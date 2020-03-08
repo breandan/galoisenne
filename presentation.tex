@@ -1,0 +1,139 @@
+%! Author = breandan
+%! Date = 3/7/20
+
+% Preamble
+\documentclass{beamer}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{sourcecodepro}
+\usepackage{listings}
+\usepackage{amsfonts}
+\usepackage{tikz}
+\usepackage{tikz-qtree}
+\usepackage{amsthm}
+
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}[section]
+
+\mode<presentation> { \usetheme{Madrid} }
+
+\title{Discriminative Embeddings of \\ Latent Variable Models for Structured Data}
+\author{Hanjun Dai, Bo Dai, Le Song}
+\institute[McGill]{
+    presentation by \\
+    Breandan Considine \\
+    McGill University \\
+    \medskip
+    \textit{breandan.considine@mail.mcgill.ca}
+}
+\date{\today}
+% Document
+\begin{document}
+
+    \begin{frame}
+        \titlepage
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{What is a kernel?}
+        A feature map transforms the input space to a feature space:
+        \begin{equation}
+            \varphi: \overbrace{\mathbb R^n}^\text{Input space} \to \overbrace{\mathbb R^m}^\text{Feature space}
+        \end{equation}
+        Kernel functions generalize the inner product to feature maps:
+        \begin{equation}
+            k(\mathbf x, \mathbf y) = \varphi(\mathbf x)^\intercal \varphi(\mathbf y)
+        \end{equation}
+        Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$!
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{What is a kernel?}
+        Consider the polynomial kernel $k(\mathbf x, \mathbf y) = (1 + \mathbf x^T \mathbf y)^2$ with $\mathbf x, \mathbf y \in \mathbb R^2$.
+
+        \begin{align}
+            k(\mathbf x, \mathbf y) & = (1 + \mathbf x^T \mathbf y)^2 = (1 + x_1 \, y_1  + x_2 \, y_2)^2 \\
+            & = 1 + x_1^2 y_1^2 + x_2^2 y_2^2 + 2 x_1 y_1 + 2 x_2 y_2 + 2 x_1 x_2 y_1 y_2 \
+        \end{align}
+
+        This gives us the same result as:
+
+        \begin{align}
+            k(\mathbf x, \mathbf y) &= \varphi(\mathbf x)^\intercal \varphi(\mathbf y) \\
+            &=[1, x_1^2, x_2^2, \sqrt{2} x_1, \sqrt{2} x_2, \sqrt{2} x_1 x_2]^\intercal\begin{bmatrix}1\\ y_1^2\\ y_2^2\\ \sqrt{2} y_1\\ \sqrt{2} y_2\\ \sqrt{2} y_1 y_2\end{bmatrix}
+        \end{align}
+
+        But does not require computing $\varphi(x)$ or $\varphi(y)$.
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Examples of common kernels}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{What is an inner product space?}
+        Let $X$ be a vector space over the reals.
+        \begin{definition}
+            A function $f: X \rightarrow \mathbb R$ is \textbf{linear} iff $f(\alpha x)= \alpha f(x)$
+            and $f(x+z)=f(x)+f(z)$ for all $\alpha\in\mathbb R, x,z \in X$.
+        \end{definition}
+
+        \begin{definition}
+            $X$ is an \textbf{inner product space} if there exists a symmetric bilinear map $\langle \cdot ,\cdot \rangle :X\times X\to \mathbb R$ that satisfies $\langle \mathbf x,\mathbf x \rangle > 0$ (i.e. is positive definite).
+        \end{definition}
+        \begin{center}
+            \begin{tabular}{ c c c }
+                \textbf{Scalar} & \textbf{Vector} & \textbf{Random} \\
+                $\langle x,y\rangle := xy$ &
+                $\left\langle {\begin{bmatrix}x_{1}\\\vdots \\x_{n}\end{bmatrix}},{\begin{bmatrix}y_{1}\\\vdots \\y_{n}\end{bmatrix}}\right\rangle :=x^{\textsf {T}}y$ &
+                $\langle X,Y\rangle :=\operatorname {E} (XY)$
+            \end{tabular}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{What is a Hilbert space?}
+            Let $d: X\times X \rightarrow \mathbb R^{\geq 0}$ be a metric on the space $X$. \\
+        \begin{definition}
+            A sequence $\{x_n\}$ is called a \textbf{Cauchy sequence} if $\forall \varepsilon > 0, \exists N \in \mathbb{N}, \text{ such that } \forall n,m \geq N, d(x_n,x_m)\leq \varepsilon$. \\
+        \end{definition}
+        \begin{definition}
+            $X$ is called \textbf{complete} if every Cauchy sequence converges to a point in $X$.
+        \end{definition}
+        \begin{definition}
+            $X$ is called \textbf{separable} if $\exists \{x_n\}_{n = 1}^\infty \in X$ s.t. every nonempty open subset of $X$ contains at least one element of the sequence.
+        \end{definition}
+        \begin{definition}
+            A Hilbert space is an inner product space which is complete and separable.
+        \end{definition}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Examples of Hilbert Spaces}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Gaussian RBF kernel}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Belief propagation}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Results}
+        \begin{center}
+        \includegraphics[width=\textwidth]{results.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Resources}
+        \begin{itemize}
+            \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels}
+            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes Metric Spaces} \\
+        \end{itemize}
+    \end{frame}
+\end{document}
