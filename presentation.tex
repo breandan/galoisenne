@@ -19,7 +19,8 @@
 
 \mode<presentation> { \usetheme{Madrid} }
 
-\title{Discriminative Embeddings of \\ Latent Variable Models for Structured Data}
+\title{Discriminative Embeddings}
+\subtitle{of Latent Variable Models for Structured Data}
 \author{Hanjun Dai, Bo Dai, Le Song}
 \institute[McGill]{
     presentation by \\
@@ -42,11 +43,33 @@
         \begin{equation}
             \varphi: \overbrace{\mathbb R^n}^\text{Input space} \to \overbrace{\mathbb R^m}^\text{Feature space}
         \end{equation}
-        Kernel functions generalize the inner product to feature maps:
+        Kernel functions generalize the notion of inner products to feature maps:
         \begin{equation}
             k(\mathbf x, \mathbf y) = \varphi(\mathbf x)^\intercal \varphi(\mathbf y)
         \end{equation}
         Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$!
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{What is a kernel?}
+        Consider the univariate polynomial regression algorithm:
+        \begin{equation}
+            \hat{f}(\mathbf x; \bm\beta) &= \beta\varphi(\mathbf x)
+            &= \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_m x^m = \sum_{j=0}^{m} \beta_j x^{j}
+        \end{equation}
+        Where $\varphi(\mathbf x) = [1, x_1, x_2^2, x_3^3, \ldots, x_m^m]$. We seek $\bm\beta$ minimizing the error:
+        \begin{equation}
+            \bm\beta^* = \underset{\bm\beta}{\operatorname{argmin}}||\mathbf Y - \hat{\mathbf f}(\mathbf X; \bm\beta)||^2
+        \end{equation}
+        We can solve for $\bm \beta^*$ using the normal equation or gradient descent:
+        \begin{align}
+            \bm\beta^* &= (\mathbf X^\intercal \mathbf X)^{-1}\mathbf X^\intercal\mathbf Y \\
+            \bm\beta' &\leftarrow \bm\beta - \alpha \nabla_{\bm\beta}||\mathbf Y - \hat{\mathbf f}(\mathbf X; \bm\beta)||^2
+        \end{align}
+        What happens if we have a multivariate polynomial?
+        \begin{equation}
+            z(x, y) = 1 + \beta_{x} x + \beta_{y}y + \beta_{xy} xy + \beta_{x^2} x^2 + \beta_{y^2} y^2 + \beta_{xy^2} xy^2 + \ldots
+        \end{equation}
     \end{frame}
 
     \begin{frame}
@@ -58,7 +81,7 @@
             & = 1 + x_1^2 y_1^2 + x_2^2 y_2^2 + 2 x_1 y_1 + 2 x_2 y_2 + 2 x_1 x_2 y_1 y_2 \
         \end{align}
 
-        This gives us the same result as:
+        This gives us the same result as computing the 6 dimensional feature map:
 
         \begin{align}
             k(\mathbf x, \mathbf y) &= \varphi(\mathbf x)^\intercal \varphi(\mathbf y) \\
@@ -81,7 +104,7 @@
         \end{definition}
 
         \begin{definition}
-            $X$ is an \textbf{inner product space} if there exists a symmetric bilinear map $\langle \cdot ,\cdot \rangle :X\times X\to \mathbb R$ that satisfies $\langle \mathbf x,\mathbf x \rangle > 0$ (i.e. is positive definite).
+            $X$ is an \textbf{inner product space} if there exists a symmetric bilinear map $\langle \cdot ,\cdot \rangle :X\times X\to \mathbb R$ if $\forall \mathbf x \in X, \langle \mathbf x,\mathbf x \rangle > 0$ (i.e. is positive definite).
         \end{definition}
         \begin{center}
             \begin{tabular}{ c c c }
@@ -96,22 +119,27 @@
     \begin{frame}
         \frametitle{What is a Hilbert space?}
             Let $d: X\times X \rightarrow \mathbb R^{\geq 0}$ be a metric on the space $X$. \\
-        \begin{definition}
+        \begin{block}{Definition: Cauchy sequence}
             A sequence $\{x_n\}$ is called a \textbf{Cauchy sequence} if $\forall \varepsilon > 0, \exists N \in \mathbb{N}, \text{ such that } \forall n,m \geq N, d(x_n,x_m)\leq \varepsilon$. \\
-        \end{definition}
-        \begin{definition}
+        \end{block}
+        \begin{block}{Definition: Completeness}
             $X$ is called \textbf{complete} if every Cauchy sequence converges to a point in $X$.
-        \end{definition}
-        \begin{definition}
-            $X$ is called \textbf{separable} if $\exists \{x_n\}_{n = 1}^\infty \in X$ s.t. every nonempty open subset of $X$ contains at least one element of the sequence.
-        \end{definition}
-        \begin{definition}
-            A Hilbert space is an inner product space which is complete and separable.
-        \end{definition}
+        \end{block}
+        \begin{block}{Definition: Separability}
+            $X$ is called \textbf{separable} if there exists a sequence $\{x_n\}_{n = 1}^\infty \in X$ s.t. every nonempty open subset of $X$ contains at least one element of the sequence.
+        \end{block}
+        \begin{block}{Definition: Hilbert space}
+            A Hilbert space $\mathcal H$ is an inner product space that is complete and separable.
+        \end{block}
     \end{frame}
 
     \begin{frame}
-        \frametitle{Examples of Hilbert Spaces}
+        \frametitle{Properties of Hilbert Spaces}
+        \begin{block}{Hilbert space inner products are kernels}
+            The inner product $\langle\cdot ,\cdot \rangle_{\mathcal H}:\mathcal H\times \mathcal H\to \mathbb {R}$  is a positive definite kernel:
+            $\sum _{i,j=1}^{n}c_{i}c_{j}(x_{i},x_{j})_{\mathcal H}=\left(\sum _{i=1}^{n}c_{i}x_{i},\sum _{j=1}^{n}c_{j}x_{j}\right)_{\mathcal H}=\left\|\sum _{i=1}^{n}c_{i}x_{i}\right\|_{\mathcal H}^{2}\geq 0$
+        \end{block}
+
     \end{frame}
 
     \begin{frame}
