@@ -5,6 +5,7 @@
 \documentclass{beamer}
 
 % Packages
+\usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{sourcecodepro}
@@ -15,14 +16,14 @@
 \usepackage{amsthm}
 \usepackage{bm}
 
-%\theoremstyle{definition}
-%\newtheorem{definition}{Definition}[section]
+\setbeamertemplate{navigation symbols}{}
 
 \mode<presentation> { \usetheme{Madrid} }
 
 \title{Discriminative Embeddings}
 \subtitle{of Latent Variable Models for Structured Data}
-\author{Hanjun Dai, Bo Dai, Le Song}
+
+\author[Breandan Considine]{by Hanjun Dai, Bo Dai, Le Song}
 \institute[McGill]{
     presentation by \\
     Breandan Considine \\
@@ -44,30 +45,34 @@
         \begin{equation}
             \varphi: \overbrace{\mathbb R^n}^\text{Input space} \to \overbrace{\mathbb R^m}^\text{Feature space}
         \end{equation}
+        A kernel function $k$ is a real-valued function with two inputs:
+        \begin{equation}
+            k: \Omega \times \Omega \rightarrow \mathbb R
+        \end{equation}
         Kernel functions generalize the notion of inner products to feature maps:
         \begin{equation}
             k(\mathbf x, \mathbf y) = \varphi(\mathbf x)^\intercal \varphi(\mathbf y)
         \end{equation}
-        Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$
+        Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$.
     \end{frame}
 
     \begin{frame}
         \frametitle{What is a kernel?}
         Consider the univariate polynomial regression algorithm:
         \begin{equation}
-            \hat{f}(\mathbf x; \bm\beta) = \beta\varphi(\mathbf x)
+            \hat{f}(x; \bm\beta) = \beta\varphi(x)
             = \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_m x^m = \sum\limits_{j=0}^{m} \beta_j x^{j}
         \end{equation}
-        Where $\varphi(\mathbf x) = [1, x_1, x_2^2, x_3^3, \ldots, x_m^m]$. We seek $\bm\beta$ minimizing the error:
+        Where $\varphi(\mathbf x) = [1, x, x^2, x^3, \ldots, x^m]$. We seek $\bm\beta$ minimizing the error:
         \begin{equation}
             \bm\beta^* = \underset{\bm\beta}{\operatorname{argmin}}||\mathbf Y - \hat{\mathbf f}(\mathbf X; \bm\beta)||^2
         \end{equation}
-        We can solve for $\bm \beta^*$ using the normal equation or gradient descent:
+        Can solve for $\bm \beta^*$ using the normal equation or gradient descent:
         \begin{align}
             \bm\beta^* &= (\mathbf X^\intercal \mathbf X)^{-1}\mathbf X^\intercal\mathbf Y \\
             \bm\beta' &\leftarrow \bm\beta - \alpha \nabla_{\bm\beta}||\mathbf Y - \hat{\mathbf f}(\mathbf X; \bm\beta)||^2
         \end{align}
-        What happens if we have a multivariate polynomial?
+        What happens if we want to approximate a multivariate polynomial?
         \begin{equation}
             z(x, y) = 1 + \beta_{x} x + \beta_{y}y + \beta_{xy} xy + \beta_{x^2} x^2 + \beta_{y^2} y^2 + \beta_{xy^2} xy^2 + \ldots
         \end{equation}
@@ -78,15 +83,17 @@
         Consider the polynomial kernel $k(\mathbf x, \mathbf y) = (1 + \mathbf x^T \mathbf y)^2$ with $\mathbf x, \mathbf y \in \mathbb R^2$.
 
         \begin{align}
-            k(\mathbf x, \mathbf y) & = (1 + \mathbf x^T \mathbf y)^2 = (1 + x_1 \, y_1  + x_2 \, y_2)^2 \\
-            & = 1 + x_1^2 y_1^2 + x_2^2 y_2^2 + 2 x_1 y_1 + 2 x_2 y_2 + 2 x_1 x_2 y_1 y_2 \
+            k(\mathbf x, \mathbf y) & = (1 + \mathbf x^T \mathbf y)^2 = (1 + x_1 \, y_1 + x_2 \, y_2)^2 \\
+            & = 1 + x_1^2 y_1^2 + x_2^2 y_2^2 + 2 x_1 y_1 + 2 x_2 y_2 + 2 x_1 x_2 y_1 y_2
         \end{align}
 
         This gives us the same result as computing the 6 dimensional feature map:
 
         \begin{align}
             k(\mathbf x, \mathbf y) &= \varphi(\mathbf x)^\intercal \varphi(\mathbf y) \\
-            &=[1, x_1^2, x_2^2, \sqrt{2} x_1, \sqrt{2} x_2, \sqrt{2} x_1 x_2]^\intercal\begin{bmatrix}1\\ y_1^2\\ y_2^2\\ \sqrt{2} y_1\\ \sqrt{2} y_2\\ \sqrt{2} y_1 y_2\end{bmatrix}
+            &=[1, x_1^2, x_2^2, \sqrt{2} x_1, \sqrt{2} x_2, \sqrt{2} x_1 x_2]^\intercal\begin{bmatrix}
+                                                                                           1\\ y_1^2\\ y_2^2\\ \sqrt{2} y_1\\ \sqrt{2} y_2\\ \sqrt{2} y_1 y_2
+            \end{bmatrix}
         \end{align}
 
         But does not require computing $\varphi(x)$ or $\varphi(y)$.
@@ -95,41 +102,66 @@
     \begin{frame}
         \frametitle{Examples of common kernels}
         \centering{Popular kernels}
-            \begin{center}
-                \begin{tabular}{|c|c|c|} \hline
-                    Polynomial & $k(\mathbf{x},\mathbf{y}):=(\mathbf{x}^{T}\mathbf{y}+r)^{n}$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d}, n \in \mathbb N, r\geq 0$ \\ \hline
-                    Laplacian & $k(\mathbf{x},\mathbf{y}):=exp\left(-\alpha \|\mathbf{x}-\mathbf{y}\|\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\alpha >0$ \\ \hline
-                    Gaussian RBF & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|^{2}}{2\sigma ^{2}}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
-                \end{tabular}
-            \end{center}
+        \begin{center}
+            \begin{tabular}{|c|c|c|}
+                \hline
+                Polynomial & $k(\mathbf{x},\mathbf{y}):=(\mathbf{x}^{T}\mathbf{y}+r)^{n}$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d}, n \in \mathbb N, r\geq 0$ \\ \hline
+                Laplacian & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|}{\sigma}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
+                Gaussian RBF & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|^{2}}{2\sigma ^{2}}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
+            \end{tabular}
+        \end{center}
 
         \centering{Popular Graph Kernels}
         \begin{center}
-            \begin{tabular}{|c|l|l|} \hline
-            RW & $k_\times(G, H) := \sum\limits_{i, j = 1}^{|V_\times|}[\sum\limits_{n=1}^\infty\mathbf{\lambda}^{n}A^n_\times]_{ij} = \mathbf{e}^\intercal(\mathbf{I} - \lambda A_\times)^{-1}\mathbf{e}$ & $\mathcal O(n^6)$ \\\hline
-            SP & $k_{SP}(G, H) := \sum\limits_{s_1\in SD(G)}\sum\limits_{s_2 \in SD(H)} k(s_1, s_2)$ & $\mathcal O(n^4)$ \\\hline
-            WL & \begin{tabular}$l^{(i)}(G) :=$ \begin{cases}$\text{deg}_v, \forall v \in G$&$i = 1$\\$HASH(\{\{l^{(i-1)}(u), \forall u \in \mathcal{N}(v)\}\})$&$i > 1$\end{cases}\\$k_{WL}(G, H):=\langle\psi_{WL}(G), \psi_{WL}(H)\rangle$\end{tabular} & $\mathcal O(hm)$ \\\hline
+            \begin{tabular}{|c|l|l|}
+                \hline
+                RW & $k_\times(G, H) := \sum\limits_{i, j = 1}^{|V_\times|}[\sum\limits_{n=1}^\infty\mathbf{\lambda}^{n}A^n_\times]_{ij} = \mathbf{e}^\intercal(\mathbf{I} - \lambda A_\times)^{-1}\mathbf{e}$ & $\mathcal O(n^6)$ \\\hline
+                SP & $k_{SP}(G, H) := \sum\limits_{s_1\in SD(G)}\sum\limits_{s_2 \in SD(H)} k(s_1, s_2)$ & $\mathcal O(n^4)$ \\\hline
+                WL & \begin{tabular}
+                         $l^{(i)}(G) :=$ \begin{cases}
+                                             $\text{deg}_v, \forall v \in G$&$i = 1$\\$HASH(\{\{l^{(i-1)}(u), \forall u \in \mathcal{N}(v)\}\})$&$i > 1$
+                         \end{cases}\\$k_{WL}(G, H):=\langle\psi_{WL}(G), \psi_{WL}(H)\rangle$
+                \end{tabular} & $\mathcal O(hm)$ \\\hline
             \end{tabular}
         \end{center}
         \tiny{\url{https://people.mpi-inf.mpg.de/~mehlhorn/ftp/genWLpaper.pdf}}
-\end{frame}
+    \end{frame}
 
-\begin{frame}
+    \begin{frame}
+        \frametitle{Positive definite kernels}
+        \begin{block}{Positive Definite Matrix}
+            A symmetric matrix $\mathbf K \in \mathbb R^{N^2}$ is \textbf{positive definite} if $\mathbf{x}^\intercal\mathbf K\mathbf{x} > 0, \forall \mathbf x \in \mathbb R^N \setminus \mathbf 0$.
+        \end{block}
+
+        \begin{block}{Positive Definite Kernel}
+            A symmetric kernel $k$ is called positive definite on $\Omega$ if its associated kernel matrix $\mathbf K = \left[k(\mathbf x_i, \mathbf x_j)\right]_{i, j = 0}^N$ is positive definite $\forall N \in \mathbb N, \forall \{\mathbf x_1, \ldots, \mathbf x_N\} \subset \Omega$.
+        \end{block}
+        \tiny{\url{http://www.math.iit.edu/~fass/PDKernels.pdf}}
+    \end{frame}
+
+    \begin{frame}
         \frametitle{What is an inner product space?}
-        Let $X$ be a vector space over the reals.
-        \begin{definition}
-            A function $f: X \rightarrow \mathbb R$ is \textbf{linear} iff $f(\alpha x)= \alpha f(x)$
-            and $f(x+z)=f(x)+f(z)$ for all $\alpha\in\mathbb R, x,z \in X$.
-        \end{definition}
 
-        \begin{definition}
+        \begin{block}{Linear function}
+            Let $X$ be a vector space over $\mathbb R$. A function $f: X \rightarrow \mathbb R$ is \textbf{linear} iff $f(\alpha x)= \alpha f(x)$
+            and $f(x+z)=f(x)+f(z)$ for all $\alpha\in\mathbb R, x,z \in X$.
+        \end{block}
+
+        \begin{block}{Inner product space}
             $X$ is an \textbf{inner product space} if there exists a symmetric bilinear map $\langle \cdot ,\cdot \rangle :X\times X\to \mathbb R$ if $\forall \mathbf x \in X, \langle \mathbf x,\mathbf x \rangle > 0$ (i.e. is positive definite).
-        \end{definition}
+        \end{block}
+        \begin{block}{Cauchy-Schwartz Inequality}
+            If $X$ is an inner product space, then $\forall \mathbf u, \mathbf v \in \mathcal X, |\langle\mathbf u, \mathbf v\rangle|^2 \leq \langle \mathbf u, \mathbf u\rangle\cdot\langle\mathbf v, \mathbf v\rangle$.
+        \end{block}
         \begin{center}
             \begin{tabular}{ c c c }
                 \textbf{Scalar Product} & \textbf{Vector Dot Product} & \textbf{Random Variable} \\
                 $\langle x,y\rangle := xy$ &
-                $\left\langle {\begin{bmatrix}x_{1}\\\vdots \\x_{n}\end{bmatrix}},{\begin{bmatrix}y_{1}\\\vdots \\y_{n}\end{bmatrix}}\right\rangle :=x^{\textsf {T}}y$ &
+                $\left\langle {\begin{bmatrix}
+                                   x_{1}\\\vdots \\x_{n}
+                \end{bmatrix}},{\begin{bmatrix}
+                                    y_{1}\\\vdots \\y_{n}
+                \end{bmatrix}}\right\rangle :=x^{\textsf {T}}y$ &
                 $\langle X,Y\rangle :=\operatorname {E} (XY)$
             \end{tabular}
         \end{center}
@@ -137,17 +169,17 @@
 
     \begin{frame}
         \frametitle{What is a Hilbert space?}
-            Let $d: X\times X \rightarrow \mathbb R^{\geq 0}$ be a metric on the space $X$. \\
-        \begin{block}{Definition: Cauchy sequence}
+        Let $d: X\times X \rightarrow \mathbb R^{\geq 0}$ be a metric on the space $X$. \\
+        \begin{block}{Cauchy sequence}
             A sequence $\{x_n\}$ is called a \textbf{Cauchy sequence} if $\forall \varepsilon > 0, \exists N \in \mathbb{N}, \text{ such that } \forall n,m \geq N, d(x_n,x_m)\leq \varepsilon$. \\
         \end{block}
-        \begin{block}{Definition: Completeness}
+        \begin{block}{Completeness}
             $X$ is called \textbf{complete} if every Cauchy sequence converges to a point in $X$.
         \end{block}
-        \begin{block}{Definition: Separability}
+        \begin{block}{Separability}
             $X$ is called \textbf{separable} if there exists a sequence $\{x_n\}_{n = 1}^\infty \in X$ s.t. every nonempty open subset of $X$ contains at least one element of the sequence.
         \end{block}
-        \begin{block}{Definition: Hilbert space}
+        \begin{block}{Hilbert space}
             A Hilbert space $\mathcal H$ is an inner product space that is complete and separable.
         \end{block}
     \end{frame}
@@ -155,7 +187,7 @@
     \begin{frame}
         \frametitle{Properties of Hilbert Spaces}
         \begin{block}{Hilbert space inner products are kernels}
-            The inner product $\langle\cdot ,\cdot \rangle_{\mathcal H}:\mathcal H\times \mathcal H\to \mathbb {R}$ is a PD positive definite kernel:
+            The inner product $\langle\cdot ,\cdot \rangle_{\mathcal H}:\mathcal H\times \mathcal H\to \mathbb {R}$ is a positive definite kernel:
             $\sum\limits_{i,j=1}^{n}c_{i}c_{j}(x_{i},x_{j})_{\mathcal H}=\left(\sum _{i=1}^{n}c_{i}x_{i},\sum\limits_{j=1}^{n}c_{j}x_{j}\right)_{\mathcal H}=\left\|\sum \limits_{i=1}^{n}c_{i}x_{i}\right\|_{\mathcal H}^{2}\geq 0$
         \end{block}
 
@@ -164,6 +196,15 @@
         \end{block}
 
         \tiny{\url{http://jmlr.csail.mit.edu/papers/volume11/vishwanathan10a/vishwanathan10a.pdf}}
+        \tiny{\url{https://marcocuturi.net/Papers/pdk_in_ml.pdf}}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Latent Variable Models}
+        \begin{center}
+            \includegraphics[width=0.7\textwidth]{string_lvm.png}
+            \includegraphics[width=0.7\textwidth]{graph_lvm.png}
+        \end{center}
     \end{frame}
 
     \begin{frame}
@@ -175,9 +216,37 @@
     \end{frame}
 
     \begin{frame}
-        \frametitle{Results}
+        \frametitle{Embedded mean field}
         \begin{center}
-        \includegraphics[width=\textwidth]{results.png}
+            \includegraphics[width=0.8\textwidth]{emf.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Embedded loopy belief propagation}
+        \begin{center}
+            \includegraphics[width=0.8\textwidth]{elbp.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Graph Dataset Results}
+        \begin{center}
+            \includegraphics[width=\textwidth]{graph_results.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Harvard Clean Energy Project (CEP)}
+        \begin{center}
+            \includegraphics[width=\textwidth]{cep_data.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{CEP Results}
+        \begin{center}
+            \includegraphics[width=0.95\textwidth]{cep_results.png}
         \end{center}
     \end{frame}
 
@@ -186,7 +255,13 @@
         \begin{itemize}
             \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels} \\
             \item \href{https://arxiv.org/pdf/1903.11835.pdf}{Survey on Graph Kernels} \\
-            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes Metric Spaces}
+            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes on Metric Spaces} \\
+            \item \href{http://www.math.iit.edu/~fass/PDKernels.pdf}{Positive Definite Kernels: Past, Present and Future}
+            \item \href{https://marcocuturi.net/Papers/pdk_in_ml.pdf}{Positive Definite Kernels in Machine Learning}
+            \item \href{http://www.cs.cmu.edu/~mgormley/bp-tutorial/}{Structured Belief Propagation for NLP}
         \end{itemize}
     \end{frame}
+%    \begin{frame}
+%        \bibliography{presentation}
+%    \end{frame}
 \end{document}
