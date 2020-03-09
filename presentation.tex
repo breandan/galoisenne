@@ -13,6 +13,7 @@
 \usepackage{tikz}
 \usepackage{tikz-qtree}
 \usepackage{amsthm}
+\usepackage{bm}
 
 %\theoremstyle{definition}
 %\newtheorem{definition}{Definition}[section]
@@ -47,15 +48,15 @@
         \begin{equation}
             k(\mathbf x, \mathbf y) = \varphi(\mathbf x)^\intercal \varphi(\mathbf y)
         \end{equation}
-        Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$!
+        Gives us $\varphi(x)^\intercal\varphi(y)$ without directly computing $\varphi(x)$ or $\varphi(y)$
     \end{frame}
 
     \begin{frame}
         \frametitle{What is a kernel?}
         Consider the univariate polynomial regression algorithm:
         \begin{equation}
-            \hat{f}(\mathbf x; \bm\beta) &= \beta\varphi(\mathbf x)
-            &= \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_m x^m = \sum_{j=0}^{m} \beta_j x^{j}
+            \hat{f}(\mathbf x; \bm\beta) = \beta\varphi(\mathbf x)
+            = \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_m x^m = \sum\limits_{j=0}^{m} \beta_j x^{j}
         \end{equation}
         Where $\varphi(\mathbf x) = [1, x_1, x_2^2, x_3^3, \ldots, x_m^m]$. We seek $\bm\beta$ minimizing the error:
         \begin{equation}
@@ -93,9 +94,27 @@
 
     \begin{frame}
         \frametitle{Examples of common kernels}
-    \end{frame}
+        \centering{Popular kernels}
+            \begin{center}
+                \begin{tabular}{|c|c|c|} \hline
+                    Polynomial & $k(\mathbf{x},\mathbf{y}):=(\mathbf{x}^{T}\mathbf{y}+r)^{n}$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d}, n \in \mathbb N, r\geq 0$ \\ \hline
+                    Laplacian & $k(\mathbf{x},\mathbf{y}):=exp\left(-\alpha \|\mathbf{x}-\mathbf{y}\|\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\alpha >0$ \\ \hline
+                    Gaussian RBF & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|^{2}}{2\sigma ^{2}}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
+                \end{tabular}
+            \end{center}
 
-    \begin{frame}
+        \centering{Popular Graph Kernels}
+        \begin{center}
+            \begin{tabular}{|c|l|l|} \hline
+            RW & $k_\times(G, H) := \sum\limits_{i, j = 1}^{|V_\times|}[\sum\limits_{n=1}^\infty\mathbf{\lambda}^{n}A^n_\times]_{ij} = \mathbf{e}^\intercal(\mathbf{I} - \lambda A_\times)^{-1}\mathbf{e}$ & $\mathcal O(n^6)$ \\\hline
+            SP & $k_{SP}(G, H) := \sum\limits_{s_1\in SD(G)}\sum\limits_{s_2 \in SD(H)} k(s_1, s_2)$ & $\mathcal O(n^4)$ \\\hline
+            WL & \begin{tabular}$l^{(i)}(G) :=$ \begin{cases}$\text{deg}_v, \forall v \in G$&$i = 1$\\$HASH(\{\{l^{(i-1)}(u), \forall u \in \mathcal{N}(v)\}\})$&$i > 1$\end{cases}\\$k_{WL}(G, H):=\langle\psi_{WL}(G), \psi_{WL}(H)\rangle$\end{tabular} & $\mathcal O(hm)$ \\\hline
+            \end{tabular}
+        \end{center}
+        \tiny{\url{https://people.mpi-inf.mpg.de/~mehlhorn/ftp/genWLpaper.pdf}}
+\end{frame}
+
+\begin{frame}
         \frametitle{What is an inner product space?}
         Let $X$ be a vector space over the reals.
         \begin{definition}
@@ -108,7 +127,7 @@
         \end{definition}
         \begin{center}
             \begin{tabular}{ c c c }
-                \textbf{Scalar} & \textbf{Vector} & \textbf{Random} \\
+                \textbf{Scalar Product} & \textbf{Vector Dot Product} & \textbf{Random Variable} \\
                 $\langle x,y\rangle := xy$ &
                 $\left\langle {\begin{bmatrix}x_{1}\\\vdots \\x_{n}\end{bmatrix}},{\begin{bmatrix}y_{1}\\\vdots \\y_{n}\end{bmatrix}}\right\rangle :=x^{\textsf {T}}y$ &
                 $\langle X,Y\rangle :=\operatorname {E} (XY)$
@@ -136,14 +155,19 @@
     \begin{frame}
         \frametitle{Properties of Hilbert Spaces}
         \begin{block}{Hilbert space inner products are kernels}
-            The inner product $\langle\cdot ,\cdot \rangle_{\mathcal H}:\mathcal H\times \mathcal H\to \mathbb {R}$  is a positive definite kernel:
-            $\sum _{i,j=1}^{n}c_{i}c_{j}(x_{i},x_{j})_{\mathcal H}=\left(\sum _{i=1}^{n}c_{i}x_{i},\sum _{j=1}^{n}c_{j}x_{j}\right)_{\mathcal H}=\left\|\sum _{i=1}^{n}c_{i}x_{i}\right\|_{\mathcal H}^{2}\geq 0$
+            The inner product $\langle\cdot ,\cdot \rangle_{\mathcal H}:\mathcal H\times \mathcal H\to \mathbb {R}$ is a PD positive definite kernel:
+            $\sum\limits_{i,j=1}^{n}c_{i}c_{j}(x_{i},x_{j})_{\mathcal H}=\left(\sum _{i=1}^{n}c_{i}x_{i},\sum\limits_{j=1}^{n}c_{j}x_{j}\right)_{\mathcal H}=\left\|\sum \limits_{i=1}^{n}c_{i}x_{i}\right\|_{\mathcal H}^{2}\geq 0$
         \end{block}
 
+        \begin{block}{Reproducing Kernel Hilbert Space (RKHS)}
+            Any continuous, symmetric, positive definite kernel $k: X \times X\rightarrow \mathbb R$ has a corresponding Hilbert space, which induces a feature map $\varphi: X \rightarrow \mathcal H$ satisfying $k(x,y) = \langle\varphi(x),\varphi(y)\rangle $_{\mathcal H}.
+        \end{block}
+
+        \tiny{\url{http://jmlr.csail.mit.edu/papers/volume11/vishwanathan10a/vishwanathan10a.pdf}}
     \end{frame}
 
     \begin{frame}
-        \frametitle{Gaussian RBF kernel}
+        \frametitle{Structured data kernels}
     \end{frame}
 
     \begin{frame}
@@ -160,8 +184,9 @@
     \begin{frame}
         \frametitle{Resources}
         \begin{itemize}
-            \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels}
-            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes Metric Spaces} \\
+            \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels} \\
+            \item \href{https://arxiv.org/pdf/1903.11835.pdf}{Survey on Graph Kernels} \\
+            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes Metric Spaces}
         \end{itemize}
     \end{frame}
 \end{document}
