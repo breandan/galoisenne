@@ -15,6 +15,12 @@
 \usepackage{tikz-qtree}
 \usepackage{amsthm}
 \usepackage{bm}
+\usetikzlibrary{bayesnet}
+\usetikzlibrary{arrows}
+\usepackage{color}
+\usepackage{caption}
+\usepackage{subcaption}
+\usetikzlibrary{backgrounds}
 
 \setbeamertemplate{navigation symbols}{}
 
@@ -226,6 +232,31 @@
     \end{frame}
 
     \begin{frame}
+        \frametitle{Belief Networks}
+        Belief network is a distribution of the form:
+        \begin{equation}
+            P(x_1,\ldots,x_D)=\prod_{i=1}^D P(x_i|pa(x_i))
+        \end{equation}
+        \begin{center}
+            \begin{tabular}{cc}
+                \begin{figure}
+                    \tikz{
+                        \node[obs] (z) {$z$};%
+                        \node[latent,above=of z,xshift=-1cm,fill] (x) {$x$}; %
+                        \node[latent,above=of z,xshift=1cm] (y) {$y$}; %
+                        \edge {x,y} {z}  }
+                \end{figure} & \begin{figure}
+                                   \tikz{
+                                       \node[obs] (z) {$z$};%
+                                       \node[latent,above=of z,xshift=-1cm,fill] (x) {$x$}; %
+                                       \node[latent,above=of z,xshift=1cm] (y) {$y$}; %
+                                       \edge {z} {x,y}   } \end{figure}
+            \end{tabular} \\
+            $P(X,Y|Z) \propto P(Z|X,Y)P(X)P(Y)$ & $P(X,Y|Z)=P(X|Z)P(Y|Z)$
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
         \frametitle{Latent Variable Models}
         \begin{center}
             \includegraphics[width=0.7\textwidth]{string_lvm.png}
@@ -240,6 +271,7 @@
 %    \begin{frame}
 %        \frametitle{Belief propagation}
 %    \end{frame}
+
 
     \begin{frame}
         \frametitle{Embedded mean field}
@@ -293,6 +325,7 @@
             \item \href{https://marcocuturi.net/Papers/pdk_in_ml.pdf}{Positive Definite Kernels in Machine Learning}
             \item \href{http://www.cs.cmu.edu/~mgormley/bp-tutorial/}{Structured Belief Propagation for NLP}
             \item \href{http://luthuli.cs.uiuc.edu/~daf/courses/AutonomousCars/autoencodernotes.pdf}{Mean Field Inference}
+            \item \href{https://frnsys.com/ai_notes/foundations/probabilistic_graphical_models.html}{Probabilistic Graphical Models}
         \end{itemize}
     \end{frame}
 %    \begin{frame}
