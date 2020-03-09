@@ -200,6 +200,32 @@
     \end{frame}
 
     \begin{frame}
+        \frametitle{Hilbert Space Embedding of Distributions}
+        Maps distributions into potentially infinite dimensional feature spaces:
+        \begin{equation}
+            \mu_X := \mathbb{E}_X[\phi(X)] = \int_{\mathcal X} \phi(x)p(x)dx : \mathcal P \mapsto \mathcal F
+        \end{equation}
+        By choosing the right kernel, we can make this mapping injective.
+        \begin{align}
+            f(p(x)) &= \tilde{f}(\mu_x), f:\mathcal P \mapsto \mathbb R\\
+            \mathcal{T} \circ p(x) &= \tilde{\mathcal T} \circ \mu_x, \tilde{\mathcal T}: \mathcal F \mapsto \mathbb R^d
+        \end{align}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Hilbert Space Embedding of Distributions}
+        Maps distributions into potentially infinite dimensional feature spaces:
+        \begin{equation}
+            \mu_X := \mathbb{E}_X[\phi(X)] = \int_{\mathcal X} \phi(x)p(x)dx : \mathcal P \mapsto \mathcal F
+        \end{equation}
+        By choosing the right kernel, we can make this mapping injective.
+        \begin{align}
+            f(p(x)) &= \tilde{f}(\mu_x), f:\mathcal P \mapsto \mathbb R\\
+            \mathcal{T} \circ p(x) &= \tilde{\mathcal T} \circ \mu_x, \tilde{\mathcal T}: \mathcal F \mapsto \mathbb R^d
+        \end{align}
+    \end{frame}
+
+    \begin{frame}
         \frametitle{Latent Variable Models}
         \begin{center}
             \includegraphics[width=0.7\textwidth]{string_lvm.png}
@@ -207,13 +233,13 @@
         \end{center}
     \end{frame}
 
-    \begin{frame}
-        \frametitle{Structured data kernels}
-    \end{frame}
-
-    \begin{frame}
-        \frametitle{Belief propagation}
-    \end{frame}
+%    \begin{frame}
+%        \frametitle{Structured data kernels}
+%    \end{frame}
+%
+%    \begin{frame}
+%        \frametitle{Belief propagation}
+%    \end{frame}
 
     \begin{frame}
         \frametitle{Embedded mean field}
@@ -226,6 +252,13 @@
         \frametitle{Embedded loopy belief propagation}
         \begin{center}
             \includegraphics[width=0.8\textwidth]{elbp.png}
+        \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Discriminative Embedding}
+        \begin{center}
+            \includegraphics[width=0.95\textwidth]{disc_embedding.png}
         \end{center}
     \end{frame}
 
@@ -253,12 +286,13 @@
     \begin{frame}
         \frametitle{Resources}
         \begin{itemize}
-            \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels} \\
-            \item \href{https://arxiv.org/pdf/1903.11835.pdf}{Survey on Graph Kernels} \\
-            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes on Metric Spaces} \\
+            \item \href{https://people.eecs.berkeley.edu/~jordan/kernels/0521813972c03_p47-84.pdf}{Properties of kernels}
+            \item \href{https://arxiv.org/pdf/1903.11835.pdf}{Survey on Graph Kernels}
+            \item \href{https://www.cs.mcgill.ca/~prakash/Courses/599/Notes/metric_spaces.pdf}{Notes on Metric Spaces}
             \item \href{http://www.math.iit.edu/~fass/PDKernels.pdf}{Positive Definite Kernels: Past, Present and Future}
             \item \href{https://marcocuturi.net/Papers/pdk_in_ml.pdf}{Positive Definite Kernels in Machine Learning}
             \item \href{http://www.cs.cmu.edu/~mgormley/bp-tutorial/}{Structured Belief Propagation for NLP}
+            \item \href{http://luthuli.cs.uiuc.edu/~daf/courses/AutonomousCars/autoencodernotes.pdf}{Mean Field Inference}
         \end{itemize}
     \end{frame}
 %    \begin{frame}
