@@ -1,4 +1,4 @@
-# Kalinin∇
+# Kaliningraph
 
 ![](https://upload.wikimedia.org/wikipedia/commons/1/15/Image-Koenigsberg%2C_Map_by_Merian-Erben_1652.jpg)
 
