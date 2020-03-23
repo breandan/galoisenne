@@ -9,11 +9,12 @@ fun main() {
     }
 }
 
-class Node(val label: String, override val neighbors: Graph = Graph()) : Graph() {
+class Node(val label: String, val neighbors: Graph = Graph()) : Graph() {
     constructor(node: Node, newNeighbors: Graph) : this(node.label, node.neighbors + newNeighbors)
 
     override val nodes = setOf(this)
     override fun hashCode() = label.hashCode()
+
     override fun equals(other: Any?) = when {
         this === other -> true
         javaClass != other?.javaClass -> false
@@ -21,20 +22,40 @@ class Node(val label: String, override val neighbors: Graph = Graph()) : Graph()
         else -> true
     }
 
+    override fun plus(other: Graph) = when(other) {
+        is Node -> Node(this, neighbors + other.neighbors)
+        else -> super.plus(other)
+    }
+
+    fun Set<Node>.neighbors() = Graph(flatMap { it.neighbors() })
+
     tailrec fun neighbors(k: Int = 0, neighbors: Graph = this.neighbors): Graph =
-        if (k == 0 || neighbors.neighbors == neighbors) neighbors
-        else neighbors(k - 1, neighbors.neighbors)
+        if (k == 0 || neighbors.neighbors() == neighbors) neighbors
+        else neighbors(k - 1, this + neighbors.neighbors())
 }
 
-open class Graph(nodeConfig: List<Node>): Set<Node> {
-    open val nodes: Set<Node> = nodeConfig.map { it.neighbors(-1) }.fold(Graph()) { acc, graph -> acc + graph }
-    open val neighbors: Graph = Graph(nodes.flatMap { it.neighbors })
-    constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { j, k -> j + k }.nodes)
-    open operator fun plus(other: Graph) = Graph(nodes + other.nodes)
+open class Graph : Set<Node> {
+    constructor(nodes: List<Node>) {
+        this.nodes = nodes.map { it.neighbors(-1) }.fold(Graph()) { acc, graph -> acc + graph }
+        this.size = this.nodes.size
+    }
+
     constructor(nodes: Set<Node>) : this(nodes.toList())
 
+    constructor(vararg graphs: Graph) {
+        this.nodes = graphs.flatMap { it.nodes }.toSet()
+        this.size = nodes.size
+    }
+
+    open val nodes: Set<Node>
+    override val size: Int
+
+    open operator fun plus(other: Graph): Graph = when (other) {
+        is Node -> other + this
+        else -> this
+    }
+
     open operator fun times(graph: Graph) = Graph(nodes.map { Node(it.label, graph) })
-    override val size: Int = nodes.size
     override fun contains(element: Node) = nodes.contains(element)
     override fun containsAll(elements: Collection<Node>) = nodes.containsAll(elements)
     override fun isEmpty() = nodes.isEmpty()
