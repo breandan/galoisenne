@@ -6,7 +6,7 @@
 
 What are graphs? A graph is a (possibly empty) set of nodes.
 
-What are nodes? A node is a graph (containing only itself) with neighbors (possibly containing itself).
+What are nodes? A node is a unique integer with neighbors (possibly containing itself).
 
 What are neighbors? Neighbors are a graph.
 
