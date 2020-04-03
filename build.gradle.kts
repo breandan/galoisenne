@@ -1,6 +1,6 @@
 plugins {
     java
-    kotlin("jvm") version "1.3.71"
+    kotlin("jvm") version "1.3.70"
 }
 
 group = "edu.mcgill"

@@ -1,3 +1,5 @@
+import java.util.*
+
 fun main() {
     println("Hello Kaliningraph!")
 
@@ -9,59 +11,59 @@ fun main() {
 //    }
     val t = Node("t", Node("q", Node("t", Node("p"))))
 
-    println("Neighbors: " + t.neighbors.first())
-}
+    val dg = buildGraph {
+        val t = d - a - c - b - e
+        val g = d - c - e
 
-class Node(val label: String, val neighbors: Set<Node>) {
-    constructor(node: Node, newNeighbors: Graph) : this(node.label, node.neighbors + newNeighbors)
-    constructor(label: String, vararg neighbors: Node): this(label, neighbors.toSet())
-    override fun hashCode() = label.hashCode()
-
-    override fun equals(other: Any?) = when {
-        this === other -> true
-        javaClass != other?.javaClass -> false
-        label != (other as Node).label -> false
-        else -> true
+        Graph(t, g)
     }
 
-    fun plus(other: Graph) = other + this
-
-    fun Set<Node>.neighbors() = Graph(flatMap { it.neighbors() })
-
-    tailrec fun neighbors(k: Int = 0, neighbors: Set<Node> = this.neighbors): Graph =
-        if (k == 0 || neighbors.neighbors() == neighbors) Graph(neighbors)
-        else neighbors(k - 1, neighbors.neighbors())
-
-    override fun toString() = label
+    println("Neighbors: " + dg.nodes)
 }
 
-open class Graph(open val nodes: Set<Node>) : Set<Node> by nodes {
-    constructor(nodes: List<Node>):
-            this(nodes.map { it.neighbors(-1) }.fold(Graph()) { acc, graph -> acc + graph })
+class Node(
+    val id: String = UUID.randomUUID().toString(),
+    val neighbors: Set<Node> = hashSetOf()
+) {
+    constructor(id: String = UUID.randomUUID().toString(), vararg nodes: Node) :
+            this(id, nodes.toSet())
 
-    constructor() : this(emptySet())
+    val edges: Set<Edge> = neighbors.map { Edge(this, it) }.toSet()
 
-    constructor(vararg graphs: Graph):
-            this(graphs.fold(Graph()) { acc, graph -> acc + graph }.nodes)
+    fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
 
-    val adjacency = HashMap<Node, Node>()
+    tailrec fun neighbors(k: Int = 0, neighbors: Set<Node> = this.neighbors + this): Set<Node> =
+        if (k == 0 || neighbors.neighbors() == neighbors) neighbors
+        else neighbors(k - 1, neighbors + neighbors.neighbors() + this)
 
-    open operator fun plus(other: Node): Graph =
-        if(other in this)
-            Graph(first { it == other }.neighbors() +
-                    other.neighbors + filter { it != other })
-        else
-            Graph(nodes + other)
+    fun asGraph() = Graph(neighbors(-1))
 
-    operator fun plus(other: Graph): Graph = TODO()
+    override fun toString() = id
 
-    open operator fun times(graph: Graph) = Graph(nodes.map { Node(it.label, graph) })
-    override fun contains(element: Node) = nodes.contains(element)
-    override fun containsAll(elements: Collection<Node>) = nodes.containsAll(elements)
-    override fun isEmpty() = nodes.isEmpty()
-//    override fun iterator() = nodes.iterator()
+    override fun hashCode() = id.hashCode()
 
-    override fun toString() = nodes.joinToString { it.toString() }
+    operator fun minus(node: Node) = Node(id, neighbors + node)
+
+    override fun equals(other: Any?) = (other as? Node)?.id == id
+}
+
+class Edge(
+    val source: Node, val target: Node,
+    val id: String = UUID.randomUUID().toString()
+)
+
+class Graph(val nodes: Set<Node>) {
+    constructor(graphs: List<Graph>) : this(graphs.flatMap { it.nodes }.toSet())
+
+    //    constructor(vararg graphs: Graph)
+    constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
+
+    operator fun plus(graph: Graph) =
+        Graph(nodes + graph.nodes)
+//            (nodes - graph.nodes) +
+//             nodes.intersect(graph.nodes).map {  } +
+//            (graph.nodes - nodes)
+//        )
 }
 
 object GraphBuilder {
