@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     testCompile("junit", "junit", "4.12")
+    implementation("guru.nidi:graphviz-kotlin:0.15.1")
 }
 
 configure<JavaPluginConvention> {
