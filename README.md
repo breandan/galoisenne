@@ -12,4 +12,7 @@ What are neighbors? Neighbors are a graph.
 
 # References
 
-* [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf)
+* [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf) by Euler
+* [Think Like a Vertex, Behave Like a Function!A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf) by Kento Emoto et al.
+* [Inductive Graphs and Functional Graph Algorithms](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.28.9377&rep=rep1&type=pdf) by Martin Erwig
+* [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf) by Bruno Oliveira and William Cook
