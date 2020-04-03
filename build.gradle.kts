@@ -27,4 +27,11 @@ tasks {
     compileTestKotlin {
         kotlinOptions.jvmTarget = "1.8"
     }
+
+    listOf("HelloKaliningraph").forEach { fileName ->
+        register(fileName, JavaExec::class) {
+            main = "edu.mcgill.kaliningraph.${fileName}Kt"
+            classpath = sourceSets["main"].runtimeClasspath
+        }
+    }
 }

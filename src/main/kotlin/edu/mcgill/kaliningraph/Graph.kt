@@ -1,3 +1,5 @@
+package edu.mcgill.kaliningraph
+
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.edge
 import guru.nidi.graphviz.engine.Format
@@ -9,26 +11,6 @@ import guru.nidi.graphviz.toGraphviz
 import java.io.File
 import java.util.*
 
-fun main() {
-    println("Hello Kaliningraph!")
-
-    val t = Node("t", Node("q", Node("t", Node("p"))))
-
-    val dg = buildGraph {
-        val t = d - a - c - b - e
-        val g = d - c - e
-
-        val m = a - b - c - d
-        val n = c - d - e
-
-        Graph(t, g, d - e).reversed()
-    }
-
-    println("Nodes: " + dg.V)
-
-    dg.show()
-}
-
 class Node(
     val id: String = UUID.randomUUID().toString(),
     val out: Set<Node> = emptySet()
@@ -36,7 +18,12 @@ class Node(
     constructor(id: String = UUID.randomUUID().toString(), vararg nodes: Node) :
             this(id, nodes.toSet())
 
-    val edges: Set<Edge> = out.map { Edge(this, it) }.toSet()
+    val edges: Set<Edge> = out.map {
+        Edge(
+            this,
+            it
+        )
+    }.toSet()
 
     fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
 
@@ -50,7 +37,8 @@ class Node(
 
     override fun hashCode() = id.hashCode()
 
-    operator fun minus(node: Node) = Node(node.id, node.out + this)
+    operator fun minus(node: Node) =
+        Node(node.id, node.out + this)
 
     operator fun plus(node: Node) = asGraph() + node.asGraph()
 
@@ -73,15 +61,22 @@ class Graph(
 
     val nodesById = V.map { it.id to it }.toMap()
 
-    operator fun plus(that: Graph) = Graph(
-        (this - that) +
-         intersect(that).map { Node(it.id, A[it] as Set<Node> + that.A[it] as Set<Node>) } +
-        (that - this)
-    )
+    operator fun plus(that: Graph) =
+        Graph(
+            (this - that) +
+                    intersect(that).map {
+                        Node(
+                            it.id,
+                            A[it] as Set<Node> + that.A[it] as Set<Node>
+                        )
+                    } +
+                    (that - this)
+        )
 
     fun intersect(graph: Graph) = V.intersect(graph.V)
 
-    operator fun minus(graph: Graph) = Graph(V - graph.V)
+    operator fun minus(graph: Graph) =
+        Graph(V - graph.V)
 
     operator fun get(node: Node) = nodesById[node.id]
 
@@ -90,7 +85,8 @@ class Graph(
                 flatMap { (k, v) -> v.map { it to k } }.groupBy { it.first }
                     .map { (k, v) -> k to v.map { it.second }.toSet() }.toMap()
 
-    fun reversed(): Graph = Graph(A.reversed())
+    fun reversed(): Graph =
+        Graph(A.reversed())
 }
 
 object GraphBuilder {
@@ -101,7 +97,9 @@ object GraphBuilder {
     val e = Node("e")
 }
 
-fun buildGraph(builder: GraphBuilder.() -> Graph) = builder(GraphBuilder)
+fun buildGraph(builder: GraphBuilder.() -> Graph) = builder(
+    GraphBuilder
+)
 
 val DARKMODE = false
 val THICKNESS = 2
