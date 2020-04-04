@@ -46,8 +46,8 @@ class Node(
 data class Edge(val source: Node, val target: Node, val id: String = randomString())
 
 class Graph(
-  val V: Set<Node> = emptySet(),
-  val A: Map<Node, Set<Node>> = V.map { it to it.out }.toMap()
+  val V: Set<Node> = emptySet(), // Vertices
+  val A: Map<Node, Set<Node>> = V.map { it to it.out }.toMap() // Adjacency list
 ) : Set<Node> by V {
   constructor(vararg graphs: Graph) : this(graphs.toList())
   constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
@@ -55,20 +55,15 @@ class Graph(
   constructor(adjacency: Map<Node, Set<Node>>) : this(adjacency.keys, adjacency)
 
   val nodesById = V.map { it.id to it }.toMap()
+  val numEdges = A.values.flatten().size
 
-  operator fun plus(that: Graph) =
-    Graph(
-      (this - that) +
-        intersect(that).map {
-          Node(it.id, A[it] as Set<Node> + that.A[it] as Set<Node>)
-        } +
-        (that - this)
-    )
+  // Implements graph merge. For all nodes in common, merge their neighbors.
+  operator fun plus(that: Graph) = Graph((this - that) + intersect(that) + (that - this))
 
-  fun intersect(graph: Graph) = V.intersect(graph.V)
+  fun intersect(that: Graph) =
+    V.intersect(that.V).map { Node(it.id, A[it] as Set<Node> + that.A[it] as Set<Node>) }
 
-  operator fun minus(graph: Graph) =
-    Graph(V - graph.V)
+  operator fun minus(graph: Graph) = Graph(V - graph.V)
 
   operator fun get(node: Node) = nodesById[node.id]
 
@@ -81,11 +76,12 @@ class Graph(
 
   val histogram by lazy { poolingBy { size } }
 
+  // Weisfeiler-Lehman isomorphism test: http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
   tailrec fun computeWL(k: Int = 5, labels: Map<Node, Int> = histogram): Map<Node, Int> =
     if (k <= 0) labels
     else computeWL(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
 
-  fun isomorphicTo(that: Graph) =
+  fun isomorphicTo(that: Graph) = V.size == that.V.size && numEdges == that.numEdges &&
     computeWL().values.sorted().hashCode() == that.computeWL().values.sorted().hashCode()
 
   fun <R> poolingBy(k: Set<Node>.() -> R): Map<Node, R> =
