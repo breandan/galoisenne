@@ -27,6 +27,10 @@ class Node(
 
   fun asGraph() = Graph(neighbors(-1))
 
+  fun egoGraph() = Graph(neighbors(0).closure())
+
+  fun Set<Node>.closure() = map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
+
   override fun toString() = id
 
   override fun hashCode() = id.hashCode()
@@ -74,6 +78,18 @@ class Graph(
         .map { (k, v) -> k to v.map { it.second }.toSet() }.toMap()
 
   fun reversed(): Graph = Graph(A.reversed())
+
+  val histogram by lazy { poolingBy { size } }
+
+  tailrec fun computeWL(k: Int = 5, labels: Map<Node, Int> = histogram): Map<Node, Int> =
+    if (k <= 0) labels
+    else computeWL(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
+
+  fun isomorphicTo(that: Graph) =
+    computeWL().values.sorted().hashCode() == that.computeWL().values.sorted().hashCode()
+
+  fun <R> poolingBy(k: Set<Node>.() -> R): Map<Node, R> =
+    V.map { it to k(it.neighbors()) }.toMap()
 }
 
 object GraphBuilder {
@@ -82,6 +98,13 @@ object GraphBuilder {
   val c = Node("c")
   val d = Node("d")
   val e = Node("e")
+  val f = Node("f")
+  val g = Node("g")
+  val h = Node("h")
+  val i = Node("i")
+  val j = Node("j")
+  val k = Node("k")
+  val l = Node("l")
 }
 
 fun buildGraph(builder: GraphBuilder.() -> Graph) = builder(GraphBuilder).reversed()
