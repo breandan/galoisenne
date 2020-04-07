@@ -84,8 +84,8 @@ class Graph(
   fun isomorphicTo(that: Graph) = V.size == that.V.size && numEdges == that.numEdges &&
     computeWL().values.sorted().hashCode() == that.computeWL().values.sorted().hashCode()
 
-  fun <R> poolingBy(k: Set<Node>.() -> R): Map<Node, R> =
-    V.map { it to k(it.neighbors()) }.toMap()
+  fun <R> poolingBy(op: Set<Node>.() -> R): Map<Node, R> =
+    V.map { it to op(it.neighbors()) }.toMap()
 }
 
 object GraphBuilder {
