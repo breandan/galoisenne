@@ -2,12 +2,17 @@ package edu.mcgill.kaliningraph
 
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.edge
+import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Renderer
 import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.Factory.mutNode
 import guru.nidi.graphviz.node
 import guru.nidi.graphviz.toGraphviz
+import org.ejml.data.DMatrix
+import org.ejml.data.DMatrixRBlock
+import org.ejml.data.DMatrixRMaj
+import org.ejml.kotlin.minus
 import java.io.File
 import java.util.*
 
@@ -29,14 +34,14 @@ class Node(
 
   fun egoGraph() = Graph(neighbors(0).closure())
 
-  fun Set<Node>.closure() = map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
+  fun Set<Node>.closure() =
+    map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
 
   override fun toString() = id
 
   override fun hashCode() = id.hashCode()
 
-  operator fun minus(node: Node) =
-    Node(node.id, node.out + this)
+  operator fun minus(node: Node) = Node(node.id, node.out + this)
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
@@ -49,19 +54,34 @@ class Graph(
   val V: Set<Node> = emptySet(), // Vertices
   val A: Map<Node, Set<Node>> = V.map { it to it.out }.toMap() // Adjacency list
 ) : Set<Node> by V {
-  constructor(vararg graphs: Graph) : this(graphs.toList())
+  constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
   constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
-  constructor(graphs: List<Graph>) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
+  constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
   constructor(adjacency: Map<Node, Set<Node>>) : this(adjacency.keys, adjacency)
 
   val nodesById = V.map { it.id to it }.toMap()
   val numEdges = A.values.flatten().size
 
-  // Implements graph merge. For all nodes in common, merge their neighbors.
-  operator fun plus(that: Graph) = Graph((this - that) + intersect(that) + (that - this))
+  val degMat by lazy {
+    DMatrixRMaj(V.size, V.size).apply {
+      V.forEachIndexed { i, node -> A[node]!!.size }
+    }
+  }
 
-  fun intersect(that: Graph) =
-    V.intersect(that.V).map { Node(it.id, A[it] as Set<Node> + that.A[it] as Set<Node>) }
+  val adjMat by lazy {
+    DMatrixRMaj(V.size, V.size).apply {
+      V.forEachIndexed { i, iNode -> A[iNode]!!.forEachIndexed { j , jNode -> set(i, j, 1.0) } }
+    }
+  }
+
+  val laplacian by lazy { degMat - adjMat }
+
+  // Implements graph merge. For all nodes in common, merge their neighbors.
+  operator fun plus(that: Graph) =
+    Graph((this - that) + (this intersect that) + (that - this))
+
+  infix fun intersect(that: Graph) =
+    (V intersect that.V).map { Node(it.id, A[it]!! + that.A[it]!!) }
 
   operator fun minus(graph: Graph) = Graph(V - graph.V)
 
@@ -119,7 +139,7 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
     node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS)]
 
     op()
-  }.toGraphviz().render(format)
+  }.toGraphviz().apply { engine(Engine.NEATO) }.render(format)
 
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
 fun Graph.show() = render {
