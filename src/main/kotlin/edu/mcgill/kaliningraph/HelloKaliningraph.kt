@@ -15,6 +15,8 @@ fun main() {
   val t = dg.V.first()
   dg.show()
 
+  println("Ego graph of ${dg.toList()[2]}: " + dg.toList()[2].egoGraph().V)
+
   println("${t}:" + t.neighbors())
 
   val abcd = buildGraph { Graph(a - b - c - a) }

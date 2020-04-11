@@ -1,2 +1,2 @@
-rootProject.name = "gradletest"
+rootProject.name = "kaliningraph"
 

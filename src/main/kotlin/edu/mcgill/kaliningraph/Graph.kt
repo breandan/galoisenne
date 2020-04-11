@@ -9,8 +9,6 @@ import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.Factory.mutNode
 import guru.nidi.graphviz.node
 import guru.nidi.graphviz.toGraphviz
-import org.ejml.data.DMatrix
-import org.ejml.data.DMatrixRBlock
 import org.ejml.data.DMatrixRMaj
 import org.ejml.kotlin.minus
 import java.io.File
@@ -50,49 +48,62 @@ class Node(
 
 data class Edge(val source: Node, val target: Node, val id: String = randomString())
 
-class Graph(
-  val V: Set<Node> = emptySet(), // Vertices
-  val A: Map<Node, Set<Node>> = V.map { it to it.out }.toMap() // Adjacency list
-) : Set<Node> by V {
+class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
   constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
   constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
-  constructor(adjacency: Map<Node, Set<Node>>) : this(adjacency.keys, adjacency)
+  constructor(adjList: Map<Node, Set<Node>>) : this(adjList.keys)
 
   val nodesById = V.map { it.id to it }.toMap()
-  val numEdges = A.values.flatten().size
+  val numEdges = V.map { it.out.size }.sum()
+  val index = NodeIndex(V)
 
-  val degMat by lazy {
+  class NodeIndex(val set: Set<Node>) {
+    val array: Array<Node> = set.toTypedArray()
+    val map: Map<Node, Int> = array.mapIndexed { index, a -> a to index }.toMap()
+    operator fun get(it: Node) = map[it]
+    operator fun get(it: Int) = array[it]
+  }
+
+  operator fun get(node: Node) = nodesById[node.id]
+  operator fun get(nodeId: String) = nodesById[nodeId]
+  operator fun get(nodeIdx: Int) = index[nodeIdx]
+
+  // Degree matrix
+  val D by lazy {
     DMatrixRMaj(V.size, V.size).apply {
-      V.forEachIndexed { i, node -> A[node]!!.size }
+      V.forEachIndexed { i, node -> set(i, i, node.out.size.toDouble()) }
     }
   }
 
-  val adjMat by lazy {
+  // Adjacency matrix
+  val A by lazy {
     DMatrixRMaj(V.size, V.size).apply {
-      V.forEachIndexed { i, iNode -> A[iNode]!!.forEachIndexed { j , jNode -> set(i, j, 1.0) } }
+      V.forEach { node ->
+        node.out.forEach { neighbor ->
+          set(index[node]!!, index[neighbor]!!, 1.0)
+        }
+      }
     }
   }
 
-  val laplacian by lazy { degMat - adjMat }
+  val laplacian by lazy { D - A }
 
   // Implements graph merge. For all nodes in common, merge their neighbors.
   operator fun plus(that: Graph) =
     Graph((this - that) + (this intersect that) + (that - this))
 
   infix fun intersect(that: Graph) =
-    (V intersect that.V).map { Node(it.id, A[it]!! + that.A[it]!!) }
+    (V intersect that.V).toSortedSet(compareBy { it.id })
+      .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
+      .map { (left, right) -> Node(left.id, left.out + right.out) }
 
   operator fun minus(graph: Graph) = Graph(V - graph.V)
 
-  operator fun get(node: Node) = nodesById[node.id]
-
-  fun Map<Node, Set<Node>>.reversed(): Map<Node, Set<Node>> =
-    keys.map { it to emptySet<Node>() }.toMap() +
-      flatMap { (k, v) -> v.map { it to k } }.groupBy { it.first }
-        .map { (k, v) -> k to v.map { it.second }.toSet() }.toMap()
-
-  fun reversed(): Graph = Graph(A.reversed())
+  fun reversed(): Graph =
+    Graph(V.map { it to emptySet<Node>() }.toMap() + V.map { it to it.out }
+      .flatMap { (k, v) -> v.map { it to k } }.groupBy { it.first }
+      .map { (k, v) -> k to v.map { it.second }.toSet() }.toMap())
 
   val histogram by lazy { poolingBy { size } }
 
@@ -143,7 +154,9 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
 
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
 fun Graph.show() = render {
-  A.forEach { (k, v) -> v.forEach { mutNode(k.id).addLink(it.id) } }
+  V.forEach { node ->
+    node.out.forEach { neighbor -> mutNode(node.id).addLink(neighbor.id) }
+  }
 }.show()
 
 fun File.show() = ProcessBuilder("x-www-browser", path).start()
