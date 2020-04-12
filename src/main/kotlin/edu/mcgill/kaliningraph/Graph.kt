@@ -9,6 +9,8 @@ import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.Factory.mutNode
 import guru.nidi.graphviz.node
 import guru.nidi.graphviz.toGraphviz
+import org.apache.commons.math3.distribution.EnumeratedDistribution
+import org.apache.commons.math3.util.Pair
 import org.ejml.data.DMatrixRMaj
 import org.ejml.kotlin.minus
 import java.io.File
@@ -16,10 +18,7 @@ import java.util.*
 
 fun randomString() = UUID.randomUUID().toString()
 
-class Node(
-  val id: String = randomString(),
-  val out: Set<Node> = emptySet()
-) {
+class Node(val id: String = randomString(), val out: Set<Node> = emptySet()) {
   val edges: Set<Edge> = out.map { Edge(this, it) }.toSet()
 
   fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
@@ -32,8 +31,7 @@ class Node(
 
   fun egoGraph() = Graph(neighbors(0).closure())
 
-  fun Set<Node>.closure() =
-    map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
+  fun Set<Node>.closure() = map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
 
   override fun toString() = id
 
@@ -87,6 +85,8 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
     }
   }
 
+  val inDeg by lazy { reversed().V.map { it to it.out.size }.toMap() }
+  val edges by lazy { inDeg.values.sum() }
   val laplacian by lazy { D - A }
 
   // Implements graph merge. For all nodes in common, merge their neighbors.
@@ -107,7 +107,11 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
 
   val histogram by lazy { poolingBy { size } }
 
-  // Weisfeiler-Lehman isomorphism test: http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
+  /*
+   * Weisfeiler-Lehman isomorphism test:
+   * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
+   */
+
   tailrec fun computeWL(k: Int = 5, labels: Map<Node, Int> = histogram): Map<Node, Int> =
     if (k <= 0) labels
     else computeWL(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
@@ -132,6 +136,16 @@ object GraphBuilder {
   val j = Node("j")
   val k = Node("k")
   val l = Node("l")
+
+  fun Graph.attachNode(neighbors: Int) =
+    this + Node(randomString(), EnumeratedDistribution(
+      inDeg.map { (k, v) -> Pair(k, (v + 1.0) / (edges + 1.0)) })
+      .run { (0..neighbors).map { sample() }.toSet() }
+    ).asGraph()
+
+  // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
+  tailrec fun prefAttach(graph: Graph, nodes: Int = 0, neighbors: Int = 3): Graph =
+    if (nodes <= 0) graph else prefAttach(graph.attachNode(neighbors), nodes - 1)
 }
 
 fun buildGraph(builder: GraphBuilder.() -> Graph) = builder(GraphBuilder).reversed()

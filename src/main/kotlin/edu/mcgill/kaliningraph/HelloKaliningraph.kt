@@ -26,4 +26,7 @@ fun main() {
   val efgh_wl3 = efgh.computeWL(3).values.sorted()
   println("WL3(efgh) = $efgh_wl3")
   println("Isomorphic: ${abcd.isomorphicTo(efgh)}")
+
+  val rg = buildGraph { prefAttach(a.asGraph(), 20) }
+  rg.show()
 }

@@ -17,6 +17,7 @@ dependencies {
   implementation("org.ejml:ejml-kotlin:$ejmlVersion")
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.15.1")
+  implementation("org.apache.commons:commons-math3:3.6.1")
 }
 
 configure<JavaPluginConvention> {
