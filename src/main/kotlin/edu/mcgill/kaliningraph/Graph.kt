@@ -1,27 +1,29 @@
 package edu.mcgill.kaliningraph
 
+import guru.nidi.graphviz.*
+import guru.nidi.graphviz.minus
 import guru.nidi.graphviz.attribute.*
-import guru.nidi.graphviz.edge
 import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Renderer
-import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.Factory.mutNode
-import guru.nidi.graphviz.node
-import guru.nidi.graphviz.toGraphviz
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import org.ejml.data.DMatrixRMaj
 import org.ejml.kotlin.minus
 import java.io.File
 import java.util.*
+import kotlin.collections.minus
 
 fun randomString() = UUID.randomUUID().toString()
 
-class Node(val id: String = randomString(), val out: Set<Node> = emptySet()) {
-  val edges: Set<Edge> = out.map { Edge(this, it) }.toSet()
+class Node(val id: String = randomString(), val edges: List<Edge>) {
+  constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
+    this(id, out.map { Edge(it) })
 
   fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
+
+  val out: Set<Node> = edges.map { it.target }.toSet()
 
   tailrec fun neighbors(k: Int = 0, neighbors: Set<Node> = out + this): Set<Node> =
     if (k == 0 || neighbors.neighbors() == neighbors) neighbors
@@ -31,20 +33,26 @@ class Node(val id: String = randomString(), val out: Set<Node> = emptySet()) {
 
   fun egoGraph() = Graph(neighbors(0).closure())
 
-  fun Set<Node>.closure() = map { Node(it.id, it.out.intersect(this@closure)) }.toSet()
+  fun Set<Node>.closure() =
+    map { Node(it.id, it.edges.filter { it.target in this@closure }) }.toSet()
 
   override fun toString() = id
 
   override fun hashCode() = id.hashCode()
 
-  operator fun minus(node: Node) = Node(node.id, node.out + this)
+  operator fun minus(node: Node) = Node(node.id, node.edges + edges + Edge(this))
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
   override fun equals(other: Any?) = (other as? Node)?.id == id
 }
 
-data class Edge(val source: Node, val target: Node, val id: String = randomString())
+data class Edge(val target: Node, val label: String = "") {
+  override fun equals(other: Any?) =
+    super.equals(other) && target.id == (other as Edge).target.id && label == other.label
+
+  override fun hashCode() = target.id.hashCode() + label.hashCode()
+}
 
 class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
   constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
@@ -96,14 +104,14 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
   infix fun intersect(that: Graph) =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> Node(left.id, left.out + right.out) }
+      .map { (left, right) -> Node(left.id, left.edges + right.edges) }
 
   operator fun minus(graph: Graph) = Graph(V - graph.V)
 
   fun reversed(): Graph =
-    Graph(V.map { it to emptySet<Node>() }.toMap() + V.map { it to it.out }
-      .flatMap { (k, v) -> v.map { it to k } }.groupBy { it.first }
-      .map { (k, v) -> k to v.map { it.second }.toSet() }.toMap())
+    Graph(V.map { it to emptySet<Node>() }.toMap() +
+      V.flatMap { node -> node.out.map { it to node } }
+        .groupBy({ it.first }, { it.second }).mapValues { it.value.toSet() })
 
   val histogram by lazy { poolingBy { size } }
 
@@ -116,8 +124,13 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
     if (k <= 0) labels
     else computeWL(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
 
-  fun isomorphicTo(that: Graph) = V.size == that.V.size && numEdges == that.numEdges &&
-    computeWL().values.sorted().hashCode() == that.computeWL().values.sorted().hashCode()
+  fun isomorphicTo(that: Graph) =
+    V.size == that.V.size && numEdges == that.numEdges && hashCode() == that.hashCode()
+
+  override fun equals(other: Any?) =
+    super.equals(other) || (other as? Graph)?.isomorphicTo(this) ?: false
+
+  override fun hashCode() = computeWL().values.sorted().hashCode()
 
   fun <R> poolingBy(op: Set<Node>.() -> R): Map<Node, R> =
     V.map { it to op(it.neighbors()) }.toMap()
@@ -136,6 +149,12 @@ object GraphBuilder {
   val j = Node("j")
   val k = Node("k")
   val l = Node("l")
+
+  class ProtoEdge(val source: Node, val label: String)
+
+  operator fun String.minus(node: Node) = ProtoEdge(node, this)
+  operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
+  operator fun ProtoEdge.minus(target: Node) = Node(target.id, listOf(Edge(target, label)))
 
   fun Graph.attachNode(neighbors: Int) =
     this + Node(randomString(), EnumeratedDistribution(
@@ -169,7 +188,9 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
 fun Graph.show() = render {
   V.forEach { node ->
-    node.out.forEach { neighbor -> mutNode(node.id).addLink(neighbor.id) }
+    node.edges.toSet().forEach { edge ->
+      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
+    }
   }
 }.show()
 

@@ -8,7 +8,7 @@ fun main() {
     val g = d - c - e
 
     val m = a - b - c - d
-    val n = c - d - e
+    val n = c - "a" - d - e
 
     Graph(t, g, d - e) + Graph(m, n)
   }
