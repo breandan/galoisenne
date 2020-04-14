@@ -19,12 +19,12 @@ fun randomString() = UUID.randomUUID().toString()
 
 class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>) {
   constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
-    this(id, { node -> out.map { Edge(it, node) } })
+    this(id, { node -> out.map { Edge(it) } })
 
   val edges = edgeMap(this).toSet()
   fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
 
-  val out: Set<Node> = edges.map { it.source }.toSet()
+  val out: Set<Node> = edges.map { it.target }.toSet()
 
   tailrec fun neighbors(k: Int = 0, neighbors: Set<Node> = out + this): Set<Node> =
     if (k == 0 || neighbors.neighbors() == neighbors) neighbors
@@ -35,10 +35,10 @@ class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>)
   fun egoGraph() = Graph(neighbors(0).closure())
 
   fun Set<Node>.closure() = map {
-    Node(it.id) { node -> it.edges.filter { it.source in this@closure } }
+    Node(it.id) { node -> it.edges.filter { it.target in this@closure } }
   }.toSet()
 
-  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this, node) }
+  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this) }
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
@@ -47,20 +47,17 @@ class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>)
   override fun toString() = id
 }
 
-// Doubly-linked edges
-data class Edge(val source: Node, val target: Node, val label: String = "") {
-  override fun equals(other: Any?) =
-    (other as? Edge)?.source == source && (other as? Edge)?.target == target
-  override fun hashCode() = source.hashCode() + target.hashCode() + label.hashCode()
-  override fun toString() = source.id
-  fun reversed() = Edge(target, source, label)
+data class Edge(val target: Node, val label: String = "") {
+  override fun equals(other: Any?) = (other as? Edge)?.target == target
+  override fun hashCode() = target.hashCode() + label.hashCode()
+  override fun toString() = target.id
 }
 
 class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
   constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
   constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
-  constructor(adjList: Map<Node, Set<Node>>) : this(adjList.keys)
+  constructor(adjList: Map<Node, Set<Node>>) : this(adjList.map { (k, v) -> Node(k.id, v) }.toSet())
 
   val nodesById = V.map { it.id to it }.toMap()
   val numEdges = V.map { it.out.size }.sum()
@@ -156,7 +153,7 @@ object GraphBuilder {
 
   operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
   operator fun ProtoEdge.minus(target: Node) =
-    Node(target.id) { target.edges + Edge(source, it, label) }
+    Node(target.id) { target.edges + Edge(source, label) }
 
   fun Graph.attachNode(neighbors: Int) =
     this + Node(randomString(), EnumeratedDistribution(
@@ -192,7 +189,7 @@ fun Graph.show() = render {
   V.forEach { node ->
     println(node.id + "," + node.edges )
     node.edges.forEach { edge ->
-      (mutNode(edge.source.id) - mutNode(node.id)).add(Label.of(edge.label))
+      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
     }
   }
 }.show()
