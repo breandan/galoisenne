@@ -19,12 +19,12 @@ fun randomString() = UUID.randomUUID().toString()
 
 class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>) {
   constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
-    this(id, { out.map { Edge(it) } })
+    this(id, { node -> out.map { Edge(it, node) } })
 
   val edges = edgeMap(this).toSet()
   fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
 
-  val out: Set<Node> = edges.map { it.target }.toSet()
+  val out: Set<Node> = edges.map { it.source }.toSet()
 
   tailrec fun neighbors(k: Int = 0, neighbors: Set<Node> = out + this): Set<Node> =
     if (k == 0 || neighbors.neighbors() == neighbors) neighbors
@@ -35,29 +35,25 @@ class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>)
   fun egoGraph() = Graph(neighbors(0).closure())
 
   fun Set<Node>.closure() = map {
-    Node(it.id) { node -> it.edges.filter { it.target in this@closure } }
+    Node(it.id) { node -> it.edges.filter { it.source in this@closure } }
   }.toSet()
 
-  override fun toString() = id
-
-  override fun hashCode() = id.hashCode()
-
-  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this) }
+  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this, node) }
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
   override fun equals(other: Any?) = (other as? Node)?.id == id
+  override fun hashCode() = id.hashCode()
+  override fun toString() = id
 }
 
 // Doubly-linked edges
-data class Edge(val target: Node, val label: String = "") {
-  override fun equals(other: Any?) = (other as? Edge)?.target == target
-
-  fun updateReferences(node: Node) = Edge(if (target == node) node else target, label)
-
-  override fun hashCode() = target.hashCode() + label.hashCode()
-
-  override fun toString() = target.id
+data class Edge(val source: Node, val target: Node, val label: String = "") {
+  override fun equals(other: Any?) =
+    (other as? Edge)?.source == source && (other as? Edge)?.target == target
+  override fun hashCode() = source.hashCode() + target.hashCode() + label.hashCode()
+  override fun toString() = source.id
+  fun reversed() = Edge(target, source, label)
 }
 
 class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
@@ -160,7 +156,7 @@ object GraphBuilder {
 
   operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
   operator fun ProtoEdge.minus(target: Node) =
-    Node(target.id) { target.edges + Edge(source, label) }
+    Node(target.id) { target.edges + Edge(source, it, label) }
 
   fun Graph.attachNode(neighbors: Int) =
     this + Node(randomString(), EnumeratedDistribution(
@@ -196,8 +192,7 @@ fun Graph.show() = render {
   V.forEach { node ->
     println(node.id + "," + node.edges )
     node.edges.forEach { edge ->
-//      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
-      (mutNode(edge.target.id) - mutNode(node.id)).add(Label.of(edge.label))
+      (mutNode(edge.source.id) - mutNode(node.id)).add(Label.of(edge.label))
     }
   }
 }.show()
