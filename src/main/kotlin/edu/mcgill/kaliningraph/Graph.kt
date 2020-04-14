@@ -17,10 +17,11 @@ import kotlin.collections.minus
 
 fun randomString() = UUID.randomUUID().toString()
 
-class Node(val id: String = randomString(), val edges: List<Edge>) {
+class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>) {
   constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
-    this(id, out.map { Edge(it) })
+    this(id, { out.map { Edge(it) } })
 
+  val edges = edgeMap(this).toSet()
   fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
 
   val out: Set<Node> = edges.map { it.target }.toSet()
@@ -33,25 +34,30 @@ class Node(val id: String = randomString(), val edges: List<Edge>) {
 
   fun egoGraph() = Graph(neighbors(0).closure())
 
-  fun Set<Node>.closure() =
-    map { Node(it.id, it.edges.filter { it.target in this@closure }) }.toSet()
+  fun Set<Node>.closure() = map {
+    Node(it.id) { node -> it.edges.filter { it.target in this@closure } }
+  }.toSet()
 
   override fun toString() = id
 
   override fun hashCode() = id.hashCode()
 
-  operator fun minus(node: Node) = Node(node.id, node.edges + edges + Edge(this))
+  operator fun minus(node: Node) = Node(node.id) { node.edges + edges + Edge(this) }
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
   override fun equals(other: Any?) = (other as? Node)?.id == id
 }
 
+// Doubly-linked edges
 data class Edge(val target: Node, val label: String = "") {
-  override fun equals(other: Any?) =
-    super.equals(other) && target.id == (other as Edge).target.id && label == other.label
+  override fun equals(other: Any?) = (other as? Edge)?.target == target
 
-  override fun hashCode() = target.id.hashCode() + label.hashCode()
+  fun updateReferences(node: Node) = Edge(if (target == node) node else target, label)
+
+  override fun hashCode() = target.hashCode() + label.hashCode()
+
+  override fun toString() = target.id
 }
 
 class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
@@ -104,7 +110,7 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
   infix fun intersect(that: Graph) =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> Node(left.id, left.edges + right.edges) }
+      .map { (left, right) -> Node(left.id) { left.edges + right.edges } }
 
   operator fun minus(graph: Graph) = Graph(V - graph.V)
 
@@ -154,7 +160,8 @@ object GraphBuilder {
 
   operator fun String.minus(node: Node) = ProtoEdge(node, this)
   operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
-  operator fun ProtoEdge.minus(target: Node) = Node(target.id, listOf(Edge(target, label)))
+  operator fun ProtoEdge.minus(target: Node) =
+    Node(target.id) { listOf(Edge(it, label)) }
 
   fun Graph.attachNode(neighbors: Int) =
     this + Node(randomString(), EnumeratedDistribution(
@@ -188,7 +195,9 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
 fun Graph.show() = render {
   V.forEach { node ->
-    node.edges.toSet().forEach { edge ->
+    println(node.id + "," + node.edges )
+    node.edges.forEach { edge ->
+      println(node.id + "," + edge.target + "," + edge.label)
       (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
     }
   }
