@@ -42,7 +42,7 @@ class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>)
 
   override fun hashCode() = id.hashCode()
 
-  operator fun minus(node: Node) = Node(node.id) { node.edges + edges + Edge(this) }
+  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this) }
 
   operator fun plus(node: Node) = asGraph() + node.asGraph()
 
@@ -158,10 +158,9 @@ object GraphBuilder {
 
   class ProtoEdge(val source: Node, val label: String)
 
-  operator fun String.minus(node: Node) = ProtoEdge(node, this)
   operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
   operator fun ProtoEdge.minus(target: Node) =
-    Node(target.id) { listOf(Edge(it, label)) }
+    Node(target.id) { target.edges + Edge(source, label) }
 
   fun Graph.attachNode(neighbors: Int) =
     this + Node(randomString(), EnumeratedDistribution(
@@ -197,8 +196,8 @@ fun Graph.show() = render {
   V.forEach { node ->
     println(node.id + "," + node.edges )
     node.edges.forEach { edge ->
-      println(node.id + "," + edge.target + "," + edge.label)
-      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
+//      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
+      (mutNode(edge.target.id) - mutNode(node.id)).add(Label.of(edge.label))
     }
   }
 }.show()
