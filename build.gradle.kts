@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-  testCompile("junit", "junit", "4.12")
+  testImplementation("junit", "junit", "4.13")
   val ejmlVersion = "0.39"
   implementation("org.ejml:ejml-kotlin:$ejmlVersion")
   implementation("org.ejml:ejml-all:$ejmlVersion")
