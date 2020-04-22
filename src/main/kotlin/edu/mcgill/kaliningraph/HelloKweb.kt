@@ -2,16 +2,29 @@ package edu.mcgill.kaliningraph
 
 import kweb.*
 
+@ExperimentalStdlibApi
 fun main() {
-    Kweb(port = 16097) {
-        doc.body.new {
-            h1().text("Hello World!")
-            button().text("Click me").on.click {
-                println("Button clicked!")
-            }
-            input(type = InputType.text).on.keyup {
-                println("Key Pressed: ${it.key}")
-            }
+  val graph = mutableListOf(buildGraph { Graph(a) })
+
+  Kweb(port = 16097) {
+    doc.body.apply {
+      val el = new { element("div").innerHTML(graph.last().html()) }
+      on.keydown {
+        when {
+          "Left" in it.key -> {
+            graph.removeLastOrNull()
+            graph.lastOrNull()?.html()?.let { el.innerHTML(it) }
+          }
+          "Right" in it.key -> {
+            graph.add(graph.last().grow())
+            el.innerHTML(graph.last().html())
+          }
         }
+      }
     }
+  }
+
+  ProcessBuilder("x-www-browser", "http://0.0.0.0:16097").start()
 }
+
+fun Graph.grow() = buildGraph { prefAttach(this@grow, 1) }

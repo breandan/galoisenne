@@ -15,7 +15,7 @@ import java.io.File
 import java.util.*
 import kotlin.collections.minus
 
-fun randomString() = UUID.randomUUID().toString()
+fun randomString() = UUID.randomUUID().toString().take(5)
 
 class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>) {
   constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
@@ -177,21 +177,24 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
 
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]
 
-    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
+//    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
 
     node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS)]
 
     op()
-  }.toGraphviz().apply { engine(Engine.NEATO) }.render(format)
+  }.toGraphviz().apply { engine(Engine.CIRCO) }.render(format)
 
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
-fun Graph.show() = render {
+fun Graph.render() = render {
   V.forEach { node ->
-    println(node.id + "," + node.edges )
     node.edges.forEach { edge ->
       (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
     }
   }
-}.show()
+}
+
+fun Graph.html() = render().toString()
+
+fun Graph.show() = render().show()
 
 fun File.show() = ProcessBuilder("x-www-browser", path).start()
