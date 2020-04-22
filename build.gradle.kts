@@ -8,6 +8,8 @@ version = "1.0-SNAPSHOT"
 
 repositories {
   mavenCentral()
+  maven("https://jitpack.io")
+  jcenter()
 }
 
 dependencies {
@@ -18,6 +20,8 @@ dependencies {
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.15.1")
   implementation("org.apache.commons:commons-math3:3.6.1")
+  implementation("com.github.kwebio:kweb-core:0.7.4")
+  implementation("org.slf4j:slf4j-simple:1.7.30")
 }
 
 configure<JavaPluginConvention> {
