@@ -13,7 +13,7 @@ fun main() {
         when {
           "Left" in it.key -> {
             graph.removeLastOrNull()
-            graph.lastOrNull()?.html()?.let { el.innerHTML(it) }
+            graph.lastOrNull()?.html()?.let(el::innerHTML)
           }
           "Right" in it.key -> {
             graph.add(graph.last().grow())

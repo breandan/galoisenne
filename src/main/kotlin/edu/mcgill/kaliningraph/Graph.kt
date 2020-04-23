@@ -17,92 +17,90 @@ import kotlin.collections.minus
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 
-class Node(val id: String = randomString(), edgeMap: (Node) -> Collection<Edge>) {
-  constructor(id: String = randomString(), out: Set<Node> = emptySet()) :
-    this(id, { node -> out.map { Edge(it) } })
+class Vertex(val id: String = randomString(), edgeMap: (Vertex) -> Collection<Edge>) {
+  constructor(id: String = randomString(), out: Set<Vertex> = emptySet()) :
+    this(id, { vertex -> out.map { Edge(it) } })
 
   val edges = edgeMap(this).toSet()
-  fun Set<Node>.neighbors() = flatMap { it.neighbors() }.toSet()
+  val neighbors: Set<Vertex> = edges.map { it.target }.toSet()
 
-  val neighbors: Set<Node> = edges.map { it.target }.toSet()
+  tailrec fun neighbors(k: Int = 0, vertices: Set<Vertex> = neighbors + this): Set<Vertex> =
+    if (k == 0 || vertices.neighbors() == vertices) vertices
+    else neighbors(k - 1, vertices + vertices.neighbors() + this)
 
-  tailrec fun neighbors(k: Int = 0, nodes: Set<Node> = neighbors + this): Set<Node> =
-    if (k == 0 || nodes.neighbors() == nodes) nodes
-    else neighbors(k - 1, nodes + nodes.neighbors() + this)
-
-  fun asGraph() = Graph(neighbors(-1))
-
-  fun egoGraph() = Graph(neighbors(0).closure())
-
-  private fun Set<Node>.closure() = map { node ->
-    Node(node.id) { node.edges.filter { it.target in this@closure } }
+  // Removes all edges pointing outside the set
+  private fun Set<Vertex>.closure() = map { vertex ->
+    Vertex(vertex.id) { vertex.edges.filter { it.target in this@closure } }
   }.toSet()
 
-  operator fun minus(node: Node) = Node(node.id) { node.edges + Edge(this) }
-  operator fun plus(edge: Edge) = Node(id) { edges + edge }
-  operator fun plus(node: Node) = asGraph() + node.asGraph()
+  private fun Set<Vertex>.neighbors() = flatMap { it.neighbors() }.toSet()
 
-  override fun equals(other: Any?) = (other as? Node)?.id == id
+  fun asGraph() = Graph(neighbors(-1))
+  fun egoGraph() = Graph(neighbors(0).closure())
+
+  operator fun minus(vertex: Vertex) = Vertex(vertex.id) { vertex.edges + Edge(this) }
+  operator fun plus(edge: Edge) = Vertex(id) { edges + edge }
+  operator fun plus(vertex: Vertex) = asGraph() + vertex.asGraph()
+
+  override fun equals(other: Any?) = (other as? Vertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
 }
 
-data class Edge(val target: Node, val label: String = "") {
+data class Edge(val target: Vertex, val label: String = "") {
   override fun equals(other: Any?) = (other as? Edge)?.target == target
   override fun hashCode() = target.hashCode() + label.hashCode()
   override fun toString() = target.id
 }
 
-class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
+class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
-  constructor(vararg nodes: Node) : this(nodes.map { it.asGraph() })
+  constructor(vararg vertices: Vertex) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
-  constructor(adjList: Map<Node, List<Edge>>) :
-    this(adjList.map { (k, v) -> Node(k.id) { v } }.toSet())
+  constructor(adjList: Map<Vertex, List<Edge>>) :
+    this(adjList.map { (k, v) -> Vertex(k.id) { v } }.toSet())
 
-  val nodesById = V.map { it.id to it }.toMap()
-  val numEdges = V.map { it.neighbors.size }.sum()
-  val index = NodeIndex(V)
+  val totalEdges = V.map { it.neighbors.size }.sum()
+  val index = VIndex(V)
 
-  class NodeIndex(val set: Set<Node>) {
-    val array: Array<Node> = set.toTypedArray()
-    val map: Map<Node, Int> = array.mapIndexed { index, a -> a to index }.toMap()
-    operator fun get(it: Node) = map[it]
+  class VIndex(val set: Set<Vertex>) {
+    val array: Array<Vertex> = set.toTypedArray()
+    val map: Map<Vertex, Int> = array.mapIndexed { index, a -> a to index }.toMap()
+    operator fun get(it: Vertex) = map[it]
     operator fun get(it: Int) = array[it]
   }
 
-  operator fun get(node: Node) = nodesById[node.id]
-  operator fun get(nodeId: String) = nodesById[nodeId]
-  operator fun get(nodeIdx: Int) = index[nodeIdx]
+  operator fun get(vertex: Vertex) = index[vertex]
+  operator fun get(vertexIdx: Int) = index[vertexIdx]
 
   // Degree matrix
   val D by lazy {
-    DMatrixRMaj(V.size, V.size).apply {
-      V.forEachIndexed { i, node -> set(i, i, node.neighbors.size.toDouble()) }
+    DMatrixRMaj(V.size, V.size).also { degMat ->
+      V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
     }
   }
 
   // Adjacency matrix
-  val A by lazy {
-    DMatrixRMaj(V.size, V.size).apply {
-      V.forEach { node ->
-        node.neighbors.forEach { neighbor ->
-          set(index[node]!!, index[neighbor]!!, 1.0)
-        }
-      }
+  val A: DMatrixRMaj by lazy {
+    DMatrixRMaj(V.size, V.size).also { adjMat ->
+      V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
     }
   }
 
-  val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
   val laplacian by lazy { D - A }
+  val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
+  operator fun DMatrixRMaj.get(n0: Vertex, n1: Vertex) = this[index[n0]!!, index[n1]!!]
+  operator fun DMatrixRMaj.set(n0: Vertex, n1: Vertex, value: Double) {
+    this[index[n0]!!, index[n1]!!] = value
+  }
 
-  // Implements graph merge. For all nodes in common, merge their neighbors.
+  // Implements graph merge. For all vertices in common, merge their neighbors.
   operator fun plus(that: Graph) = Graph((this - that) + (this join that) + (that - this))
 
   infix fun join(that: Graph) =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> Node(left.id) { left.edges + right.edges } }
+      .map { (left, right) -> Vertex(left.id) { left.edges + right.edges } }
 
   operator fun minus(graph: Graph) = Graph(V - graph.V)
 
@@ -118,51 +116,51 @@ class Graph(val V: Set<Node> = emptySet()) : Set<Node> by V {
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
    */
 
-  tailrec fun computeWL(k: Int = 5, labels: Map<Node, Int> = histogram): Map<Node, Int> =
+  tailrec fun wl(k: Int = 5, labels: Map<Vertex, Int> = histogram): Map<Vertex, Int> =
     if (k <= 0) labels
-    else computeWL(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
+    else wl(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
 
   fun isomorphicTo(that: Graph) =
-    V.size == that.V.size && numEdges == that.numEdges && hashCode() == that.hashCode()
+    V.size == that.V.size && totalEdges == that.totalEdges && hashCode() == that.hashCode()
 
   override fun equals(other: Any?) =
     super.equals(other) || (other as? Graph)?.isomorphicTo(this) ?: false
 
-  override fun hashCode() = computeWL().values.sorted().hashCode()
+  override fun hashCode() = wl().values.sorted().hashCode()
 
-  fun <R> poolingBy(op: Set<Node>.() -> R): Map<Node, R> =
+  fun <R> poolingBy(op: Set<Vertex>.() -> R): Map<Vertex, R> =
     V.map { it to op(it.neighbors()) }.toMap()
 }
 
 object GraphBuilder {
-  val a = Node("a")
-  val b = Node("b")
-  val c = Node("c")
-  val d = Node("d")
-  val e = Node("e")
-  val f = Node("f")
-  val g = Node("g")
-  val h = Node("h")
-  val i = Node("i")
-  val j = Node("j")
-  val k = Node("k")
-  val l = Node("l")
+  val a = Vertex("a")
+  val b = Vertex("b")
+  val c = Vertex("c")
+  val d = Vertex("d")
+  val e = Vertex("e")
+  val f = Vertex("f")
+  val g = Vertex("g")
+  val h = Vertex("h")
+  val i = Vertex("i")
+  val j = Vertex("j")
+  val k = Vertex("k")
+  val l = Vertex("l")
 
-  class ProtoEdge(val source: Node, val label: String)
+  class ProtoEdge(val source: Vertex, val label: String)
 
   // Arithmetic is right-associative, so we construct in reverse and flip after
-  operator fun Node.minus(symbols: String) = ProtoEdge(this, symbols)
-  operator fun ProtoEdge.minus(target: Node) = target + Edge(source, label)
+  operator fun Vertex.minus(symbols: String) = ProtoEdge(this, symbols)
+  operator fun ProtoEdge.minus(target: Vertex) = target + Edge(source, label)
 
-  fun Graph.attachNode(neighbors: Int) =
-    this + Node(randomString(), EnumeratedDistribution(
-      degMap.map { (k, v) -> Pair(k, (v + 1.0) / (numEdges + 1.0)) })
+  fun Graph.attach(neighbors: Int) =
+    this + Vertex(randomString(), EnumeratedDistribution(
+      degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
       .run { (0..neighbors).map { sample() }.toSet() }
     ).asGraph()
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-  tailrec fun prefAttach(graph: Graph, nodes: Int = 0, neighbors: Int = 3): Graph =
-    if (nodes <= 0) graph else prefAttach(graph.attachNode(neighbors), nodes - 1)
+  tailrec fun prefAttach(graph: Graph, vertices: Int = 0, neighbors: Int = 3): Graph =
+    if (vertices <= 0) graph else prefAttach(graph.attach(neighbors), vertices - 1)
 }
 
 // Flips edge direction to correct for right associativity of minus operator
@@ -186,9 +184,9 @@ inline fun render(format: Format = Format.SVG, crossinline op: () -> Unit) =
 
 fun Renderer.show() = toFile(File.createTempFile("temp", ".svg")).show()
 fun Graph.render() = render {
-  V.forEach { node ->
-    node.edges.forEach { edge ->
-      (mutNode(node.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
+  V.forEach { vertex ->
+    vertex.edges.forEach { edge ->
+      (mutNode(vertex.id) - mutNode(edge.target.id)).add(Label.of(edge.label))
     }
   }
 }
