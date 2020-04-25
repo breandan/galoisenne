@@ -20,8 +20,9 @@ dependencies {
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.15.1")
   implementation("org.apache.commons:commons-math3:3.6.1")
-  implementation("com.github.kwebio:kweb-core:0.7.4")
+  implementation("com.github.kwebio:kweb-core:0.7.5")
   implementation("org.slf4j:slf4j-simple:1.7.30")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
 }
 
 configure<JavaPluginConvention> {
@@ -29,17 +30,17 @@ configure<JavaPluginConvention> {
 }
 
 tasks {
-  compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-  }
-  compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-  }
-
   listOf("HelloKaliningraph").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["main"].runtimeClasspath
+    }
+  }
+
+  test {
+    useJUnitPlatform()
+    testLogging {
+      events("passed", "skipped", "failed")
     }
   }
 }

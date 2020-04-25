@@ -7,39 +7,38 @@ import kweb.new
 fun main() {
   println("Hello Kaliningraph!")
 
-  val dg = buildGraph {
-    val t = d - a - c - b - e
-    val g = d - c - e
+  val de = Graph { d - e }
+  val dacbe = Graph { d - a - c - b - e }
+  val dce = Graph { d - c - e }
 
-    val m = a - b - c - d
-    val n = c - "a" - f - d - e
+  val abcd = Graph { a - b - c - d }
+  val cfde = Graph { c - "a" - f - d - e }
 
-    Graph(t, g, d - e) + Graph(m, n)
-  }
-  val t = dg.V.first()
+  val dg = Graph(dacbe, dce, de) + Graph(abcd, cfde)
   dg.show()
 
-  println("Ego graph of ${dg.toList()[2]}: " + dg.toList()[2].egoGraph().V)
+  val l = dg.V.first()
+  println("$l:" + l.neighbors())
+  println("Ego Graph of ${dg.toList()[2]}: " + dg.toList()[2].egoGraph().V)
 
-  println("${t}:" + t.neighbors())
-
-  val abcd = buildGraph { Graph(a - b - c - a) }
-  val efgh = buildGraph { Graph(e - f - g - e) }
-  val abcd_wl3 = abcd.wl(3).values.sorted()
+  val abca = Graph { a - b - c - a }
+  val efgh = Graph { e - f - g - e }
+  val abcd_wl3 = abca.wl(3).values.sorted()
   println("WL3(abcd) = $abcd_wl3")
   val efgh_wl3 = efgh.wl(3).values.sorted()
   println("WL3(efgh) = $efgh_wl3")
-  println("Isomorphic: ${abcd.isomorphicTo(efgh)}")
+  println("Isomorphic: ${abca.isomorphicTo(efgh)}")
 
-  browserDemo()
+  prefAttachDemo()
 }
 
 @ExperimentalStdlibApi
-fun browserDemo() {
-  val graph = mutableListOf(buildGraph { Graph(a) })
+fun prefAttachDemo() {
+  val graph = mutableListOf(Graph { a - b })
 
   Kweb(port = 16097) {
     doc.body.apply {
+      val desc = new { element("p").innerHTML("Use →/← keys...") }
       val el = new { element("div").innerHTML(graph.last().html()) }
       on.keydown {
         when {
@@ -48,7 +47,7 @@ fun browserDemo() {
             graph.lastOrNull()?.html()?.let(el::innerHTML)
           }
           "Right" in it.key -> {
-            graph.add(graph.last().grow())
+            graph.add(graph.last().prefAttach())
             el.innerHTML(graph.last().html())
           }
         }
@@ -58,5 +57,3 @@ fun browserDemo() {
 
   ProcessBuilder("x-www-browser", "http://0.0.0.0:16097").start()
 }
-
-fun Graph.grow() = buildGraph { prefAttach(this@grow, 1) }
