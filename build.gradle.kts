@@ -22,6 +22,7 @@ dependencies {
   implementation("org.apache.commons:commons-math3:3.6.1")
   implementation("com.github.kwebio:kweb-core:0.7.5")
   implementation("org.slf4j:slf4j-simple:1.7.30")
+  implementation("com.github.ajalt:clikt:2.6.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
 }
 
