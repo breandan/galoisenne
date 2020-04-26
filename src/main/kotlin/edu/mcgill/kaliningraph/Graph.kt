@@ -6,8 +6,9 @@ import org.ejml.data.DMatrixRMaj
 import org.ejml.kotlin.minus
 
 class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
-  constructor(builder: GraphBuilder.() -> Unit):
+  constructor(builder: GraphBuilder.() -> Unit) :
     this(GraphBuilder().also { it.builder() }.graph.reversed())
+
   constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
   constructor(vararg vertices: Vertex) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
@@ -86,10 +87,10 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   fun <R> poolingBy(op: Set<Vertex>.() -> R): Map<Vertex, R> =
     V.map { it to op(it.neighbors()) }.toMap()
 
-  fun attachRandomVertex(withNeighbors: Int) =
-    this + Vertex(EnumeratedDistribution(
-      degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
-      .run { (0..withNeighbors).map { sample() } }.toSet()).asGraph()
+  fun attachRandomVertex(withNeighbors: Int) = this + Vertex(
+    EnumeratedDistribution(degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
+      .run { (0..withNeighbors).map { sample() } }.toSet()
+  ).asGraph()
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
   tailrec fun prefAttach(graph: Graph = this, vertices: Int = 1, degree: Int = 3): Graph =

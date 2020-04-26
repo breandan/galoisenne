@@ -2,10 +2,10 @@ package edu.mcgill.kaliningraph
 
 import java.util.*
 
-
 class Vertex(val id: String = randomString(), edgeMap: (Vertex) -> Collection<Edge>) {
   constructor(id: String = randomString(), out: Set<Vertex> = emptySet()) :
     this(id, { out.map { Edge(it) } })
+
   constructor(out: Set<Vertex> = emptySet()) :
     this(randomString(), { out.map { Edge(it) } })
 

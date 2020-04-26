@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import org.apache.commons.math3.distribution.EnumeratedDistribution
-import org.apache.commons.math3.util.Pair
+import kotlin.reflect.KProperty
 
 /**
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
@@ -10,18 +9,10 @@ import org.apache.commons.math3.util.Pair
 class GraphBuilder {
   var graph = Graph()
 
-  val a = Vertex("a")
-  val b = Vertex("b")
-  val c = Vertex("c")
-  val d = Vertex("d")
-  val e = Vertex("e")
-  val f = Vertex("f")
-  val g = Vertex("g")
-  val h = Vertex("h")
-  val i = Vertex("i")
-  val j = Vertex("j")
-  val k = Vertex("k")
-  val l = Vertex("l")
+  val a by Vertex(); val b by Vertex(); val c by Vertex(); val d by Vertex()
+  val e by Vertex(); val f by Vertex(); val g by Vertex(); val h by Vertex()
+  val i by Vertex(); val j by Vertex(); val k by Vertex(); val l by Vertex()
+  operator fun Vertex.getValue(g: GraphBuilder, prop: KProperty<*>) = Vertex(prop.name)
 
   operator fun Vertex.minus(v: Vertex) =
     Vertex(v.id) { v.edges + Edge(this) }.also { graph += Graph(it) }
