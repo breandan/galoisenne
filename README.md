@@ -50,10 +50,6 @@ What are vertices? A [vertex](src/main/kotlin/edu/mcgill/kaliningraph/Vertex.kt)
 
 What are neighbors? Neighbors are a graph.
 
-## Requirements
-
-Kaliningraph uses [KraphViz](https://github.com/nidi3/graphviz-java#kotlin-dsl) for graph visualization.
-
 ## Getting Started
 
 Run [the demo](src/main/kotlin/edu/mcgill/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
@@ -81,6 +77,26 @@ val x = Graph { a - b - c - d - e; a - c - e }
 val y = Graph { b - c - d - e - f; b - d - f }
 assertEquals(x == y) // true
 ```
+
+## Visualization
+
+Graph visualization is made possible thanks to [KraphViz](https://github.com/nidi3/graphviz-java#kotlin-dsl).
+
+```kotlin
+val de = Graph { d - e }
+val dacbe = Graph { d - a - c - b - e }
+val dce = Graph { d - c - e }
+
+val abcd = Graph { a - b - c - d }
+val cfde = Graph { c - "a" - f - d - e }
+
+val dg = Graph(dacbe, dce, de) + Graph(abcd, cfde)
+dg.show()
+```
+
+Running the above snippet will cause the following figure to be rendered in the browser:
+
+![](latex/figures/visualization.svg)
 
 ## References
 
