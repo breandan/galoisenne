@@ -1,10 +1,46 @@
 # Kaliningraph
 
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
+[![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 
 Kaliningraph is a purely functional graph library with a DSL for constructing graphs and visualizing the behavior of graph algorithms.
 
 ![](https://upload.wikimedia.org/wikipedia/commons/1/15/Image-Koenigsberg%2C_Map_by_Merian-Erben_1652.jpg)
+
+## Installation
+
+Kaliningraph is hosted on [JitPack](https://jitpack.io/#breandan/kaliningraph/).
+
+### Gradle
+
+```kotlin
+repositories {
+    maven("https://jitpack.io")
+}
+
+dependencies {
+    implementation("com.github.breandan:kaliningraph:-SNAPSHOT")
+}
+```
+
+### Maven
+
+```xml
+<project>
+  <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
+  </repositories>
+  
+  <dependency>
+    <groupId>com.github.breandan</groupId>
+    <artifactId>kaliningraph</artifactId>
+    <version>-SNAPSHOT</version>
+  </dependency>
+</project>
+```
 
 ## Graphs, Inductively
 
