@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: 13
       - name: Build with Gradle
-        run: ./gradlew build --stacktrace
+        run: ./gradlew test --stacktrace

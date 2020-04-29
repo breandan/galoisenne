@@ -37,7 +37,7 @@ dependencies {
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
-    <version>-SNAPSHOT</version>
+    <version>0.0.1</version>
   </dependency>
 </project>
 ```

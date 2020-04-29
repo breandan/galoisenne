@@ -16,9 +16,9 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
     this(adjList.map { (k, v) -> Vertex(k.id) { v } }.toSet())
 
   val totalEdges = V.map { it.neighbors.size }.sum()
-  val index = VIndex(V)
+  private val index = VIndex(V)
 
-  class VIndex(val set: Set<Vertex>) {
+  private class VIndex(val set: Set<Vertex>) {
     val array: Array<Vertex> = set.toTypedArray()
     val map: Map<Vertex, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Vertex) = map[it]
@@ -42,7 +42,12 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
     }
   }
 
-  val laplacian by lazy { D - A }
+  // Laplacian matrix
+  val L by lazy { D - A }
+
+  val edgList by lazy { V.flatMap { s -> s.edges.map { s to it } }.asSequence() }
+  val adjList by lazy { V.flatMap { s -> s.neighbors.map { t -> Pair(s, t) } } }
+
   val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixRMaj.get(n0: Vertex, n1: Vertex) = this[index[n0]!!, index[n1]!!]
   operator fun DMatrixRMaj.set(n0: Vertex, n1: Vertex, value: Double) {
