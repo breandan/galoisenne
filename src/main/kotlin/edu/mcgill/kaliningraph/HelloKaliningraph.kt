@@ -34,7 +34,7 @@ fun main() {
 
 @ExperimentalStdlibApi
 fun prefAttachDemo() {
-  val graph = mutableListOf(Graph { a - b })
+  val graph = mutableListOf(Graph())
 
   Kweb(port = 16097) {
     doc.body.apply {
