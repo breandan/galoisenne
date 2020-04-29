@@ -6,8 +6,8 @@ import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
-import guru.nidi.graphviz.engine.Graphviz
 import guru.nidi.graphviz.model.Factory
+import guru.nidi.graphviz.model.MutableGraph
 import org.apache.commons.math3.util.Pair
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
@@ -19,13 +19,13 @@ import java.io.File
 val THICKNESS = 2
 
 fun Graph.render(layout: Engine = DOT, format: Format = SVG) =
-  toGraphviz().apply { engine(layout) }.render(format)
+  toGraphviz().toGraphviz().apply { engine(layout) }.render(format)
 
 fun Graph.html() = render().toString()
 fun Graph.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
 fun File.show() = ProcessBuilder("x-www-browser", path).start()
 
-fun Graph.toGraphviz(): Graphviz =
+fun Graph.toGraphviz() =
   graph(directed = true) {
     val color = Color.BLACK
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]
@@ -37,7 +37,10 @@ fun Graph.toGraphviz(): Graphviz =
         (Factory.mutNode(vertex.id) - Factory.mutNode(edge.target.id)).add(Label.of(edge.label ?: ""))
       }
     }
-  }.toGraphviz()
+  }
+
+fun MutableGraph.toKaliningraph() =
+  Graph { edges().forEach { Vertex(it.from()?.name()?.value()) - Vertex(it.to().name().value()) } }
 
 fun Graph.toJGraphT(): SimpleGraph<String, DefaultEdge> =
   SimpleGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {

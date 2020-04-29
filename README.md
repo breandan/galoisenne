@@ -70,7 +70,7 @@ val ace = Graph { a - c - e }
 val graph = abcde + ace
 ```
 
-Equality is supported using the Weisfeiler-Lehman test:
+Equality is supported using the [Weisfeiler-Lehman](http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6) test:
 
 ```kotlin
 val x = Graph { a - b - c - d - e; a - c - e }
@@ -97,6 +97,17 @@ dg.show()
 Running the above snippet will cause the following figure to be rendered in the browser:
 
 ![](latex/figures/visualization.svg)
+
+## Translation
+
+Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview) and [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) is supported:
+
+```kotlin
+val g = Graph { a - b - c - a }
+        .toJGraphT().toKaliningraph()
+        .toTinkerpop().toKaliningraph()
+        .toGraphviz().toKaliningraph()
+```
 
 ## References
 

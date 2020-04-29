@@ -13,4 +13,8 @@ class TranslationTest {
   @Test
   fun testJGraphTTranslationInvariance() =
     randomGraph.let { assertEquals(it, it.toJGraphT().toKaliningraph()) }
+
+  @Test
+  fun testGraphvizTranslationInvariance() =
+    randomGraph.let { assertEquals(it, it.toGraphviz().toKaliningraph()) }
 }
