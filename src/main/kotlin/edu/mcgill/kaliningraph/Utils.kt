@@ -13,7 +13,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSo
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.graph.SimpleGraph
+import org.jgrapht.graph.SimpleDirectedGraph
 import java.io.File
 
 val THICKNESS = 2
@@ -32,20 +32,18 @@ fun Graph.toGraphviz() =
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS)]
 
-    V.forEach { vertex ->
-      vertex.edges.forEach { edge ->
-        (Factory.mutNode(vertex.id) - Factory.mutNode(edge.target.id)).add(Label.of(edge.label ?: ""))
-      }
+    edgList.forEach { (vertex, edge) ->
+      (Factory.mutNode(vertex.id) - Factory.mutNode(edge.target.id)).add(Label.of(edge.label ?: ""))
     }
   }
 
 fun MutableGraph.toKaliningraph() =
   Graph { edges().forEach { Vertex(it.from()?.name()?.value()) - Vertex(it.to().name().value()) } }
 
-fun Graph.toJGraphT(): SimpleGraph<String, DefaultEdge> =
-  SimpleGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {
+fun Graph.toJGraphT() =
+  SimpleDirectedGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {
     V.forEach { addVertex(it.id) }
-    adjList.forEach { (s, t) -> addEdge(s.id, t.id) }
+    edgList.forEach { (source, edge) -> addEdge(source.id, edge.target.id) }
   }
 
 fun <E> org.jgrapht.Graph<String, E>.toKaliningraph() =
@@ -56,16 +54,12 @@ fun Graph.toTinkerpop(): GraphTraversalSource =
     val map = V.map { it to addV(it.id).next() }.toMap()
     edgList.forEach { (v, e) ->
       (map[v] to map[e.target])
-        .also { (s, t) -> addE(e.label ?: DEFAULT_LABEL).from(s).to(t).next() }
+        .also { (t, s) -> addE(e.label ?: DEFAULT_LABEL).from(s).to(t).next() }
     }
   }
 
 fun GraphTraversalSource.toKaliningraph() =
   Graph { E().toList().forEach { Vertex(it.inVertex().label()) - Vertex(it.outVertex().label()) } }
-
-fun main() {
-  Graph { a - b - c - a }.toTinkerpop().toKaliningraph().show()
-}
 
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first

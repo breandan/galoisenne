@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
 class TranslationTest {
-  val randomGraph = Graph { a - b - c - a }//.prefAttach(vertices = 3)
+  val randomGraph = Graph { a - b - c - a }.prefAttach(vertices = 3)
 
   @Test
   fun testTinkerpopTranslationInvariance() =
