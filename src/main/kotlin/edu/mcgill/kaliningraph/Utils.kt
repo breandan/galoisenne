@@ -63,4 +63,3 @@ fun GraphTraversalSource.toKaliningraph() =
 
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
-

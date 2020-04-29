@@ -18,7 +18,7 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   val totalEdges = V.map { it.neighbors.size }.sum()
   private val index = VIndex(V)
 
-  private class VIndex(val set: Set<Vertex>) {
+  private class VIndex(set: Set<Vertex>) {
     val array: Array<Vertex> = set.toTypedArray()
     val map: Map<Vertex, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Vertex) = map[it]
@@ -68,7 +68,7 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   fun reversed(): Graph =
     Graph(V.map { it to listOf<Edge>() }.toMap() +
       V.flatMap { src -> src.edges.map { edge -> edge.target to Edge(src, edge.label) } }
-        .groupBy({ it.first }, { it.second }).mapValues { it.value })
+        .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
   val histogram by lazy { poolingBy { size } }
 
@@ -92,11 +92,11 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   fun <R> poolingBy(op: Set<Vertex>.() -> R): Map<Vertex, R> =
     V.map { it to op(it.neighbors()) }.toMap()
 
-  fun attachRandomVertex(withNeighbors: Int) =
+  fun attachRandomVertex(degree: Int) =
     this + Vertex(
       if (V.isEmpty()) emptySet() else EnumeratedDistribution(
         degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
-        .run { (0..withNeighbors).map { sample() } }.toSet()
+        .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
     ).asGraph()
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
