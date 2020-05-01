@@ -4,7 +4,8 @@
     "graphvizVersion": "0.16.0",
     "jgraphtVersion": "1.4.0",
     "ejmlVersion": "0.39",
-    "mathVersion": "3.6.1"
+    "mathVersion": "3.6.1",
+    "tinkerpopVersion": "3.4.6"
   },
   "link": "https://github.com/breandan/kaliningraph",
   "repositories": [
@@ -17,7 +18,9 @@
     "org.ejml:ejml-all:$ejmlVersion",
     "org.apache.commons:commons-math3:$mathVersion",
     "org.jgrapht:jgrapht-core:$jgraphtVersion",
-    "org.jgrapht:jgrapht-ext:$jgraphtVersion"
+    "org.jgrapht:jgrapht-ext:$jgraphtVersion",
+    "org.apache.tinkerpop:gremlin-core:$tinkerpopVersion",
+    "org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion"
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*"
