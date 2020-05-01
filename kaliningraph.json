@@ -1,6 +1,6 @@
 {
   "properties": {
-    "kaliningraphVersion": "0.0.1",
+    "kaliningraphVersion": "0.0.2",
     "graphvizVersion": "0.16.0",
     "jgraphtVersion": "1.4.0",
     "ejmlVersion": "0.39",
