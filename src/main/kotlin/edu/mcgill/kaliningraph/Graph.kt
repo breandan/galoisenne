@@ -103,4 +103,8 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   tailrec fun prefAttach(graph: Graph = this, vertices: Int = 1, degree: Int = 3): Graph =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomVertex(degree), vertices - 1, degree)
+
+  override fun toString() =
+    "(" + V.joinToString(", ", "{", "}") + ", " +
+      edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
 }
