@@ -9,7 +9,8 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   constructor(builder: GraphBuilder.() -> Unit) :
     this(GraphBuilder().also { it.builder() }.graph.reversed())
 
-  constructor(vararg graphs: Graph) : this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
+  constructor(vararg graphs: Graph) :
+    this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
   constructor(vararg vertices: Vertex) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
   constructor(adjList: Map<Vertex, List<Edge>>) :

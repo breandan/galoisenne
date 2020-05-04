@@ -1,6 +1,7 @@
 package edu.mcgill.kaliningraph
 
 import java.util.*
+import kotlin.reflect.KProperty
 
 class Vertex(val id: String = randomString(), edgeMap: (Vertex) -> Collection<Edge>) {
   constructor(id: String? = randomString(), out: Set<Vertex> = emptySet()) :
@@ -33,4 +34,5 @@ class Vertex(val id: String = randomString(), edgeMap: (Vertex) -> Collection<Ed
   override fun equals(other: Any?) = (other as? Vertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
+  operator fun getValue(a: Any?, prop: KProperty<*>) = Vertex(prop.name)
 }

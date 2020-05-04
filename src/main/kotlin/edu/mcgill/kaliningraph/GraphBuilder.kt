@@ -12,7 +12,6 @@ class GraphBuilder {
   val a by Vertex(); val b by Vertex(); val c by Vertex(); val d by Vertex()
   val e by Vertex(); val f by Vertex(); val g by Vertex(); val h by Vertex()
   val i by Vertex(); val j by Vertex(); val k by Vertex(); val l by Vertex()
-  operator fun Vertex.getValue(g: GraphBuilder, prop: KProperty<*>) = Vertex(prop.name)
 
   operator fun Vertex.minus(v: Vertex) =
     Vertex(v.id) { v.edges + Edge(this) }.also { graph += Graph(it) }
