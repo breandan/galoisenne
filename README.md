@@ -118,3 +118,4 @@ val g = Graph { a - b - c - a }
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
 * [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf)
 * [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf), Leonhard Euler
+* [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
