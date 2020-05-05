@@ -47,6 +47,13 @@ tasks {
     }
   }
 
+  listOf("RegexDemo").forEach { fileName ->
+    register(fileName, JavaExec::class) {
+      main = "edu.mcgill.kaliningraph.automata.${fileName}Kt"
+      classpath = sourceSets["main"].runtimeClasspath
+    }
+  }
+
   test {
     useJUnitPlatform()
     testLogging {

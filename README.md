@@ -109,6 +109,12 @@ val g = Graph { a - b - c - a }
         .toGraphviz().toKaliningraph()
 ```
 
+## Automata-Based Regex
+
+A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`. You should see something like this:
+
+![](regex_demo.png)
+
 ## References
 
 * [Graph Representation Learning](https://cs.mcgill.ca/~wlh/comp766/notes.html), William Hamilton
