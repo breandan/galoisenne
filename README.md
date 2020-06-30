@@ -135,6 +135,12 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
 * [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf)
 
+### Automata
+
+* [roll-library](https://github.com/ISCAS-PMC/roll-library)
+* [dk.brics.automata](https://github.com/cs-au-dk/dk.brics.automaton)
+* [LearnLib](https://github.com/Learnlib/learnlib)
+
 ### Software
 
 * [GraphBlas](http://graphblas.org)

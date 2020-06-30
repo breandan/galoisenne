@@ -35,7 +35,7 @@ var regex = Regex("ε")
 fun makeNFA(input: String) =
   if (regex.regex != input)
     try {
-      Regex(if (input.isEmpty()) "ε" else input).also { regex = it }
+      Regex(input.ifEmpty { "ε" }).also { regex = it }
     }catch(ex: Exception) {regex}
   else regex
 
