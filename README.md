@@ -100,7 +100,7 @@ Running the above snippet will cause the following figure to be rendered in the 
 
 ## Translation
 
-Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview) and [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) is supported:
+Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview), [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) and [RedisGraph](https://oss.redislabs.com/redisgraph/) is supported:
 
 ```kotlin
 val g = Graph { a - b - c - a }
@@ -147,3 +147,4 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [GraphBLAST](https://github.com/gunrock/graphblast)
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [JGraphT](https://doi.org/10.1145/3381449) - A Java Library for Graph Data Structures and Algorithms
+* [viz-js](http://viz-js.com/)
