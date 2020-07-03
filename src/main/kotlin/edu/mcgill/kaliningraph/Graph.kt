@@ -2,8 +2,10 @@ package edu.mcgill.kaliningraph
 
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
-import org.ejml.data.DMatrixRMaj
+import org.ejml.data.DMatrixSparseCSC
+import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
+import org.ejml.ops.ConvertDMatrixStruct
 
 class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   constructor(builder: GraphBuilder.() -> Unit) :
@@ -11,6 +13,7 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
 
   constructor(vararg graphs: Graph) :
     this(graphs.fold(Graph()) { it, acc -> it + acc }.V)
+
   constructor(vararg vertices: Vertex) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph>) : this(*graphs.toTypedArray())
   constructor(adjList: Map<Vertex, List<Edge>>) :
@@ -31,16 +34,20 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
 
   // Degree matrix
   val D by lazy {
-    DMatrixRMaj(V.size, V.size).also { degMat ->
-      V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
-    }
+    ConvertDMatrixStruct.convert(
+      DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
+        V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
+      }, null as DMatrixSparseCSC?
+    )
   }
 
   // Adjacency matrix
-  val A: DMatrixRMaj by lazy {
-    DMatrixRMaj(V.size, V.size).also { adjMat ->
-      V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
-    }
+  val A by lazy {
+    ConvertDMatrixStruct.convert(
+      DMatrixSparseTriplet(V.size, V.size, totalEdges).also { adjMat ->
+        V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
+      }, null as DMatrixSparseCSC?
+    )
   }
 
   // Laplacian matrix
@@ -50,8 +57,8 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   val adjList by lazy { V.flatMap { s -> s.neighbors.map { t -> Pair(s, t) } } }
 
   val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
-  operator fun DMatrixRMaj.get(n0: Vertex, n1: Vertex) = this[index[n0]!!, index[n1]!!]
-  operator fun DMatrixRMaj.set(n0: Vertex, n1: Vertex, value: Double) {
+  operator fun DMatrixSparseTriplet.get(n0: Vertex, n1: Vertex) = this[index[n0]!!, index[n1]!!]
+  operator fun DMatrixSparseTriplet.set(n0: Vertex, n1: Vertex, value: Double) {
     this[index[n0]!!, index[n1]!!] = value
   }
 
@@ -76,6 +83,7 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   /*
    * Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
+   * https://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
    */
 
   tailrec fun wl(k: Int = 5, labels: Map<Vertex, Int> = histogram): Map<Vertex, Int> =

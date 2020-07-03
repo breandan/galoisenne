@@ -6,6 +6,7 @@ import kweb.new
 import org.ejml.data.DMatrixRMaj
 import org.ejml.dense.row.CommonOps_DDRM
 import org.ejml.dense.row.DMatrixComponent
+import org.ejml.ops.ConvertDMatrixStruct
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -52,7 +53,8 @@ fun prefAttachDemo() {
 
 fun Graph.toBase64Image(f: Int = 20): String {
   val rescaled = DMatrixRMaj(A.numRows * f, A.numCols * f)
-  CommonOps_DDRM.kron(A, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
+  val dense = ConvertDMatrixStruct.convert(A, null as DMatrixRMaj?)
+  CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
 
   val bi = BufferedImage(rescaled.numCols, rescaled.numRows, BufferedImage.TYPE_INT_RGB)
   DMatrixComponent.renderMatrix(rescaled, bi, 1.0)
