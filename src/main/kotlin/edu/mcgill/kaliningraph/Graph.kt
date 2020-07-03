@@ -102,7 +102,7 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
     V.map { it to op(it.neighbors()) }.toMap()
 
   fun attachRandomVertex(degree: Int) =
-    this + Vertex(
+    this + Vertex(V.size.toString(),
       if (V.isEmpty()) emptySet() else EnumeratedDistribution(
         degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
         .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()

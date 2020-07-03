@@ -98,6 +98,12 @@ Running the above snippet will cause the following figure to be rendered in the 
 
 ![](latex/figures/visualization.svg)
 
+Graph visualization in both DOT and adjacency matrix format is supported.
+
+|DOT Graph|Matrix|
+|-----|------|
+|![image](latex/figures/random_dot_graph.png)|![image_1](latex/figures/random_matrix.png)|
+
 ## Translation
 
 Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview), [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) and [RedisGraph](https://oss.redislabs.com/redisgraph/) is supported:
