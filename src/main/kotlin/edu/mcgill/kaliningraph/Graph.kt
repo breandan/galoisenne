@@ -7,7 +7,7 @@ import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
 import org.ejml.ops.ConvertDMatrixStruct
 
-class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
+open class Graph(open val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
   constructor(builder: GraphBuilder.() -> Unit) :
     this(GraphBuilder().also { it.builder() }.graph.reversed())
 
@@ -98,11 +98,12 @@ class Graph(val V: Set<Vertex> = emptySet()) : Set<Vertex> by V {
 
   override fun hashCode() = wl().values.sorted().hashCode()
 
-  fun <R> poolingBy(op: Set<Vertex>.() -> R): Map<Vertex, R> =
-    V.map { it to op(it.neighbors()) }.toMap()
+  fun poolingBy(stat: Set<Vertex>.() -> Int): Map<Vertex, Int> =
+    V.map { it to stat(it.neighbors()) }.toMap()
 
   fun attachRandomVertex(degree: Int) =
-    this + Vertex(V.size.toString(),
+    this + Vertex(
+      V.size.toString(),
       if (V.isEmpty()) emptySet() else EnumeratedDistribution(
         degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
         .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
