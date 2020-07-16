@@ -33,6 +33,7 @@ fun prefAttachDemo() {
       val mat = new { img(null, mapOf("width" to "200", "height" to "200")) }
       val vec = new { img(null, mapOf("width" to "200", "height" to "200")) }
       val nex = new { img(null, mapOf("width" to "200", "height" to "200")) }
+      val program = new { element("p").innerHTML("") }
       on.keydown {
         when {
           "Left" in it.key -> {
@@ -43,6 +44,8 @@ fun prefAttachDemo() {
             if (current.none { (it as Node<Vertex>).occupied }) {
               println("restarting")
               current.sortedBy { -it.id.toInt() + Math.random() * 10 }.takeWhile { Math.random() < 0.5 }.forEach { it.occupied = true }
+              current.done = current.filter { it.occupied }.map { it.id }.toMutableSet()
+              current.string = "y = ${current.done.joinToString(" + ")}"
             } else {
               current.propagate()
             }
@@ -59,6 +62,7 @@ fun prefAttachDemo() {
         mat.render(graphs.last()) { it.A }
         vec.render(graphs.last()) { it.S() }
         nex.render(graphs.last()) { it.A.transpose() * it.S() }
+        program.innerHTML("<p style=\"font-size:40px\">${graphs.last().string}</p>")
       }
     }
   }

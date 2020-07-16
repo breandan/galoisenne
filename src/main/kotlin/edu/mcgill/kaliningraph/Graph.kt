@@ -116,11 +116,14 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
         .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
     ).asGraph()
 
+  var done = mutableSetOf<String>()
+  var string = ""
   fun propagate() {
     val (previousStates, unoccupied) = V.partition { it.occupied }
     val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
     previousStates.forEach { it.occupied = false }
-    nextStates.forEach { it.occupied = true }
+    nextStates.forEach { it.occupied = true; done.add(it.id) }
+    string = "y = " + done.joinToString(" + ")
   }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
