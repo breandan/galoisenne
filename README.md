@@ -46,7 +46,7 @@ dependencies {
 
 What are graphs? A [graph](src/main/kotlin/edu/mcgill/kaliningraph/Graph.kt) is a (possibly empty) set of vertices.
 
-What are vertices? A [vertex](src/main/kotlin/edu/mcgill/kaliningraph/Vertex.kt) is a unique label with neighbors (possibly containing itself).
+What are vertices? A [vertex](src/main/kotlin/edu/mcgill/kaliningraph/Node.kt) is a unique label with neighbors (possibly containing itself).
 
 What are neighbors? Neighbors are a graph.
 
