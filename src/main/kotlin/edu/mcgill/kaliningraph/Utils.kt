@@ -1,7 +1,9 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.automata.State
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
@@ -30,10 +32,14 @@ fun <T : Node<T>> Graph<T>.toGraphviz() =
     val color = Color.BLACK
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
-    node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS)]
+    node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS), Shape.CIRCLE]
 
-    edgList.forEach { (vertex, edge) ->
-      (Factory.mutNode(vertex.id) - Factory.mutNode(edge.target.id)).add(Label.of(edge.label ?: ""))
+    V.forEach { vertex ->
+      for(neighbor in vertex.neighbors) {
+        val source = Factory.mutNode(vertex.id).also { if (vertex.occupied) it[Style.FILLED, RED.fill()] else it[BLACK] }
+        val target = Factory.mutNode(neighbor.id)//.also { if (neighbor.occupied) it[RED] else it[BLACK] }
+        (source - target).add(Label.of("")).also {  if (vertex.occupied) it[RED] else it[BLACK]  }
+      }
     }
   }
 

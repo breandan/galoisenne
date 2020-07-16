@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph
 
+import kweb.shoebox.toArrayList
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import org.ejml.data.DMatrixSparseCSC
@@ -14,16 +15,16 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(vararg vertices: T) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph<T>>) : this(*graphs.toTypedArray())
   constructor(adjList: Map<T, List<Edge<T>>>) :
-    this(adjList.map { (k, v) -> Node<T>(k.id) { v } }.toSet() as Set<T>)
-  
-  val prototype: Node<T> by lazy { V.firstOrNull() ?: Node<T>() }
+    this(adjList.map { (k, v) -> adjList.keys.first().new (k.id) { v } }.toSet() as Set<T>)
 
-  val totalEdges = V.map { it.neighbors.size }.sum()
-  private val index = VIndex<T>(V)
+  open val prototype: Node<T> by lazy { V.firstOrNull() ?: Node<T>() }
 
-  private class VIndex<T: Node<T>>(set: Set<Node<T>>) {
-    val array: Array<Node<T>> = set.toTypedArray()
-    val map: Map<Node<T>, Int> = array.mapIndexed { index, a -> a to index }.toMap()
+  val totalEdges by lazy { V.map { it.neighbors.size }.sum() }
+  private val index by lazy { VIndex(V) }
+
+  private class VIndex<T: Node<T>>(set: Set<T>) {
+    val array: ArrayList<T> = set.toList().toArrayList()
+    val map: Map<T, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Node<T>) = map[it]
     operator fun get(it: Int) = array[it]
   }
@@ -35,7 +36,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   val D by lazy {
     ConvertDMatrixStruct.convert(
       DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
-        V.forEach { v -> degMat[v, v as T] = v.neighbors.size.toDouble() }
+        V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
       }, null as DMatrixSparseCSC?
     )
   }
@@ -51,6 +52,13 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
 
   // Laplacian matrix
   val L by lazy { D - A }
+
+  fun S() =
+    ConvertDMatrixStruct.convert(
+      DMatrixSparseTriplet(V.size, 1, totalEdges).also { adjMat ->
+        V.forEach { v -> adjMat[index[v]!!, 0] = if(v.occupied) 1.0 else 0.0 }
+      }, null as DMatrixSparseCSC?
+    )
 
   val edgList by lazy { V.flatMap { s -> s.edges.map { s to it } }.asSequence() }
   val adjList by lazy { V.flatMap { s -> s.neighbors.map { t -> Pair(s, t) } } }
@@ -68,7 +76,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   infix fun join(that: Graph<T>): Set<T> =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> prototype.new(left.id) { left.edges + right.edges } as T}.toSet()
+      .map { (left, right) -> prototype.new(left.id) { left.edges + right.edges } as T }.toSet()
 
   operator fun minus(graph: Graph<T>): Graph<T> = Graph(V - graph.V)
 
@@ -107,6 +115,13 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
         degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
         .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
     ).asGraph()
+
+  fun propagate() {
+    val (previousStates, unoccupied) = V.partition { it.occupied }
+    val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
+    previousStates.forEach { it.occupied = false }
+    nextStates.forEach { it.occupied = true }
+  }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
   tailrec fun prefAttach(graph: Graph<T> = this, vertices: Int = 1, degree: Int = 3): Graph<T> =
