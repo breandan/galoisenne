@@ -19,7 +19,7 @@ fun main() {
 
 @ExperimentalStdlibApi
 fun prefAttachDemo() {
-  val graphs = mutableListOf(Graph())
+  val graphs = mutableListOf(Graph<Vertex>())
 
   Kweb(port = 16097) {
     doc.body.apply {
@@ -51,7 +51,7 @@ fun prefAttachDemo() {
   ProcessBuilder("x-www-browser", "http://0.0.0.0:16097").start()
 }
 
-fun Graph.toBase64Image(f: Int = 20): String {
+fun Graph<Vertex>.toBase64Image(f: Int = 20): String {
   val rescaled = DMatrixRMaj(A.numRows * f, A.numCols * f)
   val dense = ConvertDMatrixStruct.convert(A, null as DMatrixRMaj?)
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
