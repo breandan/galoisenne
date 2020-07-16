@@ -55,8 +55,8 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
 
   fun S() =
     ConvertDMatrixStruct.convert(
-      DMatrixSparseTriplet(V.size, 1, totalEdges).also { adjMat ->
-        V.forEach { v -> adjMat[index[v]!!, 0] = if(v.occupied) 1.0 else 0.0 }
+      DMatrixSparseTriplet(V.size, 1, totalEdges).also { state ->
+        V.forEach { v -> state[index[v]!!, 0] = if(v.occupied) 1.0 else 0.0 }
       }, null as DMatrixSparseCSC?
     )
 
@@ -124,7 +124,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-  tailrec fun prefAttach(graph: Graph<T> = this, vertices: Int = 1, degree: Int = 3): Graph<T> =
+  tailrec fun prefAttach(graph: Graph<T> = this, vertices: Int = 1, degree: Int = 2): Graph<T> =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
 

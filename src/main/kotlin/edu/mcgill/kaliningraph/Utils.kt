@@ -18,7 +18,7 @@ import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 import java.io.File
 
-val THICKNESS = 2
+val THICKNESS = 4
 
 fun <T : Node<T>> Graph<T>.render(layout: Engine = DOT, format: Format = SVG) =
   toGraphviz().toGraphviz().apply { engine(layout) }.render(format)
