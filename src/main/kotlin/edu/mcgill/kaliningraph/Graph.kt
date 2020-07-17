@@ -34,31 +34,24 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
 
   // Degree matrix
   val D by lazy {
-    ConvertDMatrixStruct.convert(
       DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
         V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
-      }, null as DMatrixSparseCSC?
-    )
+      }.toCSC()
   }
 
   // Adjacency matrix
   val A by lazy {
-    ConvertDMatrixStruct.convert(
       DMatrixSparseTriplet(V.size, V.size, totalEdges).also { adjMat ->
         V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
-      }, null as DMatrixSparseCSC?
-    )
+      }.toCSC()
   }
 
   // Laplacian matrix
   val L by lazy { D - A }
 
-  fun S() =
-    ConvertDMatrixStruct.convert(
-      DMatrixSparseTriplet(V.size, 1, totalEdges).also { state ->
-        V.forEach { v -> state[index[v]!!, 0] = if(v.occupied) 1.0 else 0.0 }
-      }, null as DMatrixSparseCSC?
-    )
+  fun S() = DMatrixSparseTriplet(V.size, 1, totalEdges).also { state ->
+    V.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
+  }.toCSC()
 
   val edgList by lazy { V.flatMap { s -> s.edges.map { s to it } }.asSequence() }
   val adjList by lazy { V.flatMap { s -> s.neighbors.map { t -> Pair(s, t) } } }

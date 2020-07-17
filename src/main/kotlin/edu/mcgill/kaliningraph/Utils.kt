@@ -14,6 +14,9 @@ import org.apache.commons.math3.util.Pair
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
+import org.ejml.data.DMatrixSparseCSC
+import org.ejml.data.DMatrixSparseTriplet
+import org.ejml.ops.ConvertDMatrixStruct
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 import java.io.File
@@ -63,6 +66,8 @@ fun <T : Node<T>> Graph<T>.toTinkerpop(): GraphTraversalSource =
         .also { (t, s) -> addE(e.label ?: DEFAULT_LABEL).from(s).to(t).next() }
     }
   }
+
+fun DMatrixSparseTriplet.toCSC() = ConvertDMatrixStruct.convert(this, null as DMatrixSparseCSC?)
 
 fun GraphTraversalSource.toKaliningraph() =
   GraphBuilder { E().toList().forEach { Vertex(it.inVertex().label()) - Vertex(it.outVertex().label()) } }
