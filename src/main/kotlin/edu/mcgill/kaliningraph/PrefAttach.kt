@@ -38,12 +38,15 @@ fun prefAttachDemo() {
       val nex = new { img(null, mapOf("width" to "200", "height" to "200")) }
       val program = new { element("p").innerHTML("") }
 
-      on.keydown { keystroke -> handle(keystroke, graphs) }
+      on.keydown { keystroke ->
+        handle(keystroke, graphs)
 
-      el.innerHTML(graphs.last().html())
-      mat.render(graphs.last()) { it.A }
-      vec.render(graphs.last()) { it.S() }
-      nex.render(graphs.last()) { it.A.transpose() * it.S() }
+        el.innerHTML(graphs.last().html())
+        mat.render(graphs.last()) { it.A }
+        vec.render(graphs.last()) { it.S() }
+        nex.render(graphs.last()) { it.A.transpose() * it.S() }
+      }
+
       program.innerHTML("<p style=\"font-size:40px\">${graphs.last().string}</p>")
     }
   }
@@ -56,7 +59,7 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex>>) {
   when {
     "Left" in it.key -> { }
     "Right" in it.key -> {
-      val current = graphs.last() as Graph<*>
+      val current = graphs.last()
       if (current.none { it.occupied }) {
         current.sortedBy { -it.id.toInt() + Math.random() * 10 }
           .takeWhile { Math.random() < 0.5 }
@@ -75,6 +78,7 @@ private fun ImageElement.render(graph: Graph<Vertex>, renderFun: (Graph<Vertex>)
 }
 
 fun DMatrixSparseCSC.adjToMat(f: Int = 20): String {
+  if (numCols == 0 || numRows == 0) return ""
   val rescaled = DMatrixRMaj(numRows * f, numCols * f)
   val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)

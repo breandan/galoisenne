@@ -5,7 +5,7 @@
 
 Kaliningraph is a purely functional graph library with a DSL for constructing graphs and visualizing the behavior of graph algorithms.
 
-![](https://upload.wikimedia.org/wikipedia/commons/1/15/Image-Koenigsberg%2C_Map_by_Merian-Erben_1652.jpg)
+![](http://breandan.net/images/konigsberg_bridges.png)
 
 ## Installation
 
@@ -104,7 +104,7 @@ Graph visualization in both DOT and adjacency matrix format is supported.
 |-----|------|
 |![image](latex/figures/random_dot_graph.png)|![image_1](latex/figures/random_matrix.png)|
 
-It is also possible to visualize the state and transition matrices and step through the graph.
+It is also possible to visualize the state and transition matrices and step through the graph (`./gradlew PrefAttach`).
 
 ![transition_diagram](latex/figures/transition_diagram.png)
 

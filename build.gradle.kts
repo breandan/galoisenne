@@ -25,6 +25,7 @@ dependencies {
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.ajalt:clikt:2.6.0")
   implementation("com.redislabs:jredisgraph:2.0.2")
+  implementation("io.lacuna:bifurcan:0.2.0-alpha1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
 
   val jgraphtVersion by extra { "1.4.0" }
@@ -41,7 +42,7 @@ configure<JavaPluginConvention> {
 }
 
 tasks {
-  listOf("HelloKaliningraph").forEach { fileName ->
+  listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["main"].runtimeClasspath

@@ -6,11 +6,12 @@ import edu.mcgill.kaliningraph.GraphBuilder
 import edu.mcgill.kaliningraph.Node
 import kweb.random
 
-open class State(override val id: String = randomString(), transition: (State) -> Collection<Transition>, override var occupied: Boolean = false) : Node<State>() {
-  constructor(id: String? = null, out: Set<State> = setOf()) : this(id ?: randomString(), { out.map { Transition(it) } }, false)
+open class State(override val id: String = randomString(), override var occupied: Boolean = false, transition: (State) -> Collection<Edge<State>>) : Node<State>() {
+  constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(), occupied = false, transition= { out.map { Transition(it) } })
   override val edges = transition(this).toSet()
-  override val neighbors = edges.map { it.nextState }.toSet()
+  override val neighbors = edges.map { it.target }.toSet()
   override fun new(id: String?, out: Set<State>): State = State(id, out)
+  override fun new(id: String, edgeMap: (State) -> Collection<Edge<State>>): State = State(id, false, edgeMap)
 }
 
 open class Transition(val nextState: State, val string: String? = null): Edge<State>(nextState, string)

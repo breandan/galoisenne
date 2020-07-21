@@ -17,7 +17,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(adjList: Map<T, List<Edge<T>>>) :
     this(adjList.map { (k, v) -> adjList.keys.first().new (k.id) { v } }.toSet() as Set<T>)
 
-  open val prototype: Node<T> by lazy { V.firstOrNull() ?: Node<T>() }
+  open val prototype: Node<T>? by lazy { V.firstOrNull() }
 
   val totalEdges by lazy { V.map { it.neighbors.size }.sum() }
   private val index by lazy { VIndex(V) }
@@ -69,7 +69,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   infix fun join(that: Graph<T>): Set<T> =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> prototype.new(left.id) { left.edges + right.edges } as T }.toSet()
+      .map { (left, right) -> prototype?.new(left.id) { left.edges + right.edges } as T }.toSet()
 
   operator fun minus(graph: Graph<T>): Graph<T> = Graph(V - graph.V)
 
@@ -102,12 +102,12 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
     V.map { it to stat(it.neighbors()) }.toMap()
 
   fun attachRandomT(degree: Int) =
-    this + prototype.new(
+    prototype?.let { this + it.new(
       V.size.toString(),
       if (V.isEmpty()) emptySet() else EnumeratedDistribution(
         degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
         .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
-    ).asGraph()
+    ).asGraph() } ?: this
 
   var done = mutableSetOf<String>()
   var string = ""

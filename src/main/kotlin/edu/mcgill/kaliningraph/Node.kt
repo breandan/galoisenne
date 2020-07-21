@@ -3,22 +3,18 @@ package edu.mcgill.kaliningraph
 import java.util.*
 import kotlin.reflect.KProperty
 
-open class Node<T: Node<T>> constructor (open val id: String = randomString(),
-                            open var occupied: Boolean = false, edgeMap: (T) -> Collection<Edge<T>>) {
-  constructor(id: String? = randomString(), out: Set<T> = emptySet()) :
-    this(id ?: randomString(), false, { out.map { Edge<T>(it) } })
-
-  constructor(out: Set<T> = setOf()) : this(randomString(), false, { out.map { Edge<T>(it) } })
-
+abstract class Node<T: Node<T>> {
   companion object {
     fun randomString() = UUID.randomUUID().toString().take(5)
   }
 
-  open fun new(id: String? = randomString(), out: Set<T> = emptySet()) = Node(id, out) as T
-  open fun new(id: String = randomString(), edgeMap: (T) -> Collection<Edge<T>>): T = Node(id, false, edgeMap) as T
+  abstract fun new(id: String? = randomString(), out: Set<T> = emptySet()): T
+  abstract fun new(id: String = randomString(), edgeMap: (T) -> Collection<Edge<T>>): T
 
-  open val edges by lazy { edgeMap(this as T).toSet() }
-  open val neighbors by lazy { edges?.map { it.target }.toSet() }
+  abstract val id: String
+  abstract val edges: Set<Edge<T>>
+  abstract val neighbors: Set<T>
+  abstract var occupied: Boolean
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<T> = neighbors + this as T): Set<T> =
     if (k == 0 || vertices.neighbors() == vertices) vertices
@@ -41,4 +37,19 @@ open class Node<T: Node<T>> constructor (open val id: String = randomString(),
   operator fun getValue(a: Any?, prop: KProperty<*>): T = new(prop.name)
 }
 
-class Vertex(id: String? = randomString(), out: Set<Vertex> = emptySet()): Node<Vertex>(id, out)
+class Vertex(
+  override val id: String = randomString(),
+  edgeMap: (Vertex) -> Collection<Edge<Vertex>>
+): Node<Vertex>() {
+  constructor(id: String? = randomString(), out: Set<Vertex> = emptySet()) :
+    this(id ?: randomString(), { out.map { Edge<Vertex>(it) } })
+
+  constructor(out: Set<Vertex> = setOf()) : this(randomString(), { out.map { Edge<Vertex>(it) } })
+
+  override var occupied = false
+  override val edges by lazy { edgeMap(this).toSet() }
+  override val neighbors by lazy { edges.map { it.target }.toSet() }
+
+  override fun new(id: String, edgeMap: (Vertex) -> Collection<Edge<Vertex>>) = Vertex(id, edgeMap)
+  override fun new(id: String?, out: Set<Vertex>) = Vertex(id, out)
+}
