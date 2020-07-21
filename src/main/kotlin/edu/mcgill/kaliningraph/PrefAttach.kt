@@ -2,7 +2,7 @@ package edu.mcgill.kaliningraph
 
 import kweb.ImageElement
 import kweb.Kweb
-import kweb.dom.element.events.ONReceiver.KeyboardEvent
+import kweb.html.events.KeyboardEvent
 import kweb.img
 import kweb.new
 import org.ejml.data.DMatrixRMaj
@@ -24,7 +24,7 @@ fun main() {
 
 @ExperimentalStdlibApi
 fun prefAttachDemo() {
-  val graphs = mutableListOf(Graph<Vertex>())
+  val graphs = mutableListOf(Graph(Vertex("0")))
 
   Kweb(port = 16097) {
     doc.body.apply {
@@ -78,7 +78,6 @@ private fun ImageElement.render(graph: Graph<Vertex>, renderFun: (Graph<Vertex>)
 }
 
 fun DMatrixSparseCSC.adjToMat(f: Int = 20): String {
-  if (numCols == 0 || numRows == 0) return ""
   val rescaled = DMatrixRMaj(numRows * f, numCols * f)
   val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)

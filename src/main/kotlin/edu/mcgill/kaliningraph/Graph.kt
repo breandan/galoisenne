@@ -32,6 +32,9 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   operator fun get(vertex: T) = index[vertex]
   operator fun get(vertexIdx: Int) = index[vertexIdx]
 
+  val edgList by lazy { V.flatMap { s -> s.edges.map { s to it } }.asSequence() }
+  val adjList by lazy { edgList.map { (v, e) -> v to e.target } }
+
   // Degree matrix
   val D by lazy {
       DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
@@ -53,8 +56,6 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
     V.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
   }.toCSC()
 
-  val edgList by lazy { V.flatMap { s -> s.edges.map { s to it } }.asSequence() }
-  val adjList by lazy { V.flatMap { s -> s.neighbors.map { t -> Pair(s, t) } } }
 
   val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: T, n1: T) = this[index[n0]!!, index[n1]!!]

@@ -21,7 +21,7 @@ dependencies {
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.16.0")
   implementation("org.apache.commons:commons-math3:3.6.1")
-  implementation("com.github.kwebio:kweb-core:0.7.5")
+  implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.ajalt:clikt:2.6.0")
   implementation("com.redislabs:jredisgraph:2.0.2")

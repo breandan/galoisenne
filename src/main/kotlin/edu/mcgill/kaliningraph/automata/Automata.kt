@@ -4,7 +4,6 @@ import edu.mcgill.kaliningraph.Edge
 import edu.mcgill.kaliningraph.Graph
 import edu.mcgill.kaliningraph.GraphBuilder
 import edu.mcgill.kaliningraph.Node
-import kweb.random
 
 open class State(override val id: String = randomString(), override var occupied: Boolean = false, transition: (State) -> Collection<Edge<State>>) : Node<State>() {
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(), occupied = false, transition= { out.map { Transition(it) } })
