@@ -3,10 +3,8 @@ package edu.mcgill.kaliningraph
 import kweb.shoebox.toArrayList
 import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
-import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
-import org.ejml.ops.ConvertDMatrixStruct
 
 open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(vararg graphs: Graph<T>) :
@@ -15,7 +13,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(vararg vertices: T) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph<T>>) : this(*graphs.toTypedArray())
   constructor(adjList: Map<T, List<Edge<T>>>) :
-    this(adjList.map { (k, v) -> adjList.keys.first().new (k.id) { v } }.toSet() as Set<T>)
+    this(adjList.map { (k, v) -> adjList.keys.first().new (k.id) { v } }.toSet())
 
   open val prototype: Node<T>? by lazy { V.firstOrNull() }
 
@@ -76,7 +74,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
 
   fun reversed(): Graph<T> =
     Graph(V.map { it to listOf<Edge<T>>() }.toMap() +
-      V.flatMap { src -> src.edges.map { edge -> edge.target to Edge(src, edge.label) } as List<Pair<T, Edge<T>>> }
+      V.flatMap { src -> src.edges.map { edge -> edge.target to Edge(src, edge.label) } }
         .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
   val histogram by lazy { poolingBy { size } }
