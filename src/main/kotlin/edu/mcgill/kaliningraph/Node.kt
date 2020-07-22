@@ -23,28 +23,28 @@ interface Node<T: Node<T, E>, E: Edge<E, T>> {
 
   private fun Set<T>.neighbors(): Set<T> = flatMap { it.neighbors() }.toSet()
 
-  fun asGraph() = Graph<T, E>(neighbors(-1))
-  fun neighborhood() = Graph<T, E>(neighbors(0).closure())
+  fun asGraph() = Graph(neighbors(-1))
+  fun neighborhood() = Graph(neighbors(0).closure())
 
   operator fun getValue(a: Any?, prop: KProperty<*>): T = new(prop.name)
 }
 
-class Vertex<E: Edge<E, Vertex<E>>>(
+class Vertex(
   override val id: String = randomString(),
-  edgeMap: (Vertex<E>) -> Collection<Edge<E, Vertex<E>>>
-): Node<Vertex<E>, E> {
-  constructor(id: String? = randomString(), out: Set<Vertex<E>> = emptySet()) :
-    this(id ?: randomString(), { out.map { Edge<E, Vertex<E>>(it) } })
+  edgeMap: (Vertex) -> Collection<Edge<LabeledEdge, Vertex>>
+): Node<Vertex, LabeledEdge> {
+  constructor(id: String? = randomString(), out: Set<Vertex> = emptySet()) :
+    this(id ?: randomString(), { out.map { LabeledEdge(it) } })
 
-  constructor(out: Set<Vertex<E>> = setOf()) : this(randomString(), { out.map { Edge<E, Vertex<E>>(it) } })
+  constructor(out: Set<Vertex> = setOf()) : this(randomString(), { out.map { LabeledEdge(it) } })
 
   override var occupied = false
   override val edges by lazy { edgeMap(this).toSet() }
   override val neighbors by lazy { edges.map { it.target }.toSet() }
 
-  override fun equals(other: Any?) = (other as? Vertex<E>)?.id == id
+  override fun equals(other: Any?) = (other as? Vertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
-  override fun new(id: String, edgeMap: (Vertex<E>) -> Collection<Edge<E, Vertex<E>>>) = Vertex(id, edgeMap)
-  override fun new(id: String?, out: Set<Vertex<E>>) = Vertex(id, out)
+  override fun new(id: String?, out: Set<Vertex>) = Vertex(id, out)
+  override fun new(id: String, edgeMap: (Vertex) -> Collection<Edge<LabeledEdge, Vertex>>) = Vertex(id, edgeMap)
 }

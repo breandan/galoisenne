@@ -18,14 +18,14 @@ import java.util.*
 
 val THICKNESS = 4
 
-fun <T : Node<T>> Graph<T>.render(layout: Engine = DOT, format: Format = SVG) =
+fun Graph<*, *>.render(layout: Engine = DOT, format: Format = SVG) =
   toGraphviz().toGraphviz().apply { engine(layout) }.render(format)
 
-fun <T : Node<T>> Graph<T>.html() = render().toString()
-fun <T : Node<T>> Graph<T>.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
+fun Graph<*, *>.html() = render().toString()
+fun Graph<*, *>.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
 fun File.show() = ProcessBuilder("x-www-browser", path).start()
 
-fun <T : Node<T>> Graph<T>.toGraphviz() =
+fun Graph<*, *>.toGraphviz() =
   graph(directed = true) {
     val color = BLACK
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]

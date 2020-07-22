@@ -55,7 +55,7 @@ fun prefAttachDemo() {
 }
 
 @ExperimentalStdlibApi
-private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex>>) {
+private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex, LabeledEdge>>) {
   when {
     "Left" in it.key -> { }
     "Right" in it.key -> {
@@ -73,7 +73,7 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex>>) {
   }
 }
 
-private fun ImageElement.render(graph: Graph<Vertex>, renderFun: (Graph<Vertex>) -> DMatrixSparseCSC) {
+private fun ImageElement.render(graph: Graph<Vertex, LabeledEdge>, renderFun: (Graph<Vertex, LabeledEdge>) -> DMatrixSparseCSC) {
   setAttributeRaw("src", renderFun(graph).adjToMat())
 }
 

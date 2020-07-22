@@ -12,9 +12,9 @@ class GraphBuilder {
   val i by Vertex(); val j by Vertex(); val k by Vertex(); val l by Vertex()
 
   operator fun Vertex.minus(v: Vertex) =
-    Vertex().new(v.id) { v.edges + Edge(this) }.also { graph += Graph(it) }
+    Vertex().new(v.id) { v.edges + LabeledEdge(this) }.also { graph += Graph(it) }
 
-  operator fun Vertex.plus(edge: Edge<Vertex>) =
+  operator fun Vertex.plus(edge: LabeledEdge) =
     Vertex().new { edges + edge }.also { graph += Graph(it) }
 
   operator fun Vertex.plus(vertex: Vertex) =
@@ -24,7 +24,7 @@ class GraphBuilder {
 
   // Arithmetic is right-associative, so we construct in reverse and flip after
   operator fun Vertex.minus(symbols: String) = ProtoEdge(this, symbols)
-  operator fun ProtoEdge.minus(target: Vertex) = target + Edge(source, label)
+  operator fun ProtoEdge.minus(target: Vertex) = target + LabeledEdge(source, label)
 
   companion object {
     operator fun invoke(builder: GraphBuilder.() -> Unit) =
