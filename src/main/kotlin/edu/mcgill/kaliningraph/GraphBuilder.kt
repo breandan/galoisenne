@@ -5,7 +5,7 @@ package edu.mcgill.kaliningraph
  */
 
 class GraphBuilder {
-  var graph = Graph<Vertex>()
+  var graph = Graph<Vertex, LabeledEdge>()
 
   val a by Vertex(); val b by Vertex(); val c by Vertex(); val d by Vertex()
   val e by Vertex(); val f by Vertex(); val g by Vertex(); val h by Vertex()

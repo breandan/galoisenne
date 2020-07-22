@@ -23,18 +23,20 @@ dependencies {
   implementation("org.apache.commons:commons-math3:3.6.1")
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
-  implementation("com.github.ajalt:clikt:2.6.0")
-  implementation("com.redislabs:jredisgraph:2.0.2")
-  implementation("io.lacuna:bifurcan:0.2.0-alpha1")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
 
+  testImplementation("com.github.ajalt:clikt:2.6.0")
+
+  testImplementation("com.redislabs:jredisgraph:2.0.2")
+  testImplementation("io.lacuna:bifurcan:0.2.0-alpha1")
+
+  testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
   val jgraphtVersion by extra { "1.4.0" }
-  implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
-  implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
+  testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
+  testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
   val tinkerpopVersion by extra { "3.4.6" }
-  implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
-  implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
+  testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
+  testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
 }
 
 configure<JavaPluginConvention> {

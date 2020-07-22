@@ -6,24 +6,24 @@ import org.apache.commons.math3.util.Pair
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
 
-open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
-  constructor(vararg graphs: Graph<T>) :
-    this(graphs.fold(Graph<T>()) { it, acc -> it + acc }.V)
+open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
+  constructor(vararg graphs: Graph<T, E>) :
+    this(graphs.fold(Graph<T, E>()) { it, acc -> it + acc }.V)
 
   constructor(vararg vertices: T) : this(vertices.map { it.asGraph() })
-  constructor(graphs: List<Graph<T>>) : this(*graphs.toTypedArray())
-  constructor(adjList: Map<T, List<Edge<T>>>) :
-    this(adjList.map { (k, v) -> adjList.keys.first().new (k.id) { v } }.toSet())
+  constructor(graphs: List<Graph<T, E>>) : this(*graphs.toTypedArray())
+  constructor(adjList: Map<T, List<Edge<E, T>>>) :
+    this(adjList.map { (k, v) -> adjList.keys.first().new(k.id) { v } }.toSet())
 
-  open val prototype: Node<T>? by lazy { V.firstOrNull() }
+  open val prototype: Node<T, E>? by lazy { V.firstOrNull() }
 
   val totalEdges by lazy { V.map { it.neighbors.size }.sum() }
   private val index by lazy { VIndex(V) }
 
-  private class VIndex<T: Node<T>>(set: Set<T>) {
+  private class VIndex<T : Node<T, E>, E: Edge<E, T>>(set: Set<T>) {
     val array: ArrayList<T> = set.toList().toArrayList()
     val map: Map<T, Int> = array.mapIndexed { index, a -> a to index }.toMap()
-    operator fun get(it: Node<T>) = map[it]
+    operator fun get(it: Node<T, E>) = map[it]
     operator fun get(it: Int) = array[it]
   }
 
@@ -35,16 +35,16 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
 
   // Degree matrix
   val D by lazy {
-      DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
-        V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
-      }.toCSC()
+    DMatrixSparseTriplet(V.size, V.size, totalEdges).also { degMat ->
+      V.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
+    }.toCSC()
   }
 
   // Adjacency matrix
   val A by lazy {
-      DMatrixSparseTriplet(V.size, V.size, totalEdges).also { adjMat ->
-        V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
-      }.toCSC()
+    DMatrixSparseTriplet(V.size, V.size, totalEdges).also { adjMat ->
+      V.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
+    }.toCSC()
   }
 
   // Laplacian matrix
@@ -54,7 +54,6 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
     V.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
   }.toCSC()
 
-
   val degMap by lazy { V.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: T, n1: T) = this[index[n0]!!, index[n1]!!]
   operator fun DMatrixSparseTriplet.set(n0: T, n1: T, value: Double) {
@@ -62,19 +61,19 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   }
 
   // Implements graph merge. For all vertices in common, merge their neighbors.
-  operator fun plus(that: Graph<T>) =
+  operator fun plus(that: Graph<T, E>) =
     Graph((this - that) as Set<T> + (this join that) + (that - this))
 
-  infix fun join(that: Graph<T>): Set<T> =
+  infix fun join(that: Graph<T, E>): Set<T> =
     (V intersect that.V).toSortedSet(compareBy { it.id })
       .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
       .map { (left, right) -> prototype?.new(left.id) { left.edges + right.edges } as T }.toSet()
 
-  operator fun minus(graph: Graph<T>): Graph<T> = Graph(V - graph.V)
+  operator fun minus(graph: Graph<T, E>): Graph<T, E> = Graph(V - graph.V)
 
-  fun reversed(): Graph<T> =
-    Graph(V.map { it to listOf<Edge<T>>() }.toMap() +
-      V.flatMap { src -> src.edges.map { edge -> edge.target to Edge(src, edge.label) } }
+  fun reversed(): Graph<T, E> =
+    Graph(V.map { it to listOf<Edge<E, T>>() }.toMap() +
+      V.flatMap { src -> src.edges.map { edge -> edge.target to Edge<E, T>(src) } }
         .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
   val histogram by lazy { poolingBy { size } }
@@ -90,24 +89,26 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
     return if (k <= 0 || labels == next) labels else wl(k - 1, next)
   }
 
-  fun isomorphicTo(that: Graph<T>) =
+  fun isomorphicTo(that: Graph<T, E>) =
     V.size == that.V.size && totalEdges == that.totalEdges && hashCode() == that.hashCode()
 
   override fun equals(other: Any?) =
-    super.equals(other) || (other as? Graph<T>)?.isomorphicTo(this) ?: false
+    super.equals(other) || (other as? Graph<T, E>)?.isomorphicTo(this) ?: false
 
   override fun hashCode() = wl().values.sorted().hashCode()
 
   fun poolingBy(stat: Set<T>.() -> Int): Map<T, Int> =
     V.map { it to stat(it.neighbors()) }.toMap()
 
-  fun attachRandomT(degree: Int) =
-    prototype?.let { this + it.new(
-      V.size.toString(),
-      if (V.isEmpty()) emptySet() else EnumeratedDistribution(
-        degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
-        .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
-    ).asGraph() } ?: this
+  fun attachRandomT(degree: Int): Graph<T, E> =
+    prototype?.let {
+      this + it.new(
+        V.size.toString(),
+        if (V.isEmpty()) emptySet() else EnumeratedDistribution(
+          degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
+          .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
+      ).asGraph()
+    } ?: this
 
   var done = mutableSetOf<String>()
   var string = ""
@@ -120,7 +121,7 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-  tailrec fun prefAttach(graph: Graph<T> = this, vertices: Int = 1, degree: Int = 2): Graph<T> =
+  tailrec fun prefAttach(graph: Graph<T, E> = this, vertices: Int = 1, degree: Int = 2): Graph<T, E> =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
 
