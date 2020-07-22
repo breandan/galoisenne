@@ -87,9 +87,10 @@ open class Graph<T: Node<T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
    * https://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
    */
 
-  tailrec fun wl(k: Int = 5, labels: Map<T, Int> = histogram): Map<T, Int> =
-    if (k <= 0) labels
-    else wl(k - 1, poolingBy { map { labels[it]!! }.sorted().hashCode() })
+  tailrec fun wl(k: Int = 5, labels: Map<T, Int> = histogram): Map<T, Int> {
+    val next = poolingBy { map { labels[it]!! }.sorted().hashCode() }
+    return if (k <= 0 || labels == next) labels else wl(k - 1, next)
+  }
 
   fun isomorphicTo(that: Graph<T>) =
     V.size == that.V.size && totalEdges == that.totalEdges && hashCode() == that.hashCode()
