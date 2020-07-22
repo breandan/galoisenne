@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.jupiter.api.Test
 
 class GraphTest {
@@ -21,5 +21,9 @@ class GraphTest {
     val graph2 = abcde + ace
 
     assertEquals(graph1, graph2)
+
+    val abcdead = GraphBuilder { a - b - c - d - e - a - d }
+    val edcbace = GraphBuilder { e - d - c - b - a - c - e }
+    assertNotEquals(abcdead, edcbace)
   }
 }

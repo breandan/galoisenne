@@ -2,20 +2,29 @@ package edu.mcgill.kaliningraph.automata
 
 import edu.mcgill.kaliningraph.*
 
-open class State(override val id: String = randomString(), override var occupied: Boolean = false, transition: (State) -> Collection<Edge<Transition, State>>) : Node<State, Transition> {
-  constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(), occupied = false, transition= { out.map { Transition(it) } })
-  override val edges = transition(this).toSet()
-  override val neighbors = edges.map { it.target }.toSet()
+open class State(
+  id: String = randomString(),
+  override val edgeMap: (State) -> Collection<Transition>
+) : Node<State, Transition>(id) {
+  constructor(id: String? = null, out: Set<State> = setOf()) : this(
+    id = id ?: randomString(),
+    edgeMap = { out.map { Transition(it) } })
+
+//  override val edges = transition(this).toSet()
+//  override val neighbors = edges.map { it.target }.toSet()
   override fun new(id: String?, out: Set<State>): State = State(id, out)
-  override fun new(id: String, edgeMap: (State) -> Collection<Edge<Transition, State>>): State = State(id, false, edgeMap)
+  override fun new(id: String, edgeMap: (State) -> Collection<Transition>): State =
+    State(id, edgeMap)
 }
 
-open class Transition(val nextState: State, val string: String? = null): Edge<Transition, State>(nextState)
+open class Transition(val nextState: State, val string: String? = null) : Edge<Transition, State>(nextState) {
+  override fun newTarget(target: State) = Transition(target, string)
+}
 
-open class Automaton(override val V: Set<State> = setOf(State())): Graph<State, Transition>() {
+open class Automaton(override val V: Set<State> = setOf(State())) : Graph<State, Transition>() {
   constructor(vararg states: State) : this(states.toSet())
-  override val prototype: State by lazy { V.firstOrNull() ?: State() }
 
+  override val prototype: State by lazy { V.firstOrNull() ?: State() }
 }
 
 class AutomatonBuilder {

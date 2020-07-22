@@ -2,8 +2,11 @@ package edu.mcgill.kaliningraph
 
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Arrow.*
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
+import guru.nidi.graphviz.attribute.Shape.*
+import guru.nidi.graphviz.attribute.Style.*
 import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
@@ -28,15 +31,15 @@ fun File.show() = ProcessBuilder("x-www-browser", path).start()
 fun Graph<*, *>.toGraphviz() =
   graph(directed = true) {
     val color = BLACK
-    edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]
+    edge[color, NORMAL, lineWidth(THICKNESS)]
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
-    node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS), Shape.CIRCLE]
+    node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), CIRCLE]
 
     V.forEach { vertex ->
-      for(neighbor in vertex.neighbors) {
-        val source = Factory.mutNode(vertex.id).also { if (vertex.occupied) it[Style.FILLED, RED.fill()] else it[BLACK] }
+      for (neighbor in vertex.neighbors) {
+        val source = Factory.mutNode(vertex.id).also { if (vertex.occupied) it[FILLED, RED.fill()] else it[BLACK] }
         val target = Factory.mutNode(neighbor.id)//.also { if (neighbor.occupied) it[RED] else it[BLACK] }
-        (source - target).add(Label.of("")).also {  if (vertex.occupied) it[RED] else it[BLACK]  }
+        (source - target).add(Label.of("")).also { if (vertex.occupied) it[RED] else it[BLACK] }
       }
     }
   }

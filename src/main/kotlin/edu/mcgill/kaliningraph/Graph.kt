@@ -5,14 +5,15 @@ import org.apache.commons.math3.distribution.EnumeratedDistribution
 import org.apache.commons.math3.util.Pair
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
+import kotlin.reflect.KProperty
 
-open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
+open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(vararg graphs: Graph<T, E>) :
     this(graphs.fold(Graph<T, E>()) { it, acc -> it + acc }.V)
 
   constructor(vararg vertices: T) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph<T, E>>) : this(*graphs.toTypedArray())
-  constructor(adjList: Map<T, List<Edge<E, T>>>) :
+  constructor(adjList: Map<T, List<E>>) :
     this(adjList.map { (k, v) -> adjList.keys.first().new(k.id) { v } }.toSet())
 
   open val prototype: Node<T, E>? by lazy { V.firstOrNull() }
@@ -20,7 +21,7 @@ open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet())
   val totalEdges by lazy { V.map { it.neighbors.size }.sum() }
   private val index by lazy { VIndex(V) }
 
-  private class VIndex<T : Node<T, E>, E: Edge<E, T>>(set: Set<T>) {
+  private class VIndex<T : Node<T, E>, E : Edge<E, T>>(set: Set<T>) {
     val array: ArrayList<T> = set.toList().toArrayList()
     val map: Map<T, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Node<T, E>) = map[it]
@@ -61,7 +62,7 @@ open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet())
   }
 
   // Implements graph merge. For all vertices in common, merge their neighbors.
-  operator fun plus(that: Graph<T, E>) =
+  operator fun plus(that: Graph<T, E>): Graph<T, E> =
     Graph((this - that) as Set<T> + (this join that) + (that - this))
 
   infix fun join(that: Graph<T, E>): Set<T> =
@@ -72,8 +73,8 @@ open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet())
   operator fun minus(graph: Graph<T, E>): Graph<T, E> = Graph(V - graph.V)
 
   fun reversed(): Graph<T, E> =
-    Graph(V.map { it to listOf<Edge<E, T>>() }.toMap() +
-      V.flatMap { src -> src.edges.map { edge -> edge.target to Edge<E, T>(src) } }
+    Graph(V.map { it to listOf<E>() }.toMap() +
+      V.flatMap { src -> src.edges.map { edge -> edge.target to edge.newTarget(src) } }
         .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
   val histogram by lazy { poolingBy { size } }
@@ -128,4 +129,35 @@ open class Graph<T : Node<T, E>, E: Edge<E, T>>(open val V: Set<T> = emptySet())
   override fun toString() =
     "(" + V.joinToString(", ", "{", "}") + ", " +
       edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
+}
+
+abstract class Edge<E: Edge<E, T>, T: Node<T, E>>(open val target: T) {
+  abstract fun newTarget(target: T): E
+}
+
+abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
+  abstract fun new(id: String? = randomString(), out: Set<T> = emptySet()): T
+  abstract fun new(id: String = randomString(), edgeMap: (T) -> Collection<E>): T
+
+  abstract val edgeMap: (T) -> Collection<E>
+  open val edges by lazy { edgeMap(this as T).toSet() }
+  open val neighbors by lazy { edges.map { it.target }.toSet() }
+  open var occupied = false
+
+  tailrec fun neighbors(k: Int = 0, vertices: Set<T> = neighbors + this as T): Set<T> =
+    if (k == 0 || vertices.neighbors() == vertices) vertices
+    else neighbors(k - 1, vertices + vertices.neighbors() + this as T)
+
+  // Removes all edges pointing outside the set
+  private fun Set<T>.closure(): Set<T> =
+    map { vertex ->
+      vertex.new(vertex.id) { vertex.edges.filter { it.target in this } }
+    }.toSet()
+
+  private fun Set<T>.neighbors(): Set<T> = flatMap { it.neighbors() }.toSet()
+
+  fun asGraph() = Graph(neighbors(-1))
+  fun neighborhood() = Graph(neighbors(0).closure())
+
+  operator fun getValue(a: Any?, prop: KProperty<*>): T = new(prop.name)
 }

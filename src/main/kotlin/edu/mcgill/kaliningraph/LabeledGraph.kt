@@ -28,6 +28,26 @@ class GraphBuilder {
 
   companion object {
     operator fun invoke(builder: GraphBuilder.() -> Unit) =
-       GraphBuilder().also { it.builder() }.graph.reversed()
+      GraphBuilder().also { it.builder() }.graph.reversed()
   }
+}
+
+class Vertex(
+  id: String = randomString(),
+  override val edgeMap: (Vertex) -> Collection<LabeledEdge>
+) : Node<Vertex, LabeledEdge>(id) {
+  constructor(id: String? = randomString(), out: Set<Vertex> = emptySet()) :
+    this(id ?: randomString(), { out.map { LabeledEdge(it) } })
+
+  constructor(out: Set<Vertex> = setOf()) : this(randomString(), { out.map { LabeledEdge(it) } })
+
+  override fun equals(other: Any?) = (other as? Vertex)?.id == id
+  override fun hashCode() = id.hashCode()
+  override fun toString() = id
+  override fun new(id: String?, out: Set<Vertex>) = Vertex(id, out)
+  override fun new(id: String, edgeMap: (Vertex) -> Collection<LabeledEdge>) = Vertex(id, edgeMap)
+}
+
+open class LabeledEdge(override val target: Vertex, val label: String? = null): Edge<LabeledEdge, Vertex>(target) {
+  override fun newTarget(target: Vertex) = LabeledEdge(target, label)
 }

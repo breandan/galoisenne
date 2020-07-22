@@ -2,12 +2,8 @@ package edu.mcgill.kaliningraph
 
 import guru.nidi.graphviz.model.MutableGraph
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
-import org.apache.tinkerpop.gremlin.structure.Edge
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
-import org.ejml.data.DMatrixSparseCSC
-import org.ejml.data.DMatrixSparseTriplet
-import org.ejml.ops.ConvertDMatrixStruct
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.SimpleDirectedGraph
 import org.junit.Assert.assertEquals
