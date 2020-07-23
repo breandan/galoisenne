@@ -9,14 +9,25 @@ class Notebook {
   var e by Slot(); var f by Slot(); var g by Slot(); var h by Slot()
   var i by Slot(); var j by Slot(); var k by Slot(); var l by Slot()
 
-  operator fun Slot.minus(value: Any) =
-    Slot("-" + randomString()) {
-      setOf(UnlabeledEdge(this), UnlabeledEdge(wrap(value)))
-    }.also { graph += Graph(it) }
+  operator fun Any.minus(that: Any) = wrap(this, that) { this - it }
+  operator fun Any.plus(that: Any) = wrap(this, that) { this + it }
+  operator fun Any.times(that: Any) = wrap(this, that) { this * it }
+  operator fun Any.div(that: Any) = wrap(this, that) { this / it }
 
-  operator fun Slot.plus(value: Any) =
-    Slot("+" + randomString()) {
-      setOf(UnlabeledEdge(this), UnlabeledEdge(wrap(value)))
+  operator fun Slot.plus(that: Slot) = join(this, that, "+")
+  operator fun Slot.minus(that: Slot) = join(this, that, "-")
+  operator fun Slot.times(that: Slot) = join(this, that, "*")
+  operator fun Slot.div(that: Slot) = join(this, that, "/")
+
+  fun wrap(left: Any, right: Any, op: Slot.(Slot) -> Slot) = when {
+    left is Number && right is Slot -> wrap(left).op(right)
+    left is Slot && right is Number -> left.op(wrap(right))
+    else -> throw Exception("Unknown")
+  }
+
+  fun join(left: Slot, right: Slot, label: String) =
+    Slot(label + randomString()) {
+      setOf(UnlabeledEdge(left), UnlabeledEdge(right))
     }.also { graph += Graph(it) }
 
   fun wrap(value: Any) = if(value is Slot) value else Slot(value.toString())
@@ -51,4 +62,13 @@ class Slot(
 
 open class UnlabeledEdge(override val target: Slot): Edge<UnlabeledEdge, Slot>(target) {
   override fun newTarget(target: Slot) = UnlabeledEdge(target)
+}
+
+fun main() {
+  Notebook {
+    a = b + c
+    d = e * f
+    g = 1 - h
+    i = a + d + g
+  }.show()
 }
