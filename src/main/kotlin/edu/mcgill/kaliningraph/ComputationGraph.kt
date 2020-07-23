@@ -9,21 +9,18 @@ class Notebook {
   var e by Slot(); var f by Slot(); var g by Slot(); var h by Slot()
   var i by Slot(); var j by Slot(); var k by Slot(); var l by Slot()
 
-  operator fun Any.minus(that: Any) = wrap(this, that) { this - it }
-  operator fun Any.plus(that: Any) = wrap(this, that) { this + it }
-  operator fun Any.times(that: Any) = wrap(this, that) { this * it }
-  operator fun Any.div(that: Any) = wrap(this, that) { this / it }
+  operator fun Any.plus(that: Any) = wrap(this, that) { a, b -> a + b }
+  operator fun Any.minus(that: Any) = wrap(this, that) { a, b -> a - b }
+  operator fun Any.times(that: Any) = wrap(this, that) { a, b -> a * b }
+  operator fun Any.div(that: Any) = wrap(this, that) { a, b -> a / b }
 
   operator fun Slot.plus(that: Slot) = join(this, that, "+")
   operator fun Slot.minus(that: Slot) = join(this, that, "-")
   operator fun Slot.times(that: Slot) = join(this, that, "*")
   operator fun Slot.div(that: Slot) = join(this, that, "/")
 
-  fun wrap(left: Any, right: Any, op: Slot.(Slot) -> Slot) = when {
-    left is Number && right is Slot -> wrap(left).op(right)
-    left is Slot && right is Number -> left.op(wrap(right))
-    else -> throw Exception("Unknown")
-  }
+  fun wrap(left: Any, right: Any, op: (Slot, Slot) -> Slot) =
+    op(wrap(left), wrap(right))
 
   fun join(left: Slot, right: Slot, label: String) =
     Slot(label + randomString()) {
