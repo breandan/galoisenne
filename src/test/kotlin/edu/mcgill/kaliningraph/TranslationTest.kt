@@ -25,7 +25,7 @@ class TranslationTest {
     randomGraph.let { assertEquals(it, it.toGraphviz().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
-    GraphBuilder { edges().forEach { Vertex(it.from()?.name()?.value()) - Vertex(it.to().name().value()) } }
+    LabeledGraph { edges().forEach { Vertex(it.from()?.name()?.value()) - Vertex(it.to().name().value()) } }
 
   fun Graph<*, *>.toJGraphT() =
     SimpleDirectedGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {
@@ -34,7 +34,7 @@ class TranslationTest {
     }
 
   fun <E> org.jgrapht.Graph<String, E>.toKaliningraph() =
-    GraphBuilder { edgeSet().map { e -> Vertex(getEdgeSource(e)) - Vertex(getEdgeTarget(e)) } }
+    LabeledGraph { edgeSet().map { e -> Vertex(getEdgeSource(e)) - Vertex(getEdgeTarget(e)) } }
 
   fun Graph<*, *>.toTinkerpop(): GraphTraversalSource =
     TinkerGraph.open().traversal().apply {
@@ -46,5 +46,5 @@ class TranslationTest {
     }
 
   fun GraphTraversalSource.toKaliningraph() =
-    GraphBuilder { E().toList().forEach { Vertex(it.inVertex().label()) - Vertex(it.outVertex().label()) } }
+    LabeledGraph { E().toList().forEach { Vertex(it.inVertex().label()) - Vertex(it.outVertex().label()) } }
 }

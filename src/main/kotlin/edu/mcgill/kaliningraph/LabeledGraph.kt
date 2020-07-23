@@ -4,7 +4,7 @@ package edu.mcgill.kaliningraph
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
  */
 
-class GraphBuilder {
+class LabeledGraph {
   var graph = Graph<Vertex, LabeledEdge>()
 
   val a by Vertex(); val b by Vertex(); val c by Vertex(); val d by Vertex()
@@ -12,10 +12,10 @@ class GraphBuilder {
   val i by Vertex(); val j by Vertex(); val k by Vertex(); val l by Vertex()
 
   operator fun Vertex.minus(v: Vertex) =
-    Vertex().new(v.id) { v.edges + LabeledEdge(this) }.also { graph += Graph(it) }
+    Vertex(v.id) { v.edges + LabeledEdge(this) }.also { graph += Graph(it) }
 
   operator fun Vertex.plus(edge: LabeledEdge) =
-    Vertex().new { edges + edge }.also { graph += Graph(it) }
+    new { edges + edge }.also { graph += Graph(it) }
 
   operator fun Vertex.plus(vertex: Vertex) =
     (asGraph() + vertex.asGraph()).also { graph += it }
@@ -27,8 +27,8 @@ class GraphBuilder {
   operator fun ProtoEdge.minus(target: Vertex) = target + LabeledEdge(source, label)
 
   companion object {
-    operator fun invoke(builder: GraphBuilder.() -> Unit) =
-      GraphBuilder().also { it.builder() }.graph.reversed()
+    operator fun invoke(builder: LabeledGraph.() -> Unit) =
+      LabeledGraph().also { it.builder() }.graph.reversed()
   }
 }
 

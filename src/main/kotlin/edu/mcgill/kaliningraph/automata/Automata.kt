@@ -50,7 +50,7 @@ class AutomatonBuilder {
   operator fun ProtoEdge.minus(target: State) = target + Transition(source, label)
 
   companion object {
-    operator fun invoke(builder: GraphBuilder.() -> Unit) =
-      GraphBuilder().also { it.builder() }.graph.reversed()
+    operator fun invoke(builder: LabeledGraph.() -> Unit) =
+      LabeledGraph().also { it.builder() }.graph.reversed()
   }
 }
