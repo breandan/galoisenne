@@ -80,6 +80,10 @@ assertEquals(x == y) // true
 
 ## Visualization
 
+Kaliningraph supports a number of graph visualizations.
+
+### Graphviz
+
 Graph visualization is made possible thanks to [KraphViz](https://github.com/nidi3/graphviz-java#kotlin-dsl).
 
 ```kotlin
@@ -98,6 +102,8 @@ Running the above snippet will cause the following figure to be rendered in the 
 
 ![](latex/figures/visualization.svg)
 
+### Matrix form
+
 Graph visualization in both DOT and adjacency matrix format is supported.
 
 |DOT Graph|Matrix|
@@ -107,6 +113,21 @@ Graph visualization in both DOT and adjacency matrix format is supported.
 It is also possible to visualize the state and transition matrices and step through the graph (`./gradlew PrefAttach`).
 
 ![transition_diagram](latex/figures/transition_diagram.png)
+
+### Computation graph
+
+Computational notebooks prototyping is also supported.
+
+```
+Notebook {
+  a = b + c
+  f = b - h
+}.show()
+```
+
+The above snippet should display something like the following:
+
+![](pdg_demo.svg)
 
 ## Translation
 
@@ -144,6 +165,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al.
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
 * [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf)
+* [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf)
 
 ### Automata
 
