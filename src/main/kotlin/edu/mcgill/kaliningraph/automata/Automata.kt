@@ -12,7 +12,7 @@ open class State(
 
 //  override val edges = transition(this).toSet()
 //  override val neighbors = edges.map { it.target }.toSet()
-  override fun new(id: String?, out: Set<State>): State = State(id, out)
+  override fun new(id: String, out: Set<State>): State = State(id, out)
   override fun new(id: String, edgeMap: (State) -> Collection<Transition>): State =
     State(id, edgeMap)
 }

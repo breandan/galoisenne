@@ -136,7 +136,7 @@ abstract class Edge<E: Edge<E, T>, T: Node<T, E>>(open val target: T) {
 }
 
 abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
-  abstract fun new(id: String? = randomString(), out: Set<T> = emptySet()): T
+  abstract fun new(id: String = randomString(), out: Set<T> = emptySet()): T
   abstract fun new(id: String = randomString(), edgeMap: (T) -> Collection<E>): T
 
   abstract val edgeMap: (T) -> Collection<E>

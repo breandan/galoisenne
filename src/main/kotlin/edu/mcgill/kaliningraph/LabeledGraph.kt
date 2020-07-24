@@ -44,7 +44,7 @@ class Vertex(
   override fun equals(other: Any?) = (other as? Vertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
-  override fun new(id: String?, out: Set<Vertex>) = Vertex(id, out)
+  override fun new(id: String, out: Set<Vertex>) = Vertex(id, out)
   override fun new(id: String, edgeMap: (Vertex) -> Collection<LabeledEdge>) = Vertex(id, edgeMap)
 }
 
