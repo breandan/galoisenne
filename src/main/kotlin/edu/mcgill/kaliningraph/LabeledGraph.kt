@@ -44,10 +44,13 @@ class Vertex(
   override fun equals(other: Any?) = (other as? Vertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
-  override fun new(id: String, out: Set<Vertex>) = Vertex(id, out)
-  override fun new(id: String, edgeMap: (Vertex) -> Collection<LabeledEdge>) = Vertex(id, edgeMap)
+  override fun new(newId: String, out: Set<Vertex>) = Vertex(newId, out)
+  override fun new(newId: String, edgeMap: (Vertex) -> Collection<LabeledEdge>) = Vertex(newId, edgeMap)
 }
 
-open class LabeledEdge(override val target: Vertex, val label: String? = null): Edge<LabeledEdge, Vertex>(target) {
+open class LabeledEdge(
+  override val target: Vertex,
+  val label: String? = null
+) : Edge<LabeledEdge, Vertex>(target) {
   override fun newTarget(target: Vertex) = LabeledEdge(target, label)
 }

@@ -12,8 +12,8 @@ open class State(
 
 //  override val edges = transition(this).toSet()
 //  override val neighbors = edges.map { it.target }.toSet()
-  override fun new(id: String, out: Set<State>): State = State(id, out)
-  override fun new(id: String, edgeMap: (State) -> Collection<Transition>): State =
+  override fun new(newId: String, out: Set<State>): State = State(id, out)
+  override fun new(newId: String, edgeMap: (State) -> Collection<Transition>): State =
     State(id, edgeMap)
 }
 
@@ -35,7 +35,7 @@ class AutomatonBuilder {
   val i by State(); val j by State(); val k by State(); val l by State()
 
   operator fun State.minus(v: State) =
-    State().new(v.id) { v.edges + Transition(this) }.also { graph += Automaton(it) }
+    State().new { v.edges + Transition(this) }.also { graph += Automaton(it) }
 
   operator fun State.plus(edge: Transition) =
     State().new { edges + edge }.also { graph += Graph(it) }

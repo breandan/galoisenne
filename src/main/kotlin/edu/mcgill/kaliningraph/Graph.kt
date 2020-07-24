@@ -13,8 +13,7 @@ open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()
 
   constructor(vararg vertices: T) : this(vertices.map { it.asGraph() })
   constructor(graphs: List<Graph<T, E>>) : this(*graphs.toTypedArray())
-  constructor(adjList: Map<T, List<E>>) :
-    this(adjList.map { (k, v) -> adjList.keys.first().new(k.id) { v } }.toSet())
+  constructor(adjList: Map<T, List<E>>) : this(adjList.map { (k, v) -> k.new { v } }.toSet())
 
   open val prototype: Node<T, E>? by lazy { V.firstOrNull() }
 
@@ -66,9 +65,9 @@ open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()
     Graph((this - that) as Set<T> + (this join that) + (that - this))
 
   infix fun join(that: Graph<T, E>): Set<T> =
-    (V intersect that.V).toSortedSet(compareBy { it.id })
-      .zip((that.V intersect V).toSortedSet(compareBy { it.id }))
-      .map { (left, right) -> prototype?.new(left.id) { left.edges + right.edges } as T }.toSet()
+    (V intersect that.V).sortedBy { it.id }.toSet()
+      .zip((that.V intersect V).sortedBy { it.id }.toSet())
+      .map { (left, right) -> left.new { left.edges + right.edges } }.toSet()
 
   operator fun minus(graph: Graph<T, E>): Graph<T, E> = Graph(V - graph.V)
 
@@ -102,14 +101,12 @@ open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()
     V.map { it to stat(it.neighbors()) }.toMap()
 
   fun attachRandomT(degree: Int): Graph<T, E> =
-    prototype?.let {
-      this + it.new(
-        V.size.toString(),
-        if (V.isEmpty()) emptySet() else EnumeratedDistribution(
+      this + (prototype?.new(
+        newId = V.size.toString(),
+        out = if (V.isEmpty()) emptySet() else EnumeratedDistribution(
           degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
-          .run { (0..degree.coerceAtMost(V.size)).map { sample() } }.toSet()
-      ).asGraph()
-    } ?: this
+          .run { generateSequence { sample() }.take(degree.coerceAtMost(V.size)) }.toSet()
+      )?.asGraph() ?: Graph())
 
   var done = mutableSetOf<String>()
   var string = ""
@@ -122,7 +119,7 @@ open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()
   }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-  tailrec fun prefAttach(graph: Graph<T, E> = this, vertices: Int = 1, degree: Int = 2): Graph<T, E> =
+  tailrec fun prefAttach(graph: Graph<T, E> = this, vertices: Int = 1, degree: Int = 3): Graph<T, E> =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
 
@@ -136,8 +133,8 @@ abstract class Edge<E: Edge<E, T>, T: Node<T, E>>(open val target: T) {
 }
 
 abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
-  abstract fun new(id: String = randomString(), out: Set<T> = emptySet()): T
-  abstract fun new(id: String = randomString(), edgeMap: (T) -> Collection<E>): T
+  abstract fun new(newId: String = id, out: Set<T> = emptySet()): T
+  abstract fun new(newId: String = id, edgeMap: (T) -> Collection<E>): T
 
   abstract val edgeMap: (T) -> Collection<E>
   open val edges by lazy { edgeMap(this as T).toSet() }
@@ -150,9 +147,7 @@ abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
 
   // Removes all edges pointing outside the set
   private fun Set<T>.closure(): Set<T> =
-    map { vertex ->
-      vertex.new(vertex.id) { vertex.edges.filter { it.target in this } }
-    }.toSet()
+    map { vertex -> vertex.new { vertex.edges.filter { it.target in this } } }.toSet()
 
   private fun Set<T>.neighbors(): Set<T> = flatMap { it.neighbors() }.toSet()
 

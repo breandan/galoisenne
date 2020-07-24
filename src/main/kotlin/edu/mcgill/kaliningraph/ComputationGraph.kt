@@ -66,8 +66,8 @@ open class Slot(
   override fun equals(other: Any?) = (other as? Slot)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id.first().toString()
-  override fun new(id: String, out: Set<Slot>) = Slot(id, *out.toTypedArray())
-  override fun new(id: String, edgeMap: (Slot) -> Collection<UnlabeledEdge>) = Slot(id, edgeMap)
+  override fun new(newId: String, out: Set<Slot>) = Slot(newId, *out.toTypedArray())
+  override fun new(newId: String, edgeMap: (Slot) -> Collection<UnlabeledEdge>) = Slot(newId, edgeMap)
 
   companion object {
     fun wrap(value: Any) = if (value is Slot) value else Slot(value.toString())
@@ -90,6 +90,7 @@ fun main() {
     }
 
     j = funA(3, 2, 1)
+    j = b * c
     d = e * f
     g = 1 - h
     i = a + d + g
