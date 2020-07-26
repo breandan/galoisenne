@@ -19,7 +19,7 @@ dependencies {
   val ejmlVersion = "0.39"
   implementation("org.ejml:ejml-kotlin:$ejmlVersion")
   implementation("org.ejml:ejml-all:$ejmlVersion")
-  implementation("guru.nidi:graphviz-kotlin:0.16.0")
+  implementation("guru.nidi:graphviz-kotlin:0.17.0")
   implementation("org.apache.commons:commons-math3:3.6.1")
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
@@ -30,8 +30,9 @@ dependencies {
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha1")
 
   testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
-  val jgraphtVersion by extra { "1.4.0" }
+  val jgraphtVersion by extra { "1.5.0" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
+  testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
   val tinkerpopVersion by extra { "3.4.6" }
