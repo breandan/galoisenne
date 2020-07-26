@@ -46,7 +46,7 @@ dependencies {
 
 What are graphs? A [graph](src/main/kotlin/edu/mcgill/kaliningraph/Graph.kt) is a (possibly empty) set of vertices.
 
-What are vertices? A [vertex](src/main/kotlin/edu/mcgill/kaliningraph/Node.kt) is a unique label with neighbors (possibly containing itself).
+What are vertices? A vertex is a unique label with neighbors (possibly containing itself).
 
 What are neighbors? Neighbors are a graph.
 
@@ -56,7 +56,7 @@ Run [the demo](src/main/kotlin/edu/mcgill/kaliningraph/HelloKaliningraph.kt) via
 
 ## Usage
 
-To construct a graph, the [graph builder DSL](src/main/kotlin/edu/mcgill/kaliningraph/GraphBuilder.kt) provides an small alphabet:
+To construct a graph, the [graph builder DSL](src/main/kotlin/edu/mcgill/kaliningraph/LabeledGraph.kt) provides an small alphabet:
 
 ```kotlin
 val graph = Graph { a - b - c - d - e; a - c - e }
@@ -180,3 +180,8 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [JGraphT](https://doi.org/10.1145/3381449) - A Java Library for Graph Data Structures and Algorithms
 * [viz-js](http://viz-js.com/)
+
+### Software Engineering
+
+* [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf)
+* [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/!etd.send_file?accession=case1496835753068605)
