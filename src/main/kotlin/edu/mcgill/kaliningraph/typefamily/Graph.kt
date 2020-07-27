@@ -1,10 +1,12 @@
 package edu.mcgill.kaliningraph.typefamily
 
 interface Graph<G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>> {
+  val graph: G
   val vertices: List<V>
 }
 
 interface Edge<G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>> {
+  val graph: G
   val source: V
   val target: V
 }

@@ -1,7 +1,7 @@
 plugins {
   java
   maven
-  kotlin("jvm") version "1.3.72"
+  kotlin("jvm") version "1.4-M3"
 }
 
 group = "edu.mcgill"
@@ -10,7 +10,9 @@ version = "0.1-SNAPSHOT"
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
+  maven("https://dl.bintray.com/kotlin/kotlin-eap")
   jcenter()
+  maven("https://dl.bintray.com/mipt-npm/dev")
 }
 
 dependencies {
@@ -20,9 +22,15 @@ dependencies {
   implementation("org.ejml:ejml-kotlin:$ejmlVersion")
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.17.0")
+//  implementation("org.hipparchus:hipparchus-core:1.7")
   implementation("org.apache.commons:commons-math3:3.6.1")
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
+
+  val kmathVersion by extra { "0.1.4-dev-8" }
+  implementation("scientifik:kmath-core:$kmathVersion")
+  implementation("scientifik:kmath-ast:$kmathVersion")
+  implementation("scientifik:kmath-prob:$kmathVersion")
 
   testImplementation("com.github.ajalt:clikt:2.6.0")
 

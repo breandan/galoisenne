@@ -12,7 +12,9 @@ import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.Factory
-import org.apache.commons.math3.util.Pair
+//import org.hipparchus.distribution.EnumeratedDistribution
+//import org.hipparchus.random.RandomDataGenerator
+//import org.hipparchus.util.Pair
 import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.ops.ConvertDMatrixStruct
