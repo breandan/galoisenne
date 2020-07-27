@@ -22,10 +22,10 @@ dependencies {
   implementation("org.ejml:ejml-kotlin:$ejmlVersion")
   implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.17.0")
-//  implementation("org.hipparchus:hipparchus-core:1.7")
-  implementation("org.apache.commons:commons-math3:3.6.1")
+  implementation("org.apache.commons:commons-rng-examples-sampling:1.3")
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
+  implementation("com.github.breandan:tensor:master-SNAPSHOT")
 
 //  val kmathVersion by extra { "0.1.4-dev-8" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
