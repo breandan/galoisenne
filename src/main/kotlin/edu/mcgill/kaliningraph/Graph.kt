@@ -1,13 +1,11 @@
 package edu.mcgill.kaliningraph
 
 import kweb.shoebox.toArrayList
-import org.apache.commons.math3.distribution.EnumeratedDistribution
-import org.apache.commons.math3.util.Pair
+import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
+import org.apache.commons.rng.simple.RandomSource
+import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
-//import org.hipparchus.distribution.EnumeratedDistribution
-//import org.hipparchus.random.RandomDataGenerator
-//import org.hipparchus.util.Pair
 import kotlin.reflect.KProperty
 
 open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
@@ -106,9 +104,10 @@ open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()
   fun attachRandomT(degree: Int): Graph<T, E> =
       this + (prototype?.new(
         newId = V.size.toString(),
-        out = if (V.isEmpty()) emptySet() else EnumeratedDistribution(
-          degMap.map { (k, v) -> Pair(k, (v + 1.0) / (totalEdges + 1.0)) })
-          .run { generateSequence { sample() }.take(degree.coerceAtMost(V.size)) }.toSet()
+        out = if (V.isEmpty()) emptySet()
+        else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
+            degMap.map { (k, v) -> k to (v + 1.0) / (totalEdges + 1.0) }.toMap())
+         .run { generateSequence { sample() }.take(degree.coerceAtMost(V.size)) }.toSet()
       )?.asGraph() ?: Graph())
 
   var done = mutableSetOf<String>()
