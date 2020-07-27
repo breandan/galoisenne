@@ -12,7 +12,7 @@ repositories {
   maven("https://jitpack.io")
   maven("https://dl.bintray.com/kotlin/kotlin-eap")
   jcenter()
-  maven("https://dl.bintray.com/mipt-npm/dev")
+//  maven("https://dl.bintray.com/mipt-npm/dev")
 }
 
 dependencies {
@@ -27,10 +27,10 @@ dependencies {
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
 
-  val kmathVersion by extra { "0.1.4-dev-8" }
-  implementation("scientifik:kmath-core:$kmathVersion")
-  implementation("scientifik:kmath-ast:$kmathVersion")
-  implementation("scientifik:kmath-prob:$kmathVersion")
+//  val kmathVersion by extra { "0.1.4-dev-8" }
+//  implementation("scientifik:kmath-core:$kmathVersion")
+//  implementation("scientifik:kmath-ast:$kmathVersion")
+//  implementation("scientifik:kmath-prob:$kmathVersion")
 
   testImplementation("com.github.ajalt:clikt:2.6.0")
 
