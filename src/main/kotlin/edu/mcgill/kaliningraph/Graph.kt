@@ -156,5 +156,5 @@ abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
   fun asGraph() = Graph(neighbors(-1))
   fun neighborhood() = Graph(neighbors(0).closure())
 
-  operator fun getValue(a: Any?, prop: KProperty<*>): T = new(prop.name)
+  open operator fun getValue(a: Any?, prop: KProperty<*>): T = new(prop.name)
 }

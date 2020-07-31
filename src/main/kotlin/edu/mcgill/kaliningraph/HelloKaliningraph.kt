@@ -1,5 +1,7 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.circuits.Notebook
+
 fun main() {
   println("Hello Kaliningraph!")
 

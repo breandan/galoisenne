@@ -1,7 +1,7 @@
 plugins {
   java
   maven
-  kotlin("jvm") version "1.4-M3"
+  kotlin("jvm") version "1.4.0-rc"
 }
 
 group = "edu.mcgill"
