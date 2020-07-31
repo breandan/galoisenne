@@ -27,6 +27,9 @@
     "edu.mcgill.kaliningraph.circuits.*"
   ],
   "renderers": {
-    "edu.mcgill.kaliningraph.Graph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())"
+    "edu.mcgill.kaliningraph.Graph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(Graph($it as edu.mcgill.kaliningraph.circuits.Gate).html())",
+    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(Graph($it as edu.mcgill.kaliningraph.circuits.Gate).html())",
+    "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${graph.A.adjToMat()}\\\"/>\")"
   }
 }

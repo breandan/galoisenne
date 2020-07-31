@@ -76,16 +76,3 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex, LabeledE
 private fun ImageElement.render(graph: Graph<Vertex, LabeledEdge>, renderFun: (Graph<Vertex, LabeledEdge>) -> DMatrixSparseCSC) {
   setAttributeRaw("src", renderFun(graph).adjToMat())
 }
-
-fun DMatrixSparseCSC.adjToMat(f: Int = 20): String {
-  val rescaled = DMatrixRMaj(numRows * f, numCols * f)
-  val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
-  CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
-
-  val bi = BufferedImage(rescaled.numCols, rescaled.numRows, BufferedImage.TYPE_INT_RGB)
-  DMatrixComponent.renderMatrix(rescaled, bi, 1.0)
-
-  val os = ByteArrayOutputStream()
-  ImageIO.write(bi, "png", os)
-  return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
-}

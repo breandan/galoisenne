@@ -115,9 +115,4 @@ fun main() {
     g = 1 - h
     i = a + d + g
   }.show()
-
-  val t by def(b, c) { b * c }
-  val a1 = a + b + c
-  val b1 = b + a + c
-  println(a1.toGraph() == b1.toGraph())
 }
