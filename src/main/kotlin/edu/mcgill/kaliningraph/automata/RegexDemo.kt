@@ -3,6 +3,7 @@ package edu.mcgill.kaliningraph.automata
 import edu.mcgill.kaliningraph.THICKNESS
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.model.Factory
 import guru.nidi.graphviz.model.MutableNode
@@ -43,7 +44,7 @@ fun Regex.toGraphviz() =
   graph(directed = true) {
     val color = Color.BLACK
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]
-    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
+    graph[Rank.dir(LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), Style.lineWidth(THICKNESS)]
 
     transitions.forEach { transition ->

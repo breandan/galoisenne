@@ -1,6 +1,6 @@
 {
   "properties": {
-    "kaliningraphVersion": "0.0.2",
+    "kaliningraphVersion": "0.0.4",
     "graphvizVersion": "0.16.0",
     "jgraphtVersion": "1.4.0",
     "ejmlVersion": "0.39",
@@ -23,7 +23,8 @@
     "org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion"
   ],
   "imports": [
-    "edu.mcgill.kaliningraph.*"
+    "edu.mcgill.kaliningraph.*",
+    "edu.mcgill.kaliningraph.circuits.*"
   ],
   "renderers": {
     "edu.mcgill.kaliningraph.Graph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())"

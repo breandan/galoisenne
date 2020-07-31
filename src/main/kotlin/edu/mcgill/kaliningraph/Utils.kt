@@ -35,7 +35,7 @@ fun Graph<*, *>.toGraphviz() =
     val color = BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
-    node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), CIRCLE]
+    node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
     V.forEach { node ->
       for (neighbor in node.neighbors) {

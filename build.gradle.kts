@@ -1,3 +1,5 @@
+import org.gradle.api.JavaVersion.VERSION_1_8
+
 plugins {
   java
   maven
@@ -5,7 +7,7 @@ plugins {
 }
 
 group = "edu.mcgill"
-version = "0.3-SNAPSHOT"
+version = "0.0.4-SNAPSHOT"
 
 repositories {
   mavenCentral()
@@ -49,10 +51,14 @@ dependencies {
 }
 
 configure<JavaPluginConvention> {
-  sourceCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = VERSION_1_8
 }
 
 tasks {
+  compileKotlin {
+    kotlinOptions.jvmTarget = VERSION_1_8.toString()
+    kotlinOptions.freeCompilerArgs += "-XXLanguage:+NewInference"
+  }
   listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"

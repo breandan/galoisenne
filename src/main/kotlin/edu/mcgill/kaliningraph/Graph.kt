@@ -8,6 +8,7 @@ import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
 import kotlin.reflect.KProperty
 
+// TODO: Extend type family interface
 open class Graph<T : Node<T, E>, E : Edge<E, T>>(open val V: Set<T> = emptySet()) : Set<T> by V {
   constructor(vararg graphs: Graph<T, E>) :
     this(graphs.fold(Graph<T, E>()) { it, acc -> it + acc }.V)
@@ -134,6 +135,7 @@ abstract class Edge<E: Edge<E, T>, T: Node<T, E>>(open val target: T) {
   abstract fun newTarget(target: T): E
 }
 
+// TODO: Link to graph and make a "view" of the container graph
 abstract class Node<T : Node<T, E>, E : Edge<E, T>>(val id: String) {
   abstract fun new(newId: String = id, out: Set<T> = emptySet()): T
   abstract fun new(newId: String = id, edgeMap: (T) -> Collection<E>): T
