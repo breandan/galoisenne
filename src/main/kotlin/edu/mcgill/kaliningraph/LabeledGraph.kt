@@ -15,7 +15,7 @@ class LabeledGraphBuilder {
     LGVertex(v.id) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
 
   operator fun LGVertex.plus(edge: LabeledEdge) =
-    new { outgoing + edge }.also { mutGraph += it.graph }
+    Vertex { outgoing + edge }.also { mutGraph += it.graph }
 
   operator fun LGVertex.plus(vertex: LGVertex) = (graph + vertex.graph).also { mutGraph += it }
 
@@ -45,9 +45,9 @@ class LGVertex(
     this(id ?: randomString(), { s -> out.map { t -> LabeledEdge(s, t) } })
   constructor(out: Set<LGVertex> = setOf()) : this(randomString(), { s ->  out.map { t -> LabeledEdge(s, t) } })
 
-  override fun graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
-  override fun new(newId: String, out: Set<LGVertex>) = LGVertex(newId, out)
-  override fun new(newId: String, edgeMap: (LGVertex) -> Collection<LabeledEdge>) = LGVertex(newId, edgeMap)
+  override fun Graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
+  override fun Edge(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
+  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Collection<LabeledEdge>) = LGVertex(newId, edgeMap)
 }
 
 open class LabeledEdge(override val source: LGVertex, override val target: LGVertex, val label: String? = null) :

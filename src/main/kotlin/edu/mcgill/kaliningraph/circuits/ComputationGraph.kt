@@ -56,7 +56,6 @@ fun wrap(left: Any, right: Any, op: (Gate, Gate) -> Gate): Gate =
 fun join(left: Gate, right: Gate, label: String) = Gate(label, left, right)
 
 class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices) {
-  constructor(vararg gates: Gate): this(gates.toSet())
   override fun new(vertices: Set<Gate>) = ComputationGraph(vertices)
 }
 
@@ -69,7 +68,6 @@ open class Gate(
     this(id, label, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) } })
   constructor(label: String = "", vararg gates: Gate) : this(randomString(), label, *gates)
 
-  override fun graph(vertices: Set<Gate>) = ComputationGraph(vertices)
 
   companion object {
     fun wrap(value: Any) = if (value is Gate) value else Gate(value.toString())
@@ -78,8 +76,9 @@ open class Gate(
 
   override fun toString() = label
 
-  override fun new(newId: String, out: Set<Gate>) = Gate(newId, label, *out.toTypedArray())
-  override fun new(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = Gate(newId, label, edgeMap)
+  override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
+  override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
+  override fun Vertex(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = Gate(newId, label, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name, prop.name)
   open operator fun setValue(builder: Notebook, prop: KProperty<*>, value: Gate) {

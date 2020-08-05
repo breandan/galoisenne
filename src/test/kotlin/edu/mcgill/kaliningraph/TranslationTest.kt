@@ -25,7 +25,9 @@ class TranslationTest {
     randomGraph.let { assertEquals(it, it.toGraphviz().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
-    LabeledGraphBuilder { edges().forEach { LGVertex(it.from()?.name()?.value()) - LGVertex(it.to().name().value()) } }
+    LabeledGraphBuilder {
+      edges().forEach { LGVertex(it.from()?.name()?.value()) - LGVertex(it.to().name().value()) }
+    }
 
   fun Graph<*, *, *>.toJGraphT() =
     SimpleDirectedGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {
@@ -40,11 +42,14 @@ class TranslationTest {
     TinkerGraph.open().traversal().apply {
       val map = vertices.map { it to addV(it.id).next() }.toMap()
       edgList.forEach { (v, e) ->
-        (map[v] to map[e.target])
-          .also { (t, s) -> addE(if (e is LabeledEdge) e.label ?: DEFAULT_LABEL else DEFAULT_LABEL).from(s).to(t).next() }
+        (map[v] to map[e.target]).also { (t, s) ->
+          addE(if (e is LabeledEdge) e.label ?: DEFAULT_LABEL else DEFAULT_LABEL).from(s).to(t).next()
+        }
       }
     }
 
   fun GraphTraversalSource.toKaliningraph() =
-    LabeledGraphBuilder { E().toList().forEach { LGVertex(it.inVertex().label()) - LGVertex(it.outVertex().label()) } }
+    LabeledGraphBuilder {
+      E().toList().forEach { LGVertex(it.inVertex().label()) - LGVertex(it.outVertex().label()) }
+    }
 }

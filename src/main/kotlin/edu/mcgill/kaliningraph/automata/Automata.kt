@@ -2,19 +2,9 @@ package edu.mcgill.kaliningraph.automata
 
 import edu.mcgill.kaliningraph.*
 
-open class State(
-  id: String = randomString(),
-  override val edgeMap: (State) -> Collection<Transition>
-) : Vertex<Automaton, Transition, State>(id) {
-  constructor(id: String? = null, out: Set<State> = setOf()) : this(
-    id = id ?: randomString(),
-    edgeMap = { s -> out.map { t -> Transition(s, t) } })
-
-  override fun new(newId: String, out: Set<State>): State = State(id, out)
-  override fun new(newId: String, edgeMap: (State) -> Collection<Transition>): State =
-    State(id, edgeMap)
-
-  override fun graph(vertices: Set<State>) = Automaton(vertices)
+open class Automaton(override val vertices: Set<State> = setOf(State()))
+  : Graph<Automaton, Transition, State>(vertices) {
+  override fun new(vertices: Set<State>) = Automaton(vertices)
 }
 
 open class Transition(override val source: State, override val target: State, val string: String? = null) :
@@ -22,11 +12,16 @@ open class Transition(override val source: State, override val target: State, va
   override fun new(source: State, target: State) = Transition(source, target, string)
 }
 
-open class Automaton(override val vertices: Set<State> = setOf(State()))
-  : Graph<Automaton, Transition, State>() {
-  constructor(vararg states: State) : this(states.toSet())
-  override fun new(vertices: Set<State>) = Automaton(vertices)
-  override val prototype: State by lazy { vertices.firstOrNull() ?: State() }
+open class State(
+  id: String = randomString(),
+  override val edgeMap: (State) -> Collection<Transition>
+) : Vertex<Automaton, Transition, State>(id) {
+  constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
+    edgeMap = { s -> out.map { t -> Transition(s, t) } })
+
+  override fun Graph(vertices: Set<State>) = Automaton(vertices)
+  override fun Edge(s: State, t: State) = Transition(s, t)
+  override fun Vertex(newId: String, edgeMap: (State) -> Collection<Transition>): State = State(id, edgeMap)
 }
 
 class AutomatonBuilder {
@@ -37,10 +32,10 @@ class AutomatonBuilder {
   val i by State(); val j by State(); val k by State(); val l by State()
 
   operator fun State.minus(v: State) =
-    State().new { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
+    State().Vertex { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
 
   operator fun State.plus(edge: Transition) =
-    State().new { outgoing + edge }.also { automaton += it.graph }
+    State().Vertex { outgoing + edge }.also { automaton += it.graph }
 
   operator fun State.plus(vertex: State) =
     (graph + vertex.graph).also { automaton += it }

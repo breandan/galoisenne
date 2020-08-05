@@ -17,7 +17,7 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
   open fun new(vararg graphs: G): G = new(graphs.toList())
   open fun new(vararg vertices: V): G = new(vertices.map { it.graph })
   open fun new(graphs: List<G>): G = new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
-  open fun new(adjList: Map<V, List<E>>): G = new(adjList.map { (k, v) -> k.new { v } }.toSet())
+  open fun new(adjList: Map<V, List<E>>): G = new(adjList.map { (k, v) -> k.Vertex { v } }.toSet())
   abstract fun new(vertices: Set<V> = setOf()): G
 
   override val graph: G = this as G
@@ -74,7 +74,7 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
   infix fun join(that: G): Set<V> =
     (vertices intersect that.vertices).sortedBy { it.id }.toSet()
       .zip((that.vertices intersect vertices).sortedBy { it.id }.toSet())
-      .map { (left, right) -> left.new { left.outgoing + right.outgoing } }.toSet()
+      .map { (left, right) -> left.Vertex { left.outgoing + right.outgoing } }.toSet()
 
   operator fun minus(graph: G): G = new(vertices - graph.vertices)
 
@@ -110,7 +110,7 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
     vertices.map { it to stat(it.neighbors()) }.toMap()
 
   fun attachRandomT(degree: Int): G =
-      this + (prototype?.new(
+      this + (prototype?.Vertex(
         newId = vertices.size.toString(),
         out = if (vertices.isEmpty()) emptySet()
         else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
@@ -146,18 +146,22 @@ constructor(override val source: V, override val target: V): IEdge<G, E, V> {
 }
 
 // TODO: Link to graph and make a "view" of the container graph
+// TODO: Possible to extend Graph?
 abstract class Vertex<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
 constructor(val id: String) : IVertex<G, E, V> {
-  abstract fun new(newId: String = id, out: Set<V> = emptySet()): V
-  abstract fun new(newId: String = id, edgeMap: (V) -> Collection<E>): V
+  abstract fun Graph(vertices: Set<V>): G
+  abstract fun Edge(s: V, t: V): E
+  abstract fun Vertex(newId: String = id, edgeMap: (V) -> Collection<E>): V
 
-  abstract val edgeMap: (V) -> Collection<E>
+  fun Vertex(newId: String = id, out: Set<V> = emptySet()): V =
+    Vertex(newId) { s -> out.map { t -> Edge(s, t) } }
+
+  override val graph: G by lazy { Graph(neighbors(-1)) }
+  abstract val edgeMap: (V) -> Collection<E> // Allows self-loops by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap.toMap()[this]!! }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
   open var occupied = false
-  override val graph: G by lazy { graph(neighbors(-1)) }
-  abstract fun graph(vertices: Set<V>): G
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
     if (k == 0 || vertices.neighbors() == vertices) vertices
@@ -165,13 +169,13 @@ constructor(val id: String) : IVertex<G, E, V> {
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { vertex -> vertex.new { vertex.outgoing.filter { it.target in this } } }.toSet()
+    map { vertex -> Vertex { vertex.outgoing.filter { it.target in this } } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
-  fun neighborhood(): G = graph(neighbors(0).closure())
+  fun neighborhood(): G = Graph(neighbors(0).closure())
 
-  open operator fun getValue(a: Any?, prop: KProperty<*>): V = new(prop.name)
+  open operator fun getValue(a: Any?, prop: KProperty<*>): V = Vertex(prop.name)
   override fun equals(other: Any?) = (other as? LGVertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id
