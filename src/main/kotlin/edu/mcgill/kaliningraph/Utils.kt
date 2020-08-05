@@ -29,21 +29,21 @@ import javax.imageio.ImageIO
 
 val THICKNESS = 4
 
-fun Graph<*, *>.render(layout: Engine = DOT, format: Format = SVG) =
+fun Graph<*, *, *>.render(layout: Engine = DOT, format: Format = SVG) =
   toGraphviz().toGraphviz().apply { engine(layout) }.render(format)
 
-fun Graph<*, *>.html() = render().toString()
-fun Graph<*, *>.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
+fun Graph<*, *, *>.html() = render().toString()
+fun Graph<*, *, *>.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
 fun File.show() = ProcessBuilder("x-www-browser", path).start()
 
-fun Graph<*, *>.toGraphviz() =
+fun Graph<*, *, *>.toGraphviz() =
   graph(directed = true) {
     val color = BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
-    V.forEach { node ->
+    vertices.forEach { node ->
       for (neighbor in node.neighbors) {
         val source = Factory.mutNode(node.id).add(Label.of(node.toString())).also { if (node.occupied) it[FILLED, RED.fill()] else it[BLACK] }
         val target = Factory.mutNode(neighbor.id).add(Label.of(neighbor.toString()))//.also { if (neighbor.occupied) it[RED] else it[BLACK] }

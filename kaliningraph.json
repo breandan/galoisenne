@@ -28,8 +28,8 @@
   ],
   "renderers": {
     "edu.mcgill.kaliningraph.Graph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
-    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(Graph($it as edu.mcgill.kaliningraph.circuits.Gate).html())",
-    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(Graph($it as edu.mcgill.kaliningraph.circuits.Gate).html())",
+    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
     "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${($it as org.ejml.data.DMatrixSparseCSC).adjToMat()}\\\"/>\")"
   }
 }

@@ -4,53 +4,53 @@ package edu.mcgill.kaliningraph
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
  */
 
-class LabeledGraph {
-  var graph = Graph<Vertex, LabeledEdge>()
+class LabeledGraphBuilder {
+  var mutGraph = LabeledGraph()
 
-  val a by Vertex(); val b by Vertex(); val c by Vertex(); val d by Vertex()
-  val e by Vertex(); val f by Vertex(); val g by Vertex(); val h by Vertex()
-  val i by Vertex(); val j by Vertex(); val k by Vertex(); val l by Vertex()
+  val a by LGVertex(); val b by LGVertex(); val c by LGVertex(); val d by LGVertex()
+  val e by LGVertex(); val f by LGVertex(); val g by LGVertex(); val h by LGVertex()
+  val i by LGVertex(); val j by LGVertex(); val k by LGVertex(); val l by LGVertex()
 
-  operator fun Vertex.minus(v: Vertex) =
-    Vertex(v.id) { v.edges + LabeledEdge(this) }.also { graph += Graph(it) }
+  operator fun LGVertex.minus(v: LGVertex) =
+    LGVertex(v.id) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
 
-  operator fun Vertex.plus(edge: LabeledEdge) =
-    new { edges + edge }.also { graph += Graph(it) }
+  operator fun LGVertex.plus(edge: LabeledEdge) =
+    new { outgoing + edge }.also { mutGraph += it.graph }
 
-  operator fun Vertex.plus(vertex: Vertex) =
-    (asGraph() + vertex.asGraph()).also { graph += it }
+  operator fun LGVertex.plus(vertex: LGVertex) = (graph + vertex.graph).also { mutGraph += it }
 
-  class ProtoEdge(val source: Vertex, val label: String)
+  class ProtoEdge(val source: LGVertex, val label: String)
 
   // Arithmetic is right-associative, so we construct in reverse and flip after
-  operator fun Vertex.minus(symbols: String) = ProtoEdge(this, symbols)
-  operator fun ProtoEdge.minus(target: Vertex) = target + LabeledEdge(source, label)
+  operator fun LGVertex.minus(symbols: String) = ProtoEdge(this, symbols)
+  operator fun ProtoEdge.minus(target: LGVertex) = target + LabeledEdge(target, source, label)
 
   companion object {
-    operator fun invoke(builder: LabeledGraph.() -> Unit) =
-      LabeledGraph().also { it.builder() }.graph.reversed()
+    operator fun invoke(builder: LabeledGraphBuilder.() -> Unit) =
+      LabeledGraphBuilder().also { it.builder() }.mutGraph.reversed()
   }
 }
 
-class Vertex(
-  id: String = randomString(),
-  override val edgeMap: (Vertex) -> Collection<LabeledEdge>
-) : Node<Vertex, LabeledEdge>(id) {
-  constructor(id: String? = randomString(), out: Set<Vertex> = emptySet()) :
-    this(id ?: randomString(), { out.map { LabeledEdge(it) } })
-
-  constructor(out: Set<Vertex> = setOf()) : this(randomString(), { out.map { LabeledEdge(it) } })
-
-  override fun equals(other: Any?) = (other as? Vertex)?.id == id
-  override fun hashCode() = id.hashCode()
-  override fun toString() = id
-  override fun new(newId: String, out: Set<Vertex>) = Vertex(newId, out)
-  override fun new(newId: String, edgeMap: (Vertex) -> Collection<LabeledEdge>) = Vertex(newId, edgeMap)
+class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
+  Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
+  constructor(vararg vertices: LGVertex): this(vertices.toSet())
+  override fun new(vertices: Set<LGVertex>) = LabeledGraph(vertices)
 }
 
-open class LabeledEdge(
-  override val target: Vertex,
-  val label: String? = null
-) : Edge<LabeledEdge, Vertex>(target) {
-  override fun newTarget(target: Vertex) = LabeledEdge(target, label)
+class LGVertex(
+  id: String = randomString(),
+  override val edgeMap: (LGVertex) -> Collection<LabeledEdge>
+) : Vertex<LabeledGraph, LabeledEdge, LGVertex>(id) {
+  constructor(id: String? = randomString(), out: Set<LGVertex> = emptySet()) :
+    this(id ?: randomString(), { s -> out.map { t -> LabeledEdge(s, t) } })
+  constructor(out: Set<LGVertex> = setOf()) : this(randomString(), { s ->  out.map { t -> LabeledEdge(s, t) } })
+
+  override fun graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
+  override fun new(newId: String, out: Set<LGVertex>) = LGVertex(newId, out)
+  override fun new(newId: String, edgeMap: (LGVertex) -> Collection<LabeledEdge>) = LGVertex(newId, edgeMap)
+}
+
+open class LabeledEdge(override val source: LGVertex, override val target: LGVertex, val label: String? = null) :
+  Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
+  override fun new(source: LGVertex, target: LGVertex) = LabeledEdge(source, target, label)
 }

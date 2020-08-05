@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
 class Notebook {
-  var graph = Graph<Gate, UnlabeledEdge>()
+  var graph = ComputationGraph()
 
   var a by Gate(); var b by Gate(); var c by Gate(); var d by Gate()
   var e by Gate(); var f by Gate(); var g by Gate(); var h by Gate()
@@ -26,7 +26,7 @@ class Notebook {
     op(wrap(left), wrap(right))
 
   fun join(left: Gate, right: Gate, label: String) =
-    Gate(label, left, right).also { graph += Graph(it) }
+    Gate(label, left, right).also { graph += it.graph }
 
   companion object {
     operator fun invoke(builder: Notebook.() -> Unit) =
@@ -50,36 +50,40 @@ operator fun Gate.minus(that: Gate) = join(this, that, "-")
 operator fun Gate.times(that: Gate) = join(this, that, "*")
 operator fun Gate.div(that: Gate) = join(this, that, "/")
 
-fun Gate.toGraph() = Graph(this)
-
 fun wrap(left: Any, right: Any, op: (Gate, Gate) -> Gate): Gate =
   op(wrap(left), wrap(right))
 
 fun join(left: Gate, right: Gate, label: String) = Gate(label, left, right)
 
+class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices) {
+  constructor(vararg gates: Gate): this(gates.toSet())
+  override fun new(vertices: Set<Gate>) = ComputationGraph(vertices)
+}
+
 open class Gate(
   id: String = randomString(),
   val label: String = id,
   override val edgeMap: (Gate) -> Collection<UnlabeledEdge>
-) : Node<Gate, UnlabeledEdge>(id) {
+) : Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
   constructor(id: String = randomString(), label: String, vararg gates: Gate) :
-    this(id, label, { gates.toSet().map { UnlabeledEdge(it) } })
+    this(id, label, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) } })
   constructor(label: String = "", vararg gates: Gate) : this(randomString(), label, *gates)
 
-  override fun equals(other: Any?) = (other as? Gate)?.id == id
-  override fun hashCode() = id.hashCode()
-  override fun toString() = label
-  override fun new(newId: String, out: Set<Gate>) = Gate(newId, label, *out.toTypedArray())
-  override fun new(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = Gate(newId, label, edgeMap)
+  override fun graph(vertices: Set<Gate>) = ComputationGraph(vertices)
 
   companion object {
     fun wrap(value: Any) = if (value is Gate) value else Gate(value.toString())
     fun wrapAll(vararg values: Any) = values.map { wrap(it) }.toTypedArray()
   }
 
+  override fun toString() = label
+
+  override fun new(newId: String, out: Set<Gate>) = Gate(newId, label, *out.toTypedArray())
+  override fun new(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = Gate(newId, label, edgeMap)
+
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name, prop.name)
   open operator fun setValue(builder: Notebook, prop: KProperty<*>, value: Gate) {
-    builder.graph += Graph(Gate(prop.name, prop.name, Gate("=", value)))
+    builder.graph += Gate(prop.name, prop.name, Gate("=", value)).graph
   }
 }
 
@@ -87,7 +91,7 @@ class NFunction(
   val name: String = randomString(),
   val params: Array<out Gate> = arrayOf(),
   val body: (Array<out Gate>) -> Gate = { Gate(name) }
-): Gate(id = name, edgeMap = { setOf(UnlabeledEdge(body(params))) }) {
+): Gate(id = name, edgeMap = { s -> setOf(UnlabeledEdge(s, body(params))) }) {
   operator fun invoke(vararg args: Any): Gate =
     if (arityMatches(*args))
       Gate("λ", *wrapAll(*args).let { it.plusElement(Gate(name, Gate("=", body(it)))) })
@@ -101,8 +105,9 @@ class NFunction(
     NFunction(property.name, params, body)
 }
 
-open class UnlabeledEdge(override val target: Gate): Edge<UnlabeledEdge, Gate>(target) {
-  override fun newTarget(target: Gate) = UnlabeledEdge(target)
+open class UnlabeledEdge(override val source: Gate, override val target: Gate):
+  Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
+  override fun new(source: Gate, target: Gate) = UnlabeledEdge(source, target)
 }
 
 fun main() {

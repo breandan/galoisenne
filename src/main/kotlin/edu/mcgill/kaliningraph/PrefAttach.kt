@@ -5,17 +5,9 @@ import kweb.Kweb
 import kweb.html.events.KeyboardEvent
 import kweb.img
 import kweb.new
-import org.ejml.data.DMatrixRMaj
 import org.ejml.data.DMatrixSparseCSC
-import org.ejml.dense.row.CommonOps_DDRM
-import org.ejml.dense.row.DMatrixComponent
 import org.ejml.kotlin.times
 import org.ejml.kotlin.transpose
-import org.ejml.ops.ConvertDMatrixStruct
-import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import java.util.*
-import javax.imageio.ImageIO
 
 @ExperimentalStdlibApi
 fun main() {
@@ -24,7 +16,7 @@ fun main() {
 
 @ExperimentalStdlibApi
 fun prefAttachDemo() {
-  val graphs = mutableListOf(Graph(Vertex("0")))
+  val graphs = mutableListOf(LabeledGraph(LGVertex("0")))
 
   Kweb(port = 16097) {
     doc.body.apply {
@@ -55,7 +47,7 @@ fun prefAttachDemo() {
 }
 
 @ExperimentalStdlibApi
-private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex, LabeledEdge>>) {
+private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
   when {
     "Left" in it.key -> { }
     "Right" in it.key -> {
@@ -73,6 +65,6 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<Graph<Vertex, LabeledE
   }
 }
 
-private fun ImageElement.render(graph: Graph<Vertex, LabeledEdge>, renderFun: (Graph<Vertex, LabeledEdge>) -> DMatrixSparseCSC) {
+private fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> DMatrixSparseCSC) {
   setAttributeRaw("src", renderFun(graph).adjToMat())
 }
