@@ -43,11 +43,11 @@ fun Graph<*, *, *>.toGraphviz() =
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
-    vertices.forEach { node ->
-      for (neighbor in node.neighbors) {
-        val source = Factory.mutNode(node.id).add(Label.of(node.toString())).also { if (node.occupied) it[FILLED, RED.fill()] else it[BLACK] }
+    vertices.forEach { vertex ->
+      vertex.neighbors.forEach { neighbor ->
+        val source = Factory.mutNode(vertex.id).add(Label.of(vertex.toString())).also { if (vertex.occupied) it[FILLED, RED.fill()] else it[BLACK] }
         val target = Factory.mutNode(neighbor.id).add(Label.of(neighbor.toString()))//.also { if (neighbor.occupied) it[RED] else it[BLACK] }
-        (source - target).add(Label.of("")).also { if (node.occupied) it[RED] else it[BLACK] }
+        (source - target).add(Label.of("")).also { if (vertex.occupied) it[RED] else it[BLACK] }
       }
     }
   }
