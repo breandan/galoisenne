@@ -44,9 +44,9 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<Comput
 }
 
 interface Op
-enum class Monad: Op { `-`, sin, cos, tan, id }
-enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow, d }
-enum class Polyad: Op { λ, Σ, Π }
+enum class Monad: Op { `-`, sin, cos, tan, id, ᵀ }
+enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
+enum class Polyad: Op { λ, Σ, Π, map }
 
 open class Gate constructor(
   id: String = randomString(),
@@ -71,6 +71,7 @@ open class Gate constructor(
   operator fun times(that: Any) = Gate(`*`, this, wrap(that))
   operator fun div(that: Any) = Gate(`÷`, this, wrap(that))
   infix fun pow(that: Any) = Gate(pow, this, wrap(that))
+  infix fun log(that: Any) = Gate(log, this, wrap(that))
 
   operator fun unaryMinus() = Gate(Monad.`-`, this)
 
