@@ -1,10 +1,10 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.circuits.Gate
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.*
-import guru.nidi.graphviz.attribute.Color.BLACK
-import guru.nidi.graphviz.attribute.Color.RED
+import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Shape.*
 import guru.nidi.graphviz.attribute.Style.*
 import guru.nidi.graphviz.engine.Engine
@@ -40,14 +40,18 @@ fun Graph<*, *, *>.toGraphviz() =
   graph(directed = true) {
     val color = BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
+    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
     vertices.forEach { vertex ->
-      vertex.neighbors.forEach { neighbor ->
+      vertex.neighbors.forEachIndexed { i, neighbor ->
         val source = Factory.mutNode(vertex.id).add(Label.of(vertex.toString())).also { if (vertex.occupied) it[FILLED, RED.fill()] else it[BLACK] }
         val target = Factory.mutNode(neighbor.id).add(Label.of(neighbor.toString()))//.also { if (neighbor.occupied) it[RED] else it[BLACK] }
-        (source - target).add(Label.of("")).also { if (vertex.occupied) it[RED] else it[BLACK] }
+        (target - source).add(Label.of("")).also {
+          if (vertex.occupied) it[RED] else it[BLACK]
+          if (vertex is Gate && 1 < vertex.neighbors.size) if(i % 2 == 0) it[BLUE] else it[RED]
+        }
       }
     }
   }

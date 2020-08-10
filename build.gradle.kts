@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "edu.mcgill"
-version = "0.0.6-SNAPSHOT"
+version = "0.0.7"
 
 repositories {
   mavenCentral()

@@ -22,9 +22,6 @@ class Notebook {
   fun wrap(left: Any, right: Any, op: (Gate, Gate) -> Gate): Gate =
     op(wrap(left), wrap(right))
 
-  fun join(left: Gate, right: Gate, label: String) =
-    Gate(label, left, right).also { graph += it.graph }
-
   companion object {
     operator fun invoke(builder: Notebook.() -> Unit) =
       Notebook().also { it.builder() }.graph.reversed()
@@ -48,7 +45,7 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<Comput
 
 interface Op
 enum class Monad: Op { `-`, sin, cos, tan, id }
-enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow }
+enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow, d }
 enum class Polyad: Op { λ, Σ, Π }
 
 open class Gate constructor(
@@ -80,10 +77,11 @@ open class Gate constructor(
   fun sin() = Gate(Monad.sin, this)
   fun cos() = Gate(Monad.cos, this)
   fun tan() = Gate(Monad.tan, this)
+  fun d(that: Any) = Gate(Dyad.d, this, wrap(that))
 
   override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
   override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = 
+  override fun Vertex(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) =
     Gate(newId, Monad.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
