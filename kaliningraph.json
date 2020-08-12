@@ -27,9 +27,10 @@
     "edu.mcgill.kaliningraph.circuits.*"
   ],
   "renderers": {
-    "edu.mcgill.kaliningraph.Graph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
-    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
-    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.LabeledGraph": "HTML(($it as edu.mcgill.kaliningraph.LabeledGraph).html())",
+    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.circuits.Gate).graph.html())",
+    "edu.mcgill.kaliningraph.circuits.ComputationGraph": "HTML(($it as edu.mcgill.kaliningraph.circuits.ComputationGraph).html())",
+    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.circuits.NFunction).graph.html())",
     "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${($it as org.ejml.data.DMatrixSparseCSC).adjToMat()}\\\"/>\")"
   }
 }

@@ -34,7 +34,16 @@ fun Graph<*, *, *>.render(layout: Engine = DOT, format: Format = SVG) =
 
 fun Graph<*, *, *>.html() = render().toString()
 fun Graph<*, *, *>.show() = render().toFile(File.createTempFile("temp", ".svg")).show()
-fun File.show() = ProcessBuilder("x-www-browser", path).start()
+val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
+  when {
+    "win" in os -> "rundll32 url.dll,FileProtocolHandler"
+    "mac" in os -> "open"
+    "nix" in os || "nux" in os -> "x-www-browser"
+    else -> throw Exception("Unable to open browser for unknown OS: $os")
+  }
+}
+
+fun File.show() = ProcessBuilder(browserCmd, path).start()
 
 fun Graph<*, *, *>.toGraphviz() =
   graph(directed = true) {
