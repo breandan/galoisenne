@@ -77,4 +77,14 @@ tasks {
     useJUnitPlatform()
     testLogging { events("passed", "skipped", "failed") }
   }
+
+  val installPathLocal = "${System.getProperty("user.home")}/.jupyter_kotlin/libraries"
+
+  register<Copy>("jupyterInstall") {
+    val installPath = findProperty("ath") ?: installPathLocal
+    doFirst { mkdir(installPath) }
+    from(file("kaliningraph.json"))
+    into(installPath)
+    doLast { logger.info("Kaliningraph notebook support was installed in: $installPath") }
+  }
 }

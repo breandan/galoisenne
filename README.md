@@ -42,6 +42,22 @@ dependencies {
 </project>
 ```
 
+### Jupyter Notebook
+
+[First install](https://github.com/kotlin/kotlin-jupyter#installation) the Kotlin Jupyter kernel, then run the `jupyterInstall` task to install the library descriptor:
+
+```
+./gradlew jupyterInstall [-Path=~/.jupyter_kotlin/libraries]
+```
+
+To access Kotlin∇'s notebook support, use the following line magic:
+
+```
+%use kotlingrad
+```
+
+For more information, explore the [tutorial](notebooks/Hello%20Kaliningraph.ipynb).
+
 ## Graphs, Inductively
 
 What are graphs? A [graph](src/main/kotlin/edu/mcgill/kaliningraph/Graph.kt) is a (possibly empty) set of vertices.
