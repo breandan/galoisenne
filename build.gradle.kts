@@ -3,7 +3,7 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 plugins {
   java
   maven
-  kotlin("jvm") version "1.4.0-rc"
+  kotlin("jvm") version "1.4.0"
 }
 
 group = "edu.mcgill"
@@ -12,7 +12,6 @@ version = "0.0.7"
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
-  maven("https://dl.bintray.com/kotlin/kotlin-eap")
   jcenter()
 //  maven("https://dl.bintray.com/mipt-npm/dev")
 }
