@@ -83,14 +83,18 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
       vertices.flatMap { src -> src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) } }
         .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
-  val histogram by lazy { poolingBy { size } }
+  val histogram: Map<V, Int> by lazy { poolingBy { size } }
+  val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
 
   /*
    * Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
    * https://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
+   * https://breandan.net/2020/06/30/graph-computation/#weisfeiler-lehman
    */
 
+  // TODO: parameterize labeler as function?
+  // TODO: implement GNN as recurrence relation/sparse matmul
   tailrec fun wl(k: Int = 5, labels: Map<V, Int> = histogram): Map<V, Int> {
     val next = poolingBy { map { labels[it]!! }.sorted().hashCode() }
     return if (k <= 0 || labels == next) labels else wl(k - 1, next)
