@@ -1,8 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.typefamily.IEdge
-import edu.mcgill.kaliningraph.typefamily.IGraph
-import edu.mcgill.kaliningraph.typefamily.IVertex
+import edu.mcgill.kaliningraph.typefamily.*
 import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
@@ -83,21 +81,21 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
       vertices.flatMap { src -> src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) } }
         .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
 
-  val histogram: Map<V, Int> by lazy { poolingBy { size } }
+  val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
   val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
 
   /*
    * Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
-   * https://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
+   * http://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
    * https://breandan.net/2020/06/30/graph-computation/#weisfeiler-lehman
    */
 
-  // TODO: parameterize labeler as function?
   // TODO: implement GNN as recurrence relation/sparse matmul
-  tailrec fun wl(k: Int = 5, labels: Map<V, Int> = histogram): Map<V, Int> {
-    val next = poolingBy { map { labels[it]!! }.sorted().hashCode() }
-    return if (k <= 0 || labels == next) labels else wl(k - 1, next)
+  tailrec fun wl(k: Int = 5, label: (V) -> Int = { histogram[it]!! }): Map<V, Int> {
+    val updates = aggregateBy { it.map(label).sorted().hashCode() }
+    return if (k <= 0 || all { label(it) == updates[it] }) updates
+    else wl(k - 1) { updates[it]!! }
   }
 
   fun isomorphicTo(that: G) =
@@ -110,8 +108,8 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
 
   override fun hashCode() = wl().values.sorted().hashCode()
 
-  fun poolingBy(stat: Set<V>.() -> Int): Map<V, Int> =
-    vertices.map { it to stat(it.neighbors()) }.toMap()
+  fun <T> aggregateBy(aggregate: (Set<V>) -> T): Map<V, T> =
+    vertices.map { it to aggregate(it.neighbors()) }.toMap()
 
   fun attachRandomT(degree: Int): G =
       this + (prototype?.Vertex(
