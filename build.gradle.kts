@@ -56,8 +56,9 @@ configure<JavaPluginConvention> {
 tasks {
   compileKotlin {
     kotlinOptions.jvmTarget = VERSION_1_8.toString()
-    kotlinOptions.freeCompilerArgs += "-XXLanguage:+NewInference"
+//    kotlinOptions.useIR = true
   }
+
   listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
