@@ -11,7 +11,7 @@ import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
-import guru.nidi.graphviz.model.Factory
+import guru.nidi.graphviz.model.*
 import org.ejml.data.DMatrixRMaj
 //import org.hipparchus.distribution.EnumeratedDistribution
 //import org.hipparchus.random.RandomDataGenerator
@@ -53,14 +53,10 @@ fun Graph<*, *, *>.toGraphviz() =
 //    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), Color.TRANSPARENT.background()]
     node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
+//    vertices.forEach { vertex -> vertex.outgoing.forEachIndexed { i, edge -> edge.render() } } TODO: Fix
     vertices.forEach { vertex ->
-      vertex.neighbors.forEachIndexed { i, neighbor ->
-        val source = Factory.mutNode(vertex.id).add(Label.of(vertex.toString())).also { if (vertex.occupied) it[FILLED, RED.fill()] else it[BLACK] }
-        val target = Factory.mutNode(neighbor.id).add(Label.of(neighbor.toString()))//.also { if (neighbor.occupied) it[RED] else it[BLACK] }
-        (target - source).add(Label.of("")).also {
-          if (vertex.occupied) it[RED] else it[BLACK]
-          if (vertex is Gate && 1 < vertex.neighbors.size) if(i % 2 == 0) it[BLUE] else it[RED]
-        }
+      vertex.outgoing.forEachIndexed { i, edge ->
+        edge.render().also { if (vertex is LGVertex && vertex.occupied) it[RED] }
       }
     }
   }
@@ -85,3 +81,4 @@ fun randomString() = UUID.randomUUID().toString().take(5)
 
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
+operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!

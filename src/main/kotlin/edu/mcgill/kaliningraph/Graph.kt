@@ -1,37 +1,40 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.typefamily.*
+import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.model.*
 import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
-import org.ejml.data.DMatrixSparseCSC
-import org.ejml.data.DMatrixSparseTriplet
+import org.ejml.data.*
 import org.ejml.kotlin.minus
 import kotlin.reflect.KProperty
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGraph<G, E, V> {
+constructor(override val vertices: Set<V> = setOf())
+  : Set<V> by vertices, IGraph<G, E, V>, (V) -> Set<V> by { it: V -> it.neighbors } {
   open fun new(vararg graphs: G): G = new(graphs.toList())
   open fun new(vararg vertices: V): G = new(vertices.map { it.graph })
   open fun new(graphs: List<G>): G = new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
-  open fun new(adjList: Map<V, List<E>>): G = new(adjList.map { (k, v) -> k.Vertex { v } }.toSet())
+  open fun new(adjList: Map<V, Set<E>>): G = new(adjList.map { (k, v) -> k.Vertex { v } }.toSet())
   abstract fun new(vertices: Set<V> = setOf()): G
 
   override val graph: G = this as G
   open val prototype: V? by lazy { vertices.firstOrNull() }
 
   val totalEdges: Int by lazy { vertices.map { it.neighbors.size }.sum() }
-  private val index: VIndex<G, E, V> by lazy { VIndex(vertices) }
+  protected val index: VIndex<G, E, V> by lazy { VIndex(vertices) }
 
-  private class VIndex<G: Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>(set: Set<V>) {
+  protected class VIndex<G: Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>(val set: Set<V>) {
+    operator fun plus(vertexIdx: VIndex<G, E, V>) = VIndex(set + vertexIdx.set)
     val array: ArrayList<V> = set.toList().toArrayList()
     val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Vertex<G, E, V>) = map[it]
     operator fun get(it: Int) = array[it]
   }
 
-  operator fun get(vertex: V): Int? = index[vertex]
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
 
   val edgList: Sequence<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } }.asSequence() }
@@ -55,10 +58,6 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
   // Laplacian matrix
   val L by lazy { D - A }
 
-  fun S() = DMatrixSparseTriplet(vertices.size, 1, totalEdges).also { state ->
-    vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
-  }.toCSC()
-
   val degMap by lazy { vertices.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
   operator fun DMatrixSparseTriplet.set(n0: V, n1: V, value: Double) {
@@ -77,9 +76,9 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
   operator fun minus(graph: G): G = new(vertices - graph.vertices)
 
   fun reversed(): G =
-    new(vertices.map { it to listOf<E>() }.toMap() +
+    new(vertices.map { it to setOf<E>() }.toMap() +
       vertices.flatMap { src -> src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) } }
-        .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v })
+        .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
   val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
@@ -98,6 +97,16 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
     else wl(k - 1) { updates[it]!! }
   }
 
+//  tailrec fun mp(
+//    k: Int = 10,
+//    updater: (List<Double>) -> List<Double>,
+//    label: (V) -> List<Double> = { listOf(histogram[it]!!.toDouble()) }
+//  ): Map<V, List<Double>> {
+//    val updates = updater { aggregateBy { it ->  } }
+//    return if (k <= 0 || all { label(it) == updates[it] }) updates
+//    else wl(k - 1) { updates[it]!! }
+//  }
+
   fun isomorphicTo(that: G) =
     vertices.size == that.vertices.size &&
       totalEdges == that.totalEdges &&
@@ -109,31 +118,24 @@ constructor(override val vertices: Set<V> = setOf()) : Set<V> by vertices, IGrap
   override fun hashCode() = wl().values.sorted().hashCode()
 
   fun <T> aggregateBy(aggregate: (Set<V>) -> T): Map<V, T> =
-    vertices.map { it to aggregate(it.neighbors()) }.toMap()
+    vertices.map { it to aggregate(this(it)) }.toMap()
 
-  fun attachRandomT(degree: Int): G =
-      this + (prototype?.Vertex(
-        newId = vertices.size.toString(),
-        out = if (vertices.isEmpty()) emptySet()
-        else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
-            degMap.map { (k, v) -> k to (v + 1.0) / (totalEdges + 1.0) }.toMap())
-         .run { generateSequence { sample() }.take(degree.coerceAtMost(vertices.size)) }.toSet()
-      )?.graph ?: new())
+  fun toMap() = vertices.map { it to it.neighbors }.toMap()
 
-  var done = mutableSetOf<String>()
-  var string = ""
-  fun propagate() {
-    val (previousStates, unoccupied) = vertices.partition { it.occupied }
-    val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
-    previousStates.forEach { it.occupied = false }
-    nextStates.forEach { it.occupied = true; done.add(it.id) }
-    string = "y = " + done.joinToString(" + ")
-  }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
   tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
+
+  fun attachRandomT(degree: Int): G =
+    this + (prototype?.Vertex(
+      newId = vertices.size.toString(),
+      out = if (vertices.isEmpty()) emptySet()
+      else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
+        degMap.map { (k, v) -> k to (v + 1.0) / (totalEdges + 1.0) }.toMap())
+        .run { generateSequence { sample() }.take(degree.coerceAtMost(vertices.size)) }.toSet()
+    )?.graph ?: new())
 
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() =
@@ -145,6 +147,9 @@ abstract class Edge<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
 constructor(override val source: V, override val target: V): IEdge<G, E, V> {
   override val graph by lazy { target.graph }
   abstract fun new(source: V, target: V): E
+  open fun render(): Link = (source.render() - target.render()).add(Label.of(""))
+  operator fun component1() = source
+  operator fun component2() = target
 }
 
 // TODO: Link to graph and make a "view" of the container graph
@@ -153,17 +158,16 @@ abstract class Vertex<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>
 constructor(val id: String) : IVertex<G, E, V> {
   abstract fun Graph(vertices: Set<V>): G
   abstract fun Edge(s: V, t: V): E
-  abstract fun Vertex(newId: String = id, edgeMap: (V) -> Collection<E>): V
+  abstract fun Vertex(newId: String = id, edgeMap: (V) -> Set<E>): V
 
   fun Vertex(newId: String = id, out: Set<V> = emptySet()): V =
-    Vertex(newId) { s -> out.map { t -> Edge(s, t) } }
+    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
 
   override val graph: G by lazy { Graph(neighbors(-1)) }
   abstract val edgeMap: (V) -> Collection<E> // Allows self-loops by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap.toMap()[this]!! }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
-  open var occupied = false
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
     if (k == 0 || vertices.neighbors() == vertices) vertices
@@ -171,13 +175,14 @@ constructor(val id: String) : IVertex<G, E, V> {
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { vertex -> Vertex { vertex.outgoing.filter { it.target in this } } }.toSet()
+    map { vertex -> Vertex { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
   fun neighborhood(): G = Graph(neighbors(0).closure())
 
   open operator fun getValue(a: Any?, prop: KProperty<*>): V = Vertex(prop.name)
+  open fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
   override fun equals(other: Any?) = (other as? LGVertex)?.id == id
   override fun hashCode() = id.hashCode()
   override fun toString() = id

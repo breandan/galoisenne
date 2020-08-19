@@ -43,7 +43,7 @@ fun prefAttachDemo() {
     }
   }
 
-  ProcessBuilder("x-www-browser", "http://0.0.0.0:16097").start()
+  ProcessBuilder(browserCmd, "http://0.0.0.0:16097").start()
 }
 
 @ExperimentalStdlibApi
@@ -56,8 +56,8 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
         current.sortedBy { -it.id.toInt() + Math.random() * 10 }
           .takeWhile { Math.random() < 0.5 }
           .forEach { it.occupied = true }
-        current.done = current.filter { it.occupied }.map { it.id }.toMutableSet()
-        current.string = "y = ${current.done.joinToString(" + ")}"
+        current.accumuator = current.filter { it.occupied }.map { it.id }.toMutableSet()
+        current.string = "y = ${current.accumuator.joinToString(" + ")}"
       } else current.propagate()
     }
     "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()

@@ -3,7 +3,9 @@ package edu.mcgill.kaliningraph.circuits
 import edu.mcgill.kaliningraph.*
 import edu.mcgill.kaliningraph.circuits.Dyad.*
 import edu.mcgill.kaliningraph.circuits.Gate.Companion.wrap
-import edu.mcgill.kaliningraph.circuits.Polyad.*
+import edu.mcgill.kaliningraph.circuits.Polyad.λ
+import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
@@ -24,7 +26,7 @@ class Notebook {
 
   companion object {
     operator fun invoke(builder: Notebook.() -> Unit) =
-      Notebook().also { it.builder() }.graph.reversed()
+      Notebook().also { it.builder() }.graph
   }
 }
 
@@ -51,12 +53,12 @@ enum class Polyad: Op { λ, Σ, Π, map }
 open class Gate constructor(
   id: String = randomString(),
   val op: Op = Monad.id,
-  override val edgeMap: (Gate) -> Collection<UnlabeledEdge>
+  override val edgeMap: (Gate) -> Set<UnlabeledEdge>
 ) : Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
   constructor(op: Op = Monad.id, vararg gates: Gate) : this(randomString(), op, *gates)
   constructor(id: String = randomString(), vararg gates: Gate) : this(id, Monad.id, *gates)
   constructor(id: String = randomString(), op: Op = Monad.id, vararg gates: Gate) :
-    this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) } })
+    this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())
@@ -82,7 +84,7 @@ open class Gate constructor(
 
   override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
   override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) =
+  override fun Vertex(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
     Gate(newId, Monad.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
@@ -114,6 +116,9 @@ class NFunction(
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
   override fun new(source: Gate, target: Gate) = UnlabeledEdge(source, target)
+  override fun render() =
+    (target.render() - source.render()).add(Label.of(""))
+      .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }
 
 fun main() {

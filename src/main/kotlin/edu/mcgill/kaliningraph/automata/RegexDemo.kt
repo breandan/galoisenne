@@ -1,6 +1,7 @@
 package edu.mcgill.kaliningraph.automata
 
 import edu.mcgill.kaliningraph.THICKNESS
+import edu.mcgill.kaliningraph.browserCmd
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
@@ -29,7 +30,7 @@ fun main() {
     }
   }
 
-  ProcessBuilder("x-www-browser", "http://0.0.0.0:$port").start()
+  ProcessBuilder(browserCmd, "http://0.0.0.0:$port").start()
 }
 
 var regex = Regex("ε")
