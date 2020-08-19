@@ -1,9 +1,10 @@
 package edu.mcgill.kaliningraph
 
+import guru.nidi.graphviz.KraphvizContext
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
-import guru.nidi.graphviz.attribute.Label
-import guru.nidi.graphviz.attribute.Style.*
+import guru.nidi.graphviz.attribute.Style.FILLED
+import guru.nidi.graphviz.model.MutableGraph
 import org.ejml.data.DMatrixSparseTriplet
 
 /**
@@ -57,19 +58,19 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   }
 }
 
-class LGVertex(
+class LGVertex constructor(
   id: String = randomString(),
-  override val edgeMap: (LGVertex) -> Set<LabeledEdge>
+  var occupied: Boolean = false,
+  override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
 ) : Vertex<LabeledGraph, LabeledEdge, LGVertex>(id) {
   constructor(id: String? = randomString(), out: Set<LGVertex> = emptySet()) :
-    this(id ?: randomString(), { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
-  constructor(out: Set<LGVertex> = setOf()) : this(randomString(), { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
-  var occupied = false
+    this(id = id ?: randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+  constructor(out: Set<LGVertex> = setOf()) : this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
 
   override fun render() = super.render().also { if (occupied) it.add(FILLED, RED.fill()) else it.add(BLACK) }
   override fun Graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
   override fun Edge(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) = LGVertex(newId, edgeMap)
+  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) = LGVertex(newId, occupied, edgeMap)
 }
 
 open class LabeledEdge(override val source: LGVertex, override val target: LGVertex, val label: String? = null) :

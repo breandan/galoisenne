@@ -1,14 +1,19 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.typefamily.*
+import guru.nidi.graphviz.KraphvizContext
 import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.Style.lineWidth
+import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
 import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
-import org.ejml.data.*
+import org.ejml.data.DMatrixSparseCSC
+import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.minus
 import kotlin.reflect.KProperty
 
@@ -21,7 +26,6 @@ constructor(override val vertices: Set<V> = setOf())
   open fun new(adjList: Map<V, Set<E>>): G = new(adjList.map { (k, v) -> k.Vertex { v } }.toSet())
   abstract fun new(vertices: Set<V> = setOf()): G
 
-  override val graph: G = this as G
   open val prototype: V? by lazy { vertices.firstOrNull() }
 
   val totalEdges: Int by lazy { vertices.map { it.neighbors.size }.sum() }
@@ -40,6 +44,7 @@ constructor(override val vertices: Set<V> = setOf())
   val edgList: Sequence<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } }.asSequence() }
   val adjList: Sequence<Pair<V, V>> by lazy { edgList.map { (v, e) -> v to e.target } }
   val edgMap: Map<V, Set<E>> by lazy { vertices.map { it to it.outgoing }.toMap() }
+  val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
   val D: DMatrixSparseCSC by lazy {
@@ -122,7 +127,6 @@ constructor(override val vertices: Set<V> = setOf())
 
   fun toMap() = vertices.map { it to it.neighbors }.toMap()
 
-
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
   tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
     if (vertices <= 0) graph
@@ -141,6 +145,20 @@ constructor(override val vertices: Set<V> = setOf())
   override fun toString() =
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
+
+  open fun render(): MutableGraph =
+    graph(directed = true) {
+      val color = if (DARKMODE) WHITE else BLACK
+      edge[color, NORMAL, lineWidth(THICKNESS)]
+      graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
+      node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
+      
+      vertices.forEach { vertex ->
+        vertex.outgoing.forEach { edge ->
+          edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
+        }
+      }
+    }
 }
 
 abstract class Edge<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>

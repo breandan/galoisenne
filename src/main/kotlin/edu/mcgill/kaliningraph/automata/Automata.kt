@@ -48,6 +48,6 @@ class AutomatonBuilder {
 
   companion object {
     operator fun invoke(builder: LabeledGraph.() -> Unit) =
-      LabeledGraph().also { it.builder() }.graph.reversed()
+      LabeledGraph().also { it.builder() }.reversed()
   }
 }

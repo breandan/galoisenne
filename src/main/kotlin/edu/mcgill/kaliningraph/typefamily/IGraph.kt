@@ -3,7 +3,6 @@ package edu.mcgill.kaliningraph.typefamily
 // https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf#page=3
 
 interface IGraph<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
-  val graph: G
   val vertices: Set<V>
 }
 

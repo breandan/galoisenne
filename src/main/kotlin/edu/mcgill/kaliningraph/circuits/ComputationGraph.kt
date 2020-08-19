@@ -116,9 +116,8 @@ class NFunction(
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
   override fun new(source: Gate, target: Gate) = UnlabeledEdge(source, target)
-  override fun render() =
-    (target.render() - source.render()).add(Label.of(""))
-      .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
+  override fun render() = (target.render() - source.render()).add(Label.of(""))
+    .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }
 
 fun main() {

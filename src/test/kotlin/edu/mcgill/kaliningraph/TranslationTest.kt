@@ -22,7 +22,7 @@ class TranslationTest {
 
   @Test
   fun testGraphvizTranslationInvariance() =
-    randomGraph.let { assertEquals(it, it.toGraphviz().toKaliningraph()) }
+    randomGraph.let { assertEquals(it, it.render().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
     LabeledGraphBuilder {
