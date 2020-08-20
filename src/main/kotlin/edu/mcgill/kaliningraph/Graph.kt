@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.typefamily.*
-import guru.nidi.graphviz.KraphvizContext
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
@@ -14,7 +13,9 @@ import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.DMatrixSparseTriplet
-import org.ejml.kotlin.minus
+import org.ejml.kotlin.*
+import kotlin.math.tanh
+import kotlin.random.Random
 import kotlin.reflect.KProperty
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
@@ -48,20 +49,31 @@ constructor(override val vertices: Set<V> = setOf())
 
   // Degree matrix
   val D: DMatrixSparseCSC by lazy {
-    DMatrixSparseTriplet(vertices.size, vertices.size, totalEdges).also { degMat ->
+    DMatrixSparseTriplet(size, size, totalEdges).also { degMat ->
       vertices.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
     }.toCSC()
   }
 
   // Adjacency matrix
   val A: DMatrixSparseCSC by lazy {
-    DMatrixSparseTriplet(vertices.size, vertices.size, totalEdges).also { adjMat ->
+    DMatrixSparseTriplet(size, size, totalEdges).also { adjMat ->
       vertices.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
     }.toCSC()
   }
 
   // Laplacian matrix
   val L by lazy { D - A }
+
+  val H0 by lazy {
+    DMatrixSparseTriplet(size, size, totalEdges).also { featMat ->
+      vertices.encode().forEachIndexed { i, row ->
+        row.forEachIndexed { j, it -> if(it != 0.0) featMat[i, j] = it }
+      }
+    }.toCSC()
+  }
+
+  // TODO: implement one-hot encoder for finite alphabet
+  fun Set<V>.encode() = Array(size) { i -> Array(size) { j -> if(i == j) 1.0 else 0.0 } }
 
   val degMap by lazy { vertices.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
@@ -102,18 +114,19 @@ constructor(override val vertices: Set<V> = setOf())
     else wl(k - 1) { updates[it]!! }
   }
 
-//  tailrec fun mp(
-//    k: Int = 10,
-//    updater: (List<Double>) -> List<Double>,
-//    label: (V) -> List<Double> = { listOf(histogram[it]!!.toDouble()) }
-//  ): Map<V, List<Double>> {
-//    val updates = updater { aggregateBy { it ->  } }
-//    return if (k <= 0 || all { label(it) == updates[it] }) updates
-//    else wl(k - 1) { updates[it]!! }
-//  }
+  // https://cs.mcgill.ca/~wlh/comp766/files/chapter4_draft_mar29.pdf#page=5
+  // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+  tailrec fun mpnn(
+    t: Int = 10,
+    H: DMatrixSparseCSC = H0,
+    W: DMatrixSparseCSC = randomMatrix(size, size) { Random.nextDouble() },
+    b: DMatrixSparseCSC = randomMatrix(size, size) { Random.nextDouble() },
+    σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } }
+  ): DMatrixSparseCSC =
+    if(t == 0) H else mpnn(t = t - 1, H = σ(A * H * W + H * W + b), W = W, b = b)
 
   fun isomorphicTo(that: G) =
-    vertices.size == that.vertices.size &&
+    this.size == that.size &&
       totalEdges == that.totalEdges &&
       hashCode() == that.hashCode()
 
@@ -134,11 +147,11 @@ constructor(override val vertices: Set<V> = setOf())
 
   fun attachRandomT(degree: Int): G =
     this + (prototype?.Vertex(
-      newId = vertices.size.toString(),
+      newId = size.toString(),
       out = if (vertices.isEmpty()) emptySet()
       else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
         degMap.map { (k, v) -> k to (v + 1.0) / (totalEdges + 1.0) }.toMap())
-        .run { generateSequence { sample() }.take(degree.coerceAtMost(vertices.size)) }.toSet()
+        .run { generateSequence { sample() }.take(degree.coerceAtMost(size)) }.toSet()
     )?.graph ?: new())
 
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
@@ -146,19 +159,18 @@ constructor(override val vertices: Set<V> = setOf())
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
 
-  open fun render(): MutableGraph =
-    graph(directed = true) {
-      val color = if (DARKMODE) WHITE else BLACK
-      edge[color, NORMAL, lineWidth(THICKNESS)]
-      graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
-      node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
-      
-      vertices.forEach { vertex ->
-        vertex.outgoing.forEach { edge ->
-          edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
-        }
+  open fun render(): MutableGraph = graph(directed = true) {
+    val color = if (DARKMODE) WHITE else BLACK
+    edge[color, NORMAL, lineWidth(THICKNESS)]
+    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
+    node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
+
+    vertices.forEach { vertex ->
+      vertex.outgoing.forEach { edge ->
+        edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
       }
     }
+  }
 }
 
 abstract class Edge<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>

@@ -63,3 +63,9 @@ fun randomString() = UUID.randomUUID().toString().take(5)
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
+
+fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
+  copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
+
+fun randomMatrix(rows: Int, cols: Int, rand: () -> Double) =
+  DMatrixSparseTriplet(rows, cols, rows * cols).apply { this[rows, cols] = rand() }.toCSC()
