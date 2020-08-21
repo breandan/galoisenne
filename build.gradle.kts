@@ -20,8 +20,8 @@ dependencies {
   implementation(kotlin("stdlib-jdk8"))
   testImplementation("junit", "junit", "4.13")
   val ejmlVersion = "0.39"
-  api("org.ejml:ejml-kotlin:$ejmlVersion")
-  api("org.ejml:ejml-all:$ejmlVersion")
+  implementation("org.ejml:ejml-kotlin:$ejmlVersion")
+  implementation("org.ejml:ejml-all:$ejmlVersion")
   implementation("guru.nidi:graphviz-kotlin:0.17.0")
   implementation("org.apache.commons:commons-rng-examples-sampling:1.3")
   implementation("com.github.kwebio:kweb-core:0.7.20")

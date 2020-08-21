@@ -63,6 +63,8 @@ fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
   copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
 
 fun randomMatrix(rows: Int, cols: Int, rand: () -> Double) =
-  DMatrixSparseTriplet(rows, cols, rows * cols).apply {
-    for (i in 0 until rows) for (j in 0 until cols) this[i, j] = rand()
-  }.toCSC()
+  Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
+
+fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, size, sumBy { it.count { it == 0.0 } })
+  .also { s -> for (i in 0 until size) for (j in 0 until size) this[i][j].let { if (0 < it) s[i, j] = it } }
+fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)

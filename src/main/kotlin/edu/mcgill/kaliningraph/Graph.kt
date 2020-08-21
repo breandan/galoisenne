@@ -116,6 +116,7 @@ constructor(override val vertices: Set<V> = setOf())
 
   // https://cs.mcgill.ca/~wlh/comp766/files/chapter4_draft_mar29.pdf#page=5
   // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+  @Suppress("NonAsciiCharacters")
   tailrec fun mpnn(
     t: Int = 10,
     H: DMatrixSparseCSC = H0,
@@ -123,7 +124,15 @@ constructor(override val vertices: Set<V> = setOf())
     b: DMatrixSparseCSC = randomMatrix(size, size) { Random.nextDouble() },
     σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } }
   ): DMatrixSparseCSC =
-    if(t == 0) H else mpnn(t = t - 1, H = σ(A * H * W + H * W + b), W = W, b = b)
+    if(t == 0) H
+    else
+      mpnn(
+        t = t - 1,
+        H = σ(A * H * W + H * W + b),
+//        H = A + A,
+        W = W,
+        b = b
+      )
 
   fun isomorphicTo(that: G) =
     this.size == that.size &&
