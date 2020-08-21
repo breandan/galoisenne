@@ -3,15 +3,10 @@ package edu.mcgill.kaliningraph
 //import org.hipparchus.distribution.EnumeratedDistribution
 //import org.hipparchus.random.RandomDataGenerator
 //import org.hipparchus.util.Pair
-import guru.nidi.graphviz.attribute.*
-import guru.nidi.graphviz.attribute.Arrow.NORMAL
-import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
-import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
 import guru.nidi.graphviz.toGraphviz
 import org.ejml.data.*
@@ -68,4 +63,6 @@ fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
   copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
 
 fun randomMatrix(rows: Int, cols: Int, rand: () -> Double) =
-  DMatrixSparseTriplet(rows, cols, rows * cols).apply { this[rows, cols] = rand() }.toCSC()
+  DMatrixSparseTriplet(rows, cols, rows * cols).apply {
+    for (i in 0 until rows) for (j in 0 until cols) this[i, j] = rand()
+  }.toCSC()
