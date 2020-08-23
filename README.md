@@ -173,7 +173,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph learning
 
-* [Graph Representation Learning](https://cs.mcgill.ca/~wlh/comp766/notes.html), William Hamilton
+* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), William Hamilton
 
 ### Functional graphs
 

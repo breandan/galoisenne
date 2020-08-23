@@ -114,7 +114,7 @@ constructor(override val vertices: Set<V> = setOf())
     else wl(k - 1) { updates[it]!! }
   }
 
-  // https://cs.mcgill.ca/~wlh/comp766/files/chapter4_draft_mar29.pdf#page=5
+  // https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6
   // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
   @Suppress("NonAsciiCharacters")
   tailrec fun mpnn(
