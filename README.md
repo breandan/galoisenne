@@ -156,6 +156,12 @@ val g = Graph { a - b - c - a }
         .toGraphviz().toKaliningraph()
 ```
 
+## Code2Vec
+
+Code2Vec generation and visualization is supported. The following demo was generated using message passing on the adjacency matrix, for graphs of varying height. The technique to create the embeddings is described [here](https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6). We use TSNE to visualize the resulting vectors in 2D, and can clearly distinguish the clusters.
+
+![](src/main/resources/clusters.svg)
+
 ## Automata-Based Regex
 
 A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`. You should see something like this:

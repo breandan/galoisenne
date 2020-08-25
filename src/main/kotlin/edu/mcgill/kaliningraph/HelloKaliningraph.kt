@@ -34,5 +34,4 @@ fun main() {
     f = b - h
     b = g + 1
   }//.show()
-
 }
