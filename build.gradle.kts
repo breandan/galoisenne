@@ -13,7 +13,7 @@ repositories {
   mavenCentral()
   maven("https://jitpack.io")
   jcenter()
-  maven("https://dl.bintray.com/egor-bogomolov/astminer/")
+  maven("https://dl.bintray.com/egor-bogomolov/astminer")
   maven("https://dl.bintray.com/mipt-npm/dev")
 }
 
