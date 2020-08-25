@@ -1,29 +1,13 @@
 {
   "properties": {
-    "kaliningraphVersion": "0.0.8",
-    "graphvizVersion": "0.16.0",
-    "jgraphtVersion": "1.4.0",
-    "ejmlVersion": "0.39",
-    "mathVersion": "3.6.1",
-    "tinkerpopVersion": "3.4.6",
-    "astminerVersion": "0.5"
+    "kaliningraphVersion": "0.0.9"
   },
   "link": "https://github.com/breandan/kaliningraph",
   "repositories": [
-    "https://jitpack.io",
-    "https://dl.bintray.com/egor-bogomolov/astminer"
+    "https://jitpack.io"
   ],
   "dependencies": [
-    "com.github.breandan:kaliningraph:$kaliningraphVersion",
-    "guru.nidi:graphviz-kotlin:$graphvizVersion",
-    "org.ejml:ejml-kotlin:$ejmlVersion",
-    "org.ejml:ejml-all:$ejmlVersion",
-    "org.apache.commons:commons-math3:$mathVersion",
-    "org.jgrapht:jgrapht-core:$jgraphtVersion",
-    "org.jgrapht:jgrapht-ext:$jgraphtVersion",
-    "org.apache.tinkerpop:gremlin-core:$tinkerpopVersion",
-    "org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion",
-    "io.github.vovak.astminer:astminer:$astminerVersion"
+    "com.github.breandan:kaliningraph:$kaliningraphVersion"
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*",
