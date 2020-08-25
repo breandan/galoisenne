@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "edu.mcgill"
-version = "0.0.9"
+version = "0.1.0"
 
 repositories {
   mavenCentral()
@@ -95,6 +95,7 @@ val fatJar by tasks.creating(Jar::class) {
     attributes["Implementation-Title"] = "kaliningraph"
     attributes["Implementation-Version"] = archiveVersion
   }
+  setExcludes(listOf("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"))
   from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
   with(tasks.jar.get() as CopySpec)
 }
