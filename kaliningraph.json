@@ -5,11 +5,13 @@
     "jgraphtVersion": "1.4.0",
     "ejmlVersion": "0.39",
     "mathVersion": "3.6.1",
-    "tinkerpopVersion": "3.4.6"
+    "tinkerpopVersion": "3.4.6",
+    "astminerVersion": "0.5"
   },
   "link": "https://github.com/breandan/kaliningraph",
   "repositories": [
-    "https://jitpack.io"
+    "https://jitpack.io",
+    "https://dl.bintray.com/egor-bogomolov/astminer"
   ],
   "dependencies": [
     "com.github.breandan:kaliningraph:$kaliningraphVersion",
@@ -20,17 +22,18 @@
     "org.jgrapht:jgrapht-core:$jgraphtVersion",
     "org.jgrapht:jgrapht-ext:$jgraphtVersion",
     "org.apache.tinkerpop:gremlin-core:$tinkerpopVersion",
-    "org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion"
+    "org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion",
+    "io.github.vovak.astminer:astminer:$astminerVersion"
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*",
     "edu.mcgill.kaliningraph.circuits.*"
   ],
   "renderers": {
-    "edu.mcgill.kaliningraph.LabeledGraph": "HTML(($it as edu.mcgill.kaliningraph.LabeledGraph).html())",
-    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.circuits.Gate).graph.html())",
-    "edu.mcgill.kaliningraph.circuits.ComputationGraph": "HTML(($it as edu.mcgill.kaliningraph.circuits.ComputationGraph).html())",
-    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.circuits.NFunction).graph.html())",
+    "edu.mcgill.kaliningraph.LabeledGraph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.circuits.ComputationGraph": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
+    "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.Graph).html())",
     "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${($it as org.ejml.data.DMatrixSparseCSC).adjToMat()}\\\"/>\")"
   }
 }
