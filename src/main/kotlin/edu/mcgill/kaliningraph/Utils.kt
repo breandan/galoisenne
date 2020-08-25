@@ -1,23 +1,45 @@
 package edu.mcgill.kaliningraph
 
-//import org.hipparchus.distribution.EnumeratedDistribution
-//import org.hipparchus.random.RandomDataGenerator
-//import org.hipparchus.util.Pair
-import guru.nidi.graphviz.engine.Engine
+import astminer.common.model.Node
+import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
-import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.*
 import guru.nidi.graphviz.toGraphviz
 import org.ejml.data.*
-import org.ejml.dense.row.CommonOps_DDRM
-import org.ejml.dense.row.DMatrixComponent
+import org.ejml.dense.row.*
 import org.ejml.ops.ConvertDMatrixStruct
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
-import java.io.File
+import java.io.*
+import java.math.*
 import java.util.*
 import javax.imageio.ImageIO
+import kotlin.system.measureTimeMillis
+
+fun Node.toKGraph() =
+  LabeledGraphBuilder {
+    closure(
+      toVisit = setOf(this@toKGraph),
+      successors = { flatMap { setOfNotNull(it.getParent()) + it.getChildren() }.toSet() }
+    ).forEach { parent ->
+      getChildren().forEach { child ->
+        LGVertex(id = parent.toString(), label = parent.getToken()) - LGVertex(id = child.toString(), label = child.getToken())
+        LGVertex(id = child.toString(), label = child.getToken()) - LGVertex(id = parent.toString(), label = parent.getToken())
+      }
+    }
+  }
+
+tailrec fun <T> closure(
+  toVisit: Set<T> = emptySet(),
+  visited: Set<T> = emptySet(),
+  successors: Set<T>.() -> Set<T>
+): Set<T> =
+  if (toVisit.isEmpty()) visited
+  else closure(
+    toVisit = toVisit.successors() - visited,
+    visited = visited + toVisit,
+    successors = successors
+  )
 
 val THICKNESS = 4
 val DARKMODE = false
@@ -65,6 +87,17 @@ fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
 fun randomMatrix(rows: Int, cols: Int, rand: () -> Double) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
 
-fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, size, sumBy { it.count { it == 0.0 } })
-  .also { s -> for (i in 0 until size) for (j in 0 until size) this[i][j].let { if (0 < it) s[i, j] = it } }
+fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, this[0].size, sumBy { it.count { it == 0.0 } })
+  .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0 < it) s[i, j] = it } }
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
+
+fun Double.round(precision: Int = 10) = BigDecimal(this, MathContext(precision)).toDouble()
+
+fun Array<DoubleArray>.round(precision: Int = 3): Array<DoubleArray> =
+  map { it.map { it.round(precision) }.toDoubleArray() }.toTypedArray()
+
+fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
+  measureTimeMillis { constructor.power(100, matmul) }
+
+fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
+  (0..exp).fold(this) { acc, i -> matmul(acc, this) }

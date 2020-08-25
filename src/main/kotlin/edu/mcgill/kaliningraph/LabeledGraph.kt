@@ -38,6 +38,7 @@ class LabeledGraphBuilder {
   }
 }
 
+// TODO: convert to/from other graph types
 open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
@@ -60,17 +61,21 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
 
 class LGVertex constructor(
   id: String = randomString(),
+  val label: String = "",
   var occupied: Boolean = false,
   override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
 ) : Vertex<LabeledGraph, LabeledEdge, LGVertex>(id) {
+  constructor(id: String? = randomString(), label: String = "", out: Set<LGVertex> = emptySet()) :
+    this(id = id ?: randomString(), label = label, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(id: String? = randomString(), out: Set<LGVertex> = emptySet()) :
     this(id = id ?: randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(out: Set<LGVertex> = setOf()) : this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
 
   override fun render() = super.render().also { if (occupied) it.add(FILLED, RED.fill()) else it.add(BLACK) }
+//  override fun toString(): String = label
   override fun Graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
   override fun Edge(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) = LGVertex(newId, occupied, edgeMap)
+  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) = LGVertex(newId, "", occupied, edgeMap)
 }
 
 open class LabeledEdge(override val source: LGVertex, override val target: LGVertex, val label: String? = null) :

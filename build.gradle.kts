@@ -13,7 +13,8 @@ repositories {
   mavenCentral()
   maven("https://jitpack.io")
   jcenter()
-//  maven("https://dl.bintray.com/mipt-npm/dev")
+  maven("https://dl.bintray.com/egor-bogomolov/astminer/")
+  maven("https://dl.bintray.com/mipt-npm/dev")
 }
 
 dependencies {
@@ -27,6 +28,7 @@ dependencies {
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.breandan:tensor:master-SNAPSHOT")
+  implementation("io.github.vovak.astminer:astminer:0.5")
 
 //  val kmathVersion by extra { "0.1.4-dev-8" }
 //  implementation("scientifik:kmath-core:$kmathVersion")

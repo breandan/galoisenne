@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.circuits.Notebook
+import edu.mcgill.kaliningraph.circuits.CircuitBuilder
 
 fun main() {
   println("Hello Kaliningraph!")
@@ -28,10 +28,11 @@ fun main() {
   println("WL3(efgh) = $efgh_wl3")
   println("Isomorphic: ${abca.isomorphicTo(efgh)}")
 
-  Notebook {
+  CircuitBuilder {
     a = b + c
     e = a + d
     f = b - h
     b = g + 1
-  }.show()
+  }//.show()
+
 }

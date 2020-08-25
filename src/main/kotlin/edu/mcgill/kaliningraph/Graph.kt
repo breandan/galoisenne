@@ -4,6 +4,7 @@ import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
 import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
@@ -14,7 +15,7 @@ import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.*
-import kotlin.math.tanh
+import kotlin.math.*
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
@@ -49,31 +50,45 @@ constructor(override val vertices: Set<V> = setOf())
 
   // Degree matrix
   val D: DMatrixSparseCSC by lazy {
-    DMatrixSparseTriplet(size, size, totalEdges).also { degMat ->
-      vertices.forEach { v -> degMat[v, v] = v.neighbors.size.toDouble() }
-    }.toCSC()
+    elwise { v, _ ->
+      this[v, v] = v.neighbors.size.toDouble()
+    }
   }
 
   // Adjacency matrix
-  val A: DMatrixSparseCSC by lazy {
-    DMatrixSparseTriplet(size, size, totalEdges).also { adjMat ->
-      vertices.forEach { v -> v.neighbors.forEach { n -> adjMat[v, n] = 1.0 } }
-    }.toCSC()
+  val A: DMatrixSparseCSC by lazy { elwise { v, n -> this[v, n] = 1.0 } }
+
+  val ANORM: DMatrixSparseCSC by lazy {
+    elwise { v, n ->
+      this[v, n] = 1.0 / (sqrt(v.outgoing.size.toDouble()) * sqrt(n.outgoing.size.toDouble()))
+    }
   }
+
+  inline fun elwise(crossinline lf: DMatrixSparseTriplet.(V, V) -> Unit) =
+    DMatrixSparseTriplet(size, size, totalEdges).also { adjMat ->
+        forEach { v -> v.neighbors.forEach { n -> adjMat.lf(v, n) } }
+    }.toCSC()
 
   // Laplacian matrix
   val L by lazy { D - A }
+  val I by lazy { elwise { v, n -> if(v == n) this[v, n] = 1.0 } }
+
+  val LSYMNORM by lazy { I - ANORM }
+
+  val featureDim by lazy { size } //min(size, 10) }
 
   val H0 by lazy {
-    DMatrixSparseTriplet(size, size, totalEdges).also { featMat ->
-      vertices.encode().forEachIndexed { i, row ->
-        row.forEachIndexed { j, it -> if(it != 0.0) featMat[i, j] = it }
-      }
-    }.toCSC()
+//     LSYMNORM.power(20) { a, b -> a * b }
+     L.power(20) { a, b -> a * b }
   }
 
   // TODO: implement one-hot encoder for finite alphabet
-  fun Set<V>.encode() = Array(size) { i -> Array(size) { j -> if(i == j) 1.0 else 0.0 } }
+  fun Set<V>.encode() = Array(size) { i ->
+    DoubleArray(featureDim) { j ->
+//      Random.nextDouble()
+      if(i == j) 1.0 else 0.0
+    }
+  }
 
   val degMap by lazy { vertices.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
@@ -118,10 +133,14 @@ constructor(override val vertices: Set<V> = setOf())
   // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
   @Suppress("NonAsciiCharacters")
   tailrec fun mpnn(
-    t: Int = 10,
+    t: Int = 20,
+    // Matrix of node representations ℝ^{|V|xd}
     H: DMatrixSparseCSC = H0,
-    W: DMatrixSparseCSC = randomMatrix(size, size) { Random.nextDouble() },
-    b: DMatrixSparseCSC = randomMatrix(size, size) { Random.nextDouble() },
+    // (Trainable) weight matrix
+    W: DMatrixSparseCSC = randomMatrix(H0.numCols, H0.numCols) { Random.nextDouble() },
+    // Bias term
+    b: DMatrixSparseCSC = randomMatrix(size, H0.numCols) { Random.nextDouble() },
+    // Nonlinearity
     σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } }
   ): DMatrixSparseCSC =
     if(t == 0) H
@@ -129,7 +148,6 @@ constructor(override val vertices: Set<V> = setOf())
       mpnn(
         t = t - 1,
         H = σ(A * H * W + H * W + b),
-//        H = A + A,
         W = W,
         b = b
       )
@@ -168,10 +186,10 @@ constructor(override val vertices: Set<V> = setOf())
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
 
-  open fun render(): MutableGraph = graph(directed = true) {
+  open fun render(): MutableGraph = graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
-    graph[Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
+    graph[CONCENTRATE, Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
     node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
     vertices.forEach { vertex ->

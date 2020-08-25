@@ -9,7 +9,7 @@ import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
-class Notebook {
+class CircuitBuilder {
   var graph = ComputationGraph()
 
   var a by Var(); var b by Var(); var c by Var(); var d by Var()
@@ -25,8 +25,8 @@ class Notebook {
     op(wrap(left), wrap(right))
 
   companion object {
-    operator fun invoke(builder: Notebook.() -> Unit) =
-      Notebook().also { it.builder() }.graph
+    operator fun invoke(builder: CircuitBuilder.() -> Unit) =
+      CircuitBuilder().also { it.builder() }.graph
   }
 }
 
@@ -88,7 +88,7 @@ open class Gate constructor(
     Gate(newId, Monad.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
-  open operator fun setValue(builder: Notebook, prop: KProperty<*>, value: Gate) {
+  open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
     builder.graph += Gate(prop.name, Gate(`=`, value)).graph
   }
 }
@@ -121,7 +121,7 @@ open class UnlabeledEdge(override val source: Gate, override val target: Gate):
 }
 
 fun main() {
-  Notebook {
+  CircuitBuilder {
     val funA by def(a, b, c) { a + b + c }
     j = funA(3, 2, 1)
     j = b * c
