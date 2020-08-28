@@ -53,8 +53,8 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
     "Right" in it.key -> {
       val current = graphs.last()
       if (current.none { it.occupied }) {
-        current.sortedBy { -it.id.toInt() + Math.random() * 10 }
-          .takeWhile { Math.random() < 0.5 }
+        current.sortedBy { -it.id.toInt() + DEFAULT_RANDOM.nextDouble() * 10 }
+          .takeWhile { DEFAULT_RANDOM.nextDouble() < 0.5 }
           .forEach { it.occupied = true }
         current.accumuator = current.filter { it.occupied }.map { it.id }.toMutableSet()
         current.string = "y = ${current.accumuator.joinToString(" + ")}"

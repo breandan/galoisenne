@@ -78,6 +78,8 @@ fun DMatrixSparseCSC.adjToMat(f: Int = 20): String {
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 
+val DEFAULT_RANDOM = Random(1)
+
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
@@ -85,10 +87,10 @@ operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links
 fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
   copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
 
-fun randomMatrix(rows: Int, cols: Int, rand: () -> Double = { Math.random() }) =
+fun randomMatrix(rows: Int, cols: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
 
-fun randomVector(size: Int, rand: () -> Double = { Math.random() }) =
+fun randomVector(size: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
 
 fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, this[0].size, sumBy { it.count { it == 0.0 } })
