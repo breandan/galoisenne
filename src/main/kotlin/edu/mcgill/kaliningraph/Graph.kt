@@ -16,7 +16,6 @@ import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.*
 import kotlin.math.*
-import kotlin.random.Random
 import kotlin.reflect.KProperty
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
@@ -75,20 +74,9 @@ constructor(override val vertices: Set<V> = setOf())
 
   val LSYMNORM by lazy { I - ANORM }
 
-  val featureDim by lazy { size } //min(size, 10) }
+//  val featureDim by lazy { size } //min(size, 10) }
 
-  val H0 by lazy {
-//     LSYMNORM.power(20) { a, b -> a * b }
-     L.power(20) { a, b -> a * b }
-  }
-
-  // TODO: implement one-hot encoder for finite alphabet
-  fun Set<V>.encode() = Array(size) { i ->
-    DoubleArray(featureDim) { j ->
-//      Random.nextDouble()
-      if(i == j) 1.0 else 0.0
-    }
-  }
+  fun encode() = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
 
   val degMap by lazy { vertices.map { it to it.neighbors.size }.toMap() }
   operator fun DMatrixSparseTriplet.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
@@ -107,10 +95,12 @@ constructor(override val vertices: Set<V> = setOf())
 
   operator fun minus(graph: G): G = new(vertices - graph.vertices)
 
-  fun reversed(): G =
-    new(vertices.map { it to setOf<E>() }.toMap() +
-      vertices.flatMap { src -> src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) } }
-        .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
+  fun reversed(): G = new(
+    vertices.map { it to setOf<E>() }.toMap() +
+      vertices.flatMap { src ->
+        src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) }
+      }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() }
+  )
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
   val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
@@ -129,28 +119,26 @@ constructor(override val vertices: Set<V> = setOf())
     else wl(k - 1) { updates[it]!! }
   }
 
+  // Graph-level GNN implementation
   // https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6
   // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+
   @Suppress("NonAsciiCharacters")
-  tailrec fun mpnn(
-    t: Int = 20,
+  tailrec fun gnn(
+    // Message passing rounds
+    t: Int = 100,
     // Matrix of node representations ℝ^{|V|xd}
-    H: DMatrixSparseCSC = H0,
+    H: DMatrixSparseCSC = encode(),
     // (Trainable) weight matrix
-    W: DMatrixSparseCSC = randomMatrix(H0.numCols, H0.numCols) { Random.nextDouble() },
+    W: DMatrixSparseCSC = randomMatrix(H.numCols, H.numCols),
     // Bias term
-    b: DMatrixSparseCSC = randomMatrix(size, H0.numCols) { Random.nextDouble() },
+    b: DMatrixSparseCSC = randomMatrix(size, H.numCols),
     // Nonlinearity
-    σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } }
+    σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } },
+    // Message
+    m: Graph<G, E, V>.(DMatrixSparseCSC) -> DMatrixSparseCSC = { σ(A * H * W + H * W + b) }
   ): DMatrixSparseCSC =
-    if(t == 0) H
-    else
-      mpnn(
-        t = t - 1,
-        H = σ(A * H * W + H * W + b),
-        W = W,
-        b = b
-      )
+    if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   fun isomorphicTo(that: G) =
     this.size == that.size &&
@@ -189,8 +177,11 @@ constructor(override val vertices: Set<V> = setOf())
   open fun render(): MutableGraph = graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
-    graph[CONCENTRATE, Rank.dir(Rank.RankDir.LEFT_TO_RIGHT), TRANSPARENT.background(), GraphAttr.margin(0.0), Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
-    node[color, color.font(), Font.config("Helvetica", 20), lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
+    graph[CONCENTRATE, Rank.dir(Rank.RankDir.LEFT_TO_RIGHT),
+      TRANSPARENT.background(), GraphAttr.margin(0.0),
+      Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
+    node[color, color.font(), Font.config("Helvetica", 20),
+      lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
     vertices.forEach { vertex ->
       vertex.outgoing.forEach { edge ->
@@ -209,6 +200,7 @@ constructor(override val source: V, override val target: V): IEdge<G, E, V> {
   operator fun component2() = target
 }
 
+const val DEFAULT_FEATURE_LEN = 20
 // TODO: Link to graph and make a "view" of the container graph
 // TODO: Possible to extend Graph?
 abstract class Vertex<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
@@ -225,6 +217,8 @@ constructor(val id: String) : IVertex<G, E, V> {
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap.toMap()[this]!! }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
+
+  open fun encode() = id.vectorize()
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
     if (k == 0 || vertices.neighbors() == vertices) vertices

@@ -6,6 +6,7 @@ import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
 import guru.nidi.graphviz.model.MutableGraph
 import org.ejml.data.DMatrixSparseTriplet
+import kotlin.random.Random
 
 /**
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
@@ -71,6 +72,7 @@ class LGVertex constructor(
     this(id = id ?: randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(out: Set<LGVertex> = setOf()) : this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
 
+  override fun encode() = label.vectorize()
   override fun render() = super.render().also { if (occupied) it.add(FILLED, RED.fill()) else it.add(BLACK) }
 //  override fun toString(): String = label
   override fun Graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)

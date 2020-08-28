@@ -14,6 +14,7 @@ import java.io.*
 import java.math.*
 import java.util.*
 import javax.imageio.ImageIO
+import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 fun Node.toKGraph() =
@@ -84,8 +85,11 @@ operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links
 fun DMatrixSparseCSC.elwise(op: (Double) -> Double) =
   copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
 
-fun randomMatrix(rows: Int, cols: Int, rand: () -> Double) =
+fun randomMatrix(rows: Int, cols: Int, rand: () -> Double = { Math.random() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
+
+fun randomVector(size: Int, rand: () -> Double = { Math.random() }) =
+  Array(size) { rand() }.toDoubleArray()
 
 fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, this[0].size, sumBy { it.count { it == 0.0 } })
   .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0 < it) s[i, j] = it } }
@@ -101,3 +105,6 @@ fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
 
 fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
   (0..exp).fold(this) { acc, i -> matmul(acc, this) }
+
+fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) = Random(hashCode())
+  .let { randomVector(len) { it.nextDouble() } }
