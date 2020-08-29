@@ -9,6 +9,7 @@ import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
 import kweb.shoebox.toArrayList
+import kweb.util.toJson
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
@@ -70,7 +71,7 @@ constructor(override val vertices: Set<V> = setOf())
 
   // Laplacian matrix
   val L by lazy { D - A }
-  val I by lazy { elwise { v, n -> if(v == n) this[v, n] = 1.0 } }
+  val I by lazy { Array(size) { i -> Array(size) { j -> if(i == j) 1.0 else 0.0 }.toDoubleArray() }.toEJMLSparse() }
 
   val LSYMNORM by lazy { I - ANORM }
 
@@ -105,6 +106,12 @@ constructor(override val vertices: Set<V> = setOf())
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
   val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
 
+  tailrec fun diameter(
+    d: Int = 1,
+    walks: DMatrixSparseCSC = A + A.transpose() + I
+  ): Int = if (walks.isFull) d
+  else diameter(d = d + 1, walks = walks * (A + A.transpose()))
+
   /*
    * Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
@@ -112,7 +119,6 @@ constructor(override val vertices: Set<V> = setOf())
    * https://breandan.net/2020/06/30/graph-computation/#weisfeiler-lehman
    */
 
-  // TODO: implement GNN as recurrence relation/sparse matmul
   tailrec fun wl(k: Int = 5, label: (V) -> Int = { histogram[it]!! }): Map<V, Int> {
     val updates = aggregateBy { it.map(label).sorted().hashCode() }
     return if (k <= 0 || all { label(it) == updates[it] }) updates
@@ -126,7 +132,7 @@ constructor(override val vertices: Set<V> = setOf())
   @Suppress("NonAsciiCharacters")
   tailrec fun gnn(
     // Message passing rounds
-    t: Int = 100,
+    t: Int = diameter(),
     // Matrix of node representations ℝ^{|V|xd}
     H: DMatrixSparseCSC = encode(),
     // (Trainable) weight matrix

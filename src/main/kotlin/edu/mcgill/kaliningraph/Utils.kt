@@ -94,7 +94,8 @@ fun randomVector(size: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }
   Array(size) { rand() }.toDoubleArray()
 
 fun Array<DoubleArray>.toEJMLSparse() = DMatrixSparseCSC(size, this[0].size, sumBy { it.count { it == 0.0 } })
-  .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0 < it) s[i, j] = it } }
+  .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
+
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
 
 fun Double.round(precision: Int = 10) = BigDecimal(this, MathContext(precision)).toDouble()

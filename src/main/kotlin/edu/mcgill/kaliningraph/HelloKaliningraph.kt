@@ -6,8 +6,12 @@ fun main() {
   println("Hello Kaliningraph!")
 
   val de = LabeledGraphBuilder { d - e }
-  val dacbe = LabeledGraphBuilder { d - a - c - b - e }
+  println(de.diameter())
   val dce = LabeledGraphBuilder { d - c - e }
+  println(dce.diameter())
+  val dacbe = LabeledGraphBuilder { d - a - c - b - e - f - g - h - i - j - k }
+  dacbe.show()
+  println(dacbe.diameter())
 
   val abcd = LabeledGraphBuilder { a - b - c - d }
   val cfde = LabeledGraphBuilder { c - "a" - f - d - e }
