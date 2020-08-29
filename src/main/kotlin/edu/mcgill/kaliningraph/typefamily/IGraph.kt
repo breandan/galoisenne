@@ -18,6 +18,7 @@ interface IVertex<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   val outgoing: Set<E>
 }
 
+// https://github.com/amodeus-science/amod
 abstract class Map : IGraph<Map, Road, City>
 abstract class Road : IEdge<Map, Road, City>
 abstract class City : IVertex<Map, Road, City>

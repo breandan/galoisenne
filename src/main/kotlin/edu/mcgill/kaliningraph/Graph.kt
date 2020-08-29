@@ -9,7 +9,6 @@ import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
 import kweb.shoebox.toArrayList
-import kweb.util.toJson
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
@@ -18,6 +17,8 @@ import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.*
 import kotlin.math.*
 import kotlin.reflect.KProperty
+
+typealias SprsMat = DMatrixSparseCSC
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
 constructor(override val vertices: Set<V> = setOf())
@@ -49,16 +50,17 @@ constructor(override val vertices: Set<V> = setOf())
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
-  val D: DMatrixSparseCSC by lazy {
+  val D: SprsMat by lazy {
     elwise { v, _ ->
       this[v, v] = v.neighbors.size.toDouble()
     }
   }
 
   // Adjacency matrix
-  val A: DMatrixSparseCSC by lazy { elwise { v, n -> this[v, n] = 1.0 } }
+  val A: SprsMat by lazy { elwise { v, n -> this[v, n] = 1.0 } }
+  val A_AUG: SprsMat by lazy { A + A.transpose() + I }
 
-  val ANORM: DMatrixSparseCSC by lazy {
+  val ANORM: SprsMat by lazy {
     elwise { v, n ->
       this[v, n] = 1.0 / (sqrt(v.outgoing.size.toDouble()) * sqrt(n.outgoing.size.toDouble()))
     }
@@ -74,8 +76,6 @@ constructor(override val vertices: Set<V> = setOf())
   val I by lazy { Array(size) { i -> Array(size) { j -> if(i == j) 1.0 else 0.0 }.toDoubleArray() }.toEJMLSparse() }
 
   val LSYMNORM by lazy { I - ANORM }
-
-//  val featureDim by lazy { size } //min(size, 10) }
 
   fun encode() = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
 
@@ -106,14 +106,17 @@ constructor(override val vertices: Set<V> = setOf())
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
   val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
 
-  tailrec fun diameter(
-    d: Int = 1,
-    walks: DMatrixSparseCSC = A + A.transpose() + I
-  ): Int = if (walks.isFull) d
-  else diameter(d = d + 1, walks = walks * (A + A.transpose()))
+  /* (𝟙 + A)ⁿ[a, b] counts the number of walks between vertices a, b of length n
+   * Let i be the smallest natural number such that (𝟙 + A)ⁱ has no zeros.
+   * Fact: i is the length of the longest shortest path in G.
+   *
+   * https://link.springer.com/content/pdf/10.1007/BF00264532.pdf#page=5
+   */
 
-  /*
-   * Weisfeiler-Lehman isomorphism test:
+  tailrec fun diameter(d: Int = 1, walks: SprsMat = A_AUG): Int =
+    if (walks.isFull) d else diameter(d = d + 1, walks = walks * A_AUG)
+
+  /* Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
    * http://davidbieber.com/post/2019-05-10-weisfeiler-lehman-isomorphism-test/
    * https://breandan.net/2020/06/30/graph-computation/#weisfeiler-lehman
@@ -125,26 +128,26 @@ constructor(override val vertices: Set<V> = setOf())
     else wl(k - 1) { updates[it]!! }
   }
 
-  // Graph-level GNN implementation
-  // https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6
-  // H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+  /* Graph-level GNN implementation
+   * https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6
+   * H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+   */
 
   @Suppress("NonAsciiCharacters")
   tailrec fun gnn(
     // Message passing rounds
     t: Int = diameter(),
     // Matrix of node representations ℝ^{|V|xd}
-    H: DMatrixSparseCSC = encode(),
+    H: SprsMat = encode(),
     // (Trainable) weight matrix
-    W: DMatrixSparseCSC = randomMatrix(H.numCols, H.numCols),
+    W: SprsMat = randomMatrix(H.numCols, H.numCols),
     // Bias term
-    b: DMatrixSparseCSC = randomMatrix(size, H.numCols),
+    b: SprsMat = randomMatrix(size, H.numCols),
     // Nonlinearity
-    σ: (DMatrixSparseCSC) -> DMatrixSparseCSC = { it.elwise { tanh(it) } },
+    σ: (SprsMat) -> SprsMat = { it.elwise { tanh(it) } },
     // Message
-    m: Graph<G, E, V>.(DMatrixSparseCSC) -> DMatrixSparseCSC = { σ(A * H * W + H * W + b) }
-  ): DMatrixSparseCSC =
-    if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
+    m: Graph<G, E, V>.(SprsMat) -> SprsMat = { σ(A * it * W + it * W + b) }
+  ): SprsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   fun isomorphicTo(that: G) =
     this.size == that.size &&
@@ -162,6 +165,7 @@ constructor(override val vertices: Set<V> = setOf())
   fun toMap() = vertices.map { it to it.neighbors }.toMap()
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
+
   tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
     if (vertices <= 0) graph
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
