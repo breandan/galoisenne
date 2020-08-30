@@ -63,10 +63,13 @@ val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
 
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 
-fun SpsMat.adjToMat(f: Int = 20): String {
-  val rescaled = DMatrixRMaj(numRows * f, numCols * f)
+fun SpsMat.matToImg(f: Int = 20): String {
+  var rescaled = DMatrixRMaj(numRows * f, numCols * f)
   val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
+  // Confine to binary colorspace to correct for floating point drift
+  rescaled = DMatrixRMaj(numRows * f, numCols * f, true,
+    *rescaled.data.map { if(0.0 < it) 1.0 else 0.0 }.toDoubleArray())
 
   val bi = BufferedImage(rescaled.numCols, rescaled.numRows, BufferedImage.TYPE_INT_RGB)
   DMatrixComponent.renderMatrix(rescaled, bi, 1.0)
@@ -84,7 +87,7 @@ private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
-fun randomMatrix(rows: Int, cols: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
+fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
 
 fun randomVector(size: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =

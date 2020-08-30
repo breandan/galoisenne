@@ -133,13 +133,21 @@ constructor(override val vertices: Set<V> = setOf())
     // Matrix of node representations ℝ^{|V|xd}
     H: SpsMat = encode(),
     // (Trainable) weight matrix
-    W: SpsMat = randomMatrix(H.numCols, H.numCols),
+    W: SpsMat = randomMatrix(H.numCols),
     // Bias term
     b: SpsMat = randomMatrix(size, H.numCols),
     // Nonlinearity
     σ: (SpsMat) -> SpsMat = { it.elwise { tanh(it) } },
+    // Feature scaling
+    norm: (SpsMat) -> SpsMat = {
+      // Mean normalization
+      val (μ, min, max) = it.nz_values.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
+        Triple(a + e / it.nz_length.toDouble(), min(b, e), max(c, e))
+      }
+      it.elwise { e -> (e - μ) / (max - min) }
+    },
     // Message
-    m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(A * it * W + it * W + b) }
+    m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(norm(A * it * W + it * W + b)) }
   ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   fun isomorphicTo(that: G) =

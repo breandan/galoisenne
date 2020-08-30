@@ -5,7 +5,6 @@ import kweb.Kweb
 import kweb.html.events.KeyboardEvent
 import kweb.img
 import kweb.new
-import org.ejml.data.DMatrixSparseCSC
 import org.ejml.kotlin.times
 import org.ejml.kotlin.transpose
 
@@ -65,6 +64,6 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
   }
 }
 
-private fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> DMatrixSparseCSC) {
-  setAttributeRaw("src", renderFun(graph).adjToMat())
+private fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> SpsMat) {
+  setAttributeRaw("src", renderFun(graph).matToImg())
 }
