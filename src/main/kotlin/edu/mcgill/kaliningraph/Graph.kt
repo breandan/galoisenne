@@ -124,9 +124,12 @@ constructor(override val vertices: Set<V> = setOf())
   /* Graph-level GNN implementation
    * https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6
    * H^t := σ(AH^(t-1)W^(t) + H^(t-1)W^t)
+   *
+   * TODO:
+   *   Pooling: https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=18
+   *   Convolution: https://arxiv.org/pdf/2004.03519.pdf#page=2
    */
 
-  @Suppress("NonAsciiCharacters")
   tailrec fun gnn(
     // Message passing rounds
     t: Int = diameter() * 10,
@@ -137,17 +140,11 @@ constructor(override val vertices: Set<V> = setOf())
     // Bias term
     b: SpsMat = randomMatrix(size, H.numCols),
     // Nonlinearity
-    σ: (SpsMat) -> SpsMat = { it.elwise { tanh(it) } },
-    // Feature scaling
-    norm: (SpsMat) -> SpsMat = {
-      // Mean normalization
-      val (μ, min, max) = it.nz_values.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
-        Triple(a + e / it.nz_length.toDouble(), min(b, e), max(c, e))
-      }
-      it.elwise { e -> (e - μ) / (max - min) }
-    },
+    σ: (SpsMat) -> SpsMat = ACT_TANH,
+    // Layer normalization
+    z: (SpsMat) -> SpsMat = NORM_AVG,
     // Message
-    m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(norm(A * it * W + it * W + b)) }
+    m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(z(A * it * W + it * W + b)) }
   ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   fun isomorphicTo(that: G) =

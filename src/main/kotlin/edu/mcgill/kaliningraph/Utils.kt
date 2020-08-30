@@ -14,6 +14,7 @@ import java.io.*
 import java.math.*
 import java.util.*
 import javax.imageio.ImageIO
+import kotlin.math.*
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
@@ -112,8 +113,20 @@ fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) = Random(hashCode())
   .let { randomVector(len) { it.nextDouble() } }
 
-fun SpsMat.elwise(op: (Double) -> Double) =
-  copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
+fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
+  (if(copy) copy() else this).also { mat ->
+    createCoordinateIterator().forEach { mat[it.row, it.col] = op(it.value) }
+  }
+
+val ACT_TANH: (SpsMat) -> SpsMat = { it.elwise { tanh(it) } }
+val NORM_AVG: (SpsMat) -> SpsMat = { it.meanNorm() }
+
+fun SpsMat.meanNorm(copy: Boolean = false) =
+  nz_values.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
+    Triple(a + e / nz_length.toDouble(), min(b, e), max(c, e))
+  }.let { (μ, min, max) ->
+    elwise(copy) { e -> (e - μ) / (max - min) }
+  }
 
 inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
                   crossinline lf: (Int, Int) -> Double?) =
