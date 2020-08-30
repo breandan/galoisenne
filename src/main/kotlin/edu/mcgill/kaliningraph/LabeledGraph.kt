@@ -47,9 +47,9 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   var accumuator = mutableSetOf<String>()
   var string = ""
 
-  fun S() = DMatrixSparseTriplet(vertices.size, 1, totalEdges).also { state ->
+  fun S() = SprsMat(vertices.size, 1, totalEdges).also { state ->
     vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
-  }.toCSC()
+  }
 
   fun propagate() {
     val (previousStates, unoccupied) = vertices.partition { it.occupied }

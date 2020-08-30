@@ -4,7 +4,9 @@ import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
 import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
+import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
@@ -12,13 +14,9 @@ import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
-import org.ejml.data.DMatrixSparseCSC
-import org.ejml.data.DMatrixSparseTriplet
 import org.ejml.kotlin.*
 import kotlin.math.*
 import kotlin.reflect.KProperty
-
-typealias SprsMat = DMatrixSparseCSC
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
 constructor(override val vertices: Set<V> = setOf())
@@ -38,50 +36,44 @@ constructor(override val vertices: Set<V> = setOf())
     operator fun plus(vertexIdx: VIndex<G, E, V>) = VIndex(set + vertexIdx.set)
     val array: ArrayList<V> = set.toList().toArrayList()
     val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
-    operator fun get(it: Vertex<G, E, V>) = map[it]
-    operator fun get(it: Int) = array[it]
+    operator fun get(it: Vertex<G, E, V>): Int? = map[it]
+    operator fun get(it: Int): V = array[it]
   }
 
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
 
-  val edgList: Sequence<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } }.asSequence() }
-  val adjList: Sequence<Pair<V, V>> by lazy { edgList.map { (v, e) -> v to e.target } }
+  val edgList: List<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } } }
+  val adjList: List<Pair<V, V>> by lazy { edgList.map { (v, e) -> v to e.target } }
   val edgMap: Map<V, Set<E>> by lazy { vertices.map { it to it.outgoing }.toMap() }
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
-  val D: SprsMat by lazy {
-    elwise { v, _ ->
-      this[v, v] = v.neighbors.size.toDouble()
-    }
-  }
+  val D: SprsMat by lazy { vwise { v, _ -> v.neighbors.size.toDouble() } }
 
   // Adjacency matrix
-  val A: SprsMat by lazy { elwise { v, n -> this[v, n] = 1.0 } }
+  val A: SprsMat by lazy { vwise { v, n -> 1.0 } }
   val A_AUG: SprsMat by lazy { A + A.transpose() + I }
 
+  // Normalized adjacency
   val ANORM: SprsMat by lazy {
-    elwise { v, n ->
-      this[v, n] = 1.0 / (sqrt(v.outgoing.size.toDouble()) * sqrt(n.outgoing.size.toDouble()))
-    }
+    vwise { v, n -> 1.0 / (sqrt(v.degree.toDouble()) * sqrt(n.degree.toDouble())) }
   }
 
-  inline fun elwise(crossinline lf: DMatrixSparseTriplet.(V, V) -> Unit) =
-    DMatrixSparseTriplet(size, size, totalEdges).also { adjMat ->
-        forEach { v -> v.neighbors.forEach { n -> adjMat.lf(v, n) } }
-    }.toCSC()
-
   // Laplacian matrix
-  val L by lazy { D - A }
-  val I by lazy { Array(size) { i -> Array(size) { j -> if(i == j) 1.0 else 0.0 }.toDoubleArray() }.toEJMLSparse() }
+  val L: SprsMat by lazy { D - A }
+  val I: SprsMat by lazy { elwise(size) { v, n -> if(v == n) 1.0 else null } }
+  val LSYMNORM: SprsMat by lazy { I - ANORM }
 
-  val LSYMNORM by lazy { I - ANORM }
+  inline fun vwise(crossinline lf: Graph<G, E, V>.(V, V) -> Double?): SprsMat =
+    elwise(size) { i, j ->
+      (this[i] to this[j]).let { (v, n) -> if (n in v.neighbors) lf(v, n) else null }
+    }
 
-  fun encode() = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
+  fun encode(): SprsMat = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
 
-  val degMap by lazy { vertices.map { it to it.neighbors.size }.toMap() }
-  operator fun DMatrixSparseTriplet.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
-  operator fun DMatrixSparseTriplet.set(n0: V, n1: V, value: Double) {
+  val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
+  operator fun SprsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
+  operator fun SprsMat.set(n0: V, n1: V, value: Double) {
     this[index[n0]!!, index[n1]!!] = value
   }
 
@@ -110,6 +102,7 @@ constructor(override val vertices: Set<V> = setOf())
    * Let i be the smallest natural number such that (𝟙 + A)ⁱ has no zeros.
    * Fact: i is the length of the longest shortest path in G.
    *
+   * TODO: implement O(M(n)log(n)) version based on Booth & Lipton (1981)
    * https://link.springer.com/content/pdf/10.1007/BF00264532.pdf#page=5
    */
 
@@ -136,7 +129,7 @@ constructor(override val vertices: Set<V> = setOf())
   @Suppress("NonAsciiCharacters")
   tailrec fun gnn(
     // Message passing rounds
-    t: Int = diameter(),
+    t: Int = diameter() * 10,
     // Matrix of node representations ℝ^{|V|xd}
     H: SprsMat = encode(),
     // (Trainable) weight matrix
@@ -187,17 +180,14 @@ constructor(override val vertices: Set<V> = setOf())
   open fun render(): MutableGraph = graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
-    graph[CONCENTRATE, Rank.dir(Rank.RankDir.LEFT_TO_RIGHT),
+    graph[CONCENTRATE, Rank.dir(LEFT_TO_RIGHT),
       TRANSPARENT.background(), GraphAttr.margin(0.0),
-      Attributes.attr("compound", "true"), Attributes.attr("nslimit", "20")]
+      COMPOUND, Attributes.attr("nslimit", "20")]
     node[color, color.font(), Font.config("Helvetica", 20),
       lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
-    vertices.forEach { vertex ->
-      vertex.outgoing.forEach { edge ->
-        edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
-      }
-    }
+    for((vertex, edge) in edgList)
+      edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }
 }
 
@@ -227,8 +217,9 @@ constructor(val id: String) : IVertex<G, E, V> {
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap.toMap()[this]!! }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
+  open val degree by lazy { neighbors.size }
 
-  open fun encode() = id.vectorize()
+  open fun encode(): DoubleArray = id.vectorize()
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
     if (k == 0 || vertices.neighbors() == vertices) vertices

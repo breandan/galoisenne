@@ -24,7 +24,9 @@ dependencies {
   api("guru.nidi:graphviz-kotlin:0.17.0")
   api("io.github.vovak.astminer:astminer:0.5")
 
-  implementation("org.apache.commons:commons-rng-examples-sampling:1.3")
+  val commonsRngVersion = "1.3"
+  implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
+  implementation("org.apache.commons:commons-rng-simple:$commonsRngVersion")
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.breandan:tensor:master-SNAPSHOT")
@@ -37,7 +39,7 @@ dependencies {
   testImplementation("junit", "junit", "4.13")
   testImplementation("com.github.ajalt:clikt:2.6.0")
   testImplementation("com.redislabs:jredisgraph:2.0.2")
-  testImplementation("io.lacuna:bifurcan:0.2.0-alpha1")
+  testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
   val jgraphtVersion by extra { "1.5.0" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
