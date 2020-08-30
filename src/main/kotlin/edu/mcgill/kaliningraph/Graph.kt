@@ -48,32 +48,32 @@ constructor(override val vertices: Set<V> = setOf())
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
-  val D: SprsMat by lazy { vwise { v, _ -> v.neighbors.size.toDouble() } }
+  val D: SpsMat by lazy { vwise { v, _ -> v.neighbors.size.toDouble() } }
 
   // Adjacency matrix
-  val A: SprsMat by lazy { vwise { v, n -> 1.0 } }
-  val A_AUG: SprsMat by lazy { A + A.transpose() + I }
+  val A: SpsMat by lazy { vwise { v, n -> 1.0 } }
+  val A_AUG: SpsMat by lazy { A + A.transpose() + I }
 
   // Normalized adjacency
-  val ANORM: SprsMat by lazy {
+  val ANORM: SpsMat by lazy {
     vwise { v, n -> 1.0 / (sqrt(v.degree.toDouble()) * sqrt(n.degree.toDouble())) }
   }
 
   // Laplacian matrix
-  val L: SprsMat by lazy { D - A }
-  val I: SprsMat by lazy { elwise(size) { v, n -> if(v == n) 1.0 else null } }
-  val LSYMNORM: SprsMat by lazy { I - ANORM }
+  val L: SpsMat by lazy { D - A }
+  val I: SpsMat by lazy { elwise(size) { v, n -> if(v == n) 1.0 else null } }
+  val LSYMNORM: SpsMat by lazy { I - ANORM }
 
-  inline fun vwise(crossinline lf: Graph<G, E, V>.(V, V) -> Double?): SprsMat =
+  inline fun vwise(crossinline lf: Graph<G, E, V>.(V, V) -> Double?): SpsMat =
     elwise(size) { i, j ->
       (this[i] to this[j]).let { (v, n) -> if (n in v.neighbors) lf(v, n) else null }
     }
 
-  fun encode(): SprsMat = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
+  fun encode(): SpsMat = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
 
   val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
-  operator fun SprsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
-  operator fun SprsMat.set(n0: V, n1: V, value: Double) {
+  operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
+  operator fun SpsMat.set(n0: V, n1: V, value: Double) {
     this[index[n0]!!, index[n1]!!] = value
   }
 
@@ -106,7 +106,7 @@ constructor(override val vertices: Set<V> = setOf())
    * https://link.springer.com/content/pdf/10.1007/BF00264532.pdf#page=5
    */
 
-  tailrec fun diameter(d: Int = 1, walks: SprsMat = A_AUG): Int =
+  tailrec fun diameter(d: Int = 1, walks: SpsMat = A_AUG): Int =
     if (walks.isFull) d else diameter(d = d + 1, walks = walks * A_AUG)
 
   /* Weisfeiler-Lehman isomorphism test:
@@ -131,16 +131,16 @@ constructor(override val vertices: Set<V> = setOf())
     // Message passing rounds
     t: Int = diameter() * 10,
     // Matrix of node representations ℝ^{|V|xd}
-    H: SprsMat = encode(),
+    H: SpsMat = encode(),
     // (Trainable) weight matrix
-    W: SprsMat = randomMatrix(H.numCols, H.numCols),
+    W: SpsMat = randomMatrix(H.numCols, H.numCols),
     // Bias term
-    b: SprsMat = randomMatrix(size, H.numCols),
+    b: SpsMat = randomMatrix(size, H.numCols),
     // Nonlinearity
-    σ: (SprsMat) -> SprsMat = { it.elwise { tanh(it) } },
+    σ: (SpsMat) -> SpsMat = { it.elwise { tanh(it) } },
     // Message
-    m: Graph<G, E, V>.(SprsMat) -> SprsMat = { σ(A * it * W + it * W + b) }
-  ): SprsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
+    m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(A * it * W + it * W + b) }
+  ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   fun isomorphicTo(that: G) =
     this.size == that.size &&

@@ -1,12 +1,8 @@
 package edu.mcgill.kaliningraph
 
-import guru.nidi.graphviz.KraphvizContext
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
-import guru.nidi.graphviz.model.MutableGraph
-import org.ejml.data.DMatrixSparseTriplet
-import kotlin.random.Random
 
 /**
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
@@ -47,7 +43,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   var accumuator = mutableSetOf<String>()
   var string = ""
 
-  fun S() = SprsMat(vertices.size, 1, totalEdges).also { state ->
+  fun S() = SpsMat(vertices.size, 1, totalEdges).also { state ->
     vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
   }
 

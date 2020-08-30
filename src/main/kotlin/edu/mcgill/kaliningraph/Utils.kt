@@ -17,7 +17,7 @@ import javax.imageio.ImageIO
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-typealias SprsMat = DMatrixSparseCSC
+typealias SpsMat = DMatrixSparseCSC
 
 fun Node.toKGraph() =
   LabeledGraphBuilder {
@@ -63,7 +63,7 @@ val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
 
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 
-fun SprsMat.adjToMat(f: Int = 20): String {
+fun SpsMat.adjToMat(f: Int = 20): String {
   val rescaled = DMatrixRMaj(numRows * f, numCols * f)
   val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
@@ -90,7 +90,7 @@ fun randomMatrix(rows: Int, cols: Int, rand: () -> Double = { DEFAULT_RANDOM.nex
 fun randomVector(size: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
 
-fun Array<DoubleArray>.toEJMLSparse() = SprsMat(size, this[0].size, sumBy { it.count { it == 0.0 } })
+fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumBy { it.count { it == 0.0 } })
   .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
 
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
@@ -109,11 +109,11 @@ fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) = Random(hashCode())
   .let { randomVector(len) { it.nextDouble() } }
 
-fun SprsMat.elwise(op: (Double) -> Double) =
+fun SpsMat.elwise(op: (Double) -> Double) =
   copy().also { copy -> createCoordinateIterator().forEach { copy[it.row, it.col] = op(it.value) } }
 
 inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
                   crossinline lf: (Int, Int) -> Double?) =
-  SprsMat(rows, cols, nonZeroes).also { sprsMat ->
+  SpsMat(rows, cols, nonZeroes).also { sprsMat ->
     for (v in 0 until rows) for (n in 0 until cols) lf(v, n)?.let { sprsMat[v, n] = it }
   }
