@@ -48,28 +48,32 @@ constructor(override val vertices: Set<V> = setOf())
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
-  val D: SpsMat by lazy { vwise { v, _ -> v.neighbors.size.toDouble() } }
+  val D: SpsMat by lazy { elwise(size) { i -> this[i].neighbors.size.toDouble() } }
 
   // Adjacency matrix
   val A: SpsMat by lazy { vwise { v, n -> 1.0 } }
   val A_AUG: SpsMat by lazy { A + A.transpose() + I }
 
-  // Normalized adjacency
-  val ANORM: SpsMat by lazy {
+  // Symmetric normalized adjacency
+  val ASYMNORM: SpsMat by lazy {
     vwise { v, n -> 1.0 / (sqrt(v.degree.toDouble()) * sqrt(n.degree.toDouble())) }
   }
 
   // Laplacian matrix
   val L: SpsMat by lazy { D - A }
-  val I: SpsMat by lazy { elwise(size) { v, n -> if(v == n) 1.0 else null } }
-  val LSYMNORM: SpsMat by lazy { I - ANORM }
+  val I: SpsMat by lazy { elwise(size) { i -> 1.0 } }
+  // Symmetric normalized Laplacian
+  val LSYMNORM: SpsMat by lazy { I - ASYMNORM }
+
+  val ENCODED: SpsMat by lazy { vertices.map { it.encode() }.toTypedArray().toEJMLSparse() }
+
+  // TODO: Implement APSP distance matrix using algebraic Floyd-Warshall
+  //       https://doi.org/10.1137/1.9780898719918.ch5
 
   inline fun vwise(crossinline lf: Graph<G, E, V>.(V, V) -> Double?): SpsMat =
     elwise(size) { i, j ->
       (this[i] to this[j]).let { (v, n) -> if (n in v.neighbors) lf(v, n) else null }
     }
-
-  fun encode(): SpsMat = vertices.map { it.encode() }.toTypedArray().toEJMLSparse()
 
   val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
   operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
@@ -88,6 +92,7 @@ constructor(override val vertices: Set<V> = setOf())
 
   operator fun minus(graph: G): G = new(vertices - graph.vertices)
 
+  // TODO: Reimplement using matrix transpose
   fun reversed(): G = new(
     vertices.map { it to setOf<E>() }.toMap() +
       vertices.flatMap { src ->
@@ -96,14 +101,13 @@ constructor(override val vertices: Set<V> = setOf())
   )
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
-  val labelFunc: (V) -> Int = { v: V -> histogram[v]!! }
 
   /* (𝟙 + A)ⁿ[a, b] counts the number of walks between vertices a, b of length n
    * Let i be the smallest natural number such that (𝟙 + A)ⁱ has no zeros.
    * Fact: i is the length of the longest shortest path in G.
    *
    * TODO: implement O(M(n)log(n)) version based on Booth & Lipton (1981)
-   * https://link.springer.com/content/pdf/10.1007/BF00264532.pdf#page=5
+   *       https://doi.org/10.1007/BF00264532
    */
 
   tailrec fun diameter(d: Int = 1, walks: SpsMat = A_AUG): Int =
@@ -134,16 +138,16 @@ constructor(override val vertices: Set<V> = setOf())
     // Message passing rounds
     t: Int = diameter() * 10,
     // Matrix of node representations ℝ^{|V|xd}
-    H: SpsMat = encode(),
-    // (Trainable) weight matrix
+    H: SpsMat = ENCODED,
+    // (Trainable) weight matrix ℝ^{dxd}
     W: SpsMat = randomMatrix(H.numCols),
-    // Bias term
+    // Bias term ℝ^{dxd}
     b: SpsMat = randomMatrix(size, H.numCols),
-    // Nonlinearity
+    // Nonlinearity ℝ^{*} -> ℝ^{*}
     σ: (SpsMat) -> SpsMat = ACT_TANH,
-    // Layer normalization
+    // Layer normalization ℝ^{*} -> ℝ^{*}
     z: (SpsMat) -> SpsMat = NORM_AVG,
-    // Message
+    // Message ℝ^{*} -> ℝ^{*}
     m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(z(A * it * W + it * W + b)) }
   ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
@@ -180,7 +184,7 @@ constructor(override val vertices: Set<V> = setOf())
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() =
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
-      edgList.map { (v, e) -> "${v.id}→${e.target.id}" }.joinToString(", ", "{", "}") + ")"
+      edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
 
   open fun render(): MutableGraph = graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
@@ -220,7 +224,7 @@ constructor(val id: String) : IVertex<G, E, V> {
   override val graph: G by lazy { Graph(neighbors(-1)) }
   abstract val edgeMap: (V) -> Collection<E> // Allows self-loops by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }
-  override val incoming by lazy { graph.reversed().edgMap.toMap()[this]!! }
+  override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
   open val degree by lazy { neighbors.size }
 

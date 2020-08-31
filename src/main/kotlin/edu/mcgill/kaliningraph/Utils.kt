@@ -53,6 +53,10 @@ fun Graph<*, *, *>.toGraphViz(layout: Engine = DOT, format: Format = SVG) =
 
 fun Graph<*, *, *>.html() = toGraphViz().toString()
 fun Graph<*, *, *>.show() = toGraphViz().toFile(File.createTempFile("temp", ".svg")).show()
+fun SpsMat.show() = matToImg().let { data ->
+  File.createTempFile("temp", ".html").apply { writeText("<html><body><img src=\"$data\"/></body></html>") }
+}.show()
+
 val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
   when {
     "win" in os -> "rundll32 url.dll,FileProtocolHandler"
@@ -131,5 +135,13 @@ fun SpsMat.meanNorm(copy: Boolean = false) =
 inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
                   crossinline lf: (Int, Int) -> Double?) =
   SpsMat(rows, cols, nonZeroes).also { sprsMat ->
-    for (v in 0 until rows) for (n in 0 until cols) lf(v, n)?.let { sprsMat[v, n] = it }
+    for (v in 0 until rows) for (n in 0 until cols)
+      lf(v, n)?.let { if (it != 0.0) sprsMat[v, n] = it }
+  }
+
+inline fun elwise(size: Int, nonZeroes: Int = size,
+                  crossinline lf: (Int) -> Double?) =
+  SpsMat(size, size, nonZeroes).also { sprsMat ->
+    for (v in 0 until size)
+      lf(v)?.let { if (it != 0.0) sprsMat[v, v] = it }
   }
