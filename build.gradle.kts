@@ -5,8 +5,8 @@ plugins {
   kotlin("jvm") version "1.4.0"
 }
 
-group = "edu.mcgill"
-version = "0.1.0"
+group = "com.github.breandan"
+version = "0.1.1"
 
 repositories {
   mavenCentral()
@@ -82,12 +82,25 @@ tasks {
 
   val installPathLocal = "${System.getProperty("user.home")}/.jupyter_kotlin/libraries"
 
-  register<Copy>("jupyterInstall") {
+  val genNotebookJSON by creating(JavaExec::class) {
+    main = "edu.mcgill.kaliningraph.codegen.NotebookGenKt"
+    classpath = sourceSets["main"].runtimeClasspath
+    args = listOf(projectDir.path, project.version.toString())
+  }
+
+  val jupyterInstall by registering(Copy::class) {
+    dependsOn(genNotebookJSON)
+    dependsOn("publishToMavenLocal")
     val installPath = findProperty("ath") ?: installPathLocal
     doFirst { mkdir(installPath) }
     from(file("kaliningraph.json"))
     into(installPath)
     doLast { logger.info("Kaliningraph notebook support was installed in: $installPath") }
+  }
+
+  val jupyterRun by creating(Exec::class) {
+    dependsOn(jupyterInstall)
+    commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
 }
 
@@ -106,7 +119,6 @@ publishing {
   publications.create<MavenPublication>("default") {
     artifact(fatJar)
     pom {
-      name.set("Kaliningraph")
       url.set("https://github.com/breandan/kaliningraph")
       licenses {
         license {

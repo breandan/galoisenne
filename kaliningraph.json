@@ -1,13 +1,11 @@
 {
-  "properties": {
-    "kaliningraphVersion": "0.1.0"
-  },
   "link": "https://github.com/breandan/kaliningraph",
   "repositories": [
+    "*mavenLocal",
     "https://jitpack.io"
   ],
   "dependencies": [
-    "com.github.breandan:kaliningraph:$kaliningraphVersion"
+    "com.github.breandan:kaliningraph:0.1.1"
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*",
@@ -20,6 +18,6 @@
     "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($it as edu.mcgill.kaliningraph.circuits.Gate).graph.html())",
     "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($it as edu.mcgill.kaliningraph.circuits.NFunction).graph.html())",
     "edu.mcgill.kaliningraph.circuits.ComputationGraph": "HTML(($it as edu.mcgill.kaliningraph.Graph<*, *, *>).html())",
-    "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${($it as org.ejml.data.DMatrixSparseCSC).adjToMat()}\\\"/>\")"
+    "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"${($it as org.ejml.data.DMatrixSparseCSC).matToImg()}\\\"/>\")"
   }
 }
