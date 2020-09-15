@@ -183,6 +183,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Functional graphs
 
+* [Algebraic Graphs with Class (Functional Pearl)](https://dl.acm.org/doi/pdf/10.1145/3122955.3122956)
 * [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf), Bruno Oliveira and William Cook
 * [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al.
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
@@ -197,6 +198,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Software
 
+* [Alga](https://github.com/snowleopard/alga)
 * [GraphBlas](http://graphblas.org)
 * [GraphBLAST](https://github.com/gunrock/graphblast)
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
