@@ -1,9 +1,9 @@
-package edu.mcgill.kaliningraph.circuits
+package edu.umontreal.kotlingrad.experimental.ir
 
 import edu.mcgill.kaliningraph.*
-import edu.mcgill.kaliningraph.circuits.Dyad.*
-import edu.mcgill.kaliningraph.circuits.Gate.Companion.wrap
-import edu.mcgill.kaliningraph.circuits.Polyad.*
+import edu.umontreal.kotlingrad.experimental.ir.Gate.Companion.wrap
+import edu.umontreal.kotlingrad.experimental.ir.Polyad.*
+import edu.umontreal.kotlingrad.experimental.ir.Dyad.*
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
@@ -48,7 +48,7 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<Comput
 
 interface Op
 enum class Monad: Op { `-`, sin, cos, tan, id }
-enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow }
+enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow, d }
 enum class Polyad: Op { λ, Σ, Π }
 
 open class Gate constructor(
