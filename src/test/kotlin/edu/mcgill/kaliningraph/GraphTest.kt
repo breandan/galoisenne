@@ -26,4 +26,12 @@ class GraphTest {
     val edcbace = LabeledGraphBuilder { e - d - c - b - a - c - e }
     assertNotEquals(abcdead, edcbace)
   }
+
+  @Test
+  fun testClosure() {
+    val graph = LabeledGraphBuilder { a - b - c - d - e; a - c - e }
+    assertEquals(graph.toSet(), graph.vertices.flatMap { it.neighbors + it }.toSet())
+  }
+
+  // TODO: Test whether graph is closed under other circumstances
 }

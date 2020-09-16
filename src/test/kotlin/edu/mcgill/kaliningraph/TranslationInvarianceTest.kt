@@ -9,20 +9,24 @@ import org.jgrapht.graph.SimpleDirectedGraph
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
-class TranslationTest {
+class TranslationInvarianceTest {
   val randomGraph = LabeledGraph().prefAttach(vertices = 10)
 
   @Test
-  fun testTinkerpopTranslationInvariance() =
+  fun testTinkerpop() =
     randomGraph.let { assertEquals(it, it.toTinkerpop().toKaliningraph()) }
 
   @Test
-  fun testJGraphTTranslationInvariance() =
+  fun testJGraphT() =
     randomGraph.let { assertEquals(it, it.toJGraphT().toKaliningraph()) }
 
   @Test
-  fun testGraphvizTranslationInvariance() =
-    randomGraph.let { assertEquals(it, it.toGraphviz().toKaliningraph()) }
+  fun testGraphviz() =
+    randomGraph.let { assertEquals(it, it.render().toKaliningraph()) }
+
+  @Test
+  fun testBifurcan() =
+    randomGraph.let { assertEquals(it, it.toBifurcan().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
     LabeledGraphBuilder {
@@ -33,6 +37,16 @@ class TranslationTest {
     SimpleDirectedGraph<String, DefaultEdge>(DefaultEdge::class.java).apply {
       vertices.forEach { addVertex(it.id) }
       edgList.forEach { (source, edge) -> addEdge(source.id, edge.target.id) }
+    }
+
+  fun <G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>> Graph<G, E, V>.toBifurcan() =
+    io.lacuna.bifurcan.Graph<V, E>().apply {
+      adjList.forEach { (source, target) -> edge(source, target) }
+    }
+
+  fun <V, E> io.lacuna.bifurcan.Graph<V, E>.toKaliningraph() =
+    LabeledGraphBuilder {
+      edges().forEach { LGVertex(it.from().toString()) - LGVertex(it.to().toString()) }
     }
 
   fun <E> org.jgrapht.Graph<String, E>.toKaliningraph() =

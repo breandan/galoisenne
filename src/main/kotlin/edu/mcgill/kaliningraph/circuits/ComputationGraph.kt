@@ -1,13 +1,15 @@
-package edu.umontreal.kotlingrad.experimental.ir
+package edu.mcgill.kaliningraph.circuits
 
 import edu.mcgill.kaliningraph.*
-import edu.umontreal.kotlingrad.experimental.ir.Gate.Companion.wrap
-import edu.umontreal.kotlingrad.experimental.ir.Polyad.*
-import edu.umontreal.kotlingrad.experimental.ir.Dyad.*
+import edu.mcgill.kaliningraph.circuits.Dyad.*
+import edu.mcgill.kaliningraph.circuits.Gate.Companion.wrap
+import edu.mcgill.kaliningraph.circuits.Polyad.λ
+import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
-class Notebook {
+class CircuitBuilder {
   var graph = ComputationGraph()
 
   var a by Var(); var b by Var(); var c by Var(); var d by Var()
@@ -22,12 +24,9 @@ class Notebook {
   fun wrap(left: Any, right: Any, op: (Gate, Gate) -> Gate): Gate =
     op(wrap(left), wrap(right))
 
-  fun join(left: Gate, right: Gate, label: String) =
-    Gate(label, left, right).also { graph += it.graph }
-
   companion object {
-    operator fun invoke(builder: Notebook.() -> Unit) =
-      Notebook().also { it.builder() }.graph.reversed()
+    operator fun invoke(builder: CircuitBuilder.() -> Unit) =
+      CircuitBuilder().also { it.builder() }.graph
   }
 }
 
@@ -47,19 +46,19 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<Comput
 }
 
 interface Op
-enum class Monad: Op { `-`, sin, cos, tan, id }
-enum class Dyad: Op { `+`, `-`, `*`, `÷`, `=`, pow, d }
-enum class Polyad: Op { λ, Σ, Π }
+enum class Monad: Op { `-`, sin, cos, tan, id, ᵀ }
+enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
+enum class Polyad: Op { λ, Σ, Π, map }
 
 open class Gate constructor(
   id: String = randomString(),
   val op: Op = Monad.id,
-  override val edgeMap: (Gate) -> Collection<UnlabeledEdge>
+  override val edgeMap: (Gate) -> Set<UnlabeledEdge>
 ) : Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
   constructor(op: Op = Monad.id, vararg gates: Gate) : this(randomString(), op, *gates)
   constructor(id: String = randomString(), vararg gates: Gate) : this(id, Monad.id, *gates)
   constructor(id: String = randomString(), op: Op = Monad.id, vararg gates: Gate) :
-    this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) } })
+    this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())
@@ -74,20 +73,22 @@ open class Gate constructor(
   operator fun times(that: Any) = Gate(`*`, this, wrap(that))
   operator fun div(that: Any) = Gate(`÷`, this, wrap(that))
   infix fun pow(that: Any) = Gate(pow, this, wrap(that))
+  infix fun log(that: Any) = Gate(log, this, wrap(that))
 
   operator fun unaryMinus() = Gate(Monad.`-`, this)
 
   fun sin() = Gate(Monad.sin, this)
   fun cos() = Gate(Monad.cos, this)
   fun tan() = Gate(Monad.tan, this)
+  fun d(that: Any) = Gate(Dyad.d, this, wrap(that))
 
   override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
   override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (Gate) -> Collection<UnlabeledEdge>) = 
+  override fun Vertex(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
     Gate(newId, Monad.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
-  open operator fun setValue(builder: Notebook, prop: KProperty<*>, value: Gate) {
+  open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
     builder.graph += Gate(prop.name, Gate(`=`, value)).graph
   }
 }
@@ -115,10 +116,12 @@ class NFunction(
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
   override fun new(source: Gate, target: Gate) = UnlabeledEdge(source, target)
+  override fun render() = (target.render() - source.render()).add(Label.of(""))
+    .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }
 
 fun main() {
-  Notebook {
+  CircuitBuilder {
     val funA by def(a, b, c) { a + b + c }
     j = funA(3, 2, 1)
     j = b * c

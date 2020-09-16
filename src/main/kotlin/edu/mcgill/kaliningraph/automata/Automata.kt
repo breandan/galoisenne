@@ -14,14 +14,14 @@ open class Transition(override val source: State, override val target: State, va
 
 open class State(
   id: String = randomString(),
-  override val edgeMap: (State) -> Collection<Transition>
+  override val edgeMap: (State) -> Set<Transition>
 ) : Vertex<Automaton, Transition, State>(id) {
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
-    edgeMap = { s -> out.map { t -> Transition(s, t) } })
+    edgeMap = { s -> out.map { t -> Transition(s, t) }.toSet() })
 
   override fun Graph(vertices: Set<State>) = Automaton(vertices)
   override fun Edge(s: State, t: State) = Transition(s, t)
-  override fun Vertex(newId: String, edgeMap: (State) -> Collection<Transition>): State = State(id, edgeMap)
+  override fun Vertex(newId: String, edgeMap: (State) -> Set<Transition>): State = State(id, edgeMap)
 }
 
 class AutomatonBuilder {
@@ -48,6 +48,6 @@ class AutomatonBuilder {
 
   companion object {
     operator fun invoke(builder: LabeledGraph.() -> Unit) =
-      LabeledGraph().also { it.builder() }.graph.reversed()
+      LabeledGraph().also { it.builder() }.reversed()
   }
 }

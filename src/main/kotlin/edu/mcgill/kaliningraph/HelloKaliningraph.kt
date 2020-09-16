@@ -1,13 +1,17 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.circuits.Notebook
+import edu.mcgill.kaliningraph.circuits.CircuitBuilder
 
 fun main() {
   println("Hello Kaliningraph!")
 
   val de = LabeledGraphBuilder { d - e }
-  val dacbe = LabeledGraphBuilder { d - a - c - b - e }
+  println(de.diameter())
   val dce = LabeledGraphBuilder { d - c - e }
+  println(dce.diameter())
+  val dacbe = LabeledGraphBuilder { d - a - c - b - e - f - g - h - i - j - k }
+  dacbe.show()
+  println(dacbe.diameter())
 
   val abcd = LabeledGraphBuilder { a - b - c - d }
   val cfde = LabeledGraphBuilder { c - "a" - f - d - e }
@@ -28,10 +32,10 @@ fun main() {
   println("WL3(efgh) = $efgh_wl3")
   println("Isomorphic: ${abca.isomorphicTo(efgh)}")
 
-  Notebook {
+  CircuitBuilder {
     a = b + c
     e = a + d
     f = b - h
     b = g + 1
-  }.show()
+  }//.show()
 }

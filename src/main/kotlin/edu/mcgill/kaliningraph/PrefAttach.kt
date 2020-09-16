@@ -5,7 +5,6 @@ import kweb.Kweb
 import kweb.html.events.KeyboardEvent
 import kweb.img
 import kweb.new
-import org.ejml.data.DMatrixSparseCSC
 import org.ejml.kotlin.times
 import org.ejml.kotlin.transpose
 
@@ -43,7 +42,7 @@ fun prefAttachDemo() {
     }
   }
 
-  ProcessBuilder("x-www-browser", "http://0.0.0.0:16097").start()
+  ProcessBuilder(browserCmd, "http://0.0.0.0:16097").start()
 }
 
 @ExperimentalStdlibApi
@@ -53,11 +52,11 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
     "Right" in it.key -> {
       val current = graphs.last()
       if (current.none { it.occupied }) {
-        current.sortedBy { -it.id.toInt() + Math.random() * 10 }
-          .takeWhile { Math.random() < 0.5 }
+        current.sortedBy { -it.id.toInt() + DEFAULT_RANDOM.nextDouble() * 10 }
+          .takeWhile { DEFAULT_RANDOM.nextDouble() < 0.5 }
           .forEach { it.occupied = true }
-        current.done = current.filter { it.occupied }.map { it.id }.toMutableSet()
-        current.string = "y = ${current.done.joinToString(" + ")}"
+        current.accumuator = current.filter { it.occupied }.map { it.id }.toMutableSet()
+        current.string = "y = ${current.accumuator.joinToString(" + ")}"
       } else current.propagate()
     }
     "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
@@ -65,6 +64,6 @@ private fun handle(it: KeyboardEvent, graphs: MutableList<LabeledGraph>) {
   }
 }
 
-private fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> DMatrixSparseCSC) {
-  setAttributeRaw("src", renderFun(graph).adjToMat())
+private fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> SpsMat) {
+  setAttributeRaw("src", renderFun(graph).matToImg())
 }

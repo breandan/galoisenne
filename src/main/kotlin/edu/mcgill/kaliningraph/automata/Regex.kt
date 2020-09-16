@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph.automata
 
+import edu.mcgill.kaliningraph.DEFAULT_RANDOM
 import java.util.*
 
 class Regex(val regex: String) {
@@ -178,7 +179,7 @@ class Regex(val regex: String) {
     stackFinal.push(outState)
   }
 
-  class State(var stateId: Int = Random().nextInt(9999)) {
+  class State(var stateId: Int = DEFAULT_RANDOM.nextInt(9999)) {
     var previousStates: MutableList<State> = LinkedList()
     var nextStates: MutableList<State> = LinkedList()
     var initial = false
