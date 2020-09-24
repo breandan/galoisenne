@@ -30,6 +30,7 @@ dependencies {
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.breandan:tensor:master-SNAPSHOT")
+  implementation("org.sosy-lab:java-smt:3.6.0")
 
 //  val kmathVersion by extra { "0.1.4-dev-8" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
@@ -40,7 +41,7 @@ dependencies {
   testImplementation("com.github.ajalt.clikt:clikt:3.0.1")
   testImplementation("com.redislabs:jredisgraph:2.1.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
   val jgraphtVersion by extra { "1.5.0" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
