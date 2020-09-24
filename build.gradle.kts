@@ -30,6 +30,9 @@ dependencies {
   implementation("com.github.kwebio:kweb-core:0.7.20")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.breandan:tensor:master-SNAPSHOT")
+
+  // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
+  implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
   implementation("org.sosy-lab:java-smt:3.6.0")
 
 //  val kmathVersion by extra { "0.1.4-dev-8" }
