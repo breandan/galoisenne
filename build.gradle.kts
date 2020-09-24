@@ -33,7 +33,11 @@ dependencies {
 
   // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
   implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
-  implementation("org.sosy-lab:java-smt:3.6.0")
+  implementation("org.sosy-lab:java-smt:3.6.0") {
+    // Remove pending: https://github.com/sosy-lab/java-smt/issues/201
+    exclude(group = "uuverifiers", module = "princess_2.13")
+    exclude(group = "edu.tum.cs", module = "java-cup")
+  }
 
 //  val kmathVersion by extra { "0.1.4-dev-8" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
@@ -63,6 +67,11 @@ tasks {
   compileKotlin {
     kotlinOptions.jvmTarget = VERSION_1_8.toString()
 //    kotlinOptions.useIR = true
+  }
+
+  register("collectArtifacts", Copy::class) {
+    from(project.configurations.implementation.resolvedConfiguration.lenientConfiguration.getFiles(Specs.satisfyAll()))
+    into("artifacts/")
   }
 
   listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->
