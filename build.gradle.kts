@@ -23,6 +23,7 @@ dependencies {
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.17.0")
   api("io.github.vovak.astminer:astminer:0.5")
+  implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
 
   val commonsRngVersion = "1.3"
   implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
@@ -67,11 +68,6 @@ tasks {
   compileKotlin {
     kotlinOptions.jvmTarget = VERSION_1_8.toString()
 //    kotlinOptions.useIR = true
-  }
-
-  register("collectArtifacts", Copy::class) {
-    from(project.configurations.implementation.resolvedConfiguration.lenientConfiguration.getFiles(Specs.satisfyAll()))
-    into("artifacts/")
   }
 
   listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->

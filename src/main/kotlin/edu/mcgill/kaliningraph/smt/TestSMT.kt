@@ -5,17 +5,36 @@ import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.BooleanFormula
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
+import javax.script.*
 import kotlin.reflect.KProperty
 
-val solverContext = SolverContextFactory.createSolverContext(Solvers.SMTINTERPOL)
+val solverContext = SolverContextFactory.createSolverContext(Solvers.Z3)
 val fm = solverContext.formulaManager.integerFormulaManager
 
 fun main() {
   val a by SMTVar()
   val b by SMTVar()
-  val v = a + 1
-  val f = fm.equal(v, b)
-  solveFor(a, b).subjectTo(f)
+  val c by SMTVar()
+  val v = (a / (b + c)) + (b  / (a + c)) + (c / (a + b))
+  val f = fm.equal(v, fm.makeNumber(4))
+  val g = fm.greaterThan(a, fm.makeNumber(2))
+  val h = fm.greaterThan(b, fm.makeNumber(2))
+  val i = fm.greaterThan(c, fm.makeNumber(2))
+  val solution = solveFor(a, b, c).subjectTo(f, g, h, i)
+  val engine = ScriptEngineManager().getEngineByExtension("kts")
+
+  // Check solution is correct by evaluating it
+  engine.run {
+    try {
+      val bnds = solution.map { it.first to it.second }.toMap()
+      setBindings(SimpleBindings(bnds), ScriptContext.ENGINE_SCOPE)
+      val e = "(a / (b + c)) + (b  / (a + c)) + (c / (a + b))"
+      println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
+    } catch (e: Exception) {
+      System.err.println("Failed to evaluate expression: $f")
+      throw e
+    }
+  }
 }
 
 class SMTVar(val name: String? = null): IntegerFormula {
@@ -30,7 +49,7 @@ fun ProofContext.subjectTo(vararg bs: BooleanFormula) =
   solverContext.newProverEnvironment(GENERATE_MODELS).use { prover ->
     for (f in bs) prover.addConstraint(f)
     assert(!prover.isUnsat) { "Unsat!" }
-    prover.model.use { for (f in fs) println("$f = ${it.evaluate(f)}") }
+    prover.model.use { fs.map { a -> a.toString() to it.evaluate(a)!!.toInt() } }
   }
 
 fun wrap(number: Number) = fm.makeNumber("$number")
