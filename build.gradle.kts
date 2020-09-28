@@ -2,7 +2,7 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.10"
+  kotlin("jvm") version "1.4.20-M1"
 }
 
 group = "com.github.breandan"
@@ -10,6 +10,7 @@ version = "0.1.1"
 
 repositories {
   mavenCentral()
+  maven ("https://dl.bintray.com/kotlin/kotlin-eap")
   maven("https://jitpack.io")
   jcenter()
   maven("https://dl.bintray.com/egor-bogomolov/astminer")
@@ -40,7 +41,7 @@ dependencies {
     exclude(group = "edu.tum.cs", module = "java-cup")
   }
 
-//  val kmathVersion by extra { "0.1.4-dev-8" }
+//  val kmathVersion by extra { "0.2.0-dev-2" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
 //  implementation("scientifik:kmath-ast:$kmathVersion")
 //  implementation("scientifik:kmath-prob:$kmathVersion")
