@@ -35,10 +35,9 @@ dependencies {
 
   // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
   implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
-  implementation("org.sosy-lab:java-smt:3.6.0") {
+  implementation("org.sosy-lab:java-smt:3.6.1") {
     // Remove pending: https://github.com/sosy-lab/java-smt/issues/201
     exclude(group = "uuverifiers", module = "princess_2.13")
-    exclude(group = "edu.tum.cs", module = "java-cup")
   }
 
 //  val kmathVersion by extra { "0.2.0-dev-2" }
