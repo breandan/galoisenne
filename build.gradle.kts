@@ -3,6 +3,7 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.4.20-M1"
+  id("com.github.ben-manes.versions") version "0.33.0"
 }
 
 group = "com.github.breandan"
@@ -30,7 +31,7 @@ dependencies {
   val commonsRngVersion = "1.3"
   implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
   implementation("org.apache.commons:commons-rng-simple:$commonsRngVersion")
-  implementation("com.github.kwebio:kweb-core:0.7.20")
+  implementation("com.github.kwebio:kweb-core:0.7.32")
   implementation("org.slf4j:slf4j-simple:1.7.30")
   implementation("com.github.breandan:tensor:master-SNAPSHOT")
 
@@ -53,7 +54,7 @@ dependencies {
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.4.6" }
+  val tinkerpopVersion by extra { "3.4.8" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
 }
