@@ -198,6 +198,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [An Algorithm for Optimal Lambda Calculus Reduction](https://dl.acm.org/doi/pdf/10.1145/96709.96711), Lamping
 - [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner
 - [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
+- [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig
 - [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco, Juan de Lara
 - [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch
 
@@ -206,6 +207,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf), Tate
 * [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/!etd.send_file?accession=case1496835753068605), Henderson
 * [Semantic Enrichment of Data Science Code](https://arxiv.org/pdf/2006.08945.pdf#chapter.6), Patterson
+* [Finally, a Polymorphic Linear Algebra Language](https://drops.dagstuhl.de/opus/volltexte/2019/10817/pdf/LIPIcs-ECOOP-2019-25.pdf)
 
 ### Proof Search
 
@@ -224,8 +226,10 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 ### Software
 
 * [Alga](https://github.com/snowleopard/alga)
+* [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker
+* [JavaSMT](https://github.com/sosy-lab/java-smt)
+* [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
+* [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
+* [viz-js](http://viz-js.com/)
 * [GraphBlas](http://graphblas.org)
 * [GraphBLAST](https://github.com/gunrock/graphblast)
-* [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
-* [JGraphT](https://doi.org/10.1145/3381449) - A Java Library for Graph Data Structures and Algorithms
-* [viz-js](http://viz-js.com/)
