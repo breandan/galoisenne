@@ -192,8 +192,10 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf)
 * [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf)
 
-### Graph Reduction
+### Graph Rewriting
 
+- [Equational term graph rewriting](ftp://www.cs.uoregon.edu/pub/ariola/acta-report.ps), Ariola
+- [Bisimilarity in Term Graph Rewriting](https://doi.org/10.1006/inco.1999.2824), Ariola
 - [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt
 - [An Algorithm for Optimal Lambda Calculus Reduction](https://dl.acm.org/doi/pdf/10.1145/96709.96711), Lamping
 - [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner
@@ -225,11 +227,11 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Software
 
-* [Alga](https://github.com/snowleopard/alga)
+* [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
 * [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker
-* [JavaSMT](https://github.com/sosy-lab/java-smt)
+* [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
 * [viz-js](http://viz-js.com/)
 * [GraphBlas](http://graphblas.org)
-* [GraphBLAST](https://github.com/gunrock/graphblast)
+* [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs 
