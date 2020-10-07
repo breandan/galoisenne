@@ -229,6 +229,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 * [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
 * [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker
+* [GP2](https://github.com/UoYCS-plasma/GP2) - Rule-based graph programming language
 * [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
