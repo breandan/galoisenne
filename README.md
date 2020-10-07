@@ -168,6 +168,34 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ![](regex_demo.png)
 
+## Research Questions
+
+* How could we implement graph rewriting?
+   - Is there an algebraic definition for graph grammars?
+   - Maybe graph convolution. How to encode rewrites as a kernel?
+   - Rectangular matrix multiplication or square with upper bound?
+   - Maybe possible to represent using tensor contraction
+   - Need to look into hyperedge replacement grammars
+   - How do we identify confluent rewrite systems?
+* What are the advantages and disadvantages of graph rewriting? 
+   - Graphs as vertices and rewrites as edges in a nested graph?
+   - Reduction/canonicalization versus expansion graph grammar
+* What happens if we represent the graph as a symbolic matrix?
+   - Could we propogate functions instead of just values?
+   - What if matrix elements were symbolic expressions?
+   - Should we represent the whole matrix as a big bold symbol?
+* Is there an efficient way to parallelize arithmetic circuits?
+   - Translate formula graph to matrix using Miller's evaluator
+   - How to distribute the work evenly across sparse matrices   
+* What are some good way to [visualize](https://setosa.io/ev/markov-chains/) random walks?
+   - Display states, transitions and graph occupancy side-by-side
+* What is the connection between belief and error propagation?
+   - Look into Turing's [unorganized machines](https://weightagnostic.github.io/papers/turing1948.pdf#page=8)
+* Is there a connection between linear algebra and λ-calculus?
+   - λ expressions can be represented as a graph/matrix
+   - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
+   - Look into [optimal beta reduction](https://www.youtube.com/channel/UCKQa6Ls95RhShE0kQsiXzVw) and Lamping's [optimal reduction algorithm](https://doi.org/10.1145%2F96709.96711)
+
 ## References
 
 ### Graph theory
