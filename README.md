@@ -168,6 +168,34 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ![](regex_demo.png)
 
+## Research Questions
+
+* How could we implement graph rewriting?
+   - Is there an algebraic definition for graph grammars?
+   - Maybe graph convolution. How to encode rewrites as a kernel?
+   - Rectangular matrix multiplication or square with upper bound?
+   - Maybe possible to represent using tensor contraction
+   - Need to look into hyperedge replacement grammars
+   - How do we identify confluent rewrite systems?
+* What are the advantages and disadvantages of graph rewriting? 
+   - Graphs as vertices and rewrites as edges in a nested graph?
+   - Reduction/canonicalization versus expansion graph grammar
+* What happens if we represent the graph as a symbolic matrix?
+   - Could we propogate functions instead of just values?
+   - What if matrix elements were symbolic expressions?
+   - Should we represent the whole matrix as a big bold symbol?
+* Is there an efficient way to parallelize arithmetic circuits?
+   - Translate formula graph to matrix using Miller's evaluator
+   - How to distribute the work evenly across sparse matrices   
+* What are some good way to [visualize](https://setosa.io/ev/markov-chains/) random walks?
+   - Display states, transitions and graph occupancy side-by-side
+* What is the connection between belief and error propagation?
+   - Look into Turing's [unorganized machines](https://weightagnostic.github.io/papers/turing1948.pdf#page=8)
+* Is there a connection between linear algebra and λ-calculus?
+   - λ expressions can be represented as a graph/matrix
+   - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
+   - Look into [optimal beta reduction](https://www.youtube.com/channel/UCKQa6Ls95RhShE0kQsiXzVw) and Lamping's [optimal reduction algorithm](https://doi.org/10.1145%2F96709.96711)
+
 ## References
 
 ### Graph theory
@@ -185,7 +213,6 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Functional graphs
 
-* [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov
 * [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf), Bruno Oliveira and William Cook
 * [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al.
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
@@ -199,10 +226,18 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt
 - [An Algorithm for Optimal Lambda Calculus Reduction](https://dl.acm.org/doi/pdf/10.1145/96709.96711), Lamping
 - [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner
-- [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
-- [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig
 - [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco, Juan de Lara
 - [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch
+
+### Algebra
+
+- [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov
+- [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig
+- [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
+- [Drags: A Simple Algebraic Framework For Graph Rewriting](https://hal.inria.fr/hal-01853836/document), Dershowitz and Jouannaud
+- [Lineal: A linear-algebraic λ-calculus](https://lmcs.episciences.org/3203/pdf), Arrighi and Dowek
+- [Graph products](https://en.wikipedia.org/wiki/Graph_product), Wikipedia
+- [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász
 
 ### Software Engineering
 
@@ -229,9 +264,10 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 * [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
 * [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker
+* [GP2](https://github.com/UoYCS-plasma/GP2) - Rule-based graph programming language
 * [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
 * [viz-js](http://viz-js.com/)
 * [GraphBlas](http://graphblas.org)
-* [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs 
+* [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs
