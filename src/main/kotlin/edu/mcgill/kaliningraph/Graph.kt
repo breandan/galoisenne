@@ -111,8 +111,8 @@ constructor(override val vertices: Set<V> = setOf())
    *       https://doi.org/10.1007/BF00264532
    */
 
-  tailrec fun diameter(d: Int = 1, walks: SpsMat = A_AUG): Int =
-    if (walks.isFull) d else diameter(d = d + 1, walks = walks * A_AUG)
+  tailrec fun diameter(i: Int = 1, walks: SpsMat = A_AUG): Int =
+    if (walks.isFull) i else diameter(i = i + 1, walks = walks * A_AUG)
 
   /* Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6
