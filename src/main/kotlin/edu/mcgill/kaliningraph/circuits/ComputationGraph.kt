@@ -46,7 +46,7 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()): Graph<Comput
 }
 
 interface Op
-enum class Monad: Op { `-`, sin, cos, tan, id, ᵀ }
+enum class Monad: Op { `+`, `-`, sin, cos, tan, id, ᵀ }
 enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
 enum class Polyad: Op { λ, Σ, Π, map }
 
