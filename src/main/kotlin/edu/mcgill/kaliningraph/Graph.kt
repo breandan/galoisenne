@@ -17,6 +17,7 @@ import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.kotlin.*
 import kotlin.math.*
+import kotlin.random.Random
 import kotlin.reflect.KProperty
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
@@ -100,6 +101,9 @@ constructor(override val vertices: Set<V> = setOf())
         src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() }
   )
+
+  fun randomWalk(r: Random = Random(System.currentTimeMillis())): Sequence<V> =
+    generateSequence(vertices.random(r)) { edgMap[it]?.random(r)?.target }
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
 

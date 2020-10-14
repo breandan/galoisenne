@@ -3,6 +3,8 @@ package edu.mcgill.kaliningraph
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
+import java.util.regex.Pattern
+import kotlin.random.Random
 
 /**
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
@@ -17,6 +19,9 @@ class LabeledGraphBuilder {
 
   operator fun LGVertex.minus(v: LGVertex) =
     LGVertex(v.id) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
+  operator fun LGVertex.minus(v: String): LGVertex =  this - LGVertex(v)
+  operator fun String.minus(v: LGVertex): LGVertex = LGVertex(this) - v
+  operator fun String.minus(v: String): LGVertex = LGVertex(this) - LGVertex(v)
 
   operator fun LGVertex.plus(edge: LabeledEdge) =
     Vertex { outgoing + edge }.also { mutGraph += it.graph }
@@ -26,12 +31,14 @@ class LabeledGraphBuilder {
   class ProtoEdge(val source: LGVertex, val label: String)
 
   // Arithmetic is right-associative, so we construct in reverse and flip after
-  operator fun LGVertex.minus(symbols: String) = ProtoEdge(this, symbols)
   operator fun ProtoEdge.minus(target: LGVertex) = target + LabeledEdge(target, source, label)
 
   companion object {
     operator fun invoke(builder: LabeledGraphBuilder.() -> Unit) =
       LabeledGraphBuilder().also { it.builder() }.mutGraph
+
+    operator fun invoke(graph: String) =
+      this { graph.substring(1).fold(LGVertex(graph.first().toString())) { acc, c -> acc - c.toString() }  }.reversed()
   }
 }
 
@@ -46,6 +53,12 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   fun S() = SpsMat(vertices.size, 1, totalEdges).also { state ->
     vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
   }
+
+  fun rewrite(substitution: Pair<String, String>, random: Random) =
+    LabeledGraphBuilder(
+      randomWalk().take(200).toList().joinToString("")
+        .replace(substitution.first, substitution.second)
+    )
 
   fun propagate() {
     val (previousStates, unoccupied) = vertices.partition { it.occupied }

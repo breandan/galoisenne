@@ -69,7 +69,7 @@ tasks {
 //    kotlinOptions.useIR = true
   }
 
-  listOf("HelloKaliningraph", "PrefAttach").forEach { fileName ->
+  listOf("HelloKaliningraph", "Rewriter", "PrefAttach").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["main"].runtimeClasspath
