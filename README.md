@@ -229,12 +229,24 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco, Juan de Lara
 - [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch
 
+#### Unification
+
+- [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump
+- [Unification with Drags](https://hal.inria.fr/hal-02562152/document)
+
+#### Termination checking
+
+- [Proving Termination of Graph Transformation Systems using Weighted Type Graphs over Semirings](https://arxiv.org/pdf/1505.01695.pdf)
+- [Termination of string rewriting with matrix interpretations](https://www.imn.htwk-leipzig.de/~waldmann/talk/06/rta/rta06.pdf)
+- [Matrix Interpretations for Proving Termination of Term Rewriting](https://link.springer.com/content/pdf/10.1007/s10817-007-9087-9.pdf)
+- [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud
+
 ### Algebra
 
 - [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov
 - [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig
-- [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
 - [Drags: A Simple Algebraic Framework For Graph Rewriting](https://hal.inria.fr/hal-01853836/document), Dershowitz and Jouannaud
+- [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
 - [Lineal: A linear-algebraic λ-calculus](https://lmcs.episciences.org/3203/pdf), Arrighi and Dowek
 - [Graph products](https://en.wikipedia.org/wiki/Graph_product), Wikipedia
 - [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász

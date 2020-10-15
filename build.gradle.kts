@@ -39,6 +39,8 @@ dependencies {
   implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
   implementation("org.sosy-lab:java-smt:3.6.1")
 
+  implementation(file("/libs/grez-src.jar"))
+
 //  val kmathVersion by extra { "0.2.0-dev-2" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
 //  implementation("scientifik:kmath-ast:$kmathVersion")
