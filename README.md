@@ -236,9 +236,9 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 #### Termination checking
 
-- [Proving Termination of Graph Transformation Systems using Weighted Type Graphs over Semirings](https://arxiv.org/pdf/1505.01695.pdf)
-- [Termination of string rewriting with matrix interpretations](https://www.imn.htwk-leipzig.de/~waldmann/talk/06/rta/rta06.pdf)
-- [Matrix Interpretations for Proving Termination of Term Rewriting](https://link.springer.com/content/pdf/10.1007/s10817-007-9087-9.pdf)
+- [Proving Termination of Graph Transformation Systems using Weighted Type Graphs over Semirings](https://arxiv.org/pdf/1505.01695.pdf), Bruggink
+- [Termination of string rewriting with matrix interpretations](https://www.imn.htwk-leipzig.de/~waldmann/talk/06/rta/rta06.pdf), Hofbauer
+- [Matrix Interpretations for Proving Termination of Term Rewriting](https://link.springer.com/content/pdf/10.1007/s10817-007-9087-9.pdf), Endrullis et al.
 - [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud
 
 ### Algebra
@@ -275,11 +275,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 ### Software
 
 * [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
-* [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker
+* [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker ([manual](http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf))
 * [GP2](https://github.com/UoYCS-plasma/GP2) - Rule-based graph programming language
 * [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
 * [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
 * [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
+* [AGG](https://www.user.tu-berlin.de/o.runge/agg/) - development environment for attributed graph transformation systems supporting an algebraic approach to graph transformation ([manual](http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf))
+* [Henshin](https://github.com/de-tu-berlin-tfs/Henshin-Editor) - an IDE for deveoping and simulating triple graph grammars (TGGs) ([manual](https://wiki.eclipse.org/Henshin))
+* [JGraLab](https://github.com/jgralab/jgralab) - a Java graph library implementing [TGraphs](https://github.com/jgralab/jgralab/wiki/TGraphs): typed, attributed, ordered, and directed graphs ([paper](https://www.researchgate.net/profile/Juergen_Ebert2/publication/228566960_Using_the_TGraph_approach_for_model_fact_repositories/links/09e41509259d33a161000000/Using-the-TGraph-approach-for-model-fact-repositories.pdf))
 * [viz-js](http://viz-js.com/)
 * [GraphBlas](http://graphblas.org)
 * [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs

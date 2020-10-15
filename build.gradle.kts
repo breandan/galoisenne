@@ -17,6 +17,7 @@ repositories {
   maven("https://dl.bintray.com/egor-bogomolov/astminer")
   maven("https://dl.bintray.com/mipt-npm/dev")
   maven("http://logicrunch.research.it.uu.se/maven/")
+  maven("https://clojars.org/repo")
 }
 
 dependencies {
@@ -39,7 +40,14 @@ dependencies {
   implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
   implementation("org.sosy-lab:java-smt:3.6.1")
 
-  implementation(file("/libs/grez-src.jar"))
+  // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
+  implementation(files("/libs/grez.jar"))
+
+  // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
+  implementation(files("/libs/aggEngine_V21_classes.jar"))
+
+  // https://github.com/jgralab/jgralab/wiki
+  implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
 //  val kmathVersion by extra { "0.2.0-dev-2" }
 //  implementation("scientifik:kmath-core:$kmathVersion")
