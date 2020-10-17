@@ -41,10 +41,10 @@ dependencies {
   implementation("org.sosy-lab:java-smt:3.6.1")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
-  implementation(files("/libs/grez.jar"))
+  implementation(files("$projectDir/libs/grez.jar"))
 
   // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
-  implementation(files("/libs/aggEngine_V21_classes.jar"))
+  implementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
   // https://github.com/jgralab/jgralab/wiki
   implementation("de.uni-koblenz.ist:jgralab:8.1.0")
