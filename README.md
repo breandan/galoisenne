@@ -216,8 +216,8 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf), Bruno Oliveira and William Cook
 * [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al.
 * [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
-* [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf)
-* [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf)
+* [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf), Erwig
+* [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf), Ferrante
 
 ### Graph Rewriting
 
@@ -266,23 +266,27 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf) Gauthier, 2020
 - [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf) Li et al., 2020
 
-### Automata
+### Software
+
+#### Graphs
+
+* [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
+* [Bifurcan](https://github.com/lacuna/bifurcan) - high-quality JVM implementations of immutable data structures
+* [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl) - Graphviz with pure Java
+* [JGraLab](https://github.com/jgralab/jgralab) - a Java graph library implementing [TGraphs](https://github.com/jgralab/jgralab/wiki/TGraphs): typed, attributed, ordered, and directed graphs ([paper](https://www.researchgate.net/profile/Juergen_Ebert2/publication/228566960_Using_the_TGraph_approach_for_model_fact_repositories/links/09e41509259d33a161000000/Using-the-TGraph-approach-for-model-fact-repositories.pdf))
+* [GraphBLAS](http://graphblas.org) - open effort to define standard building blocks for graph algorithms in the language of linear algebra
+* [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs
+
+#### Rewriting
+
+* [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker ([manual](http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf))
+* [GP2](https://github.com/UoYCS-plasma/GP2) - Rule-based graph programming language
+* [AGG](https://www.user.tu-berlin.de/o.runge/agg/) - development environment for attributed graph transformation systems supporting an algebraic approach to graph transformation ([manual](http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf))
+* [Henshin](https://github.com/de-tu-berlin-tfs/Henshin-Editor) - an IDE for developing and simulating triple graph grammars (TGGs) ([manual](https://wiki.eclipse.org/Henshin))
+* [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
+
+#### Automata
 
 * [roll-library](https://github.com/ISCAS-PMC/roll-library)
 * [dk.brics.automata](https://github.com/cs-au-dk/dk.brics.automaton)
 * [LearnLib](https://github.com/Learnlib/learnlib)
-
-### Software
-
-* [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
-* [Grez](http://www.ti.inf.uni-due.de/research/tools/grez/) - graph transformation termination checker ([manual](http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf))
-* [GP2](https://github.com/UoYCS-plasma/GP2) - Rule-based graph programming language
-* [JavaSMT](https://github.com/sosy-lab/java-smt) - Unified Java API for SMT solvers
-* [Bifurcan](https://github.com/lacuna/bifurcan), high-quality JVM implementations of immutable data structures
-* [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl)
-* [AGG](https://www.user.tu-berlin.de/o.runge/agg/) - development environment for attributed graph transformation systems supporting an algebraic approach to graph transformation ([manual](http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf))
-* [Henshin](https://github.com/de-tu-berlin-tfs/Henshin-Editor) - an IDE for deveoping and simulating triple graph grammars (TGGs) ([manual](https://wiki.eclipse.org/Henshin))
-* [JGraLab](https://github.com/jgralab/jgralab) - a Java graph library implementing [TGraphs](https://github.com/jgralab/jgralab/wiki/TGraphs): typed, attributed, ordered, and directed graphs ([paper](https://www.researchgate.net/profile/Juergen_Ebert2/publication/228566960_Using_the_TGraph_approach_for_model_fact_repositories/links/09e41509259d33a161000000/Using-the-TGraph-approach-for-model-fact-repositories.pdf))
-* [viz-js](http://viz-js.com/)
-* [GraphBlas](http://graphblas.org)
-* [GraphBLAST](https://github.com/gunrock/graphblast) - High-Performance Linear Algebra-based Graph Primitives on GPUs
