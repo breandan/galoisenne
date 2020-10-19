@@ -3,7 +3,6 @@ package edu.mcgill.kaliningraph
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
-import java.util.regex.Pattern
 import kotlin.random.Random
 
 /**
@@ -48,7 +47,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
   override fun new(vertices: Set<LGVertex>) = LabeledGraph(vertices)
   var accumuator = mutableSetOf<String>()
-  var string = ""
+  var description = ""
 
   fun S() = SpsMat(vertices.size, 1, totalEdges).also { state ->
     vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
@@ -56,7 +55,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
 
   fun rewrite(substitution: Pair<String, String>, random: Random) =
     LabeledGraphBuilder(
-      randomWalk().take(200).toList().joinToString("")
+      randomWalk(random).take(200).toList().joinToString("")
         .replace(substitution.first, substitution.second)
     )
 
@@ -65,7 +64,6 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
     previousStates.forEach { it.occupied = false }
     nextStates.forEach { it.occupied = true; accumuator.add(it.id) }
-    string = "y = " + accumuator.joinToString(" + ")
   }
 }
 
