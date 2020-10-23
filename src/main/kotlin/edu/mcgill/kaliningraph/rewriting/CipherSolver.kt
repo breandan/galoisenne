@@ -24,26 +24,19 @@ fun main() {
 
   val possibleWords = FastListMultimap.newMultimap<String, String>()
   for (word in cipherwords)
-    if (!possibleWords.containsKey(word))
-      possibleWords.putAll(word, patterns.get(convertWordToPattern(word)))
+    possibleWords.getIfAbsentPutAll(word, patterns[convertWordToPattern(word)])
 
   crackCipher(possibleWords)
 
   for (word in cipherwords)
-    println(possibleWords.get(word).toString() + " -> (" + word + ")")
+    println(possibleWords[word].toString() + " -> (" + word + ")")
 }
 
 private fun decrypt(isogram: String, ciphertext: String, shift: Int = 1) =
   encrypt(isogram.reversed(), ciphertext, shift)
 
-private fun encrypt(isogram: String, s: String, shift: Int = 1): String {
-  val sb = StringBuilder()
-
-  for (c in s.toCharArray())
-    sb.append(getShiftChar(isogram, c, shift))
-
-  return sb.toString()
-}
+private fun encrypt(isogram: String, s: String, shift: Int = 1) =
+  s.map { getShiftChar(isogram, it, shift) }.joinToString("")
 
 private fun getShiftChar(isogram: String, c: Char, shift: Int = 1) =
   isogram.indexOf(c + "")
@@ -121,4 +114,4 @@ private fun crackCipher(possibleWords: FastListMultimap<String, String>) {
 private fun convertWordToPattern(word: String) =
   HashMap<Char, Char>().let { charMap ->
     word.map { charMap.computeIfAbsent(it) { 'a' + charMap.size } }
-  }.joinToString("")
+  }.joinToString("").also { println(it) }

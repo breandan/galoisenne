@@ -37,7 +37,11 @@ class LabeledGraphBuilder {
       LabeledGraphBuilder().also { it.builder() }.mutGraph
 
     operator fun invoke(graph: String) =
-      this { graph.substring(1).fold(LGVertex(graph.first().toString())) { acc, c -> acc - c.toString() }  }.reversed()
+      this {
+        graph.substring(1).fold(LGVertex(graph[0].toString())) { acc, c ->
+          acc - c.toString()
+        }
+      }.reversed()
   }
 }
 

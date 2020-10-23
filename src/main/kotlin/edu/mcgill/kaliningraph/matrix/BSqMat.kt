@@ -3,8 +3,6 @@ package edu.mcgill.kaliningraph.matrix
 import org.ejml.data.BMatrixRMaj
 import org.ejml.data.DMatrix
 import org.ejml.data.DMatrixRMaj
-import org.ejml.data.DMatrixSparseCSC
-import org.ejml.data.Matrix
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -14,6 +12,15 @@ open class BMat(val rows: Int, val cols: Int, open vararg val data: Boolean) {
   constructor(size: Int, vararg data: Boolean) : this(size, size, *data)
   constructor(rows: Int, cols: Int, f: (Int, Int) -> Boolean) :
     this(rows, cols, *BooleanArray(rows * cols) { f(it / cols, it % cols) })
+
+  open fun join(that: BMat, op: (Int, Int) -> Boolean) =
+    assert(cols == that.rows) {
+      "Dimension mismatch: $rows,$cols . ${that.rows},${that.cols}"
+    }.run { BMat(cols, that.rows, op) }
+
+  fun toSqMat() =
+    assert(rows == cols) { "Dimension mismatch: $cols != $rows" }
+      .run { BSqMat(rows) { i -> data[i] } }
 
   open operator fun get(r: Int, c: Int) = data[r * cols + c]
   open operator fun get(r: Int) = data.toList().subList(r * cols, r * cols + cols).toBooleanArray()
@@ -37,9 +44,7 @@ class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()
   constructor(size: Int, b: Boolean) : this(*BooleanArray(size * size) { b })
   constructor(size: Int, f: (Int) -> Boolean) : this(*BooleanArray(size * size) { f(it) })
   constructor(size: Int, f: (Int, Int) -> Boolean) : this(*BooleanArray(size * size) { f(it / size, it % size) })
-
-  fun copy() = BSqMat(size) { i, j -> this[i, j] }
-
+  constructor(vararg rows: Int) : this(rows.fold("") { a, b -> a + b })
   constructor(vararg rows: String) :
     this(*rows.fold("") { a, b -> a + b }
       .toCharArray().let { chars ->
@@ -49,33 +54,29 @@ class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()
       }
     )
 
+  fun copy() = BSqMat(size) { i, j -> this[i, j] }
+
   init {
     assert(size * size == data.size) { "Expected square matrix!" }
     contents = data.toList().chunked(size)
       .map { it.toBooleanArray() }.toTypedArray()
   }
 
-  constructor(vararg rows: Int) : this(rows.fold("") { a, b -> a + b })
-
   // TODO: https://arxiv.org/pdf/0811.1714.pdf#page=5
-  operator fun times(that: BSqMat): BSqMat {
-    assert(size == that.size) { "Dimension mismatch: ${size}x${that.size}" }
-    val bMatT = that.transpose()
-    return BSqMat(size) { i, j -> this[i] * bMatT[j] }
-  }
+  operator fun times(that: BSqMat) =
+    join(that) { i, j -> this[i] * that[j] } as BSqMat
 
-  operator fun times(that: BMat): BMat {
-    assert(size == that.rows) { "Dimension mismatch: ${size}x${that.rows}" }
-    val bMatT = that.transpose()
-    return BMat(size, that.cols) { i, j -> this[i] * bMatT[j] }
-  }
+  operator fun times(that: BMat) =
+    join(that) { i, j -> this[i] * that[j] }
 
-  operator fun plus(that: BSqMat): BSqMat {
-    assert(size == that.size) { "Dimension mismatch: ${size}x${that.size}" }
-    return BSqMat(
-      *contents.zip(that.contents) { a, b -> a.zip(b) { c, d -> c || d } }.flatten().toBooleanArray()
-    )
-  }
+  operator fun plus(that: BMat) =
+    join(that.toSqMat()) { i, j -> this[i, j] || that[i, j] } as BSqMat
+
+  override fun join(that: BMat, op: (Int, Int) -> Boolean) =
+    if (that is BSqMat)
+      assert(size == that.size) { "Dimension mismatch: $size,${that.size}" }
+        .run { BSqMat(size, op) }
+    else super.join(that, op)
 
   private operator fun BooleanArray.times(other: BooleanArray) =
     zip(other) { a, b -> a && b }.reduce { a, b -> a || b }
@@ -83,8 +84,7 @@ class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()
   override fun transpose(): BSqMat = BSqMat(size) { r, c -> this[c, r] }
 
   override fun toString() = data.foldIndexed("") { i, a, b ->
-    a + (if (b) 1 else 0) + "  " +
-      if (i > 0 && (i + 1) % size == 0) "\n" else ""
+    a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % size == 0) "\n" else ""
   }
 
   fun toEJML() = BMatrixRMaj(size, size).let {
