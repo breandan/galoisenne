@@ -251,6 +251,16 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Graph products](https://en.wikipedia.org/wiki/Graph_product), Wikipedia
 - [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász
 
+### Random Walks
+
+- [Random Walks on Graphs: A Survey](https://web.cs.elte.hu/~lovasz/erdos.pdf), Lovász (1993)
+- [String Edit Distance, Random Walks and Graph Matching](https://link.springer.com/content/pdf/10.1007/3-540-70659-3_10.pdf), Kelly and Hancock (2002)
+- [Exact and Approximate Graph Matching Using Random Walks](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1432743), Gori and Maggini (2005)
+- [Reweighted random walks for graph matching](https://www.researchgate.net/profile/Minsu_Cho/publication/221304918_Reweighted_Random_Walks_for_Graph_Matching/links/54c50ae80cf256ed5a98633c.pdf), Cho and Lee (2010)
+- [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
+- [Small Subgraphs in the trace of a random walk](https://arxiv.org/pdf/1605.04585.pdf), Krivelevich and Michaeli (2018)
+- [KnightKing: A Fast Distributed Graph Random Walk Engine](https://dl.acm.org/doi/pdf/10.1145/3341301.3359634) (2019)
+
 ### Software Engineering
 
 * [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf), Tate
