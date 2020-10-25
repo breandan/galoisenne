@@ -30,7 +30,7 @@ class TranslationInvarianceTest {
 
   fun MutableGraph.toKaliningraph() =
     LabeledGraphBuilder {
-      edges().forEach { LGVertex(it.from()?.name()?.value()) - LGVertex(it.to().name().value()) }
+      edges().forEach { LGVertex(it.from()?.name()?.value() ?: "") - LGVertex(it.to().name().value()) }
     }
 
   fun Graph<*, *, *>.toJGraphT() =
