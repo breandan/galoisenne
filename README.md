@@ -207,9 +207,9 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph learning
 
-* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), William Hamilton
-* [Spectral Graph Theory with Applications to ML](http://www.cs.cmu.edu/afs/cs/academic/class/15859n-s20/recordings.html), Gary Miller
-* [Neural Execution of Graph Algorithms](https://arxiv.org/abs/1910.10593)
+* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), William Hamilton (2020)
+* [Spectral Graph Theory with Applications to ML](http://www.cs.cmu.edu/afs/cs/academic/class/15859n-s20/recordings.html), Gary Miller (2020)
+* [Neural Execution of Graph Algorithms](https://arxiv.org/abs/1910.10593), Veličković et al. (2020)
 
 ### Functional graphs
 
@@ -257,8 +257,8 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [String Edit Distance, Random Walks and Graph Matching](https://link.springer.com/content/pdf/10.1007/3-540-70659-3_10.pdf), Kelly and Hancock (2002)
 - [Exact and Approximate Graph Matching Using Random Walks](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1432743), Gori and Maggini (2005)
 - [Reweighted random walks for graph matching](https://www.researchgate.net/profile/Minsu_Cho/publication/221304918_Reweighted_Random_Walks_for_Graph_Matching/links/54c50ae80cf256ed5a98633c.pdf), Cho and Lee (2010)
-- [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
 - [Small Subgraphs in the trace of a random walk](https://arxiv.org/pdf/1605.04585.pdf), Krivelevich and Michaeli (2018)
+- [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
 - [KnightKing: A Fast Distributed Graph Random Walk Engine](https://dl.acm.org/doi/pdf/10.1145/3341301.3359634) (2019)
 
 ### Software Engineering

@@ -66,7 +66,7 @@ open class Gate constructor(
     fun wrapAll(vararg values: Any): Array<Gate> = values.map { wrap(it) }.toTypedArray()
   }
 
-  override fun toString() = if(op != Monad.id) op.toString() else id
+  override fun toString() = if(op == Monad.id) id else op.toString()
 
   operator fun plus(that: Any) = Gate(`+`, this, wrap(that))
   operator fun minus(that: Any) = Gate(`-`, this, wrap(that))

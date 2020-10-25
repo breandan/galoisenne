@@ -1,11 +1,20 @@
 package edu.mcgill.kaliningraph
 
 import astminer.common.model.Node
+import guru.nidi.graphviz.*
+
+import guru.nidi.graphviz.attribute.*
+import guru.nidi.graphviz.attribute.Arrow.NORMAL
+import guru.nidi.graphviz.attribute.Color.*
+import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
+import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
+import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
+import guru.nidi.graphviz.attribute.Style.lineWidth
+import guru.nidi.graphviz.model.*
+
 import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
-import guru.nidi.graphviz.model.*
-import guru.nidi.graphviz.toGraphviz
 import org.ejml.data.*
 import org.ejml.dense.row.*
 import org.ejml.ops.ConvertDMatrixStruct
@@ -27,8 +36,8 @@ fun Node.toKGraph() =
       successors = { flatMap { setOfNotNull(it.getParent()) + it.getChildren() }.toSet() }
     ).forEach { parent ->
       getChildren().forEach { child ->
-        LGVertex(id = parent.toString(), label = parent.getToken()) - LGVertex(id = child.toString(), label = child.getToken())
-        LGVertex(id = child.toString(), label = child.getToken()) - LGVertex(id = parent.toString(), label = parent.getToken())
+        LGVertex(parent.getToken()) - LGVertex(child.getToken())
+        LGVertex(child.getToken()) - LGVertex(parent.getToken())
       }
     }
   }
@@ -45,16 +54,19 @@ tailrec fun <T> closure(
     successors = successors
   )
 
-val THICKNESS = 4
-val DARKMODE = false
+const val THICKNESS = 4
+const val DARKMODE = false
 
-fun Graph<*, *, *>.toGraphViz(layout: Engine = DOT, format: Format = SVG) =
-   render().toGraphviz().apply { engine(layout) }.render(format)
+fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
+   toGraphviz().apply { engine(layout) }.render(format)
 
-fun Graph<*, *, *>.html() = toGraphViz().toString()
-fun Graph<*, *, *>.show() = toGraphViz().toFile(File.createTempFile("temp", ".svg")).show()
-fun SpsMat.show() = matToImg().let { data ->
-  File.createTempFile("temp", ".html").apply { writeText("<html><body><img src=\"$data\"/></body></html>") }
+fun Graph<*, *, *>.html() = toGraphviz().render(SVG).toString()
+fun Graph<*, *, *>.show(filename: String = "temp") =
+  toGraphviz().render(SVG).run {
+    toFile(File.createTempFile(filename, ".svg"))
+  }.show()
+fun SpsMat.show(filename: String = "temp") = matToImg().let { data ->
+  File.createTempFile(filename, ".html").apply { writeText("<html><body><img src=\"$data\"/></body></html>") }
 }.show()
 
 val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
@@ -114,8 +126,9 @@ fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
 fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
   (0..exp).fold(this) { acc, i -> matmul(acc, this) }
 
-fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) = Random(hashCode())
-  .let { randomVector(len) { it.nextDouble() } }
+const val DEFAULT_FEATURE_LEN = 20
+fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
+  Random(hashCode()).let { randomVector(len) { it.nextDouble() } }
 
 fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
   (if(copy) copy() else this).also { mat ->
@@ -144,4 +157,19 @@ inline fun elwise(size: Int, nonZeroes: Int = size,
   SpsMat(size, size, nonZeroes).also { sprsMat ->
     for (v in 0 until size)
       lf(v)?.let { if (it != 0.0) sprsMat[v, v] = it }
+  }
+
+fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
+  Graph<G, E, V>.toGraphviz() =
+  graph(directed = true, strict = true) {
+    val color = if (DARKMODE) WHITE else BLACK
+    edge[color, NORMAL, lineWidth(THICKNESS)]
+    graph[CONCENTRATE, Rank.dir(LEFT_TO_RIGHT),
+      TRANSPARENT.background(), GraphAttr.margin(0.0),
+      COMPOUND, Attributes.attr("nslimit", "20")]
+    node[color, color.font(), Font.config("Helvetica", 20),
+      lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
+
+    for((vertex, edge) in edgList)
+      edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }

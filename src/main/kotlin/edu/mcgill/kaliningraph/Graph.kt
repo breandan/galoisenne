@@ -1,28 +1,23 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.matrix.BSqMat
 import edu.mcgill.kaliningraph.typefamily.*
-import guru.nidi.graphviz.attribute.*
-import guru.nidi.graphviz.attribute.Arrow.NORMAL
-import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
-import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
-import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
-import guru.nidi.graphviz.attribute.Style.lineWidth
-import guru.nidi.graphviz.graph
+import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
 import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.kotlin.*
-import kotlin.math.*
+import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
 abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(override val vertices: Set<V> = setOf())
-  : Set<V> by vertices, IGraph<G, E, V>, (V) -> Set<V> by { it: V -> it.neighbors } {
+constructor(override val vertices: Set<V> = setOf()):
+  Set<V> by vertices,
+  IGraph<G, E, V>,
+  (V) -> Set<V> by { it: V -> it.neighbors }
+{
   open fun new(vararg graphs: G): G = new(graphs.toList())
   open fun new(vararg vertices: V): G = new(vertices.map { it.graph })
   open fun new(graphs: List<G>): G = new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
@@ -102,8 +97,7 @@ constructor(override val vertices: Set<V> = setOf())
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() }
   )
 
-  fun randomWalk(r: Random = Random(System.currentTimeMillis())): Sequence<V> =
-    generateSequence(vertices.random(r)) { edgMap[it]?.random(r)?.target }
+  fun randomWalk(r: Random = DEFAULT_RANDOM) = RandomWalk(r, this as G)
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
 
@@ -191,18 +185,7 @@ constructor(override val vertices: Set<V> = setOf())
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
 
-  open fun render(): MutableGraph = graph(directed = true, strict = true) {
-    val color = if (DARKMODE) WHITE else BLACK
-    edge[color, NORMAL, lineWidth(THICKNESS)]
-    graph[CONCENTRATE, Rank.dir(LEFT_TO_RIGHT),
-      TRANSPARENT.background(), GraphAttr.margin(0.0),
-      COMPOUND, Attributes.attr("nslimit", "20")]
-    node[color, color.font(), Font.config("Helvetica", 20),
-      lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
-
-    for((vertex, edge) in edgList)
-      edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
-  }
+  open fun render() = toGraphviz()
 }
 
 abstract class Edge<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
@@ -214,11 +197,10 @@ constructor(override val source: V, override val target: V): IEdge<G, E, V> {
   operator fun component2() = target
 }
 
-const val DEFAULT_FEATURE_LEN = 20
 // TODO: Link to graph and make a "view" of the container graph
 // TODO: Possible to extend Graph?
 abstract class Vertex<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(val id: String) : IVertex<G, E, V> {
+constructor(open val id: String) : IVertex<G, E, V>, Encodable {
   abstract fun Graph(vertices: Set<V>): G
   abstract fun Edge(s: V, t: V): E
   abstract fun Vertex(newId: String = id, edgeMap: (V) -> Set<E>): V
@@ -227,13 +209,13 @@ constructor(val id: String) : IVertex<G, E, V> {
     Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
 
   override val graph: G by lazy { Graph(neighbors(-1)) }
-  abstract val edgeMap: (V) -> Collection<E> // Allows self-loops by passing this
+  abstract val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
   open val degree by lazy { neighbors.size }
 
-  open fun encode(): DoubleArray = id.vectorize()
+  override fun encode(): DoubleArray = id.vectorize()
 
   tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
     if (k == 0 || vertices.neighbors() == vertices) vertices
@@ -249,7 +231,29 @@ constructor(val id: String) : IVertex<G, E, V> {
 
   open operator fun getValue(a: Any?, prop: KProperty<*>): V = Vertex(prop.name)
   open fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
-  override fun equals(other: Any?) = (other as? LGVertex)?.id == id
+  override fun equals(other: Any?) =
+    (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())
   override fun hashCode() = id.hashCode()
   override fun toString() = id
 }
+
+class RandomWalk<G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>>
+constructor(
+  val rand: Random = DEFAULT_RANDOM,
+  val graph: G,
+  val head: V = graph.random()
+): Sequence<RandomWalk<G, E, V>> {
+  val tail by lazy {
+    RandomWalk(
+      graph = graph,
+      head = graph.edgMap[head]!!.random(rand).target,
+      rand = rand
+    )
+  }
+
+  override fun toString() = head.toString()
+
+  override fun iterator() = generateSequence(this) { it.tail }.iterator()
+}
+
+interface Encodable { fun encode(): DoubleArray }
