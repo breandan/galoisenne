@@ -2,7 +2,7 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.20-M1"
+  kotlin("jvm") version "1.4.20-M2"
   id("com.github.ben-manes.versions") version "0.33.0"
 }
 
@@ -54,7 +54,7 @@ dependencies {
 //  implementation("scientifik:kmath-ast:$kmathVersion")
 //  implementation("scientifik:kmath-prob:$kmathVersion")
 
-  testImplementation("junit", "junit", "4.13")
+  testImplementation("junit", "junit", "4.13.1")
   testImplementation("com.github.ajalt.clikt:clikt:3.0.1")
   testImplementation("com.redislabs:jredisgraph:2.1.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
