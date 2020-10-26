@@ -233,6 +233,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 - [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump
 - [Unification with Drags](https://hal.inria.fr/hal-02562152/document)
+- [The identity problem for elementary functions and constants](https://dl.acm.org/doi/pdf/10.1145/190347.190429)
 
 #### Termination checking
 
@@ -267,6 +268,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/!etd.send_file?accession=case1496835753068605), Henderson
 * [Semantic Enrichment of Data Science Code](https://arxiv.org/pdf/2006.08945.pdf#chapter.6), Patterson
 * [Finally, a Polymorphic Linear Algebra Language](https://drops.dagstuhl.de/opus/volltexte/2019/10817/pdf/LIPIcs-ECOOP-2019-25.pdf)
+* [Towards an API for the Real Numbers](https://dl.acm.org/doi/pdf/10.1145/3385412.3386037)
 
 ### Proof Search
 
