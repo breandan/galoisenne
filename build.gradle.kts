@@ -122,20 +122,8 @@ tasks {
   }
 }
 
-val fatJar by tasks.creating(Jar::class) {
-  archiveBaseName.set("${project.name}-fat")
-  manifest {
-    attributes["Implementation-Title"] = "kaliningraph"
-    attributes["Implementation-Version"] = archiveVersion
-  }
-  setExcludes(listOf("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"))
-  from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-  with(tasks.jar.get() as CopySpec)
-}
-
 publishing {
   publications.create<MavenPublication>("default") {
-    artifact(fatJar)
     pom {
       url.set("https://github.com/breandan/kaliningraph")
       licenses {
