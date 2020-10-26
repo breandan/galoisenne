@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.breandan"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
   mavenCentral()
@@ -120,10 +120,18 @@ tasks {
     dependsOn(jupyterInstall)
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
+
+  val sourcesJar by registering(org.gradle.jvm.tasks.Jar::class) {
+    classifier = "sources"
+    from(sourceSets.main.get().allSource)
+  }
 }
 
 publishing {
   publications.create<MavenPublication>("default") {
+    from(components["java"])
+    artifact(tasks["sourcesJar"])
+
     pom {
       url.set("https://github.com/breandan/kaliningraph")
       licenses {
