@@ -252,6 +252,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Graph products](https://en.wikipedia.org/wiki/Graph_product), Wikipedia
 - [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász
 
+### Circuits
+
+- [Efficient parallel evaluation of straight-line code and arithmetic circuits](http://www.cs.cmu.edu/~glmiller/Publications/MRK86b.pdf), Miller (1986)
+- [An Efficient Graph Representation for Arithmetic Circuit Verification](https://doi.org/10.1109/43.969437), Chen and Bryant (2001)
+- [A Top-Down Compiler for Sentential Decision Diagrams](https://www.ijcai.org/Proceedings/15/Papers/443.pdf), Oztok and Darwiche (2015)
+- [Complexities of Graph-Based Representations for Elementary Functions](https://doi.org/10.1109/TC.2008.134), Nagayama and Sasao (2008)
+- [Numerical Function Generators Using LUT Cascades](https://doi.org/10.1109/TC.2007.1033), Sasao and Nagayama (2007)
+
 ### Random Walks
 
 - [Random Walks on Graphs: A Survey](https://web.cs.elte.hu/~lovasz/erdos.pdf), Lovász (1993)
