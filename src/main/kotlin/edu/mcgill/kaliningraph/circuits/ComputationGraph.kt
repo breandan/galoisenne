@@ -106,7 +106,7 @@ class NFunction(
     else throw Exception(invokeError(*args))
 
   fun invokeError(vararg args: Any) =
-    "Could not invoke $name(${params.joinToString(", ")}) with ${args.joinToString(", ")}"
+    "Could not invoke $name(${params.joinToString()}) with ${args.joinToString()}"
 
   fun arityMatches(vararg args: Any) = args.size == params.size
   operator fun getValue(nothing: Nothing?, property: KProperty<*>): NFunction =

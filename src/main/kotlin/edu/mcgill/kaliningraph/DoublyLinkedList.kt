@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph
 
+
 fun main() {
   val head = DLL("a") + "b" + "c" + "d"
   println(head)
@@ -16,6 +17,8 @@ class LL<T>(val head: T, val succ: LL<T>? = null) {
 
   override fun toString(): String = "[$head]" + "->" + succ.toString()
 }
+
+// TODO: Translate to doubly-linked graph
 
 class DLL<T>(
   val head: T,
@@ -44,5 +47,5 @@ class DLL<T>(
   fun last(): T = if (succ == null) head else succ!!.last()
   fun first() = head
 
-  override fun toString(): String = "[$head]" + "<->" + succ.toString()
+  override fun toString(): String = "[$head]<->$succ"
 }
