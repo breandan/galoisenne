@@ -12,12 +12,13 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
-abstract class Graph<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(override val vertices: Set<V> = setOf()):
+abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   Set<V> by vertices,
   IGraph<G, E, V>,
-  (V) -> Set<V> by { it: V -> it.neighbors }
-{
+  // TODO: Compare graph as a function V -> Set<V> vs. a multimap graph[g]
+  // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
+    (V) -> Set<V> by { it: V -> it.neighbors }
+  where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   open fun new(vararg graphs: G): G = new(graphs.toList())
   open fun new(vararg vertices: V): G = new(vertices.map { it.graph })
   open fun new(graphs: List<G>): G = new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
@@ -45,7 +46,7 @@ constructor(override val vertices: Set<V> = setOf()):
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
-  val D: SpsMat by lazy { elwise(size) { i -> this[i].neighbors.size.toDouble() } }
+  val D: SpsMat by lazy { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
   // Adjacency matrix
   val A: SpsMat by lazy { vwise { v, n -> 1.0 } }
@@ -58,7 +59,7 @@ constructor(override val vertices: Set<V> = setOf()):
 
   // Laplacian matrix
   val L: SpsMat by lazy { D - A }
-  val I: SpsMat by lazy { elwise(size) { i -> 1.0 } }
+  val I: SpsMat by lazy { elwise(size) { i, j -> if(i == j) 1.0 else 0.0 } }
   // Symmetric normalized Laplacian
   val LSYMNORM: SpsMat by lazy { I - ASYMNORM }
 
@@ -73,12 +74,15 @@ constructor(override val vertices: Set<V> = setOf()):
     }
 
   val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
+
   operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
   operator fun SpsMat.set(n0: V, n1: V, value: Double) {
     this[index[n0]!!, index[n1]!!] = value
   }
 
   // Implements graph merge. For all vertices in common, merge their neighbors.
+  // TODO: Figure out how to implement this operator "correctly"
+  // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
   open operator fun plus(that: G): G =
     new((this - that) + (this join that) + (that - this))
 
@@ -188,8 +192,8 @@ constructor(override val vertices: Set<V> = setOf()):
   open fun render() = toGraphviz()
 }
 
-abstract class Edge<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(override val source: V, override val target: V): IEdge<G, E, V> {
+abstract class Edge<G, E, V>(override val source: V, override val target: V): IEdge<G, E, V>
+  where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val graph by lazy { target.graph }
   abstract fun new(source: V, target: V): E
   open fun render(): Link = (source.render() - target.render()).add(Label.of(""))
@@ -199,8 +203,8 @@ constructor(override val source: V, override val target: V): IEdge<G, E, V> {
 
 // TODO: Link to graph and make a "view" of the container graph
 // TODO: Possible to extend Graph?
-abstract class Vertex<G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-constructor(open val id: String) : IVertex<G, E, V>, Encodable {
+abstract class Vertex<G, E, V>(open val id: String): IVertex<G, E, V>, Encodable
+  where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   abstract fun Graph(vertices: Set<V>): G
   abstract fun Edge(s: V, t: V): E
   abstract fun Vertex(newId: String = id, edgeMap: (V) -> Set<E>): V
@@ -237,12 +241,12 @@ constructor(open val id: String) : IVertex<G, E, V>, Encodable {
   override fun toString() = id
 }
 
-class RandomWalk<G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>>
-constructor(
+class RandomWalk<G, E, V>(
   val rand: Random = DEFAULT_RANDOM,
   val graph: G,
   val head: V = graph.random()
-): Sequence<RandomWalk<G, E, V>> {
+): Sequence<RandomWalk<G, E, V>>
+  where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   val tail by lazy {
     RandomWalk(
       graph = graph,

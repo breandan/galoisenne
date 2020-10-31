@@ -23,10 +23,9 @@ fun main() {
       "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
       "Down" in it.key -> {
         val current = graphs.last()
-        val rand = Random(1)
         val sub = "cdec" to "ijkl"
-        graphs.add(current.rewrite(sub, rand).also {
-          it.description = "${current.randomWalk(rand).take(20).joinToString("")}...$sub"
+        graphs.add(current.rewrite(sub).also {
+          it.description = "${current.randomWalk().take(20).joinToString("")}...$sub"
         })
       }
     }

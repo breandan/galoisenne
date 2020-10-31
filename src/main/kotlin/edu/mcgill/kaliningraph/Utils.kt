@@ -128,7 +128,7 @@ fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
 
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
-  Random(hashCode()).let { randomVector(len) { it.nextDouble() } }
+  DEFAULT_RANDOM.let { randomVector(len) { it.nextDouble() } }
 
 fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
   (if(copy) copy() else this).also { mat ->
@@ -150,13 +150,6 @@ inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
   SpsMat(rows, cols, nonZeroes).also { sprsMat ->
     for (v in 0 until rows) for (n in 0 until cols)
       lf(v, n)?.let { if (it != 0.0) sprsMat[v, n] = it }
-  }
-
-inline fun elwise(size: Int, nonZeroes: Int = size,
-                  crossinline lf: (Int) -> Double?) =
-  SpsMat(size, size, nonZeroes).also { sprsMat ->
-    for (v in 0 until size)
-      lf(v)?.let { if (it != 0.0) sprsMat[v, v] = it }
   }
 
 fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>

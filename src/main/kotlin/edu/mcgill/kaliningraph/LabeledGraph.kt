@@ -60,7 +60,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
   }
 
-  fun rewrite(substitution: Pair<String, String>, random: Random) =
+  fun rewrite(substitution: Pair<String, String>) =
     LabeledGraphBuilder(
       randomWalk().take(200).toList().joinToString("")
         .replace(substitution.first, substitution.second)
