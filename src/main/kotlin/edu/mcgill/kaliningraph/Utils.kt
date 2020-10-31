@@ -128,7 +128,7 @@ fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
 
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
-  DEFAULT_RANDOM.let { randomVector(len) { it.nextDouble() } }
+  Random(hashCode()).let { randomVector(len) { it.nextDouble() } }
 
 fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
   (if(copy) copy() else this).also { mat ->
