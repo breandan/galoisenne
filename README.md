@@ -50,10 +50,10 @@ dependencies {
 ./gradlew jupyterInstall [-Path=~/.jupyter_kotlin/libraries]
 ```
 
-To access Kotlin∇'s notebook support, use the following line magic:
+To access notebook support, use the following line magic:
 
 ```
-%use kotlingrad
+%use kaliningraph
 ```
 
 For more information, explore the [tutorial](notebooks/Hello%20Kaliningraph.ipynb).
@@ -258,6 +258,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Arithmetic Circuit Verification Based on Word-Level Decision Diagrams](https://apps.dtic.mil/dtic/tr/fulltext/u2/a350486.pdf), Chen (1998)
 - [An Efficient Graph Representation for Arithmetic Circuit Verification](https://doi.org/10.1109/43.969437), Chen and Bryant (2001)
 - [A Top-Down Compiler for Sentential Decision Diagrams](https://www.ijcai.org/Proceedings/15/Papers/443.pdf), Oztok and Darwiche (2015)
+- [Representations of Elementary Functions Using Edge-Valued MDDs](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4215928), Nagayama and Sasao (2007)
 - [Complexities of Graph-Based Representations for Elementary Functions](https://doi.org/10.1109/TC.2008.134), Nagayama and Sasao (2008)
 - [Numerical Function Generators Using LUT Cascades](https://doi.org/10.1109/TC.2007.1033), Sasao and Nagayama (2007)
 
