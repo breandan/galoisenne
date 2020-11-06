@@ -49,7 +49,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   val D: SpsMat by lazy { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
   // Adjacency matrix
-  val A: SpsMat by lazy { vwise { v, n -> 1.0 } }
+  val A: SpsMat by lazy { vwise { _, _ -> 1.0 } }
   val A_AUG: SpsMat by lazy { A + A.transpose() + I }
 
   // Symmetric normalized adjacency
@@ -59,7 +59,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   // Laplacian matrix
   val L: SpsMat by lazy { D - A }
-  val I: SpsMat by lazy { elwise(size) { i, j -> if(i == j) 1.0 else 0.0 } }
+  val I: SpsMat by lazy { elwise(size) }
   // Symmetric normalized Laplacian
   val LSYMNORM: SpsMat by lazy { I - ASYMNORM }
 

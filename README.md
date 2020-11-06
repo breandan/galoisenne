@@ -256,6 +256,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 ### Circuits
 
 - [Efficient parallel evaluation of straight-line code and arithmetic circuits](http://www.cs.cmu.edu/~glmiller/Publications/MRK86b.pdf), Miller (1986)
+- [Algebraic Decision Diagrams and Their Applications](https://link.springer.com/content/pdf/10.1023/A:1008699807402.pdf), Bahar et al. (1997)
 - [Arithmetic Circuit Verification Based on Word-Level Decision Diagrams](https://apps.dtic.mil/dtic/tr/fulltext/u2/a350486.pdf), Chen (1998)
 - [An Efficient Graph Representation for Arithmetic Circuit Verification](https://doi.org/10.1109/43.969437), Chen and Bryant (2001)
 - [A Top-Down Compiler for Sentential Decision Diagrams](https://www.ijcai.org/Proceedings/15/Papers/443.pdf), Oztok and Darwiche (2015)

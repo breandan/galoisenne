@@ -146,11 +146,13 @@ fun SpsMat.meanNorm(copy: Boolean = false) =
   }
 
 inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
-                  crossinline lf: (Int, Int) -> Double?) =
+                  crossinline lf: (Int, Int) -> Double? = ::kroneckerDelta) =
   SpsMat(rows, cols, nonZeroes).also { sprsMat ->
     for (v in 0 until rows) for (n in 0 until cols)
       lf(v, n)?.let { if (it != 0.0) sprsMat[v, n] = it }
   }
+
+fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
 
 fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
   Graph<G, E, V>.toGraphviz() =
