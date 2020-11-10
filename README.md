@@ -200,58 +200,58 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph theory
 
-* [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf), Leonhard Euler
-* [Account of the Icosian Calculus](http://www.kurims.kyoto-u.ac.jp/EMIS/classics/Hamilton/PRIAIcos.pdf), William (Rowan) Hamilton
-* [Mathematical Foundations of the GraphBLAS](https://arxiv.org/pdf/1606.05790.pdf)
-* [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918)
+* [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf), Euler (1741)
+* [Account of the Icosian Calculus](http://www.kurims.kyoto-u.ac.jp/EMIS/classics/Hamilton/PRIAIcos.pdf), Hamilton (1858)
+* [Mathematical Foundations of the GraphBLAS](https://arxiv.org/pdf/1606.05790.pdf), Kepner et al. (2016)
+* [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918) Kepner and Gilbert (2011)
 
 ### Graph learning
 
-* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), William Hamilton (2020)
-* [Spectral Graph Theory with Applications to ML](http://www.cs.cmu.edu/afs/cs/academic/class/15859n-s20/recordings.html), Gary Miller (2020)
+* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), Hamilton (2020)
+* [Spectral Graph Theory with Applications to ML](http://www.cs.cmu.edu/afs/cs/academic/class/15859n-s20/recordings.html), Miller (2020)
 * [Neural Execution of Graph Algorithms](https://arxiv.org/abs/1910.10593), Veličković et al. (2020)
 
 ### Functional graphs
 
-* [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf), Bruno Oliveira and William Cook
-* [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al.
-* [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Martin Erwig
-* [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf), Erwig
-* [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf), Ferrante
+* [Functional programming with structured graphs](http://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf), Oliveira and Cook (2012)
+* [Think Like a Vertex, Behave Like a Function! A Functional DSL for Vertex-Centric Big Graph Processing](http://research.nii.ac.jp/~hu/pub/icfp16.pdf), Kento Emoto et al. (2016)
+* [Inductive Graphs and Functional Graph Algorithms](http://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf), Erwig (2001)
+* [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf), Erwig (1997)
+* [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf), Ferrante et al. (1987)
 
 ### Graph Rewriting
 
-- [Equational term graph rewriting](https://www.researchgate.net/profile/Jan_willem_Klop/publication/2688773_Equational_Term_Graph_Rewriting/links/53ce68260cf2b8e35d148342.pdf), Ariola
-- [Bisimilarity in Term Graph Rewriting](https://doi.org/10.1006/inco.1999.2824), Ariola
-- [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt
-- [An Algorithm for Optimal Lambda Calculus Reduction](https://dl.acm.org/doi/pdf/10.1145/96709.96711), Lamping
-- [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner
-- [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco, Juan de Lara
-- [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch
+- [Equational term graph rewriting](https://www.researchgate.net/profile/Jan_willem_Klop/publication/2688773_Equational_Term_Graph_Rewriting/links/53ce68260cf2b8e35d148342.pdf), Ariola and Klop (1997)
+- [Bisimilarity in Term Graph Rewriting](https://doi.org/10.1006/inco.1999.2824), Ariola et al. (2000)
+- [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt et al. (1988)
+- [An Algorithm for Optimal Lambda Calculus Reduction](https://doi.org/10.1145/96709.96711), Lamping (1990)
+- [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner (1979)
+- [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco and de Lara (2009)
+- [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch (2012)
 
 #### Unification
 
-- [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump
-- [Unification with Drags](https://hal.inria.fr/hal-02562152/document)
-- [The identity problem for elementary functions and constants](https://dl.acm.org/doi/pdf/10.1145/190347.190429)
+- [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump and Habel (1996)
+- [Unification with Drags](https://hal.inria.fr/hal-02562152/document), Jouannaud and Orejas (2020)
+- [The identity problem for elementary functions and constants](https://doi.org/10.1145/190347.190429), Richardson and Fitch (1994)
 
 #### Termination checking
 
-- [Proving Termination of Graph Transformation Systems using Weighted Type Graphs over Semirings](https://arxiv.org/pdf/1505.01695.pdf), Bruggink
-- [Termination of string rewriting with matrix interpretations](https://www.imn.htwk-leipzig.de/~waldmann/talk/06/rta/rta06.pdf), Hofbauer
-- [Matrix Interpretations for Proving Termination of Term Rewriting](https://link.springer.com/content/pdf/10.1007/s10817-007-9087-9.pdf), Endrullis et al.
-- [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud
+- [Proving Termination of Graph Transformation Systems using Weighted Type Graphs over Semirings](https://arxiv.org/pdf/1505.01695.pdf), Bruggink (2015)
+- [Termination of string rewriting with matrix interpretations](https://www.imn.htwk-leipzig.de/~waldmann/talk/06/rta/rta06.pdf), Hofbauer (2006)
+- [Matrix Interpretations for Proving Termination of Term Rewriting](https://doi.org/10.1007/s10817-007-9087-9), Endrullis et al. (2007)
+- [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud (2019)
 
 ### Algebra
 
 - [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov (2017)
 - [Fun with Semirings](http://stedolan.net/research/semirings.pdf), Dolan (2013)
-- [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig
-- [Drags: A Simple Algebraic Framework For Graph Rewriting](https://hal.inria.fr/hal-01853836/document), Dershowitz and Jouannaud
-- [An Algebraic Theory of Graph Reduction](https://dl.acm.org/doi/pdf/10.1145/174147.169807#page=19), Arnborg
-- [Lineal: A linear-algebraic λ-calculus](https://lmcs.episciences.org/3203/pdf), Arrighi and Dowek
+- [Introduction to Algebraic Theory of Graph Grammars](https://doi.org/10.1007/BFb0025714), Erhig (1978)
+- [Drags: A Simple Algebraic Framework For Graph Rewriting](https://hal.inria.fr/hal-01853836/document), Dershowitz and Jouannaud (2018)
+- [An Algebraic Theory of Graph Reduction](https://doi.org/10.1145/174147.169807), Arnborg (1993)
+- [Lineal: A linear-algebraic λ-calculus](https://arxiv.org/pdf/quant-ph/0612199.pdf), Arrighi and Dowek (2017)
 - [Graph products](https://en.wikipedia.org/wiki/Graph_product), Wikipedia
-- [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász
+- [Graphs and Geometry](http://web.cs.elte.hu/~lovasz/bookxx/geomgraphbook/geombook2019.01.11.pdf), Lovász (2019)
 
 ### Circuits
 
@@ -267,28 +267,28 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 ### Random Walks
 
 - [Random Walks on Graphs: A Survey](https://web.cs.elte.hu/~lovasz/erdos.pdf), Lovász (1993)
-- [String Edit Distance, Random Walks and Graph Matching](https://link.springer.com/content/pdf/10.1007/3-540-70659-3_10.pdf), Kelly and Hancock (2002)
-- [Exact and Approximate Graph Matching Using Random Walks](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1432743), Gori and Maggini (2005)
-- [Reweighted random walks for graph matching](https://www.researchgate.net/profile/Minsu_Cho/publication/221304918_Reweighted_Random_Walks_for_Graph_Matching/links/54c50ae80cf256ed5a98633c.pdf), Cho and Lee (2010)
+- [String Edit Distance, Random Walks and Graph Matching](https://doi.org/10.1007/3-540-70659-3_10), Kelly and Hancock (2002)
+- [Exact and Approximate Graph Matching Using Random Walks](https://doi.org/10.1109/TPAMI.2005.138), Gori and Maggini (2005)
+- [Reweighted random walks for graph matching](https://doi.org/10.1007/978-3-642-15555-0_36), Cho and Lee (2010)
 - [Small Subgraphs in the trace of a random walk](https://arxiv.org/pdf/1605.04585.pdf), Krivelevich and Michaeli (2018)
 - [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
-- [KnightKing: A Fast Distributed Graph Random Walk Engine](https://dl.acm.org/doi/pdf/10.1145/3341301.3359634) (2019)
+- [KnightKing: A Fast Distributed Graph Random Walk Engine](https://doi.org/10.1145/3341301.3359634) Yang et al. (2019)
 
 ### Software Engineering
 
-* [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf), Tate
-* [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/!etd.send_file?accession=case1496835753068605), Henderson
-* [Semantic Enrichment of Data Science Code](https://arxiv.org/pdf/2006.08945.pdf#chapter.6), Patterson
-* [Finally, a Polymorphic Linear Algebra Language](https://drops.dagstuhl.de/opus/volltexte/2019/10817/pdf/LIPIcs-ECOOP-2019-25.pdf)
-* [Towards an API for the Real Numbers](https://dl.acm.org/doi/pdf/10.1145/3385412.3386037)
+* [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf), Tate (2014)
+* [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=case1496835753068605&disposition=attachment), Henderson (2017)
+* [Semantic Enrichment of Data Science Code](https://arxiv.org/pdf/2006.08945.pdf#chapter.6), Patterson (2020)
+* [Finally, a Polymorphic Linear Algebra Language](https://drops.dagstuhl.de/opus/volltexte/2019/10817/pdf/LIPIcs-ECOOP-2019-25.pdf), Shaikhha and Parreaux (2019)
+* [Towards an API for the Real Numbers](https://dl.acm.org/doi/pdf/10.1145/3385412.3386037), Boehm (2020)
 
 ### Proof Search
 
-- [Generative Language Modeling for Automated Theorem Proving](https://arxiv.org/pdf/2009.03393.pdf) Polu et al., 2020
-- [Towards Proof Synthesis Guided by Neural Machine Translation for Intuitionistic Propositional Logic](https://arxiv.org/pdf/1706.06462.pdf) Sekiyama, 2020
-- [Can Neural Networks Learn Symbolic Rewriting?](https://arxiv.org/pdf/1911.04873.pdf) Piotrowski et al., 2020
-- [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf) Gauthier, 2020
-- [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf) Li et al., 2020
+- [Generative Language Modeling for Automated Theorem Proving](https://arxiv.org/pdf/2009.03393.pdf) Polu et al. (2020)
+- [Towards Proof Synthesis Guided by Neural Machine Translation for Intuitionistic Propositional Logic](https://arxiv.org/pdf/1706.06462.pdf) Sekiyama (2020)
+- [Can Neural Networks Learn Symbolic Rewriting?](https://arxiv.org/pdf/1911.04873.pdf) Piotrowski et al. (2020)
+- [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf) Gauthier (2020)
+- [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf) Li et al. (2020)
 
 ### Software
 
