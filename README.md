@@ -203,7 +203,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf), Euler (1741)
 * [Account of the Icosian Calculus](http://www.kurims.kyoto-u.ac.jp/EMIS/classics/Hamilton/PRIAIcos.pdf), Hamilton (1858)
 * [Mathematical Foundations of the GraphBLAS](https://arxiv.org/pdf/1606.05790.pdf), Kepner et al. (2016)
-* [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918) Kepner and Gilbert (2011)
+* [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918), Kepner and Gilbert (2011)
 
 ### Graph learning
 
@@ -226,7 +226,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt et al. (1988)
 - [An Algorithm for Optimal Lambda Calculus Reduction](https://doi.org/10.1145/96709.96711), Lamping (1990)
 - [A New Implementation Technique for Applicative Languages](https://doi.org/10.1002/spe.4380090105), Turner (1979)
-- [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf) Velasco and de Lara (2009)
+- [A Reformulation of Matrix Graph Grammars with Boolean Complexes](https://www.emis.de/journals/EJC/ojs/index.php/eljc/article/view/v16i1r73/pdf), Velasco and de Lara (2009)
 - [Towards a GPU-based implementation of interaction nets](https://arxiv.org/pdf/1404.0076.pdf), Jiresch (2012)
 
 #### Unification
@@ -272,7 +272,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Reweighted random walks for graph matching](https://doi.org/10.1007/978-3-642-15555-0_36), Cho and Lee (2010)
 - [Small Subgraphs in the trace of a random walk](https://arxiv.org/pdf/1605.04585.pdf), Krivelevich and Michaeli (2018)
 - [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
-- [KnightKing: A Fast Distributed Graph Random Walk Engine](https://doi.org/10.1145/3341301.3359634) Yang et al. (2019)
+- [KnightKing: A Fast Distributed Graph Random Walk Engine](https://doi.org/10.1145/3341301.3359634), Yang et al. (2019)
 
 ### Software Engineering
 
@@ -284,11 +284,11 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Proof Search
 
-- [Generative Language Modeling for Automated Theorem Proving](https://arxiv.org/pdf/2009.03393.pdf) Polu et al. (2020)
-- [Towards Proof Synthesis Guided by Neural Machine Translation for Intuitionistic Propositional Logic](https://arxiv.org/pdf/1706.06462.pdf) Sekiyama et al. (2020)
-- [Can Neural Networks Learn Symbolic Rewriting?](https://arxiv.org/pdf/1911.04873.pdf) Piotrowski et al. (2020)
-- [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf) Gauthier (2020)
-- [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf) Li et al. (2020)
+- [Generative Language Modeling for Automated Theorem Proving](https://arxiv.org/pdf/2009.03393.pdf), Polu et al. (2020)
+- [Towards Proof Synthesis Guided by Neural Machine Translation for Intuitionistic Propositional Logic](https://arxiv.org/pdf/1706.06462.pdf), Sekiyama et al. (2020)
+- [Can Neural Networks Learn Symbolic Rewriting?](https://arxiv.org/pdf/1911.04873.pdf), Piotrowski et al. (2020)
+- [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf), Gauthier (2020)
+- [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf), Li et al. (2020)
 
 ### Software
 
