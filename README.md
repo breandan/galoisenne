@@ -33,7 +33,7 @@ dependencies {
       <url>https://jitpack.io</url>
     </repository>
   </repositories>
-  
+
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
@@ -170,27 +170,32 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ## Research Questions
 
-* How could we implement graph rewriting?
-   - Is there an algebraic definition for graph grammars?
-   - Maybe graph convolution. How to encode rewrites as a kernel?
-   - Rectangular matrix multiplication or square with upper bound?
-   - Maybe possible to represent using tensor contraction
+* Is subgraph isomorphism feasible using random walks?
+   - Treat graph as a sequence and run string convolution
+   - Generate lazy random walk and halt after K steps
+   - Convolve permuted variants of query in parallel
+   - Need some kind of label permutation / edit distance metric
+* How could we implement graph grammars/rewriting?
+   - [Rewrites](src/main/kotlin/edu/mcgill/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
+   - Reconstruct graph from rewritten string using adjacency matrix
+   - ~~Is there an algebraic definition for graph grammars?~~
+   - ~~Maybe graph convolution. How to encode rewrites as a kernel?~~
+   - ~~Rectangular matrix multiplication or square with upper bound?~~
+   - ~~May be possible to represent using tensor contraction~~
    - Need to look into hyperedge replacement grammars
    - How do we identify confluent rewrite systems?
-* What are the advantages and disadvantages of graph rewriting? 
+* What are the advantages and disadvantages of graph rewriting?
    - Graphs as vertices and rewrites as edges in a nested graph?
    - Reduction/canonicalization versus expansion graph grammar
 * What happens if we represent the graph as a symbolic matrix?
-   - Could we propogate functions instead of just values?
+   - Could we propagate functions instead of just values?
    - What if matrix elements were symbolic expressions?
    - Should we represent the whole matrix as a big bold symbol?
 * Is there an efficient way to parallelize arithmetic circuits?
    - Translate formula graph to matrix using Miller's evaluator
-   - How to distribute the work evenly across sparse matrices   
+   - How to distribute the work evenly across sparse matrices
 * What are some good way to [visualize](https://setosa.io/ev/markov-chains/) random walks?
    - Display states, transitions and graph occupancy side-by-side
-* What is the connection between belief and error propagation?
-   - Look into Turing's [unorganized machines](https://weightagnostic.github.io/papers/turing1948.pdf#page=8)
 * Is there a connection between linear algebra and λ-calculus?
    - λ expressions can be represented as a graph/matrix
    - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
@@ -234,6 +239,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump and Habel (1996)
 - [Unification with Drags](https://hal.inria.fr/hal-02562152/document), Jouannaud and Orejas (2020)
 - [The identity problem for elementary functions and constants](https://doi.org/10.1145/190347.190429), Richardson and Fitch (1994)
+- [Duplicate code detection using anti-unification](http://clonedigger.sourceforge.net/duplicate_code_detection_bulychev_minea.pdf), Bulychev and Minea (2008)
 
 #### Termination checking
 
@@ -289,6 +295,16 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Can Neural Networks Learn Symbolic Rewriting?](https://arxiv.org/pdf/1911.04873.pdf), Piotrowski et al. (2020)
 - [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf), Gauthier (2020)
 - [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf), Li et al. (2020)
+
+### Code Search
+
+- [Approximate Online Pattern Matching in Sub-linear Time](https://arxiv.org/pdf/1810.03551.pdf), Chakraborty et al. (2018)
+- [Improved online algorithms for jumbled matching](https://doi.org/10.1016/j.dam.2018.05.028), Ghuman et al. (2018)
+- [Parallelizing Exact and Approximate String Matching via Inclusive Scan on a GPU](http://www-hagi.ist.osaka-u.ac.jp/research/papers/201707_mitani_ieeetpds.pdf), Mitani et al. (2017)
+- [A Novel Algorithm for Online Inexact String Matching and its FPGA Implementation](https://doi.org/10.1007/s12559-019-09646-y), Cinti et al. (2019)
+- [Context-Free Path Querying by Matrix Multiplication](https://doi.org/10.1145/3210259.3210264), Azimov and Grigorev (2018)
+- [Code Search on Bytecode for Mobile App Development](https://dl.acm.org/doi/pdf/10.1145/3299815.3314471), Nguyen et al. (2019)
+  - Uses a HMM to model transitions between method calls
 
 ### Software
 
