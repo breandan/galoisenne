@@ -71,7 +71,7 @@ class DLL<T>(
 //    else DLL(tail, { pred.append(it) }, { succ.reversed() + head })
 
   override fun toString(): String =
-    if (hasNext()) "[$head]" else "[$head]<->$succ"
+    if (!hasNext()) "[$head]" else "[$head]<->$succ"
 
   fun hasNext() = succ != this
 }
