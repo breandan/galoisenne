@@ -45,20 +45,36 @@ class DLL<T>(
     get() = if (!hasNext()) head else succ.tail
 
   operator fun plus(t: T): DLL<T> =
-    if (!hasNext())
-      DLL(head, { pred.append(it) }, { me -> DLL(t, { me }) })
-    else
-      DLL(head, { pred.append(it) }, { it.append(succ + t) })
+    DLL(
+      head = head,
+      pred = { pred.append(it) },
+      succ = { me ->
+        if (!hasNext()) DLL(t, { me })
+        else me.append(succ + t)
+      }
+    )
 
   fun append(succ: DLL<T>): DLL<T> = succ.prepend(this) // TODO: flip?
 
   fun prepend(pred: DLL<T>): DLL<T> =
-    if (!hasNext()) DLL(head, { pred })
-    else DLL(head, { pred }, { it.append(succ) })
+    DLL(
+      head = head,
+      pred = { pred },
+      succ = { me ->
+        if (!hasNext()) me
+        else me.append(succ)
+      }
+    )
 
   fun insert(t: T): DLL<T> =
-    if (!hasNext()) this + t
-    else DLL(head, { pred.append(it) }, { me -> DLL(t, { me }, { it.append(succ) }) })
+    DLL(
+      head = head,
+      pred = { pred.append(it) },
+      succ = { me ->
+        if (!hasNext()) this + t
+        else DLL(t, { me }, { it.append(succ) })
+      }
+    )
 
   operator fun get(i: Int): DLL<T> = if (i == 0) this else succ[i - 1]
 
