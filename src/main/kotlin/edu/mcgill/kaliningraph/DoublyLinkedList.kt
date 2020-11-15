@@ -2,11 +2,22 @@ package edu.mcgill.kaliningraph
 
 
 fun main() {
-  val head = DLL("a") + "b" + "c" + "d"
-  println(head)
-  println(head.succ?.pred === head)
-  println(head.succ?.succ?.pred === head.succ)
+  var head = DLL("a").let { ('c'..'z').fold(it) { a, b -> a + b.toString() } }
+  assertDLL(head)
+
+  head = head.insert("b")
+  assertDLL(head)
+//  println(head.reversed())
 }
+
+private fun assertDLL(head: DLL<String>) =
+  (1 until head.size - 1).map { head[it] }.forEach {
+    val isDLLForward = it.succ?.pred === it
+    val isDLLBack = it.pred?.succ === it
+    println(it)
+    assert(isDLLForward) { "${it.succ?.pred} != $it" }
+    assert(isDLLBack) { "${it.pred?.succ} != $it" }
+  }
 
 class LL<T>(val head: T, val succ: LL<T>? = null) {
   operator fun plus(t: T): LL<T> =
@@ -27,22 +38,32 @@ class DLL<T>(
 ) {
   val pred: DLL<T>? by lazy { pred(this) }
   val succ: DLL<T>? by lazy { succ(this) }
+  val size: Int
+    get() = 1 + (succ?.size ?: 0)
+  val tail: T
+    get() = if(succ == null) head else succ!!.tail
 
   operator fun plus(t: T): DLL<T> =
     if (succ == null)
-      if (pred == null) DLL(head, { null }, { me -> DLL(t, { me }, { null }) })
-      else DLL(head, { pred!!.append(it) }, { me -> DLL(t, { me }, { null }) })
-    else // succ != null
-      if (pred == null) DLL(head, { null }, { (succ!! + t).prepend(it) })
-      else DLL(head, { pred!!.append(it) }, { (succ!! + t).prepend(it) })
+      DLL(head, { it.prepend(pred) }, { me -> DLL(t, { me }, { null }) })
+    else
+      DLL(head, { it.prepend(pred) }, { succ?.plus(t)?.prepend(it) })
 
-  fun append(succ: DLL<T>): DLL<T> =
-    if (pred == null) DLL(head, { null }, { succ })
-    else DLL(head, { pred!!.append(it) }, { succ })
+  fun append(succ: DLL<T>?): DLL<T> =
+    DLL(head, { it.prepend(pred) }, { succ })
 
-  fun prepend(pred: DLL<T>): DLL<T> =
-    if (succ == null) DLL(head, { pred }, { null })
-    else DLL(head, { pred }, { succ!!.prepend(it) })
+  fun prepend(pred: DLL<T>?): DLL<T> =
+    DLL(head, { pred }, { succ?.prepend(it) })
+
+  fun insert(t: T): DLL<T> =
+    if(succ == null) this + t
+    else DLL(t, { it.prepend(pred?.plus(head)) }, { succ?.prepend(it) })
+
+  operator fun get(i: Int): DLL<T> = if(i == 0) this else succ!![i - 1]
+
+  fun reversed(): DLL<T> =
+    if(succ == null) this
+    else DLL(tail, { it.prepend(pred) }, { TODO() })
 
   fun last(): T = if (succ == null) head else succ!!.last()
   fun first() = head

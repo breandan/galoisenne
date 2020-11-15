@@ -226,6 +226,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph Rewriting
 
+- [Seam: Provably Safe Local Edits on Graphs](https://cs.stanford.edu/people/sharmar/pubs/seam.pdf), Papadakis et al. (2017)
 - [Equational term graph rewriting](https://www.researchgate.net/profile/Jan_willem_Klop/publication/2688773_Equational_Term_Graph_Rewriting/links/53ce68260cf2b8e35d148342.pdf), Ariola and Klop (1997)
 - [Bisimilarity in Term Graph Rewriting](https://doi.org/10.1006/inco.1999.2824), Ariola et al. (2000)
 - [LEAN: An intermediate language based on graph rewriting](https://doi.org/10.1016/0167-8191(89)90126-9), Barendregt et al. (1988)
