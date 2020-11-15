@@ -16,10 +16,6 @@ private fun assertDLL(head: DLL<String>) =
   (1 until head.size - 1).map { head[it] }.forEach {
     val isDLLForward = it.succ.pred === it
     val isDLLBack = it.pred.succ === it
-    val isDLLTwiceForward = it.succ.succ.pred.pred === it // TODO: fixme
-    val isDLLTwiceBack = it.pred.pred.succ.succ === it // TODO: fixme
-    println(it.pred.pred.succ.succ)
-    println(isDLLTwiceBack)
     assert(isDLLForward) { "${it.succ.pred} != $it" }
     assert(isDLLBack) { "${it.pred.succ} != $it" }
   }
@@ -62,7 +58,7 @@ class DLL<T>(
 
   fun insert(t: T): DLL<T> =
     if (!hasNext()) this + t
-    else DLL(t, { it.prepend(pred + head) }, { it.append(succ) })
+    else DLL(head, { pred.append(it) }, { me -> DLL(t, { me }, { it.append(succ) }) })
 
   operator fun get(i: Int): DLL<T> = if (i == 0) this else succ[i - 1]
 
