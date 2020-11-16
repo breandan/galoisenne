@@ -2,88 +2,90 @@ package edu.mcgill.kaliningraph
 
 
 fun main() {
-  var head = DLL("a").let { ('c'..'z').fold(it) { a, b -> a + b.toString() } }
-  println(head)
+  var head = DLL("a").let { ('c'..'f').fold(it) { a, b -> a + b.toString() } }
+//  println(head)
   assertDLL(head)
 
   head = head.insert("b")
-  println(head)
+  println(head + head)
   assertDLL(head)
-//  println(head.reversed())
+  println(head.reversed())
 }
 
 private fun assertDLL(head: DLL<String>) =
   (1 until head.size - 1).map { head[it] }.forEach {
-    val isDLLForward = it.succ.pred === it
-    val isDLLBack = it.pred.succ === it
-    assert(isDLLForward) { "${it.succ.pred} != $it" }
-    assert(isDLLBack) { "${it.pred.succ} != $it" }
+    val isDLLForward = it.next.prev === it
+    val isDLLBack = it.prev.next === it
+    println(head)
+    assert(isDLLForward) { "${it.next.prev} != $it" }
+    assert(isDLLBack) { "${it.prev.next} != $it" }
   }
 
-class LL<T>(val head: T, val succ: LL<T>? = null) {
+class LL<T>(val head: T, val next: LL<T>? = null) {
   operator fun plus(t: T): LL<T> =
-    if (succ == null) LL(head, LL(t)) else LL(head, succ + t)
+    if (next == null) LL(head, LL(t)) else LL(head, next + t)
 
-  fun last(): T = if (succ == null) head else succ.last()
+  fun last(): T = if (next == null) head else next.last()
   fun first() = head
 
-  override fun toString(): String = "[$head]" + "->" + succ.toString()
+  override fun toString(): String = "[$head]" + "->" + next.toString()
 }
 
 // TODO: Translate to doubly-linked graph
 
 class DLL<T>(
   val head: T,
-  pred: (DLL<T>) -> DLL<T> = { it },
-  succ: (DLL<T>) -> DLL<T> = { it }
-) {
-  val pred: DLL<T> by lazy { pred(this) }
-  val succ: DLL<T> by lazy { succ(this) }
-  val size: Int
-    get() = 1 + (if (!hasNext()) 0 else succ.size)
-  val tail: T
-    get() = if (!hasNext()) head else succ.tail
+  prev: (DLL<T>) -> DLL<T> = { it },
+  next: (DLL<T>) -> DLL<T> = { it }
+): Iterable<DLL<T>> {
+  val prev: DLL<T> by lazy { prev(this) }
+  val next: DLL<T> by lazy { next(this) }
+  val size: Int by lazy { 1 + (if (!hasNext()) 0 else this.next.size) }
+  val tail: T by lazy { if (!hasNext()) head else this.next.tail }
 
   operator fun plus(t: T): DLL<T> =
     DLL(
       head = head,
-      pred = { pred.append(it) },
-      succ = { me ->
+      prev = { prev + it },
+      next = { me ->
         if (!hasNext()) DLL(t, { me })
-        else me.append(succ + t)
+        else me.append(next + t)
       }
     )
 
-  fun append(succ: DLL<T>): DLL<T> = succ.prepend(this) // TODO: flip?
-
-  fun prepend(pred: DLL<T>): DLL<T> =
+  // TODO: how can these two be merged?
+  operator fun plus(other: DLL<T>): DLL<T> =
+    other.fold(this) { a, b -> a + b.head }
+  private fun append(next: DLL<T>): DLL<T> =
     DLL(
-      head = head,
-      pred = { pred },
-      succ = { me ->
-        if (!hasNext()) me
-        else me.append(succ)
+      head = next.head,
+      prev = { this },
+      next = { me ->
+        if (!next.hasNext()) me
+        else me.append(next.next)
       }
     )
 
   fun insert(t: T): DLL<T> =
     DLL(
       head = head,
-      pred = { pred.append(it) },
-      succ = { me ->
+      prev = { prev + it },
+      next = { me ->
         if (!hasNext()) this + t
-        else DLL(t, { me }, { it.append(succ) })
+        else DLL(t, { me }, { it.append(next) })
       }
     )
 
-  operator fun get(i: Int): DLL<T> = if (i == 0) this else succ[i - 1]
+  operator fun get(i: Int): DLL<T> = if (i == 0) this else next[i - 1]
 
-//  fun reversed(): DLL<T> =
-//    if (hasNext()) this
-//    else DLL(tail, { pred.append(it) }, { succ.reversed() + head })
+  fun reversed(): DLL<T> = if (!hasNext()) this else next.reversed() + head
 
   override fun toString(): String =
-    if (!hasNext()) "[$head]" else "[$head]<->$succ"
+    if (!hasNext()) "[$head]" else "[$head]<->$next"
 
-  fun hasNext() = succ != this
+  fun hasNext() = next != this
+  fun hasPrev() = prev != this
+
+  override fun iterator() =
+    generateSequence(this) { if (it.next != it) it.next else null }.iterator()
 }
