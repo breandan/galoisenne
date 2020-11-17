@@ -237,6 +237,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 #### Unification
 
+- [A Catalogue of Canonical Term Rewriting Systems](https://apps.dtic.mil/dtic/tr/fulltext/u2/a087641.pdf#page=7), Hullot (1980)
 - [Graph Unification and Matching](https://www.cs.york.ac.uk/plasma/publications/pdf/PlumpHabel.96.pdf), Plump and Habel (1996)
 - [Unification with Drags](https://hal.inria.fr/hal-02562152/document), Jouannaud and Orejas (2020)
 - [The identity problem for elementary functions and constants](https://doi.org/10.1145/190347.190429), Richardson and Fitch (1994)
