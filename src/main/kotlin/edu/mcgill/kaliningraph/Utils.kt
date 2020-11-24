@@ -17,7 +17,8 @@ import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
 import org.ejml.data.*
 import org.ejml.dense.row.*
-import org.ejml.ops.ConvertDMatrixStruct
+import org.ejml.ops.ConvertMatrixType
+import org.ejml.sparse.csc.CommonOps_DSCC
 import java.awt.image.BufferedImage
 import java.io.*
 import java.math.*
@@ -54,7 +55,7 @@ tailrec fun <T> closure(
     successors = successors
   )
 
-const val THICKNESS = 4
+const val THICKNESS = 4.0
 const val DARKMODE = false
 
 fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
@@ -82,7 +83,7 @@ fun File.show() = ProcessBuilder(browserCmd, path).start()
 
 fun SpsMat.matToImg(f: Int = 20): String {
   var rescaled = DMatrixRMaj(numRows * f, numCols * f)
-  val dense = ConvertDMatrixStruct.convert(this, null as DMatrixRMaj?)
+  val dense = ConvertMatrixType.convert(this, MatrixType.DDRM) as DMatrixRMaj
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
   // Confine to binary colorspace to correct for floating point drift
   rescaled = DMatrixRMaj(numRows * f, numCols * f, true,

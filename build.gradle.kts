@@ -2,8 +2,8 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.20-RC"
-  id("com.github.ben-manes.versions") version "0.33.0"
+  kotlin("jvm") version "1.4.20"
+  id("com.github.ben-manes.versions") version "0.36.0"
 }
 
 group = "com.github.breandan"
@@ -22,10 +22,10 @@ repositories {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-  val ejmlVersion = "0.39"
+  val ejmlVersion = "0.40"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
-  api("guru.nidi:graphviz-kotlin:0.17.0")
+  api("guru.nidi:graphviz-kotlin:0.18.0")
   api("io.github.vovak.astminer:astminer:0.6")
   implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
 
@@ -38,7 +38,7 @@ dependencies {
 
   // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
   implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
-  implementation("org.sosy-lab:java-smt:3.6.1")
+  implementation("org.sosy-lab:java-smt:3.7.0")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
@@ -56,7 +56,7 @@ dependencies {
 
   testImplementation("junit", "junit", "4.13.1")
   testImplementation("com.github.ajalt.clikt:clikt:3.0.1")
-  testImplementation("com.redislabs:jredisgraph:2.1.0")
+  testImplementation("com.redislabs:jredisgraph:2.2.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
   val jgraphtVersion by extra { "1.5.0" }
@@ -122,7 +122,7 @@ tasks {
   }
 
   val sourcesJar by registering(org.gradle.jvm.tasks.Jar::class) {
-    classifier = "sources"
+    archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
   }
 }
