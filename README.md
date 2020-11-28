@@ -251,6 +251,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Matrix Interpretations for Proving Termination of Term Rewriting](https://doi.org/10.1007/s10817-007-9087-9), Endrullis et al. (2007)
 - [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud (2019)
 
+### Propagation
+
+- [Unifying Graph Convolutional Neural Networks and Label Propagation](https://arxiv.org/pdf/2002.06755.pdf), Wang and Leskovec (2020
+- [Equilibrium Propagation: Bridging the Gap between Energy-Based Models and Backpropagation](https://doi.org/10.3389/fncom.2017.00024) Scellier and Bengio (2017)
+- [Expecation Propagation for Aproximate Bayesian Inference](https://arxiv.org/pdf/1301.2294.pdf), Minka (2001)
+- [Propagation Networks: A Flexible and Expressive Substrate for Computation](https://dspace.mit.edu/bitstream/handle/1721.1/54635/603543210-MIT.pdf), Radul (2009)
+- [The Art of the Propagator](http://dspace.mit.edu/bitstream/handle/1721.1/44215/MIT-CSAIL-TR-2009-002.pdf), Radul and Sussman (2009)
+
 ### Algebra
 
 - [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov (2017)
