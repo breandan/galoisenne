@@ -251,14 +251,6 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Matrix Interpretations for Proving Termination of Term Rewriting](https://doi.org/10.1007/s10817-007-9087-9), Endrullis et al. (2007)
 - [Graph Path Orderings](https://hal.inria.fr/hal-01903086/document#page=2), Dershowitz and Jouannaud (2019)
 
-### Propagation
-
-- [Unifying Graph Convolutional Neural Networks and Label Propagation](https://arxiv.org/pdf/2002.06755.pdf), Wang and Leskovec (2020
-- [Equilibrium Propagation: Bridging the Gap between Energy-Based Models and Backpropagation](https://doi.org/10.3389/fncom.2017.00024) Scellier and Bengio (2017)
-- [Expecation Propagation for Aproximate Bayesian Inference](https://arxiv.org/pdf/1301.2294.pdf), Minka (2001)
-- [Propagation Networks: A Flexible and Expressive Substrate for Computation](https://dspace.mit.edu/bitstream/handle/1721.1/54635/603543210-MIT.pdf), Radul (2009)
-- [The Art of the Propagator](http://dspace.mit.edu/bitstream/handle/1721.1/44215/MIT-CSAIL-TR-2009-002.pdf), Radul and Sussman (2009)
-
 ### Algebra
 
 - [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov (2017)
@@ -280,6 +272,15 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Representations of Elementary Functions Using Edge-Valued MDDs](https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=4215928), Nagayama and Sasao (2007)
 - [Complexities of Graph-Based Representations for Elementary Functions](https://doi.org/10.1109/TC.2008.134), Nagayama and Sasao (2008)
 - [Numerical Function Generators Using LUT Cascades](https://doi.org/10.1109/TC.2007.1033), Sasao and Nagayama (2007)
+
+### Propagation
+
+- [Unifying Graph Convolutional Neural Networks and Label Propagation](https://arxiv.org/pdf/2002.06755.pdf), Wang and Leskovec (2020)
+- [Equilibrium Propagation: Bridging the Gap between Energy-Based Models and Backpropagation](https://doi.org/10.3389/fncom.2017.00024) Scellier and Bengio (2017)
+- [Expecation Propagation for Aproximate Bayesian Inference](https://arxiv.org/pdf/1301.2294.pdf), Minka (2001)
+- [Propagation Networks: A Flexible and Expressive Substrate for Computation](https://dspace.mit.edu/bitstream/handle/1721.1/54635/603543210-MIT.pdf), Radul (2009)
+- [The Art of the Propagator](http://dspace.mit.edu/bitstream/handle/1721.1/44215/MIT-CSAIL-TR-2009-002.pdf), Radul and Sussman (2009)
+- [Fusion, propagation, and structuring in belief networks](https://bi.snu.ac.kr/~scai/Info/AI/Fusion,%20Propagation,%20and%20Structuring%20in%20Belief%20Networks.pdf), Pearl (1986)
 
 ### Random Walks
 
