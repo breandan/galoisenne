@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-  val ejmlVersion = "0.40"
+  val ejmlVersion = "0.39"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.18.0")

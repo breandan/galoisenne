@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.breandan:kaliningraph:-SNAPSHOT")
+    implementation("com.github.breandan:kaliningraph:0.1.4")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
-    <version>0.0.1</version>
+    <version>0.1.4</version>
   </dependency>
 </project>
 ```
