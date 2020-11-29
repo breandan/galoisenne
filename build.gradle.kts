@@ -27,27 +27,27 @@ dependencies {
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.18.0")
   api("io.github.vovak.astminer:astminer:0.6")
-  implementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
 
   val commonsRngVersion = "1.3"
   implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
   implementation("org.apache.commons:commons-rng-simple:$commonsRngVersion")
-  implementation("com.github.kwebio:kweb-core:0.7.33")
   implementation("org.slf4j:slf4j-simple:1.7.30")
-  implementation("com.github.breandan:tensor:master-SNAPSHOT")
 
+  testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
+  testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
+  testImplementation("com.github.kwebio:kweb-core:0.7.33")
   // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
-  implementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
-  implementation("org.sosy-lab:java-smt:3.7.0")
+  testImplementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
+  testImplementation("org.sosy-lab:java-smt:3.7.0")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
 
   // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
-  implementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
+  testImplementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
   // https://github.com/jgralab/jgralab/wiki
-  implementation("de.uni-koblenz.ist:jgralab:8.1.0")
+  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
 //  val kmathVersion by extra { "0.2.0-dev-2" }
 //  implementation("scientifik:kmath-core:$kmathVersion")

@@ -3,7 +3,6 @@ package edu.mcgill.kaliningraph
 import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
-import kweb.shoebox.toArrayList
 import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
@@ -32,7 +31,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   protected class VIndex<G: Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>(val set: Set<V>) {
     operator fun plus(vertexIdx: VIndex<G, E, V>) = VIndex(set + vertexIdx.set)
-    val array: ArrayList<V> = set.toList().toArrayList()
+    val array: List<V> = set.toList()
     val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     operator fun get(it: Vertex<G, E, V>): Int? = map[it]
     operator fun get(it: Int): V = array[it]

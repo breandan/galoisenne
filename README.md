@@ -213,7 +213,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph learning
 
-* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/), Hamilton (2020)
+* [Graph Representation Learning](https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book.pdf), Hamilton (2020)
 * [Spectral Graph Theory with Applications to ML](http://www.cs.cmu.edu/afs/cs/academic/class/15859n-s20/recordings.html), Miller (2020)
 * [Neural Execution of Graph Algorithms](https://arxiv.org/abs/1910.10593), Veličković et al. (2020)
 
@@ -277,7 +277,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 - [Unifying Graph Convolutional Neural Networks and Label Propagation](https://arxiv.org/pdf/2002.06755.pdf), Wang and Leskovec (2020)
 - [Equilibrium Propagation: Bridging the Gap between Energy-Based Models and Backpropagation](https://doi.org/10.3389/fncom.2017.00024) Scellier and Bengio (2017)
-- [Expecation Propagation for Aproximate Bayesian Inference](https://arxiv.org/pdf/1301.2294.pdf), Minka (2001)
+- [Expectation Propagation for Approximate Bayesian Inference](https://arxiv.org/pdf/1301.2294.pdf), Minka (2001)
 - [Propagation Networks: A Flexible and Expressive Substrate for Computation](https://dspace.mit.edu/bitstream/handle/1721.1/54635/603543210-MIT.pdf), Radul (2009)
 - [The Art of the Propagator](http://dspace.mit.edu/bitstream/handle/1721.1/44215/MIT-CSAIL-TR-2009-002.pdf), Radul and Sussman (2009)
 - [Fusion, propagation, and structuring in belief networks](https://bi.snu.ac.kr/~scai/Info/AI/Fusion,%20Propagation,%20and%20Structuring%20in%20Belief%20Networks.pdf), Pearl (1986)
