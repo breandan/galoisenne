@@ -1,6 +1,5 @@
 package edu.mcgill.kaliningraph
 
-import astminer.common.model.Node
 import guru.nidi.graphviz.*
 
 import guru.nidi.graphviz.attribute.*
@@ -29,19 +28,6 @@ import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 typealias SpsMat = DMatrixSparseCSC
-
-fun Node.toKGraph() =
-  LabeledGraphBuilder {
-    closure(
-      toVisit = setOf(this@toKGraph),
-      successors = { flatMap { setOfNotNull(it.getParent()) + it.getChildren() }.toSet() }
-    ).forEach { parent ->
-      getChildren().forEach { child ->
-        LGVertex(parent.getToken()) - LGVertex(child.getToken())
-        LGVertex(child.getToken()) - LGVertex(parent.getToken())
-      }
-    }
-  }
 
 tailrec fun <T> closure(
   toVisit: Set<T> = emptySet(),

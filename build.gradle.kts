@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.breandan"
-version = "0.1.3"
+version = "0.1.4"
 
 repositories {
   mavenCentral()
@@ -26,7 +26,6 @@ dependencies {
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.18.0")
-  api("io.github.vovak.astminer:astminer:0.6")
 
   val commonsRngVersion = "1.3"
   implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
