@@ -1,6 +1,7 @@
 package edu.mcgill.kaliningraph.display
 
 import edu.mcgill.kaliningraph.*
+import edu.mcgill.kaliningraph.matrix.BMat
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
@@ -42,6 +43,6 @@ fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, Mutable
 //var fromField = ""
 //var replField = ""
 
-fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> SpsMat) {
+fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> BMat) {
   setAttributeRaw("src", renderFun(graph).matToImg())
 }

@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.matrix.*
 import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
@@ -7,7 +8,7 @@ import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
 import org.apache.commons.rng.simple.RandomSource
 import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.kotlin.*
-import kotlin.math.sqrt
+import kotlin.math.*
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
@@ -48,12 +49,12 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   val D: SpsMat by lazy { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
   // Adjacency matrix
-  val A: SpsMat by lazy { vwise { _, _ -> 1.0 } }
-  val A_AUG: SpsMat by lazy { A + A.transpose() + I }
+  val A: BSqMat by lazy { BSqMat(size) { i, j -> this[j] in this[i].neighbors } }
+  val A_AUG: BSqMat by lazy { A + A.transpose() + BSqMat.one(size) }
 
   // Symmetric normalized adjacency
   val ASYMNORM: SpsMat by lazy {
-    vwise { v, n -> 1.0 / (sqrt(v.degree.toDouble()) * sqrt(n.degree.toDouble())) }
+    vwise { v, n -> 1.0 / sqrt(v.degree.toDouble() * n.degree.toDouble()) }
   }
 
   // Laplacian matrix
@@ -69,7 +70,9 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   inline fun vwise(crossinline lf: Graph<G, E, V>.(V, V) -> Double?): SpsMat =
     elwise(size) { i, j ->
-      (this[i] to this[j]).let { (v, n) -> if (n in v.neighbors) lf(v, n) else null }
+      (this[i] to this[j]).let { (v, n) ->
+        if (n in v.neighbors) lf(v, n) else null
+      }
     }
 
   val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
@@ -104,16 +107,20 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
 
-  /* (𝟙 + A)ⁿ[a, b] counts the number of walks between vertices a, b of length n
-   * Let i be the smallest natural number such that (𝟙 + A)ⁱ has no zeros.
-   * Fact: i is the length of the longest shortest path in G.
-   *
-   * TODO: implement O(M(n)log(n)) version based on Booth & Lipton (1981)
-   *       https://doi.org/10.1007/BF00264532
+  /* (A')ⁿ[a, b] counts the number of walks between vertices a, b of
+   * length n. Let i be the smallest natural number such that (A')ⁱ
+   * has no zeros. i is the length of the longest shortest path in G.
    */
 
-  tailrec fun diameter(i: Int = 1, walks: SpsMat = A_AUG): Int =
-    if (walks.isFull) i else diameter(i = i + 1, walks = walks * A_AUG)
+  tailrec fun slowDiameter(i: Int = 1, walks: BSqMat = A_AUG): Int =
+    if (walks.isFull) i
+    else slowDiameter(i = i + 1, walks = walks * A_AUG)
+
+  // Based on Booth & Lipton (1981): https://doi.org/10.1007/BF00264532
+
+  tailrec fun diameter(i: Int = 1, prev: BSqMat = A_AUG, next: BSqMat = prev): Int =
+    if (next.isFull) slowDiameter(i / 2, prev)
+    else diameter(i = 2 * i, prev = next, next = next * next)
 
   /* Weisfeiler-Lehman isomorphism test:
    * http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6

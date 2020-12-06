@@ -1,8 +1,9 @@
 package edu.mcgill.kaliningraph.matrix
 
+import edu.mcgill.kaliningraph.*
 import org.ejml.data.BMatrixRMaj
 import org.ejml.data.DMatrix
-import org.ejml.data.DMatrixRMaj
+import org.ejml.kotlin.*
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -26,9 +27,21 @@ open class BMat(val rows: Int, val cols: Int, open vararg val data: Boolean) {
   open operator fun get(r: Int) = data.toList().subList(r * cols, r * cols + cols).toBooleanArray()
 
   open fun transpose(): BMat = BMat(cols, rows) { r, c -> this[c, r] }
+
+  fun toEJML() = BMatrixRMaj(rows, cols).also {
+    for (i in 0 until rows) for (j in 0 until cols) it[i, j] = this[i, j]
+  }
+
+  fun toEJMLSparse() =
+    SpsMat(rows, cols, rows).also {
+      for (i in 0 until rows) for (j in 0 until cols)
+        it[i, j] = if (this[i, j]) 1.0 else 0.0
+    }
 }
 
-class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()).toInt(), *data) {
+class BSqMat(override vararg val data: Boolean):
+  BMat(sqrt(data.size.toDouble()).toInt(), *data) {
+  val isFull = data.all { it }
   val size: Int = sqrt(data.size.toDouble()).toInt()
   val values = data.distinct().sorted()
   val contents: Array<BooleanArray>
@@ -87,12 +100,6 @@ class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % size == 0) "\n" else ""
   }
 
-  fun toEJML() = BMatrixRMaj(size, size).let {
-    for (i in 0 until size) for (j in 0 until size) it[i, j] = this[i, j]
-  }
-
-  fun toDMat() = DMatrixRMaj(contents.map { it.map { if (it) 1.0 else 0.0 }.toDoubleArray() }.toTypedArray())
-
   override fun equals(other: Any?): Boolean {
     if (other !is BSqMat) return false
 
@@ -105,8 +112,8 @@ class BSqMat(override vararg val data: Boolean) : BMat(sqrt(data.size.toDouble()
   override fun hashCode() = contents.contentDeepHashCode()
 }
 
-fun DMatrix.toBMat() =
-  BSqMat(numRows) { i, j -> get(i, j) < 0.5 }
-
-fun BMatrixRMaj.toBMat() =
-  BSqMat(numRows) { i, j -> get(i, j) }
+fun DMatrix.toBMat() = BSqMat(numRows) { i, j -> get(i, j) > 0.5 }
+fun BMatrixRMaj.toBMat() = BSqMat(numRows) { i, j -> get(i, j) }
+operator fun BMat.times(mat: SpsMat): SpsMat = toEJMLSparse() * mat
+operator fun BMat.plus(mat: SpsMat): SpsMat = toEJMLSparse() * mat
+operator fun SpsMat.minus(mat: BMat): SpsMat = this - mat.toEJMLSparse()

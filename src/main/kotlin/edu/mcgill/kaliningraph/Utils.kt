@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.matrix.BMat
 import guru.nidi.graphviz.*
 
 import guru.nidi.graphviz.attribute.*
@@ -52,8 +53,8 @@ fun Graph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {
     toFile(File.createTempFile(filename, ".svg"))
   }.show()
-fun SpsMat.show(filename: String = "temp") = matToImg().let { data ->
-  File.createTempFile(filename, ".html").apply { writeText("<html><body><img src=\"$data\"/></body></html>") }
+fun BMat.show(filename: String = "temp") = matToImg().let { data ->
+  File.createTempFile(filename, ".html").apply { writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>") }
 }.show()
 
 val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
@@ -67,12 +68,12 @@ val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
 
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 
-fun SpsMat.matToImg(f: Int = 20): String {
-  var rescaled = DMatrixRMaj(numRows * f, numCols * f)
-  val dense = ConvertMatrixType.convert(this, MatrixType.DDRM) as DMatrixRMaj
+fun BMat.matToImg(f: Int = 20): String {
+  var rescaled = DMatrixRMaj(rows * f, cols * f)
+  val dense = ConvertMatrixType.convert(toEJMLSparse(), MatrixType.DDRM) as DMatrixRMaj
   CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
   // Confine to binary colorspace to correct for floating point drift
-  rescaled = DMatrixRMaj(numRows * f, numCols * f, true,
+  rescaled = DMatrixRMaj(rows * f, cols * f, true,
     *rescaled.data.map { if(0.0 < it) 1.0 else 0.0 }.toDoubleArray())
 
   val bi = BufferedImage(rescaled.numCols, rescaled.numRows, BufferedImage.TYPE_INT_RGB)

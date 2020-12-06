@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph
 
+import edu.mcgill.kaliningraph.matrix.BMat
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
@@ -56,9 +57,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   var accumuator = mutableSetOf<String>()
   var description = ""
 
-  fun S() = SpsMat(vertices.size, 1, totalEdges).also { state ->
-    vertices.forEach { v -> state[index[v]!!, 0] = if (v.occupied) 1.0 else 0.0 }
-  }
+  fun S() = BMat(vertices.size, 1) { i, j -> this[i].occupied }
 
   fun rewrite(substitution: Pair<String, String>) =
     LabeledGraphBuilder(
