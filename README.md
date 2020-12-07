@@ -210,6 +210,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Account of the Icosian Calculus](http://www.kurims.kyoto-u.ac.jp/EMIS/classics/Hamilton/PRIAIcos.pdf), Hamilton (1858)
 * [Mathematical Foundations of the GraphBLAS](https://arxiv.org/pdf/1606.05790.pdf), Kepner et al. (2016)
 * [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918), Kepner and Gilbert (2011)
+* [Parallel Matrix and Graph Algorithms](https://epubs.siam.org/doi/pdf/10.1137/0210049), Dekel et al. (1981)
 
 ### Graph learning
 
