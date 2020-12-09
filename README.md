@@ -177,7 +177,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
    - Convolve permuted variants of query in parallel
    - Need some kind of label permutation / edit distance metric
 * How could we implement graph grammars/rewriting?
-   - [Rewrites](src/main/kotlin/edu/mcgill/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
+   - [Rewrites](src/test/kotlin/edu/mcgill/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
    - Reconstruct graph from rewritten string using adjacency matrix
    - ~~Is there an algebraic definition for graph grammars?~~
    - ~~Maybe graph convolution. How to encode rewrites as a kernel?~~
