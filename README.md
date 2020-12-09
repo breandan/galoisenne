@@ -204,6 +204,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ## References
 
+### Knowledge graphs
+
+* [Organizing Math as a Rule-based Decision Tree](https://rulebasedintegration.org/vision.html), Rich et al. (2018)
+* [ProbOnto 2.5: Ontology and Knowledge Base of Probability Distributions](https://sites.google.com/site/probonto/home), Maciej et al. (2016)
+* [Metamath Proof Explorer](http://us.metamath.org/), Megill (2006)
+* [The Empirical Metamathematics of Euclid and Beyond](https://writings.stephenwolfram.com/2020/09/the-empirical-metamathematics-of-euclid-and-beyond/), Wolfram (2020)
+* [Metafore della Matematica](http://utenti.quipo.it/base5/scuola/mate_metafor.htm), Bo (2014)
+
 ### Graph theory
 
 * [Solutio problematis ad geometriam situs pertinentis](http://eulerarchive.maa.org/docs/originals/E053.pdf), Euler (1741)
