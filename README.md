@@ -207,6 +207,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 ### Knowledge graphs
 
 * [Organizing Math as a Rule-based Decision Tree](https://rulebasedintegration.org/vision.html), Rich et al. (2018)
+* [GOOL: a generic object-oriented language](https://doi.org/10.1145/3372884.3373159), Carette et al. (2020)
 * [ProbOnto 2.5: Ontology and Knowledge Base of Probability Distributions](https://sites.google.com/site/probonto/home), Maciej et al. (2016)
 * [Metamath Proof Explorer](http://us.metamath.org/), Megill (2006)
 * [The Empirical Metamathematics of Euclid and Beyond](https://writings.stephenwolfram.com/2020/09/the-empirical-metamathematics-of-euclid-and-beyond/), Wolfram (2020)
@@ -218,6 +219,8 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Account of the Icosian Calculus](http://www.kurims.kyoto-u.ac.jp/EMIS/classics/Hamilton/PRIAIcos.pdf), Hamilton (1858)
 * [Mathematical Foundations of the GraphBLAS](https://arxiv.org/pdf/1606.05790.pdf), Kepner et al. (2016)
 * [Graph Algorithms in the Language of Linear Algebra](https://epubs.siam.org/doi/book/10.1137/1.9780898719918), Kepner and Gilbert (2011)
+* [Graphs, Dioids and Semirings. New Models and Algorithms](https://link.springer.com/content/pdf/10.1007%2F978-0-387-75450-5.pdf), Gondran and Minoux (2008)
+* [Path Problems in Networks](https://doi.org/10.2200/S00245ED1V01Y201001CNT003), Baras and Theodorakopoulos (2010)
 * [Parallel Matrix and Graph Algorithms](https://epubs.siam.org/doi/pdf/10.1137/0210049), Dekel et al. (1981)
 
 ### Graph learning
