@@ -22,6 +22,8 @@ fun main(args: Array<String>) =
     "edu.mcgill.kaliningraph.circuits.Gate": "HTML(($`$`it as edu.mcgill.kaliningraph.circuits.Gate).graph.html())",
     "edu.mcgill.kaliningraph.circuits.NFunction": "HTML(($`$`it as edu.mcgill.kaliningraph.circuits.NFunction).graph.html())",
     "edu.mcgill.kaliningraph.circuits.ComputationGraph": "HTML(($`$`it as edu.mcgill.kaliningraph.Graph<*, *, *>).html())",
+    "edu.mcgill.kaliningraph.matrix.BMat": "HTML(\"<img src=\\\"$`$`{($`$`it as edu.mcgill.kaliningraph.matrix.BMat).matToImg()}\\\"/>\")",
+    "edu.mcgill.kaliningraph.matrix.BSqMat": "HTML(\"<img src=\\\"$`$`{($`$`it as edu.mcgill.kaliningraph.matrix.BSqMat).matToImg()}\\\"/>\")",
     "org.ejml.data.DMatrixSparseCSC": "HTML(\"<img src=\\\"$`$`{($`$`it as org.ejml.data.DMatrixSparseCSC).matToImg()}\\\"/>\")"
   }
 }
