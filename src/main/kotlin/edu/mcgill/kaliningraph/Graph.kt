@@ -19,12 +19,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
     (V) -> Set<V> by { it: V -> it.neighbors }
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
-  open fun new(vararg graphs: G): G = new(graphs.toList())
-  open fun new(vararg vertices: V): G = new(vertices.map { it.graph })
-  open fun new(graphs: List<G>): G = new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
-  open fun new(adjList: Map<V, Set<E>>): G = new(adjList.map { (k, v) -> k.Vertex { v } }.toSet())
-  abstract fun new(vertices: Set<V> = setOf()): G
-
+  // TODO: Is this still needed?
   open val prototype: V? by lazy { vertices.firstOrNull() }
 
   val totalEdges: Int by lazy { vertices.map { it.neighbors.size }.sum() }
@@ -85,7 +80,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   // Implements graph merge. For all vertices in common, merge their neighbors.
   // TODO: Figure out how to implement this operator "correctly"
   // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
-  open operator fun plus(that: G): G =
+  override operator fun plus(that: G): G =
     new((this - that) + (this join that) + (that - this))
 
   infix fun join(that: G): Set<V> =
@@ -201,7 +196,6 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 abstract class Edge<G, E, V>(override val source: V, override val target: V): IEdge<G, E, V>
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val graph by lazy { target.graph }
-  abstract fun new(source: V, target: V): E
   open fun render(): Link = (source.render() - target.render()).add(Label.of(""))
   operator fun component1() = source
   operator fun component2() = target
@@ -209,15 +203,8 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V): IE
 
 // TODO: Link to graph and make a "view" of the container graph
 // TODO: Possible to extend Graph?
-abstract class Vertex<G, E, V>(open val id: String): IVertex<G, E, V>, Encodable
+abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encodable
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
-  abstract fun Graph(vertices: Set<V>): G
-  abstract fun Edge(s: V, t: V): E
-  abstract fun Vertex(newId: String = id, edgeMap: (V) -> Set<E>): V
-
-  fun Vertex(newId: String = id, out: Set<V> = emptySet()): V =
-    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
-
   override val graph: G by lazy { Graph(neighbors(-1)) }
   abstract val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }

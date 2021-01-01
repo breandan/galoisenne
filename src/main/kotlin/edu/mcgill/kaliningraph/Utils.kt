@@ -16,10 +16,13 @@ import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
 import org.ejml.data.*
+import org.ejml.data.MatrixType.DDRM
 import org.ejml.dense.row.*
+import org.ejml.dense.row.CommonOps_DDRM.kron
 import org.ejml.ops.ConvertMatrixType
 import org.ejml.sparse.csc.CommonOps_DSCC
 import java.awt.image.BufferedImage
+import java.awt.image.BufferedImage.TYPE_INT_RGB
 import java.io.*
 import java.math.*
 import java.util.*
@@ -54,7 +57,9 @@ fun Graph<*, *, *>.show(filename: String = "temp") =
     toFile(File.createTempFile(filename, ".svg"))
   }.show()
 fun BMat.show(filename: String = "temp") = matToImg().let { data ->
-  File.createTempFile(filename, ".html").apply { writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>") }
+  File.createTempFile(filename, ".html").apply {
+    writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>")
+  }
 }.show()
 
 val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
@@ -68,21 +73,20 @@ val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
 
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 
-fun BMat.matToImg(f: Int = 20): String {
-  var rescaled = DMatrixRMaj(rows * f, cols * f)
-  val dense = ConvertMatrixType.convert(toEJMLSparse(), MatrixType.DDRM) as DMatrixRMaj
-  CommonOps_DDRM.kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
-  // Confine to binary colorspace to correct for floating point drift
-  rescaled = DMatrixRMaj(rows * f, cols * f, true,
-    *rescaled.data.map { if(0.0 < it) 1.0 else 0.0 }.toDoubleArray())
+fun SpsMat.matToImg(f: Int = 20): String {
+  val rescaled = DMatrixRMaj(numRows * f, numCols * f)
+  val dense = ConvertMatrixType.convert(this, DDRM) as DMatrixRMaj
+  kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
 
-  val bi = BufferedImage(rescaled.numCols, rescaled.numRows, BufferedImage.TYPE_INT_RGB)
+  val bi = BufferedImage(rescaled.numCols, rescaled.numRows, TYPE_INT_RGB)
   DMatrixComponent.renderMatrix(rescaled, bi, 1.0)
 
   val os = ByteArrayOutputStream()
   ImageIO.write(bi, "png", os)
   return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
 }
+
+fun BMat.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 
