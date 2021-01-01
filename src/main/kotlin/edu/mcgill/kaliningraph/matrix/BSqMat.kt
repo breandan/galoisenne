@@ -24,7 +24,8 @@ open class BMat(val rows: Int, val cols: Int, open vararg val data: Boolean) {
       .run { BSqMat(rows) { i -> data[i] } }
 
   open operator fun get(r: Int, c: Int) = data[r * cols + c]
-  open operator fun get(r: Int) = data.toList().subList(r * cols, r * cols + cols).toBooleanArray()
+  open operator fun get(r: Int) =
+    data.toList().subList(r * cols, r * cols + cols).toBooleanArray()
 
   open fun transpose(): BMat = BMat(cols, rows) { r, c -> this[c, r] }
 

@@ -18,6 +18,7 @@ repositories {
   maven("https://dl.bintray.com/mipt-npm/dev")
   maven("http://logicrunch.research.it.uu.se/maven/")
   maven("https://clojars.org/repo")
+  maven("https://dl.bintray.com/kotlin/kotlin-datascience")
 }
 
 dependencies {
@@ -33,6 +34,11 @@ dependencies {
   implementation("org.slf4j:slf4j-simple:1.7.30")
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
+
+  val multik_version = "0.0.1-dev-11"
+  testImplementation("org.jetbrains.kotlinx.multik:multik-api:$multik_version")
+  testImplementation("org.jetbrains.kotlinx.multik:multik-default:$multik_version")
+
   testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
   // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
@@ -76,6 +82,10 @@ tasks {
   compileKotlin {
     kotlinOptions.jvmTarget = VERSION_1_8.toString()
 //    kotlinOptions.useIR = true
+  }
+
+  compileTestKotlin {
+    kotlinOptions.jvmTarget = VERSION_1_8.toString()
   }
 
   listOf("HelloKaliningraph", "Rewriter", "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->

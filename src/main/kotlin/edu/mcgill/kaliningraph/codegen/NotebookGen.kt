@@ -7,10 +7,7 @@ val `$` = "$"
 fun main(args: Array<String>) =
   """{
   "link": "https://github.com/breandan/kaliningraph",
-  "repositories": [
-    "*mavenLocal",
-    "https://jitpack.io"
-  ],
+  "description": "Graph library with a DSL for constructing graphs and visualizing the behavior of graph algorithms",
   "dependencies": [
     "com.github.breandan:kaliningraph:${args[1]}"
   ],
