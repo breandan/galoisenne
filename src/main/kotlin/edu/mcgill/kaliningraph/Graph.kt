@@ -13,11 +13,9 @@ import kotlin.random.Random
 import kotlin.reflect.KProperty
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
-  Set<V> by vertices,
   IGraph<G, E, V>,
-  // TODO: Compare graph as a function V -> Set<V> vs. a multimap graph[g]
-  // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
-    (V) -> Set<V> by { it: V -> it.neighbors }
+  Set<V> by vertices,
+     (V) -> Set<V> by { it: V -> it.neighbors }
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   // TODO: Is this still needed?
   open val prototype: V? by lazy { vertices.firstOrNull() }
@@ -206,7 +204,6 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V): IE
 abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encodable
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val graph: G by lazy { Graph(neighbors(-1)) }
-  abstract val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
   open val neighbors by lazy { outgoing.map { it.target }.toSet() }
