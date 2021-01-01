@@ -113,8 +113,8 @@ class BSqMat(override vararg val data: Boolean):
   override fun hashCode() = contents.contentDeepHashCode()
 }
 
-fun DMatrix.toBMat() = BSqMat(numRows) { i, j -> get(i, j) > 0.5 }
-fun BMatrixRMaj.toBMat() = BSqMat(numRows) { i, j -> get(i, j) }
+fun DMatrix.toBMat() = BMat(numRows, numCols) { i, j -> get(i, j) > 0.5 }
+fun BMatrixRMaj.toBMat() = BMat(numRows, numCols) { i, j -> get(i, j) }
 operator fun BMat.times(mat: SpsMat): SpsMat = toEJMLSparse() * mat
 operator fun BMat.plus(mat: SpsMat): SpsMat = toEJMLSparse() * mat
 operator fun SpsMat.minus(mat: BMat): SpsMat = this - mat.toEJMLSparse()
