@@ -45,16 +45,10 @@ dependencies {
 
 ### Jupyter Notebook
 
-[First install](https://github.com/kotlin/kotlin-jupyter#installation) the Kotlin Jupyter kernel, then run the `jupyterInstall` task to install the library descriptor:
-
-```
-./gradlew jupyterInstall [-Path=~/.jupyter_kotlin/libraries]
-```
-
 To access notebook support, use the following line magic:
 
 ```
-%use kaliningraph
+%use @https://raw.githubusercontent.com/breandan/kaliningraph/master/kaliningraph.json
 ```
 
 For more information, explore the [tutorial](notebooks/Hello%20Kaliningraph.ipynb).

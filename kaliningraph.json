@@ -5,7 +5,7 @@
     "https://jitpack.io"
   ],
   "dependencies": [
-    "com.github.breandan:kaliningraph:0.1.1"
+    "com.github.breandan:kaliningraph:0.1.4"
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*",
