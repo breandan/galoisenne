@@ -13,6 +13,7 @@ fun main(args: Array<String>) =
   ],
   "imports": [
     "edu.mcgill.kaliningraph.*",
+    "edu.mcgill.kaliningraph.matrix.*",
     "edu.mcgill.kaliningraph.circuits.*",
     "org.ejml.data.*",
     "org.ejml.kotlin.*"
