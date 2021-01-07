@@ -1,5 +1,11 @@
 package edu.mcgill.kaliningraph.rewriting
 
+import io.ktor.util.*
+import kotlin.system.exitProcess
+import kotlin.text.toCharArray
+
+// What is the most efficient way to shuffle a string?
+
 fun main() {
   val m = 0..3
   val s = m.map { listOf(it) }.toSet().grayCode()
@@ -7,10 +13,29 @@ fun main() {
 //  println(s.size)
 //  println(s.joinToString("\n"))
   val w = m.map { ('a'..'z').toList()[it] }.joinToString("")
-  println(w.conv(s))
+  val grayWrd = w.grayWord(s).toSortedSet()
+  val swapSet = w.swap().toSortedSet()
+
+  if (
+    s.size != m.fold(1) { a, i -> a * (i + 1) } ||
+    grayWrd.size != swapSet.size
+  ) {
+    System.err.println("Something went wrong")
+    exitProcess(1)
+  }
+
+  val convSet = w.conv(s).toSortedSet()
+  val missSet = (grayWrd - w.conv(s)).toSortedSet()
+
 //  println("i: " + "abcd".conv(setOf(listOf(1, 0))))
-//  println(s.joinToString { it.joinToString("") })
+  println("""Gray:${grayWrd.size}""")
+  println("""Swap:${swapSet.size}""")
+  println("""Conv:${convSet.size}""")
+  println("""Miss:${missSet.size}""")
 }
+
+private fun String.grayWord(gc: Set<List<Int>>) =
+  gc.map { it.mapIndexed { i, c -> this[c] }.joinToString("") }
 
 operator fun <Q, T: Iterable<Q>> Set<T>.times(s: Set<T>) =
   flatMap { l ->
@@ -56,7 +81,7 @@ private fun Set<List<Int>>.grayCode(int: Int = size) =
 // https://mathworld.wolfram.com/ElementaryCellularAutomaton.html
 // R: Set of rewrites to try
 
-fun String.conv(R: Set<List<Int>>): Int? =
+fun String.conv(R: Set<List<Int>>): Set<String> =
   R.map { r: List<Int> ->
     val t = toCharArray()
     var i = 0
@@ -73,5 +98,24 @@ fun String.conv(R: Set<List<Int>>): Int? =
       i++
 //      if(i % t.size == 0){ q++; i+= Random.nextInt(40) }
     } while (cc != this@conv)
-    found.size
-  }.max()
+    found
+  }.maxBy { it.size }!!
+
+tailrec fun String.swap(
+  prev: Set<String> = setOf(this),
+  closure: Set<String> = emptySet()
+): Set<String> =
+  if (prev == closure) prev
+  else swap(
+    closure,
+    (prev + closure).map { word ->
+      word.mapIndexed { i, cc ->
+        (if (i < word.length - 1) {
+          val ca = word.toCharArray()
+          ca[i] = ca[i + 1]
+          ca[i + 1] = cc
+          ca.joinToString("")
+        } else word)
+      }
+    }.flatten().toSet()
+  )
