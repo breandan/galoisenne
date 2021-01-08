@@ -2,7 +2,7 @@ import org.gradle.api.JavaVersion.VERSION_1_8
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.21"
+  kotlin("jvm") version "1.4.30-M1"
   id("com.github.ben-manes.versions") version "0.36.0"
 }
 
@@ -60,7 +60,7 @@ dependencies {
 //  implementation("scientifik:kmath-prob:$kmathVersion")
 
   testImplementation("junit", "junit", "4.13.1")
-  testImplementation("com.github.ajalt.clikt:clikt:3.0.1")
+  testImplementation("com.github.ajalt.clikt:clikt:3.1.0")
   testImplementation("com.redislabs:jredisgraph:2.2.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
@@ -69,7 +69,7 @@ dependencies {
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.4.8" }
+  val tinkerpopVersion by extra { "3.4.9" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
 }
@@ -91,7 +91,7 @@ tasks {
   listOf("HelloKaliningraph", "Rewriter", "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
-      classpath = sourceSets["main"].runtimeClasspath
+      classpath = sourceSets["test"].runtimeClasspath
     }
   }
 
