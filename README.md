@@ -1,6 +1,6 @@
 # Kaliningraph
 
-[![Kotlin 1.4.30-M1](https://img.shields.io/badge/Kotlin-1.4.30-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
+[![Kotlin 1.4.30](https://img.shields.io/badge/Kotlin-1.4.30-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
 [![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 

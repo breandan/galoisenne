@@ -1,8 +1,10 @@
 import org.gradle.api.JavaVersion.VERSION_1_8
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.30-M1"
+  kotlin("jvm") version "1.4.30"
   id("com.github.ben-manes.versions") version "0.36.0"
 }
 
@@ -11,12 +13,9 @@ version = "0.1.4"
 
 repositories {
   mavenCentral()
-  maven ("https://dl.bintray.com/kotlin/kotlin-eap")
   maven("https://jitpack.io")
-  jcenter()
   maven("https://dl.bintray.com/egor-bogomolov/astminer")
   maven("https://dl.bintray.com/mipt-npm/dev")
-  maven("http://logicrunch.research.it.uu.se/maven/")
   maven("https://clojars.org/repo")
   maven("https://dl.bintray.com/kotlin/kotlin-datascience")
 }
@@ -35,15 +34,14 @@ dependencies {
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
 
-  val multik_version = "0.0.1-dev-11"
+  val multik_version = "0.0.1-dev-13"
   testImplementation("org.jetbrains.kotlinx.multik:multik-api:$multik_version")
   testImplementation("org.jetbrains.kotlinx.multik:multik-default:$multik_version")
 
   testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  // Remove pending: https://github.com/sosy-lab/java-smt/issues/88
-  testImplementation("io.github.tudo-aqua:z3-turnkey:4.8.7.1")
   testImplementation("org.sosy-lab:java-smt:3.7.0")
+  testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
@@ -61,7 +59,7 @@ dependencies {
 
   testImplementation("junit", "junit", "4.13.1")
   testImplementation("com.github.ajalt.clikt:clikt:3.1.0")
-  testImplementation("com.redislabs:jredisgraph:2.2.0")
+  testImplementation("com.redislabs:jredisgraph:2.3.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
   val jgraphtVersion by extra { "1.5.0" }
@@ -69,7 +67,7 @@ dependencies {
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.4.9" }
+  val tinkerpopVersion by extra { "3.4.10" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
 }
@@ -79,13 +77,13 @@ configure<JavaPluginConvention> {
 }
 
 tasks {
-  compileKotlin {
-    kotlinOptions.jvmTarget = VERSION_1_8.toString()
-//    kotlinOptions.useIR = true
-  }
-
-  compileTestKotlin {
-    kotlinOptions.jvmTarget = VERSION_1_8.toString()
+//  compileKotlin {
+  withType<KotlinCompile> {
+      kotlinOptions {
+//        languageVersion = "1.5"
+//        apiVersion = "1.5"
+        jvmTarget = VERSION_1_8.toString()
+      }
   }
 
   listOf("HelloKaliningraph", "Rewriter", "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
