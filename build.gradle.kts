@@ -18,6 +18,9 @@ repositories {
   maven("https://dl.bintray.com/mipt-npm/dev")
   maven("https://clojars.org/repo")
   maven("https://dl.bintray.com/kotlin/kotlin-datascience")
+  maven("http://logicrunch.research.it.uu.se/maven/") {
+    isAllowInsecureProtocol = true
+  }
 }
 
 dependencies {
