@@ -25,7 +25,7 @@ repositories {
 
 dependencies {
   implementation(kotlin("stdlib-jdk8"))
-  val ejmlVersion = "0.39"
+  val ejmlVersion = "0.40"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.18.0")
@@ -37,9 +37,9 @@ dependencies {
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
 
-  val multik_version = "0.0.1-dev-13"
-  testImplementation("org.jetbrains.kotlinx.multik:multik-api:$multik_version")
-  testImplementation("org.jetbrains.kotlinx.multik:multik-default:$multik_version")
+  val multik_version = "0.0.1"
+  testImplementation("org.jetbrains.kotlinx:multik-api:$multik_version")
+  testImplementation("org.jetbrains.kotlinx:multik-default:$multik_version")
 
   testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
@@ -89,7 +89,10 @@ tasks {
       }
   }
 
-  listOf("HelloKaliningraph", "Rewriter", "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
+  listOf("HelloKaliningraph", "Rewriter",
+    "PrefAttach", "rewriting.CipherSolver",
+  "HelloMultik"
+  ).forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["test"].runtimeClasspath
