@@ -54,7 +54,7 @@ class TranslationInvarianceTest {
 
   fun Graph<*, *, *>.toTinkerpop(): GraphTraversalSource =
     TinkerGraph.open().traversal().apply {
-      val map = vertices.map { it to addV(it.id).next() }.toMap()
+      val map = vertices.associateWith { addV(it.id).next() }
       edgList.forEach { (v, e) ->
         (map[v] to map[e.target]).also { (t, s) ->
           addE(if (e is LabeledEdge) e.label ?: DEFAULT_LABEL else DEFAULT_LABEL).from(s).to(t).next()

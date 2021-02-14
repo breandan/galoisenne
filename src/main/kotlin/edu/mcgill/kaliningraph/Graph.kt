@@ -20,7 +20,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   // TODO: Is this still needed?
   open val prototype: V? by lazy { vertices.firstOrNull() }
 
-  val totalEdges: Int by lazy { vertices.map { it.neighbors.size }.sum() }
+  val totalEdges: Int by lazy { vertices.sumOf { it.neighbors.size } }
   protected val index: VIndex<G, E, V> by lazy { VIndex(vertices) }
 
   protected class VIndex<G: Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>(val set: Set<V>) {
@@ -35,7 +35,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   val edgList: List<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } } }
   val adjList: List<Pair<V, V>> by lazy { edgList.map { (v, e) -> v to e.target } }
-  val edgMap: Map<V, Set<E>> by lazy { vertices.map { it to it.outgoing }.toMap() }
+  val edgMap: Map<V, Set<E>> by lazy { vertices.associateWith { it.outgoing } }
   val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
 
   // Degree matrix
@@ -68,7 +68,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
       }
     }
 
-  val degMap: Map<V, Int> by lazy { vertices.map { it to it.neighbors.size }.toMap() }
+  val degMap: Map<V, Int> by lazy { vertices.associateWith { it.neighbors.size } }
 
   operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
   operator fun SpsMat.set(n0: V, n1: V, value: Double) {
@@ -90,7 +90,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   // TODO: Reimplement using matrix transpose
   fun reversed(): G = new(
-    vertices.map { it to setOf<E>() }.toMap() +
+    vertices.associateWith { setOf<E>() } +
       vertices.flatMap { src ->
         src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() }
@@ -164,9 +164,9 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   override fun hashCode() = wl().values.sorted().hashCode()
 
   fun <T> aggregateBy(aggregate: (Set<V>) -> T): Map<V, T> =
-    vertices.map { it to aggregate(this(it)) }.toMap()
+    vertices.associateWith { aggregate(this(it)) }
 
-  fun toMap() = vertices.map { it to it.neighbors }.toMap()
+  fun toMap() = vertices.associateWith { it.neighbors }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
 

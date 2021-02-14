@@ -26,7 +26,7 @@ fun main() {
   // Check solution is correct by evaluating it
   engine.run {
     try {
-      val bnds = solution.map { it.first to it.second }.toMap()
+      val bnds = solution.associate { it.first to it.second }
       setBindings(SimpleBindings(bnds), ScriptContext.ENGINE_SCOPE)
       val e = "(a / (b + c)) + (b  / (a + c)) + (c / (a + b))"
       println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
