@@ -90,9 +90,7 @@ tasks {
   }
 
   listOf("HelloKaliningraph", "Rewriter",
-    "PrefAttach", "rewriting.CipherSolver",
-  "HelloMultik"
-  ).forEach { fileName ->
+    "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["test"].runtimeClasspath
