@@ -15,7 +15,7 @@ import kotlin.reflect.KProperty
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   IGraph<G, E, V>,
   Set<V> by vertices,
-     (V) -> Set<V> by { it: V -> it.neighbors }
+    (V) -> Set<V> by { it: V -> it.neighbors }
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   // TODO: Is this still needed?
   open val prototype: V? by lazy { vertices.firstOrNull() }
@@ -75,30 +75,9 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     this[index[n0]!!, index[n1]!!] = value
   }
 
-  // Implements graph merge. For all vertices in common, merge their neighbors.
-  // TODO: Figure out how to implement this operator "correctly"
-  // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
-  override operator fun plus(that: G): G =
-    new((this - that) + (this join that) + (that - this))
-
-  infix fun join(that: G): Set<V> =
-    (vertices intersect that.vertices).sortedBy { it.id }.toSet()
-      .zip((that.vertices intersect vertices).sortedBy { it.id }.toSet())
-      .map { (left, right) -> left.Vertex { left.outgoing + right.outgoing } }.toSet()
-
-  operator fun minus(graph: G): G = new(vertices - graph.vertices)
-
-  // TODO: Reimplement using matrix transpose
-  fun reversed(): G = new(
-    vertices.associateWith { setOf<E>() } +
-      vertices.flatMap { src ->
-        src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) }
-      }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() }
-  )
-
   fun randomWalk(r: Random = DEFAULT_RANDOM) = RandomWalk(r, this as G)
 
-  val histogram: Map<V, Int> by lazy { aggregateBy { it.size } }
+  val histogram: Map<V, Int> by lazy { associateWith { this(it).size } }
 
   /* (A')ⁿ[a, b] counts the number of walks between vertices a, b of
    * length n. Let i be the smallest natural number such that (A')ⁱ
@@ -122,7 +101,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
    */
 
   tailrec fun wl(k: Int = 5, label: (V) -> Int = { histogram[it]!! }): Map<V, Int> {
-    val updates = aggregateBy { it.map(label).sorted().hashCode() }
+    val updates = associateWith { this(it).map(label).sorted().hashCode() }
     return if (k <= 0 || all { label(it) == updates[it] }) updates
     else wl(k - 1) { updates[it]!! }
   }
@@ -162,11 +141,6 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
 
   override fun hashCode() = wl().values.sorted().hashCode()
-
-  fun <T> aggregateBy(aggregate: (Set<V>) -> T): Map<V, T> =
-    vertices.associateWith { aggregate(this(it)) }
-
-  fun toMap() = vertices.associateWith { it.neighbors }
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
 
@@ -236,7 +210,9 @@ class RandomWalk<G, E, V>(
   val graph: G,
   val head: V = graph.random()
 ): Sequence<RandomWalk<G, E, V>>
-  where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
+  where G: Graph<G, E, V>,
+        E: Edge<G, E, V>,
+        V: Vertex<G, E, V> {
   val tail by lazy {
     RandomWalk(
       graph = graph,
