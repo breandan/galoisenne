@@ -14,10 +14,7 @@ version = "0.1.4"
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
-  maven("https://dl.bintray.com/egor-bogomolov/astminer")
-  maven("https://dl.bintray.com/mipt-npm/dev")
   maven("https://clojars.org/repo")
-  maven("https://dl.bintray.com/kotlin/kotlin-datascience")
   maven("http://logicrunch.research.it.uu.se/maven/") {
     isAllowInsecureProtocol = true
   }
@@ -55,12 +52,7 @@ dependencies {
   // https://github.com/jgralab/jgralab/wiki
   testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-//  val kmathVersion by extra { "0.2.0-dev-2" }
-//  implementation("scientifik:kmath-core:$kmathVersion")
-//  implementation("scientifik:kmath-ast:$kmathVersion")
-//  implementation("scientifik:kmath-prob:$kmathVersion")
-
-  testImplementation("junit", "junit", "4.13.1")
+  testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.github.ajalt.clikt:clikt:3.1.0")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
