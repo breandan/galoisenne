@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.31"
+  kotlin("jvm") version "1.5.0-M1"
   id("com.github.ben-manes.versions") version "0.36.0"
 }
 
@@ -72,12 +72,11 @@ configure<JavaPluginConvention> {
 }
 
 tasks {
-//  compileKotlin {
   withType<KotlinCompile> {
       kotlinOptions {
-//        languageVersion = "1.5"
-//        apiVersion = "1.5"
         jvmTarget = VERSION_1_8.toString()
+        // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
+        freeCompilerArgs += "-Xdisable-phases=Tailrec"
       }
   }
 
