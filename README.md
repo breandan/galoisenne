@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.breandan:kaliningraph:0.1.4")
+    implementation("com.github.breandan:kaliningraph:0.1.5")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
-    <version>0.1.4</version>
+    <version>0.1.5</version>
   </dependency>
 </project>
 ```
@@ -48,10 +48,13 @@ dependencies {
 To access notebook support, use the following line magic:
 
 ```
-%use @https://raw.githubusercontent.com/breandan/kaliningraph/master/kaliningraph.json
+@file:DependsOn("com.github.breandan:kaliningraph:0.1.5")
 ```
 
-For more information, explore the [tutorial](notebooks/Hello%20Kaliningraph.ipynb).
+For more information, explore our tutorials:
+
+* [Hello Kaliningraph.ipynb](notebooks/Hello%20Kaliningraph.ipynb).
+* [Program Graphs.ipynb](notebooks/Program%20Graphs.ipynb).
 
 ## Graphs, Inductively
 
@@ -70,22 +73,22 @@ Run [the demo](src/main/kotlin/edu/mcgill/kaliningraph/HelloKaliningraph.kt) via
 To construct a graph, the [graph builder DSL](src/main/kotlin/edu/mcgill/kaliningraph/LabeledGraph.kt) provides an small alphabet:
 
 ```kotlin
-val graph = Graph { a - b - c - d - e; a - c - e }
+val graph = LGBuilder { a - b - c - d - e; a - c - e }
 ```
 
 This is the same as:
 
 ```kotlin
-val abcde = Graph { a - b - c - d - e }
-val ace = Graph { a - c - e }
+val abcde = LGBuilder { a - b - c - d - e }
+val ace = LGBuilder { a - c - e }
 val graph = abcde + ace
 ```
 
 Equality is supported using the [Weisfeiler-Lehman](http://www.jmlr.org/papers/volume12/shervashidze11a/shervashidze11a.pdf#page=6) test:
 
 ```kotlin
-val x = Graph { a - b - c - d - e; a - c - e }
-val y = Graph { b - c - d - e - f; b - d - f }
+val x = LGBuilder { a - b - c - d - e; a - c - e }
+val y = LGBuilder { b - c - d - e - f; b - d - f }
 assertEquals(x == y) // true
 ```
 
@@ -98,12 +101,12 @@ Kaliningraph supports a number of graph visualizations.
 Graph visualization is made possible thanks to [KraphViz](https://github.com/nidi3/graphviz-java#kotlin-dsl).
 
 ```kotlin
-val de = Graph { d - e }
-val dacbe = Graph { d - a - c - b - e }
-val dce = Graph { d - c - e }
+val de = LGBuilder { d - e }
+val dacbe = LGBuilder { d - a - c - b - e }
+val dce = LGBuilder { d - c - e }
 
-val abcd = Graph { a - b - c - d }
-val cfde = Graph { c - "a" - f - d - e }
+val abcd = LGBuilder { a - b - c - d }
+val cfde = LGBuilder { c - "a" - f - d - e }
 
 val dg = Graph(dacbe, dce, de) + Graph(abcd, cfde)
 dg.show()
@@ -145,7 +148,7 @@ The above snippet should display something like the following:
 Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview), [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) and [RedisGraph](https://oss.redislabs.com/redisgraph/) is supported:
 
 ```kotlin
-val g = Graph { a - b - c - a }
+val g = LGBuilder { a - b - c - a }
         .toJGraphT().toKaliningraph()
         .toTinkerpop().toKaliningraph()
         .toGraphviz().toKaliningraph()

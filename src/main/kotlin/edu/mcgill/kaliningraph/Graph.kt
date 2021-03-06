@@ -4,9 +4,6 @@ import edu.mcgill.kaliningraph.matrix.*
 import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
-import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler
-import org.apache.commons.rng.simple.RandomSource
-import org.apache.commons.rng.simple.RandomSource.JDK
 import org.ejml.kotlin.*
 import kotlin.math.*
 import kotlin.random.Random
@@ -152,9 +149,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     this + (prototype?.Vertex(
       newId = size.toString(),
       out = if (vertices.isEmpty()) emptySet()
-      else DiscreteProbabilityCollectionSampler(RandomSource.create(JDK),
-        degMap.map { (k, v) -> k to (v + 1.0) / (totalEdges + 1.0) }.toMap())
-        .run { generateSequence { sample() }.take(degree.coerceAtMost(size)) }.toSet()
+      else degMap.sample().take(degree.coerceAtMost(size)).toSet()
     )?.graph ?: new())
 
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6

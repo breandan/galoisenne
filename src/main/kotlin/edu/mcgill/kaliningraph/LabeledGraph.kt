@@ -4,13 +4,12 @@ import edu.mcgill.kaliningraph.matrix.BMat
 import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
-import kotlin.random.Random
 
 /**
  * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
  */
 
-class LabeledGraphBuilder {
+class LGBuilder {
   var mutGraph = LabeledGraph()
 
   val a by LGVertex(); val b by LGVertex(); val c by LGVertex()
@@ -35,18 +34,6 @@ class LabeledGraphBuilder {
   // Arithmetic is right-associative, so we construct in reverse and flip after
   operator fun ProtoEdge.minus(target: LGVertex) =
     target + LabeledEdge(target, source, label)
-
-  companion object {
-    operator fun invoke(builder: LabeledGraphBuilder.() -> Unit) =
-      LabeledGraphBuilder().also { it.builder() }.mutGraph
-
-    operator fun invoke(graph: String) =
-      this {
-        graph.substring(1).fold(LGVertex(graph[0].toString())) { acc, c ->
-          acc - c.toString()
-        }
-      }.reversed()
-  }
 }
 
 // TODO: convert to/from other graph types
@@ -60,7 +47,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   fun S() = BMat(vertices.size, 1) { i, j -> this[i].occupied }
 
   fun rewrite(substitution: Pair<String, String>) =
-    LabeledGraphBuilder(
+    LabeledGraph(
       randomWalk().take(200).toList().joinToString("")
         .replace(substitution.first, substitution.second)
     )
@@ -70,6 +57,18 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
     previousStates.forEach { it.occupied = false }
     nextStates.forEach { it.occupied = true; accumuator.add(it.id) }
+  }
+
+  companion object {
+    operator fun invoke(builder: LGBuilder.() -> Unit) =
+      LGBuilder().also { it.builder() }.mutGraph
+
+    operator fun invoke(graph: String) =
+      this {
+        graph.substring(1).fold(LGVertex(graph[0].toString())) { acc, c ->
+          acc - c.toString()
+        }
+      }.reversed()
   }
 }
 

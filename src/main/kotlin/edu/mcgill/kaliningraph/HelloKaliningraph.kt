@@ -1,20 +1,22 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.circuits.CircuitBuilder
+import org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY
 
 fun main() {
   println("Hello Kaliningraph!")
+  System.setProperty(DEFAULT_LOG_LEVEL_KEY, "Error")
 
-  val de = LabeledGraphBuilder { d - e }
-  println(de.diameter())
-  val dce = LabeledGraphBuilder { d - c - e }
-  println(dce.diameter())
-  val dacbe = LabeledGraphBuilder { d - a - c - b - e - f - g - h - i - j - k }
+  val de = LabeledGraph { d - e }
+  println("de diamater: " + de.diameter())
+  val dce = LabeledGraph { d - c - e }
+  println("dce diamater: " + dce.diameter())
+  val dacbe = LabeledGraph { d - a - c - b - e - f - g - h - i - j - k }
   dacbe.show()
-  println(dacbe.diameter())
+  println("dacbe diamater: " + dacbe.diameter())
 
-  val abcd = LabeledGraphBuilder { a - b - c - d }
-  val cfde = LabeledGraphBuilder { c - "a" - f - d - e }
+  val abcd = LabeledGraph { a - b - c - d }
+  val cfde = LabeledGraph { c - "a" - f - d - e }
 
   val dg = de.new(dacbe, dce, de) + de.new(abcd, cfde)
 
@@ -24,8 +26,8 @@ fun main() {
   println("$l:" + l.neighbors())
   println("Ego GraphBuilder of ${dg.toList()[2]}: " + dg.toList()[2].neighborhood().vertices)
 
-  val abca = LabeledGraphBuilder { a - b - c - a }
-  val efgh = LabeledGraphBuilder { e - f - g - e }
+  val abca = LabeledGraph { a - b - c - a }
+  val efgh = LabeledGraph { e - f - g - e }
   val abcd_wl3 = abca.wl(3).values.sorted()
   println("WL3(abcd) = $abcd_wl3")
   val efgh_wl3 = efgh.wl(3).values.sorted()

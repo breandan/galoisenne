@@ -4,60 +4,62 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.5.0-M1"
+  kotlin("jvm") version "1.4.30"
   kotlin("jupyter.api") version "0.8.3.255"
-  id("com.github.ben-manes.versions") version "0.36.0"
+  id("com.github.ben-manes.versions") version "0.38.0"
 }
 
 group = "com.github.breandan"
-version = "0.1.4"
+version = "0.1.5"
 
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
   maven("https://clojars.org/repo")
+  // TODO: Remove pending https://github.com/sosy-lab/java-smt/issues/201#issuecomment-777336656
   maven("http://logicrunch.research.it.uu.se/maven/") {
     isAllowInsecureProtocol = true
   }
 }
 
 dependencies {
-  implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("stdlib"))
+
   val ejmlVersion = "0.40"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
-  api("guru.nidi:graphviz-kotlin:0.18.0")
+  api("guru.nidi:graphviz-kotlin:0.18.1")
 
-  val commonsRngVersion = "1.3"
-  implementation("org.apache.commons:commons-rng-sampling:$commonsRngVersion")
-  implementation("org.apache.commons:commons-rng-simple:$commonsRngVersion")
   implementation("org.slf4j:slf4j-simple:1.7.30")
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
 
-  val multik_version = "0.0.1"
-  testImplementation("org.jetbrains.kotlinx:multik-api:$multik_version")
-  testImplementation("org.jetbrains.kotlinx:multik-default:$multik_version")
+  val multikVersion = "0.0.1"
+  testImplementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
+  testImplementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
   testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.7.0")
+  testImplementation("org.sosy-lab:java-smt:3.7.0") //  {
+  //    exclude(group = "uuverifiers", module = "princess_2.13")
+  //  }
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
 
   // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
-  testImplementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
+  // testImplementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
   // https://github.com/jgralab/jgralab/wiki
-  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
+  //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
   testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.github.ajalt.clikt:clikt:3.1.0")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
+
   val jgraphtVersion by extra { "1.5.0" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
@@ -81,13 +83,6 @@ tasks {
       }
   }
 
-  listOf("KotlinJupyter").forEach { fileName ->
-    register(fileName, JavaExec::class) {
-      main = "edu.mcgill.kaliningraph.notebook.${fileName}Kt"
-      classpath = sourceSets["main"].runtimeClasspath
-    }
-  }
-
   listOf("HelloKaliningraph", "Rewriter",
     "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
     register(fileName, JavaExec::class) {
@@ -108,26 +103,18 @@ tasks {
     testLogging { events("passed", "skipped", "failed") }
   }
 
-  val installPathLocal = "${System.getProperty("user.home")}/.jupyter_kotlin/libraries"
+/*
+If overwriting an older version, it is necessary to first run:
 
-  val genNotebookJSON by creating(JavaExec::class) {
-    main = "edu.mcgill.kaliningraph.codegen.NotebookGenKt"
-    classpath = sourceSets["main"].runtimeClasspath
-    args = listOf(projectDir.path, project.version.toString())
-  }
+rm -rf ~/.m2/repository/com/github/breandan/kaliningraph \
+       ~/.ivy2/cache/com.github.breandan/kaliningraph
 
-  val jupyterInstall by registering(Copy::class) {
-    dependsOn(genNotebookJSON)
-    dependsOn("publishToMavenLocal")
-    val installPath = findProperty("ath") ?: installPathLocal
-    doFirst { mkdir(installPath) }
-    from(file("kaliningraph.json"))
-    into(installPath)
-    doLast { logger.info("Kaliningraph notebook support was installed in: $installPath") }
-  }
+To deploy to Maven Local and start the notebook, run:
+
+./gradlew [build publishToMavenLocal] jupyterRun -x test
+*/
 
   val jupyterRun by creating(Exec::class) {
-    dependsOn(jupyterInstall)
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
 

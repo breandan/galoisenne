@@ -160,3 +160,24 @@ fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
     for((vertex, edge) in edgList)
       edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }
+
+// Samples from unnormalized counts with normalized frequency
+fun <T> Map<T, Number>.sample(random: Random = DEFAULT_RANDOM) =
+  entries.map { (k, v) -> k to v }.unzip().let { (keys, values) ->
+    val cdf = values.cdf()
+    generateSequence { keys[cdf.sample(random)] }
+  }
+
+fun Collection<Number>.cdf() = CDF(
+  sumOf { it.toDouble() }
+    .let { sum -> map { i -> i.toDouble() / sum } }
+    .runningReduce { acc, d -> d + acc }
+)
+
+class CDF(val cdf: List<Double>): List<Double> by cdf
+
+// Draws a single sample using KS-transform w/binary search
+fun CDF.sample(random: Random = DEFAULT_RANDOM,
+               target: Double = random.nextDouble()) =
+  cdf.binarySearch { it.compareTo(target) }
+    .let { if (it < 0) abs(it) - 1 else it }

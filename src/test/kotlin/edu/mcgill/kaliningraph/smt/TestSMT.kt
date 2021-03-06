@@ -1,5 +1,6 @@
 package edu.mcgill.kaliningraph.smt
 
+import org.junit.jupiter.api.Test
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.BooleanFormula
@@ -8,31 +9,29 @@ import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import javax.script.*
 import kotlin.reflect.KProperty
 
-val solverContext = SolverContextFactory.createSolverContext(Solvers.Z3)
+val solverContext = SolverContextFactory.createSolverContext(Solvers.PRINCESS)
 val fm = solverContext.formulaManager.integerFormulaManager
 
-fun main() {
-  val a by SMTVar()
-  val b by SMTVar()
-  val c by SMTVar()
-  val v = (a / (b + c)) + (b  / (a + c)) + (c / (a + b))
-  val f = fm.equal(v, fm.makeNumber(4))
-  val g = fm.greaterThan(a, fm.makeNumber(2))
-  val h = fm.greaterThan(b, fm.makeNumber(2))
-  val i = fm.greaterThan(c, fm.makeNumber(2))
-  val solution = solveFor(a, b, c).subjectTo(f, g, h, i)
-  val engine = ScriptEngineManager().getEngineByExtension("kts")
+class SMTTest {
+  @Test
+  fun testSMT() {
+    val a by SMTVar()
+    val b by SMTVar()
+    val c by SMTVar()
+    val v = (a / (b + c)) + (b / (a + c)) + (c / (a + b))
+    val f = fm.equal(v, fm.makeNumber(4))
+    val g = fm.greaterThan(a, fm.makeNumber(2))
+    val h = fm.greaterThan(b, fm.makeNumber(2))
+    val i = fm.greaterThan(c, fm.makeNumber(2))
+    val solution = solveFor(a, b, c).subjectTo(f, g, h, i)
+    val engine = ScriptEngineManager().getEngineByExtension("kts")
 
-  // Check solution is correct by evaluating it
-  engine.run {
-    try {
-      val bnds = solution.associate { it.first to it.second }
-      setBindings(SimpleBindings(bnds), ScriptContext.ENGINE_SCOPE)
-      val e = "(a / (b + c)) + (b  / (a + c)) + (c / (a + b))"
-      println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
-    } catch (e: Exception) {
-      System.err.println("Failed to evaluate expression: $f")
-      throw e
+    // Check solution is correct by evaluating it
+    engine.run {
+        val bnds = solution.associate { it.first to it.second }
+        setBindings(SimpleBindings(bnds), ScriptContext.ENGINE_SCOPE)
+        val e = "(a / (b + c)) + (b  / (a + c)) + (c / (a + b))"
+        println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
     }
   }
 }

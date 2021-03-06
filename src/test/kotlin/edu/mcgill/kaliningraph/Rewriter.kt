@@ -3,12 +3,11 @@ package edu.mcgill.kaliningraph
 import edu.mcgill.kaliningraph.display.animate
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
-import kotlin.random.Random
 
 @ExperimentalStdlibApi
 fun main() {
   animate(
-    LabeledGraphBuilder("abcdecfghia")
+    LGBuilder("abcdecfghia")
   ) { doc: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
     when {
       "Left" in it.key -> {
