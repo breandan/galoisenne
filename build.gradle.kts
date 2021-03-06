@@ -79,7 +79,7 @@ tasks {
       kotlinOptions {
         jvmTarget = VERSION_1_8.toString()
         // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
-        freeCompilerArgs += "-Xdisable-phases=Tailrec"
+//        freeCompilerArgs += "-Xdisable-phases=Tailrec"
       }
   }
 
