@@ -29,7 +29,7 @@ class TranslationInvarianceTest {
     randomGraph.let { assertEquals(it, it.toBifurcan().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
-    LGBuilder {
+    LabeledGraph {
       edges().forEach { LGVertex(it.from()?.name()?.value() ?: "") - LGVertex(it.to().name().value()) }
     }
 
@@ -45,12 +45,12 @@ class TranslationInvarianceTest {
     }
 
   fun <V, E> io.lacuna.bifurcan.Graph<V, E>.toKaliningraph() =
-    LGBuilder {
+    LabeledGraph {
       edges().forEach { LGVertex(it.from().toString()) - LGVertex(it.to().toString()) }
     }
 
   fun <E> org.jgrapht.Graph<String, E>.toKaliningraph() =
-    LGBuilder { edgeSet().map { e -> LGVertex(getEdgeSource(e)) - LGVertex(getEdgeTarget(e)) } }
+    LabeledGraph { edgeSet().map { e -> LGVertex(getEdgeSource(e)) - LGVertex(getEdgeTarget(e)) } }
 
   fun Graph<*, *, *>.toTinkerpop(): GraphTraversalSource =
     TinkerGraph.open().traversal().apply {
@@ -63,7 +63,7 @@ class TranslationInvarianceTest {
     }
 
   fun GraphTraversalSource.toKaliningraph() =
-    LGBuilder {
+    LabeledGraph {
       E().toList().forEach { LGVertex(it.inVertex().label()) - LGVertex(it.outVertex().label()) }
     }
 }

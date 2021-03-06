@@ -48,13 +48,14 @@ dependencies {
 To access notebook support, use the following line magic:
 
 ```
+@file:Repository("https://jitpack.io")
 @file:DependsOn("com.github.breandan:kaliningraph:0.1.5")
 ```
 
 For more information, explore our tutorials:
 
-* [Hello Kaliningraph.ipynb](notebooks/Hello%20Kaliningraph.ipynb).
-* [Program Graphs.ipynb](notebooks/Program%20Graphs.ipynb).
+* [Hello Kaliningraph.ipynb](notebooks/Hello%20Kaliningraph.ipynb)
+* [Program Graphs.ipynb](notebooks/Program%20Graphs.ipynb)
 
 ## Graphs, Inductively
 

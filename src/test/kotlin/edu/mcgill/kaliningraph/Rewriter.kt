@@ -7,7 +7,7 @@ import kweb.html.events.KeyboardEvent
 @ExperimentalStdlibApi
 fun main() {
   animate(
-    LGBuilder("abcdecfghia")
+    LabeledGraph("abcdecfghia")
   ) { doc: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
     when {
       "Left" in it.key -> {
