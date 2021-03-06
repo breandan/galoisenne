@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.5.0-M1"
+  kotlin("jupyter.api") version "0.8.3.255"
   id("com.github.ben-manes.versions") version "0.36.0"
 }
 
@@ -78,6 +79,13 @@ tasks {
         // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
         freeCompilerArgs += "-Xdisable-phases=Tailrec"
       }
+  }
+
+  listOf("KotlinJupyter").forEach { fileName ->
+    register(fileName, JavaExec::class) {
+      main = "edu.mcgill.kaliningraph.notebook.${fileName}Kt"
+      classpath = sourceSets["main"].runtimeClasspath
+    }
   }
 
   listOf("HelloKaliningraph", "Rewriter",
