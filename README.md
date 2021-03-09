@@ -121,9 +121,9 @@ Running the above snippet will cause the following figure to be rendered in the 
 
 Graph visualization in both DOT and adjacency matrix format is supported.
 
-|DOT Graph|Matrix|
-|-----|------|
-|![image](latex/figures/random_dot_graph.png)|![image_1](latex/figures/random_matrix.png)|
+| DOT Graph                                    | Matrix                                      |
+|:---------------------------------------------|:--------------------------------------------|
+| ![image](latex/figures/random_dot_graph.png) | ![image_1](latex/figures/random_matrix.png) |
 
 It is also possible to visualize the state and transition matrices and step through the graph (`./gradlew PrefAttach`).
 
