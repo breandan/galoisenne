@@ -1,5 +1,7 @@
 package edu.mcgill.kaliningraph.rewriting
 
+import kotlin.math.min
+
 // Experiment: probabilistic subgraph ismorphism as
 // substring matching on a random walk trace. E.g.:
 //
@@ -33,18 +35,65 @@ package edu.mcgill.kaliningraph.rewriting
 const val MAX_LEN = 10
 
 fun main() {
-  val seq = "quicken".toCharArray().toList()
+  val seq = "abcadb".toCharArray().toList()
   val sls = seq.prefixSublists()
   println(sls)
   val enc = sls.map { (lst, idx) -> lst.canonicalize() to idx }
   println(enc)
 
-  val strA = "abcadb".toList()
-  val strB = "qrsqtr".toList()
-  val isomorphicSubstrings = lcis(strA, strB)
+  val strA = "abcadbzzzz".also { println(it) }.toList()
+  val strB = "qrsqtrr".also { println(it) }.toList()
+  val isomorphicSubstrings = isogramSearch(strA, strB)
 
   println("Longest common isograms up to length $MAX_LEN:")
   isomorphicSubstrings.forEach { (a, b) -> println("$a / $b") }
+}
+
+/**
+ * Turns a list into canonical form, e.g.:
+ * [A B B A B C C D] -> [0 1 1 0 1 2 2 3],
+ * [W X X W X Y Y Z] -> [0 1 1 0 1 2 2 3]
+ */
+
+fun <E> List<E>.canonicalize(): List<Int> =
+  fold(listOf<Int>() to setOf<E>()) { (l, s), e ->
+    if (e in s) l + s.indexOf(e) to s
+    else l + s.size to s + e
+  }.first
+
+/**
+ * Indexes all isomorphic subsequences up to [MAX_LEN].
+ */
+
+fun <E> List<E>.isogramIndex(): Map<List<Int>, List<Int>> =
+  prefixSublists().fold(mutableMapOf()) { map, (lst, idx) ->
+    val key = lst.canonicalize() // Subgraph fingerprint
+    map[key] = map.getOrDefault(key, listOf()) + idx
+    map
+  }
+
+/**
+ * Takes a random walk [trace] and a [query], and returns a
+ * list of closest matches according to Levenshtein distance.
+ */
+
+fun <E, F> isogramSearch(
+  trace: List<E>, query: List<F>,
+  takeTopK: Int = 4,
+  metric: (List<Int>) -> Int = {
+    val queryCF = query.canonicalize().joinToString()
+    val candidate = it.joinToString()
+    levenshtein(queryCF, candidate)
+  }
+): List<Pair<List<E>, List<F>>> {
+  val traceA = trace.isogramIndex()
+  val traceB = query.isogramIndex()
+  val lcs = (traceA.keys intersect traceB.keys).sortedBy(metric)
+  return lcs.map {
+    val a = traceA[it]!!.map { idx -> trace.subList(idx, idx + it.size) }
+    val b = traceB[it]!!.map { idx -> query.subList(idx, idx + it.size) }
+    a.first() to b.first() // Take first occurrence of n matches
+  }.take(takeTopK)
 }
 
 fun <E> List<E>.sublists(k: Int = MAX_LEN) =
@@ -55,26 +104,35 @@ fun <E> List<E>.sublists(k: Int = MAX_LEN) =
 
 fun <E> List<E>.prefixes() = (1..size).map { subList(0, it) }
 
-fun <E> List<E>.prefixSublists(k: Int = MAX_LEN) =
-  sublists(k).map { (lst, idx) -> lst.prefixes().map { it to idx } }
+fun <E> List<E>.prefixSublists() =
+  sublists().map { (lst, idx) -> lst.prefixes().map { it to idx } }
     .flatten().toSet()
 
-fun <E> List<E>.canonicalize() =
-  fold(listOf<Int>() to setOf<E>()) { (l, s), e ->
-    if (e in s) l + s.indexOf(e) to s
-    else l + s.size to s + e
-  }.first
+// https://gist.github.com/ademar111190/34d3de41308389a0d0d8
+fun levenshtein(lhs: CharSequence, rhs: CharSequence): Int {
+  val lhsLength = lhs.length + 1
+  val rhsLength = rhs.length + 1
 
-fun <E> List<E>.buildSubsequenceIndex() =
-  prefixSublists().associate { (lst, idx) -> lst.canonicalize() to idx }
+  var cost = Array(lhsLength) { it }
+  var newCost = Array(lhsLength) { 0 }
 
-// Longest common isomorphic subsequences
-fun <E> lcis(strA: List<E>, strB: List<E>): List<Pair<List<E>, List<E>>> {
-  val traceA = strA.buildSubsequenceIndex()
-  val traceB = strB.buildSubsequenceIndex()
-  val lcs = (traceA.keys intersect traceB.keys).sortedBy { -it.size }.dropLast(1)
-  return lcs.map {
-    strA.subList(traceA[it]!!, traceA[it]!! + it.size ) to
-      strB.subList(traceB[it]!!, traceB[it]!! + it.size )
+  for (i in 1 until rhsLength) {
+    newCost[0] = i
+
+    for (j in 1 until lhsLength) {
+      val match = if (lhs[j - 1] == rhs[i - 1]) 0 else 1
+
+      val costReplace = cost[j - 1] + match
+      val costInsert = cost[j] + 1
+      val costDelete = newCost[j - 1] + 1
+
+      newCost[j] = min(min(costInsert, costDelete), costReplace)
+    }
+
+    val swap = cost
+    cost = newCost
+    newCost = swap
   }
+
+  return cost[lhsLength - 1]
 }
