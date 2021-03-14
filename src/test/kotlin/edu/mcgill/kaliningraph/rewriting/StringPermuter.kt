@@ -3,56 +3,6 @@ package edu.mcgill.kaliningraph.rewriting
 import kotlin.system.exitProcess
 import kotlin.text.toCharArray
 
-// What is the most efficient way to shuffle a string?
-
-fun main() {
-  val m = 0..3
-  val s = m.map { listOf(it) }.toSet().grayCode()
-
-//  println(s.size)
-//  println(s.joinToString("\n"))
-  val w = m.map { ('a'..'z').toList()[it] }.joinToString("")
-  val grayWrd = w.grayWord(s).toSortedSet()
-  val swapSet = w.swap().toSortedSet()
-
-  if (
-    s.size != m.fold(1) { a, i -> a * (i + 1) } ||
-    grayWrd.size != swapSet.size
-  ) {
-    System.err.println("Something went wrong")
-    exitProcess(1)
-  }
-
-  val convSet = w.conv(s).toSortedSet()
-  val missSet = (grayWrd - w.conv(s)).toSortedSet()
-
-//  println("i: " + "abcd".conv(setOf(listOf(1, 0))))
-  println("""Gray:${grayWrd.size}""")
-  println("""Swap:${swapSet.size}""")
-  println("""Conv:${convSet.size}""")
-  println("""Miss:${missSet.size}""")
-}
-
-private fun String.grayWord(gc: Set<List<Int>>) =
-  gc.map { it.mapIndexed { i, c -> this[c] }.joinToString("") }
-
-operator fun <Q, T: Iterable<Q>> Set<T>.times(s: Set<T>) =
-  flatMap { l ->
-    s.map { r ->
-      (l + r).distinct()
-    }.toSet()
-  }.toSet()
-
-infix fun <T> Set<T>.cross(s: Set<T>) =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
-
-private fun Set<List<Int>>.grayCode(int: Int = size) =
-  (0..int).fold(this) { acc, _ -> acc * this }
-    .let {
-      val t = it.maxOf { it.size }
-      it.filter { it.size > t - 1 }.toSet()
-    }
-
 // Tries to generate all permutations using convolution
 // on a ring buffer containing a string. Encoding:
 //
@@ -118,3 +68,51 @@ tailrec fun String.swap(
       }
     }.flatten().toSet()
   )
+
+private fun String.grayWord(gc: Set<List<Int>>) =
+  gc.map { it.mapIndexed { i, c -> this[c] }.joinToString("") }
+
+operator fun <Q, T: Iterable<Q>> Set<T>.times(s: Set<T>) =
+  flatMap { l ->
+    s.map { r ->
+      (l + r).distinct()
+    }.toSet()
+  }.toSet()
+
+infix fun <T> Set<T>.cross(s: Set<T>) =
+  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
+
+private fun Set<List<Int>>.grayCode(int: Int = size) =
+  (0..int).fold(this) { acc, _ -> acc * this }
+    .let {
+      val t = it.maxOf { it.size }
+      it.filter { it.size > t - 1 }.toSet()
+    }
+
+fun main() {
+  val m = 0..3
+  val s = m.map { listOf(it) }.toSet().grayCode()
+
+//  println(s.size)
+//  println(s.joinToString("\n"))
+  val w = m.map { 'a' + it }.joinToString("")
+  val grayWrd = w.grayWord(s).toSortedSet()
+  val swapSet = w.swap().toSortedSet()
+
+  if (
+    s.size != m.fold(1) { a, i -> a * (i + 1) } ||
+    grayWrd.size != swapSet.size
+  ) {
+    System.err.println("Something went wrong")
+    exitProcess(1)
+  }
+
+  val convSet = w.conv(s).toSortedSet()
+  val missSet = (grayWrd - w.conv(s)).toSortedSet()
+
+//  println("i: " + "abcd".conv(setOf(listOf(1, 0))))
+  println("""Gray:${grayWrd.size}""")
+  println("""Swap:${swapSet.size}""")
+  println("""Conv:${convSet.size}""")
+  println("""Miss:${missSet.size}""")
+}
