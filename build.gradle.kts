@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.4.30"
-  kotlin("jupyter.api") version "0.8.3.268"
+  kotlin("jupyter.api") version "0.8.3.289"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
 
@@ -55,7 +55,6 @@ dependencies {
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
   testImplementation("junit", "junit", "4.13.2")
-  testImplementation("com.github.ajalt.clikt:clikt:3.1.0")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")

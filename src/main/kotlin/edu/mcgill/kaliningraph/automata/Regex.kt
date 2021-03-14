@@ -1,9 +1,10 @@
 package edu.mcgill.kaliningraph.automata
 
-import edu.mcgill.kaliningraph.DEFAULT_RANDOM
 import java.util.*
+import kotlin.random.Random
 
-class Regex(val regex: String) {
+
+class KRegex(val regex: String) {
   val postfixRegex = PostFix.toPostfix(regex)
   val symbols = mutableListOf<Char>()
   val transitions = mutableListOf<Transition>()
@@ -179,7 +180,7 @@ class Regex(val regex: String) {
     stackFinal.push(outState)
   }
 
-  class State(var stateId: Int = DEFAULT_RANDOM.nextInt(9999)) {
+  class State(var stateId: Int = Random.Default.nextInt(9999)) {
     var previousStates: MutableList<State> = LinkedList()
     var nextStates: MutableList<State> = LinkedList()
     var initial = false

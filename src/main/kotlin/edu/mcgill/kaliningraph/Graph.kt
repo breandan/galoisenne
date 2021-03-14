@@ -72,7 +72,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     this[index[n0]!!, index[n1]!!] = value
   }
 
-  fun randomWalk(r: Random = DEFAULT_RANDOM) = RandomWalk(r, this as G)
+  fun randomWalk(r: Random = Random.Default) = RandomWalk(r, this as G)
 
   val histogram: Map<V, Int> by lazy { associateWith { this(it).size } }
 
@@ -201,7 +201,7 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encod
 }
 
 class RandomWalk<G, E, V>(
-  val rand: Random = DEFAULT_RANDOM,
+  val rand: Random = Random.Default,
   val graph: G,
   val head: V = graph.random()
 ): Sequence<RandomWalk<G, E, V>>

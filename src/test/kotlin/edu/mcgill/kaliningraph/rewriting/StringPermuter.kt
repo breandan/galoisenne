@@ -1,6 +1,5 @@
 package edu.mcgill.kaliningraph.rewriting
 
-import io.ktor.util.*
 import kotlin.system.exitProcess
 import kotlin.text.toCharArray
 
@@ -99,7 +98,7 @@ fun String.conv(R: Set<List<Int>>): Set<String> =
 //      if(i % t.size == 0){ q++; i+= Random.nextInt(40) }
     } while (cc != this@conv)
     found
-  }.maxBy { it.size }!!
+  }.maxByOrNull { it.size }!!
 
 tailrec fun String.swap(
   prev: Set<String> = setOf(this),

@@ -90,16 +90,14 @@ fun BMat.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 
-val DEFAULT_RANDOM = Random(1)
-
 private operator fun <K, V> Pair<K, V>.component2(): V = second
 private operator fun <K, V> Pair<K, V>.component1(): K = first
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
-fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
+fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
 
-fun randomVector(size: Int, rand: () -> Double = { DEFAULT_RANDOM.nextDouble() }) =
+fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
 
 fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumBy { it.count { it == 0.0 } })
@@ -162,7 +160,7 @@ fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
   }
 
 // Samples from unnormalized counts with normalized frequency
-fun <T> Map<T, Number>.sample(random: Random = DEFAULT_RANDOM) =
+fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
   entries.map { (k, v) -> k to v }.unzip().let { (keys, values) ->
     val cdf = values.cdf()
     generateSequence { keys[cdf.sample(random)] }
@@ -177,7 +175,7 @@ fun Collection<Number>.cdf() = CDF(
 class CDF(val cdf: List<Double>): List<Double> by cdf
 
 // Draws a single sample using KS-transform w/binary search
-fun CDF.sample(random: Random = DEFAULT_RANDOM,
+fun CDF.sample(random: Random = Random.Default,
                target: Double = random.nextDouble()) =
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }

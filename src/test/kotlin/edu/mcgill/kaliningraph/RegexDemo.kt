@@ -1,7 +1,6 @@
-package edu.mcgill.kaliningraph.automata
+package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.THICKNESS
-import edu.mcgill.kaliningraph.browserCmd
+import edu.mcgill.kaliningraph.automata.KRegex
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
@@ -33,15 +32,15 @@ fun main() {
   ProcessBuilder(browserCmd, "http://0.0.0.0:$port").start()
 }
 
-var regex = Regex("ε")
+var regex = KRegex("ε")
 fun makeNFA(input: String) =
   if (regex.regex != input)
     try {
-      Regex(input.ifEmpty { "ε" }).also { regex = it }
+      KRegex(input.ifEmpty { "ε" }).also { regex = it }
     }catch(ex: Exception) {regex}
   else regex
 
-fun Regex.toGraphviz() =
+fun KRegex.toGraphviz() =
   graph(directed = true) {
     val color = Color.BLACK
     edge[color, Arrow.NORMAL, Style.lineWidth(THICKNESS)]

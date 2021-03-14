@@ -3,19 +3,20 @@ package edu.mcgill.kaliningraph
 import edu.mcgill.kaliningraph.display.animate
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
+import kotlin.random.Random
 
 @ExperimentalStdlibApi
 fun main() {
   animate(
     LabeledGraph("abcdecfghia")
-  ) { doc: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
+  ) { _: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
     when {
       "Left" in it.key -> {
       }
       "Right" in it.key -> {
         val current = graphs.last()
         if (current.none { it.occupied }) {
-          current.takeWhile { DEFAULT_RANDOM.nextDouble() < 0.5 }
+          current.takeWhile { Random.Default.nextDouble() < 0.5 }
             .forEach { it.occupied = true }
         } else current.propagate()
       }
