@@ -28,8 +28,9 @@ package edu.mcgill.kaliningraph.rewriting
 // matching as a longest common subsequence problem on
 // a caesar cipher of length k, where k is the window.
 //
-// Need a streaming algorithm, i.e. string convolution
-// on the random walk trace.
+// TODO: Need a streaming algorithm, i.e. string convolution on the trace.
+
+const val MAX_LEN = 10
 
 fun main() {
   val seq = "quicken".toCharArray().toList()
@@ -38,25 +39,23 @@ fun main() {
   val enc = sls.map { (lst, idx) -> lst.canonicalize() to idx }
   println(enc)
 
-  val strA = "abcadb"
-  val strB = "qrsqtr"
+  val strA = "abcadb".toList()
+  val strB = "qrsqtr".toList()
   val isomorphicSubstrings = lcis(strA, strB)
-  println("Longest common isomorphic subsequences:")
-  isomorphicSubstrings.forEach { (a, b) ->
-    println("$a / $b")
-  }
+
+  println("Longest common isograms up to length $MAX_LEN:")
+  isomorphicSubstrings.forEach { (a, b) -> println("$a / $b") }
 }
 
-fun <E> List<E>.sublists(k: Int = 4) =
+fun <E> List<E>.sublists(k: Int = MAX_LEN) =
   (1 until size + k).map {
     subList((it - k).coerceAtLeast(0), it.coerceAtMost(size)) to
       (it - k).coerceAtLeast(0)
   }
 
-fun <E> List<E>.prefixes() =
-  (1..size).map { subList(0, it) }
+fun <E> List<E>.prefixes() = (1..size).map { subList(0, it) }
 
-fun <E> List<E>.prefixSublists(k: Int = 4) =
+fun <E> List<E>.prefixSublists(k: Int = MAX_LEN) =
   sublists(k).map { (lst, idx) -> lst.prefixes().map { it to idx } }
     .flatten().toSet()
 
@@ -70,12 +69,12 @@ fun <E> List<E>.buildSubsequenceIndex() =
   prefixSublists().associate { (lst, idx) -> lst.canonicalize() to idx }
 
 // Longest common isomorphic subsequences
-fun lcis(strA: String, strB: String): List<Pair<String, String>> {
-  val traceA = strA.toCharArray().toList().buildSubsequenceIndex()
-  val traceB = strB.toCharArray().toList().buildSubsequenceIndex()
+fun <E> lcis(strA: List<E>, strB: List<E>): List<Pair<List<E>, List<E>>> {
+  val traceA = strA.buildSubsequenceIndex()
+  val traceB = strB.buildSubsequenceIndex()
   val lcs = (traceA.keys intersect traceB.keys).sortedBy { -it.size }.dropLast(1)
   return lcs.map {
-    strA.substring(traceA[it]!!.let { idxA -> idxA until idxA + it.size }) to
-      strB.substring(traceB[it]!!.let { idxB -> idxB until idxB + it.size })
+    strA.subList(traceA[it]!!, traceA[it]!! + it.size ) to
+      strB.subList(traceB[it]!!, traceB[it]!! + it.size )
   }
 }
