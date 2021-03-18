@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.4.30"
+//  kotlin("jvm") version "1.5.0-M1"
   kotlin("jupyter.api") version "0.8.3.289"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
@@ -77,7 +78,9 @@ tasks {
   withType<KotlinCompile> {
       kotlinOptions {
         jvmTarget = VERSION_1_8.toString()
-        // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
+//        languageVersion = "1.5"
+//        apiVersion = "1.5"
+//        // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
 //        freeCompilerArgs += "-Xdisable-phases=Tailrec"
       }
   }
