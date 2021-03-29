@@ -4,9 +4,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.4.30"
-//  kotlin("jvm") version "1.5.0-M1"
-  kotlin("jupyter.api") version "0.8.3.289"
+  kotlin("jvm") version "1.5.0-M2"
+  kotlin("jupyter.api") version "0.9.0.3"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
 
@@ -60,7 +59,7 @@ dependencies {
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 
-  val jgraphtVersion by extra { "1.5.0" }
+  val jgraphtVersion by extra { "1.5.1" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
@@ -68,6 +67,7 @@ dependencies {
   val tinkerpopVersion by extra { "3.4.10" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
+  testImplementation("info.debatty:java-string-similarity:2.0.0")
 }
 
 configure<JavaPluginConvention> {
@@ -110,6 +110,8 @@ If overwriting an older version, it is necessary to first run:
 
 rm -rf ~/.m2/repository/com/github/breandan/kaliningraph \
        ~/.ivy2/cache/com.github.breandan/kaliningraph
+
+https://github.com/Kotlin/kotlin-jupyter/issues/121
 
 To deploy to Maven Local and start the notebook, run:
 
