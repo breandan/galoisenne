@@ -78,10 +78,8 @@ tasks {
   withType<KotlinCompile> {
       kotlinOptions {
         jvmTarget = VERSION_1_8.toString()
-//        languageVersion = "1.5"
-//        apiVersion = "1.5"
-//        // Remove pending: https://youtrack.jetbrains.com/issue/KT-36853
-//        freeCompilerArgs += "-Xdisable-phases=Tailrec"
+        languageVersion = "1.5"
+        apiVersion = "1.5"
       }
   }
 
