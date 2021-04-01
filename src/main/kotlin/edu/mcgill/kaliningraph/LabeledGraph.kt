@@ -40,6 +40,35 @@ class LGBuilder {
 open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
+
+  /**
+   * TODO: Any way to move this into [Graph]?
+   * Constructors cannot be inherited, but invoke() can.
+   * May be possible to define a generic "constructor".
+   */
+
+  companion object {
+    operator fun invoke(builder: LGBuilder.() -> Unit) =
+      LGBuilder().also { it.builder() }.mutGraph
+
+    operator fun <T> invoke(
+      vararg adjList: Pair<T, T>,
+      toVertex: T.() -> LGVertex = { LGVertex(toString()) }
+    ): LabeledGraph =
+      adjList.fold(adjList.first().first.toVertex().graph) { acc, (s, t) ->
+        acc + LabeledGraph { s.toVertex() - t.toVertex() }
+      }
+
+    operator fun invoke(graph: String) =
+      this {
+        graph.split(" ").forEach {
+          it.substring(1).fold(LGVertex(it[0].toString())) { acc, c ->
+            acc - c.toString()
+          }
+        }
+      }.reversed()
+  }
+
   override fun new(vertices: Set<LGVertex>) = LabeledGraph(vertices)
   var accumuator = mutableSetOf<String>()
   var description = ""
@@ -47,28 +76,15 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   fun S() = BMat(vertices.size, 1) { i, j -> this[i].occupied }
 
   fun rewrite(substitution: Pair<String, String>) =
-    LabeledGraph(
-      randomWalk().take(200).toList().joinToString("")
-        .replace(substitution.first, substitution.second)
-    )
+    randomWalk().take(200).toList().joinToString("")
+      .replace(substitution.first, substitution.second)
+      .let { LabeledGraph(it) }
 
   fun propagate() {
     val (previousStates, unoccupied) = vertices.partition { it.occupied }
     val nextStates = unoccupied.intersect(previousStates.flatMap { it.neighbors }.toSet())
     previousStates.forEach { it.occupied = false }
     nextStates.forEach { it.occupied = true; accumuator.add(it.id) }
-  }
-
-  companion object {
-    operator fun invoke(builder: LGBuilder.() -> Unit) =
-      LGBuilder().also { it.builder() }.mutGraph
-
-    operator fun invoke(graph: String) =
-      this {
-        graph.substring(1).fold(LGVertex(graph[0].toString())) { acc, c ->
-          acc - c.toString()
-        }
-      }.reversed()
   }
 }
 
