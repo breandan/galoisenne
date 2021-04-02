@@ -134,5 +134,8 @@ fun main() {
     d = e * f
     g = 1 - h
     i = a + d + g
-  }.show()
+  }
+    //.reversed() //TODO: What is this even supposed to mean?
+    // Maybe this whole tower of abstractions wasn't such a good idea after all
+    .show()
 }

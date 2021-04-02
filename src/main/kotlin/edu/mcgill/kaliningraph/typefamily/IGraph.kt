@@ -1,32 +1,37 @@
 package edu.mcgill.kaliningraph.typefamily
 
-import edu.mcgill.kaliningraph.*
-
 // Inheritable constructors
-interface IGF<G, E, V>
-  where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-  // Inheritors must implement these three
-  fun Vertex(newId: String, edgeMap: (V) -> Set<E>): V
+@Suppress("FunctionName")
+interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
+  // Inheritors must implement these three "constructors"
+  fun Vertex(newId: String = "", edgeMap: (V) -> Set<E>): V
   fun Graph(vertices: Set<V> = setOf()): G
   fun Edge(s: V, t: V): E
 
+  fun Vertex(newId: String = "", out: Set<V> = emptySet()): V =
+    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
+
   fun Graph(vararg graphs: G): G = Graph(graphs.toList())
   fun Graph(vararg vertices: V): G = Graph(vertices.map { it.graph })
-  fun Graph(graphs: List<G>): G =
-    Graph(graphs.fold(Graph()) { it, acc -> it + acc }.vertices)
-
-  fun Vertex(newId: String, out: Set<V> = emptySet()): V =
-    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
 
   fun <T> Graph(
     vararg adjList: Pair<T, T>,
-    toVertex: (Pair<T, T>) -> V =
-      { (s, t) -> Vertex(s.toString(), setOf(Vertex(t.toString()))) }
-  ): G = adjList.map { toVertex(it) }.fold(Graph()) { acc, v -> acc + v.graph }
+    p2v: (Pair<T, T>) -> V = { (s, t) -> Vertex("$s", setOf(Vertex("$t"))) }
+  ): G = adjList.map { p2v(it) }.fold(Graph()) { acc, v -> acc + v.graph }
 
-  fun Graph(graph: String) = graph.split(" ").map {
-    Graph(*it.zipWithNext().map { (c1, c2) -> "$c1" to "$c2" }.toTypedArray())
-  }.fold(Graph()) { acc, g -> acc + g }.reversed()
+  fun <T> Graph(list: List<T>): G = Graph(
+    when {
+      list.isEmpty() -> setOf()
+      list allAre Graph() -> Graph(list.fold(Graph()) { it, acc -> it + acc as G }.vertices)
+      list allAre Vertex() -> Graph(list.map { it as V }.toSet())
+      list.any { it is IGF<*, *, *> } -> list.first { it is IGF<*, *, *> }
+        .let { throw Exception("Unsupported: Graph(${it!!::class.java})") }
+      else -> Graph(*list.toList().zipWithNext().toTypedArray())
+    }
+  )
+
+  fun Graph(graph: String): G = graph.split(" ")
+    .fold(Graph()) { acc, it -> acc + Graph(it.toCharArray().toList()) }
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
@@ -95,6 +100,13 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   val outgoing: Set<E>
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
 }
+
+infix fun Any?.isA(that: Any?) =
+  this?.javaClass?.let { thisClass ->
+    that?.javaClass?.isAssignableFrom(thisClass) ?: false
+  } ?: false
+
+infix fun Collection<*>.allAre(that: Any?) = all { it isA that }
 
 // https://github.com/amodeus-science/amod
 //abstract class Map : IGraph<Map, Road, City>
