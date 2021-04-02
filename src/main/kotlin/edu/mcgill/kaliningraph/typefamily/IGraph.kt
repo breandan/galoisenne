@@ -1,6 +1,35 @@
 package edu.mcgill.kaliningraph.typefamily
 
-interface IGraph<G, E, V>: Set<V>, (V) -> Set<V>
+import edu.mcgill.kaliningraph.*
+
+// Inheritable constructors
+interface IGF<G, E, V>
+  where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
+  // Inheritors must implement these three
+  fun Vertex(newId: String, edgeMap: (V) -> Set<E>): V
+  fun Graph(vertices: Set<V> = setOf()): G
+  fun Edge(s: V, t: V): E
+
+  fun Graph(vararg graphs: G): G = Graph(graphs.toList())
+  fun Graph(vararg vertices: V): G = Graph(vertices.map { it.graph })
+  fun Graph(graphs: List<G>): G =
+    Graph(graphs.fold(Graph()) { it, acc -> it + acc }.vertices)
+
+  fun Vertex(newId: String, out: Set<V> = emptySet()): V =
+    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
+
+  fun <T> Graph(
+    vararg adjList: Pair<T, T>,
+    toVertex: (Pair<T, T>) -> V =
+      { (s, t) -> Vertex(s.toString(), setOf(Vertex(t.toString()))) }
+  ): G = adjList.map { toVertex(it) }.fold(Graph()) { acc, v -> acc + v.graph }
+
+  fun Graph(graph: String) = graph.split(" ").map {
+    Graph(*it.zipWithNext().map { (c1, c2) -> "$c1" to "$c2" }.toTypedArray())
+  }.fold(Graph()) { acc, g -> acc + g }.reversed()
+}
+
+interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 /*
  * TODO: Which primary interface should we expect graphs to fulfill?
  *
@@ -27,75 +56,44 @@ interface IGraph<G, E, V>: Set<V>, (V) -> Set<V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
 
-  // TODO: Possible to use typeclass here? https://kotlin.christmas/2020/7
-  fun new(vararg graphs: G): G = new(graphs.toList())
-  fun new(vararg vertices: V): G = new(vertices.map { it.graph })
-  fun new(graphs: List<G>): G =
-    new(graphs.fold(new()) { it, acc -> it + acc }.vertices)
-  fun new(vertices: Set<V> = setOf()): G
-
-//  companion object {
-//    operator fun <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> invoke(
-//      graph: (Set<V>) -> G,
-//      edge: (V, V) -> E,
-//      vertex: (Set<V>) -> V
-//    ) =
-//      object: IGraph<G, E, V> {
-//
-//      }
-//  }
-
-//  fun Vertex(newId: String = randomString(), edgeMap: (V) -> Set<E>): V
-//  fun Graph(vertices: Set<V>): G
-//  fun Edge(s: V, t: V): E
-
   // Implements graph merge. For all vertices in common, merge their neighbors.
   // TODO: Figure out how to implement this operator "correctly"
   // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
   operator fun plus(that: G): G =
-    new((this - that) + (this join that) + (that - this))
+    Graph((this - that) + (this join that) + (that - this))
 
-  operator fun minus(graph: G): G = new(vertices - graph.vertices)
+  operator fun minus(graph: G): G = Graph(vertices - graph.vertices)
 
   infix fun join(that: G): Set<V> =
     (vertices intersect that.vertices).sortedBy { it.id }.toSet()
       .zip((that.vertices intersect vertices).sortedBy { it.id }.toSet())
-      .map { (left, right) -> left.Vertex { left.outgoing + right.outgoing } }
+      .map { (left, right) -> Vertex(left.id) { left.outgoing + right.outgoing } }
       .toSet()
 
   // TODO: Reimplement using matrix transpose
-  fun reversed(): G = new(
+  fun reversed(): G = Graph(
     (vertices.associateWith { setOf<E>() } +
       vertices.flatMap { src ->
-        src.outgoing.map { edge -> edge.target to edge.new(edge.target, src) }
+        src.outgoing.map { edge -> edge.target to Edge(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
-      .map { (k, v) -> k.Vertex { v } }.toSet()
+      .map { (k, v) -> Vertex(k.id) { v } }.toSet()
   )
 }
 
-interface IEdge<G, E, V>
+interface IEdge<G, E, V>: IGF<G, E, V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val graph: G
   val source: V
   val target: V
-
-  fun new(source: V, target: V): E
 }
 
-interface IVertex<G, E, V>
+interface IVertex<G, E, V>: IGF<G, E, V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val id: String
   val graph: G
   val incoming: Set<E>
   val outgoing: Set<E>
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
-
-  fun Vertex(newId: String = id, edgeMap: (V) -> Set<E>): V
-  fun Vertex(newId: String = id, out: Set<V> = emptySet()): V =
-    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
-
-  fun Graph(vertices: Set<V>): G
-  fun Edge(s: V, t: V): E
 }
 
 // https://github.com/amodeus-science/amod

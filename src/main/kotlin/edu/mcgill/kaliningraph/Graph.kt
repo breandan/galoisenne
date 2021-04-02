@@ -150,7 +150,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
       newId = size.toString(),
       out = if (vertices.isEmpty()) emptySet()
       else degMap.sample().take(degree.coerceAtMost(size)).toSet()
-    )?.graph ?: new())
+    )?.graph ?: Graph())
 
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() =
@@ -186,7 +186,7 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encod
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { vertex -> Vertex { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
+    map { vertex -> Vertex(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 

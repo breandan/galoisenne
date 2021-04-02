@@ -33,11 +33,10 @@ open class BMat(val rows: Int, val cols: Int, open vararg val data: Boolean) {
     for (i in 0 until rows) for (j in 0 until cols) it[i, j] = this[i, j]
   }
 
-  fun toEJMLSparse() =
-    SpsMat(rows, cols, rows).also {
-      for (i in 0 until rows) for (j in 0 until cols)
-        it[i, j] = if (this[i, j]) 1.0 else 0.0
-    }
+  fun toEJMLSparse() = SpsMat(rows, cols, rows).also {
+    for (i in 0 until rows) for (j in 0 until cols)
+      it[i, j] = if (this[i, j]) 1.0 else 0.0
+  }
 }
 
 class BSqMat(override vararg val data: Boolean):

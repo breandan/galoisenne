@@ -18,7 +18,8 @@ fun main() {
   val abcd = LabeledGraph { a - b - c - d }
   val cfde = LabeledGraph { c - "a" - f - d - e }
 
-  val dg = de.new(dacbe, dce, de) + de.new(abcd, cfde)
+  val dg = LabeledGraph.Graph(dacbe, dce, de) +
+    LabeledGraph.Graph(abcd, cfde)
 
   dg.show()
 

@@ -1,26 +1,28 @@
 package edu.mcgill.kaliningraph.automata
 
 import edu.mcgill.kaliningraph.*
+import edu.mcgill.kaliningraph.typefamily.IGF
+
+interface AGF: IGF<Automaton, Transition, State> {
+  override fun Graph(vertices: Set<State>) = Automaton(vertices)
+  override fun Edge(s: State, t: State) = Transition(s, t)
+  override fun Vertex(newId: String, edgeMap: (State) -> Set<Transition>) =
+    State(edgeMap = edgeMap)
+}
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))
-  : Graph<Automaton, Transition, State>(vertices) {
-  override fun new(vertices: Set<State>) = Automaton(vertices)
-}
+  : AGF, Graph<Automaton, Transition, State>(vertices) {}
 
 open class Transition(override val source: State, override val target: State, val string: String? = null) :
-  Edge<Automaton, Transition, State>(source, target) {
-  override fun new(source: State, target: State) = Transition(source, target, string)
-}
+  AGF, Edge<Automaton, Transition, State>(source, target)
 
 open class State(
   id: String = randomString(),
   override val edgeMap: (State) -> Set<Transition>
-) : Vertex<Automaton, Transition, State>(id) {
+) : AGF, Vertex<Automaton, Transition, State>(id) {
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
     edgeMap = { s -> out.map { t -> Transition(s, t) }.toSet() })
 
-  override fun Graph(vertices: Set<State>) = Automaton(vertices)
-  override fun Edge(s: State, t: State) = Transition(s, t)
   override fun Vertex(newId: String, edgeMap: (State) -> Set<Transition>): State = State(id, edgeMap)
 }
 
@@ -32,10 +34,10 @@ class AutomatonBuilder {
   val i by State(); val j by State(); val k by State(); val l by State()
 
   operator fun State.minus(v: State) =
-    State().Vertex { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
+    Vertex(id) { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
 
   operator fun State.plus(edge: Transition) =
-    State().Vertex { outgoing + edge }.also { automaton += it.graph }
+    Vertex(id) { outgoing + edge }.also { automaton += it.graph }
 
   operator fun State.plus(vertex: State) =
     (graph + vertex.graph).also { automaton += it }
