@@ -4,8 +4,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.5.0-M2"
-  kotlin("jupyter.api") version "0.9.0.3"
+  kotlin("jvm") version "1.5.0-RC"
+  kotlin("jupyter.api") version "0.9.0-38"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
 

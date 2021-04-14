@@ -97,7 +97,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
    * https://breandan.net/2020/06/30/graph-computation/#weisfeiler-lehman
    */
 
-  /*tailrec*/ fun wl(k: Int = 5, label: (V) -> Int = { histogram[it]!! }): Map<V, Int> {
+  tailrec fun wl(k: Int = 5, label: (V) -> Int = { histogram[it]!! }): Map<V, Int> {
     val updates = associateWith { this(it).map(label).sorted().hashCode() }
     return if (k <= 0 || all { label(it) == updates[it] }) updates
     else wl(k - 1) { updates[it]!! }
@@ -112,7 +112,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
    *   Convolution: https://arxiv.org/pdf/2004.03519.pdf#page=2
    */
 
-  /*tailrec*/ fun gnn(
+  tailrec fun gnn(
     // Message passing rounds
     t: Int = diameter() * 10,
     // Matrix of node representations ℝ^{|V|xd}
