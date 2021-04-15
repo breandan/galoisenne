@@ -1,4 +1,4 @@
-import org.gradle.api.JavaVersion.VERSION_1_8
+import org.gradle.api.JavaVersion.VERSION_11
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -71,16 +71,14 @@ dependencies {
 }
 
 configure<JavaPluginConvention> {
-  sourceCompatibility = VERSION_1_8
+  sourceCompatibility = VERSION_11
 }
 
 tasks {
-  withType<KotlinCompile> {
-      kotlinOptions {
-        jvmTarget = VERSION_1_8.toString()
-        languageVersion = "1.5"
-        apiVersion = "1.5"
-      }
+  compileKotlin {
+    kotlinOptions {
+      jvmTarget = VERSION_11.toString()
+    }
   }
 
   listOf("HelloKaliningraph", "Rewriter",
@@ -120,7 +118,7 @@ To deploy to Maven Local and start the notebook, run:
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
 
-  val sourcesJar by registering(org.gradle.jvm.tasks.Jar::class) {
+  val sourcesJar by registering(Jar::class) {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
   }
