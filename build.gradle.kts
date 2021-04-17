@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.5.0-RC"
-  kotlin("jupyter.api") version "0.9.0-38"
+  kotlin("jupyter.api") version "0.9.0-50"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
 
