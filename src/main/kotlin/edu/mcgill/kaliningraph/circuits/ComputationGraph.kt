@@ -50,7 +50,7 @@ interface CGF: IGF<ComputationGraph, UnlabeledEdge, Gate> {
 }
 
 class ComputationGraph(override val vertices: Set<Gate> = setOf()):
-  CGF, Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices){}
+  CGF, Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices)
 
 interface Op
 enum class Monad: Op { `+`, `-`, sin, cos, tan, id, ᵀ }
