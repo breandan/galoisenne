@@ -125,17 +125,3 @@ open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   override fun render() = (target.render() - source.render()).add(Label.of(""))
     .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }
-
-fun main() {
-  CircuitBuilder {
-    val funA by def(a, b, c) { a + b + c }
-    j = funA(3, 2, 1)
-    j = b * c
-    d = e * f
-    g = 1 - h
-    i = a + d + g
-  }
-    //.reversed() //TODO: What is this even supposed to mean?
-    // Maybe this whole tower of abstractions wasn't such a good idea after all
-    .show()
-}

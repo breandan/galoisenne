@@ -81,18 +81,11 @@ tasks {
     }
   }
 
-  listOf("HelloKaliningraph", "Rewriter",
-    "PrefAttach", "rewriting.CipherSolver").forEach { fileName ->
+  listOf("HelloKaliningraph", "Rewriter", "PrefAttach",
+    "rewriting.CipherSolver", "RegexDemo").forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["test"].runtimeClasspath
-    }
-  }
-
-  listOf("RegexDemo").forEach { fileName ->
-    register(fileName, JavaExec::class) {
-      main = "edu.mcgill.kaliningraph.automata.${fileName}Kt"
-      classpath = sourceSets["main"].runtimeClasspath
     }
   }
 
