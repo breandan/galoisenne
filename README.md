@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.breandan:kaliningraph:0.1.5")
+    implementation("com.github.breandan:kaliningraph:0.1.6")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
-    <version>0.1.5</version>
+    <version>0.1.6</version>
   </dependency>
 </project>
 ```
@@ -49,7 +49,7 @@ To access notebook support, use the following line magic:
 
 ```
 @file:Repository("https://jitpack.io")
-@file:DependsOn("com.github.breandan:kaliningraph:0.1.5")
+@file:DependsOn("com.github.breandan:kaliningraph:0.1.6")
 ```
 
 For more information, explore our tutorials:
