@@ -263,6 +263,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Algebra
 
+- [Algebraic Property Graphs](https://arxiv.org/pdf/1909.04881.pdf), Shinavier and Wisnesky (2020)
 - [Algebraic Graphs with Class (Functional Pearl)](https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf), Mokhov (2017)
 - [Algebra of Parameterised Graphs](https://www.staff.ncl.ac.uk/andrey.mokhov/algebra.pdf), Mokov and Khomenko (2014)
 - [Fun with Semirings](http://stedolan.net/research/semirings.pdf), Dolan (2013)
