@@ -14,18 +14,18 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   fun Graph(vararg graphs: G): G = Graph(graphs.toList())
   fun Graph(vararg vertices: V): G = Graph(vertices.map { it.graph })
 
-  fun <T> Graph(
+  fun <T: Any> Graph(
     vararg adjList: Pair<T, T>,
     p2v: (Pair<T, T>) -> V = { (s, t) -> Vertex("$s", setOf(Vertex("$t"))) }
   ): G = adjList.map { p2v(it) }.fold(Graph()) { acc, v -> acc + v.graph }
 
-  fun <T> Graph(list: List<T>): G = Graph(
+  fun <T: Any> Graph(list: List<T>): G = Graph(
     when {
       list.isEmpty() -> setOf()
       list allAre Graph() -> Graph(list.fold(Graph()) { it, acc -> it + acc as G }.vertices)
       list allAre Vertex() -> Graph(list.map { it as V }.toSet())
       list.any { it is IGF<*, *, *> } -> list.first { it is IGF<*, *, *> }
-        .let { throw Exception("Unsupported: Graph(${it!!::class.java})") }
+        .let { throw Exception("Unsupported: Graph(${it::class.java})") }
       else -> Graph(*list.toList().zipWithNext().toTypedArray())
     }
   )
@@ -101,12 +101,10 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
 }
 
-infix fun Any?.isA(that: Any?) =
-  this?.javaClass?.let { thisClass ->
-    that?.javaClass?.isAssignableFrom(thisClass) ?: false
-  } ?: false
+inline infix fun <reified S: Any, reified T: Any> S.isA(that: T) =
+  this::class.java.let { that::class.java.isAssignableFrom(it) }
 
-infix fun Collection<*>.allAre(that: Any?) = all { it isA that }
+infix fun Collection<Any>.allAre(that: Any) = all { it isA that }
 
 // https://github.com/amodeus-science/amod
 //abstract class Map : IGraph<Map, Road, City>
