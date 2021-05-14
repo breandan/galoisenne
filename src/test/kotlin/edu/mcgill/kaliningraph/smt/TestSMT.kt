@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph.smt
 
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.BooleanFormula
@@ -9,7 +9,7 @@ import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import javax.script.*
 import kotlin.reflect.KProperty
 
-val solverContext = SolverContextFactory.createSolverContext(Solvers.PRINCESS)
+val solverContext = SolverContextFactory.createSolverContext(Solvers.SMTINTERPOL)
 val fm = solverContext.formulaManager.integerFormulaManager
 
 class SMTTest {
@@ -18,8 +18,10 @@ class SMTTest {
     val a by SMTVar()
     val b by SMTVar()
     val c by SMTVar()
-    val v = (a / (b + c)) + (b / (a + c)) + (c / (a + b))
-    val f = fm.equal(v, fm.makeNumber(4))
+//    val v = (a / (b + c)) + (b / (a + c)) + (c / (a + b))
+    val v = a + b + c
+//    val f = fm.equal(v, fm.makeNumber(4))
+    val f = fm.equal(v, fm.makeNumber(9))
     val g = fm.greaterThan(a, fm.makeNumber(2))
     val h = fm.greaterThan(b, fm.makeNumber(2))
     val i = fm.greaterThan(c, fm.makeNumber(2))

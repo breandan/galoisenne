@@ -16,10 +16,6 @@ repositories {
   mavenCentral()
   maven("https://jitpack.io")
   maven("https://clojars.org/repo")
-  // TODO: Remove pending https://github.com/sosy-lab/java-smt/issues/201#issuecomment-777336656
-  maven("http://logicrunch.research.it.uu.se/maven/") {
-    isAllowInsecureProtocol = true
-  }
 }
 
 dependencies {
@@ -40,9 +36,9 @@ dependencies {
 
   testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.7.0") //  {
-  //    exclude(group = "uuverifiers", module = "princess_2.13")
-  //  }
+  testImplementation("org.sosy-lab:java-smt:3.7.0")  {
+      exclude(group = "uuverifiers", module = "princess_2.13")
+    }
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
