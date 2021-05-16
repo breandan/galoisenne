@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.5.0"
-  kotlin("jupyter.api") version "0.10.0-13"
+  kotlin("jupyter.api") version "0.10.0-17"
   id("com.github.ben-manes.versions") version "0.38.0"
 }
 
@@ -19,6 +19,7 @@ repositories {
 }
 
 dependencies {
+  implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
   implementation(kotlin("stdlib"))
 
   val ejmlVersion = "0.40"
@@ -50,6 +51,8 @@ dependencies {
   // https://github.com/jgralab/jgralab/wiki
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
+  implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
+
   testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
@@ -60,7 +63,7 @@ dependencies {
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.4.10" }
+  val tinkerpopVersion by extra { "3.5.0" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
   testImplementation("info.debatty:java-string-similarity:2.0.0")

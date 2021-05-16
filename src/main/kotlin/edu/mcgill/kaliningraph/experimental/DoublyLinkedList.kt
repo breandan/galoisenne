@@ -23,18 +23,21 @@ class DLL<T>(
   val tail: T by lazy { if (!hasNext()) head else this.next.tail }
 
   operator fun plus(t: T): DLL<T> =
-    DLL(
+    if (t is DLL<*> && t.head!!.javaClass == head!!.javaClass)
+      t.fold(this) { a, b -> a + b.head as T }
+    else if (t!!.javaClass == head!!.javaClass) DLL(
       head = head,
-      prev = { prev + it },
+      prev = { prev + it as T },
       next = { me ->
         if (!hasNext()) DLL(t, { me })
         else me.append(next + t)
       }
     )
+    else throw Exception("Type error, t: " +
+        if (t is DLL<*>) "DLL<${t.head!!.javaClass.simpleName}>"
+        else t.javaClass.simpleName
+    )
 
-  // TODO: how can these two be merged?
-  operator fun plus(other: DLL<T>): DLL<T> =
-    other.fold(this) { a, b -> a + b.head }
   private fun append(next: DLL<T>): DLL<T> =
     DLL(
       head = next.head,
@@ -48,7 +51,7 @@ class DLL<T>(
   fun insert(t: T): DLL<T> =
     DLL(
       head = head,
-      prev = { prev + it },
+      prev = { prev + it as T },
       next = { me ->
         if (!hasNext()) this + t
         else DLL(t, { me }, { it.append(next) })
