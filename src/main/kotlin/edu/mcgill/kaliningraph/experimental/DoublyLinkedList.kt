@@ -30,7 +30,7 @@ class DLL<T>(
       }
     )
 
-//  // TODO: how can these two be merged?
+// TODO: can these two be merged?
   operator fun plus(other: DLL<T>): DLL<T> =
     other.fold(this) { a, b -> a + b.head }
   private fun append(next: DLL<T>): DLL<T> =
