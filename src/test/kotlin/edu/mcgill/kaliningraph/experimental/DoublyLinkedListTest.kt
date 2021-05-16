@@ -7,11 +7,13 @@ class DoublyLinkedListTest {
   @Test
   fun testDLL() {
     var head = DLL("a").let { ('c'..'f').fold(it) { a, b -> a + b.toString() } }
-//  println(head)
+    println(head)
     assertDLL(head)
 
     head = head.insert("b")
-    println(head + head)
+    println(head)
+    var tail = DLL("g").let { ('h'..'l').fold(it) { a, b -> a + b.toString() } }
+    println(head + tail)
     assertDLL(head)
     println(head.reversed())
   }

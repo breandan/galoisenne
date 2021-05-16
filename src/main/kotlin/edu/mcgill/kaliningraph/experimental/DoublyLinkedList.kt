@@ -23,30 +23,44 @@ class DLL<T>(
   operator fun plus(t: T): DLL<T> =
     DLL(
       head = head,
-      prev = { prev + it },
       next = { me ->
-        if (!hasNext()) DLL(t, { me })
-        else me + (next + t)
+        if (!hasNext()) DLL(t, prev = { me })
+        else me.append(next + t)
+//        else me + (next + t)
       }
     )
 
-  operator fun plus(next: DLL<T>): DLL<T> =
+//  // TODO: how can these two be merged?
+  operator fun plus(other: DLL<T>): DLL<T> =
+    other.fold(this) { a, b -> a + b.head }
+  private fun append(next: DLL<T>): DLL<T> =
     DLL(
       head = next.head,
       prev = { this },
       next = { me ->
         if (!next.hasNext()) me
-        else me + next.next
+        else me.append(next.next)
       }
     )
+
+// TODO: This would appear to work, but head/prev is broken
+//  operator fun plus(next: DLL<T>): DLL<T> =
+//    DLL(
+//      head = head,
+//      prev = { this },
+//      next = { me ->
+//        if (!next.hasNext()) me
+//        else me + next.next
+//      }
+//    )
 
   fun insert(t: T): DLL<T> =
     DLL(
       head = head,
-      prev = { prev + it as T },
       next = { me ->
         if (!hasNext()) this + t
-        else DLL(t, { me }, { it + next })
+        else DLL(t, { me }, { it.append(next) })
+//        else DLL(t, { me }, { it + (next) })
       }
     )
 
