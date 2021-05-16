@@ -39,7 +39,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   // Symmetric normalized adjacency
   val ASYMNORM: SpsMat by lazy {
-    vwise { v, n -> 1.0 / sqrt(v.degree.toDouble() * n.degree.toDouble()) }
+    vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) }
   }
 
   // Laplacian matrix
@@ -168,7 +168,7 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encod
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
   override val neighbors by lazy { outgoing.map { it.target }.toSet() }
-  override val degree by lazy { neighbors.size }
+  override val outdegree by lazy { neighbors.size }
 
   override fun encode(): DoubleArray = id.vectorize()
 

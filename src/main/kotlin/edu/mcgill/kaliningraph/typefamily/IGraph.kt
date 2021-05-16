@@ -1,9 +1,17 @@
 package edu.mcgill.kaliningraph.typefamily
 
-// Inheritable constructors
+// Reified constructors
 @Suppress("FunctionName")
+/**
+ * TODO: can we lift builders somehow? e.g.:
+ * [edu.mcgill.kaliningraph.LGBuilder]
+ * [edu.mcgill.kaliningraph.TypedGraphBuilder]
+ * [edu.mcgill.kaliningraph.automata.AutomatonBuilder]
+ * [edu.mcgill.kaliningraph.circuits.CircuitBuilder]
+ */
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   // Inheritors must implement these three "constructors"
+  // TODO: can we delegate to the constructor at runtime using reflection magic?
   fun V(newId: String = "", edgeMap: (V) -> Set<E>): V
   fun G(vertices: Set<V> = setOf()): G
   fun E(s: V, t: V): E
@@ -30,8 +38,8 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     }
   )
 
-  fun G(graph: String): G = graph.split(" ")
-    .fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
+  fun G(graph: String): G =
+    graph.split(" ").fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
@@ -106,7 +114,7 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
 
   open val neighbors get() = outgoing.map { it.target }.toSet()
-  open val degree get() = neighbors.size
+  open val outdegree get() = neighbors.size
 
   // tailrec prohibited on open members? may be possible with deep recursion
   // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-deep-recursive-function/

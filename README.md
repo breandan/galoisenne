@@ -188,7 +188,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
    - Reduction/canonicalization versus expansion graph grammar
 * What happens if we represent the graph as a symbolic matrix?
    - Could we propagate functions instead of just values?
-   - What if matrix elements were symbolic expressions?
+   - What if matrix elements were symbolic expressions? (cf. [KeOps](https://proceedings.neurips.cc/paper/2020/file/a6292668b36ef412fa3c4102d1311a62-Paper.pdf))
    - Should we represent the whole matrix as a big bold symbol?
 * Is there an efficient way to parallelize arithmetic circuits?
    - Translate formula graph to matrix using Miller's evaluator
@@ -334,6 +334,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 #### Graphs
 
+* [KeOps](https://github.com/getkeops/keops) - Dense, sparse and symbolic tensor library
 * [Alga](https://github.com/snowleopard/alga) - a library for algebraic construction and manipulation of graphs in Haskell
 * [Bifurcan](https://github.com/lacuna/bifurcan) - high-quality JVM implementations of immutable data structures
 * [Kraphviz](https://github.com/nidi3/graphviz-java#kotlin-dsl) - Graphviz with pure Java
