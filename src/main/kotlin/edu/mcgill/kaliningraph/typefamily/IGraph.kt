@@ -12,6 +12,7 @@ package edu.mcgill.kaliningraph.typefamily
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   // Inheritors must implement these three "constructors"
   // TODO: can we delegate to the constructor at runtime using reflection magic?
+  // https://stackoverflow.com/questions/10470263/create-new-object-using-reflection
   fun V(newId: String = "", edgeMap: (V) -> Set<E>): V
   fun G(vertices: Set<V> = setOf()): G
   fun E(s: V, t: V): E

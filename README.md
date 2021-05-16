@@ -237,6 +237,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Graph Rewriting
 
+- [Factor Graph Grammars](https://arxiv.org/abs/2010.12048), Chiang and Riley (2020)
 - [Seam: Provably Safe Local Edits on Graphs](https://cs.stanford.edu/people/sharmar/pubs/seam.pdf), Papadakis et al. (2017)
 - [Equational term graph rewriting](https://www.researchgate.net/profile/Jan_willem_Klop/publication/2688773_Equational_Term_Graph_Rewriting/links/53ce68260cf2b8e35d148342.pdf), Ariola and Klop (1997)
 - [Bisimilarity in Term Graph Rewriting](https://doi.org/10.1006/inco.1999.2824), Ariola et al. (2000)
@@ -355,3 +356,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [roll-library](https://github.com/ISCAS-PMC/roll-library)
 * [dk.brics.automata](https://github.com/cs-au-dk/dk.brics.automaton)
 * [LearnLib](https://github.com/Learnlib/learnlib)
+
+# Special Thanks
+
+The following individuals have helped inspire this project through their enthusiasm and thoughtful feedback. Please check out their work.
+
+* [Jin Guo](https://www.cs.mcgill.ca/~jguo/lab.html)
+* [Xujie Si](https://www.cs.mcgill.ca/~xsi/)
+* [Andrey Mokhov](https://blogs.ncl.ac.uk/andreymokhov/)
+* [Fabian Muehlboeck](http://pub.ist.ac.at/~fmuehlbo/#about)
+* [Dave Keenan](https://dkeenan.com/)
+* [John Tromp](http://tromp.github.io/)

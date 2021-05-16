@@ -7,7 +7,9 @@ import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style.FILLED
 
 /**
- * DSL for constructing simple graphs - just enumerate paths. Duplicates will be merged.
+ * DSL for labeled graphs - just enumerate paths. Duplicates will be merged.
+ *
+ * cf. [edu.mcgill.kaliningraph.HelloKaliningraphKt]
  */
 
 class LGBuilder {
@@ -50,7 +52,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
 
   /**
-   * TODO: Any way to move this into [G]?
+   * TODO: Any way to move this into [IGF]?
    * Constructors cannot be inherited, but invoke() can.
    * May be possible to define a generic "constructor".
    */
