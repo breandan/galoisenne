@@ -12,6 +12,8 @@ class DoublyLinkedListTest {
 
     head = head.insert("b")
     println(head)
+    assertDLL(head)
+
 // TODO: this seems broken. is it really?
 //    head = head.next.next.insert("c")
 //    println(head)
@@ -19,7 +21,10 @@ class DoublyLinkedListTest {
     head = head + tail
     println(head)
     assertDLL(head)
-    println(head.reversed())
+
+    head = head.reversed()
+    println(head)
+    assertDLL(head)
   }
 
   private fun assertDLL(head: DLL<String>) =
