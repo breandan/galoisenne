@@ -35,6 +35,7 @@ class DLL<T>(
     other.fold(this) { a, b -> a + b.head }
   private fun append(next: DLL<T>): DLL<T> =
     DLL(
+      // n.b. head is advanced! (wrong view for publicly-facing API)
       head = next.head,
       prev = { this },
       next = { me ->
