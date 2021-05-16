@@ -4,9 +4,9 @@ import edu.mcgill.kaliningraph.*
 import edu.mcgill.kaliningraph.typefamily.IGF
 
 interface AGF: IGF<Automaton, Transition, State> {
-  override fun Graph(vertices: Set<State>) = Automaton(vertices)
-  override fun Edge(s: State, t: State) = Transition(s, t)
-  override fun Vertex(newId: String, edgeMap: (State) -> Set<Transition>) =
+  override fun G(vertices: Set<State>) = Automaton(vertices)
+  override fun E(s: State, t: State) = Transition(s, t)
+  override fun V(newId: String, edgeMap: (State) -> Set<Transition>) =
     State(edgeMap = edgeMap)
 }
 
@@ -23,7 +23,7 @@ open class State(
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
     edgeMap = { s -> out.map { t -> Transition(s, t) }.toSet() })
 
-  override fun Vertex(newId: String, edgeMap: (State) -> Set<Transition>): State = State(id, edgeMap)
+  override fun V(newId: String, edgeMap: (State) -> Set<Transition>): State = State(id, edgeMap)
 }
 
 class AutomatonBuilder {
@@ -34,10 +34,10 @@ class AutomatonBuilder {
   val i by State(); val j by State(); val k by State(); val l by State()
 
   operator fun State.minus(v: State) =
-    Vertex(id) { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
+    V(id) { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
 
   operator fun State.plus(edge: Transition) =
-    Vertex(id) { outgoing + edge }.also { automaton += it.graph }
+    V(id) { outgoing + edge }.also { automaton += it.graph }
 
   operator fun State.plus(vertex: State) =
     (graph + vertex.graph).also { automaton += it }

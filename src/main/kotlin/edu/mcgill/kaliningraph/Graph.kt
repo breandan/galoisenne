@@ -141,11 +141,11 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
 
   fun attachRandomT(degree: Int): G =
-    this + (prototype?.Vertex(
+    this + (prototype?.V(
       newId = size.toString(),
       out = if (vertices.isEmpty()) emptySet()
       else degMap.sample().take(degree.coerceAtMost(size)).toSet()
-    )?.graph ?: Graph())
+    )?.graph ?: G())
 
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() =
@@ -172,7 +172,7 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encod
 
   override fun encode(): DoubleArray = id.vectorize()
 
-  open operator fun getValue(a: Any?, prop: KProperty<*>): V = Vertex(prop.name)
+  open operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
   open fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
   override fun equals(other: Any?) =
     (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())

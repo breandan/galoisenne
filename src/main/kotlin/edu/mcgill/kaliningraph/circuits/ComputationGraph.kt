@@ -43,9 +43,9 @@ operator fun Any.times(that: Gate) = wrap(this, that) { a, b -> a * b }
 operator fun Any.div(that: Gate) = wrap(this, that) { a, b -> a / b }
 
 interface CGF: IGF<ComputationGraph, UnlabeledEdge, Gate> {
-  override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
-  override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
+  override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
+  override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
+  override fun V(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
     Gate(edgeMap = edgeMap)
 }
 
@@ -89,9 +89,9 @@ open class Gate constructor(
   fun tan() = Gate(Monad.tan, this)
   fun d(that: Any) = Gate(Dyad.d, this, wrap(that))
 
-  override fun Graph(vertices: Set<Gate>) = ComputationGraph(vertices)
-  override fun Edge(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
+  override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
+  override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
+  override fun V(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
     Gate(newId, Monad.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)

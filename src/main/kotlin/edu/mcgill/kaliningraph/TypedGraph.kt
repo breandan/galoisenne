@@ -5,9 +5,9 @@ import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Color.*
 
 interface TGF<T: Encodable>: IGF<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>> {
-  override fun Graph(vertices: Set<TypedVertex<T>>) = TypedGraph(vertices)
-  override fun Edge(s:TypedVertex<T>, t:TypedVertex<T>) = TypedEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
+  override fun G(vertices: Set<TypedVertex<T>>) = TypedGraph(vertices)
+  override fun E(s:TypedVertex<T>, t:TypedVertex<T>) = TypedEdge(s, t)
+  override fun V(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
     TypedVertex(edgeMap = edgeMap)
 }
 
@@ -22,7 +22,7 @@ class TypedGraphBuilder<T: Encodable> {
   operator fun T.minus(t: T): TypedVertex<T> = TypedVertex(this) - TypedVertex(t)
 
   operator fun TypedVertex<T>.plus(edge: TypedEdge<T>) =
-    Vertex(id) { outgoing + edge }.also { mutGraph += it.graph }
+    V(id) { outgoing + edge }.also { mutGraph += it.graph }
 
   operator fun TypedVertex<T>.plus(vertex: TypedVertex<T>) =
     (graph + vertex.graph).also { mutGraph += it }
@@ -53,7 +53,7 @@ class TypedVertex<T: Encodable> constructor(
     if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK)
   }
 
-  override fun Vertex(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
+  override fun V(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
     TypedVertex(t, occupied, edgeMap)
 }
 

@@ -25,7 +25,7 @@ class LGBuilder {
   operator fun String.minus(v: String): LGVertex = LGVertex(this) - LGVertex(v)
 
   operator fun LGVertex.plus(edge: LabeledEdge) =
-    Vertex(id) { outgoing + edge }.also { mutGraph += it.graph }
+    V(id) { outgoing + edge }.also { mutGraph += it.graph }
 
   operator fun LGVertex.plus(vertex: LGVertex) =
     (graph + vertex.graph).also { mutGraph += it }
@@ -38,9 +38,9 @@ class LGBuilder {
 }
 
 interface LGF: IGF<LabeledGraph, LabeledEdge, LGVertex> {
-  override fun Graph(vertices: Set<LGVertex>) = LabeledGraph(vertices)
-  override fun Edge(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
-  override fun Vertex(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) =
+  override fun G(vertices: Set<LGVertex>) = LabeledGraph(vertices)
+  override fun E(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
+  override fun V(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) =
     LGVertex(label = newId, edgeMap = edgeMap)
 }
 
@@ -50,7 +50,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
 
   /**
-   * TODO: Any way to move this into [Graph]?
+   * TODO: Any way to move this into [G]?
    * Constructors cannot be inherited, but invoke() can.
    * May be possible to define a generic "constructor".
    */
@@ -68,7 +68,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   fun rewrite(substitution: Pair<String, String>) =
     randomWalk().take(200).toList().joinToString("")
       .replace(substitution.first, substitution.second)
-      .let { LabeledGraph.Graph(it) }
+      .let { LabeledGraph.G(it) }
 
   fun propagate() {
     val (previousStates, unoccupied) = vertices.partition { it.occupied }

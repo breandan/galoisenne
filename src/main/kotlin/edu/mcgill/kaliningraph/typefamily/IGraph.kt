@@ -1,39 +1,37 @@
 package edu.mcgill.kaliningraph.typefamily
 
-import edu.mcgill.kaliningraph.*
-
 // Inheritable constructors
 @Suppress("FunctionName")
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   // Inheritors must implement these three "constructors"
-  fun Vertex(newId: String = "", edgeMap: (V) -> Set<E>): V
-  fun Graph(vertices: Set<V> = setOf()): G
-  fun Edge(s: V, t: V): E
+  fun V(newId: String = "", edgeMap: (V) -> Set<E>): V
+  fun G(vertices: Set<V> = setOf()): G
+  fun E(s: V, t: V): E
 
-  fun Vertex(newId: String = "", out: Set<V> = emptySet()): V =
-    Vertex(newId) { s -> out.map { t -> Edge(s, t) }.toSet() }
+  fun V(newId: String = "", out: Set<V> = emptySet()): V =
+    V(newId) { s -> out.map { t -> E(s, t) }.toSet() }
 
-  fun Graph(vararg graphs: G): G = Graph(graphs.toList())
-  fun Graph(vararg vertices: V): G = Graph(vertices.map { it.graph })
+  fun G(vararg graphs: G): G = G(graphs.toList())
+  fun G(vararg vertices: V): G = G(vertices.map { it.graph })
 
-  fun <T: Any> Graph(
+  fun <T: Any> G(
     vararg adjList: Pair<T, T>,
-    p2v: (Pair<T, T>) -> V = { (s, t) -> Vertex("$s", setOf(Vertex("$t"))) }
-  ): G = adjList.map { p2v(it) }.fold(Graph()) { acc, v -> acc + v.graph }
+    p2v: (Pair<T, T>) -> V = { (s, t) -> V("$s", setOf(V("$t"))) }
+  ): G = adjList.map { p2v(it) }.fold(G()) { acc, v -> acc + v.graph }
 
-  fun <T: Any> Graph(list: List<T>): G = Graph(
+  fun <T: Any> G(list: List<T>): G = G(
     when {
       list.isEmpty() -> setOf()
-      list allAre Graph() -> Graph(list.fold(Graph()) { it, acc -> it + acc as G }.vertices)
-      list allAre Vertex() -> Graph(list.map { it as V }.toSet())
+      list allAre G() -> G(list.fold(G()) { it, acc -> it + acc as G }.vertices)
+      list allAre V() -> G(list.map { it as V }.toSet())
       list.any { it is IGF<*, *, *> } -> list.first { it is IGF<*, *, *> }
         .let { throw Exception("Unsupported: Graph(${it::class.java})") }
-      else -> Graph(*list.toList().zipWithNext().toTypedArray())
+      else -> G(*list.toList().zipWithNext().toTypedArray())
     }
   )
 
-  fun Graph(graph: String): G = graph.split(" ")
-    .fold(Graph()) { acc, it -> acc + Graph(it.toCharArray().toList()) }
+  fun G(graph: String): G = graph.split(" ")
+    .fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
@@ -71,23 +69,23 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   // TODO: Figure out how to implement this operator "correctly"
   // https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
   operator fun plus(that: G): G =
-    Graph((this - that) + (this join that) + (that - this))
+    G((this - that) + (this join that) + (that - this))
 
-  operator fun minus(graph: G): G = Graph(vertices - graph.vertices)
+  operator fun minus(graph: G): G = G(vertices - graph.vertices)
 
   infix fun join(that: G): Set<V> =
     (vertices intersect that.vertices).sortedBy { it.id }.toSet()
       .zip((that.vertices intersect vertices).sortedBy { it.id }.toSet())
-      .map { (left, right) -> Vertex(left.id) { left.outgoing + right.outgoing } }
+      .map { (left, right) -> V(left.id) { left.outgoing + right.outgoing } }
       .toSet()
 
   // TODO: Reimplement using matrix transpose
-  fun reversed(): G = Graph(
+  fun reversed(): G = G(
     (vertices.associateWith { setOf<E>() } +
       vertices.flatMap { src ->
-        src.outgoing.map { edge -> edge.target to Edge(edge.target, src) }
+        src.outgoing.map { edge -> edge.target to E(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
-      .map { (k, v) -> Vertex(k.id) { v } }.toSet()
+      .map { (k, v) -> V(k.id) { v } }.toSet()
   )
 }
 
@@ -102,18 +100,13 @@ interface IEdge<G, E, V>: IGF<G, E, V>
 interface IVertex<G, E, V>: IGF<G, E, V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val id: String
-  val graph: G
-    get() = Graph(neighbors(-1))
-  val incoming: Set<E>
-    get() = graph.reversed().edgMap[this] ?: emptySet()
-  val outgoing: Set<E>
-    get() = edgeMap(this as V).toSet()
+  val graph: G get() = G(neighbors(-1))
+  val incoming: Set<E> get() = graph.reversed().edgMap[this] ?: emptySet()
+  val outgoing: Set<E> get() = edgeMap(this as V).toSet()
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
 
-  open val neighbors
-    get() = outgoing.map { it.target }.toSet()
-  open val degree
-    get() = neighbors.size
+  open val neighbors get() = outgoing.map { it.target }.toSet()
+  open val degree get() = neighbors.size
 
   // tailrec prohibited on open members? may be possible with deep recursion
   // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-deep-recursive-function/
@@ -123,14 +116,14 @@ interface IVertex<G, E, V>: IGF<G, E, V>
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { vertex -> Vertex(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
+    map { vertex -> V(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
-  fun neighborhood(): G = Graph(neighbors(0).closure())
+  fun neighborhood(): G = G(neighbors(0).closure())
 }
 
-inline infix fun <reified S: Any, reified T: Any> S.isA(that: T) =
+infix fun Any.isA(that: Any) =
   this::class.java.let { that::class.java.isAssignableFrom(it) }
 
 infix fun Collection<Any>.allAre(that: Any) = all { it isA that }

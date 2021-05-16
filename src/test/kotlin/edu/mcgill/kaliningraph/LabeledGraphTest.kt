@@ -9,7 +9,7 @@ class LabeledGraphTest {
   @Test
   fun testAdjListConstructor() = assertEquals(
     graph,
-    LabeledGraph.Graph(
+    LabeledGraph.G(
       "a" to "b",
       "b" to "c",
       "c" to "d",
@@ -20,5 +20,5 @@ class LabeledGraphTest {
   )
 
   @Test
-  fun testStringConstructor() = assertEquals(graph, LabeledGraph.Graph("abcde ace"))
+  fun testStringConstructor() = assertEquals(graph, LabeledGraph.G("abcde ace"))
 }
