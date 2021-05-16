@@ -1,5 +1,7 @@
 package edu.mcgill.kaliningraph.typefamily
 
+import edu.mcgill.kaliningraph.*
+
 // Inheritable constructors
 @Suppress("FunctionName")
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
@@ -60,6 +62,10 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
+  val edgList: List<Pair<V, E>> get() = vertices.flatMap { s -> s.outgoing.map { s to it } }
+  val adjList: List<Pair<V, V>> get() = edgList.map { (v, e) -> v to e.target }
+  val edgMap: Map<V, Set<E>> get() = vertices.associateWith { it.outgoing }
+  val edges: Set<E> get() = edgMap.values.flatten().toSet()
 
   // Implements graph merge. For all vertices in common, merge their neighbors.
   // TODO: Figure out how to implement this operator "correctly"
@@ -92,13 +98,36 @@ interface IEdge<G, E, V>: IGF<G, E, V>
   val target: V
 }
 
+// TODO: Make this a "view" of the container graph
 interface IVertex<G, E, V>: IGF<G, E, V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val id: String
   val graph: G
+    get() = Graph(neighbors(-1))
   val incoming: Set<E>
+    get() = graph.reversed().edgMap[this] ?: emptySet()
   val outgoing: Set<E>
+    get() = edgeMap(this as V).toSet()
   val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
+
+  open val neighbors
+    get() = outgoing.map { it.target }.toSet()
+  open val degree
+    get() = neighbors.size
+
+  // tailrec prohibited on open members? may be possible with deep recursion
+  // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-deep-recursive-function/
+  fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
+    if (k == 0 || vertices.neighbors() == vertices) vertices
+    else neighbors(k - 1, vertices + vertices.neighbors() + this as V)
+
+  // Removes all edges pointing outside the set
+  private fun Set<V>.closure(): Set<V> =
+    map { vertex -> Vertex(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
+
+  private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
+
+  fun neighborhood(): G = Graph(neighbors(0).closure())
 }
 
 inline infix fun <reified S: Any, reified T: Any> S.isA(that: T) =

@@ -30,11 +30,6 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
 
-  val edgList: List<Pair<V, E>> by lazy { vertices.flatMap { s -> s.outgoing.map { s to it } } }
-  val adjList: List<Pair<V, V>> by lazy { edgList.map { (v, e) -> v to e.target } }
-  val edgMap: Map<V, Set<E>> by lazy { vertices.associateWith { it.outgoing } }
-  val edges: Set<E> by lazy { edgMap.values.flatten().toSet() }
-
   // Degree matrix
   val D: SpsMat by lazy { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
@@ -168,29 +163,14 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V): IE
   operator fun component2() = target
 }
 
-// TODO: Link to graph and make a "view" of the container graph
-// TODO: Possible to extend Graph?
 abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encodable
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
-  override val graph: G by lazy { Graph(neighbors(-1)) }
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
-  open val neighbors by lazy { outgoing.map { it.target }.toSet() }
-  open val degree by lazy { neighbors.size }
+  override val neighbors by lazy { outgoing.map { it.target }.toSet() }
+  override val degree by lazy { neighbors.size }
 
   override fun encode(): DoubleArray = id.vectorize()
-
-  tailrec fun neighbors(k: Int = 0, vertices: Set<V> = neighbors + this as V): Set<V> =
-    if (k == 0 || vertices.neighbors() == vertices) vertices
-    else neighbors(k - 1, vertices + vertices.neighbors() + this as V)
-
-  // Removes all edges pointing outside the set
-  private fun Set<V>.closure(): Set<V> =
-    map { vertex -> Vertex(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
-
-  private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
-
-  fun neighborhood(): G = Graph(neighbors(0).closure())
 
   open operator fun getValue(a: Any?, prop: KProperty<*>): V = Vertex(prop.name)
   open fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
