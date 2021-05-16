@@ -10,8 +10,6 @@ class LL<T>(val head: T, val next: LL<T>? = null) {
   override fun toString(): String = "[$head]" + "->" + next.toString()
 }
 
-// TODO: Translate to doubly-linked graph
-
 class DLL<T>(
   val head: T,
   prev: (DLL<T>) -> DLL<T> = { it },
@@ -23,28 +21,22 @@ class DLL<T>(
   val tail: T by lazy { if (!hasNext()) head else this.next.tail }
 
   operator fun plus(t: T): DLL<T> =
-    if (t is DLL<*> && t.head!!.javaClass == head!!.javaClass)
-      t.fold(this) { a, b -> a + b.head as T }
-    else if (t!!.javaClass == head!!.javaClass) DLL(
+    DLL(
       head = head,
-      prev = { prev + it as T },
+      prev = { prev + it },
       next = { me ->
         if (!hasNext()) DLL(t, { me })
-        else me.append(next + t)
+        else me + (next + t)
       }
     )
-    else throw Exception("Type error, t: " +
-        if (t is DLL<*>) "DLL<${t.head!!.javaClass.simpleName}>"
-        else t.javaClass.simpleName
-    )
 
-  private fun append(next: DLL<T>): DLL<T> =
+  operator fun plus(next: DLL<T>): DLL<T> =
     DLL(
       head = next.head,
       prev = { this },
       next = { me ->
         if (!next.hasNext()) me
-        else me.append(next.next)
+        else me + next.next
       }
     )
 
@@ -54,7 +46,7 @@ class DLL<T>(
       prev = { prev + it as T },
       next = { me ->
         if (!hasNext()) this + t
-        else DLL(t, { me }, { it.append(next) })
+        else DLL(t, { me }, { it + next })
       }
     )
 
