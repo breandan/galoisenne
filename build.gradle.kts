@@ -19,8 +19,9 @@ repositories {
 }
 
 dependencies {
-  implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
+  implementation(platform(kotlin("bom")))
   implementation(kotlin("stdlib"))
+  implementation(kotlin("reflect"))
 
   val ejmlVersion = "0.40"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
@@ -35,7 +36,7 @@ dependencies {
   testImplementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
   testImplementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
-  testImplementation("org.jetbrains.kotlin:kotlin-scripting-jsr223")
+  testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
   testImplementation("org.sosy-lab:java-smt:3.7.0")  {
       exclude(group = "uuverifiers", module = "princess_2.13")
@@ -50,8 +51,6 @@ dependencies {
 
   // https://github.com/jgralab/jgralab/wiki
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
-
-  implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
 
   testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
