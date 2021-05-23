@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph.typefamily
 
-import java.lang.reflect.*
-import kotlin.jvm.functions.Function1
+import java.lang.reflect.ParameterizedType
 import kotlin.reflect.KClass
 
 // Reified constructors
@@ -57,16 +56,14 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
   private fun gev(): Array<Class<*>> =
     (generateSequence(javaClass) { it.superclass as Class<IGF<G, E, V>> }
-      .first { it.genericSuperclass is ParameterizedType }.genericSuperclass
-      as ParameterizedType).actualTypeArguments
-      .map {
-        if (it is Class<*>) it
-        else ((it as ParameterizedType).rawType as Class<*>)
-      }.toTypedArray()
+      .first { it.genericSuperclass is ParameterizedType }
+      .genericSuperclass as ParameterizedType).actualTypeArguments
+      .map { (if (it is ParameterizedType) it.rawType else it) as Class<*> }
+      .toTypedArray()
 
   private fun g() = gev()[0].getConstructor(Set::class.java)
   private fun e() = gev().let { it[1].getConstructor(it[2], it[2]) }
-  private fun v() = gev()[2].getConstructor(java.lang.String::class.java, Function1::class.java)
+  private fun v() = gev()[2].getConstructor(String::class.java, Function1::class.java)
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
