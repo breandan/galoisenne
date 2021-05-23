@@ -39,16 +39,9 @@ class LGBuilder {
     target + LabeledEdge(target, source, label)
 }
 
-interface LGF: IGF<LabeledGraph, LabeledEdge, LGVertex> {
-  override fun G(vertices: Set<LGVertex>) = LabeledGraph(vertices)
-  override fun E(s: LGVertex, t: LGVertex) = LabeledEdge(s, t)
-  override fun V(newId: String, edgeMap: (LGVertex) -> Set<LabeledEdge>) =
-    LGVertex(label = newId, edgeMap = edgeMap)
-}
-
 // TODO: convert to/from other graph types
 open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
-  LGF, Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
+  Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
 
   /**
@@ -85,9 +78,10 @@ class StatefulGraph: LabeledGraph()
 
 class LGVertex constructor(
   val label: String = "",
-  var occupied: Boolean = false,
   override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
-): LGF, Vertex<LabeledGraph, LabeledEdge, LGVertex>(label) {
+): Vertex<LabeledGraph, LabeledEdge, LGVertex>(label) {
+  var occupied: Boolean = false
+
   constructor(out: Set<LGVertex> = setOf()) :
     this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(label: String, out: Set<LGVertex> = emptySet()) :
@@ -98,7 +92,14 @@ class LGVertex constructor(
 //  override fun toString(): String = label
 }
 
-open class LabeledEdge(override val source: LGVertex, override val target: LGVertex, val label: String? = null) :
-  LGF, Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
-  override fun render() = super.render().also { it.add(if (source.occupied) RED else BLACK) }
+open class LabeledEdge(
+  override val source: LGVertex,
+  override val target: LGVertex,
+  val label: String? = null
+):
+  Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
+  constructor(source: LGVertex, target: LGVertex): this(source, target, null)
+
+  override fun render() =
+    super.render().also { it.add(if (source.occupied) RED else BLACK) }
 }

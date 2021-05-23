@@ -42,26 +42,19 @@ operator fun Any.minus(that: Gate) = wrap(this, that) { a, b -> a - b }
 operator fun Any.times(that: Gate) = wrap(this, that) { a, b -> a * b }
 operator fun Any.div(that: Gate) = wrap(this, that) { a, b -> a / b }
 
-interface CGF: IGF<ComputationGraph, UnlabeledEdge, Gate> {
-  override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
-  override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun V(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
-    Gate(edgeMap = edgeMap)
-}
-
 class ComputationGraph(override val vertices: Set<Gate> = setOf()):
-  CGF, Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices)
+  Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices)
 
 interface Op
 enum class Monad: Op { `+`, `-`, sin, cos, tan, id, ᵀ }
 enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
 enum class Polyad: Op { λ, Σ, Π, map }
 
-open class Gate constructor(
+open class Gate(
   id: String = randomString(),
   val op: Op = Monad.id,
   override val edgeMap: (Gate) -> Set<UnlabeledEdge>
-) : CGF, Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
+) : Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
   constructor(op: Op = Monad.id, vararg gates: Gate) : this(randomString(), op, *gates)
   constructor(id: String = randomString(), vararg gates: Gate) : this(id, Monad.id, *gates)
   constructor(id: String = randomString(), op: Op = Monad.id, vararg gates: Gate) :
@@ -121,7 +114,7 @@ class NFunction(
 }
 
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
-  CGF, Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
+  Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
   override fun render() = (target.render() - source.render()).add(Label.of(""))
     .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }

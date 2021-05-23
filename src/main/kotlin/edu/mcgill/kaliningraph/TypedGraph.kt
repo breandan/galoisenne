@@ -4,13 +4,6 @@ import edu.mcgill.kaliningraph.typefamily.IGF
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Color.*
 
-interface TGF<T: Encodable>: IGF<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>> {
-  override fun G(vertices: Set<TypedVertex<T>>) = TypedGraph(vertices)
-  override fun E(s:TypedVertex<T>, t:TypedVertex<T>) = TypedEdge(s, t)
-  override fun V(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
-    TypedVertex(edgeMap = edgeMap)
-}
-
 class TypedGraphBuilder<T: Encodable> {
   var mutGraph = TypedGraph<T>()
 
@@ -34,7 +27,7 @@ class TypedGraphBuilder<T: Encodable> {
 // TODO: convert to/from other graph types
 open class TypedGraph<T: Encodable>
 constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
-  TGF<T>, Graph<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(vertices) {
+  Graph<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(vertices) {
   constructor(vararg vertices: TypedVertex<T>): this(vertices.toSet())
 }
 
@@ -42,7 +35,7 @@ class TypedVertex<T: Encodable> constructor(
   val t: T? = null,
   var occupied: Boolean = false,
   override val edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>,
-) : TGF<T>, Vertex<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(t.toString()) {
+) : Vertex<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(t.toString()) {
   constructor(out: Set<TypedVertex<T>> = setOf()) :
     this(edgeMap = { s ->  out.map { t -> TypedEdge<T>(s, t) }.toSet() })
   constructor(t: T, out: Set<TypedVertex<T>> = emptySet()) :
@@ -58,6 +51,6 @@ class TypedVertex<T: Encodable> constructor(
 }
 
 open class TypedEdge<T: Encodable>(override val source: TypedVertex<T>, override val target: TypedVertex<T>, val v: String? = null) :
-  TGF<T>, Edge<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(source, target) {
+  Edge<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(source, target) {
   override fun render() = super.render().also { it.add(if (source.occupied) RED else BLACK) }
 }

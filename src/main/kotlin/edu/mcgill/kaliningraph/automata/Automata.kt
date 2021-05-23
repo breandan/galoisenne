@@ -3,23 +3,16 @@ package edu.mcgill.kaliningraph.automata
 import edu.mcgill.kaliningraph.*
 import edu.mcgill.kaliningraph.typefamily.IGF
 
-interface AGF: IGF<Automaton, Transition, State> {
-  override fun G(vertices: Set<State>) = Automaton(vertices)
-  override fun E(s: State, t: State) = Transition(s, t)
-  override fun V(newId: String, edgeMap: (State) -> Set<Transition>) =
-    State(edgeMap = edgeMap)
-}
-
 open class Automaton(override val vertices: Set<State> = setOf(State()))
-  : AGF, Graph<Automaton, Transition, State>(vertices) {}
+  : Graph<Automaton, Transition, State>(vertices) {}
 
 open class Transition(override val source: State, override val target: State, val string: String? = null) :
-  AGF, Edge<Automaton, Transition, State>(source, target)
+  Edge<Automaton, Transition, State>(source, target)
 
 open class State(
   id: String = randomString(),
   override val edgeMap: (State) -> Set<Transition>
-) : AGF, Vertex<Automaton, Transition, State>(id) {
+) : Vertex<Automaton, Transition, State>(id) {
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
     edgeMap = { s -> out.map { t -> Transition(s, t) }.toSet() })
 

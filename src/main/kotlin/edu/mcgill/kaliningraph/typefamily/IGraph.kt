@@ -1,5 +1,9 @@
 package edu.mcgill.kaliningraph.typefamily
 
+import java.lang.reflect.*
+import kotlin.jvm.functions.Function1
+import kotlin.reflect.KClass
+
 // Reified constructors
 @Suppress("FunctionName")
 /**
@@ -10,12 +14,20 @@ package edu.mcgill.kaliningraph.typefamily
  * [edu.mcgill.kaliningraph.circuits.CircuitBuilder]
  */
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
-  // Inheritors must implement these three "constructors"
-  // TODO: can we delegate to the constructor at runtime using reflection magic?
-  // https://stackoverflow.com/questions/10470263/create-new-object-using-reflection
-  fun V(newId: String = "", edgeMap: (V) -> Set<E>): V
-  fun G(vertices: Set<V> = setOf()): G
-  fun E(s: V, t: V): E
+  fun G(vertices: Set<V> = setOf()): G = g().newInstance(vertices) as G
+
+  fun E(s: V, t: V): E = e().newInstance(s, t) as E
+
+  fun V(newId: String = "", edgeMap: (V) -> Set<E>): V =
+    v().newInstance(newId, edgeMap) as V
+
+  fun V(old: V, edgeMap: (V) -> Set<E>): V =
+    try {
+      V(old.id, edgeMap)
+    } catch (e: Exception) {
+      // If no default constructor is provided, implementors must override V
+      old.V(old, edgeMap)
+    }
 
   fun V(newId: String = "", out: Set<V> = emptySet()): V =
     V(newId) { s -> out.map { t -> E(s, t) }.toSet() }
@@ -33,7 +45,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
       list.isEmpty() -> setOf()
       list allAre G() -> G(list.fold(G()) { it, acc -> it + acc as G }.vertices)
       list allAre V() -> G(list.map { it as V }.toSet())
-      list.any { it is IGF<*, *, *> } -> list.first { it is IGF<*, *, *> }
+      list anyAre IGF::class -> list.first { it is IGF<*, *, *> }
         .let { throw Exception("Unsupported: Graph(${it::class.java})") }
       else -> G(*list.toList().zipWithNext().toTypedArray())
     }
@@ -41,6 +53,20 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
 
   fun G(graph: String): G =
     graph.split(" ").fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
+
+  // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
+  private fun gev(): Array<Class<*>> =
+    (javaClass.let {
+      if (it.genericSuperclass is ParameterizedType) it.genericSuperclass
+      else it.superclass.genericSuperclass
+    } as ParameterizedType).actualTypeArguments.map {
+      if (it is Class<*>) it
+      else ((it as ParameterizedType).rawType as Class<*>)
+    }.toTypedArray()
+
+  private fun g() = gev()[0].getConstructor(Set::class.java)
+  private fun e() = gev().let { it[1].getConstructor(it[2], it[2]) }
+  private fun v() = gev()[2].getConstructor(java.lang.String::class.java, Function1::class.java)
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
@@ -85,7 +111,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   infix fun join(that: G): Set<V> =
     (vertices intersect that.vertices).sortedBy { it.id }.toSet()
       .zip((that.vertices intersect vertices).sortedBy { it.id }.toSet())
-      .map { (left, right) -> V(left.id) { left.outgoing + right.outgoing } }
+      .map { (left, right) -> V(left) { left.outgoing + right.outgoing } }
       .toSet()
 
   // TODO: Reimplement using matrix transpose
@@ -112,7 +138,7 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   val graph: G get() = G(neighbors(-1))
   val incoming: Set<E> get() = graph.reversed().edgMap[this] ?: emptySet()
   val outgoing: Set<E> get() = edgeMap(this as V).toSet()
-  val edgeMap: (V) -> Collection<E> // Make a self-loop by passing this
+  val edgeMap: (V) -> Set<E> // Make a self-loop by passing this
 
   open val neighbors get() = outgoing.map { it.target }.toSet()
   open val outdegree get() = neighbors.size
@@ -132,10 +158,15 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   fun neighborhood(): G = G(neighbors(0).closure())
 }
 
-infix fun Any.isA(that: Any) =
-  this::class.java.let { that::class.java.isAssignableFrom(it) }
+// Maybe we can hack reification using super type tokens?
+infix fun Any.isA(that: Any) = when (that) {
+  is KClass<out Any> -> that.java
+  is Class<out Any> -> that
+  else -> that::class.java
+}.let { this::class.java.isAssignableFrom(it) }
 
 infix fun Collection<Any>.allAre(that: Any) = all { it isA that }
+infix fun Collection<Any>.anyAre(that: Any) = any { it isA that }
 
 // https://github.com/amodeus-science/amod
 //abstract class Map : IGraph<Map, Road, City>
