@@ -54,7 +54,7 @@ dependencies {
 
   testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.redislabs:jredisgraph:2.3.0")
-  testImplementation("io.lacuna:bifurcan:0.2.0-alpha4")
+  testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 
   val jgraphtVersion by extra { "1.5.1" }

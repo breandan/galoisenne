@@ -1,6 +1,7 @@
 package edu.mcgill.kaliningraph
 
 import guru.nidi.graphviz.model.MutableGraph
+import io.lacuna.bifurcan.*
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
@@ -10,7 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
 class TranslationInvarianceTest {
-  val randomGraph = LabeledGraph().prefAttach(vertices = 10)
+  val randomGraph = LabeledGraph { a - b - c - d - e; a - c - e }
 
   @Test
   fun testTinkerpop() =
@@ -40,13 +41,13 @@ class TranslationInvarianceTest {
     }
 
   fun <G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>> Graph<G, E, V>.toBifurcan() =
-    io.lacuna.bifurcan.Graph<V, E>().apply {
-      adjList.forEach { (source, target) -> edge(source, target) }
-    }
+    edges.fold(Graph<V, E>() as IGraph<V, E>) { a, b -> a.link(b.source, b.target) }
 
-  fun <V, E> io.lacuna.bifurcan.Graph<V, E>.toKaliningraph() =
+  fun <V, E> IGraph<V, E>.toKaliningraph() =
     LabeledGraph {
-      edges().forEach { LGVertex(it.from().toString()) - LGVertex(it.to().toString()) }
+      edges().forEach {
+        LGVertex(it.from().toString()) - LGVertex(it.to().toString())
+      }
     }
 
   fun <E> org.jgrapht.Graph<String, E>.toKaliningraph() =

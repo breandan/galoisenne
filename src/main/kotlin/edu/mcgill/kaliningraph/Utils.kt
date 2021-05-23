@@ -1,6 +1,7 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.matrix.BMat
+import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.*
 
 import guru.nidi.graphviz.attribute.*
@@ -144,8 +145,8 @@ inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
 
 fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
 
-fun <G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>
-  Graph<G, E, V>.toGraphviz() =
+fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
+  IGraph<G, E, V>.toGraphviz() =
   graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]

@@ -17,7 +17,6 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   // TODO: Is this still needed?
   open val prototype: V? by lazy { vertices.firstOrNull() }
 
-  val totalEdges: Int by lazy { vertices.sumOf { it.neighbors.size } }
   protected val index: VIndex<G, E, V> by lazy { VIndex(vertices) }
 
   protected class VIndex<G: Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>>(val set: Set<V>) {
@@ -124,46 +123,37 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
     m: Graph<G, E, V>.(SpsMat) -> SpsMat = { σ(z(A * it * W + it * W + b)) }
   ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
-  fun isomorphicTo(that: G) =
-    this.size == that.size &&
-      totalEdges == that.totalEdges &&
-      hashCode() == that.hashCode()
+  // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
+  tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
+    if (vertices <= 0) graph
+    else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
+
+  fun attachRandomT(degree: Int): G =
+    this + V(
+      newId = size.toString(),
+      out = if (vertices.isEmpty()) emptySet()
+      else degMap.sample().take(degree.coerceAtMost(size)).toSet()
+    ).graph
 
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
 
   override fun hashCode() = wl().values.sorted().hashCode()
 
-  // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-
-  tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
-    if (vertices <= 0) graph
-    else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
-
-  fun attachRandomT(degree: Int): G =
-    this + (prototype?.V(
-      newId = size.toString(),
-      out = if (vertices.isEmpty()) emptySet()
-      else degMap.sample().take(degree.coerceAtMost(size)).toSet()
-    )?.graph ?: G())
-
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() =
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
-
-  open fun render() = toGraphviz()
 }
 
 abstract class Edge<G, E, V>(override val source: V, override val target: V): IEdge<G, E, V>
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val graph by lazy { target.graph }
-  open fun render(): Link = (source.render() - target.render()).add(Label.of(""))
   operator fun component1() = source
   operator fun component2() = target
 }
 
-abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encodable
+abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val outgoing by lazy { edgeMap(this as V).toSet() }
   override val incoming by lazy { graph.reversed().edgMap[this] ?: emptySet() }
@@ -172,8 +162,8 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>, Encod
 
   override fun encode(): DoubleArray = id.vectorize()
 
-  open operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
-  open fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
+  override operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
+  override fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
   override fun equals(other: Any?) =
     (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())
   override fun hashCode() = id.hashCode()
@@ -200,5 +190,3 @@ class RandomWalk<G, E, V>(
 
   override fun iterator() = generateSequence(this) { it.tail }.iterator()
 }
-
-interface Encodable { fun encode(): DoubleArray }

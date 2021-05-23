@@ -1,7 +1,10 @@
 package edu.mcgill.kaliningraph.typefamily
 
+import edu.mcgill.kaliningraph.*
+import guru.nidi.graphviz.attribute.Label
+import guru.nidi.graphviz.model.*
 import java.lang.reflect.ParameterizedType
-import kotlin.reflect.KClass
+import kotlin.reflect.*
 
 // Reified constructors
 @Suppress("FunctionName")
@@ -21,12 +24,8 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     v().newInstance(newId, edgeMap) as V
 
   fun V(old: V, edgeMap: (V) -> Set<E>): V =
-    try {
-      V(old.id, edgeMap)
-    } catch (e: Exception) {
-      // If no default constructor is provided, implementors must override V
-      old.V(old, edgeMap)
-    }
+    // If no default constructor is provided, implementors must override V
+    try { V(old.id, edgeMap) } catch (e: Exception) { old.V(old, edgeMap) }
 
   fun V(newId: String = "", out: Set<V> = emptySet()): V =
     V(newId) { s -> out.map { t -> E(s, t) }.toSet() }
@@ -50,6 +49,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     }
   )
 
+  // TODO: generify, only works for labeled graphs
   fun G(graph: String): G =
     graph.split(" ").fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
 
@@ -119,6 +119,13 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
       .map { (k, v) -> V(k.id) { v } }.toSet()
   )
+
+  fun isomorphicTo(that: G) =
+    this.size == that.size &&
+      edges.size == that.edges.size &&
+      hashCode() == that.hashCode()
+
+  fun render() = toGraphviz()
 }
 
 interface IEdge<G, E, V>: IGF<G, E, V>
@@ -126,10 +133,12 @@ interface IEdge<G, E, V>: IGF<G, E, V>
   val graph: G
   val source: V
   val target: V
+
+  fun render(): Link = (source.render() - target.render()).add(Label.of(""))
 }
 
 // TODO: Make this a "view" of the container graph
-interface IVertex<G, E, V>: IGF<G, E, V>
+interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val id: String
   val graph: G get() = G(neighbors(-1))
@@ -153,7 +162,13 @@ interface IVertex<G, E, V>: IGF<G, E, V>
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
   fun neighborhood(): G = G(neighbors(0).closure())
+
+  override fun encode(): DoubleArray = id.vectorize()
+  operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
+  fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
 }
+
+interface Encodable { fun encode(): DoubleArray }
 
 // Maybe we can hack reification using super type tokens?
 infix fun Any.isA(that: Any) = when (that) {

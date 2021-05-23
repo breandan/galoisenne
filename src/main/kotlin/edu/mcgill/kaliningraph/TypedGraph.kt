@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.typefamily.IGF
+import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Color.*
 
