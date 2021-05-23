@@ -56,13 +56,13 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
 
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
   private fun gev(): Array<Class<*>> =
-    (javaClass.let {
-      if (it.genericSuperclass is ParameterizedType) it.genericSuperclass
-      else it.superclass.genericSuperclass
-    } as ParameterizedType).actualTypeArguments.map {
-      if (it is Class<*>) it
-      else ((it as ParameterizedType).rawType as Class<*>)
-    }.toTypedArray()
+    (generateSequence(javaClass) { it.superclass as Class<IGF<G, E, V>> }
+      .first { it.genericSuperclass is ParameterizedType }.genericSuperclass
+      as ParameterizedType).actualTypeArguments
+      .map {
+        if (it is Class<*>) it
+        else ((it as ParameterizedType).rawType as Class<*>)
+      }.toTypedArray()
 
   private fun g() = gev()[0].getConstructor(Set::class.java)
   private fun e() = gev().let { it[1].getConstructor(it[2], it[2]) }
