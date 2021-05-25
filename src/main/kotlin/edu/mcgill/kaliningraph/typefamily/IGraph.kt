@@ -49,10 +49,6 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     }
   )
 
-  // TODO: generify, only works for labeled graphs
-  fun G(graph: String): G =
-    graph.split(" ").fold(G()) { acc, it -> acc + G(it.toCharArray().toList()) }
-
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
   private fun gev(): Array<Class<*>> =
     (generateSequence(javaClass) { it.superclass as Class<IGF<G, E, V>> }
@@ -83,11 +79,16 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
  *   - Pros: Useful for describing many algebraic path problems
  *   - Cons: Esoteric API / unsuitable as an abstract interface
  *
- * Algebraic perspective    : https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
- * Type-family perspective  : https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf#page=3
- * Inductive perspective    : https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf
- * Mathematical perspective : https://doi.org/10.1007/978-0-387-75450-5
- * Semiring perspective     : http://stedolan.net/research/semirings.pdf
+ * Algebraic perspective   : https://github.com/snowleopard/alga-paper/releases/download/final/algebraic-graphs.pdf
+ *                         : https://arxiv.org/pdf/1909.04881.pdf
+ * Type-family perspective : https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf#page=3
+ *                         : https://www.cs.cornell.edu/andru/papers/familia/familia.pdf#page=8
+ * Inductive perspective   : https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf
+ *                         : https://doi.org/10.1145/258949.258955
+ *                         : https://www.cs.utexas.edu/~wcook/Drafts/2012/graphs.pdf
+ * Semiring perspective    : http://stedolan.net/research/semirings.pdf
+ *                         : https://doi.org/10.1007/978-0-387-75450-5
+ *                         : https://doi.org/10.2200/S00245ED1V01Y201001CNT003
  */
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
@@ -134,6 +135,9 @@ interface IEdge<G, E, V>: IGF<G, E, V>
   val source: V
   val target: V
 
+  operator fun component1() = source
+  operator fun component2() = target
+
   fun render(): Link = (source.render() - target.render()).add(Label.of(""))
 }
 
@@ -146,8 +150,8 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   val outgoing: Set<E> get() = edgeMap(this as V).toSet()
   val edgeMap: (V) -> Set<E> // Make a self-loop by passing this
 
-  open val neighbors get() = outgoing.map { it.target }.toSet()
-  open val outdegree get() = neighbors.size
+  val neighbors get() = outgoing.map { it.target }.toSet()
+  val outdegree get() = neighbors.size
 
   // tailrec prohibited on open members? may be possible with deep recursion
   // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-deep-recursive-function/
@@ -181,6 +185,6 @@ infix fun Collection<Any>.allAre(that: Any) = all { it isA that }
 infix fun Collection<Any>.anyAre(that: Any) = any { it isA that }
 
 // https://github.com/amodeus-science/amod
-//abstract class Map : IGraph<Map, Road, City>
-//abstract class Road : IEdge<Map, Road, City>
-//abstract class City : IVertex<Map, Road, City>
+abstract class TMap  : IGraph<TMap, TRoad, TCity>
+abstract class TRoad : IEdge<TMap, TRoad, TCity>
+abstract class TCity : IVertex<TMap, TRoad, TCity>

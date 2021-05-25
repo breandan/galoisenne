@@ -1,6 +1,6 @@
 # Kaliningraph
 
-[![Kotlin 1.5.0](https://img.shields.io/badge/Kotlin-1.5.0-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
+[![Kotlin 1.5.10](https://img.shields.io/badge/Kotlin-1.5.10-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
 [![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.breandan:kaliningraph:0.1.6")
+    implementation("com.github.breandan:kaliningraph:0.1.7")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
   <dependency>
     <groupId>com.github.breandan</groupId>
     <artifactId>kaliningraph</artifactId>
-    <version>0.1.6</version>
+    <version>0.1.7</version>
   </dependency>
 </project>
 ```
@@ -49,7 +49,7 @@ To access notebook support, use the following line magic:
 
 ```
 @file:Repository("https://jitpack.io")
-@file:DependsOn("com.github.breandan:kaliningraph:0.1.6")
+@file:DependsOn("com.github.breandan:kaliningraph:0.1.7")
 ```
 
 For more information, explore our tutorials:
@@ -67,7 +67,7 @@ What are neighbors? Neighbors are a graph.
 
 ## Getting Started
 
-Run [the demo](src/main/kotlin/edu/mcgill/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
+Run [the demo](src/test/kotlin/edu/mcgill/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
 
 ## Usage
 

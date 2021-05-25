@@ -2,12 +2,9 @@ package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.matrix.*
 import edu.mcgill.kaliningraph.typefamily.*
-import guru.nidi.graphviz.attribute.Label
-import guru.nidi.graphviz.model.*
 import org.ejml.kotlin.*
-import kotlin.math.*
+import kotlin.math.sqrt
 import kotlin.random.Random
-import kotlin.reflect.KProperty
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   IGraph<G, E, V>,
@@ -149,8 +146,6 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
 abstract class Edge<G, E, V>(override val source: V, override val target: V): IEdge<G, E, V>
   where G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V> {
   override val graph by lazy { target.graph }
-  operator fun component1() = source
-  operator fun component2() = target
 }
 
 abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>
@@ -160,10 +155,6 @@ abstract class Vertex<G, E, V>(override val id: String): IVertex<G, E, V>
   override val neighbors by lazy { outgoing.map { it.target }.toSet() }
   override val outdegree by lazy { neighbors.size }
 
-  override fun encode(): DoubleArray = id.vectorize()
-
-  override operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
-  override fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
   override fun equals(other: Any?) =
     (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())
   override fun hashCode() = id.hashCode()

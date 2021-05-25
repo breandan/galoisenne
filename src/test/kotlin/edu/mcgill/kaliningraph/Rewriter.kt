@@ -8,7 +8,7 @@ import kotlin.random.Random
 @ExperimentalStdlibApi
 fun main() {
   animate(
-    LabeledGraph.G("abcdecfghia").also { println(it) }
+    LabeledGraph("abcdecfghia").also { println(it) }
   ) { _: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
     when {
       "Left" in it.key -> {

@@ -63,7 +63,7 @@ fun BMat.show(filename: String = "temp") = matToImg().let { data ->
   }
 }.show()
 
-val browserCmd = System.getProperty("os.name").toLowerCase().let { os ->
+val browserCmd = System.getProperty("os.name").lowercase().let { os ->
   when {
     "win" in os -> "rundll32 url.dll,FileProtocolHandler"
     "mac" in os -> "open"
@@ -91,8 +91,6 @@ fun BMat.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 
-private operator fun <K, V> Pair<K, V>.component2(): V = second
-private operator fun <K, V> Pair<K, V>.component1(): K = first
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
@@ -101,7 +99,7 @@ fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Defa
 fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
 
-fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumBy { it.count { it == 0.0 } })
+fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumOf { it.count { it == 0.0 } })
   .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
 
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
@@ -115,7 +113,7 @@ fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
   measureTimeMillis { constructor.power(100, matmul) }
 
 fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
-  (0..exp).fold(this) { acc, i -> matmul(acc, this) }
+  generateSequence(this) { matmul(it, this) }.take(exp)
 
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =

@@ -20,5 +20,5 @@ class LabeledGraphTest {
   )
 
   @Test
-  fun testStringConstructor() = assertEquals(graph, LabeledGraph.G("abcde ace"))
+  fun testStringConstructor() = assertEquals(graph, LabeledGraph("abcde ace"))
 }

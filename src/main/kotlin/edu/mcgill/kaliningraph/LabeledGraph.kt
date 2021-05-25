@@ -53,6 +53,11 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   companion object: LabeledGraph() {
     operator fun invoke(builder: LGBuilder.() -> Unit) =
       LGBuilder().also { it.builder() }.mutGraph
+
+    operator fun invoke(graph: String) =
+      graph.split(" ").fold(G()) { acc, it ->
+        acc + G(*it.toList().zipWithNext().toTypedArray())
+      }
   }
 
   var accumuator = mutableSetOf<String>()
@@ -63,7 +68,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   fun rewrite(substitution: Pair<String, String>) =
     randomWalk().take(200).toList().joinToString("")
       .replace(substitution.first, substitution.second)
-      .let { LabeledGraph.G(it) }
+      .let { LabeledGraph(it) }
 
   fun propagate() {
     val (previousStates, unoccupied) = vertices.partition { it.occupied }
@@ -96,8 +101,7 @@ open class LabeledEdge(
   override val source: LGVertex,
   override val target: LGVertex,
   val label: String? = null
-):
-  Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
+): Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
   constructor(source: LGVertex, target: LGVertex): this(source, target, null)
 
   override fun render() =
