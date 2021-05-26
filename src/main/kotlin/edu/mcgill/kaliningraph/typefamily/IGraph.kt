@@ -16,7 +16,9 @@ import kotlin.reflect.*
  * [edu.mcgill.kaliningraph.circuits.CircuitBuilder]
  */
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
-  fun G(vertices: Set<V> = setOf()): G = g().newInstance(vertices) as G
+  fun G(vertices: Set<V> = setOf()): G =
+    (if (vertices isA g().declaringClass) vertices // G(graph) -> graph
+    else g().newInstance(vertices)) as G
 
   fun E(s: V, t: V): E = e().newInstance(s, t) as E
 
@@ -38,16 +40,14 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     p2v: (Pair<T, T>) -> V = { (s, t) -> V("$s", setOf(V("$t"))) }
   ): G = adjList.map { p2v(it) }.fold(G()) { acc, v -> acc + v.graph }
 
-  fun <T: Any> G(list: List<T>): G = G(
-    when {
-      list.isEmpty() -> setOf()
-      list allAre G() -> G(list.fold(G()) { it, acc -> it + acc as G }.vertices)
-      list allAre V() -> G(list.map { it as V }.toSet())
-      list anyAre IGF::class -> list.first { it is IGF<*, *, *> }
-        .let { throw Exception("Unsupported: Graph(${it::class.java})") }
-      else -> G(*list.toList().zipWithNext().toTypedArray())
-    }
-  )
+  fun <T: Any> G(list: List<T> = emptyList()): G = when {
+    list.isEmpty() -> setOf()
+    list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
+    list allAre V() -> list.map { it as V }.toSet()
+    list anyAre IGF::class -> list.first { it is IGF<*, *, *> }
+      .let { throw Exception("Unsupported: Graph(${it::class.java})") }
+    else -> G(*list.toList().zipWithNext().toTypedArray())
+  }.let { G(it) }
 
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
   private fun gev(): Array<Class<*>> =
@@ -93,7 +93,8 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
-  val edgList: List<Pair<V, E>> get() = vertices.flatMap { s -> s.outgoing.map { s to it } }
+  val edgList: List<Pair<V, E>>
+    get() = vertices.flatMap { s -> s.outgoing.map { s to it } }
   val adjList: List<Pair<V, V>> get() = edgList.map { (v, e) -> v to e.target }
   val edgMap: Map<V, Set<E>> get() = vertices.associateWith { it.outgoing }
   val edges: Set<E> get() = edgMap.values.flatten().toSet()
@@ -113,15 +114,14 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
       .toSet()
 
   // TODO: Reimplement using matrix transpose
-  fun reversed(): G = G(
+  fun reversed(): G =
     (vertices.associateWith { setOf<E>() } +
       vertices.flatMap { src ->
         src.outgoing.map { edge -> edge.target to E(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
-      .map { (k, v) -> V(k.id) { v } }.toSet()
-  )
+      .map { (k, v) -> V(k.id) { v } }.toSet().let { G(it) }
 
-  fun isomorphicTo(that: G) =
+  fun isomorphicTo(that: G): Boolean =
     this.size == that.size &&
       edges.size == that.edges.size &&
       hashCode() == that.hashCode()
@@ -161,7 +161,7 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { vertex -> V(id) { vertex.outgoing.filter { it.target in this }.toSet() } }.toSet()
+    map { v -> V(id) { v.outgoing.filter { it.target in this }.toSet() } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
@@ -185,6 +185,6 @@ infix fun Collection<Any>.allAre(that: Any) = all { it isA that }
 infix fun Collection<Any>.anyAre(that: Any) = any { it isA that }
 
 // https://github.com/amodeus-science/amod
-abstract class TMap  : IGraph<TMap, TRoad, TCity>
-abstract class TRoad : IEdge<TMap, TRoad, TCity>
-abstract class TCity : IVertex<TMap, TRoad, TCity>
+abstract class TMap: IGraph<TMap, TRoad, TCity>
+abstract class TRoad: IEdge<TMap, TRoad, TCity>
+abstract class TCity: IVertex<TMap, TRoad, TCity>
