@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.5.20-M1"
-  kotlin("jupyter.api") version "0.10.0-42"
-  id("com.github.ben-manes.versions") version "0.38.0"
+  kotlin("jupyter.api") version "0.10.0-52"
+  id("com.github.ben-manes.versions") version "0.39.0"
 }
 
 group = "com.github.breandan"
