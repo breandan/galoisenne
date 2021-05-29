@@ -3,7 +3,8 @@ package edu.mcgill.kaliningraph.typefamily
 import edu.mcgill.kaliningraph.*
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
-import java.lang.reflect.ParameterizedType
+import java.lang.reflect.*
+import java.util.*
 import kotlin.reflect.*
 
 // Reified constructors
@@ -17,13 +18,13 @@ import kotlin.reflect.*
  */
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   fun G(vertices: Set<V> = setOf()): G =
-    (if (vertices isA g().declaringClass) vertices // G(graph) -> graph
-    else g().newInstance(vertices)) as G
+    if (vertices isA g().declaringClass) vertices as G // G(graph) -> graph
+    else g().newInstance(vertices)
 
-  fun E(s: V, t: V): E = e().newInstance(s, t) as E
+  fun E(s: V, t: V): E = e().newInstance(s, t)
 
   fun V(newId: String = "", edgeMap: (V) -> Set<E>): V =
-    v().newInstance(newId, edgeMap) as V
+    v().newInstance(newId, edgeMap)
 
   fun V(old: V, edgeMap: (V) -> Set<E>): V =
     // If no default constructor is provided, implementors must override V
@@ -57,9 +58,24 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
       .map { (if (it is ParameterizedType) it.rawType else it) as Class<*> }
       .toTypedArray()
 
-  private fun g() = gev()[0].getConstructor(Set::class.java)
-  private fun e() = gev().let { it[1].getConstructor(it[2], it[2]) }
-  private fun v() = gev()[2].getConstructor(String::class.java, Function1::class.java)
+  // TODO: state disallowed, is there a way to memoize?
+  // https://stackoverflow.com/questions/43476811/can-a-kotlin-interface-cache-a-value
+  private fun g() = gev()[0].getConstructor(Set::class.java) as Constructor<G>
+  private fun e() = gev().let { it[1].getConstructor(it[2], it[2]) } as Constructor<E>
+  private fun v() = gev()[2].getConstructor(String::class.java, Function1::class.java) as Constructor<V>
+
+  // TODO: Maybe rewrite as a compiler plugin to avoid polluting code?
+  // https://github.com/JetBrains/kotlin/blob/master/libraries/kotlinx-metadata/jvm/ReadMe.md#writing-metadata
+  fun <T> oncePer(
+    funRef: KFunction<*>? = null,
+    classRef: IGF<G, E, V> = this,
+    args: Array<*>? = null,
+    fn: () -> T
+  ): T = cache.computeIfAbsent(Triple(classRef, funRef, args)) { fn() } as T
+
+  companion object {
+    val cache = WeakHashMap<Triple<*, *, *>, Any>()
+  }
 }
 
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
@@ -93,6 +109,8 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
+
+  // TODO: memoize?
   val edgList: List<Pair<V, E>>
     get() = vertices.flatMap { s -> s.outgoing.map { s to it } }
   val adjList: List<Pair<V, V>> get() = edgList.map { (v, e) -> v to e.target }
@@ -145,6 +163,8 @@ interface IEdge<G, E, V>: IGF<G, E, V>
 interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val id: String
+
+  // TODO: memoize?
   val graph: G get() = G(neighbors(-1))
   val incoming: Set<E> get() = graph.reversed().edgMap[this] ?: emptySet()
   val outgoing: Set<E> get() = edgeMap(this as V).toSet()
