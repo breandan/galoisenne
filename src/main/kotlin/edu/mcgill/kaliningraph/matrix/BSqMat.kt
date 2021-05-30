@@ -1,8 +1,7 @@
 package edu.mcgill.kaliningraph.matrix
 
-import edu.mcgill.kaliningraph.*
-import org.ejml.data.BMatrixRMaj
-import org.ejml.data.DMatrix
+import edu.mcgill.kaliningraph.SpsMat
+import org.ejml.data.*
 import org.ejml.kotlin.*
 import kotlin.math.sqrt
 import kotlin.random.Random

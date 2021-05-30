@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph.automata
 
 import edu.mcgill.kaliningraph.*
-import edu.mcgill.kaliningraph.typefamily.IGF
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))
   : Graph<Automaton, Transition, State>(vertices) {}

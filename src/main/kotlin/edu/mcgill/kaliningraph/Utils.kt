@@ -3,7 +3,6 @@ package edu.mcgill.kaliningraph
 import edu.mcgill.kaliningraph.matrix.BMat
 import edu.mcgill.kaliningraph.typefamily.*
 import guru.nidi.graphviz.*
-
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
@@ -11,17 +10,15 @@ import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
 import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.attribute.Style.lineWidth
-import guru.nidi.graphviz.model.*
-
 import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
+import guru.nidi.graphviz.model.*
 import org.ejml.data.*
 import org.ejml.data.MatrixType.DDRM
 import org.ejml.dense.row.*
 import org.ejml.dense.row.CommonOps_DDRM.kron
 import org.ejml.ops.ConvertMatrixType
-import org.ejml.sparse.csc.CommonOps_DSCC
 import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
 import java.io.*

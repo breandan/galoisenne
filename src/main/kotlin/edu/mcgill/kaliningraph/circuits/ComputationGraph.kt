@@ -4,7 +4,6 @@ import edu.mcgill.kaliningraph.*
 import edu.mcgill.kaliningraph.circuits.Dyad.*
 import edu.mcgill.kaliningraph.circuits.Gate.Companion.wrap
 import edu.mcgill.kaliningraph.circuits.Polyad.λ
-import edu.mcgill.kaliningraph.typefamily.IGF
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty

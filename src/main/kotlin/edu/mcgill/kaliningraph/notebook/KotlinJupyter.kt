@@ -3,9 +3,9 @@ package edu.mcgill.kaliningraph.notebook
 import edu.mcgill.kaliningraph.*
 import edu.mcgill.kaliningraph.circuits.Gate
 import edu.mcgill.kaliningraph.matrix.BMat
+import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.annotations.JupyterLibrary
-import org.jetbrains.kotlinx.jupyter.api.*
-import org.jetbrains.kotlinx.jupyter.api.libraries.*
+import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 
 @JupyterLibrary
 internal class Integration: JupyterIntegration() {

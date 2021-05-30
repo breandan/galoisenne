@@ -1,8 +1,9 @@
 package edu.mcgill.kaliningraph
 
-import edu.mcgill.kaliningraph.typefamily.*
-import guru.nidi.graphviz.attribute.*
-import guru.nidi.graphviz.attribute.Color.*
+import edu.mcgill.kaliningraph.typefamily.Encodable
+import guru.nidi.graphviz.attribute.Color.BLACK
+import guru.nidi.graphviz.attribute.Color.RED
+import guru.nidi.graphviz.attribute.Style
 
 class TypedGraphBuilder<T: Encodable> {
   var mutGraph = TypedGraph<T>()
