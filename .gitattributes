@@ -1,2 +1,2 @@
-latex/* linguist-detectable=false
-notebooks/* linguist-detectable=false
+latex/** linguist-detectable=false
+notebooks/** linguist-detectable=false
