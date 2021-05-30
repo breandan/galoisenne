@@ -1,6 +1,7 @@
 import org.gradle.api.JavaVersion.VERSION_11
-
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.gradle.api.tasks.testing.logging.*
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat.*
+import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
@@ -98,7 +99,14 @@ tasks {
   test {
     dependsOn("HelloKaliningraph")
     useJUnitPlatform()
-    testLogging { events("passed", "skipped", "failed") }
+    testLogging {
+      events = setOf(FAILED, PASSED, SKIPPED, STANDARD_OUT)
+      exceptionFormat = FULL
+      showExceptions = true
+      showCauses = true
+      showStackTraces = true
+      showStandardStreams = true
+    }
   }
 
 /*
