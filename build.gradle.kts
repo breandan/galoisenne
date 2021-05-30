@@ -16,6 +16,7 @@ repositories {
   mavenCentral()
   maven("https://jitpack.io")
   maven("https://clojars.org/repo")
+  maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
 }
 
 dependencies {
@@ -23,12 +24,17 @@ dependencies {
   implementation(kotlin("stdlib"))
   implementation(kotlin("reflect"))
 
+  // Notebook integration testing
+  testImplementation(kotlin("scripting-jvm"))
+  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-45")
+  testImplementation("io.kotest:kotest-assertions-core:4.4.3")
+
   val ejmlVersion = "0.40"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
-  implementation("org.slf4j:slf4j-simple:1.7.30")
+  testImplementation("org.slf4j:slf4j-simple:1.7.30")
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
 
