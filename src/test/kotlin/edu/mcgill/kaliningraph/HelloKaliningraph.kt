@@ -5,7 +5,6 @@ import org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY
 
 fun main() {
   println("Hello Kaliningraph!")
-  System.setProperty(DEFAULT_LOG_LEVEL_KEY, "Error")
 
   val de = LabeledGraph { d - e }
   println("de diamater: " + de.diameter())

@@ -38,9 +38,9 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.7.0")  {
-      exclude(group = "uuverifiers", module = "princess_2.13")
-    }
+  testImplementation("org.sosy-lab:java-smt:3.7.0") {
+    exclude(group = "uuverifiers", module = "princess_2.13")
+  }
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
@@ -53,7 +53,7 @@ dependencies {
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
   testImplementation("junit", "junit", "4.13.2")
-  testImplementation("com.redislabs:jredisgraph:2.3.0")
+  testImplementation("com.redislabs:jredisgraph:2.4.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
   testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 
@@ -79,8 +79,10 @@ tasks {
     }
   }
 
-  listOf("HelloKaliningraph", "Rewriter", "PrefAttach",
-    "rewriting.CipherSolver", "RegexDemo").forEach { fileName ->
+  listOf(
+    "HelloKaliningraph", "Rewriter", "PrefAttach",
+    "rewriting.CipherSolver", "RegexDemo"
+  ).forEach { fileName ->
     register(fileName, JavaExec::class) {
       main = "edu.mcgill.kaliningraph.${fileName}Kt"
       classpath = sourceSets["test"].runtimeClasspath
@@ -88,6 +90,7 @@ tasks {
   }
 
   test {
+    dependsOn("HelloKaliningraph")
     useJUnitPlatform()
     testLogging { events("passed", "skipped", "failed") }
   }
