@@ -5,13 +5,9 @@ import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.engine.Format
-import guru.nidi.graphviz.model.Factory
-import guru.nidi.graphviz.model.MutableNode
-import kweb.Kweb
-import kweb.new
-import kweb.p
+import guru.nidi.graphviz.model.*
+import kweb.*
 import kweb.state.KVar
-import kweb.textArea
 
 @ExperimentalStdlibApi
 fun main() {

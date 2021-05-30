@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph.rewriting
 
 import kotlin.system.exitProcess
-import kotlin.text.toCharArray
 
 // Tries to generate all permutations using convolution
 // on a ring buffer containing a string. Encoding:

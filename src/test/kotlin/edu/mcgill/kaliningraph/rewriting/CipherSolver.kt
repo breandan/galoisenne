@@ -2,7 +2,6 @@ package edu.mcgill.kaliningraph.rewriting
 import org.eclipse.collections.impl.multimap.bag.HashBagMultimap
 import org.eclipse.collections.impl.multimap.list.FastListMultimap
 import java.io.File
-import java.util.*
 
 /**
  * The isogram cipher takes an isogram (a word with no repeating letters) as

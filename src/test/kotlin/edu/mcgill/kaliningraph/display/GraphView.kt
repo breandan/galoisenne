@@ -5,8 +5,6 @@ import edu.mcgill.kaliningraph.matrix.BMat
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
-import org.ejml.kotlin.times
-import org.ejml.kotlin.transpose
 
 fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, MutableList<LabeledGraph>) -> Unit) {
   val graphs = mutableListOf(initial)

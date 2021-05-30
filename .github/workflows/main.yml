@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: 11
       - name: Build with Gradle
-        run: ./gradlew test --stacktrace
+        run: ./gradlew test --stacktrace -Dorg.gradle.jvmargs="-Xms512m -Xmx1024m"

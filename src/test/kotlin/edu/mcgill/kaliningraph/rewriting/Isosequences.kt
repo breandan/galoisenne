@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph.rewriting
 
 import info.debatty.java.stringsimilarity.Levenshtein
-import kotlin.math.min
 
 // Experiment: probabilistic subgraph ismorphism as
 // substring matching on a random walk trace. E.g.:

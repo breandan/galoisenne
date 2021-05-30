@@ -1,7 +1,7 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.matrix.BSqMat
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
 class TestBMatMul {

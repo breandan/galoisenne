@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 
 class LabeledGraphTest {

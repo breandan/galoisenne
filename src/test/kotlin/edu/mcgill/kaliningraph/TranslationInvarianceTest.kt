@@ -2,11 +2,11 @@ package edu.mcgill.kaliningraph
 
 import guru.nidi.graphviz.model.MutableGraph
 import io.lacuna.bifurcan.*
+import io.lacuna.bifurcan.Graph
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.graph.SimpleDirectedGraph
+import org.jgrapht.graph.*
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 

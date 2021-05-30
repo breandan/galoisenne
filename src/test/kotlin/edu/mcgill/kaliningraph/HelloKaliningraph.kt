@@ -1,7 +1,6 @@
 package edu.mcgill.kaliningraph
 
 import edu.mcgill.kaliningraph.circuits.CircuitBuilder
-import org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY
 
 fun main() {
   println("Hello Kaliningraph!")

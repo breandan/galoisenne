@@ -1,6 +1,6 @@
 package edu.mcgill.kaliningraph.smt
 
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Test
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.BooleanFormula
