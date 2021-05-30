@@ -11,7 +11,7 @@ fun main() {
   val dce = LabeledGraph { d - c - e }
   println("dce diamater: " + dce.diameter())
   val dacbe = LabeledGraph { d - a - c - b - e - f - g - h - i - j - k }
-  dacbe.show()
+//  dacbe.show()
   println("dacbe diamater: " + dacbe.diameter())
 
   val abcd = LabeledGraph { a - b - c - d }
@@ -20,7 +20,7 @@ fun main() {
   val dg = LabeledGraph.G(dacbe, dce, de) +
     LabeledGraph.G(abcd, cfde)
 
-  dg.show()
+//  dg.show()
 
   val l = dg.vertices.first()
   println("$l:" + l.neighbors())
