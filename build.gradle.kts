@@ -6,7 +6,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.5.20-M1"
-  kotlin("jupyter.api") version "0.10.0-45"
+  kotlin("jupyter.api") version "0.10.0-49"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
 
@@ -27,7 +27,7 @@ dependencies {
 
   // Notebook integration testing
   testImplementation(kotlin("scripting-jvm"))
-  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-45")
+  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-49")
   testImplementation("io.kotest:kotest-assertions-core:4.4.3")
 
   val ejmlVersion = "0.40"
