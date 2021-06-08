@@ -75,7 +75,7 @@ dependencies {
   testImplementation("info.debatty:java-string-similarity:2.0.0")
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
   sourceCompatibility = VERSION_11
 }
 
