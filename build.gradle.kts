@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.5.30-dev-1676"
+  kotlin("jvm") version "1.5.30-dev-2019"
   kotlin("jupyter.api") version "0.10.0-53"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
@@ -45,7 +45,7 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.7.0") {
+  testImplementation("org.sosy-lab:java-smt:3.8.0") {
     exclude(group = "uuverifiers", module = "princess_2.13")
   }
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
@@ -91,7 +91,7 @@ tasks {
     "rewriting.CipherSolver", "RegexDemo"
   ).forEach { fileName ->
     register(fileName, JavaExec::class) {
-      main = "edu.mcgill.kaliningraph.${fileName}Kt"
+      mainClass.set("edu.mcgill.kaliningraph.${fileName}Kt")
       classpath = sourceSets["test"].runtimeClasspath
     }
   }
