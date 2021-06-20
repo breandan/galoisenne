@@ -1,6 +1,6 @@
+
 import org.gradle.api.JavaVersion.VERSION_11
-import org.gradle.api.tasks.testing.logging.*
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat.*
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
@@ -45,9 +45,7 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.8.0") {
-    exclude(group = "uuverifiers", module = "princess_2.13")
-  }
+  testImplementation("org.sosy-lab:java-smt:3.9.0-1-g304079c2")
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
