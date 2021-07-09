@@ -17,6 +17,6 @@ jobs:
         uses: DeLaGuardo/setup-graalvm@master
         with:
           graalvm: '21.1.0'
-          java: 'java16'
+          java: 'java11'
       - name: Build with Gradle
         run: ./gradlew test --stacktrace
