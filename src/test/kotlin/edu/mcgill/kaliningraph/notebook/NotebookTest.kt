@@ -8,19 +8,19 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlinx.jupyter.*
 import org.jetbrains.kotlinx.jupyter.api.*
 import org.jetbrains.kotlinx.jupyter.libraries.EmptyResolutionInfoProvider
-import org.junit.Before
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
-import kotlin.reflect.full.memberProperties
 import kotlin.script.experimental.jvm.util.classpathFromClassloader
 
 
 class RenderingTests: AbstractReplTest() {
   @Test
-  fun `graph is rendered to html`() {
+  fun `circuit is rendered to html`() {
     @Language("kts")
     val html = execHtml(
       """
+        // Not sure why preamble is still needed here...
+        // https://github.com/Kotlin/kotlin-jupyter/issues/270
             @file:Repository("https://jitpack.io")
             @file:DependsOn("com.github.breandan:kaliningraph:0.1.7")
 
@@ -37,21 +37,19 @@ class RenderingTests: AbstractReplTest() {
   }
 }
 
-// https://github.com/Kotlin/kotlin-jupyter/issues/270
 abstract class AbstractReplTest {
   private val repl: ReplForJupyter = ReplForJupyterImpl(
-    EmptyResolutionInfoProvider, classpath, isEmbedded = true)
+    EmptyResolutionInfoProvider, classpath, isEmbedded = true
+  )
 
-  @Before
+  @BeforeEach
   fun initRepl() {
     // Jupyter integration is loaded after some code was executed, so we do it here
     // We also define here a class to retrieve values without rendering
     exec("class $WRAP(val $WRAP_VAL: Any?)")
   }
 
-  fun exec(code: Code): Any? {
-    return repl.eval(code).resultValue
-  }
+  fun exec(code: Code): Any? = repl.eval(code).resultValue
 
   @JvmName("execTyped")
   inline fun <reified T: Any> exec(code: Code): T {
@@ -73,20 +71,6 @@ abstract class AbstractReplTest {
 
     private const val WRAP_VAL = "v"
 
-    private val classpath = run {
-      val scriptArtifacts = setOf(
-        "kotlin-jupyter-lib",
-        "kotlin-jupyter-api",
-        "kotlin-jupyter-shared-compiler",
-        "kotlin-stdlib",
-        "kotlin-reflect",
-        "kotlin-script-runtime",
-      )
-      classpathFromClassloader(DependsOn::class.java.classLoader).orEmpty().filter { file ->
-        val name = file.name
-        (name == "main" && file.parentFile.name == "kotlin")
-          || (file.extension == "jar" && scriptArtifacts.any { name.startsWith(it) })
-      }
-    }
+    private val classpath = classpathFromClassloader(DependsOn::class.java.classLoader).orEmpty()
   }
 }
