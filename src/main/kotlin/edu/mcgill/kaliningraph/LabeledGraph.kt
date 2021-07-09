@@ -8,8 +8,6 @@ import guru.nidi.graphviz.attribute.Style.FILLED
 
 /**
  * DSL for labeled graphs - just enumerate paths. Duplicates will be merged.
- *
- * cf. [edu.mcgill.kaliningraph.HelloKaliningraphKt]
  */
 
 class LGBuilder {

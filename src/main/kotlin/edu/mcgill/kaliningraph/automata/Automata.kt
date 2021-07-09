@@ -3,7 +3,7 @@ package edu.mcgill.kaliningraph.automata
 import edu.mcgill.kaliningraph.*
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))
-  : Graph<Automaton, Transition, State>(vertices) {}
+  : Graph<Automaton, Transition, State>(vertices)
 
 open class Transition(override val source: State, override val target: State, val string: String? = null) :
   Edge<Automaton, Transition, State>(source, target)
