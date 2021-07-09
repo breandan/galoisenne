@@ -1,12 +1,12 @@
 
-import org.gradle.api.JavaVersion.VERSION_11
+import org.gradle.api.JavaVersion.VERSION_15
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.5.30-dev-2876"
-  kotlin("jupyter.api") version "0.10.0-53"
+  kotlin("jvm") version "1.6.0-dev-806"
+  kotlin("jupyter.api") version "0.10.0-103"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
 
@@ -27,12 +27,13 @@ dependencies {
 
   // Notebook integration testing
   testImplementation(kotlin("scripting-jvm"))
-  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-53")
+  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-103")
   testImplementation("io.kotest:kotest-assertions-core:4.6.0")
 
-  val ejmlVersion = "0.40"
+  val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
+  api("org.graalvm.js:js:21.1.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
   testImplementation("org.slf4j:slf4j-simple:1.7.30")
@@ -74,13 +75,13 @@ dependencies {
 }
 
 configure<JavaPluginExtension> {
-  sourceCompatibility = VERSION_11
+  sourceCompatibility = VERSION_15
 }
 
 tasks {
   compileKotlin {
     kotlinOptions {
-      jvmTarget = VERSION_11.toString()
+      jvmTarget = VERSION_15.toString()
     }
   }
 

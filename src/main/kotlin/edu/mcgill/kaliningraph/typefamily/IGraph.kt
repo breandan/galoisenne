@@ -65,6 +65,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   private fun v() = gev()[2].getConstructor(String::class.java, Function1::class.java) as Constructor<V>
 
   // TODO: Maybe rewrite as a compiler plugin to avoid polluting code?
+  // TODO: Cache values of nullary functions to avoid recomputing
   // https://github.com/JetBrains/kotlin/blob/master/libraries/kotlinx-metadata/jvm/ReadMe.md#writing-metadata
   fun <T> oncePer(
     funRef: KFunction<*>? = null,
