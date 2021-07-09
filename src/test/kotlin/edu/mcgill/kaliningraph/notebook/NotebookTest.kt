@@ -67,14 +67,6 @@ abstract class AbstractReplTest {
     return html
   }
 
-  fun execWrapped(code: Code): Any? {
-    val wrapped = exec(code)!!
-    @Suppress("UNCHECKED_CAST")
-    val clazz = wrapped::class as KClass<Any>
-    val prop = clazz.memberProperties.single { it.name == WRAP_VAL }
-    return prop.get(wrapped)
-  }
-
   companion object {
     @JvmStatic
     protected val WRAP = "W"
