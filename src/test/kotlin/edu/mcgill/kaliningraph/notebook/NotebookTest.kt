@@ -15,23 +15,10 @@ import kotlin.script.experimental.jvm.util.classpathFromClassloader
 
 class RenderingTests: AbstractReplTest() {
   @Test
-  fun `circuit is rendered to html`() {
+  fun `labeled graph is rendered to html`() {
     @Language("kts")
     val html = execHtml(
-      """
-        // Not sure why preamble is still needed here...
-        // https://github.com/Kotlin/kotlin-jupyter/issues/270
-            @file:Repository("https://jitpack.io")
-            @file:DependsOn("com.github.breandan:kaliningraph:0.1.7")
-
-            import edu.mcgill.kaliningraph.*
-            import edu.mcgill.kaliningraph.matrix.*
-            import edu.mcgill.kaliningraph.circuits.*
-            import org.ejml.data.*
-            import org.ejml.kotlin.*
-
-            val g1 = LabeledGraph { a - b - c - a }; g1
-        """.trimIndent()
+      """LabeledGraph { a - b - c - a }""".trimIndent()
     )
     html shouldContain "polygon"
   }

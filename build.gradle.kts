@@ -6,7 +6,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   `maven-publish`
   kotlin("jvm") version "1.6.0-dev-806"
-  kotlin("jupyter.api") version "0.10.0-103"
+  kotlin("jupyter.api") version "0.10.0-106"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
 
@@ -26,9 +26,19 @@ dependencies {
   implementation(kotlin("reflect"))
 
   // Notebook integration testing
+  // Notebook integration test
+  testImplementation(kotlin("reflect"))
   testImplementation(kotlin("scripting-jvm"))
-  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-103")
-  testImplementation("io.kotest:kotest-assertions-core:4.6.0")
+  testImplementation("junit", "junit", "4.13.2")
+  testImplementation("org.jetbrains.kotlinx:kotlin-jupyter-kernel:0.10.0-106")
+
+  // Property-based testing
+
+  val kotestVersion = "4.6.1"
+  testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+  testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+  testImplementation("io.kotest:kotest-property:$kotestVersion")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
 
   val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
@@ -58,10 +68,8 @@ dependencies {
   // https://github.com/jgralab/jgralab/wiki
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-  testImplementation("junit", "junit", "4.13.2")
   testImplementation("com.redislabs:jredisgraph:2.4.0")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.7.0")
 
   val jgraphtVersion by extra { "1.5.1" }
   testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
