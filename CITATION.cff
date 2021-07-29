@@ -7,6 +7,7 @@ authors:
   given-names: "Xujie"
 - family-names: "Guo"
   given-names: "Jin"
-title: "Kaliningraph: A Type Family of Algebraic Graphs for the JVM"
-doi: 10.5281/zenodo.3549076
-url: "https://doi.org/10.5281/zenodo.3549076"
+title: "Kaliningraph: A Type Family of Algebraic Graphs"
+version: 0.1.8
+url: "https://github.com/breandan/kaliningraph"
+date-released: 2021-07-28
