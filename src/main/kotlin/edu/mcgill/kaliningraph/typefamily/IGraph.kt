@@ -47,7 +47,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     list allAre V() -> list.map { it as V }.toSet()
     list anyAre IGF::class -> list.first { it is IGF<*, *, *> }
       .let { throw Exception("Unsupported: Graph(${it::class.java})") }
-    else -> G(*list.toList().zipWithNext().toTypedArray())
+    else -> G(*list.zipWithNext().toTypedArray())
   }.let { G(it) }
 
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html

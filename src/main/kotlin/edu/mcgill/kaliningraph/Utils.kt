@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
 import java.io.*
 import java.math.*
+import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
 import kotlin.math.*
@@ -70,6 +71,7 @@ val browserCmd = System.getProperty("os.name").lowercase().let { os ->
 }
 
 fun File.show() = ProcessBuilder(browserCmd, path).start()
+fun URL.show() = ProcessBuilder(browserCmd, toString()).start()
 
 fun SpsMat.matToImg(f: Int = 20): String {
   val rescaled = DMatrixRMaj(numRows * f, numCols * f)

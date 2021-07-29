@@ -8,6 +8,7 @@ import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.model.*
 import kweb.*
 import kweb.state.KVar
+import java.net.URL
 
 @ExperimentalStdlibApi
 fun main() {
@@ -25,7 +26,8 @@ fun main() {
     }
   }
 
-  ProcessBuilder(browserCmd, "http://0.0.0.0:$port").start()
+
+  URL("http://0.0.0.0:$port").show()
 }
 
 var regex = KRegex("ε")

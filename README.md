@@ -1,4 +1,4 @@
-# Kaliningraph
+# Kaliningraph: A Type Family of Algebraic Graphs for the JVM
 
 [![Kotlin 1.5.20](https://img.shields.io/badge/Kotlin-1.5.20-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
@@ -365,5 +365,6 @@ The following individuals have helped inspire this project through their enthusi
 * [Xujie Si](https://www.cs.mcgill.ca/~xsi/)
 * [Andrey Mokhov](https://blogs.ncl.ac.uk/andreymokhov/)
 * [Fabian Muehlboeck](http://pub.ist.ac.at/~fmuehlbo/#about)
+* [Ben Greenman](https://www.khoury.northeastern.edu/people/benjamin-greenman/)
 * [Dave Keenan](https://dkeenan.com/)
 * [John Tromp](http://tromp.github.io/)

@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you would like to cite Kaliningraph, please do so as follows:"
+authors:
+- family-names: "Considine"
+  given-names: "Breandan"
+- family-names: "Si"
+  given-names: "Xujie"
+- family-names: "Guo"
+  given-names: "Jin"
+title: "Kaliningraph: A Type Family of Algebraic Graphs for the JVM"
+doi: 10.5281/zenodo.3549076
+url: "https://doi.org/10.5281/zenodo.3549076"

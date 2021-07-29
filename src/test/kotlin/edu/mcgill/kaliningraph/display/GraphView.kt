@@ -5,6 +5,7 @@ import edu.mcgill.kaliningraph.matrix.BMat
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
+import java.net.URL
 
 fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, MutableList<LabeledGraph>) -> Unit) {
   val graphs = mutableListOf(initial)
@@ -35,7 +36,7 @@ fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, Mutable
     }
   }
 
-  ProcessBuilder(browserCmd, "http://0.0.0.0:16097").start()
+  URL("http://0.0.0.0:16097").show()
 }
 
 //var fromField = ""
