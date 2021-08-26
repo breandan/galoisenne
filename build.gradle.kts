@@ -5,8 +5,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.6.0-dev-1004"
-  kotlin("jupyter.api") version "0.10.0-182"
+  kotlin("jvm") version "1.6.20-dev-37"
+  kotlin("jupyter.api") version "0.10.0-216"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
 
@@ -38,7 +38,7 @@ dependencies {
   val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
-  api("org.graalvm.js:js:21.1.0")
+  api("org.graalvm.js:js:22.0.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
   testImplementation("org.slf4j:slf4j-simple:1.7.30")
@@ -63,7 +63,7 @@ dependencies {
   // https://github.com/jgralab/jgralab/wiki
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-  testImplementation("com.redislabs:jredisgraph:2.4.0")
+  testImplementation("com.redislabs:jredisgraph:2.5.1")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
 
   val jgraphtVersion by extra { "1.5.1" }
@@ -71,7 +71,7 @@ dependencies {
   testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
   testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.5.0" }
+  val tinkerpopVersion by extra { "3.5.1" }
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
   testImplementation("info.debatty:java-string-similarity:2.0.0")
