@@ -38,7 +38,7 @@ dependencies {
   val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
-  api("org.graalvm.js:js:22.0.0")
+  api("org.graalvm.js:js:21.2.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
   testImplementation("org.slf4j:slf4j-simple:1.7.30")
