@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.6.20-dev-37"
+  kotlin("jvm") version "1.6.20-dev-456"
   kotlin("jupyter.api") version "0.10.0-216"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
@@ -51,7 +51,7 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  testImplementation("org.sosy-lab:java-smt:3.9.0-1-g304079c2")
+  testImplementation("org.sosy-lab:java-smt:3.10.0")
   testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
