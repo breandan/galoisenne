@@ -5,8 +5,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
   `maven-publish`
-  kotlin("jvm") version "1.6.20-dev-456"
-  kotlin("jupyter.api") version "0.10.0-216"
+  kotlin("jvm") version "1.6.20-dev-689"
+  kotlin("jupyter.api") version "0.10.0-221"
   id("com.github.ben-manes.versions") version "0.39.0"
 }
 
@@ -26,7 +26,7 @@ dependencies {
   implementation(kotlin("reflect"))
 
   testImplementation("junit", "junit", "4.13.2")
-  testCompileOnly("org.jetbrains:annotations:21.0.1")
+  testCompileOnly("org.jetbrains:annotations:22.0.0")
 
   // Property-based testing
   val kotestVersion = "4.6.1"
@@ -41,7 +41,7 @@ dependencies {
   api("org.graalvm.js:js:21.2.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
-  testImplementation("org.slf4j:slf4j-simple:1.7.30")
+  testImplementation("org.slf4j:slf4j-simple:1.7.32")
 
   testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
 
@@ -52,7 +52,7 @@ dependencies {
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
   testImplementation("org.sosy-lab:java-smt:3.10.0")
-  testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
+  testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))

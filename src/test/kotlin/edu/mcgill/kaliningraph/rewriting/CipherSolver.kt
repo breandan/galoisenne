@@ -104,7 +104,7 @@ private fun crackCipher(possibleWords: FastListMultimap<String, String>) {
         // Try to solve for proper nouns, but let's indicate with CAPS
         if (possibleWords[token].isEmpty)
           possibleWords.put(token,
-            token.map { candidates[it].first().toUpperCase() }.joinToString(""))
+            token.map { candidates[it].first().uppercaseChar() }.joinToString(""))
       }
     }
   }

@@ -18,7 +18,7 @@ class DoublyLinkedListTest {
 //    head = head.next.next.insert("c")
 //    println(head)
     var tail = DLL("g").let { ('h'..'l').fold(it) { a, b -> a + b.toString() } }
-    head = head + tail
+    head += tail
     println(head)
     assertDLL(head)
 
