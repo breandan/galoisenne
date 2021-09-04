@@ -51,8 +51,9 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
+  
+  // I think we were going to use this to prove termination of graph rewriting
   testImplementation("org.sosy-lab:java-smt:3.10.0")
-  testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
@@ -75,6 +76,9 @@ dependencies {
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
   testImplementation("info.debatty:java-string-similarity:2.0.0")
+
+  // Used to cache graph lookups
+  implementation("com.github.ben-manes.caffeine:caffeine:3.0.3")
 }
 
 configure<JavaPluginExtension> {

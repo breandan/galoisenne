@@ -1,3 +1,4 @@
+
 package edu.mcgill.kaliningraph.circuits
 
 import edu.mcgill.kaliningraph.*
@@ -45,8 +46,11 @@ class ComputationGraph(override val vertices: Set<Gate> = setOf()):
   Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices)
 
 interface Op
+@Suppress("EnumEntryName")
 enum class Monad: Op { `+`, `-`, sin, cos, tan, id, ᵀ }
+@Suppress("EnumEntryName")
 enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
+@Suppress("EnumEntryName")
 enum class Polyad: Op { λ, Σ, Π, map }
 
 open class Gate(
