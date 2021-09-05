@@ -20,6 +20,14 @@ repositories {
   maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
 }
 
+java {
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(15))
+    vendor.set(JvmVendorSpec.ADOPTOPENJDK)
+    implementation.set(JvmImplementation.J9)
+  }
+}
+
 dependencies {
   implementation(platform(kotlin("bom")))
   implementation(kotlin("stdlib"))
@@ -51,7 +59,7 @@ dependencies {
 
   testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
-  
+
   // I think we were going to use this to prove termination of graph rewriting
   testImplementation("org.sosy-lab:java-smt:3.10.0")
 
@@ -79,10 +87,6 @@ dependencies {
 
   // Used to cache graph lookups
   implementation("com.github.ben-manes.caffeine:caffeine:3.0.3")
-}
-
-configure<JavaPluginExtension> {
-  sourceCompatibility = VERSION_15
 }
 
 tasks {
