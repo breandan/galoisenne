@@ -11,7 +11,7 @@ Kaliningraph is a purely functional graph library with a DSL for constructing gr
 
 ## Installation
 
-Kaliningraph is hosted on [JitPack](https://jitpack.io/#breandan/kaliningraph/).
+Kaliningraph is hosted on [Maven Central](https://s01.oss.sonatype.org/index.html#nexus-search;quick~kaliningraph).
 
 ### Gradle
 
@@ -24,20 +24,11 @@ dependencies {
 ### Maven
 
 ```xml
-<project>
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
-
-  <dependency>
-    <groupId>com.github.breandan</groupId>
-    <artifactId>kaliningraph</artifactId>
-    <version>0.1.7</version>
-  </dependency>
-</project>
+<dependency>
+  <groupId>com.github.breandan</groupId>
+  <artifactId>kaliningraph</artifactId>
+  <version>0.1.8</version>
+</dependency>
 ```
 
 ### Jupyter Notebook
@@ -45,8 +36,7 @@ dependencies {
 To access notebook support, use the following line magic:
 
 ```
-@file:Repository("https://jitpack.io")
-@file:DependsOn("com.github.breandan:kaliningraph:0.1.7")
+@file:DependsOn("com.github.breandan:kaliningraph:0.1.8")
 ```
 
 For more information, explore our tutorials:
