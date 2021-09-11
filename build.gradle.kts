@@ -1,16 +1,47 @@
-
-import org.gradle.api.JavaVersion.VERSION_15
+import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
+  signing
   `maven-publish`
-  kotlin("jvm") version "1.6.20-dev-689"
+  kotlin("jvm") version "1.6.20-dev-1357"
   kotlin("jupyter.api") version "0.10.0-216"
   id("com.github.ben-manes.versions") version "0.39.0"
+  id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
-group = "com.github.breandan"
+val sonatypeApiUser = providers.gradleProperty("sonatypeApiUser")
+val sonatypeApiKey = providers.gradleProperty("sonatypeApiKey")
+if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
+  configure<NexusPublishExtension> {
+    repositories {
+      sonatype {
+        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        username.set(sonatypeApiUser)
+        password.set(sonatypeApiKey)
+        useStaging.set(true)
+      }
+    }
+  }
+} else {
+  logger.info("Sonatype API key not defined, skipping configuration of Maven Central publishing repository")
+}
+
+val signingKeyId = providers.gradleProperty("signing.gnupg.keyId")
+val signingKeyPassphrase = providers.gradleProperty("signing.gnupg.passphrase")
+signing {
+  useGpgCmd()
+  if (signingKeyId.isPresent && signingKeyPassphrase.isPresent) {
+    useInMemoryPgpKeys(signingKeyId.get(), signingKeyPassphrase.get())
+    sign(extensions.getByType<PublishingExtension>().publications)
+  } else {
+    logger.info("PGP signing key not defined, skipping signing configuration")
+  }
+}
+
+group = "ai.hypergraph"
 version = "0.1.8"
 
 repositories {
@@ -21,6 +52,7 @@ repositories {
 }
 
 java {
+  withJavadocJar()
   toolchain {
     languageVersion.set(JavaLanguageVersion.of(15))
     vendor.set(JvmVendorSpec.ADOPTOPENJDK)
@@ -90,18 +122,12 @@ dependencies {
 }
 
 tasks {
-  compileKotlin {
-    kotlinOptions {
-      jvmTarget = VERSION_15.toString()
-    }
-  }
-
   listOf(
-    "HelloKaliningraph", "Rewriter", "PrefAttach",
-    "rewriting.CipherSolver", "RegexDemo"
+          "HelloKaliningraph", "Rewriter", "PrefAttach",
+          "rewriting.CipherSolver", "RegexDemo"
   ).forEach { fileName ->
     register(fileName, JavaExec::class) {
-      mainClass.set("edu.mcgill.kaliningraph.${fileName}Kt")
+      mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")
       classpath = sourceSets["test"].runtimeClasspath
     }
   }
@@ -149,6 +175,8 @@ publishing {
 
     pom {
       url.set("https://github.com/breandan/kaliningraph")
+      name.set("Kaliningraph")
+      description.set("A purely functional algebraic graph library")
       licenses {
         license {
           name.set("The Apache Software License, Version 1.0")

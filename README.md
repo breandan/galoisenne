@@ -1,6 +1,7 @@
 # Kaliningraph: A Type Family of Algebraic Graphs
 
-[![Kotlin 1.5.20](https://img.shields.io/badge/Kotlin-1.5.20-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
+[![Kotlin 1.6.20](https://img.shields.io/badge/Kotlin-1.6.20-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
+[![Maven Central](https://img.shields.io/maven-central/v/ai.hypergraph/kaliningraph.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22ai.hypergraph%22)
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
 [![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 
@@ -15,12 +16,8 @@ Kaliningraph is hosted on [JitPack](https://jitpack.io/#breandan/kaliningraph/).
 ### Gradle
 
 ```kotlin
-repositories {
-    maven("https://jitpack.io")
-}
-
 dependencies {
-    implementation("com.github.breandan:kaliningraph:0.1.7")
+    implementation("com.github.breandan:kaliningraph:0.1.8")
 }
 ```
 
