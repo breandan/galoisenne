@@ -17,7 +17,7 @@ Kaliningraph is hosted on [Maven Central](https://s01.oss.sonatype.org/index.htm
 
 ```kotlin
 dependencies {
-    implementation("com.github.breandan:kaliningraph:0.1.8")
+    implementation("ai.hypergraph:kaliningraph:0.1.8")
 }
 ```
 
@@ -25,7 +25,7 @@ dependencies {
 
 ```xml
 <dependency>
-  <groupId>com.github.breandan</groupId>
+  <groupId>ai.hypergraph</groupId>
   <artifactId>kaliningraph</artifactId>
   <version>0.1.8</version>
 </dependency>
@@ -36,7 +36,7 @@ dependencies {
 To access notebook support, use the following line magic:
 
 ```
-@file:DependsOn("com.github.breandan:kaliningraph:0.1.8")
+@file:DependsOn("ai.hypergraph:kaliningraph:0.1.8")
 ```
 
 For more information, explore our tutorials:
