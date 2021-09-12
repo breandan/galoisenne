@@ -12,9 +12,7 @@ import kotlin.reflect.KProperty
 val solverContext = SolverContextFactory.createSolverContext(Solvers.SMTINTERPOL)
 val fm = solverContext.formulaManager.integerFormulaManager
 
-class SMTTest {
-  @Test
-  fun testSMT() {
+fun main() {
     val a by SMTVar()
     val b by SMTVar()
     val c by SMTVar()
@@ -36,7 +34,6 @@ class SMTTest {
         println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
     }
   }
-}
 
 class SMTVar(val name: String? = null): IntegerFormula {
   operator fun getValue(nothing: Nothing?, property: KProperty<*>) = fm.makeVariable(property.name)

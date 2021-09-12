@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   signing
   `maven-publish`
-  kotlin("jvm") version "1.6.20-dev-1357"
+  kotlin("jvm") version "1.5.30"
   kotlin("jupyter.api") version "0.10.0-216"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -48,7 +48,6 @@ repositories {
   mavenCentral()
   maven("https://jitpack.io")
   maven("https://clojars.org/repo")
-  maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
 }
 
 java {
@@ -83,13 +82,10 @@ dependencies {
 
   testImplementation("org.slf4j:slf4j-simple:1.7.32")
 
-  testImplementation("com.github.breandan:tensor:master-SNAPSHOT")
-
   val multikVersion = "0.0.1"
   testImplementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
   testImplementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
-  testImplementation(kotlin("scripting-jsr223"))
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
 
   // I think we were going to use this to prove termination of graph rewriting
