@@ -1,12 +1,13 @@
 package ai.hypergraph.kaliningraph.smt
 
-import org.junit.jupiter.api.Test
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.BooleanFormula
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
-import javax.script.*
+import javax.script.ScriptContext
+import javax.script.ScriptEngineManager
+import javax.script.SimpleBindings
 import kotlin.reflect.KProperty
 
 val solverContext = SolverContextFactory.createSolverContext(Solvers.SMTINTERPOL)
