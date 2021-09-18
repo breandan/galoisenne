@@ -56,6 +56,7 @@ object Ops {
   object cos : TopOp(), TrigFun
   object tan : TopOp(), TrigFun
   object id : TopOp(), Monad
+  object ᵀ: TopOp(), Monad
 
   object `*` : TopOp(), Dyad
   object `⊙` : TopOp(), Dyad
