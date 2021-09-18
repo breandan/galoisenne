@@ -64,9 +64,6 @@ dependencies {
   implementation(kotlin("stdlib"))
   implementation(kotlin("reflect"))
 
-  testImplementation("junit", "junit", "4.13.2")
-  testCompileOnly("org.jetbrains:annotations:22.0.0")
-
   // Property-based testing
   val kotestVersion = "5.0.0.M1"
   testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
@@ -80,6 +77,11 @@ dependencies {
   api("org.graalvm.js:js:21.2.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
+  // Used to cache graph lookups
+  implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
+
+  testImplementation("junit", "junit", "4.13.2")
+  testCompileOnly("org.jetbrains:annotations:22.0.0")
   testImplementation("org.slf4j:slf4j-simple:1.7.32")
 
   val multikVersion = "0.0.1"
@@ -100,7 +102,7 @@ dependencies {
   // https://github.com/jgralab/jgralab/wiki
   //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-  testImplementation("com.redislabs:jredisgraph:2.5.1")
+  testImplementation("com.redislabs:jredisgraph:2.6.0-RC2")
   testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
 
   val jgraphtVersion by extra { "1.5.1" }
@@ -112,9 +114,6 @@ dependencies {
   testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
   testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
   testImplementation("info.debatty:java-string-similarity:2.0.0")
-
-  // Used to cache graph lookups
-  implementation("com.github.ben-manes.caffeine:caffeine:3.0.3")
 }
 
 tasks {

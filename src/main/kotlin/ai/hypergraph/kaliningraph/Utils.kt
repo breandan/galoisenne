@@ -50,8 +50,8 @@ const val DARKMODE = false
 fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
    toGraphviz().apply { engine(layout) }.render(format)
 
-fun Graph<*, *, *>.html() = toGraphviz().render(SVG).toString()
-fun Graph<*, *, *>.show(filename: String = "temp") =
+fun IGraph<*, *, *>.html() = toGraphviz().render(SVG).toString()
+fun IGraph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {
     toFile(File.createTempFile(filename, ".svg"))
   }.show()

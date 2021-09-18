@@ -5,31 +5,12 @@ import guru.nidi.graphviz.attribute.Color.BLACK
 import guru.nidi.graphviz.attribute.Color.RED
 import guru.nidi.graphviz.attribute.Style
 
-class TypedGraphBuilder<T: Encodable> {
-  var mutGraph = TypedGraph<T>()
-
-  operator fun TypedVertex<T>.minus(v: TypedVertex<T>) =
-    TypedVertex(v.t) { v.outgoing + TypedEdge(v, this) }
-      .also { mutGraph += it.graph }
-  operator fun TypedVertex<T>.minus(t: T): TypedVertex<T> = this - TypedVertex(t)
-  operator fun T.minus(t: TypedVertex<T>): TypedVertex<T> = TypedVertex(this) - t
-  operator fun T.minus(t: T): TypedVertex<T> = TypedVertex(this) - TypedVertex(t)
-
-  operator fun TypedVertex<T>.plus(edge: TypedEdge<T>) =
-    V(id) { outgoing + edge }.also { mutGraph += it.graph }
-
-  operator fun TypedVertex<T>.plus(vertex: TypedVertex<T>) =
-    (graph + vertex.graph).also { mutGraph += it }
-
-  operator fun invoke(builder: TypedGraphBuilder<T>.() -> Unit) =
-    TypedGraphBuilder<T>().also { it.builder() }.mutGraph
-}
-
 // TODO: convert to/from other graph types
 open class TypedGraph<T: Encodable>
 constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
   Graph<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(vertices) {
   constructor(vararg vertices: TypedVertex<T>): this(vertices.toSet())
+  companion object {} // Pseudoconstructor inheritance
 }
 
 class TypedVertex<T: Encodable> constructor(

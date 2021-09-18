@@ -28,6 +28,12 @@ fun main() =
         }
       }
       "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
-      "Down" in it.key -> graphs.add(graphs.last().prefAttach())
+      "Down" in it.key -> graphs.add(graphs.last().prefAttach { degree ->
+        this + V(
+          newId = size.toString(),
+          out = if (vertices.isEmpty()) emptySet()
+          else degMap.sample().take(degree.coerceAtMost(size)).toSet()
+        ).graph
+      })
     }
   }

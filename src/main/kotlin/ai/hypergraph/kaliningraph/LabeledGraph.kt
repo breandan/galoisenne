@@ -41,22 +41,15 @@ class LGBuilder {
 open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
+  constructor(builder: LGBuilder.() -> Unit):
+    this(LGBuilder().also { it.builder() }.mutGraph)
+  constructor(graph: String): this(
+    graph.split(" ").fold(LabeledGraph()) { acc, it ->
+      acc + acc.G(*it.toList().zipWithNext().toTypedArray())
+    }
+  )
 
-  /**
-   * TODO: Any way to move this into [IGF]?
-   * Constructors cannot be inherited, but invoke() can.
-   * May be possible to define a generic "constructor".
-   */
-
-  companion object: LabeledGraph() {
-    operator fun invoke(builder: LGBuilder.() -> Unit) =
-      LGBuilder().also { it.builder() }.mutGraph
-
-    operator fun invoke(graph: String) =
-      graph.split(" ").fold(G()) { acc, it ->
-        acc + G(*it.toList().zipWithNext().toTypedArray())
-      }
-  }
+  companion object: LabeledGraph()
 
   var accumuator = mutableSetOf<String>()
   var description = ""

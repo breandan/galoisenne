@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.circuits.CircuitBuilder
+import ai.hypergraph.kaliningraph.circuits.ComputationGraph
 
 fun main() {
   println("Hello Kaliningraph!")
@@ -14,7 +14,7 @@ fun main() {
   println("dacbe diamater: " + dacbe.diameter())
 
   val abcd = LabeledGraph { a - b - c - d }
-  val cfde = LabeledGraph { c - "a" - f - d - e }
+  val cfde = LabeledGraph { c - f - d - e }
 
   val dg = LabeledGraph.G(dacbe, dce, de) +
     LabeledGraph.G(abcd, cfde)
@@ -33,10 +33,10 @@ fun main() {
   println("WL3(efgh) = $efgh_wl3")
   println("Isomorphic: ${abca.isomorphicTo(efgh)}")
 
-  CircuitBuilder {
-    a = b + c
-    e = a + d
-    f = b - h
-    b = g + 1
-  }//.show()
+   ComputationGraph {
+    b + c +
+    a + d +
+    b - h +
+    g + 1
+  }.show()
 }

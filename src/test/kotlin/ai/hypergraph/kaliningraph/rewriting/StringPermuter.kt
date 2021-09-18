@@ -29,6 +29,22 @@ import kotlin.system.exitProcess
 // https://mathworld.wolfram.com/ElementaryCellularAutomaton.html
 // R: Set of rewrites to try
 
+// Idea: Generate all index permutations for each string kernel and
+// parallelize RW trace subgraph search across N cores.
+
+// RW Trace                       | Permutation Kernels
+//================================|====================
+// abcasdfjlkjqiwurooaowingoqwike | [0 1 2 3 4 ...]
+// abcasdfjlkjqiwurooaowingoqwike | [1 0 2 3 4 ...]
+// abcasdfjlkjqiwurooaowingoqwike | [2 1 0 3 4 ...]
+// abcasdfjlkjqiwurooaowingoqwike | [3 1 2 0 4 ...]
+
+// http://www.kcats.org/csci/464/doc/knuth/fascicles/fasc2b.pdf
+// https://www.princeton.edu/~rblee/ELE572Papers/p137-sedgewick.pdf
+// https://en.wikipedia.org/wiki/Heap%27s_algorithm
+// https://en.wikipedia.org/wiki/Permutohedron
+// https://en.wikipedia.org/wiki/Random_permutation_statistics
+
 fun String.conv(R: Set<List<Int>>): Set<String> =
   R.map { r: List<Int> ->
     val t = toCharArray()

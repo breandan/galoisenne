@@ -14,13 +14,6 @@ import kotlin.reflect.*
 
 // Reified constructors
 @Suppress("FunctionName")
-/**
- * TODO: can we lift builders somehow? e.g.:
- * [ai.hypergraph.kaliningraph.LGBuilder]
- * [ai.hypergraph.kaliningraph.TypedGraphBuilder]
- * [ai.hypergraph.kaliningraph.automata.AutomatonBuilder]
- * [ai.hypergraph.kaliningraph.circuits.CircuitBuilder]
- */
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   fun G(vertices: Set<V> = setOf()): G =
     if (vertices isA G.declaringClass) vertices as G // G(graph) -> graph
@@ -77,14 +70,15 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
    */
 
   fun <T> memoize(
-    callerRef: String? = Throwable().stackTrace[1].toString(),
-    classRef: Any = this,
+    classRef: Int = System.identityHashCode(this),
+    methodRef: Int = Throwable().stackTrace[1].hashCode(),
     args: Array<*>? = null,
-    fn: () -> T
-  ): T = memo.get(Triple(classRef, callerRef, args)) { fn() } as T
+    computation: () -> T
+  ): T = memo.get(Triple(classRef, methodRef, args)) { computation() } as T
 
   companion object {
-    val memo = Caffeine.newBuilder().build<Triple<*, *, *>, Any>()
+    // https://github.com/ben-manes/caffeine/issues/160#issuecomment-305681211
+    val memo = Caffeine.newBuilder().buildAsync<Triple<*, *, *>, Any>().synchronous()
   }
 }
 
@@ -119,16 +113,15 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
-  // TODO: memoize? but seems to cause IllegalStateException: Recursive update
-  val edgList: List<Pair<V, E>> get() = vertices.flatMap { s -> s.outgoing.map { s to it } }
-  val adjList: List<Pair<V, V>> get() = edgList.map { (v, e) -> v to e.target }
-  val edgMap: Map<V, Set<E>> get() = vertices.associateWith { it.outgoing }
-  val edges: Set<E> get() = edgMap.values.flatten().toSet()
-  val histogram: Map<V, Int> get() = associateWith { this(it).size }
+  val edgList: List<Pair<V, E>> get() = memoize { vertices.flatMap { s -> s.outgoing.map { s to it } } }
+  val adjList: List<Pair<V, V>> get() = memoize { edgList.map { (v, e) -> v to e.target } }
+  val edgMap: Map<V, Set<E>>    get() = memoize { vertices.associateWith { it.outgoing } }
+  val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
+  val histogram: Map<V, Int>    get() = memoize { associateWith { this(it).size } }
 
   // TODO: Is this still needed?
-  val prototype: V? get() = memoize { vertices.firstOrNull() }
-  val index: VIndex<G, E, V> get() = memoize { VIndex(vertices) }
+  val prototype: V?             get() = memoize { vertices.firstOrNull() }
+  val index: VIndex<G, E, V>    get() = memoize { VIndex(vertices) }
 
   val D: SpsMat get() = memoize { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
@@ -141,7 +134,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
     vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) }
   }
 
-  // Laplacian matrix
+  // Graph Laplacian matrix
   val L: SpsMat get() = memoize { D - A }
   val I: SpsMat get() = memoize { elwise(size) }
   // Symmetric normalized Laplacian
@@ -190,13 +183,6 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
     operator fun get(it: IVertex<G, E, V>): Int? = map[it]
     operator fun get(it: Int): V = array[it]
   }
-
-  fun attachRandomT(degree: Int): G =
-    this + V(
-      newId = size.toString(),
-      out = if (vertices.isEmpty()) emptySet()
-      else degMap.sample().take(degree.coerceAtMost(size)).toSet()
-    ).graph
 
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
 

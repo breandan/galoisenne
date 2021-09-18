@@ -291,6 +291,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Small Subgraphs in the trace of a random walk](https://arxiv.org/pdf/1605.04585.pdf), Krivelevich and Michaeli (2018)
 - [Biased random walk on the trace of a biased random walk on the trace of...](https://arxiv.org/pdf/1901.04673.pdf), Crydon and Holmes (2019)
 - [KnightKing: A Fast Distributed Graph Random Walk Engine](https://doi.org/10.1145/3341301.3359634), Yang et al. (2019)
+- [Graph Learning with 1D Convolutions on Random Walks](https://arxiv.org/abs/2102.08786), Toenshoff et al. (2021)
 
 ### Software Engineering
 

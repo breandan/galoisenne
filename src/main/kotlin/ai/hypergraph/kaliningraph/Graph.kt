@@ -3,8 +3,6 @@ package ai.hypergraph.kaliningraph
 import ai.hypergraph.kaliningraph.matrix.*
 import ai.hypergraph.kaliningraph.typefamily.*
 import org.ejml.kotlin.*
-import kotlin.math.sqrt
-import kotlin.random.Random
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   IGraph<G, E, V>,
@@ -65,9 +63,13 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()):
   ): SpsMat = if(t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
   // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
-  tailrec fun prefAttach(graph: G = this as G, vertices: Int = 1, degree: Int = 3): G =
-    if (vertices <= 0) graph
-    else prefAttach(graph.attachRandomT(degree), vertices - 1, degree)
+  tailrec fun prefAttach(
+    graph: G = this as G,
+    vertices: Int = 1,
+    degree: Int = 3,
+    attach: G.(Int) -> G
+  ): G = if (vertices <= 0) graph
+  else prefAttach(graph.attach(degree), vertices - 1, degree, attach)
 
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false

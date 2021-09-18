@@ -24,11 +24,6 @@ class CircuitBuilder {
 
   fun wrap(left: Any, right: Any, op: (Gate, Gate) -> Gate): Gate =
     op(wrap(left), wrap(right))
-
-  companion object {
-    operator fun invoke(builder: CircuitBuilder.() -> Unit) =
-      CircuitBuilder().also { it.builder() }.graph
-  }
 }
 
 val a by Var(); val b by Var(); val c by Var(); val d by Var()
@@ -42,8 +37,10 @@ operator fun Any.minus(that: Gate) = wrap(this, that) { a, b -> a - b }
 operator fun Any.times(that: Gate) = wrap(this, that) { a, b -> a * b }
 operator fun Any.div(that: Gate) = wrap(this, that) { a, b -> a / b }
 
-class ComputationGraph(override val vertices: Set<Gate> = setOf()):
-  Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices)
+open class ComputationGraph(override val vertices: Set<Gate> = setOf()) :
+  Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices) {
+  constructor(builder: CircuitBuilder.() -> Unit) : this(CircuitBuilder().also { it.builder() }.graph)
+}
 
 interface Op
 @Suppress("EnumEntryName")
@@ -62,6 +59,7 @@ open class Gate(
   constructor(id: String = randomString(), vararg gates: Gate) : this(id, Monad.id, *gates)
   constructor(id: String = randomString(), op: Op = Monad.id, vararg gates: Gate) :
     this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
+  constructor(id: String = randomString(), edgeMap: (Gate) -> Set<UnlabeledEdge>): this(id, Monad.id, edgeMap)
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())
