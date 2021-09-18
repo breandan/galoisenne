@@ -2,9 +2,7 @@
 package ai.hypergraph.kaliningraph.circuits
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.circuits.Dyad.*
 import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
-import ai.hypergraph.kaliningraph.circuits.Polyad.λ
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty
@@ -37,29 +35,55 @@ operator fun Any.minus(that: Gate) = wrap(this, that) { a, b -> a - b }
 operator fun Any.times(that: Gate) = wrap(this, that) { a, b -> a * b }
 operator fun Any.div(that: Gate) = wrap(this, that) { a, b -> a / b }
 
-open class ComputationGraph(override val vertices: Set<Gate> = setOf()) :
+open class ComputationGraph(override val vertices: Set<Gate> = setOf(),
+                            val root: Gate? = vertices.firstOrNull()) :
   Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices) {
+  constructor(vertices: Set<Gate> = setOf()): this(vertices, vertices.firstOrNull())
   constructor(builder: CircuitBuilder.() -> Unit) : this(CircuitBuilder().also { it.builder() }.graph)
 }
 
 interface Op
+interface Dyad: Op
+interface Monad: Op
+interface Polyad: Op
+interface TrigFun: Monad
 @Suppress("EnumEntryName")
-enum class Monad: Op { `+`, `-`, sin, cos, tan, id, ᵀ }
-@Suppress("EnumEntryName")
-enum class Dyad: Op { `+`, `-`, `*`, `⊙`, `÷`, `=`, dot, pow, log, d }
-@Suppress("EnumEntryName")
-enum class Polyad: Op { λ, Σ, Π, map }
+object Ops {
+  abstract class TopOp { override fun toString() = javaClass.simpleName }
+  object `+` : TopOp(), Monad, Dyad
+  object `-` : TopOp(), Monad, Dyad
+  object sin : TopOp(), TrigFun
+  object cos : TopOp(), TrigFun
+  object tan : TopOp(), TrigFun
+  object id : TopOp(), Monad
+
+  object `*` : TopOp(), Dyad
+  object `⊙` : TopOp(), Dyad
+  object `÷` : TopOp(), Dyad
+
+  object `=` : TopOp(), Dyad
+  object dot : TopOp(), Dyad
+  object pow : TopOp(), Dyad
+  object log : TopOp(), Dyad
+  object d : TopOp(), Dyad
+
+  @Suppress("EnumEntryName")
+  object λ : TopOp(), Polyad
+  object Σ : TopOp(), Polyad
+  object Π : TopOp(), Polyad
+  object map : TopOp(), Polyad
+}
 
 open class Gate(
   id: String = randomString(),
-  val op: Op = Monad.id,
+  val op: Op = Ops.id,
   override val edgeMap: (Gate) -> Set<UnlabeledEdge>
 ) : Vertex<ComputationGraph, UnlabeledEdge, Gate>(id) {
-  constructor(op: Op = Monad.id, vararg gates: Gate) : this(randomString(), op, *gates)
-  constructor(id: String = randomString(), vararg gates: Gate) : this(id, Monad.id, *gates)
-  constructor(id: String = randomString(), op: Op = Monad.id, vararg gates: Gate) :
+  constructor(op: Op = Ops.id, vararg gates: Gate) : this(randomString(), op, *gates)
+  constructor(id: String = randomString(), vararg gates: Gate) : this(id, Ops.id, *gates)
+  constructor(id: String = randomString(), op: Op = Ops.id, vararg gates: Gate) :
     this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
-  constructor(id: String = randomString(), edgeMap: (Gate) -> Set<UnlabeledEdge>): this(id, Monad.id, edgeMap)
+  constructor(id: String = randomString(), edgeMap: (Gate) -> Set<UnlabeledEdge>): this(id, Ops.id, edgeMap)
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())
@@ -67,30 +91,32 @@ open class Gate(
     fun wrapAll(vararg values: Any): Array<Gate> = values.map { wrap(it) }.toTypedArray()
   }
 
-  override fun toString() = if(op == Monad.id) id else op.toString()
+  override fun toString() = if(op == Ops.id) id else op.toString()
 
-  operator fun plus(that: Any) = Gate(`+`, this, wrap(that))
-  operator fun minus(that: Any) = Gate(`-`, this, wrap(that))
-  operator fun times(that: Any) = Gate(`*`, this, wrap(that))
-  operator fun div(that: Any) = Gate(`÷`, this, wrap(that))
-  infix fun pow(that: Any) = Gate(pow, this, wrap(that))
-  infix fun log(that: Any) = Gate(log, this, wrap(that))
+  operator fun plus(that: Any) = Gate(Ops.`+`, this, wrap(that))
+  operator fun minus(that: Any) = Gate(Ops.`-`, this, wrap(that))
+  operator fun times(that: Any) = Gate(Ops.`*`, this, wrap(that))
+  operator fun div(that: Any) = Gate(Ops.`÷`, this, wrap(that))
+  infix fun pow(that: Any) = Gate(Ops.pow, this, wrap(that))
+  infix fun log(that: Any) = Gate(Ops.log, this, wrap(that))
 
-  operator fun unaryMinus() = Gate(Monad.`-`, this)
+  operator fun unaryMinus() = Gate(Ops.`-`, this)
 
-  fun sin() = Gate(Monad.sin, this)
-  fun cos() = Gate(Monad.cos, this)
-  fun tan() = Gate(Monad.tan, this)
-  fun d(that: Any) = Gate(Dyad.d, this, wrap(that))
+  fun sin() = Gate(Ops.sin, this)
+  fun cos() = Gate(Ops.cos, this)
+  fun tan() = Gate(Ops.tan, this)
+  fun d(that: Any) = Gate(Ops.d, this, wrap(that))
 
   override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
   override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
   override fun V(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
-    Gate(newId, Monad.id, edgeMap)
+    Gate(newId, Ops.id, edgeMap)
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
   open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
-    builder.graph += Gate(prop.name, Gate(`=`, value)).graph
+    builder.graph += Gate(prop.name, Gate(Ops.`=`, value)).let {
+      ComputationGraph(vertices=it.graph/* TODO: Is this double-boxing a problem? */, root = it)
+    }
   }
 }
 
@@ -103,7 +129,7 @@ class NFunction(
 ): Gate(id = name, edgeMap = { s -> setOf(UnlabeledEdge(s, body(params))) }) {
   operator fun invoke(vararg args: Any): Gate =
     if (arityMatches(*args))
-      Gate(λ, *wrapAll(*args).let { it.plusElement(Gate(name, Gate(`=`, body(it)))) })
+      Gate(Ops.λ, *wrapAll(*args).let { it.plusElement(Gate(name, Gate(Ops.`=`, body(it)))) })
     else throw Exception(invokeError(*args))
 
   fun invokeError(vararg args: Any) =

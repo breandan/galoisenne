@@ -119,7 +119,7 @@ dependencies {
 tasks {
   listOf(
           "HelloKaliningraph", "Rewriter", "PrefAttach",
-          "rewriting.CipherSolver", "RegexDemo"
+          "rewriting.CipherSolver", "RegexDemo", "GraphRewrite"
   ).forEach { fileName ->
     register(fileName, JavaExec::class) {
       mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")

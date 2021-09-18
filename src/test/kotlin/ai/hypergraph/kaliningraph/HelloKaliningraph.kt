@@ -33,10 +33,10 @@ fun main() {
   println("WL3(efgh) = $efgh_wl3")
   println("Isomorphic: ${abca.isomorphicTo(efgh)}")
 
-   ComputationGraph {
-    b + c +
-    a + d +
-    b - h +
-    g + 1
+  ComputationGraph {
+    a = b + c
+    e = a + d
+    f = b - h
+    b = g + 1
   }.show()
 }
