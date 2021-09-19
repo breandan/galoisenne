@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph.typefamily
 
-import com.github.benmanes.caffeine.cache.Caffeine
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.matrix.BSqMat
-import ai.hypergraph.kaliningraph.matrix.minus
+import ai.hypergraph.kaliningraph.matrix.*
+import ai.hypergraph.kaliningraph.theory.wl
+import com.github.benmanes.caffeine.cache.Caffeine
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
 import org.ejml.kotlin.minus
@@ -56,7 +56,6 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
         .toTypedArray()
     }
 
-  // https://stackoverflow.com/questions/43476811/can-a-kotlin-interface-cache-a-value
   val G: Constructor<G> get() = gev[0].getConstructor(Set::class.java) as Constructor<G>
   val E: Constructor<E> get() = gev.let { it[1].getConstructor(it[2], it[2]) } as Constructor<E>
   // TODO: Generify first argument to support TypedVertex
@@ -188,11 +187,11 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
 
   fun vwise(lf: IGraph<G, E, V>.(V, V) -> Double?): SpsMat =
-          elwise(size) { i, j ->
-            (this[i] to this[j]).let { (v, n) ->
-              if (n in v.neighbors) lf(v, n) else null
-            }
-          }
+    elwise(size) { i, j ->
+      (this[i] to this[j]).let { (v, n) ->
+        if (n in v.neighbors) lf(v, n) else null
+      }
+    }
 
   operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
   operator fun SpsMat.set(n0: V, n1: V, value: Double) {
@@ -225,7 +224,7 @@ class RandomWalk<G, E, V>(
 
 interface IEdge<G, E, V>: IGF<G, E, V>
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-  val graph: G
+  val graph: G get() = memoize { target.graph }
   val source: V
   val target: V
 
@@ -238,15 +237,14 @@ interface IEdge<G, E, V>: IGF<G, E, V>
 // TODO: Make this a "view" of the container graph
 interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-  val id: String
+  val id: String // TODO: Need to think about this more carefully
 
-  // TODO: memoize?
-  val graph: G get() = G(neighbors(-1))
-  val incoming: Set<E> get() = graph.reversed().edgMap[this] ?: emptySet()
-  val outgoing: Set<E> get() = edgeMap(this as V).toSet()
+  val graph: G get() = memoize { G(neighbors(-1)) }
+  val incoming: Set<E> get() = memoize { graph.reversed().edgMap[this] ?: emptySet() }
+  val outgoing: Set<E> get() = memoize { edgeMap(this as V).toSet() }
   val edgeMap: (V) -> Set<E> // Make a self-loop by passing this
 
-  val neighbors get() = outgoing.map { it.target }.toSet()
+  val neighbors get() = memoize { outgoing.map { it.target }.toSet() }
   val outdegree get() = neighbors.size
 
   // tailrec prohibited on open members? may be possible with deep recursion
@@ -266,6 +264,33 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   override fun encode(): DoubleArray = id.vectorize()
   operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
   fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
+}
+
+abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
+  IGraph<G, E, V>, Set<V> by vertices, (V) -> Set<V> by { it: V -> it.neighbors }
+    where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) =
+    super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
+
+  override fun hashCode() =
+    if (isEmpty()) super.hashCode() else wl().values.sorted().hashCode()
+
+  // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
+  override fun toString() =
+    "(" + vertices.joinToString(", ", "{", "}") + ", " +
+        edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
+}
+
+abstract class Edge<G, E, V>(override val source: V, override val target: V) : IEdge<G, E, V>
+    where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>
+
+abstract class Vertex<G, E, V>(override val id: String) : IVertex<G, E, V>
+    where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) =
+    (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())
+
+  override fun hashCode() = id.hashCode()
+  override fun toString() = id
 }
 
 interface Encodable { fun encode(): DoubleArray }

@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.circuits.ComputationGraph
+import ai.hypergraph.kaliningraph.theory.*
 
 fun main() {
   println("Hello Kaliningraph!")

@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import ai.hypergraph.kaliningraph.theory.diameter
+import org.junit.Assert.*
 import org.junit.jupiter.api.Test
 
 class GraphTest {

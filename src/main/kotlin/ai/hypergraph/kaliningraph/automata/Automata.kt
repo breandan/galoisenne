@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.typefamily.*
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))
   : Graph<Automaton, Transition, State>(vertices)

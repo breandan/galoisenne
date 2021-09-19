@@ -1,8 +1,7 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.typefamily.Encodable
-import guru.nidi.graphviz.attribute.Color.BLACK
-import guru.nidi.graphviz.attribute.Color.RED
+import ai.hypergraph.kaliningraph.typefamily.*
+import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Style
 
 // TODO: convert to/from other graph types
@@ -13,6 +12,7 @@ constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
   companion object {} // Pseudoconstructor inheritance
 }
 
+/** TODO: This does not work properly due to [ai.hypergraph.kaliningraph.typefamily.IVertex.id] */
 class TypedVertex<T: Any> constructor(
   val t: T? = null,
   var occupied: Boolean = false,

@@ -6,8 +6,7 @@ import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
-import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
+import guru.nidi.graphviz.attribute.GraphAttr.*
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.attribute.Style.lineWidth
 import guru.nidi.graphviz.engine.*

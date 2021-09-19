@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph
 
 import com.redislabs.redisgraph.RedisGraphTransaction
 import com.redislabs.redisgraph.graph_entities.*
-import com.redislabs.redisgraph.graph_entities.Edge
 import com.redislabs.redisgraph.impl.api.RedisGraph
 
 // First run: docker run -p 6379:6379 -it --rm redislabs/redisgraph

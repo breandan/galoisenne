@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.notebook
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate
 import ai.hypergraph.kaliningraph.matrix.BMat
+import ai.hypergraph.kaliningraph.typefamily.Graph
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.annotations.JupyterLibrary
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration

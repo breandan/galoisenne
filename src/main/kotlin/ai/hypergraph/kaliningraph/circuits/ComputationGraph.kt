@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.circuits
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
+import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Label
 import kotlin.reflect.KProperty
