@@ -77,3 +77,22 @@ tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGra
   // Message ℝ^{*} -> ℝ^{*}
   m: (SpsMat) -> SpsMat = { σ(z(A * it * W + it * W + b)) }
 ): SpsMat = if (t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
+
+// https://fabianmurariu.github.io/posts/scala3-typeclassery-graphs/
+// https://doisinkidney.com/pdfs/algebras-for-weighted-search.pdf
+// https://www.youtube.com/watch?v=n6oS6X-DOlg
+
+tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.dfs(
+  init: V = random(),
+  cond: (V) -> Boolean
+): V = TODO()
+
+tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.bfs(
+  init: V = random(),
+  cond: (V) -> Boolean
+): V = TODO()
+
+tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.beamsearch(
+  init: V = random(),
+  cond: (V) -> Boolean
+): V = TODO()
