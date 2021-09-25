@@ -91,7 +91,10 @@ dependencies {
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
 
   // I think we were going to use this to prove termination of graph rewriting
-  testImplementation("org.sosy-lab:java-smt:3.10.0")
+  testImplementation("org.sosy-lab:java-smt:3.10.1")
+//  implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
+//  implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
+  //testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
   // implementation(files("$projectDir/libs/grez.jar"))
@@ -119,7 +122,7 @@ dependencies {
 tasks {
   listOf(
           "HelloKaliningraph", "Rewriter", "PrefAttach",
-          "rewriting.CipherSolver", "RegexDemo", "GraphRewrite"
+          "rewriting.CipherSolver", "RegexDemo", "GraphRewrite", "smt.TestSMT"
   ).forEach { fileName ->
     register(fileName, JavaExec::class) {
       mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")

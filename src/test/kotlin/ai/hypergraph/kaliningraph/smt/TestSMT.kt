@@ -1,76 +1,151 @@
 package ai.hypergraph.kaliningraph.smt
 
+import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
-import org.sosy_lab.java_smt.api.BooleanFormula
+import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
-import javax.script.*
+import kotlin.math.pow
 import kotlin.reflect.KProperty
 
-val solverContext = SolverContextFactory.createSolverContext(Solvers.SMTINTERPOL)
-val fm = solverContext.formulaManager.integerFormulaManager
+class TestSMT {
+  @Test
+  fun testTaxiCab() = SMTInstance().solve {
+    val a by IntVar()
+    val b by IntVar()
+    val c by IntVar()
+    val d by IntVar()
 
-fun main() {
-    val a by SMTVar()
-    val b by SMTVar()
-    val c by SMTVar()
-//    val v = (a / (b + c)) + (b / (a + c)) + (c / (a + b))
-    val v = a + b + c
-//    val f = fm.equal(v, fm.makeNumber(4))
-    val f = fm.equal(v, fm.makeNumber(9))
-    val g = fm.greaterThan(a, fm.makeNumber(2))
-    val h = fm.greaterThan(b, fm.makeNumber(2))
-    val i = fm.greaterThan(c, fm.makeNumber(2))
-    val solution = solveFor(a, b, c).subjectTo(f, g, h, i)
-    val engine = ScriptEngineManager().getEngineByExtension("kts")
+    val exp = 3
+    val f = ((a pwr exp) pls (b pwr exp)) eq ((c pwr exp) pls (d pwr exp))
 
-    // Check solution is correct by evaluating it
-    engine.run {
-        val bnds = solution.associate { it.first to it.second }
-        setBindings(SimpleBindings(bnds), ScriptContext.ENGINE_SCOPE)
-        val e = "(a / (b + c)) + (b  / (a + c)) + (c / (a + b))"
-        println("f${solution.map { (a, b) -> "$a = $b" }} = $e = ${eval(e)}")
-    }
+    val bigNum = 2
+
+    val containsNegative = (a lt 0) or (b lt 0) or (c lt 0)
+
+    val areLarge =
+      (a pwr 2 gt bigNum) and
+          (b pwr 2 gt bigNum) and
+          (c pwr 2 gt bigNum) and
+          (d pwr 2 gt bigNum)
+
+    val isNontrivial = f and containsNegative and areLarge and fm.distinct(listOf(a, b, c, d))
+
+    val solution = solveFor(a, b, c, d).subjectTo(isNontrivial)
+    println(solution)
+
+    Assertions.assertEquals(
+      solution[a]!!.pow(exp) + solution[b]!!.pow(exp),
+      solution[c]!!.pow(exp) + solution[d]!!.pow(exp)
+    )
   }
 
-class SMTVar(val name: String? = null): IntegerFormula {
-  operator fun getValue(nothing: Nothing?, property: KProperty<*>) = fm.makeVariable(property.name)
+  @Test
+  fun testSumOfCubes() = SMTInstance().solve {
+    val a by IntVar()
+    val b by IntVar()
+    val c by IntVar()
+    val d by IntVar()
+
+    val exp = 3
+    val f = (a pwr exp) pls (b pwr exp) pls (c pwr exp) eq d
+
+    val bigNum = 3
+
+    val containsNegative = (a lt 0) or (b lt 0) or (c lt 0)
+
+    val areLarge =
+      (a pwr 2 gt bigNum) and
+          (b pwr 2 gt bigNum) and
+          (c pwr 2 gt bigNum) and
+          (d pwr 2 gt bigNum)
+
+    val isNontrivial = f and containsNegative and areLarge
+
+    val solution = solveFor(a, b, c, d).subjectTo(isNontrivial)
+    println(solution)
+
+    Assertions.assertEquals(
+      solution[a]!!.pow(exp) + solution[b]!!.pow(exp) + solution[c]!!.pow(exp),
+      solution[d]
+    )
+  }
+
+  @Test
+  fun testNonLinear() = SMTInstance().solve {
+    val a by IntVar()
+    val b by IntVar()
+    val c by IntVar()
+
+    val exp = 2
+    val f = ((a pwr exp) pls (b pwr exp)) eq ((c pwr exp) pls exp)
+
+    println(f)
+    val solution = solveFor(a, b, c).subjectTo(f)
+    println(solution)
+
+    Assertions.assertEquals(
+      solution[a]!!.pow(exp) + solution[b]!!.pow(exp),
+      solution[c]!!.pow(exp) + exp
+    )
+  }
+
+  class SMTInstance(
+    val solverContext: SolverContext = SolverContextFactory.createSolverContext(Solvers.PRINCESS),
+    val fm: IntegerFormulaManager = solverContext.formulaManager.integerFormulaManager,
+    val bm: BooleanFormulaManager = solverContext.formulaManager.booleanFormulaManager,
+  ) {
+    fun solve(function: SMTInstance.() -> Unit) = this.function()
+
+    fun IntVar() = SMTVar(fm)
+    class SMTVar(val fm: IntegerFormulaManager, val name: String? = null) : IntegerFormula {
+      operator fun getValue(nothing: Nothing?, property: KProperty<*>) = this@SMTVar.fm.makeVariable(property.name)
+    }
+
+    fun solveFor(vararg fs: IntegerFormula) = ProofContext(fs)
+
+    class ProofContext(val fs: Array<out IntegerFormula>)
+
+    fun ProofContext.subjectTo(vararg bs: BooleanFormula) =
+      solverContext.newProverEnvironment(GENERATE_MODELS).use { prover ->
+        for (f in bs) prover.addConstraint(f)
+        assert(!prover.isUnsat) { "Unsat!" }
+        prover.model.use { fs.map { a -> a.toString() to it.evaluate(a)!!.toInt() } }
+      }.associate { soln -> fs.first { it.toString() == soln.first } to soln.second }
+
+    fun wrap(number: Any): IntegerFormula =
+      when (number) {
+        is Number -> fm.makeNumber("$number")
+        is IntegerFormula -> number
+        else -> throw NumberFormatException("Bad number $number")
+      }
+
+    infix fun Any.pls(b: Any) = fm.add(wrap(this), wrap(b))
+
+    infix fun Any.mns(b: Any) = fm.subtract(wrap(this), wrap(b))
+
+    infix fun Any.mul(b: Any) = fm.multiply(wrap(this), wrap(b))
+
+    infix fun Any.dvd(b: Any) = fm.divide(wrap(this), wrap(b))
+
+    infix fun Any.pwr(b: Int) = (2..b).fold(wrap(this)) { a, _ -> a mul this }
+
+    infix fun Any.lt(b: Any) = fm.lessThan(wrap(this), wrap(b))
+    infix fun Any.gt(b: Any) = fm.greaterThan(wrap(this), wrap(b))
+    infix fun Any.eq(b: Any) = fm.equal(wrap(this), wrap(b))
+
+
+    infix fun BooleanFormula.and(b: BooleanFormula) = bm.and(this, b)
+    infix fun BooleanFormula.or(b: BooleanFormula) = bm.or(this, b)
+
+    fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
+  }
 }
 
-fun solveFor(vararg fs: IntegerFormula) = ProofContext(fs)
-
-class ProofContext(val fs: Array<out IntegerFormula>)
-
-fun ProofContext.subjectTo(vararg bs: BooleanFormula) =
-  solverContext.newProverEnvironment(GENERATE_MODELS).use { prover ->
-    for (f in bs) prover.addConstraint(f)
-    assert(!prover.isUnsat) { "Unsat!" }
-    prover.model.use { fs.map { a -> a.toString() to it.evaluate(a)!!.toInt() } }
+fun main() =
+  TestSMT().run {
+    testTaxiCab()
+    testSumOfCubes()
+    testNonLinear()
   }
-
-fun wrap(number: Number) = fm.makeNumber("$number")
-
-operator fun IntegerFormula.plus(b: IntegerFormula) = fm.add(this, b)
-
-operator fun IntegerFormula.minus(b: IntegerFormula) = fm.subtract(this, b)
-
-operator fun IntegerFormula.times(b: IntegerFormula) = fm.multiply(this, b)
-
-operator fun IntegerFormula.div(b: IntegerFormula) = fm.divide(this, b)
-
-operator fun Number.plus(b: IntegerFormula) = fm.add(wrap(this), b)
-
-operator fun Number.minus(b: IntegerFormula) = fm.subtract(wrap(this), b)
-
-operator fun Number.times(b: IntegerFormula) = fm.multiply(wrap(this), b)
-
-operator fun Number.div(b: IntegerFormula) = fm.divide(wrap(this), b)
-
-operator fun IntegerFormula.plus(b: Number) = fm.add(this, wrap(b))
-
-operator fun IntegerFormula.minus(b: Number) = fm.subtract(this, wrap(b))
-
-operator fun IntegerFormula.times(b: Number) = fm.multiply(this, wrap(b))
-
-operator fun IntegerFormula.div(b: Number) = fm.divide(this, wrap(b))
