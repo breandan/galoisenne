@@ -5,9 +5,9 @@
 [![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
 [![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 
-Kaliningraph is a purely functional graph library with a DSL for constructing graphs and visualizing the behavior of graph algorithms.
+This library implements a new computational model which we call [graph computation](http://breandan.net/2020/06/30/graph-computation/). In contrast with prior work like Turing's machine and Church's λ-calculus, the advantage of this model is that it can be directly implemented using iterated matrix multiplication on GPUs and has many desirable algebraic properties. Furthermore, it offers a natural way to express neural networks, factor graphs, proof networks, and enjoys many connections to programming language theory, automata theory and category theory.
 
-![](http://breandan.net/images/konigsberg_bridges.png)
+Kaliningraph currently supports backpropagation in [Kotlin∇](https://github.com/breandan/kotlingrad). Efforts to lower other propagation schemes, e.g., belief propagation, uncertainty propagation, unit propagation, survey propagation and constraint propagation are ongoing. All of these schemes operate according to a principle known as message passing and are in general known to be Turing complete. This unification allows us to study many common problems in related domains using well-studied tools from spectral and algebraic graph theory.
 
 ## Installation
 
