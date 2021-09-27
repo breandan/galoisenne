@@ -85,6 +85,13 @@ fun SpsMat.matToImg(f: Int = 20): String {
   return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
 }
 
+// Returns the Cartesian product of two sets
+operator fun <T> Set<T>.times(s: Set<T>) =
+  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
+
+operator fun IntRange.times(s: IntRange) =
+  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
+
 fun BMat.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)

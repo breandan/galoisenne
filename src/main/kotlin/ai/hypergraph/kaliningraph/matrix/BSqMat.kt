@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.matrix
 
-import ai.hypergraph.kaliningraph.SpsMat
+import ai.hypergraph.kaliningraph.*
 import org.ejml.data.*
 import org.ejml.kotlin.*
 import kotlin.math.sqrt
@@ -29,16 +29,16 @@ open class BMat(val rows: Int, val cols: Int, open vararg val data: Boolean) {
   open fun transpose(): BMat = BMat(cols, rows) { r, c -> this[c, r] }
 
   fun toEJML() = BMatrixRMaj(rows, cols).also {
-    for (i in 0 until rows) for (j in 0 until cols) it[i, j] = this[i, j]
+    for ((i, j) in (0 until rows) * (0 until cols)) it[i, j] = this[i, j]
   }
 
   fun toEJMLSparse() = SpsMat(rows, cols, rows).also {
-    for (i in 0 until rows) for (j in 0 until cols)
+    for ((i, j) in (0 until rows) * (0 until cols))
       it[i, j] = if (this[i, j]) 1.0 else 0.0
   }
 }
 
-class BSqMat(override vararg val data: Boolean):
+class BSqMat(override vararg val data: Boolean) :
   BMat(sqrt(data.size.toDouble()).toInt(), *data) {
   val isFull = data.all { it }
   val size: Int = sqrt(data.size.toDouble()).toInt()
@@ -99,14 +99,8 @@ class BSqMat(override vararg val data: Boolean):
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % size == 0) "\n" else ""
   }
 
-  override fun equals(other: Any?): Boolean {
-    if (other !is BSqMat) return false
-
-    for (i in 0 until size) for (j in 0 until size)
-      if (this[i, j] != other[i, j]) return false
-
-    return true
-  }
+  override fun equals(other: Any?) =
+    other is BSqMat && data.zip(other.data).all { (a, b) -> a == b }
 
   override fun hashCode() = contents.contentDeepHashCode()
 }

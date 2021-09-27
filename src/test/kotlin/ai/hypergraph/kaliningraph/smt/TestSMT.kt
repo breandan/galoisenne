@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.smt
 
-import io.kotest.matchers.shouldBe
+import ai.hypergraph.kaliningraph.matrix.TSqMat
+import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
@@ -14,6 +15,7 @@ class TestSMT {
   @Test
   fun testTaxiCab() = SMTInstance().solve {
     val a by IntVar()
+    println(a)
     val b by IntVar()
     val c by IntVar()
     val d by IntVar()
@@ -93,62 +95,68 @@ class TestSMT {
   }
 
   @Test
-  fun testBistochastic() = SMTInstance() .solve {
+  fun testBistochastic() = SMTInstance().solve {
     val dim = 7
-    val m = List(dim) { i -> List(dim) { j -> fm.makeVariable("v$i$j") } }
+    val m = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("v$i$j")) }
 
     val sum by IntVar()
 
-    val sameRowSum = m.map { it.reduce { a, b -> a pls b } eq sum }.reduce { a, b -> a and b }
-    val sameColSum = (0 until dim)
-      .map { i -> (0 until dim).map { j -> m[j][i] }.reduce { a, b -> a pls b } eq sum }
+    fun TSqMat<SMTInstance.Formula>.isStochastic() =
+      rows.map { it.reduce { a, b: SMTInstance.Formula -> a.run { this + b }  } eq sum }.reduce { a, b -> a and b }
+
+    val isBistochastic = m.isStochastic() and m.transpose().isStochastic()
+
+    val assymetric = m.indices
+      .mapNotNull { (i, j) -> if (i != j) m[j][i] neq m[i][j] else null }
       .reduce { a, b -> a and b }
 
-    val assymetric = (0 until dim)
-      .map { i -> (0 until dim).mapNotNull { j -> if (i != j) m[j][i] neq m[i][j] else null } }
-      .flatten().reduce { a, b -> a and b }
+    val positive = m.data.map { it gt 0 }.reduce { a, b -> a and b }
 
-    val positive = (0 until dim)
-      .map { i -> (0 until dim).mapNotNull { j -> m[j][i] gt 0 } }
-      .flatten().reduce { a, b -> a and b }
+    val solution = solveFor(*m.data.toTypedArray()).subjectTo(isBistochastic and assymetric and positive)
 
-    val solution = solveFor(*m.flatten().toTypedArray())
-      .subjectTo(sameRowSum and sameColSum and assymetric and positive)
-
-    val sol = m.map { i -> i.map { solution[it]!! } }
+    val sol = m.rows.map { i -> i.map { solution[it]!! } }
     sol.forEach { println(it.joinToString(" ")) }
+
+    (m.rows + m.cols).windowed(2).map { twoSlices ->
+      val (a, b) = twoSlices[0] to twoSlices[1]
+      Assertions.assertEquals(a.sumOf { solution[it]!! }, b.sumOf { solution[it]!! })
   }
+}
 
   @Test
   fun testIsAssociative() = SMTInstance().solve {
     val dim = 2
-    val a = List(dim) { i -> List(dim) { j -> fm.makeVariable("a$i$j") } }
-    val b = List(dim) { i -> List(dim) { j -> fm.makeVariable("b$i$j") } }
-    val c = List(dim) { i -> List(dim) { j -> fm.makeVariable("c$i$j") } }
+    val a = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("a$i$j")) }
+    val b = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("b$i$j")) }
+    val c = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("c$i$j")) }
 
-    infix fun List<List<IntegerFormula>>.mpls(b: List<List<IntegerFormula>>) =
-      this.zip(b).map { (a, b) -> a.zip(b).map { (a, b) -> a pls b } }
+    val plusAssoc = ((a + b) + c) eq (a + (b + c))
+//    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
 
-    infix fun List<List<IntegerFormula>>.mmul(b: List<List<IntegerFormula>>) =
-      this.zip(b).map { (a, b) -> a.zip(b).map { (a, b) -> a mul b } }
-
-    val plusAssoc = ((a mpls b) mpls c) eq (a mpls (b mpls c))
-//    val multAssoc = ((a mmul b) mmul c) eq (a mmul (b mmul c))
-
-    val goal = qm.forall((a + b + c).flatten(), plusAssoc)
+    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
     val shouldBeTrue = prove(goal)
 
     println(shouldBeTrue)
 
     Assertions.assertTrue(shouldBeTrue)
+  }
 
-//    val a by IntVar()
-//    val b by IntVar()
-//    val c by IntVar()
-//
-//    val assoc = (a pls (b pls c)) eq ((a pls b) pls c)
-//
-//    println(prove(qm.forall(listOf(a, b, c), assoc)))
+  @Test
+  @Disabled //TODO: why is this so slow?
+  fun testIsDistributive() = SMTInstance().solve {
+    val dim = 2
+    val a = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("a$i$j")) }
+    val b = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("b$i$j")) }
+    val c = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("c$i$j")) }
+
+    val plusDistrib = (a * (b + c)) eq (a * b + a * c)
+
+    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusDistrib)
+    val shouldBeTrue = prove(goal)
+
+    println(shouldBeTrue)
+
+    Assertions.assertTrue(shouldBeTrue)
   }
 
   class SMTInstance(
@@ -159,14 +167,37 @@ class TestSMT {
   ) {
     fun solve(function: SMTInstance.() -> Unit) = this.function()
 
-    fun IntVar(name: String? = null) = SMTVar(fm, name)
-    class SMTVar(val fm: IntegerFormulaManager, val name: String? = null) : IntegerFormula {
-      operator fun getValue(nothing: Nothing?, property: KProperty<*>) = this@SMTVar.fm.makeVariable(property.name)
+    fun IntVar() = IntVrb(fm)
+    open class Formula(
+      open val mgr: IntegerFormulaManager,
+      val formula: IntegerFormula
+    ) : IntegerFormula by formula, Group<Formula> {
+      override val nil: Formula by lazy { Formula(mgr, mgr.makeNumber(0)) }
+      override val one: Formula by lazy { Formula(mgr, mgr.makeNumber(1)) }
+      private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = mgr.add(this, t)
+      private operator fun IntegerFormula.times(t: IntegerFormula) = mgr.multiply(this, t)
+
+      override fun Formula.plus(t: Formula): Formula = Formula(mgr, formula + t.formula)
+      override fun Formula.times(t: Formula): Formula = Formula(mgr, formula * t.formula)
+
+      override fun toString() = formula.toString()
+      override fun hashCode() = formula.hashCode()
+      override fun equals(other: Any?) =
+        other is Formula && other.formula == this.formula ||
+          other is IntegerFormula && formula == other
     }
 
-    fun solveFor(vararg fs: IntegerFormula) = ProofContext(fs)
+    class IntVrb(val mgr: IntegerFormulaManager) {
+      operator fun getValue(nothing: Nothing?, property: KProperty<*>) = mgr.makeVariable(property.name)
+    }
 
-    class ProofContext(val fs: Array<out IntegerFormula>)
+    fun solveFor(vararg fs: IntegerFormula) =
+      ProofContext(*fs.map {
+        // TODO: Necessary because error: "Cannot get the formula info of type Formula in the Solver!"
+        if (it is Formula) it.formula else it
+      }.toTypedArray())
+
+    class ProofContext(vararg val fs: IntegerFormula)
 
     fun ProofContext.subjectTo(vararg bs: BooleanFormula) =
       solverContext.newProverEnvironment(GENERATE_MODELS).use { prover ->
@@ -174,7 +205,8 @@ class TestSMT {
         assert(!prover.isUnsat) { "Unsat!" }
         prover.model.use { fs.map { a -> a.toString() to it.evaluate(a)!!.toInt() } }
       }.associate { soln -> fs.first { it.toString() == soln.first } to soln.second }
-    
+
+    // TODO: isUnsat what we really want here?
     fun prove(goal: BooleanFormula) =
       solverContext.newProverEnvironment().use { prover ->
         prover.push(goal)
@@ -184,6 +216,7 @@ class TestSMT {
     fun wrap(number: Any): IntegerFormula =
       when (number) {
         is Number -> fm.makeNumber("$number")
+        is Formula -> number.formula
         is IntegerFormula -> number
         else -> throw NumberFormatException("Bad number $number")
       }
@@ -208,10 +241,10 @@ class TestSMT {
 
     fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
-    infix fun List<List<IntegerFormula>>.eq(other: List<List<IntegerFormula>>) =
-      zip(other)
+    infix fun TSqMat<Formula>.eq(other: TSqMat<Formula>) =
+      rows.zip(other.rows)
         .map { (a, b) -> a.zip(b).map { (a, b) -> a eq b } }
-    .flatten().reduce { a, b -> a and b }
+        .flatten().reduce { a, b -> a and b }
   }
 }
 
@@ -222,4 +255,5 @@ fun main() =
     testNonLinear()
     testBistochastic()
     testIsAssociative()
+//    testIsDistributive()
   }

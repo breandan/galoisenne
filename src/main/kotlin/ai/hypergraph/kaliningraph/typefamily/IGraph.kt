@@ -58,7 +58,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
 
   val G: Constructor<G> get() = gev[0].getConstructor(Set::class.java) as Constructor<G>
   val E: Constructor<E> get() = gev.let { it[1].getConstructor(it[2], it[2]) } as Constructor<E>
-  // TODO: Generify first argument to support TypedVertex
+  /** TODO: Generify first argument to support [TypedVertex] */
   val V: Constructor<V> get() = gev[2].getConstructor(String::class.java, Function1::class.java) as Constructor<V>
 
   /**

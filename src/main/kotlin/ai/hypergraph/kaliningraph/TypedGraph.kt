@@ -12,7 +12,7 @@ constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
   companion object {} // Pseudoconstructor inheritance
 }
 
-/** TODO: This does not work properly due to [ai.hypergraph.kaliningraph.typefamily.IVertex.id] */
+/** TODO: This does not work properly due to [IVertex.id] */
 class TypedVertex<T: Any> constructor(
   val t: T? = null,
   var occupied: Boolean = false,
