@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.matrix.TSqMat
+import ai.hypergraph.kaliningraph.smt.TestSMT.SMTInstance.Formula
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
@@ -29,9 +30,9 @@ class TestSMT {
 
     val areLarge =
       (a pwr 2 gt bigNum) and
-          (b pwr 2 gt bigNum) and
-          (c pwr 2 gt bigNum) and
-          (d pwr 2 gt bigNum)
+        (b pwr 2 gt bigNum) and
+        (c pwr 2 gt bigNum) and
+        (d pwr 2 gt bigNum)
 
     val isNontrivial = f and containsNegative and areLarge and fm.distinct(listOf(a, b, c, d))
 
@@ -60,9 +61,9 @@ class TestSMT {
 
     val areLarge =
       (a pwr 2 gt bigNum) and
-          (b pwr 2 gt bigNum) and
-          (c pwr 2 gt bigNum) and
-          (d pwr 2 gt bigNum)
+        (b pwr 2 gt bigNum) and
+        (c pwr 2 gt bigNum) and
+        (d pwr 2 gt bigNum)
 
     val isNontrivial = f and containsNegative and areLarge
 
@@ -97,12 +98,13 @@ class TestSMT {
   @Test
   fun testBistochastic() = SMTInstance().solve {
     val dim = 7
-    val m = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("v$i$j")) }
+    val m = TSqMat(dim) { i, j -> IntVar("v$i$j") }
 
     val sum by IntVar()
 
-    fun TSqMat<SMTInstance.Formula>.isStochastic() =
-      rows.map { it.reduce { a, b: SMTInstance.Formula -> a.run { this + b }  } eq sum }.reduce { a, b -> a and b }
+    fun TSqMat<Formula>.isStochastic() =
+      rows.map { it.reduce { a, b: Formula -> a.run { this + b } } eq sum }
+        .reduce { a, b -> a and b }
 
     val isBistochastic = m.isStochastic() and m.transpose().isStochastic()
 
@@ -120,15 +122,15 @@ class TestSMT {
     (m.rows + m.cols).windowed(2).map { twoSlices ->
       val (a, b) = twoSlices[0] to twoSlices[1]
       Assertions.assertEquals(a.sumOf { solution[it]!! }, b.sumOf { solution[it]!! })
+    }
   }
-}
 
   @Test
   fun testIsAssociative() = SMTInstance().solve {
     val dim = 2
-    val a = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("a$i$j")) }
-    val b = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("b$i$j")) }
-    val c = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("c$i$j")) }
+    val a = TSqMat(dim) { i, j -> IntVar("a$i$j") }
+    val b = TSqMat(dim) { i, j -> IntVar("b$i$j") }
+    val c = TSqMat(dim) { i, j -> IntVar("c$i$j") }
 
     val plusAssoc = ((a + b) + c) eq (a + (b + c))
 //    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
@@ -145,9 +147,9 @@ class TestSMT {
   @Disabled //TODO: why is this so slow?
   fun testIsDistributive() = SMTInstance().solve {
     val dim = 2
-    val a = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("a$i$j")) }
-    val b = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("b$i$j")) }
-    val c = TSqMat(dim) { i, j -> SMTInstance.Formula(fm, fm.makeVariable("c$i$j")) }
+    val a = TSqMat(dim) { i, j -> IntVar("a$i$j") }
+    val b = TSqMat(dim) { i, j -> IntVar("b$i$j") }
+    val c = TSqMat(dim) { i, j -> IntVar("c$i$j") }
 
     val plusDistrib = (a * (b + c)) eq (a * b + a * c)
 
@@ -168,17 +170,19 @@ class TestSMT {
     fun solve(function: SMTInstance.() -> Unit) = this.function()
 
     fun IntVar() = IntVrb(fm)
-    open class Formula(
-      open val mgr: IntegerFormulaManager,
-      val formula: IntegerFormula
-    ) : IntegerFormula by formula, Group<Formula> {
-      override val nil: Formula by lazy { Formula(mgr, mgr.makeNumber(0)) }
-      override val one: Formula by lazy { Formula(mgr, mgr.makeNumber(1)) }
-      private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = mgr.add(this, t)
-      private operator fun IntegerFormula.times(t: IntegerFormula) = mgr.multiply(this, t)
+    fun IntVar(name: String) = Formula(solverContext, fm.makeVariable(name))
 
-      override fun Formula.plus(t: Formula): Formula = Formula(mgr, formula + t.formula)
-      override fun Formula.times(t: Formula): Formula = Formula(mgr, formula * t.formula)
+    open class Formula(
+      open val ctx: SolverContext,
+      val formula: IntegerFormula,
+      val fm: IntegerFormulaManager = ctx.formulaManager.integerFormulaManager
+    ) : IntegerFormula by formula, Group<Formula> {
+      override val nil: Formula by lazy { Formula(ctx, fm.makeNumber(0)) }
+      override val one: Formula by lazy { Formula(ctx, fm.makeNumber(1)) }
+      private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = fm.add(this, t)
+      private operator fun IntegerFormula.times(t: IntegerFormula) = fm.multiply(this, t)
+      override fun Formula.plus(t: Formula): Formula = Formula(ctx, formula + t.formula)
+      override fun Formula.times(t: Formula): Formula = Formula(ctx, formula * t.formula)
 
       override fun toString() = formula.toString()
       override fun hashCode() = formula.hashCode()
@@ -193,7 +197,7 @@ class TestSMT {
 
     fun solveFor(vararg fs: IntegerFormula) =
       ProofContext(*fs.map {
-        // TODO: Necessary because error: "Cannot get the formula info of type Formula in the Solver!"
+        // TODO: Necessary to unwrap because error: "Cannot get the formula info of type Formula in the Solver!"
         if (it is Formula) it.formula else it
       }.toTypedArray())
 
