@@ -86,7 +86,7 @@ fun SpsMat.matToImg(f: Int = 20): String {
 }
 
 // Returns the Cartesian product of two sets
-operator fun <T> Set<T>.times(s: Set<T>) =
+operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
 operator fun IntRange.times(s: IntRange) =

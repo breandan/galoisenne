@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.matrix.TSqMat
 import ai.hypergraph.kaliningraph.smt.TestSMT.SMTInstance.Formula
+import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
@@ -77,22 +78,47 @@ class TestSMT {
   }
 
   @Test
-  fun testNonLinear() = SMTInstance().solve {
-    val a by IntVar()
-    val b by IntVar()
-    val c by IntVar()
+  fun testNonLinear() {
+    // Search space of integer quadruplets w, x, y, z s.t. w^z + x^z = y^z + z
+    data class Fermat(val w: Int, val x: Int, val y: Int, val z: Int)
+    fun Int.pow(exp: Int) = toDouble().pow(exp).toInt()
+    fun Fermat.isValidSolution() = w.pow(z) + x.pow(z) == y.pow(z) + z
 
-    val exp = 2
-    val f = ((a pwr exp) pls (b pwr exp)) eq ((c pwr exp) pls exp)
+    val range = (-10..10).toSet()
+    val erange = (2..8).toSet()
+    range.let { it * it * it * erange }
+      .map { Fermat(it.first.first.first, it.first.first.second, it.first.second, it.second) }
+      .filter { it.isValidSolution() }
+      .forEach { println(it) }
 
-    println(f)
-    val solution = solveFor(a, b, c).subjectTo(f)
-    println(solution)
+    (1..2).forEach { z ->
+      SMTInstance().solve {
+        val w by IntVar()
+        val x by IntVar()
+        val y by IntVar()
 
-    Assertions.assertEquals(
-      solution[a]!!.pow(exp) + solution[b]!!.pow(exp),
-      solution[c]!!.pow(exp) + exp
-    )
+        val f = ((w pwr z) pls (x pwr z)) eq ((y pwr z) pls z)
+
+        val bigNum = 3
+
+        val containsNegative = (w lt 0) or (x lt 0) or (y lt 0)
+
+        val areLarge =
+          (w pwr 2 gt bigNum) and
+            (x pwr 2 gt bigNum) and
+            (y pwr 2 gt bigNum)
+
+        val isNontrivial = f and containsNegative and areLarge
+
+        val solution = solveFor(w, x, y).subjectTo(isNontrivial)
+        println("$solution, z=$z")
+
+        Assertions.assertEquals(
+          solution[w]!!.pow(z) + solution[x]!!.pow(z),
+          solution[y]!!.pow(z) + z
+        )
+      }
+    }
   }
 
   @Test
@@ -252,12 +278,11 @@ class TestSMT {
   }
 }
 
-fun main() =
-  TestSMT().run {
-    testTaxiCab()
-    testSumOfCubes()
-    testNonLinear()
-    testBistochastic()
-    testIsAssociative()
+fun main() = TestSMT().run {
+  testTaxiCab()
+  testSumOfCubes()
+  testNonLinear()
+  testBistochastic()
+  testIsAssociative()
 //    testIsDistributive()
-  }
+}
