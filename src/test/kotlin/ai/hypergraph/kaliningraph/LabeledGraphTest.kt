@@ -1,15 +1,14 @@
 package ai.hypergraph.kaliningraph
 
 import org.junit.Assert.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 
 class LabeledGraphTest {
   val graph = LabeledGraph { a - b - c - d - e; a - c - e }
 
   @Test
-  fun testAdjListConstructor() = assertEquals(
-    graph,
-    LabeledGraph.G(
+  fun testAdjListConstructor() = Assertions.assertEquals(
+    graph, LabeledGraph.G(
       "a" to "b",
       "b" to "c",
       "c" to "d",
@@ -20,5 +19,5 @@ class LabeledGraphTest {
   )
 
   @Test
-  fun testStringConstructor() = assertEquals(graph, LabeledGraph("abcde ace"))
+  fun testStringConstructor() = Assertions.assertEquals(graph, LabeledGraph("abcde ace"))
 }

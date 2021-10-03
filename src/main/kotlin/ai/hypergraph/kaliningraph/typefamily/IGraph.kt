@@ -126,8 +126,8 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   val D: SpsMat get() = memoize { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
   // Adjacency matrix
-  val A: BSqMat get() = memoize { BSqMat(size) { i, j -> this[j] in this[i].neighbors } }
-  val A_AUG: BSqMat get() = memoize { A + A.transpose() + BSqMat.one(size) }
+  val A: BooleanMatrix get() = memoize { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
+  val A_AUG: BooleanMatrix get() = memoize { A + A.transpose() + BooleanMatrix.one(size) }
 
   // Symmetric normalized adjacency
   val ASYMNORM: SpsMat get() = memoize {

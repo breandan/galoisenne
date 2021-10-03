@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.matrix.BMat
+import ai.hypergraph.kaliningraph.matrix.*
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
@@ -54,7 +54,7 @@ fun IGraph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {
     toFile(File.createTempFile(filename, ".svg"))
   }.show()
-fun BMat.show(filename: String = "temp") = matToImg().let { data ->
+fun BooleanMatrix.show(filename: String = "temp") = matToImg().let { data ->
   File.createTempFile(filename, ".html").apply {
     writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>")
   }
@@ -92,7 +92,7 @@ operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
 operator fun IntRange.times(s: IntRange) =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
-fun BMat.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
+fun BooleanMatrix.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)
 

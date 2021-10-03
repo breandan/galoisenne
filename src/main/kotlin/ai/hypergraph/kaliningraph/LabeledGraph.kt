@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.matrix.BMat
+import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Style.FILLED
@@ -53,7 +53,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   var accumuator = mutableSetOf<String>()
   var description = ""
 
-  fun S() = BMat(vertices.size, 1) { i, j -> this[i].occupied }
+  fun S() = BooleanMatrix(vertices.size, 1) { i, j -> this[i].occupied }
 
   fun rewrite(substitution: Pair<String, String>) =
     randomWalk().take(200).toList().joinToString("")

@@ -8,26 +8,26 @@ import org.apache.tinkerpop.gremlin.structure.Edge.DEFAULT_LABEL
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph
 import org.jgrapht.graph.*
 import org.junit.Assert.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 
 class TranslationInvarianceTest {
   val randomGraph = LabeledGraph { a - b - c - d - e; a - c - e }
 
   @Test
   fun testTinkerpop() =
-    randomGraph.let { assertEquals(it, it.toTinkerpop().toKaliningraph()) }
+    randomGraph.let { Assertions.assertEquals(it, it.toTinkerpop().toKaliningraph()) }
 
   @Test
   fun testJGraphT() =
-    randomGraph.let { assertEquals(it, it.toJGraphT().toKaliningraph()) }
+    randomGraph.let { Assertions.assertEquals(it, it.toJGraphT().toKaliningraph()) }
 
   @Test
   fun testGraphviz() =
-    randomGraph.let { assertEquals(it, it.render().toKaliningraph()) }
+    randomGraph.let { Assertions.assertEquals(it, it.render().toKaliningraph()) }
 
   @Test
   fun testBifurcan() =
-    randomGraph.let { assertEquals(it, it.toBifurcan().toKaliningraph()) }
+    randomGraph.let { Assertions.assertEquals(it, it.toBifurcan().toKaliningraph()) }
 
   fun MutableGraph.toKaliningraph() =
     LabeledGraph {

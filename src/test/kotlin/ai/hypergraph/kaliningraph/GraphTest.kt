@@ -2,16 +2,13 @@ package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.theory.diameter
 import org.junit.Assert.*
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 
 class GraphTest {
   val graph = LabeledGraph { a - b - c - d - e; a - c - e }
   @Test
   fun testIsomorphic() {
-    assertEquals(
-      graph,
-      LabeledGraph { b - c - d - e - f; b - d - f }
-    )
+    Assertions.assertEquals(graph, LabeledGraph { b - c - d - e - f; b - d - f })
   }
 
   @Test
@@ -20,21 +17,21 @@ class GraphTest {
     val ace = LabeledGraph { a - c - e }
     val graph2 = abcde + ace
 
-    assertEquals(graph, graph2)
+    Assertions.assertEquals(graph, graph2)
 
     val abcdead = LabeledGraph { a - b - c - d - e - a - d }
     val edcbace = LabeledGraph { e - d - c - b - a - c - e }
-    assertNotEquals(abcdead, edcbace)
+    Assertions.assertNotEquals(abcdead, edcbace)
   }
 
   @Test
   fun testClosure() {
-    assertEquals(graph.toSet(), graph.vertices.flatMap { it.neighbors + it }.toSet())
+    Assertions.assertEquals(graph.toSet(), graph.vertices.flatMap { it.neighbors + it }.toSet())
   }
 
   @Test
   fun testDiameter() {
-    assertEquals(2, graph.diameter())
+    Assertions.assertEquals(2, graph.diameter())
   }
 
   // TODO: Test whether graph is closed under other circumstances

@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.display
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.matrix.BMat
+import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
@@ -42,6 +42,6 @@ fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, Mutable
 //var fromField = ""
 //var replField = ""
 
-fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> BMat) {
+fun ImageElement.render(graph: LabeledGraph, renderFun: (LabeledGraph) -> BooleanMatrix) {
   setAttributeRaw("src", renderFun(graph).matToImg())
 }

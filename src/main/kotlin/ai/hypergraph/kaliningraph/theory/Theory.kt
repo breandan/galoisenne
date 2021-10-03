@@ -22,7 +22,7 @@ else prefAttach(graph.attach(degree), vertices - 1, degree, attach)
 
 tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.slowDiameter(
   i: Int = 1,
-  walks: BSqMat = A_AUG
+  walks: BooleanMatrix = A_AUG
 ): Int =
   if (walks.isFull) i
   else slowDiameter(i = i + 1, walks = walks * A_AUG)
@@ -31,8 +31,8 @@ tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGra
 
 tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.diameter(
   i: Int = 1,
-  prev: BSqMat = A_AUG,
-  next: BSqMat = prev
+  prev: BooleanMatrix = A_AUG,
+  next: BooleanMatrix = prev
 ): Int =
   if (next.isFull) slowDiameter(i / 2, prev)
   else diameter(i = 2 * i, prev = next, next = next * next)

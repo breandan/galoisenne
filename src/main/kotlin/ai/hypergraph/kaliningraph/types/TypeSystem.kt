@@ -160,21 +160,17 @@ interface Vector<T> {
   }
 }
 
-interface VectorField<T, V: Vector<T>, F: Field<T>> {
-  val v: V
+interface VectorField<T, F: Field<T>> {
   val f: F
 
   operator fun Vector<T>.plus(vec: Vector<T>): Vector<T> =
-    zip(vec) { a, b -> f.plus(a, b) }
+    zip(vec) { a, b -> with(f) { a + b } }
 
   infix fun T.dot(p: Vector<T>): Vector<T> = p.vmap { f.times(it, this) }
 
   companion object {
-    operator fun <T, F: Field<T>> invoke(v: Vector<T> = Vector(), f: F) =
-      object: VectorField<T, Vector<T>, F> {
-        override val v: Vector<T> get() = v
-        override val f: F get() = f
-      }
+    operator fun <T, F: Field<T>> invoke(f: F) =
+      object: VectorField<T, F> { override val f: F = f }
   }
 }
 

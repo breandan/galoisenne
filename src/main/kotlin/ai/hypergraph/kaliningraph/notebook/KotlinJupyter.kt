@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.notebook
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate
-import ai.hypergraph.kaliningraph.matrix.BMat
+import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.Graph
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.annotations.JupyterLibrary
@@ -19,7 +19,7 @@ internal class Integration: JupyterIntegration() {
       "org.ejml.kotlin.*"
     ).forEach { import(it) }
 
-    render<BMat> { HTML("<img src=\"${it.matToImg()}\"/>") }
+    render<BooleanMatrix> { HTML("<img src=\"${it.matToImg()}\"/>") }
     render<Graph<*, *, *>> { HTML(it.html()) }
     render<Gate> { HTML(it.graph.html()) }
     render<SpsMat> { HTML("<img src=\"${it.matToImg()}\"/>") }
