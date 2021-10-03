@@ -82,6 +82,7 @@ class TestSMT {
   fun testNonLinear() {
     // Search space of integer quadruplets w, x, y, z s.t. w^z + x^z = y^z + z
     data class Fermat(val w: Int, val x: Int, val y: Int, val z: Int)
+
     fun Int.pow(exp: Int) = toDouble().pow(exp).toInt()
     fun Fermat.isValidSolution() = w.pow(z) + x.pow(z) == y.pow(z) + z
 
@@ -153,52 +154,64 @@ class TestSMT {
     }
   }
 
-  class SMTMatrix(override val algebra: MatrixAlgebra<Formula, Ring<Formula>>,
-                  override val numRows: Int, override val numCols: Int,
-                  override val data: List<Formula>,
-  ): Matrix<Formula, Ring<Formula>, SMTMatrix> {
-    constructor(algebra: MatrixAlgebra<Formula, Ring<Formula>>, elements: List<Formula>) : this(algebra, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
-    constructor(numRows: Int, numCols: Int = numRows, algebra: MatrixAlgebra<Formula, Ring<Formula>>, f: (Int, Int) -> Formula) : this(algebra, List(numRows*numCols) { f(it / numRows, it % numCols) })
-  }
-  @Test
-  fun testIsAssociative() = SMTInstance().solve {
-    val SMT_ALGEBRA = MatrixAlgebra(
-      ring = Ring(
-        nil = nil,
-        one = one,
-        plus = { a, b -> a.run { this + b } },
-        times = { a, b -> a.run { this * b } }
-      )
+  class SMTMatrix(
+    override val algebra: MatrixAlgebra<Formula, Ring<Formula>>,
+    override val numRows: Int,
+    override val numCols: Int = numRows,
+    override val data: List<Formula>,
+  ) : Matrix<Formula, Ring<Formula>, SMTMatrix> {
+    constructor(algebra: MatrixAlgebra<Formula, Ring<Formula>>, elements: List<Formula>) : this(
+      algebra = algebra,
+      numRows = sqrt(elements.size.toDouble()).toInt(),
+      data = elements
     )
 
+    constructor(
+      numRows: Int,
+      numCols: Int = numRows,
+      algebra: MatrixAlgebra<Formula, Ring<Formula>>,
+      f: (Int, Int) -> Formula
+    ) : this(
+      algebra = algebra,
+      numRows = numRows,
+      numCols = numCols,
+      data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    )
+  }
 
-      val dim = 2
-      val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
-      val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
-      val c = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
+  class SMTAlgebra(val instance: SMTInstance): MatrixAlgebra<Formula, Ring<Formula>>{
+    override val ring: Ring<Formula> = Ring(
+      nil = instance.nil,
+      one = instance.one,
+      plus = { a, b -> a.run { this + b } },
+      times = { a, b -> a.run { this * b } }
+    )
+  }
 
-      val plusAssoc = ((a + b) + c) eq (a + (b + c))
+  @Test
+  fun testIsAssociative() = SMTInstance().solve {
+    val SMT_ALGEBRA = SMTAlgebra(this)
+
+    val dim = 2
+    val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
+    val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
+    val c = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
+
+    val plusAssoc = ((a + b) + c) eq (a + (b + c))
 //    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
 
-      val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
-      val shouldBeTrue = prove(goal)
+    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
+    val shouldBeTrue = prove(goal)
 
-      println(shouldBeTrue)
+    println(shouldBeTrue)
 
-      Assertions.assertTrue(shouldBeTrue)
+    Assertions.assertTrue(shouldBeTrue)
   }
 
   @Test
   @Disabled
   fun testIsDistributive() = SMTInstance().solve {
-    val SMT_ALGEBRA = MatrixAlgebra(
-      ring = Ring(
-        nil = nil,
-        one = one,
-        plus = { a, b -> a.run { this + b } },
-        times = { a, b -> a.run { this * b } }
-      )
-    )
+    val SMT_ALGEBRA = SMTAlgebra(this)
 
     val dim = 2
     val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
@@ -247,7 +260,6 @@ class TestSMT {
 
     val nil: Formula = Formula(solverContext, fm.makeNumber(0))
     val one: Formula = Formula(solverContext, fm.makeNumber(1))
-
 
     class IntVrb(val mgr: IntegerFormulaManager) {
       operator fun getValue(nothing: Nothing?, property: KProperty<*>) = mgr.makeVariable(property.name)

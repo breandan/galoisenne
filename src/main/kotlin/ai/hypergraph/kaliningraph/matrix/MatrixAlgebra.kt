@@ -7,9 +7,17 @@ import org.ejml.kotlin.*
 import java.lang.reflect.Constructor
 import kotlin.math.*
 import kotlin.random.Random
-import kotlin.jvm.functions.Function2
 
-interface Matrix<T, R: Ring<T>, M: Matrix<T, R, M>> {
+
+/**
+ * Generic matrix which supports overlable addition and multiplication
+ * using an abstract algebra (e.g. tropical semiring). Useful for many
+ * useful problems on graph theory.
+ *
+ * @see [MatrixAlgebra]
+ */
+
+interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
   val data: List<T>
   val numRows: Int
   val numCols: Int
@@ -19,42 +27,48 @@ interface Matrix<T, R: Ring<T>, M: Matrix<T, R, M>> {
   val rows get() = data.chunked(numCols)
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
 
-  // TODO: https://arxiv.org/pdf/0811.1714.pdf#page=5
-  operator fun times(that: M): M = with(algebra) { this@Matrix as M * that as Matrix<T, R, M>}
-  operator fun plus(that: M): M = with(algebra) { this@Matrix as M + that as Matrix<T, R, M>}
+  operator fun times(that: M): M = with(algebra) { this@Matrix as M * that as Matrix<T, R, M> }
+  operator fun plus(that: M): M = with(algebra) { this@Matrix as M + that as Matrix<T, R, M> }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numCols: Int, numRows: Int, algebra: MatrixAlgebra<T, R>, op: (Int, Int) -> T): M =
-    (javaClass.getConstructor(MatrixAlgebra::class.java, Int::class.java, Int::class.java, List::class.java) as Constructor<M>)
-      .newInstance(algebra, numCols, numRows, indices.map { (i, j) -> op(i, j) })
+  fun new(numCols: Int, numRows: Int, algebra: MatrixAlgebra<T, R>, data: List<T>): M =
+    (javaClass.getConstructor(
+      MatrixAlgebra::class.java, Int::class.java, Int::class.java, List::class.java
+    ) as Constructor<M>).newInstance(algebra, numCols, numRows, data)
 
   fun join(that: M, op: (Int, Int) -> T): M =
     assert(numCols == that.numRows) {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-    }.run { new(numCols, that.numRows, algebra, op) }
+    }.run { new(numCols, that.numRows, algebra, indices.map { (i, j) -> op(i, j) }) }
 
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> =
     data.toList().subList(r * numCols, r * numCols + numCols)
 
-  fun transpose(): M = new(numCols, numRows, algebra) { r, c -> this[c, r] }
+  fun transpose(): M = new(numCols, numRows, algebra, indices.map { (i, j) -> this[j, i] })
 }
+
+/**
+ * Ad hoc polymorphic algebra (can be specified at runtime).
+  */
 
 interface MatrixAlgebra<T, R : Ring<T>> {
   val ring: R
 
-  operator fun <M: Matrix<T, R, M>> M.plus(that: Matrix<T, R, M>): M =
+  operator fun <M : Matrix<T, R, M>> M.plus(that: Matrix<T, R, M>): M =
     join(that as M) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
 
   infix fun List<T>.dot(es: List<T>): T =
     with(ring) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
-  operator fun <M: Matrix<T, R, M>> M.times(that: Matrix<T, R, M>): M=
+  operator fun <M : Matrix<T, R, M>> M.times(that: Matrix<T, R, M>): M =
     join(that as M) { i, j -> this[i] dot that[j] }
 
   companion object {
     operator fun <T, R : Ring<T>> invoke(ring: R) =
-      object : MatrixAlgebra<T, R> { override val ring: R = ring }
+      object : MatrixAlgebra<T, R> {
+        override val ring: R = ring
+      }
   }
 }
 
@@ -96,13 +110,27 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
   )
 )
 
+
+// Concrete subclasses
+
 open class BooleanMatrix constructor(
   override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
-  override val numRows: Int, override val numCols: Int,
+  override val numRows: Int,
+  override val numCols: Int = numRows,
   override val data: List<Boolean>,
 ) : Matrix<Boolean, Ring<Boolean>, BooleanMatrix> {
-  constructor(elements: List<Boolean>) : this(BOOLEAN_ALGEBRA, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
+  constructor(elements: List<Boolean>) : this(
+    algebra = BOOLEAN_ALGEBRA,
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
+
   constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
   constructor(vararg rows: String) :
     this(rows.fold("") { a, b -> a + b }
@@ -113,10 +141,7 @@ open class BooleanMatrix constructor(
       }
     )
 
-  fun Matrix<Boolean, Ring<Boolean>, BooleanMatrix>.toBooleanMatrix() = BooleanMatrix(algebra, numRows, numCols, data)
-
-  override fun transpose(): BooleanMatrix = super.transpose().toBooleanMatrix()
-
+  // TODO: Implement Four Russians for speedy boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
   val isFull by lazy { data.all { it } }
   val values by lazy { data.distinct().sorted() }
 
@@ -141,11 +166,22 @@ open class BooleanMatrix constructor(
 
 open class IntegerMatrix constructor(
   override val algebra: MatrixAlgebra<Int, Ring<Int>> = INTEGER_ALGEBRA,
-  override val numRows: Int, override val numCols: Int,
+  override val numRows: Int,
+  override val numCols: Int = numRows,
   override val data: List<Int>,
 ) : Matrix<Int, Ring<Int>, IntegerMatrix> {
-  constructor(elements: List<Int>) : this(INTEGER_ALGEBRA, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Int) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
+  constructor(elements: List<Int>) : this(
+    algebra = INTEGER_ALGEBRA,
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Int) : this(
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
+
   constructor(vararg rows: Int) : this(rows.toList())
 
   val isFull by lazy { data.all { it > 0 } }
@@ -153,9 +189,9 @@ open class IntegerMatrix constructor(
 
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
-    data.foldIndexed("") { i, a, b ->
-    a + "$b".padEnd(pad,' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
-  }
+      data.foldIndexed("") { i, a, b ->
+        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+      }
     }
 
   override fun equals(other: Any?) =
@@ -169,18 +205,28 @@ open class IntegerMatrix constructor(
 // with the default implementation it will fail at runtime.
 open class FreeMatrix<T> constructor(
   override val algebra: MatrixAlgebra<T, Ring<T>> =
-    object: MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
-  override val numRows: Int, override val numCols: Int,
+    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+  override val numRows: Int,
+  override val numCols: Int = numRows,
   override val data: List<T>,
 ) : Matrix<T, Ring<T>, FreeMatrix<T>> {
-  constructor(elements: List<T>) : this(numRows=sqrt(elements.size.toDouble()).toInt(), numCols=sqrt(elements.size.toDouble()).toInt(), data=elements)
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
+  constructor(elements: List<T>) : this(
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
+
   constructor(vararg rows: T) : this(rows.toList())
 
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
       data.foldIndexed("") { i, a, b ->
-        a + "$b".padEnd(pad,' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
       }
     }
 
