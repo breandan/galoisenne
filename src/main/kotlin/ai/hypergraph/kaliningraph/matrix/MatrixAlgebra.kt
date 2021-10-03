@@ -4,59 +4,56 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.Ring
 import org.ejml.data.*
 import org.ejml.kotlin.*
+import java.lang.reflect.Constructor
 import kotlin.math.*
 import kotlin.random.Random
+import kotlin.jvm.functions.Function2
 
-
-interface Matrix<T> {
-  companion object {
-    operator fun <T> invoke(numRows: Int = 0, numCols: Int = numRows, data: List<T> = emptyList()): Matrix<T> =
-      object : Matrix<T> {
-        override val numRows: Int = numRows
-        override val numCols: Int = numCols
-        override val data: List<T> = data
-      }
-
-    operator fun <T> invoke(rows: Int, cols: Int = rows, f: (Int, Int) -> T): Matrix<T> =
-      invoke(rows, cols, List(rows * cols) { f(it / cols, it % cols) })
-  }
-
+interface Matrix<T, R: Ring<T>, M: Matrix<T, R, M>> {
   val data: List<T>
   val numRows: Int
   val numCols: Int
+  val algebra: MatrixAlgebra<T, R>
 
   val indices get() = (0 until numRows) * (0 until numCols)
   val rows get() = data.chunked(numCols)
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
 
+  // TODO: https://arxiv.org/pdf/0811.1714.pdf#page=5
+  operator fun times(that: M): M = with(algebra) { this@Matrix as M * that as Matrix<T, R, M>}
+  operator fun plus(that: M): M = with(algebra) { this@Matrix as M + that as Matrix<T, R, M>}
 
-  fun join(that: Matrix<T>, op: (Int, Int) -> T): Matrix<T> =
+  // Constructs a new instance with the same concrete matrix type
+  fun new(numCols: Int, numRows: Int, algebra: MatrixAlgebra<T, R>, op: (Int, Int) -> T): M =
+    (javaClass.getConstructor(MatrixAlgebra::class.java, Int::class.java, Int::class.java, List::class.java) as Constructor<M>)
+      .newInstance(algebra, numCols, numRows, indices.map { (i, j) -> op(i, j) })
+
+  fun join(that: M, op: (Int, Int) -> T): M =
     assert(numCols == that.numRows) {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-    }.run { invoke(numCols, that.numRows, op) }
+    }.run { new(numCols, that.numRows, algebra, op) }
 
-  fun <U> map(f: (T) -> U): Matrix<U> = invoke(numRows, numCols, data.map(f))
-
-  operator fun get(r: Int, c: Int) = data[r * numCols + c]
+  operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> =
     data.toList().subList(r * numCols, r * numCols + numCols)
 
-  fun transpose(): Matrix<T> = invoke(numCols, numRows) { r, c -> this[c, r] }
+  fun transpose(): M = new(numCols, numRows, algebra) { r, c -> this[c, r] }
 }
 
 interface MatrixAlgebra<T, R : Ring<T>> {
   val ring: R
 
-  operator fun Matrix<T>.plus(that: Matrix<T>): Matrix<T> =
-    join(that) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
+  operator fun <M: Matrix<T, R, M>> M.plus(that: Matrix<T, R, M>): M =
+    join(that as M) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
 
   infix fun List<T>.dot(es: List<T>): T =
     with(ring) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
-  operator fun Matrix<T>.times(that: Matrix<T>): Matrix<T> = join(that) { i, j -> this[i] dot that[j] }
+  operator fun <M: Matrix<T, R, M>> M.times(that: Matrix<T, R, M>): M=
+    join(that as M) { i, j -> this[i] dot that[j] }
 
   companion object {
-    operator fun <T, R : Ring<T>, M: Matrix<T>> invoke(ring: R) =
+    operator fun <T, R : Ring<T>> invoke(ring: R) =
       object : MatrixAlgebra<T, R> { override val ring: R = ring }
   }
 }
@@ -69,6 +66,15 @@ val BOOLEAN_ALGEBRA = MatrixAlgebra(
     one = true,
     plus = { a, b -> a || b },
     times = { a, b -> a && b }
+  )
+)
+
+val INTEGER_ALGEBRA = MatrixAlgebra(
+  Ring(
+    nil = 0,
+    one = 1,
+    plus = { a, b -> a + b },
+    times = { a, b -> a * b }
   )
 )
 
@@ -91,10 +97,10 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
 )
 
 open class BooleanMatrix constructor(
-  val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
+  override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
   override val numRows: Int, override val numCols: Int,
   override val data: List<Boolean>,
-) : Matrix<Boolean> {
+) : Matrix<Boolean, Ring<Boolean>, BooleanMatrix> {
   constructor(elements: List<Boolean>) : this(BOOLEAN_ALGEBRA, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
   constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
@@ -107,19 +113,12 @@ open class BooleanMatrix constructor(
       }
     )
 
-  fun Matrix<Boolean>.toBooleanMatrix() = BooleanMatrix(algebra, numRows, numCols, data)
-
-  // TODO: https://arxiv.org/pdf/0811.1714.pdf#page=5
-  operator fun times(that: Matrix<Boolean>) =
-    with(algebra) { this@BooleanMatrix as Matrix<Boolean> * that }.toBooleanMatrix()
-  operator fun plus(that: Matrix<Boolean>) =
-    with(algebra) { this@BooleanMatrix as Matrix<Boolean> + that }.toBooleanMatrix()
+  fun Matrix<Boolean, Ring<Boolean>, BooleanMatrix>.toBooleanMatrix() = BooleanMatrix(algebra, numRows, numCols, data)
 
   override fun transpose(): BooleanMatrix = super.transpose().toBooleanMatrix()
-  val contents: Array<BooleanArray> = data.chunked(numCols).map { it.toBooleanArray() }.toTypedArray()
 
-  val isFull = data.all { it }
-  val values = data.distinct().sorted()
+  val isFull by lazy { data.all { it } }
+  val values by lazy { data.distinct().sorted() }
 
   companion object {
     fun grayCode(size: Int): BooleanMatrix = TODO()
@@ -134,9 +133,62 @@ open class BooleanMatrix constructor(
   }
 
   override fun equals(other: Any?) =
-    other is BooleanMatrix && data.zip(other.data).all { (a, b) -> a == b }
+    other is BooleanMatrix && data.zip(other.data).all { (a, b) -> a == b } ||
+      other is Matrix<*, *, *> && other.data == data
 
-  override fun hashCode() = contents.contentDeepHashCode()
+  override fun hashCode() = data.hashCode()
+}
+
+open class IntegerMatrix constructor(
+  override val algebra: MatrixAlgebra<Int, Ring<Int>> = INTEGER_ALGEBRA,
+  override val numRows: Int, override val numCols: Int,
+  override val data: List<Int>,
+) : Matrix<Int, Ring<Int>, IntegerMatrix> {
+  constructor(elements: List<Int>) : this(INTEGER_ALGEBRA, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Int) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
+  constructor(vararg rows: Int) : this(rows.toList())
+
+  val isFull by lazy { data.all { it > 0 } }
+  val values by lazy { data.distinct().sorted() }
+
+  override fun toString() =
+    data.maxOf { it.toString().length + 2 }.let { pad ->
+    data.foldIndexed("") { i, a, b ->
+    a + "$b".padEnd(pad,' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+  }
+    }
+
+  override fun equals(other: Any?) =
+    other is IntegerMatrix && data.zip(other.data).all { (a, b) -> a == b } ||
+      other is Matrix<*, *, *> && other.data == data
+
+  override fun hashCode() = data.hashCode()
+}
+
+// A free matrix has no associated algebra by default. If you try to do math
+// with the default implementation it will fail at runtime.
+open class FreeMatrix<T> constructor(
+  override val algebra: MatrixAlgebra<T, Ring<T>> =
+    object: MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+  override val numRows: Int, override val numCols: Int,
+  override val data: List<T>,
+) : Matrix<T, Ring<T>, FreeMatrix<T>> {
+  constructor(elements: List<T>) : this(numRows=sqrt(elements.size.toDouble()).toInt(), numCols=sqrt(elements.size.toDouble()).toInt(), data=elements)
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(List(numRows*numCols) { f(it / numRows, it % numCols) })
+  constructor(vararg rows: T) : this(rows.toList())
+
+  override fun toString() =
+    data.maxOf { it.toString().length + 2 }.let { pad ->
+      data.foldIndexed("") { i, a, b ->
+        a + "$b".padEnd(pad,' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+      }
+    }
+
+  override fun equals(other: Any?) =
+    other is FreeMatrix<*> && data.zip(other.data).all { (a, b) -> a == b } ||
+      other is Matrix<*, *, *> && other.data == data
+
+  override fun hashCode() = data.hashCode()
 }
 
 fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }

@@ -9,7 +9,7 @@ import org.sosy_lab.java_smt.SolverContextFactory.Solvers.PRINCESS
 import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*
-import kotlin.math.pow
+import kotlin.math.*
 import kotlin.reflect.KProperty
 
 class TestSMT {
@@ -125,11 +125,12 @@ class TestSMT {
   @Test
   fun testBistochastic() = SMTInstance().solve {
     val dim = 7
-    val m = Matrix(dim) { i, j -> IntVar("v$i$j") }
+
+    val m = FreeMatrix(dim) { i, j -> IntVar("v$i$j") }
 
     val sum by IntVar()
 
-    fun Matrix<Formula>.isStochastic() =
+    fun FreeMatrix<Formula>.isStochastic() =
       rows.map { it.reduce { a, b: Formula -> a.run { this + b } } eq sum }
         .reduce { a, b -> a and b }
 
@@ -152,22 +153,29 @@ class TestSMT {
     }
   }
 
+  class SMTMatrix(override val algebra: MatrixAlgebra<Formula, Ring<Formula>>,
+                  override val numRows: Int, override val numCols: Int,
+                  override val data: List<Formula>,
+  ): Matrix<Formula, Ring<Formula>, SMTMatrix> {
+    constructor(algebra: MatrixAlgebra<Formula, Ring<Formula>>, elements: List<Formula>) : this(algebra, sqrt(elements.size.toDouble()).toInt(), sqrt(elements.size.toDouble()).toInt(), elements)
+    constructor(numRows: Int, numCols: Int = numRows, algebra: MatrixAlgebra<Formula, Ring<Formula>>, f: (Int, Int) -> Formula) : this(algebra, List(numRows*numCols) { f(it / numRows, it % numCols) })
+  }
   @Test
   fun testIsAssociative() = SMTInstance().solve {
-    with(
-      MatrixAlgebra(
-        ring = Ring(
-          nil = nil,
-          one = one,
-          plus = { a, b -> a.run { this + b } },
-          times = { a, b -> a.run { this * b } }
-        )
+    val SMT_ALGEBRA = MatrixAlgebra(
+      ring = Ring(
+        nil = nil,
+        one = one,
+        plus = { a, b -> a.run { this + b } },
+        times = { a, b -> a.run { this * b } }
       )
-    ) {
+    )
+
+
       val dim = 2
-      val a = Matrix(dim) { i, j -> IntVar("a$i$j") }
-      val b = Matrix(dim) { i, j -> IntVar("b$i$j") }
-      val c = Matrix(dim) { i, j -> IntVar("c$i$j") }
+      val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
+      val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
+      val c = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
 
       val plusAssoc = ((a + b) + c) eq (a + (b + c))
 //    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
@@ -178,36 +186,34 @@ class TestSMT {
       println(shouldBeTrue)
 
       Assertions.assertTrue(shouldBeTrue)
-    }
   }
 
   @Test
-  @Disabled //TODO: why is this so slow?
+  @Disabled
   fun testIsDistributive() = SMTInstance().solve {
-    with(
-      MatrixAlgebra(
-        ring = Ring(
-          nil = nil,
-          one = one,
-          plus = { a, b -> a.run { this + b } },
-          times = { a, b -> a.run { this * b } }
-        )
+    val SMT_ALGEBRA = MatrixAlgebra(
+      ring = Ring(
+        nil = nil,
+        one = one,
+        plus = { a, b -> a.run { this + b } },
+        times = { a, b -> a.run { this * b } }
       )
-    ) {
-      val dim = 2
-      val a = Matrix(dim) { i, j -> IntVar("a$i$j") }
-      val b = Matrix(dim) { i, j -> IntVar("b$i$j") }
-      val c = Matrix(dim) { i, j -> IntVar("c$i$j") }
+    )
 
-      val plusDistrib = (a * (b + c)) eq (a * b + a * c)
+    val dim = 2
+    val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
+    val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
+    val c = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
 
-      val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusDistrib)
-      val shouldBeTrue = prove(goal)
+    val plusDistrib = (a * (b + c)) eq (a * b + a * c)
+//    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
 
-      println(shouldBeTrue)
+    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusDistrib)
+    val shouldBeTrue = prove(goal)
 
-      Assertions.assertTrue(shouldBeTrue)
-    }
+    println(shouldBeTrue)
+
+    Assertions.assertTrue(shouldBeTrue)
   }
 
   open class Formula(
@@ -297,7 +303,7 @@ class TestSMT {
 
     fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
-    infix fun Matrix<Formula>.eq(other: Matrix<Formula>) =
+    infix fun Matrix<Formula, *, *>.eq(other: Matrix<Formula, *, *>) =
       rows.zip(other.rows)
         .map { (a, b) -> a.zip(b).map { (a, b) -> a eq b } }
         .flatten().reduce { a, b -> a and b }
@@ -309,6 +315,6 @@ fun main() = TestSMT().run {
   testSumOfCubes()
   testNonLinear()
   testBistochastic()
-  testIsAssociative()
+//  testIsAssociative()
 //    testIsDistributive()
 }
