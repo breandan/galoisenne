@@ -12,7 +12,7 @@ import kotlin.random.Random
 /**
  * Generic matrix which supports overlable addition and multiplication
  * using an abstract algebra (e.g. tropical semiring). Useful for many
- * useful problems on graph theory.
+ * problems in graph theory.
  *
  * @see [MatrixAlgebra]
  */
@@ -27,8 +27,8 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
   val rows get() = data.chunked(numCols)
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
 
-  operator fun times(that: M): M = with(algebra) { this@Matrix as M * that as Matrix<T, R, M> }
-  operator fun plus(that: M): M = with(algebra) { this@Matrix as M + that as Matrix<T, R, M> }
+  operator fun times(that: M): M = with(algebra) { this@Matrix times that }
+  operator fun plus(that: M): M = with(algebra) { this@Matrix plus that }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(numCols: Int, numRows: Int, algebra: MatrixAlgebra<T, R>, data: List<T>): M =
@@ -36,7 +36,7 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
       MatrixAlgebra::class.java, Int::class.java, Int::class.java, List::class.java
     ) as Constructor<M>).newInstance(algebra, numCols, numRows, data)
 
-  fun join(that: M, op: (Int, Int) -> T): M =
+  fun join(that: Matrix<T, R, M>, op: (Int, Int) -> T): M =
     assert(numCols == that.numRows) {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
     }.run { new(numCols, that.numRows, algebra, indices.map { (i, j) -> op(i, j) }) }
@@ -55,14 +55,14 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
 interface MatrixAlgebra<T, R : Ring<T>> {
   val ring: R
 
-  operator fun <M : Matrix<T, R, M>> M.plus(that: Matrix<T, R, M>): M =
-    join(that as M) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
+  infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.plus(that: Matrix<T, R, M>): M =
+    join(that) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
 
   infix fun List<T>.dot(es: List<T>): T =
     with(ring) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
-  operator fun <M : Matrix<T, R, M>> M.times(that: Matrix<T, R, M>): M =
-    join(that as M) { i, j -> this[i] dot that[j] }
+  infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.times(that: Matrix<T, R, M>): M =
+    join(that) { i, j -> this[i] dot that[j] }
 
   companion object {
     operator fun <T, R : Ring<T>> invoke(ring: R) =
@@ -112,7 +112,6 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
 
 
 // Concrete subclasses
-
 open class BooleanMatrix constructor(
   override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
   override val numRows: Int,
