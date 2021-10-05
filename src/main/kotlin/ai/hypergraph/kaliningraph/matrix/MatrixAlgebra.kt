@@ -125,6 +125,7 @@ abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
   override val numCols: Int = numRows,
   override val data: List<T>,
 ) : Matrix<T, Ring<T>, M> {
+  val values by lazy { data.toSet() }
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
       data.foldIndexed("") { i, a, b ->
@@ -192,8 +193,9 @@ open class BooleanMatrix constructor(
     )
 
   // TODO: Implement Four Russians for speedy boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
+  override fun times(that: BooleanMatrix): BooleanMatrix = super.times(that)
+
   val isFull by lazy { data.all { it } }
-  val values by lazy { data.distinct().sorted() }
 
   companion object {
     fun grayCode(size: Int): BooleanMatrix = TODO()
@@ -228,7 +230,6 @@ open class IntegerMatrix constructor(
 
   constructor(vararg rows: Int) : this(rows.toList())
 
-  val values by lazy { data.distinct().sorted() }
 }
 
 open class DoubleMatrix constructor(

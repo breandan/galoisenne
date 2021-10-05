@@ -209,7 +209,6 @@ class TestSMT {
   }
 
   @Test
-  @Disabled
   fun testIsDistributive() = SMTInstance().solve {
     val SMT_ALGEBRA = SMTAlgebra(this)
 
@@ -218,15 +217,14 @@ class TestSMT {
     val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
     val c = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
 
-    val plusDistrib = (a * (b + c)) eq (a * b + a * c)
-//    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
+    val plusDistrib = (a * (b + c)) neq (a * b + a * c)
 
-    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusDistrib)
-    val shouldBeTrue = prove(goal)
+    val goal = qm.exists((a.data + b.data + c.data).map { it.formula }, plusDistrib)
+    val shouldBeFalse = prove(goal)
 
-    println(shouldBeTrue)
+    println(shouldBeFalse)
 
-    Assertions.assertTrue(shouldBeTrue)
+    Assertions.assertFalse(shouldBeFalse)
   }
 
   open class Formula(
@@ -315,10 +313,16 @@ class TestSMT {
 
     fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
-    infix fun Matrix<Formula, *, *>.eq(other: Matrix<Formula, *, *>) =
-      rows.zip(other.rows)
-        .map { (a, b) -> a.zip(b).map { (a, b) -> a eq b } }
+    fun makeFormula(m1: Matrix<Formula, *, *>, m2: Matrix<Formula, *, *>, fmap: (Formula, Formula) -> BooleanFormula) =
+      m1.rows.zip(m2.rows)
+        .map { (a, b) -> a.zip(b).map {(a, b) ->fmap(a, b)} }
         .flatten().reduce { a, b -> a and b }
+
+    infix fun Matrix<Formula, *, *>.eq(other: Matrix<Formula, *, *>) =
+      makeFormula(this, other) { a, b -> a eq b }
+
+    infix fun Matrix<Formula, *, *>.neq(other: Matrix<Formula, *, *>) =
+      makeFormula(this, other) { a, b -> a neq b }
   }
 }
 
@@ -327,6 +331,6 @@ fun main() = TestSMT().run {
   testSumOfCubes()
   testNonLinear()
   testBistochastic()
-//  testIsAssociative()
-//    testIsDistributive()
+  testIsAssociative()
+  testIsDistributive()
 }
