@@ -119,28 +119,12 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
   )
 )
 
-// A free matrix has no associated algebra by default. If you try to do math
-// with the default implementation it will fail at runtime.
-open class FreeMatrix<T> constructor(
-  override val algebra: MatrixAlgebra<T, Ring<T>> =
-    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
+  override val algebra: MatrixAlgebra<T, Ring<T>>,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-) : Matrix<T, Ring<T>, FreeMatrix<T>> {
-  constructor(elements: List<T>) : this(
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
-  )
-
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
-    numRows = numRows,
-    numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
-  )
-
-  constructor(vararg rows: T) : this(rows.toList())
-
+) : Matrix<T, Ring<T>, M> {
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
       data.foldIndexed("") { i, a, b ->
@@ -155,13 +139,36 @@ open class FreeMatrix<T> constructor(
   override fun hashCode() = data.hashCode()
 }
 
+// A free matrix has no associated algebra by default. If you try to do math
+// with the default implementation it will fail at runtime.
+open class FreeMatrix<T> constructor(
+  override val algebra: MatrixAlgebra<T, Ring<T>> =
+    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+  override val numRows: Int,
+  override val numCols: Int = numRows,
+  override val data: List<T>,
+) : AbstractMatrix<T, FreeMatrix<T>>(algebra, numRows, numCols, data) {
+  constructor(elements: List<T>) : this(
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
+
+  constructor(vararg rows: T) : this(rows.toList())
+}
+
 // Concrete subclasses
 open class BooleanMatrix constructor(
   override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
-) : FreeMatrix<Boolean>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Boolean, BooleanMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Boolean>) : this(
     algebra = BOOLEAN_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -206,7 +213,7 @@ open class IntegerMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Int>,
-) : FreeMatrix<Int>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Int, IntegerMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Int>) : this(
     algebra = INTEGER_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -229,7 +236,7 @@ open class DoubleMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Double>,
-) : FreeMatrix<Double>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Double, DoubleMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Double>) : this(
     algebra = DOUBLE_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
