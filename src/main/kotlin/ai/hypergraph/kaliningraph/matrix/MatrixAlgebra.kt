@@ -92,6 +92,15 @@ val INTEGER_ALGEBRA = MatrixAlgebra(
   )
 )
 
+val DOUBLE_ALGEBRA = MatrixAlgebra(
+  Ring(
+    nil = 0.0,
+    one = 1.0,
+    plus = { a, b -> a + b },
+    times = { a, b -> a * b }
+  )
+)
+
 val MINPLUS_ALGEBRA = MatrixAlgebra(
   Ring(
     nil = Integer.MAX_VALUE,
@@ -110,6 +119,41 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
   )
 )
 
+// A free matrix has no associated algebra by default. If you try to do math
+// with the default implementation it will fail at runtime.
+open class FreeMatrix<T> constructor(
+  override val algebra: MatrixAlgebra<T, Ring<T>> =
+    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+  override val numRows: Int,
+  override val numCols: Int = numRows,
+  override val data: List<T>,
+) : Matrix<T, Ring<T>, FreeMatrix<T>> {
+  constructor(elements: List<T>) : this(
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
+
+  constructor(vararg rows: T) : this(rows.toList())
+
+  override fun toString() =
+    data.maxOf { it.toString().length + 2 }.let { pad ->
+      data.foldIndexed("") { i, a, b ->
+        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+      }
+    }
+
+  override fun equals(other: Any?) =
+    other is FreeMatrix<*> && data.zip(other.data).all { (a, b) -> a == b } ||
+      other is Matrix<*, *, *> && other.data == data
+
+  override fun hashCode() = data.hashCode()
+}
 
 // Concrete subclasses
 open class BooleanMatrix constructor(
@@ -117,7 +161,7 @@ open class BooleanMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
-) : Matrix<Boolean, Ring<Boolean>, BooleanMatrix> {
+) : FreeMatrix<Boolean>(algebra, numRows, numCols, data) {
   constructor(elements: List<Boolean>) : this(
     algebra = BOOLEAN_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -155,12 +199,6 @@ open class BooleanMatrix constructor(
   override fun toString() = data.foldIndexed("") { i, a, b ->
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
-
-  override fun equals(other: Any?) =
-    other is BooleanMatrix && data.zip(other.data).all { (a, b) -> a == b } ||
-      other is Matrix<*, *, *> && other.data == data
-
-  override fun hashCode() = data.hashCode()
 }
 
 open class IntegerMatrix constructor(
@@ -168,7 +206,7 @@ open class IntegerMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Int>,
-) : Matrix<Int, Ring<Int>, IntegerMatrix> {
+) : FreeMatrix<Int>(algebra, numRows, numCols, data) {
   constructor(elements: List<Int>) : this(
     algebra = INTEGER_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -183,57 +221,28 @@ open class IntegerMatrix constructor(
 
   constructor(vararg rows: Int) : this(rows.toList())
 
-  val isFull by lazy { data.all { it > 0 } }
   val values by lazy { data.distinct().sorted() }
-
-  override fun toString() =
-    data.maxOf { it.toString().length + 2 }.let { pad ->
-      data.foldIndexed("") { i, a, b ->
-        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
-      }
-    }
-
-  override fun equals(other: Any?) =
-    other is IntegerMatrix && data.zip(other.data).all { (a, b) -> a == b } ||
-      other is Matrix<*, *, *> && other.data == data
-
-  override fun hashCode() = data.hashCode()
 }
 
-// A free matrix has no associated algebra by default. If you try to do math
-// with the default implementation it will fail at runtime.
-open class FreeMatrix<T> constructor(
-  override val algebra: MatrixAlgebra<T, Ring<T>> =
-    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+open class DoubleMatrix constructor(
+  override val algebra: MatrixAlgebra<Double, Ring<Double>> = DOUBLE_ALGEBRA,
   override val numRows: Int,
   override val numCols: Int = numRows,
-  override val data: List<T>,
-) : Matrix<T, Ring<T>, FreeMatrix<T>> {
-  constructor(elements: List<T>) : this(
+  override val data: List<Double>,
+) : FreeMatrix<Double>(algebra, numRows, numCols, data) {
+  constructor(elements: List<Double>) : this(
+    algebra = DOUBLE_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
 
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Double) : this(
     numRows = numRows,
     numCols = numCols,
     data = List(numRows * numCols) { f(it / numRows, it % numCols) }
   )
 
-  constructor(vararg rows: T) : this(rows.toList())
-
-  override fun toString() =
-    data.maxOf { it.toString().length + 2 }.let { pad ->
-      data.foldIndexed("") { i, a, b ->
-        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
-      }
-    }
-
-  override fun equals(other: Any?) =
-    other is FreeMatrix<*> && data.zip(other.data).all { (a, b) -> a == b } ||
-      other is Matrix<*, *, *> && other.data == data
-
-  override fun hashCode() = data.hashCode()
+  constructor(vararg rows: Double) : this(rows.toList())
 }
 
 fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
