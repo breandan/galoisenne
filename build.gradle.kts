@@ -6,7 +6,7 @@ plugins {
   signing
   `maven-publish`
   kotlin("jvm") version "1.6.0-RC"
-  kotlin("jupyter.api") version "0.10.3-22"
+  kotlin("jupyter.api") version "0.10.0-216" // TODO: unresolved dependency after update?
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -54,8 +54,6 @@ java {
   withJavadocJar()
   toolchain {
     languageVersion.set(JavaLanguageVersion.of(17))
-    vendor.set(JvmVendorSpec.AMAZON)
-    implementation.set(JvmImplementation.VENDOR_SPECIFIC)
   }
 }
 
