@@ -5,8 +5,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   signing
   `maven-publish`
-  kotlin("jvm") version "1.5.30"
-  kotlin("jupyter.api") version "0.10.0-216"
+  kotlin("jvm") version "1.6.0-RC"
+  kotlin("jupyter.api") version "0.10.3-22"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -53,9 +53,9 @@ repositories {
 java {
   withJavadocJar()
   toolchain {
-    languageVersion.set(JavaLanguageVersion.of(15))
-    vendor.set(JvmVendorSpec.ADOPTOPENJDK)
-    implementation.set(JvmImplementation.J9)
+    languageVersion.set(JavaLanguageVersion.of(17))
+    vendor.set(JvmVendorSpec.AMAZON)
+    implementation.set(JvmImplementation.VENDOR_SPECIFIC)
   }
 }
 
@@ -65,11 +65,11 @@ dependencies {
   implementation(kotlin("reflect"))
 
   // Property-based testing
-  val kotestVersion = "5.0.0.M1"
+  val kotestVersion = "5.0.0.M2"
   testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
   testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
   testImplementation("io.kotest:kotest-property:$kotestVersion")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
   val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
@@ -84,14 +84,14 @@ dependencies {
   testCompileOnly("org.jetbrains:annotations:22.0.0")
   testImplementation("org.slf4j:slf4j-simple:1.7.32")
 
-  val multikVersion = "0.0.1"
+  val multikVersion = "0.1.0"
   testImplementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
   testImplementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
   testImplementation("com.github.kwebio:kweb-core:0.7.33")
 
   // I think we were going to use this to prove termination of graph rewriting
-  testImplementation("org.sosy-lab:java-smt:3.10.1")
+  testImplementation("org.sosy-lab:java-smt:3.11.0")
 //  implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
 //  implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
   //testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
