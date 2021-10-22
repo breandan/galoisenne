@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 
 /**
- * Generic matrix which supports overlable addition and multiplication
+ * Generic matrix which supports overloadable addition and multiplication
  * using an abstract algebra (e.g. tropical semiring). Useful for many
  * problems in graph theory.
  *
@@ -50,7 +50,7 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
 
 /**
  * Ad hoc polymorphic algebra (can be specified at runtime).
-  */
+ */
 
 interface MatrixAlgebra<T, R : Ring<T>> {
   val ring: R
