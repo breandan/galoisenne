@@ -214,11 +214,7 @@ class Rational {
   companion object {
     val ZERO = Rational(0, 1)
     val ONE = Rational(1, 1)
-
-    fun reduce(a: Int, b: Int) = Pair(
-      (a.toFloat() / a.gcd(b).toFloat()).roundToInt(),
-      (b.toFloat() / a.gcd(b).toFloat()).roundToInt()
-    )
+    fun reduce(a: Int, b: Int) = Pair(a / a.gcd(b), b / a.gcd(b))
 
     // https://github.com/binkley/kotlin-rational/blob/61be6f7df2d579ad83c6810a5f9426a4478b99a2/src/main/kotlin/hm/binkley/math/math-functions.kt#L93
     private tailrec fun Int.gcd(that: Int): Int = when {

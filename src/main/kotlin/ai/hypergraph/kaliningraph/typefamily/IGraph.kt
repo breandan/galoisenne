@@ -13,7 +13,7 @@ import kotlin.random.Random
 import kotlin.reflect.*
 
 // Reified constructors
-@Suppress("FunctionName")
+@Suppress("FunctionName", "UNCHECKED_CAST")
 interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   fun G(vertices: Set<V> = setOf()): G =
     if (vertices isA G.declaringClass) vertices as G // G(graph) -> graph
@@ -54,7 +54,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
         .genericSuperclass as ParameterizedType).actualTypeArguments
         .map { (if (it is ParameterizedType) it.rawType else it) as Class<*> }
         .toTypedArray()
-    }
+  }
 
   val G: Constructor<G> get() = gev[0].getConstructor(Set::class.java) as Constructor<G>
   val E: Constructor<E> get() = gev.let { it[1].getConstructor(it[2], it[2]) } as Constructor<E>
@@ -64,7 +64,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   /**
    * Memoizes the result of evaluating a pure function, indexed by:
    *
-   * (1) instance reference, cf. [ai.hypergraph.kaliningraph.Graph.hashCode].
+   * (1) instance reference, cf. [Graph.hashCode].
    * (2) the most direct caller on the stack (i.e. qualified method name)
    * (3) its arguments if caller is not niladic and [args] are supplied.
    */

@@ -63,7 +63,7 @@ dependencies {
   implementation(kotlin("reflect"))
 
   // Property-based testing
-  val kotestVersion = "5.0.0.M2"
+  val kotestVersion = "5.0.0.M3"
   testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
   testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
   testImplementation("io.kotest:kotest-property:$kotestVersion")
@@ -72,7 +72,7 @@ dependencies {
   val ejmlVersion = "0.41"
   api("org.ejml:ejml-kotlin:$ejmlVersion")
   api("org.ejml:ejml-all:$ejmlVersion")
-  api("org.graalvm.js:js:21.2.0")
+  api("org.graalvm.js:js:21.3.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
 
   // Used to cache graph lookups
@@ -90,8 +90,8 @@ dependencies {
 
   // I think we were going to use this to prove termination of graph rewriting
   testImplementation("org.sosy-lab:java-smt:3.11.0")
-//  implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
-//  implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
+  //implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
+  //implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
   //testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
   // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
@@ -142,17 +142,10 @@ tasks {
   }
 
 /*
-If overwriting an older version, it is necessary to first run:
-
-rm -rf ~/.m2/repository/com/github/breandan/kaliningraph \
-       ~/.ivy2/cache/com.github.breandan/kaliningraph
-
-https://github.com/Kotlin/kotlin-jupyter/issues/121
-
-To deploy to Maven Local and start the notebook, run:
-
-./gradlew [build publishToMavenLocal] jupyterRun -x test
-*/
+ * To deploy to Maven Local and start the notebook, run:
+ *
+ * ./gradlew [build publishToMavenLocal] jupyterRun -x test
+ */
 
   val jupyterRun by creating(Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")

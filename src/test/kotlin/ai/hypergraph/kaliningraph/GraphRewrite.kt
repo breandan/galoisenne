@@ -1,6 +1,5 @@
-package ai.hypergraph.kaliningraph.rewriting
+package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.*
 import ai.hypergraph.kaliningraph.typefamily.isA
 

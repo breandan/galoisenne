@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import java.math.*
 import kotlin.system.measureTimeMillis
 
-class TypeClassTest {
+class TypeSystemTests {
   val max = 10L
 
   @Test
@@ -103,7 +103,8 @@ class TypeClassTest {
     operator fun T.div(that: T) = div(this, that)
   }
 
-  fun <T> Nat<T>.benchmark(max: Any) =
+  @Suppress("UNCHECKED_CAST")
+  private fun <T> Nat<T>.benchmark(max: Any) =
     measureTimeMillis {
       println(
         javaClass.interfaces.first().simpleName + "<${nil!!::class.java.simpleName}>" + " results\n" +
