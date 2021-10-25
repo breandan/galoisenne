@@ -104,7 +104,7 @@ class TypeSystemTests {
   }
 
   @Suppress("UNCHECKED_CAST")
-  private fun <T> Nat<T>.benchmark(max: Any) =
+  fun <T> Nat<T>.benchmark(max: Any) =
     measureTimeMillis {
       println(
         javaClass.interfaces.first().simpleName + "<${nil!!::class.java.simpleName}>" + " results\n" +
