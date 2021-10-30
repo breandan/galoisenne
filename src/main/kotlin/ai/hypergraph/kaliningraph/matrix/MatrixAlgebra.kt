@@ -1,13 +1,13 @@
 package ai.hypergraph.kaliningraph.matrix
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.tensor.SparseTensor
 import ai.hypergraph.kaliningraph.types.Ring
 import org.ejml.data.*
 import org.ejml.kotlin.*
 import java.lang.reflect.Constructor
 import kotlin.math.*
 import kotlin.random.Random
-
 
 /**
  * Generic matrix which supports overloadable addition and multiplication
@@ -17,8 +17,8 @@ import kotlin.random.Random
  * @see [MatrixAlgebra]
  */
 
-interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
-  val data: List<T>
+interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> : SparseTensor<Triple<Int, Int, T>> {
+  val data: List<Triple<Int, Int, T>>
   val numRows: Int
   val numCols: Int
   val algebra: MatrixAlgebra<T, R>
@@ -41,9 +41,9 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
     }.run { new(numCols, that.numRows, algebra, indices.map { (i, j) -> op(i, j) }) }
 
-  operator fun get(r: Int, c: Int): T = data[r * numCols + c]
-  operator fun get(r: Int): List<T> =
-    data.toList().subList(r * numCols, r * numCols + numCols)
+  operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
+  operator fun get(r: Int, c: Int): T = map.keys.first { (i, j, _) -> (i to j) == (r to c) }.third
+  operator fun get(r: Int): List<T> = map.keys.filter { (i, _, _) -> i == r }.map { it.third }
 
   fun transpose(): M = new(numCols, numRows, algebra, indices.map { (i, j) -> this[j, i] })
 }
@@ -123,8 +123,10 @@ abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
   override val algebra: MatrixAlgebra<T, Ring<T>>,
   override val numRows: Int,
   override val numCols: Int = numRows,
-  override val data: List<T>,
+  override val data: List<Triple<Int, Int, T>>,
 ) : Matrix<T, Ring<T>, M> {
+  override val map: MutableMap<Triple<Int, Int, T>, Int> =
+    data.fold(mutableMapOf()) { map, (i, j, k) -> map[Triple(i, j, k)] = 1; map }
   val values by lazy { data.toSet() }
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
@@ -142,44 +144,47 @@ abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
 
 // A free matrix has no associated algebra by default. If you try to do math
 // with the default implementation it will fail at runtime.
-open class FreeMatrix<T> constructor(
+open class FreeMatrix<T> private constructor(
   override val algebra: MatrixAlgebra<T, Ring<T>> =
     object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
   override val numRows: Int,
   override val numCols: Int = numRows,
-  override val data: List<T>,
+  override val data: List<Triple<Int, Int, T>>,
 ) : AbstractMatrix<T, FreeMatrix<T>>(algebra, numRows, numCols, data) {
-  constructor(elements: List<T>) : this(
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
+  constructor(elements: List<T>, numRows: Int = sqrt(elements.size.toDouble()).toInt()) : this(
+    numRows = numRows,
+    data = elements.denseToSparse(numRows)
   )
 
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }.denseToSparse(numRows, numCols)
   )
 
   constructor(vararg rows: T) : this(rows.toList())
 }
 
+fun <T> List<T>.denseToSparse(rows: Int, cols: Int = rows) =
+  mapIndexed { i: Int, t: T -> Triple(i / rows, i % cols, t) }
+
 // Concrete subclasses
-open class BooleanMatrix constructor(
+open class BooleanMatrix private constructor(
   override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
   override val numRows: Int,
   override val numCols: Int = numRows,
-  override val data: List<Boolean>,
+  override val data: List<Triple<Int, Int, Boolean>>,
 ) : AbstractMatrix<Boolean, BooleanMatrix>(algebra, numRows, numCols, data) {
-  constructor(elements: List<Boolean>) : this(
+  constructor(elements: List<Boolean>, numRows: Int = sqrt(elements.size.toDouble()).toInt()) : this(
     algebra = BOOLEAN_ALGEBRA,
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
+    numRows = numRows,
+    data = elements.denseToSparse(numRows)
   )
 
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }.denseToSparse(numRows, numCols)
   )
 
   constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
@@ -195,7 +200,7 @@ open class BooleanMatrix constructor(
   // TODO: Implement Four Russians for speedy boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
   override fun times(that: BooleanMatrix): BooleanMatrix = super.times(that)
 
-  val isFull by lazy { data.all { it } }
+  val isFull by lazy { data.all { it.third } }
 
   companion object {
     fun grayCode(size: Int): BooleanMatrix = TODO()
@@ -206,51 +211,8 @@ open class BooleanMatrix constructor(
   }
 
   override fun toString() = data.foldIndexed("") { i, a, b ->
-    a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+    a + (if (b.third) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
-}
-
-open class IntegerMatrix constructor(
-  override val algebra: MatrixAlgebra<Int, Ring<Int>> = INTEGER_ALGEBRA,
-  override val numRows: Int,
-  override val numCols: Int = numRows,
-  override val data: List<Int>,
-) : AbstractMatrix<Int, IntegerMatrix>(algebra, numRows, numCols, data) {
-  constructor(elements: List<Int>) : this(
-    algebra = INTEGER_ALGEBRA,
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
-  )
-
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Int) : this(
-    numRows = numRows,
-    numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
-  )
-
-  constructor(vararg rows: Int) : this(rows.toList())
-
-}
-
-open class DoubleMatrix constructor(
-  override val algebra: MatrixAlgebra<Double, Ring<Double>> = DOUBLE_ALGEBRA,
-  override val numRows: Int,
-  override val numCols: Int = numRows,
-  override val data: List<Double>,
-) : AbstractMatrix<Double, DoubleMatrix>(algebra, numRows, numCols, data) {
-  constructor(elements: List<Double>) : this(
-    algebra = DOUBLE_ALGEBRA,
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
-  )
-
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Double) : this(
-    numRows = numRows,
-    numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
-  )
-
-  constructor(vararg rows: Double) : this(rows.toList())
 }
 
 fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
