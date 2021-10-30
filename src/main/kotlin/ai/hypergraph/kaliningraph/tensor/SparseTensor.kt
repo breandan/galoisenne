@@ -8,6 +8,7 @@ package ai.hypergraph.kaliningraph.tensor
 
 // Alternatively: a length-2ⁿ array which can be "parsed" into a certain shape?
 // See: http://conal.net/talks/can-tensor-programming-be-liberated.pdf
+
 interface SparseTensor<T/*Should be a named tuple or dataclass of some kind*/> {
 // TODO: Precompute specific [Borel] subsets of T's attributes that we expect to be queried at runtime
 // e.g. (n-1)-D slices and 1D fibers
