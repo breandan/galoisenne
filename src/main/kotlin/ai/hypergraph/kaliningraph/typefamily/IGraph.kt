@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.theory.wl
 import com.github.benmanes.caffeine.cache.Caffeine
 import guru.nidi.graphviz.attribute.Label
 import guru.nidi.graphviz.model.*
-import org.ejml.kotlin.minus
 import java.lang.reflect.*
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -137,24 +136,24 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 //  }
   //-------
 
-  val D: SpsMat get() = memoize { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
+  val D: DoubleMatrix get() = memoize { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
   // Adjacency matrix
   val A: BooleanMatrix get() = memoize { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
   val A_AUG: BooleanMatrix get() = memoize { A + A.transpose() + BooleanMatrix.one(size) }
 
   // Symmetric normalized adjacency
-  val ASYMNORM: SpsMat get() = memoize {
+  val ASYMNORM: DoubleMatrix get() = memoize {
     vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) }
   }
 
   // Graph Laplacian matrix
-  val L: SpsMat get() = memoize { D - A }
-  val I: SpsMat get() = memoize { elwise(size) }
+  val L: DoubleMatrix get() = memoize { D - A }
+  val I: DoubleMatrix get() = memoize { DoubleMatrix(size, size, ::kroneckerDelta) }
   // Symmetric normalized Laplacian
-  val LSYMNORM: SpsMat get() = memoize { I - ASYMNORM }
+  val LSYMNORM: DoubleMatrix get() = memoize { I - ASYMNORM }
 
-  val ENCODED: SpsMat get() = memoize { vertices.map { it.encode() }.toTypedArray().toEJMLSparse() }
+  val ENCODED: DoubleMatrix get() = memoize { vertices.map { it.encode() }.toTypedArray().toDoubleMatrix() }
 
   // TODO: Implement APSP distance matrix using algebraic Floyd-Warshall
   //       https://doi.org/10.1137/1.9780898719918.ch5
@@ -190,10 +189,10 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   fun render() = toGraphviz()
 
-  fun vwise(lf: IGraph<G, E, V>.(V, V) -> Double?): SpsMat =
-    elwise(size) { i, j ->
+  fun vwise(lf: IGraph<G, E, V>.(V, V) -> Double): DoubleMatrix =
+    DoubleMatrix(size) { i, j ->
       (this[i] to this[j]).let { (v, n) ->
-        if (n in v.neighbors) lf(v, n) else null
+        if (n in v.neighbors) lf(v, n) else 0.0
       }
     }
 

@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.types
 
+import ai.hypergraph.kaliningraph.matrix.SparseTensor
 import java.math.BigDecimal as BD
 import java.math.BigInteger as BI
 import org.junit.jupiter.api.Test
@@ -55,7 +56,7 @@ class TypeSystemTests {
 
   @Test
   fun vectorFieldTest() =
-    VectorField.new(f = Field.of(
+    VectorField.of(f = Field.of(
       nil = BI.ZERO,
       one = BI.ONE,
       plus = { a, b -> a + b },
@@ -63,8 +64,8 @@ class TypeSystemTests {
       div = { a, b -> a / b },
       minus = { a, b -> a - b }
     )).run {
-      println(BI.ONE dot Vector(BI.ZERO, BI.ONE))
-      println(Vector(BI.ZERO, BI.ONE) + Vector(BI.ONE, BI.ONE))
+      println(BI.ONE dot Vector.of(BI.ZERO, BI.ONE))
+      println(Vector.of(BI.ZERO, BI.ONE) + Vector.of(BI.ONE, BI.ONE))
     }
 
   fun <T> BaseType<T>.algebras(): List<Nat<T, *>> = listOf(

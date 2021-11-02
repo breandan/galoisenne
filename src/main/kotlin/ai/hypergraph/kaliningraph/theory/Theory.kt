@@ -65,7 +65,7 @@ tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGra
   // Message passing rounds
   t: Int = diameter() * 10,
   // Matrix of node representations ℝ^{|V|xd}
-  H: SpsMat = ENCODED,
+  H: SpsMat = ENCODED.toEJMLSparse(),
   // (Trainable) weight matrix ℝ^{dxd}
   W: SpsMat = randomMatrix(H.numCols),
   // Bias term ℝ^{dxd}

@@ -126,31 +126,27 @@ interface Field<T, R: Field<T, R>>: Ring<T, R> {
 interface Vector<T> {
   val ts: List<T>
 
-  fun vmap(map: (T) -> T) = Vector(ts.map { map(it) })
+  fun vmap(map: (T) -> T) = of(ts.map { map(it) })
 
   fun zip(other: Vector<T>, merge: (T, T) -> T) =
-    Vector(ts.zip(other.ts).map { (a, b) -> merge(a, b) })
+    of(ts.zip(other.ts).map { (a, b) -> merge(a, b) })
 
-  companion object {
-    operator fun <T> invoke(vararg ts: T): Vector<T> = invoke(ts.toList())
-    operator fun <T> invoke(ts: List<T>): Vector<T> = object: Vector<T> {
-      override val ts: List<T> = ts
-      override fun toString() =
-        ts.joinToString(",", "${ts.javaClass.simpleName}[", "]")
-    }
+  class of<T>(override val ts: List<T>): Vector<T> {
+    constructor(vararg ts: T): this(ts.toList())
+
+    override fun toString() =
+      ts.joinToString(",", "${ts.javaClass.simpleName}[", "]")
   }
 }
 
 interface VectorField<T, F: Field<T, F>> {
   val f: F
-
-  operator fun Vector<T>.plus(vec: Vector<T>): Vector<T> =
-    zip(vec) { a, b -> with(f) { a + b } }
-
+  operator fun Vector<T>.plus(vec: Vector<T>): Vector<T> = zip(vec) { a, b -> with(f) { a + b } }
   infix fun T.dot(p: Vector<T>): Vector<T> = p.vmap { f.times(it, this) }
-
-  class new<T, F: Field<T, F>>(override val f: F): VectorField<T, F>
+  class of<T, F: Field<T, F>>(override val f: F): VectorField<T, F>
 }
+
+// TODO: Clifford algebra?
 
 // http://www.math.ucsd.edu/~alina/oldcourses/2012/104b/zi.pdf
 data class GaussInt(val a: Int, val b: Int) {

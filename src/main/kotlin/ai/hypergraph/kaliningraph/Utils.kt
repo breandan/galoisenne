@@ -107,6 +107,8 @@ fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }
 fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumOf { it.count { it == 0.0 } })
   .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
 
+fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, j -> this[i][j] }
+
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
 
 fun Double.round(precision: Int = 10) = BigDecimal(this, MathContext(precision)).toDouble()
@@ -137,14 +139,6 @@ fun SpsMat.meanNorm(copy: Boolean = false) =
     Triple(a + e / nz_length.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) ->
     elwise(copy) { e -> (e - μ) / (max - min) }
-  }
-
-// TODO: sparsify?
-inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
-                  crossinline lf: (Int, Int) -> Double? = ::kroneckerDelta) =
-  SpsMat(rows, cols, nonZeroes).also { sprsMat ->
-    for (v in 0 until rows) for (n in 0 until cols)
-      lf(v, n)?.let { if (it != 0.0) sprsMat[v, n] = it }
   }
 
 fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
