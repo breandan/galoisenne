@@ -139,6 +139,7 @@ fun SpsMat.meanNorm(copy: Boolean = false) =
     elwise(copy) { e -> (e - μ) / (max - min) }
   }
 
+// TODO: sparsify?
 inline fun elwise(rows: Int, cols: Int = rows, nonZeroes: Int = rows,
                   crossinline lf: (Int, Int) -> Double? = ::kroneckerDelta) =
   SpsMat(rows, cols, nonZeroes).also { sprsMat ->

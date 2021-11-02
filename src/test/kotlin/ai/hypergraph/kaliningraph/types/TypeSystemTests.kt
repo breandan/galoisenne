@@ -55,7 +55,7 @@ class TypeSystemTests {
 
   @Test
   fun vectorFieldTest() =
-    VectorField(f = Field(
+    VectorField.new(f = Field.of(
       nil = BI.ZERO,
       one = BI.ONE,
       plus = { a, b -> a + b },
@@ -67,21 +67,21 @@ class TypeSystemTests {
       println(Vector(BI.ZERO, BI.ONE) + Vector(BI.ONE, BI.ONE))
     }
 
-  fun <T> BaseType<T>.algebras(): List<Nat<T>> = listOf(
-    Nat(
+  fun <T> BaseType<T>.algebras(): List<Nat<T, *>> = listOf(
+    Nat.of(
       nil = nil,
-      next = { this + one }
+      vnext = { this + one }
     ),
-    Group(
+    Group.of(
       nil = nil, one = one,
       plus = { a, b -> a + b }
     ),
-    Ring(
+    Ring.of(
       nil = nil, one = one,
       plus = { a, b -> a + b },
       times = { a, b -> a * b }
     ),
-    Field(
+    Field.of(
       nil = nil, one = one,
       plus = { a, b -> a + b },
       times = { a, b -> a * b },
@@ -104,7 +104,7 @@ class TypeSystemTests {
   }
 
   @Suppress("UNCHECKED_CAST")
-  fun <T> Nat<T>.benchmark(max: Any) =
+  fun <T> Nat<T, *>.benchmark(max: Any) =
     measureTimeMillis {
       println(
         javaClass.interfaces.first().simpleName + "<${nil!!::class.java.simpleName}>" + " results\n" +

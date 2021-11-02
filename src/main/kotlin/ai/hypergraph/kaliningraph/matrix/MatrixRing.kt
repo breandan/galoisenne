@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.matrix
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.SparseTensor
-import ai.hypergraph.kaliningraph.types.Ring
+import ai.hypergraph.kaliningraph.types.*
 import org.ejml.data.*
 import org.ejml.kotlin.*
 import java.lang.reflect.Constructor
@@ -15,16 +15,16 @@ import kotlin.random.Random
  * using an abstract algebra (e.g. tropical semiring). Useful for many
  * problems in graph theory.
  *
- * @see [MatrixAlgebra]
+ * @see [MatrixRing]
  */
 
-interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> : SparseTensor<Triple<Int, Int, T>> {
+interface Matrix<T, R : Ring<T, R>, M : Matrix<T, R, M>> : SparseTensor<Triple<Int, Int, T>> {
   val data: List<T>
   override val map: MutableMap<Triple<Int, Int, T>, Int> get() = TODO()
 
   val numRows: Int
   val numCols: Int
-  val algebra: MatrixAlgebra<T, R>
+  val algebra: MatrixRing<T, R>
 
   val indices get() = (0 until numRows) * (0 until numCols)
   val rows get() = data.chunked(numCols)
@@ -34,9 +34,9 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> : SparseTensor<Triple<Int,
   operator fun plus(that: M): M = with(algebra) { this@Matrix plus that }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numCols: Int, numRows: Int, algebra: MatrixAlgebra<T, R>, data: List<T>): M =
+  fun new(numCols: Int, numRows: Int, algebra: MatrixRing<T, R>, data: List<T>): M =
     (javaClass.getConstructor(
-      MatrixAlgebra::class.java, Int::class.java, Int::class.java, List::class.java
+      MatrixRing::class.java, Int::class.java, Int::class.java, List::class.java
     ) as Constructor<M>).newInstance(algebra, numCols, numRows, data)
 
   fun join(that: Matrix<T, R, M>, op: (Int, Int) -> T): M =
@@ -56,30 +56,41 @@ interface Matrix<T, R : Ring<T>, M : Matrix<T, R, M>> : SparseTensor<Triple<Int,
  * Ad hoc polymorphic algebra (can be specified at runtime).
  */
 
-interface MatrixAlgebra<T, R : Ring<T>> {
-  val ring: R
+interface MatrixRing<T, R : Ring<T, R>> {
+  val algebra: R
 
   infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.plus(that: Matrix<T, R, M>): M =
-    join(that) { i, j -> with(ring) { this@plus[i][j] + that[i][j] } }
+    join(that) { i, j -> with(this@MatrixRing.algebra) { this@plus[i][j] + that[i][j] } }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(ring) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
+    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
   infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.times(that: Matrix<T, R, M>): M =
     join(that) { i, j -> this[i] dot that[j] }
 
   companion object {
-    operator fun <T, R : Ring<T>> invoke(ring: R) =
-      object : MatrixAlgebra<T, R> {
-        override val ring: R = ring
-      }
+    operator fun <T, R : Ring<T, R>> invoke(ring: R) =
+      object : MatrixRing<T, R> { override val algebra: R = ring }
+  }
+}
+
+// Ring with additive inverse
+interface MatrixField<T, R : Field<T, R>>: MatrixRing<T, R> {
+  override val algebra: R
+
+  infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.minus(that: Matrix<T, R, M>): M =
+    join(that) { i, j -> with(this@MatrixField.algebra) { this@minus[i][j] - that[i][j] } }
+
+  companion object {
+    operator fun <T, R : Field<T, R>> invoke(field: R) =
+      object : MatrixField<T, R> { override val algebra: R = field }
   }
 }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
 
-val BOOLEAN_ALGEBRA = MatrixAlgebra(
-  Ring(
+val BOOLEAN_ALGEBRA = MatrixRing(
+  Ring.of(
     nil = false,
     one = true,
     plus = { a, b -> a || b },
@@ -87,26 +98,30 @@ val BOOLEAN_ALGEBRA = MatrixAlgebra(
   )
 )
 
-val INTEGER_ALGEBRA = MatrixAlgebra(
-  Ring(
+val INTEGER_FIELD = MatrixField(
+   Field.of(
     nil = 0,
     one = 1,
     plus = { a, b -> a + b },
-    times = { a, b -> a * b }
+    minus = { a, b -> a - b },
+    times = { a, b -> a * b },
+    div = { _, _ -> throw NotImplementedError("Division not defined on integer field.") }
   )
 )
 
-val DOUBLE_ALGEBRA = MatrixAlgebra(
-  Ring(
+val DOUBLE_FIELD = MatrixField(
+  Field.of(
     nil = 0.0,
     one = 1.0,
     plus = { a, b -> a + b },
-    times = { a, b -> a * b }
+    minus = { a, b -> a - b },
+    times = { a, b -> a * b },
+    div = { a, b -> a / b }
   )
 )
 
-val MINPLUS_ALGEBRA = MatrixAlgebra(
-  Ring(
+val MINPLUS_ALGEBRA = MatrixRing(
+  Ring.of(
     nil = Integer.MAX_VALUE,
     one = 0,
     plus = { a, b -> min(a, b) },
@@ -114,8 +129,8 @@ val MINPLUS_ALGEBRA = MatrixAlgebra(
   )
 )
 
-val MAXPLUS_ALGEBRA = MatrixAlgebra(
-  Ring(
+val MAXPLUS_ALGEBRA = MatrixRing(
+  Ring.of(
     nil = Integer.MIN_VALUE,
     one = 0,
     plus = { a, b -> max(a, b) },
@@ -123,17 +138,17 @@ val MAXPLUS_ALGEBRA = MatrixAlgebra(
   )
 )
 
-abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
-  override val algebra: MatrixAlgebra<T, Ring<T>>,
+abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> constructor(
+  override val algebra: MatrixRing<T, R>,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-) : Matrix<T, Ring<T>, M> {
+) : Matrix<T, R, M> {
   val values by lazy { data.toSet() }
   override val map: MutableMap<Triple<Int, Int, T>, Int> by lazy {
     indices.fold(mutableMapOf()) { map, (r, c) ->
       val element = get(r, c)
-      if (element != algebra.ring.nil) map[Triple(r, c, element)] = 1
+      if (element != algebra.algebra.nil) map[Triple(r, c, element)] = 1
       map
     }
   }
@@ -155,12 +170,12 @@ abstract class AbstractMatrix<T, M: AbstractMatrix<T, M>> constructor(
 // A free matrix has no associated algebra by default. If you try to do math
 // with the default implementation it will fail at runtime.
 open class FreeMatrix<T> constructor(
-  override val algebra: MatrixAlgebra<T, Ring<T>> =
-    object : MatrixAlgebra<T, Ring<T>> { override val ring: Ring<T> by lazy { TODO() } },
+  override val algebra: MatrixRing<T, Ring.of<T>> =
+    object : MatrixRing<T, Ring.of<T>> { override val algebra: Ring.of<T> by lazy { TODO() } },
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-) : AbstractMatrix<T, FreeMatrix<T>>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<T, Ring.of<T>, FreeMatrix<T>>(algebra, numRows, numCols, data) {
   constructor(elements: List<T>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -177,11 +192,11 @@ open class FreeMatrix<T> constructor(
 
 // Concrete subclasses
 open class BooleanMatrix constructor(
-  override val algebra: MatrixAlgebra<Boolean, Ring<Boolean>> = BOOLEAN_ALGEBRA,
+  override val algebra: MatrixRing<Boolean, Ring.of<Boolean>> = BOOLEAN_ALGEBRA,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
-) : AbstractMatrix<Boolean, BooleanMatrix>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Boolean, Ring.of<Boolean>, BooleanMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Boolean>) : this(
     algebra = BOOLEAN_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -223,13 +238,13 @@ open class BooleanMatrix constructor(
 }
 
 open class IntegerMatrix constructor(
-  override val algebra: MatrixAlgebra<Int, Ring<Int>> = INTEGER_ALGEBRA,
+  override val algebra: MatrixField<Int, Field.of<Int>> = INTEGER_FIELD,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Int>,
-) : AbstractMatrix<Int, IntegerMatrix>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Int, Field.of<Int>, IntegerMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Int>) : this(
-    algebra = INTEGER_ALGEBRA,
+    algebra = INTEGER_FIELD,
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
@@ -242,16 +257,17 @@ open class IntegerMatrix constructor(
 
   constructor(vararg rows: Int) : this(rows.toList())
 
+  operator fun minus(that: IntegerMatrix): IntegerMatrix = with(algebra) { this@IntegerMatrix minus that }
 }
 
 open class DoubleMatrix constructor(
-  override val algebra: MatrixAlgebra<Double, Ring<Double>> = DOUBLE_ALGEBRA,
+  override val algebra: MatrixField<Double, Field.of<Double>> = DOUBLE_FIELD,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Double>,
-) : AbstractMatrix<Double, DoubleMatrix>(algebra, numRows, numCols, data) {
+) : AbstractMatrix<Double, Field.of<Double>, DoubleMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Double>) : this(
-    algebra = DOUBLE_ALGEBRA,
+    algebra = DOUBLE_FIELD,
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
@@ -263,6 +279,8 @@ open class DoubleMatrix constructor(
   )
 
   constructor(vararg rows: Double) : this(rows.toList())
+
+  operator fun minus(that: DoubleMatrix): DoubleMatrix = with(algebra) { this@DoubleMatrix minus that }
 }
 
 fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }

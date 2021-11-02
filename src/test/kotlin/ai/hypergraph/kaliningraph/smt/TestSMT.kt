@@ -155,12 +155,12 @@ class TestSMT {
   }
 
   class SMTMatrix(
-    override val algebra: MatrixAlgebra<Formula, Ring<Formula>>,
+    override val algebra: MatrixRing<Formula, Ring.of<Formula>>,
     override val numRows: Int,
     override val numCols: Int = numRows,
     override val data: List<Formula>,
-  ) : Matrix<Formula, Ring<Formula>, SMTMatrix> {
-    constructor(algebra: MatrixAlgebra<Formula, Ring<Formula>>, elements: List<Formula>) : this(
+  ) : Matrix<Formula, Ring.of<Formula>, SMTMatrix> {
+    constructor(algebra: MatrixRing<Formula, Ring.of<Formula>>, elements: List<Formula>) : this(
       algebra = algebra,
       numRows = sqrt(elements.size.toDouble()).toInt(),
       data = elements
@@ -169,7 +169,7 @@ class TestSMT {
     constructor(
       numRows: Int,
       numCols: Int = numRows,
-      algebra: MatrixAlgebra<Formula, Ring<Formula>>,
+      algebra: MatrixRing<Formula, Ring.of<Formula>>,
       f: (Int, Int) -> Formula
     ) : this(
       algebra = algebra,
@@ -179,8 +179,8 @@ class TestSMT {
     )
   }
 
-  class SMTAlgebra(val instance: SMTInstance): MatrixAlgebra<Formula, Ring<Formula>>{
-    override val ring: Ring<Formula> = Ring(
+  class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>>{
+    override val algebra = Ring.of(
       nil = instance.nil,
       one = instance.one,
       plus = { a, b -> a.run { this + b } },
@@ -231,7 +231,7 @@ class TestSMT {
     open val ctx: SolverContext,
     val formula: IntegerFormula,
     val fm: IntegerFormulaManager = ctx.formulaManager.integerFormulaManager
-  ) : IntegerFormula by formula, Group<Formula> {
+  ) : IntegerFormula by formula, Group<Formula, Formula> {
     override val nil: Formula by lazy { Formula(ctx, fm.makeNumber(0)) }
     override val one: Formula by lazy { Formula(ctx, fm.makeNumber(1)) }
     private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = fm.add(this, t)

@@ -124,18 +124,17 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   // TODO: Move the following ceremony into named tensor
   //-------
   val index: VIndex<G, E, V>    get() = memoize { VIndex(vertices) }
+  operator fun get(vertexIdx: Int): V = index[vertexIdx]
   class VIndex<G: IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>(val set: Set<V>) {
     val array: List<V> = set.toList()
     val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
-    operator fun get(it: IVertex<G, E, V>): Int? = map[it]
+//    operator fun get(it: IVertex<G, E, V>): Int? = map[it]
     operator fun get(it: Int): V = array[it]
   }
-  operator fun get(vertexIdx: Int): V = index[vertexIdx]
-
-  operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
-  operator fun SpsMat.set(n0: V, n1: V, value: Double) {
-    this[index[n0]!!, index[n1]!!] = value
-  }
+//  operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
+//  operator fun SpsMat.set(n0: V, n1: V, value: Double) {
+//    this[index[n0]!!, index[n1]!!] = value
+//  }
   //-------
 
   val D: SpsMat get() = memoize { elwise(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
@@ -197,7 +196,6 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
         if (n in v.neighbors) lf(v, n) else null
       }
     }
-
 
   fun randomWalk(r: Random = Random.Default) = RandomWalk(r, this as G)
 }
