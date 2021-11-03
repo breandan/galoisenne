@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Label
+import guru.nidi.graphviz.model.Link
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
@@ -48,28 +49,27 @@ interface Dyad: Op
 interface Monad: Op
 interface Polyad: Op
 interface TrigFun: Monad
-@Suppress("EnumEntryName")
+@Suppress("ClassName")
 object Ops {
   abstract class TopOp { override fun toString() = javaClass.simpleName }
-  object `+` : TopOp(), Monad, Dyad
-  object `-` : TopOp(), Monad, Dyad
+  object sum : TopOp(), Monad, Dyad
+  object sub : TopOp(), Monad, Dyad
   object sin : TopOp(), TrigFun
   object cos : TopOp(), TrigFun
   object tan : TopOp(), TrigFun
   object id : TopOp(), Monad
-  object ᵀ: TopOp(), Monad
+  object transpose: TopOp(), Monad
 
-  object `*` : TopOp(), Dyad
-  object `⊙` : TopOp(), Dyad
-  object `÷` : TopOp(), Dyad
+  object prod : TopOp(), Dyad
+  object odot : TopOp(), Dyad
+  object ratio : TopOp(), Dyad
 
-  object `=` : TopOp(), Dyad
+  object eql : TopOp(), Dyad
   object dot : TopOp(), Dyad
   object pow : TopOp(), Dyad
   object log : TopOp(), Dyad
   object d : TopOp(), Dyad
 
-  @Suppress("EnumEntryName")
   object λ : TopOp(), Polyad
   object Σ : TopOp(), Polyad
   object Π : TopOp(), Polyad
@@ -95,14 +95,14 @@ open class Gate(
 
   override fun toString() = if(op == Ops.id) id else op.toString()
 
-  operator fun plus(that: Any) = Gate(Ops.`+`, this, wrap(that))
-  operator fun minus(that: Any) = Gate(Ops.`-`, this, wrap(that))
-  operator fun times(that: Any) = Gate(Ops.`*`, this, wrap(that))
-  operator fun div(that: Any) = Gate(Ops.`÷`, this, wrap(that))
+  operator fun plus(that: Any) = Gate(Ops.sum, this, wrap(that))
+  operator fun minus(that: Any) = Gate(Ops.sub, this, wrap(that))
+  operator fun times(that: Any) = Gate(Ops.prod, this, wrap(that))
+  operator fun div(that: Any) = Gate(Ops.ratio, this, wrap(that))
   infix fun pow(that: Any) = Gate(Ops.pow, this, wrap(that))
   infix fun log(that: Any) = Gate(Ops.log, this, wrap(that))
 
-  operator fun unaryMinus() = Gate(Ops.`-`, this)
+  operator fun unaryMinus() = Gate(Ops.sub, this)
 
   fun sin() = Gate(Ops.sin, this)
   fun cos() = Gate(Ops.cos, this)
@@ -116,7 +116,7 @@ open class Gate(
 
   override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
   open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
-    builder.graph += Gate(prop.name, Gate(Ops.`=`, value)).let {
+    builder.graph += Gate(prop.name, Gate(Ops.eql, value)).let {
       ComputationGraph(vertices=it.graph/* TODO: Is this double-boxing a problem? */, root = it)
     }
   }
@@ -131,7 +131,7 @@ class NFunction(
 ): Gate(id = name, edgeMap = { s -> setOf(UnlabeledEdge(s, body(params))) }) {
   operator fun invoke(vararg args: Any): Gate =
     if (arityMatches(*args))
-      Gate(Ops.λ, *wrapAll(*args).let { it.plusElement(Gate(name, Gate(Ops.`=`, body(it)))) })
+      Gate(Ops.λ, *wrapAll(*args).let { it.plusElement(Gate(name, Gate(Ops.eql, body(it)))) })
     else throw Exception(invokeError(*args))
 
   fun invokeError(vararg args: Any) =
@@ -144,6 +144,6 @@ class NFunction(
 
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
-  override fun render() = (target.render() - source.render()).add(Label.of(""))
+  override fun render(): Link = (target.render() - source.render()).add(Label.of(""))
     .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }
