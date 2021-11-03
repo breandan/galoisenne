@@ -3,4 +3,3 @@ out
 .gradle
 build
 **/.ipynb_checkpoints
-gradle.properties
