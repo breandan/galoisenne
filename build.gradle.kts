@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   signing
   `maven-publish`
-  kotlin("jvm") version "1.6.0-RC"
+  kotlin("jvm") version "1.6.0-RC2"
   id("com.google.devtools.ksp") version "1.6.0-RC-1.0.1-RC"
   kotlin("jupyter.api") version "0.10.3-31"
   id("com.github.ben-manes.versions") version "0.39.0"
@@ -47,7 +47,6 @@ version = "0.1.9"
 
 repositories {
   mavenCentral()
-  maven("https://jitpack.io")
   maven("https://clojars.org/repo")
 }
 
