@@ -140,7 +140,7 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
 ) : Matrix<T, R, M> {
   val values by lazy { data.toSet() }
   override val map: MutableMap<Triple<Int, Int, T>, Int> by lazy {
-    indices.fold(mutableMapOf()) { map, (r, c) ->
+    indices.fold(mutableMapOf<Triple<Int, Int, T>, Int>()) { map, (r, c) ->
       val element = get(r, c)
       if (element != algebra.algebra.nil) map[Triple(r, c, element)] = 1
       map
