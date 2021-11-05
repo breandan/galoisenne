@@ -1,14 +1,13 @@
 package ai.hypergraph.kaliningraph.smt
 
-import ai.hypergraph.kaliningraph.matrix.*
-import ai.hypergraph.kaliningraph.times
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers.PRINCESS
 import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
-import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*
+import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import kotlin.math.*
 import kotlin.reflect.KProperty
 
@@ -179,7 +178,7 @@ class TestSMT {
     )
   }
 
-  class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>>{
+  class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>> {
     override val algebra = Ring.of(
       nil = instance.nil,
       one = instance.one,

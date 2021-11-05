@@ -1,7 +1,5 @@
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.times
-
 /** Corecursive Fibonacci sequence of [Nat]s **/
 tailrec fun <T, R: Nat<T, R>> Nat<T, R>.fibonacci(
   n: T,
@@ -135,7 +133,7 @@ interface Vector<T> {
     constructor(vararg ts: T): this(ts.toList())
 
     override fun toString() =
-      ts.joinToString(",", "${ts.javaClass.simpleName}[", "]")
+      ts.joinToString(",", "${ts::class.simpleName}[", "]")
   }
 }
 
@@ -199,3 +197,7 @@ class Rational {
     }
   }
 }
+
+// Returns the Cartesian product of two sets
+operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
+  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()

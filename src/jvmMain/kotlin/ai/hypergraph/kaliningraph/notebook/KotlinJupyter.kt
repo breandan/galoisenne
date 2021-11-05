@@ -2,17 +2,16 @@ package ai.hypergraph.kaliningraph.notebook
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate
-import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.Graph
 import org.jetbrains.kotlinx.jupyter.api.HTML
-import org.jetbrains.kotlinx.jupyter.api.annotations.JupyterLibrary
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 
 internal class Integration: JupyterIntegration() {
   override fun Builder.onLoaded() {
     listOf(
       "ai.hypergraph.kaliningraph.*",
-      "ai.hypergraph.kaliningraph.matrix.*",
+      "ai.hypergraph.kaliningraph.tensor.*",
       "ai.hypergraph.kaliningraph.circuits.*",
       "org.ejml.data.*",
       "org.ejml.kotlin.*"

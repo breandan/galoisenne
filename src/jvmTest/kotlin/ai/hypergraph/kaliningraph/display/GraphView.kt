@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.display
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent

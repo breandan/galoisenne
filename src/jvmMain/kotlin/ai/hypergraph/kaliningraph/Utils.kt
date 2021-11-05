@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.matrix.*
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
@@ -15,8 +15,9 @@ import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.*
 import org.ejml.data.*
 import org.ejml.data.MatrixType.DDRM
-import org.ejml.dense.row.*
 import org.ejml.dense.row.CommonOps_DDRM.kron
+import org.ejml.dense.row.DMatrixComponent
+import org.ejml.kotlin.*
 import org.ejml.ops.ConvertMatrixType
 import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
@@ -84,10 +85,6 @@ fun SpsMat.matToImg(f: Int = 20): String {
   ImageIO.write(bi, "png", os)
   return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
 }
-
-// Returns the Cartesian product of two sets
-operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
 operator fun IntRange.times(s: IntRange) =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
@@ -178,3 +175,20 @@ fun CDF.sample(random: Random = Random.Default,
                target: Double = random.nextDouble()) =
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
+
+
+fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
+fun BMatrixRMaj.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) }
+operator fun BooleanMatrix.times(mat: SpsMat): SpsMat = toEJMLSparse() * mat
+operator fun BooleanMatrix.plus(mat: SpsMat): SpsMat = toEJMLSparse() * mat
+operator fun SpsMat.minus(mat: BooleanMatrix): SpsMat = this - mat.toEJMLSparse()
+
+fun DoubleMatrix.toEJMLSparse() = SpsMat(numRows, numCols, numRows).also {
+  for ((i, j) in (0 until numRows) * (0 until numCols)) if(get(i, j) != 0.0) it[i, j] = get(i, j)
+}
+
+
+fun BooleanMatrix.toEJMLSparse(): SpsMat = SpsMat(numRows, numCols, numRows).also {
+  for ((i, j) in (0 until numRows) * (0 until numCols))
+    if (this[i, j]) it[i, j] = 1.0
+}

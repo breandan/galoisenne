@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import org.junit.jupiter.api.*
 
 class TestBooleanMatrixMul {

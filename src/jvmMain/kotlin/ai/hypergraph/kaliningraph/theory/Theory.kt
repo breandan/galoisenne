@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.theory
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.matrix.*
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.*
 import org.ejml.kotlin.*
 

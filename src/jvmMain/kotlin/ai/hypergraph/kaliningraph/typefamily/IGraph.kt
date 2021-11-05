@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.typefamily
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.matrix.*
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import com.github.benmanes.caffeine.cache.Caffeine
 import guru.nidi.graphviz.attribute.Label
@@ -9,7 +9,7 @@ import guru.nidi.graphviz.model.*
 import java.lang.reflect.*
 import kotlin.math.sqrt
 import kotlin.random.Random
-import kotlin.reflect.*
+import kotlin.reflect.KClass
 
 // Reified constructors
 @Suppress("FunctionName", "UNCHECKED_CAST")
@@ -143,7 +143,8 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
   val A_AUG: BooleanMatrix get() = memoize { A + A.transpose() + BooleanMatrix.one(size) }
 
   // Symmetric normalized adjacency
-  val ASYMNORM: DoubleMatrix get() = memoize {
+  val ASYMNORM: DoubleMatrix
+    get() = memoize {
     vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) }
   }
 

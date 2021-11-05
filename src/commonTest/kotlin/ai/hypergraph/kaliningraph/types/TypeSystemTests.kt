@@ -1,38 +1,34 @@
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.matrix.SparseTensor
-import java.math.BigDecimal as BD
-import java.math.BigInteger as BI
-import org.junit.jupiter.api.Test
-import java.math.*
-import kotlin.system.measureTimeMillis
+import kotlin.test.Test
+import kotlin.time.*
 
 class TypeSystemTests {
-  val max = 10L
+  val max = 10
 
   @Test
   fun benchmark() =
     listOf(
       BaseType(
-        max = BD.valueOf(max),
-        one = BD.ONE,
-        nil = BD.ZERO,
+        max = max,
+        one = 1,
+        nil = 0,
         plus = { a, b -> a + b },
         minus = { a, b -> a - b },
         times = { a, b -> a * b },
         div = { a, b -> a / b },
       ),
       BaseType(
-        max = BI.valueOf(max),
-        one = BI.ONE,
-        nil = BI.ZERO,
+        max = max.toDouble(),
+        one = 1.0,
+        nil = 0.0,
         plus = { a, b -> a + b },
         minus = { a, b -> a - b },
         times = { a, b -> a * b },
         div = { a, b -> a / b },
       ),
       BaseType(
-        max = max, one = 1L, nil = 0L,
+        max = max.toLong(), one = 1L, nil = 0L,
         plus = { a, b -> a + b }, minus = { a, b -> a - b },
         times = { a, b -> a * b }, div = { a, b -> a / b },
       ),
@@ -57,15 +53,15 @@ class TypeSystemTests {
   @Test
   fun vectorFieldTest() =
     VectorField.of(f = Field.of(
-      nil = BI.ZERO,
-      one = BI.ONE,
+      nil = 0L,
+      one = 1L,
       plus = { a, b -> a + b },
       times = { a, b -> a * b },
       div = { a, b -> a / b },
       minus = { a, b -> a - b }
     )).run {
-      println(BI.ONE dot Vector.of(BI.ZERO, BI.ONE))
-      println(Vector.of(BI.ZERO, BI.ONE) + Vector.of(BI.ONE, BI.ONE))
+      println(1L dot Vector.of(0L, 1L))
+      println(Vector.of(0L, 1L) + Vector.of(1L, 1L))
     }
 
   fun <T> BaseType<T>.algebras(): List<Nat<T, *>> = listOf(
@@ -104,11 +100,12 @@ class TypeSystemTests {
     operator fun T.div(that: T) = div(this, that)
   }
 
+  @OptIn(ExperimentalTime::class)
   @Suppress("UNCHECKED_CAST")
   fun <T> Nat<T, *>.benchmark(max: Any) =
-    measureTimeMillis {
+    measureTimedValue {
       println(
-        javaClass.interfaces.first().simpleName + "<${nil!!::class.java.simpleName}>" + " results\n" +
+        this::class.simpleName + "<${nil!!::class.simpleName}>" + " results\n" +
           "\tFibonacci: " + fibonacci(max as T) + "\n" +
           "\tPrimes:    " + primes(max as T) + "\n" +
           "\tPower:     " + (one + one).pow(max as T) + "\n" +

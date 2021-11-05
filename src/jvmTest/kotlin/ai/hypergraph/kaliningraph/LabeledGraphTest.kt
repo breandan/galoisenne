@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph
 
-import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.*
 
 class LabeledGraphTest {

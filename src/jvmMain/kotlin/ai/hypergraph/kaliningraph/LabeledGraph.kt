@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Style.FILLED

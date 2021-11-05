@@ -1,12 +1,10 @@
-package ai.hypergraph.kaliningraph.matrix
+package ai.hypergraph.kaliningraph.tensor
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.*
-import org.ejml.data.*
-import org.ejml.kotlin.*
-import java.lang.reflect.Constructor
 import kotlin.math.*
 import kotlin.random.Random
+import kotlin.reflect.full.primaryConstructor
 
 /**
  * Generic matrix which supports overloadable addition and multiplication
@@ -32,15 +30,13 @@ interface Matrix<T, R : Ring<T, R>, M : Matrix<T, R, M>> : SparseTensor<Triple<I
   operator fun plus(that: M): M = with(algebra) { this@Matrix plus that }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numCols: Int, numRows: Int, algebra: MatrixRing<T, R>, data: List<T>): M =
-    (javaClass.getConstructor(
-      MatrixRing::class.java, Int::class.java, Int::class.java, List::class.java
-    ) as Constructor<M>).newInstance(algebra, numCols, numRows, data)
+  fun new(numRows: Int, numCols: Int, algebra: MatrixRing<T, R>, data: List<T>): M =
+    this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
   fun join(that: Matrix<T, R, M>, op: (Int, Int) -> T): M =
-    assert(numCols == that.numRows) {
-      "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-    }.run { new(numCols, that.numRows, algebra, indices.map { (i, j) -> op(i, j) }) }
+    if (numCols != that.numRows) {
+      throw Exception("Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}")
+    } else { new(numCols, that.numRows, algebra, indices.map { (i, j) -> op(i, j) }) }
 
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
@@ -120,7 +116,7 @@ val DOUBLE_FIELD = MatrixField(
 
 val MINPLUS_ALGEBRA = MatrixRing(
   Ring.of(
-    nil = Integer.MAX_VALUE,
+    nil = Int.MAX_VALUE,
     one = 0,
     plus = { a, b -> min(a, b) },
     times = { a, b -> a + b }
@@ -129,7 +125,7 @@ val MINPLUS_ALGEBRA = MatrixRing(
 
 val MAXPLUS_ALGEBRA = MatrixRing(
   Ring.of(
-    nil = Integer.MIN_VALUE,
+    nil = Int.MIN_VALUE,
     one = 0,
     plus = { a, b -> max(a, b) },
     times = { a, b -> a + b }
@@ -148,7 +144,7 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
       val element = get(r, c)
       if (element != algebra.algebra.nil) map[Triple(r, c, element)] = 1
       map
-    }
+    } as MutableMap<Triple<Int, Int, T>, Int>
   }
 
   override fun toString() =
@@ -212,7 +208,7 @@ open class BooleanMatrix constructor(
     this(rows.fold("") { a, b -> a + b }
       .toCharArray().let { chars ->
         val values = chars.distinct()
-        assert(values.size == 2) { "Expected two values" }
+        if(values.size != 2) { throw Exception("Expected two values") }
         chars.map { it == values[0] }
       }
     )
@@ -281,26 +277,11 @@ open class DoubleMatrix constructor(
   operator fun minus(that: DoubleMatrix): DoubleMatrix = with(algebra) { this@DoubleMatrix minus that }
 }
 
-fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
-fun BMatrixRMaj.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) }
-operator fun BooleanMatrix.times(mat: SpsMat): SpsMat = toEJMLSparse() * mat
-operator fun BooleanMatrix.plus(mat: SpsMat): SpsMat = toEJMLSparse() * mat
-operator fun SpsMat.minus(mat: BooleanMatrix): SpsMat = this - mat.toEJMLSparse()
 fun DoubleMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
 operator fun BooleanMatrix.times(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() * mat
 operator fun BooleanMatrix.plus(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() + mat
 operator fun DoubleMatrix.minus(mat: BooleanMatrix): DoubleMatrix = this - mat.toDoubleMatrix()
-
-fun DoubleMatrix.toEJMLSparse() = SpsMat(numRows, numCols, numRows).also {
-  for ((i, j) in (0 until numRows) * (0 until numCols)) if(get(i, j) != 0.0) it[i, j] = get(i, j)
-}
-
 fun BooleanMatrix.toDoubleMatrix() = DoubleMatrix(numRows, numCols) { i, j -> if (get(i, j)) 1.0 else 0.0 }
-
-fun BooleanMatrix.toEJMLSparse() = SpsMat(numRows, numCols, numRows).also {
-  for ((i, j) in (0 until numRows) * (0 until numCols))
-    if (this[i, j]) it[i, j] = 1.0
-}
 
 // TODO: Naperian functors
 // https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/aplicative.pdf
