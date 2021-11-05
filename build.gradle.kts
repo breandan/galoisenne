@@ -5,8 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   signing
   `maven-publish`
-  kotlin("jvm") version "1.6.0-RC2"
-  id("com.google.devtools.ksp") version "1.6.0-RC-1.0.1-RC"
+  kotlin("multiplatform") version "1.5.31"
   kotlin("jupyter.api") version "0.10.3-31"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -50,91 +49,117 @@ repositories {
   maven("https://jitpack.io")
 }
 
-java {
-  withJavadocJar()
-  toolchain {
-    languageVersion.set(JavaLanguageVersion.of(17))
-  }
-}
+kotlin {
+  jvm()
 
-dependencies {
-  implementation(platform(kotlin("bom")))
-  implementation(kotlin("stdlib"))
-  implementation(kotlin("reflect"))
-  // Used to cache graph lookups
-  implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
+  sourceSets {
+    val commonMain by getting {
+      dependencies {
+        implementation(kotlin("stdlib-common"))
+      }
+    }
+
+    val jvmMain by getting {
+      dependencies {
+        implementation(project.dependencies.platform(kotlin("bom")))
+        implementation(kotlin("stdlib"))
+        implementation(kotlin("reflect"))
+        // Used to cache graph lookups
+        implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
 //  implementation("io.github.reactivecircus.cache4k:cache4k:0.3.0")
 //  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
 //  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.5.2")
 
-  // Property-based testing
-  val kotestVersion = "5.0.0.M3"
-  testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-  testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
-  testImplementation("io.kotest:kotest-property:$kotestVersion")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
+        val ejmlVersion = "0.41"
+        implementation("org.ejml:ejml-kotlin:$ejmlVersion")
+        implementation("org.ejml:ejml-all:$ejmlVersion")
+        implementation("org.graalvm.js:js:21.3.0")
+        implementation("guru.nidi:graphviz-kotlin:0.18.1")
+      }
+    }
 
-  val ejmlVersion = "0.41"
-  api("org.ejml:ejml-kotlin:$ejmlVersion")
-  api("org.ejml:ejml-all:$ejmlVersion")
-  api("org.graalvm.js:js:21.3.0")
-  api("guru.nidi:graphviz-kotlin:0.18.1")
+    val jvmTest by getting {
+      dependencies {
+        // Property-based testing
+        val kotestVersion = "5.0.0.M3"
+        implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
+        implementation("io.kotest:kotest-assertions-core:$kotestVersion")
+        implementation("io.kotest:kotest-property:$kotestVersion")
+        implementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
-  testImplementation("junit", "junit", "4.13.2")
-  testCompileOnly("org.jetbrains:annotations:22.0.0")
-  testImplementation("org.slf4j:slf4j-simple:1.7.32")
+        implementation("junit:junit:4.13.2")
+        compileOnly("org.jetbrains:annotations:22.0.0")
+        implementation("org.slf4j:slf4j-simple:1.7.32")
 
-  val multikVersion = "0.1.0"
-  testImplementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
-  testImplementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
+        val multikVersion = "0.1.0"
+        implementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
-  testImplementation("com.github.kwebio:kweb-core:0.7.33")
+        implementation("com.github.kwebio:kweb-core:0.7.33")
 
-  // I think we were going to use this to prove termination of graph rewriting
-  testImplementation("org.sosy-lab:java-smt:3.11.0")
-  //implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
-  //implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
-  //testImplementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
+        // I think we were going to use this to prove termination of graph rewriting
+        implementation("org.sosy-lab:java-smt:3.11.0")
+        //implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
+        //implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
+        //implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
-  // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
-  // implementation(files("$projectDir/libs/grez.jar"))
+        // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
+        // implementation(files("$projectDir/libs/grez.jar"))
 
-  // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
-  // testImplementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
+        // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
+        // implementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
-  // https://github.com/jgralab/jgralab/wiki
-  //  testImplementation("de.uni-koblenz.ist:jgralab:8.1.0")
+        // https://github.com/jgralab/jgralab/wiki
+        //  implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-  testImplementation("com.redislabs:jredisgraph:2.6.0-RC2")
-  testImplementation("io.lacuna:bifurcan:0.2.0-alpha6")
+        implementation("com.redislabs:jredisgraph:2.6.0-RC2")
+        implementation("io.lacuna:bifurcan:0.2.0-alpha6")
 
-  val jgraphtVersion by extra { "1.5.1" }
-  testImplementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
-  testImplementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
-  testImplementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
+        val jgraphtVersion by extra { "1.5.1" }
+        implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
+        implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
+        implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-  val tinkerpopVersion by extra { "3.5.1" }
-  testImplementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
-  testImplementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
-  testImplementation("info.debatty:java-string-similarity:2.0.0")
+        val tinkerpopVersion by extra { "3.5.1" }
+        implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
+        implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
+        implementation("info.debatty:java-string-similarity:2.0.0")
+      }
+    }
+
+    val commonTest by getting {
+      dependencies {
+        implementation(kotlin("test-common"))
+        implementation(kotlin("test-annotations-common"))
+      }
+    }
+  }
 }
 
 tasks {
+  processJupyterApiResources {
+    libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
+  }
+
   listOf(
-          "HelloKaliningraph", "Rewriter", "PrefAttach",
-          "rewriting.CipherSolver", "RegexDemo", "GraphRewrite", "smt.TestSMT"
+    "HelloKaliningraph", "Rewriter", "PrefAttach",
+    "rewriting.CipherSolver", "RegexDemo", "GraphRewrite", "smt.TestSMT"
   ).forEach { fileName ->
-    register(fileName, JavaExec::class) {
+    register(fileName, org.gradle.api.tasks.JavaExec::class) {
       mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")
-      classpath = sourceSets["test"].runtimeClasspath
+      classpath += objects.fileCollection().from(configurations.named("jvmTestCompileClasspath"))
     }
   }
 
-  test {
-    dependsOn("HelloKaliningraph")
+  named<Test>("jvmTest") {
     useJUnitPlatform()
     testLogging {
-      events = setOf(FAILED, PASSED, SKIPPED, STANDARD_OUT)
+      events = setOf(
+        FAILED,
+        PASSED,
+        SKIPPED,
+        STANDARD_OUT
+      )
       exceptionFormat = FULL
       showExceptions = true
       showCauses = true
@@ -149,19 +174,15 @@ tasks {
  * ./gradlew [build publishToMavenLocal] jupyterRun -x test
  */
 
-  val jupyterRun by creating(Exec::class) {
+  val jupyterRun by creating(org.gradle.api.tasks.Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
-  }
-
-  val sourcesJar by registering(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.get().allSource)
   }
 }
 
+
 publishing {
   publications.create<MavenPublication>("default") {
-    from(components["java"])
+    from(components["kotlin"])
     artifact(tasks["sourcesJar"])
 
     pom {
