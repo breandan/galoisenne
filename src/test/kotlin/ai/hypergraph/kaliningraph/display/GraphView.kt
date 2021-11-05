@@ -29,8 +29,8 @@ fun animate(initial: LabeledGraph, transition: (Document, KeyboardEvent, Mutable
 
         el.innerHTML(graphs.last().html())
         mat.render(graphs.last()) { it.A }
-        vec.render(graphs.last()) { it.S() }
-        nex.render(graphs.last()) { it.A.transpose() * it.S() }
+        vec.render(graphs.last()) { it.S().also { println(it) } }
+        nex.render(graphs.last()) { (it.A.transpose() * it.S()).also { println(it) } }
         desc.innerHTML("<p style=\"font-size:40px\">${graphs.last().description}</p>")
       }
     }

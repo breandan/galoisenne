@@ -8,7 +8,7 @@ class LabeledGraphTest {
 
   @Test
   fun testAdjListConstructor() = Assertions.assertEquals(
-    graph, LabeledGraph.G(
+    graph, LabeledGraph.P(
       "a" to "b",
       "b" to "c",
       "c" to "d",

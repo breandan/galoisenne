@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.typefamily.*
+import kotlin.reflect.KProperty
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))
   : Graph<Automaton, Transition, State>(vertices)
@@ -16,7 +17,9 @@ open class State(
   constructor(id: String? = null, out: Set<State> = setOf()) : this(id = id ?: randomString(),
     edgeMap = { s -> out.map { t -> Transition(s, t) }.toSet() })
 
-  override fun V(newId: String, edgeMap: (State) -> Set<Transition>): State = State(id, edgeMap)
+  constructor(state: State, edgeMap: (State) -> Set<Transition>): this(state.id, edgeMap)
+
+  operator fun getValue(a: Any?, prop: KProperty<*>): State = State(prop.name)
 }
 
 class AutomatonBuilder {
@@ -27,10 +30,10 @@ class AutomatonBuilder {
   val i by State(); val j by State(); val k by State(); val l by State()
 
   operator fun State.minus(v: State) =
-    V(id) { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
+    V(this) { v.outgoing + Transition(v, this) }.also { automaton += it.graph }
 
   operator fun State.plus(edge: Transition) =
-    V(id) { outgoing + edge }.also { automaton += it.graph }
+    V(this) { outgoing + edge }.also { automaton += it.graph }
 
   operator fun State.plus(vertex: State) =
     (graph + vertex.graph).also { automaton += it }

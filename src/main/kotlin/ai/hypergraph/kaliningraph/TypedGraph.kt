@@ -5,6 +5,8 @@ import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Style
 
 // TODO: convert to/from other graph types
+// TODO: should we lift TypedGraph and inherit other concrete graphs or introduce a Sheaf type?
+// https://www.jakobhansen.org/publications/gentleintroduction.pdf
 open class TypedGraph<T: Any>
 constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
   Graph<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(vertices) {
@@ -24,14 +26,13 @@ class TypedVertex<T: Any> constructor(
     this(t = t, edgeMap = { s -> out.map { t -> TypedEdge<T>(s, t) }.toSet() })
   constructor(t: T, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) :
     this(t = t, occupied = false, edgeMap = edgeMap)
-
+  constructor(tv: TypedVertex<T>, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>):
+    this(tv.t, tv.occupied, edgeMap)
   override fun encode() = (t?.toString() ?: "").vectorize()
   override fun render() = super.render().also {
     if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK)
   }
 
-  override fun V(newId: String, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) =
-    TypedVertex(t, occupied, edgeMap)
 }
 
 open class TypedEdge<T: Any>(override val source: TypedVertex<T>, override val target: TypedVertex<T>, val v: String? = null) :

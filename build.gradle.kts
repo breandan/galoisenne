@@ -47,7 +47,7 @@ version = "0.1.9"
 
 repositories {
   mavenCentral()
-  maven("https://clojars.org/repo")
+  maven("https://jitpack.io")
 }
 
 java {
@@ -61,6 +61,11 @@ dependencies {
   implementation(platform(kotlin("bom")))
   implementation(kotlin("stdlib"))
   implementation(kotlin("reflect"))
+  // Used to cache graph lookups
+  implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
+//  implementation("io.github.reactivecircus.cache4k:cache4k:0.3.0")
+//  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+//  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.5.2")
 
   // Property-based testing
   val kotestVersion = "5.0.0.M3"
@@ -74,9 +79,6 @@ dependencies {
   api("org.ejml:ejml-all:$ejmlVersion")
   api("org.graalvm.js:js:21.3.0")
   api("guru.nidi:graphviz-kotlin:0.18.1")
-
-  // Used to cache graph lookups
-  implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
 
   testImplementation("junit", "junit", "4.13.2")
   testCompileOnly("org.jetbrains:annotations:22.0.0")

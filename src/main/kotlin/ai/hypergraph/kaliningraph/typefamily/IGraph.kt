@@ -20,30 +20,22 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
 
   fun E(s: V, t: V): E = E.newInstance(s, t)
 
-  fun V(newId: String = "", edgeMap: (V) -> Set<E>): V = V.newInstance(newId, edgeMap)
-
   fun V(old: V, edgeMap: (V) -> Set<E>): V =
-    // If no default constructor is provided, implementors must override V
-    try { V(old.id, edgeMap) } catch (e: Exception) { old.V(old, edgeMap) }
-
-  fun V(newId: String = "", out: Set<V> = emptySet()): V =
-    V(newId) { s -> out.map { t -> E(s, t) }.toSet() }
+    try {
+      V.newInstance(old, edgeMap)
+    } catch (e: Exception) {
+      TODO("IGF subtypes must provide a copy constructor or override this method.")
+    }
 
   fun G(vararg graphs: G): G = G(graphs.toList())
   fun G(vararg vertices: V): G = G(vertices.map { it.graph })
 
-  fun <T: Any> G(
-    vararg adjList: Pair<T, T>,
-    p2v: (Pair<T, T>) -> V = { (s, t) -> V("$s", setOf(V("$t"))) }
-  ): G = adjList.map { p2v(it) }.fold(G()) { acc, v -> acc + v.graph }
-
+  fun V() = gev[2]
   fun <T: Any> G(list: List<T> = emptyList()): G = when {
     list.isEmpty() -> setOf()
     list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
     list allAre V() -> list.map { it as V }.toSet()
-    list anyAre IGF::class -> list.first { it is IGF<*, *, *> }
-      .let { throw Exception("Unsupported: Graph(${it::class.java})") }
-    else -> G(*list.zipWithNext().toTypedArray())
+    else -> throw Exception("Unsupported constructor: G(${list.joinToString(",") { it.javaClass.simpleName }})")
   }.let { G(it) }
 
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
@@ -58,7 +50,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   val G: Constructor<G> get() = gev[0].getConstructor(Set::class.java) as Constructor<G>
   val E: Constructor<E> get() = gev.let { it[1].getConstructor(it[2], it[2]) } as Constructor<E>
   /** TODO: Generify first argument to support [TypedVertex] */
-  val V: Constructor<V> get() = gev[2].getConstructor(String::class.java, Function1::class.java) as Constructor<V>
+  val V: Constructor<V> get() = gev[2].getConstructor(V(), Function1::class.java) as Constructor<V>
 
   /**
    * Memoizes the result of evaluating a pure function, indexed by:
@@ -73,9 +65,17 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
     methodRef: Int = Throwable().stackTrace[1].hashCode(),
     args: Array<*>? = null,
     computation: () -> T
-  ): T = memo.get(Triple(classRef, methodRef, args)) { computation() } as T
+  ): T =
+    memo.get(Triple(classRef, methodRef, args)) { computation() } as T
+//    computation().also {
+//      GlobalScope.async {
+//        memo.get(Triple(classRef, methodRef, args)) { it as Any } as T
+//      }
+//    }
 
   companion object {
+//    val memo = Cache.Builder().build<Triple<*, *, *>, Any>()
+
     // https://github.com/ben-manes/caffeine/issues/160#issuecomment-305681211
     val memo = Caffeine.newBuilder().buildAsync<Triple<*, *, *>, Any>().synchronous()
   }
@@ -180,7 +180,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
       vertices.flatMap { src ->
         src.outgoing.map { edge -> edge.target to E(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
-      .map { (k, v) -> V(k.id) { v } }.toSet().let { G(it) }
+      .map { (k, v) -> V(k) { v } }.toSet().let { G(it) }
 
   fun isomorphicTo(that: G): Boolean =
     this.size == that.size &&
@@ -253,14 +253,13 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
 
   // Removes all edges pointing outside the set
   private fun Set<V>.closure(): Set<V> =
-    map { v -> V(id) { v.outgoing.filter { it.target in this }.toSet() } }.toSet()
+    map { v -> V(this@IVertex as V) { v.outgoing.filter { it.target in this }.toSet() } }.toSet()
 
   private fun Set<V>.neighbors(): Set<V> = flatMap { it.neighbors() }.toSet()
 
   fun neighborhood(): G = G(neighbors(0).closure())
 
   override fun encode(): DoubleArray = id.vectorize()
-  operator fun getValue(a: Any?, prop: KProperty<*>): V = V(prop.name)
   fun render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
 }
 

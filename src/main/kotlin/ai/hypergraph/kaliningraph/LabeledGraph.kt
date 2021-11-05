@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.matrix.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.*
 import guru.nidi.graphviz.attribute.Color.*
 import guru.nidi.graphviz.attribute.Style.FILLED
+import kotlin.reflect.KProperty
 
 /**
  * DSL for labeled graphs - just enumerate paths. Duplicates will be merged.
@@ -24,7 +25,7 @@ class LGBuilder {
   operator fun String.minus(v: String): LGVertex = LGVertex(this) - LGVertex(v)
 
   operator fun LGVertex.plus(edge: LabeledEdge) =
-    V(id) { outgoing + edge }.also { mutGraph += it.graph }
+    V(this) { outgoing + edge }.also { mutGraph += it.graph }
 
   operator fun LGVertex.plus(vertex: LGVertex) =
     (graph + vertex.graph).also { mutGraph += it }
@@ -44,11 +45,16 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     this(LGBuilder().also { it.builder() }.mutGraph)
   constructor(graph: String): this(
     graph.split(" ").fold(LabeledGraph()) { acc, it ->
-      acc + acc.G(*it.toList().zipWithNext().toTypedArray())
+      acc + P(*it.toList().zipWithNext().map { (a, b) -> a.toString() to b.toString() }.toTypedArray())
     }
   )
-
-  companion object: LabeledGraph()
+  companion object: LabeledGraph() {
+    fun P(
+      vararg adjList: Pair<String, String>,
+      p2v: (Pair<String, String>) -> LGVertex = { (s, t) -> LGVertex(s, setOf(LGVertex(t))) }
+    ) = LabeledGraph(adjList.map { p2v(it) }
+      .fold(LabeledGraph()) { acc, v -> acc + v.graph })
+  }
 
   var accumuator = mutableSetOf<String>()
   var description = ""
@@ -81,8 +87,11 @@ class LGVertex constructor(
     this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(label: String, out: Set<LGVertex> = emptySet()) :
     this(label = label, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+  constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) :
+    this(label = lgv.label, edgeMap = edgeMap)
 
   override fun encode() = label.vectorize()
+  operator fun getValue(a: Any?, prop: KProperty<*>): LGVertex = LGVertex(prop.name)
   override fun render() = super.render().also { if (occupied) it.add(FILLED, RED.fill()) else it.add(BLACK) }
 //  override fun toString(): String = label
 }

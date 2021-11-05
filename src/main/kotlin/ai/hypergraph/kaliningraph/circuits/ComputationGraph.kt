@@ -86,6 +86,8 @@ open class Gate(
   constructor(id: String = randomString(), op: Op = Ops.id, vararg gates: Gate) :
     this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
   constructor(id: String = randomString(), edgeMap: (Gate) -> Set<UnlabeledEdge>): this(id, Ops.id, edgeMap)
+  constructor(gate: Gate, edgeMap: (Gate) -> Set<UnlabeledEdge>) :
+    this(id = gate.id, edgeMap = edgeMap)
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())
@@ -111,10 +113,8 @@ open class Gate(
 
   override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
   override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
-  override fun V(newId: String, edgeMap: (Gate) -> Set<UnlabeledEdge>) =
-    Gate(newId, Ops.id, edgeMap)
 
-  override operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
+  operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
   open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
     builder.graph += Gate(prop.name, Gate(Ops.eql, value)).let {
       ComputationGraph(vertices=it.graph/* TODO: Is this double-boxing a problem? */, root = it)
