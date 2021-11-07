@@ -7,6 +7,7 @@ class TypeSystemTests {
   val max = 10
 
   @Test
+  @ExperimentalTime
   fun benchmark() =
     listOf(
       BaseType(
@@ -100,7 +101,7 @@ class TypeSystemTests {
     operator fun T.div(that: T) = div(this, that)
   }
 
-  @OptIn(ExperimentalTime::class)
+  @ExperimentalTime
   @Suppress("UNCHECKED_CAST")
   fun <T> Nat<T, *>.benchmark(max: Any) =
     measureTimedValue {
