@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.types
 
+import ai.hypergraph.kaliningraph.times
+
 /** Corecursive Fibonacci sequence of [Nat]s **/
 tailrec fun <T, R: Nat<T, R>> Nat<T, R>.fibonacci(
   n: T,
@@ -197,7 +199,3 @@ class Rational {
     }
   }
 }
-
-// Returns the Cartesian product of two sets
-operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()

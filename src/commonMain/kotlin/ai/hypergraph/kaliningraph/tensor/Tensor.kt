@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.Random
-import kotlin.reflect.full.primaryConstructor
 
 /**
  * Generic matrix which supports overloadable addition and multiplication
@@ -30,8 +29,8 @@ interface Matrix<T, R : Ring<T, R>, M : Matrix<T, R, M>> : SparseTensor<Triple<I
   operator fun plus(that: M): M = with(algebra) { this@Matrix plus that }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numRows: Int, numCols: Int, algebra: MatrixRing<T, R>, data: List<T>): M =
-    this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
+  fun new(numRows: Int, numCols: Int, algebra: MatrixRing<T, R>, data: List<T>): M
+// TODO = this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
   fun join(that: Matrix<T, R, M>, op: (Int, Int) -> T): M =
     if (numCols != that.numRows) {
@@ -147,6 +146,7 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
     } as MutableMap<Triple<Int, Int, T>, Int>
   }
 
+
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
       data.foldIndexed("") { i, a, b ->
@@ -182,6 +182,9 @@ open class FreeMatrix<T> constructor(
   )
 
   constructor(vararg rows: T) : this(rows.toList())
+
+  override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<T, Ring.of<T>>, data: List<T>) =
+    FreeMatrix(algebra, numRows, numCols, data)
 }
 
 // Concrete subclasses
@@ -229,6 +232,9 @@ open class BooleanMatrix constructor(
   override fun toString() = data.foldIndexed("") { i, a, b ->
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
+
+  override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Boolean, Ring.of<Boolean>>, data: List<Boolean>) =
+     BooleanMatrix(algebra, numRows, numCols, data)
 }
 
 open class IntegerMatrix constructor(
@@ -252,6 +258,8 @@ open class IntegerMatrix constructor(
   constructor(vararg rows: Int) : this(rows.toList())
 
   operator fun minus(that: IntegerMatrix): IntegerMatrix = with(algebra) { this@IntegerMatrix minus that }
+  override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Int, Field.of<Int>>, data: List<Int>) =
+   IntegerMatrix(algebra as MatrixField<Int, Field.of<Int>>, numRows, numCols, data)
 }
 
 open class DoubleMatrix constructor(
@@ -275,6 +283,8 @@ open class DoubleMatrix constructor(
   constructor(vararg rows: Double) : this(rows.toList())
 
   operator fun minus(that: DoubleMatrix): DoubleMatrix = with(algebra) { this@DoubleMatrix minus that }
+  override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Double, Field.of<Double>>, data: List<Double>) =
+    DoubleMatrix(algebra as MatrixField<Double, Field.of<Double>>, numRows, numCols, data)
 }
 
 fun DoubleMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }

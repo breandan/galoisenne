@@ -86,8 +86,6 @@ fun SpsMat.matToImg(f: Int = 20): String {
   return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
 }
 
-operator fun IntRange.times(s: IntRange) =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
 fun BooleanMatrix.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 

@@ -10,6 +10,7 @@ import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import kotlin.math.*
 import kotlin.reflect.KProperty
+import ai.hypergraph.kaliningraph.times
 
 class TestSMT {
   @Test
@@ -176,6 +177,9 @@ class TestSMT {
       numCols = numCols,
       data = List(numRows * numCols) { f(it / numRows, it % numCols) }
     )
+
+    override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Formula, Ring.of<Formula>>, data: List<Formula>) =
+      SMTMatrix(algebra, numRows, numCols, data)
   }
 
   class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>> {
