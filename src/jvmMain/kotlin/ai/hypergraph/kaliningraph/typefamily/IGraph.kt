@@ -39,6 +39,7 @@ interface IGF<G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> {
   }.let { G(it) }
 
   // Gafter's gadget! http://gafter.blogspot.com/2006/12/super-type-tokens.html
+  // TODO: Find a way to achieve this using Kotlin reflection?
   val gev: Array<Class<*>> get() = memoize {
       (generateSequence(javaClass) { it.superclass as Class<IGF<G, E, V>> }
         .first { it.genericSuperclass is ParameterizedType }
