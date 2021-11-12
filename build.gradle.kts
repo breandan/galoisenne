@@ -83,17 +83,17 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.0.0.M3"
+        val kotestVersion = "5.0.0.M4"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
         implementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
         implementation("junit:junit:4.13.2")
-        compileOnly("org.jetbrains:annotations:22.0.0")
+        compileOnly("org.jetbrains:annotations:23.0.0")
         implementation("org.slf4j:slf4j-simple:1.7.32")
 
-        val multikVersion = "0.1.0"
+        val multikVersion = "0.1.1"
         implementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
