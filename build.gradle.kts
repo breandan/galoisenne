@@ -90,7 +90,7 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
         implementation("junit:junit:4.13.2")
-        compileOnly("org.jetbrains:annotations:23.0.0")
+        compileOnly("org.jetbrains:annotations:22.0.0")
         implementation("org.slf4j:slf4j-simple:1.7.32")
 
         val multikVersion = "0.1.1"
