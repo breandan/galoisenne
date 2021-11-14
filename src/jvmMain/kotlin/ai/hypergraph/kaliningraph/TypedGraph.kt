@@ -1,8 +1,6 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.typefamily.Edge
-import ai.hypergraph.kaliningraph.typefamily.Graph
-import ai.hypergraph.kaliningraph.typefamily.Vertex
+import ai.hypergraph.kaliningraph.typefamily.*
 import ai.hypergraph.kaliningraph.types.IVertex
 
 // TODO: convert to/from other graph types

@@ -1,10 +1,7 @@
 package ai.hypergraph.kaliningraph.automata
 
-import ai.hypergraph.kaliningraph.LabeledGraph
-import ai.hypergraph.kaliningraph.randomString
-import ai.hypergraph.kaliningraph.typefamily.Edge
-import ai.hypergraph.kaliningraph.typefamily.Graph
-import ai.hypergraph.kaliningraph.typefamily.Vertex
+import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.typefamily.*
 import kotlin.reflect.KProperty
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))

@@ -3,9 +3,7 @@ package ai.hypergraph.kaliningraph.circuits
 
 import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
 import ai.hypergraph.kaliningraph.randomString
-import ai.hypergraph.kaliningraph.typefamily.Edge
-import ai.hypergraph.kaliningraph.typefamily.Graph
-import ai.hypergraph.kaliningraph.typefamily.Vertex
+import ai.hypergraph.kaliningraph.typefamily.*
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment

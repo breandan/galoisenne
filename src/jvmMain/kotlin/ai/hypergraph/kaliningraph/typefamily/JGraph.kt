@@ -1,15 +1,10 @@
 package ai.hypergraph.kaliningraph.typefamily
 
-import ai.hypergraph.kaliningraph.TypedVertex
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.theory.wl
-import ai.hypergraph.kaliningraph.types.IEdge
-import ai.hypergraph.kaliningraph.types.IGF
-import ai.hypergraph.kaliningraph.types.IGraph
-import ai.hypergraph.kaliningraph.types.IVertex
-import ai.hypergraph.kaliningraph.vectorize
+import ai.hypergraph.kaliningraph.types.*
 import com.github.benmanes.caffeine.cache.Caffeine
-import java.lang.reflect.Constructor
-import java.lang.reflect.ParameterizedType
+import java.lang.reflect.*
 import kotlin.reflect.KClass
 
 // Provides caching and inheritable constructors for reified parameters <G, E, V>

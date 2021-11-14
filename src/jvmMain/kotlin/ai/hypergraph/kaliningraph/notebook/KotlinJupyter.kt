@@ -1,9 +1,7 @@
 package ai.hypergraph.kaliningraph.notebook
 
-import ai.hypergraph.kaliningraph.SpsMat
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate
-import ai.hypergraph.kaliningraph.html
-import ai.hypergraph.kaliningraph.matToImg
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.Graph
 import org.jetbrains.kotlinx.jupyter.api.HTML

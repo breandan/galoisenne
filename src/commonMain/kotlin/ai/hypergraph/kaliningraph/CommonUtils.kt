@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.tensor.DoubleMatrix
 import kotlin.random.Random
 

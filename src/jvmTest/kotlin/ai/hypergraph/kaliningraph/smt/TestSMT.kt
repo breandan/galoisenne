@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 import org.sosy_lab.java_smt.SolverContextFactory
@@ -10,7 +11,6 @@ import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import kotlin.math.*
 import kotlin.reflect.KProperty
-import ai.hypergraph.kaliningraph.times
 
 class TestSMT {
   @Test
