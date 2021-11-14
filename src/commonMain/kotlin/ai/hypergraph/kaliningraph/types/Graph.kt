@@ -28,11 +28,11 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
    */
 
   fun <T> memoize(
-    classRef: Int = hashCode(), //System.identityHashCode(this),
+    classRef: Int = 1, //System.identityHashCode(this),
     methodRef: Int = Throwable().stackTraceToString().lines()[1].hashCode(),
     args: Array<*>? = null,
     computation: () -> T
-  ): T
+  ): T = computation()
 }
 
 typealias AdjList<V> = List<Pair<V, V>>

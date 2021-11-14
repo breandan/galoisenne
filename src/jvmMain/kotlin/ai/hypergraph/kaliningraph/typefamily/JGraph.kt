@@ -19,7 +19,7 @@ interface JGF<G, E, V>: IGF<G, E, V>
     try {
       v.newInstance(old, edgeMap)
     } catch (e: Exception) {
-      TODO("IGF subtypes must provide a copy constructor or override this method.")
+      TODO("JGF subtypes must provide a copy constructor or override this method.")
     }
   }
 
@@ -28,7 +28,7 @@ interface JGF<G, E, V>: IGF<G, E, V>
   override fun <T: Any> G(list: List<T>): G = when {
     list.isEmpty() -> setOf()
     list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
-    list allAre list.first()::class -> list.map { it as V }.toSet()
+    list allAre gev[2] -> list.map { it as V }.toSet()
     else -> throw Exception("Unsupported constructor: G(${list.joinToString(",") { it.javaClass.simpleName }})")
   }.let { G(it) }
 
@@ -46,21 +46,22 @@ interface JGF<G, E, V>: IGF<G, E, V>
   /** TODO: Generify first argument to support [TypedVertex] */
   private val v: Constructor<V> get() = gev[2].let { it.getConstructor(it, Function1::class.java) as Constructor<V> }
 
-  override fun <T> memoize(classRef: Int, methodRef: Int, args: Array<*>?, computation: () -> T): T =
-    memo.get(Triple(System.identityHashCode(this), Throwable().stackTrace[1].hashCode(), args)) { computation() } as T
+//  override fun <T> memoize(classRef: Int, methodRef: Int, args: Array<*>?, computation: () -> T): T =
+//    computation()
+//    memo.get(Triple(System.identityHashCode(this), Throwable().stackTrace[1].hashCode(), args)) { computation() } as T
 //    computation().also {
 //      GlobalScope.async {
 //        memo.get(Triple(classRef, methodRef, args)) { it as Any } as T
 //      }
 //    }
 
-  companion object {
+//  companion object {
 //    val memo = Cache.Builder().build<Triple<*, *, *>, Any>()
-    /** TODO: lift into [IGF] once we find a reliable KMP cache like [Caffeine] */
-    // https://github.com/ReactiveCircus/cache4k
-    // https://github.com/ben-manes/caffeine/issues/160#issuecomment-305681211
-    val memo = Caffeine.newBuilder().buildAsync<Triple<*, *, *>, Any>().synchronous()
-  }
+//    /** TODO: lift into [IGF] once we find a reliable KMP cache like [Caffeine] */
+//    // https://github.com/ReactiveCircus/cache4k
+//    // https://github.com/ben-manes/caffeine/issues/160#issuecomment-305681211
+//    val memo = Caffeine.newBuilder().buildAsync<Triple<*, *, *>, Any>().synchronous()
+//  }
 }
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
