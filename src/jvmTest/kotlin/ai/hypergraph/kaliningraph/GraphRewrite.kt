@@ -1,7 +1,8 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.circuits.*
-import ai.hypergraph.kaliningraph.typefamily.isA
+import ai.hypergraph.kaliningraph.typefamily.*
+import ai.hypergraph.kaliningraph.types.*
 
 fun main() {
     val originalGraph = ComputationGraph { f = a + 3 }.also { it.show() }

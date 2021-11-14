@@ -1,48 +1,53 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.typefamily.*
-import guru.nidi.graphviz.*
+import ai.hypergraph.kaliningraph.circuits.UnlabeledEdge
+import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.DoubleMatrix
+import ai.hypergraph.kaliningraph.types.IEdge
+import ai.hypergraph.kaliningraph.types.IGraph
+import ai.hypergraph.kaliningraph.types.IVertex
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Arrow.NORMAL
 import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.GraphAttr.*
+import guru.nidi.graphviz.attribute.GraphAttr.COMPOUND
+import guru.nidi.graphviz.attribute.GraphAttr.CONCENTRATE
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT
 import guru.nidi.graphviz.attribute.Style.lineWidth
-import guru.nidi.graphviz.engine.*
+import guru.nidi.graphviz.engine.Engine
 import guru.nidi.graphviz.engine.Engine.DOT
+import guru.nidi.graphviz.engine.Format
 import guru.nidi.graphviz.engine.Format.SVG
+import guru.nidi.graphviz.engine.Renderer
+import guru.nidi.graphviz.graph
 import guru.nidi.graphviz.model.*
-import org.ejml.data.*
+import guru.nidi.graphviz.toGraphviz
+import org.ejml.data.BMatrixRMaj
+import org.ejml.data.DMatrix
+import org.ejml.data.DMatrixRMaj
+import org.ejml.data.DMatrixSparseCSC
 import org.ejml.data.MatrixType.DDRM
 import org.ejml.dense.row.CommonOps_DDRM.kron
 import org.ejml.dense.row.DMatrixComponent
-import org.ejml.kotlin.*
+import org.ejml.kotlin.minus
+import org.ejml.kotlin.times
 import org.ejml.ops.ConvertMatrixType
 import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
-import java.io.*
-import java.math.*
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.math.BigDecimal
+import java.math.MathContext
 import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.tanh
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
 typealias SpsMat = DMatrixSparseCSC
-
-tailrec fun <T> closure(
-  toVisit: Set<T> = emptySet(),
-  visited: Set<T> = emptySet(),
-  successors: Set<T>.() -> Set<T>
-): Set<T> =
-  if (toVisit.isEmpty()) visited
-  else closure(
-    toVisit = toVisit.successors() - visited,
-    visited = visited + toVisit,
-    successors = successors
-  )
 
 const val THICKNESS = 4.0
 const val DARKMODE = false
@@ -60,6 +65,19 @@ fun BooleanMatrix.show(filename: String = "temp") = matToImg().let { data ->
     writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>")
   }
 }.show()
+
+fun TypedVertex<*>.render() = (this as IVertex<*, *, *>).render().also {
+  if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK)}
+fun TypedEdge<*>.render() = (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
+
+  fun IGraph<*, *, *>.render() = toGraphviz()
+fun IVertex<*, *, *>.render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
+fun IEdge<*, *, *>.render(): Link = (source.render() - target.render()).add(Label.of(""))
+fun LGVertex.render() = (this as IVertex<*, *, *>).render().also { if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK) }
+fun UnlabeledEdge.render(): Link = (target.render() - source.render()).add(Label.of(""))
+  .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
+fun LabeledEdge.render() =
+  (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
 
 val browserCmd = System.getProperty("os.name").lowercase().let { os ->
   when {
@@ -86,7 +104,6 @@ fun SpsMat.matToImg(f: Int = 20): String {
   return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
 }
 
-
 fun BooleanMatrix.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
 
 fun randomString() = UUID.randomUUID().toString().take(5)
@@ -96,13 +113,8 @@ operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
 
-fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
-  Array(size) { rand() }.toDoubleArray()
-
 fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumOf { it.count { it == 0.0 } })
   .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
-
-fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, j -> this[i][j] }
 
 fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
 
@@ -113,13 +125,6 @@ fun Array<DoubleArray>.round(precision: Int = 3): Array<DoubleArray> =
 
 fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
   measureTimeMillis { constructor.power(100, matmul) }
-
-fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
-  generateSequence(this) { matmul(it, this) }.take(exp)
-
-const val DEFAULT_FEATURE_LEN = 20
-fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
-  Random(hashCode()).let { randomVector(len) { it.nextDouble() } }
 
 fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
   (if(copy) copy() else this).also { mat ->
@@ -135,8 +140,6 @@ fun SpsMat.meanNorm(copy: Boolean = false) =
   }.let { (μ, min, max) ->
     elwise(copy) { e -> (e - μ) / (max - min) }
   }
-
-fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
 
 fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
   IGraph<G, E, V>.toGraphviz() =

@@ -80,9 +80,8 @@ interface MatrixField<T, R : Field<T, R>>: MatrixRing<T, R> {
   }
 }
 
-// https://www.ijcai.org/Proceedings/2020/0685.pdf
-
 val BOOLEAN_ALGEBRA = MatrixRing(
+  // https://www.ijcai.org/Proceedings/2020/0685.pdf
   Ring.of(
     nil = false,
     one = true,
@@ -145,7 +144,6 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
       map
     } as MutableMap<Triple<Int, Int, T>, Int>
   }
-
 
   override fun toString() =
     data.maxOf { it.toString().length + 2 }.let { pad ->
@@ -295,6 +293,9 @@ fun BooleanMatrix.toDoubleMatrix() = DoubleMatrix(numRows, numCols) { i, j -> if
 
 // TODO: Naperian functors
 // https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/aplicative.pdf
+// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian.hs
+// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian/Vector.hs
+// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian/Symbolic.hs
 // "The main idea is that a rank-n array is essentially a data structure of type
 // D₁(D₂(...(Dₙ a))), where each Dᵢ is a dimension : a container type, categorically
 // a functor; one might think in the first instance of lists."

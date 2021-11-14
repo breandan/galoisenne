@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.typefamily.*
-import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.Style.FILLED
+import ai.hypergraph.kaliningraph.typefamily.Edge
+import ai.hypergraph.kaliningraph.typefamily.Graph
+import ai.hypergraph.kaliningraph.typefamily.Vertex
 import kotlin.reflect.KProperty
 
 /**
@@ -92,7 +92,7 @@ class LGVertex constructor(
 
   override fun encode() = label.vectorize()
   operator fun getValue(a: Any?, prop: KProperty<*>): LGVertex = LGVertex(prop.name)
-  override fun render() = super.render().also { if (occupied) it.add(FILLED, RED.fill()) else it.add(BLACK) }
+
 //  override fun toString(): String = label
 }
 
@@ -103,6 +103,4 @@ open class LabeledEdge(
 ): Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
   constructor(source: LGVertex, target: LGVertex): this(source, target, null)
 
-  override fun render() =
-    super.render().also { it.add(if (source.occupied) RED else BLACK) }
 }

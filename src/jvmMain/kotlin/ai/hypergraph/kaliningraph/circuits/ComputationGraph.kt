@@ -1,12 +1,11 @@
 
 package ai.hypergraph.kaliningraph.circuits
 
-import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
-import ai.hypergraph.kaliningraph.typefamily.*
-import guru.nidi.graphviz.attribute.Color.*
-import guru.nidi.graphviz.attribute.Label
-import guru.nidi.graphviz.model.Link
+import ai.hypergraph.kaliningraph.randomString
+import ai.hypergraph.kaliningraph.typefamily.Edge
+import ai.hypergraph.kaliningraph.typefamily.Graph
+import ai.hypergraph.kaliningraph.typefamily.Vertex
 import kotlin.reflect.KProperty
 
 // Mutable environment with support for variable overwriting/reassignment
@@ -111,8 +110,8 @@ open class Gate(
   fun tan() = Gate(Ops.tan, this)
   fun d(that: Any) = Gate(Ops.d, this, wrap(that))
 
-  override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
-  override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
+//  override fun G(vertices: Set<Gate>) = ComputationGraph(vertices)
+//  override fun E(s: Gate, t: Gate) = UnlabeledEdge(s, t)
 
   operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
   open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
@@ -144,6 +143,4 @@ class NFunction(
 
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
   Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target) {
-  override fun render(): Link = (target.render() - source.render()).add(Label.of(""))
-    .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
 }

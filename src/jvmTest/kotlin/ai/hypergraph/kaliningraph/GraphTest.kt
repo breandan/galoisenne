@@ -6,9 +6,8 @@ import org.junit.jupiter.api.*
 class GraphTest {
   val graph = LabeledGraph { a - b - c - d - e; a - c - e }
   @Test
-  fun testIsomorphic() {
+  fun testIsomorphic() =
     Assertions.assertEquals(graph, LabeledGraph { b - c - d - e - f; b - d - f })
-  }
 
   @Test
   fun testEquivalence() {
@@ -24,14 +23,12 @@ class GraphTest {
   }
 
   @Test
-  fun testClosure() {
+  fun testClosure() =
     Assertions.assertEquals(graph.toSet(), graph.vertices.flatMap { it.neighbors + it }.toSet())
-  }
 
   @Test
-  fun testDiameter() {
+  fun testDiameter() =
     Assertions.assertEquals(2, graph.diameter())
-  }
 
   // TODO: Test whether graph is closed under other circumstances
 }

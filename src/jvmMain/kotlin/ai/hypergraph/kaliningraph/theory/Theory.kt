@@ -2,8 +2,11 @@ package ai.hypergraph.kaliningraph.theory
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.typefamily.*
-import org.ejml.kotlin.*
+import ai.hypergraph.kaliningraph.types.IEdge
+import ai.hypergraph.kaliningraph.types.IGraph
+import ai.hypergraph.kaliningraph.types.IVertex
+import org.ejml.kotlin.plus
+import org.ejml.kotlin.times
 
 
 // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
