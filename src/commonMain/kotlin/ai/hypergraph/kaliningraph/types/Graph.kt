@@ -8,6 +8,8 @@ import ai.hypergraph.kaliningraph.toDoubleMatrix
 import kotlin.math.sqrt
 import kotlin.random.Random
 
+// Provides caching and inheritable constructors for reified parameters <G, E, V>
+// Interfaces are our only option because we need multiple inheritance
 @Suppress("FunctionName", "UNCHECKED_CAST")
 interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val G: (vertices: Set<V>) -> G
@@ -17,7 +19,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   fun G() = G(setOf())
   fun G(vararg graphs: G): G = G(graphs.toList())
   fun G(vararg vertices: V): G = G(vertices.map { it.graph })
-  fun <T: Any> G(list: List<T> = emptyList()): G
+  fun G(list: List<Any> = emptyList()): G
 
   /**
    * Memoizes the result of evaluating a pure function, indexed by:
@@ -28,15 +30,15 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
    */
 
   fun <T> memoize(
-    classRef: Int = 1, //System.identityHashCode(this),
-    methodRef: Int = Throwable().stackTraceToString().lines()[1].hashCode(),
+    classRef: Any = this, // System.identityHashCode(this),
+    methodRef: Int = Throwable().stackTraceToString().lines()[2].hashCode(),
     args: Array<*>? = null,
     computation: () -> T
   ): T = computation()
 }
 
 typealias AdjList<V> = List<Pair<V, V>>
-interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
+interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
 /*
  * TODO: Which primary interface should we expect graphs to fulfill?
  *
@@ -140,9 +142,8 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
 
   fun isomorphicTo(that: G): Boolean =
     this.size == that.size &&
-      edges.size == that.edges.size &&
-      hashCode() == that.hashCode()
-
+      this.edges.size == that.edges.size &&
+      this.encode().contentEquals(that.encode())
 
   fun vwise(lf: IGraph<G, E, V>.(V, V) -> Double): DoubleMatrix =
     DoubleMatrix(size) { i, j ->
@@ -152,6 +153,10 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>
     }
 
   fun randomWalk(r: Random = Random.Default) = RandomWalk(r, this as G)
+
+  fun asString() =
+    "(" + vertices.joinToString(", ", "{", "}") + ", " +
+      edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
 }
 
 class RandomWalk<G, E, V>(

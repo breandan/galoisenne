@@ -7,7 +7,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.6.0-RC"
   id("com.google.devtools.ksp") version "1.6.0-RC-1.0.1-RC"
-  kotlin("jupyter.api") version "0.10.3-33"
+  kotlin("jupyter.api") version "0.10.3-36"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }

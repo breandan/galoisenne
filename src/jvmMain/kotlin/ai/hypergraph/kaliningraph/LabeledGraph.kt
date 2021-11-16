@@ -40,7 +40,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
   constructor(builder: LGBuilder.() -> Unit):
-    this(LGBuilder().also { it.builder() }.mutGraph)
+    this(LGBuilder().also { it.builder() }.mutGraph.reversed())
   constructor(graph: String): this(
     graph.split(" ").fold(LabeledGraph()) { acc, it ->
       acc + P(*it.toList().zipWithNext().map { (a, b) -> a.toString() to b.toString() }.toTypedArray())
@@ -82,7 +82,7 @@ class LGVertex constructor(
   var occupied: Boolean = false
 
   constructor(out: Set<LGVertex> = setOf()) :
-    this(randomString(), edgeMap = { s ->  out.map { t -> LabeledEdge(s, t) }.toSet() })
+    this(randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(label: String, out: Set<LGVertex> = emptySet()) :
     this(label = label, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) :

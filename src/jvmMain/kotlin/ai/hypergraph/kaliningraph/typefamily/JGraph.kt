@@ -3,11 +3,10 @@ package ai.hypergraph.kaliningraph.typefamily
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.theory.wl
 import ai.hypergraph.kaliningraph.types.*
-import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.*
 import java.lang.reflect.*
 import kotlin.reflect.KClass
 
-// Provides caching and inheritable constructors for reified parameters <G, E, V>
 interface JGF<G, E, V>: IGF<G, E, V>
   where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
   override val G: (vertices: Set<V>) -> G get() = { vertices ->
@@ -17,7 +16,7 @@ interface JGF<G, E, V>: IGF<G, E, V>
 
   override val V: (old: V, edgeMap: (V) -> Set<E>) -> V get() = { old, edgeMap ->
     try {
-      v.newInstance(old, edgeMap)
+      v.newInstance(old, edgeMap) /** e.g. [LGVertex] */
     } catch (e: Exception) {
       TODO("JGF subtypes must provide a copy constructor or override this method.")
     }
@@ -25,7 +24,7 @@ interface JGF<G, E, V>: IGF<G, E, V>
 
   override val E: (s: V, t: V) -> E get() = { s, t -> e.newInstance(s, t) }
 
-  override fun <T: Any> G(list: List<T>): G = when {
+  override fun G(list: List<Any>): G = when {
     list.isEmpty() -> setOf()
     list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
     list allAre gev[2] -> list.map { it as V }.toSet()
@@ -46,9 +45,9 @@ interface JGF<G, E, V>: IGF<G, E, V>
   /** TODO: Generify first argument to support [TypedVertex] */
   private val v: Constructor<V> get() = gev[2].let { it.getConstructor(it, Function1::class.java) as Constructor<V> }
 
-//  override fun <T> memoize(classRef: Int, methodRef: Int, args: Array<*>?, computation: () -> T): T =
+//  override fun <T> memoize(classRef: Any, methodRef: Int, args: Array<*>?, computation: () -> T): T =
 //    computation()
-//    memo.get(Triple(System.identityHashCode(this), Throwable().stackTrace[1].hashCode(), args)) { computation() } as T
+//    memo.get(Triple(classRef, methodRef, args)) { computation() } as T
 //    computation().also {
 //      GlobalScope.async {
 //        memo.get(Triple(classRef, methodRef, args)) { it as Any } as T
@@ -69,24 +68,22 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
     where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
-
-  override fun hashCode() =
-    if (isEmpty()) super.hashCode() else wl().values.sorted().hashCode()
-
+  override fun encode() =
+    if (isEmpty()) DoubleArray(10) {0.0} else wl().values.sorted().map { it.toDouble() }.toDoubleArray()
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
-  override fun toString() =
-    "(" + vertices.joinToString(", ", "{", "}") + ", " +
-        edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
+  override fun toString() = asString()
 }
 
 abstract class Edge<G, E, V>(override val source: V, override val target: V) : IEdge<G, E, V>, JGF<G, E, V>
-    where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V>
+    where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) = (other as? E)?.let { hashCode() == other.hashCode() } ?: false
+  override fun hashCode(): Int = source.hashCode() + target.hashCode()
+  override fun toString() = "$source→$target"
+}
 
 abstract class Vertex<G, E, V>(override val id: String) : IVertex<G, E, V>, JGF<G, E, V>
     where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
-  override fun equals(other: Any?) =
-    (other as? Vertex<*, *, *>)?.encode().contentEquals(encode())
-
+  override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
   override fun encode() = id.vectorize()
   override fun hashCode() = id.hashCode()
   override fun toString() = id
