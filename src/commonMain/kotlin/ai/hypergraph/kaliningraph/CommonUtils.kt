@@ -1,10 +1,27 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.tensor.DoubleMatrix
+import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.types.Ring
+import kotlin.math.*
 import kotlin.random.Random
+
+fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
+  Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
 
 operator fun IntRange.times(s: IntRange) =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
+
+fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
+  new(numRows, numCols, algebra, data.map { op(it) })
+
+val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
+
+val NORM_AVG: (DoubleMatrix) -> DoubleMatrix = { it.meanNorm() }
+
+fun DoubleMatrix.meanNorm() =
+  data.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
+    Triple(a + e / data.size.toDouble(), min(b, e), max(c, e))
+  }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
 // Returns the Cartesian product of two sets
 operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =

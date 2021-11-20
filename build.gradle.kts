@@ -66,15 +66,6 @@ kotlin {
         implementation(project.dependencies.platform(kotlin("bom")))
         implementation(kotlin("stdlib"))
         implementation(kotlin("reflect"))
-        // Used to cache graph lookups
-        implementation("com.github.ben-manes.caffeine:caffeine:3.0.4")
-//  implementation("io.github.reactivecircus.cache4k:cache4k:0.3.0")
-//  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
-//  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.5.2")
-
-        val ejmlVersion = "0.41"
-        implementation("org.ejml:ejml-kotlin:$ejmlVersion")
-        implementation("org.ejml:ejml-all:$ejmlVersion")
         implementation("org.graalvm.js:js:21.3.0")
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
       }

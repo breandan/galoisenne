@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.theory
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import org.ejml.kotlin.*
-
 
 // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
 tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.prefAttach(
@@ -65,18 +63,18 @@ tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGra
   // Message passing rounds
   t: Int = diameter() * 10,
   // Matrix of node representations ℝ^{|V|xd}
-  H: SpsMat = ENCODED.toEJMLSparse(),
+  H: DoubleMatrix = ENCODED,
   // (Trainable) weight matrix ℝ^{dxd}
-  W: SpsMat = randomMatrix(H.numCols),
+  W: DoubleMatrix = randomMatrix(H.numCols),
   // Bias term ℝ^{dxd}
-  b: SpsMat = randomMatrix(size, H.numCols),
+  b: DoubleMatrix = randomMatrix(size, H.numCols),
   // Nonlinearity ℝ^{*} -> ℝ^{*}
-  σ: (SpsMat) -> SpsMat = ACT_TANH,
+  σ: (DoubleMatrix) -> DoubleMatrix = ACT_TANH,
   // Layer normalization ℝ^{*} -> ℝ^{*}
-  z: (SpsMat) -> SpsMat = NORM_AVG,
+  z: (DoubleMatrix) -> DoubleMatrix = NORM_AVG,
   // Message ℝ^{*} -> ℝ^{*}
-  m: (SpsMat) -> SpsMat = { σ(z(A * it * W + it * W + b)) }
-): SpsMat = if (t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
+  m: (DoubleMatrix) -> DoubleMatrix = { σ(z(A * it * W + it * W + b)) }
+): DoubleMatrix = if (t == 0) H else gnn(t = t - 1, H = m(H), W = W, b = b)
 
 // https://fabianmurariu.github.io/posts/scala3-typeclassery-graphs/
 // https://doisinkidney.com/pdfs/algebras-for-weighted-search.pdf

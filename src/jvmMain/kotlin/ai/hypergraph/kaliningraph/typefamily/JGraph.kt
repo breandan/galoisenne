@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.typefamily
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.theory.wl
 import ai.hypergraph.kaliningraph.types.*
-import com.github.benmanes.caffeine.cache.*
 import java.lang.reflect.*
 import kotlin.reflect.KClass
 

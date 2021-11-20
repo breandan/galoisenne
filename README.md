@@ -46,7 +46,7 @@ For more information, explore our tutorials:
 
 ## Graphs, Inductively
 
-What are graphs? A [graph](src/main/kotlin/ai/hypergraph/kaliningraph/Graph.kt) is a (possibly empty) set of vertices.
+What are graphs? A [graph](src/commonMain/kotlin/ai/hypergraph/kaliningraph/types/Graph.kt) is a (possibly empty) set of vertices.
 
 What are vertices? A vertex is a unique label with neighbors (possibly containing itself).
 
@@ -54,11 +54,11 @@ What are neighbors? Neighbors are a graph.
 
 ## Getting Started
 
-Run [the demo](src/test/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
+Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
 
 ## Usage
 
-To construct a graph, the [graph builder DSL](src/main/kotlin/ai/hypergraph/kaliningraph/LabeledGraph.kt) provides an small alphabet:
+To construct a graph, the [graph builder DSL](src/jvmMain/kotlin/ai/hypergraph/kaliningraph/LabeledGraph.kt) provides an small alphabet:
 
 ```kotlin
 val graph = LabeledGraph { a - b - c - d - e; a - c - e }
@@ -146,7 +146,7 @@ val g = LabeledGraph { a - b - c - a }
 
 Code2Vec generation and visualization is supported. The following demo was generated using message passing on the adjacency matrix, for graphs of varying height. The technique to create the embeddings is described [here](https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6). We use TSNE to visualize the resulting vectors in 2D, and can clearly distinguish the clusters.
 
-![](src/main/resources/clusters.svg)
+![](src/jvmMain/resources/clusters.svg)
 
 ## Automata-Based Regex
 
@@ -162,7 +162,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
    - Convolve permuted variants of query in parallel
    - Need some kind of label permutation / edit distance metric
 * How could we implement graph grammars/rewriting?
-   - [Rewrites](src/test/kotlin/ai/hypergraph/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
+   - [Rewrites](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
    - Reconstruct graph from rewritten string using adjacency matrix
    - ~~Is there an algebraic definition for graph grammars?~~
    - ~~Maybe graph convolution. How to encode rewrites as a kernel?~~

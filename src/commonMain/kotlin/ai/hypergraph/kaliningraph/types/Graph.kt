@@ -12,9 +12,9 @@ import kotlin.random.Random
 // Interfaces are our only option because we need multiple inheritance
 @Suppress("FunctionName", "UNCHECKED_CAST")
 interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-  val G: (vertices: Set<V>) -> G
-  val E: (s: V, t: V) -> E
-  val V: (old: V, edgeMap: (V) -> Set<E>) -> V
+  val G: (vertices: Set<V>) -> G // Graph constructor
+  val E: (s: V, t: V) -> E // Edge constructor
+  val V: (old: V, edgeMap: (V) -> Set<E>) -> V // Vertex constructor
 
   fun G() = G(setOf())
   fun G(vararg graphs: G): G = G(graphs.toList())

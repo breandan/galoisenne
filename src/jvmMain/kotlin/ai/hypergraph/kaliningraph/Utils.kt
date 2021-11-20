@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.circuits.UnlabeledEdge
+import ai.hypergraph.kaliningraph.image.matToBase64Img
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import guru.nidi.graphviz.*
@@ -14,12 +15,6 @@ import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.*
-import org.ejml.data.*
-import org.ejml.data.MatrixType.DDRM
-import org.ejml.dense.row.CommonOps_DDRM.kron
-import org.ejml.dense.row.DMatrixComponent
-import org.ejml.kotlin.*
-import org.ejml.ops.ConvertMatrixType
 import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
 import java.io.*
@@ -31,7 +26,6 @@ import kotlin.math.*
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
-typealias SpsMat = DMatrixSparseCSC
 
 const val THICKNESS = 4.0
 const val DARKMODE = false
@@ -44,9 +38,9 @@ fun IGraph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {
     toFile(File.createTempFile(filename, ".svg"))
   }.show()
-fun BooleanMatrix.show(filename: String = "temp") = matToImg().let { data ->
+fun BooleanMatrix.show(filename: String = "temp") = matToBase64Img().let { data ->
   File.createTempFile(filename, ".html").apply {
-    writeText("<html><body><img src=\"$data\" height=\"t00\" width=\"500\"/></body></html>")
+    writeText("<html><body><img src=\"$data\" height=\"500\" width=\"500\"/></body></html>")
   }
 }.show()
 
@@ -54,7 +48,7 @@ fun TypedVertex<*>.render() = (this as IVertex<*, *, *>).render().also {
   if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK)}
 fun TypedEdge<*>.render() = (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
 
-  fun IGraph<*, *, *>.render() = toGraphviz()
+fun IGraph<*, *, *>.render() = toGraphviz()
 fun IVertex<*, *, *>.render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
 fun IEdge<*, *, *>.render(): Link = (source.render() - target.render()).add(Label.of(""))
 fun LGVertex.render() = (this as IVertex<*, *, *>).render().also { if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK) }
@@ -75,55 +69,12 @@ val browserCmd = System.getProperty("os.name").lowercase().let { os ->
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 fun URL.show() = ProcessBuilder(browserCmd, toString()).start()
 
-fun SpsMat.matToImg(f: Int = 20): String {
-  val rescaled = DMatrixRMaj(numRows * f, numCols * f)
-  val dense = ConvertMatrixType.convert(this, DDRM) as DMatrixRMaj
-  kron(dense, DMatrixRMaj(f, f, false, *DoubleArray(f * f) { 1.0 }), rescaled)
-
-  val bi = BufferedImage(rescaled.numCols, rescaled.numRows, TYPE_INT_RGB)
-  DMatrixComponent.renderMatrix(rescaled, bi, 1.0)
-
-  val os = ByteArrayOutputStream()
-  ImageIO.write(bi, "png", os)
-  return "data:image/jpg;base64," + Base64.getEncoder().encodeToString(os.toByteArray())
-}
-
-fun BooleanMatrix.matToImg(f: Int = 20) = toEJMLSparse().matToImg(f)
-
 fun randomString() = UUID.randomUUID().toString().take(5)
 
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
-fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
-  Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toEJMLSparse()
-
-fun Array<DoubleArray>.toEJMLSparse() = SpsMat(size, this[0].size, sumOf { it.count { it == 0.0 } })
-  .also { s -> for (i in indices) for (j in this[0].indices) this[i][j].let { if (0.0 < it) s[i, j] = it } }
-
-fun Array<DoubleArray>.toEJMLDense() = DMatrixRMaj(this)
-
-fun Double.round(precision: Int = 10) = BigDecimal(this, MathContext(precision)).toDouble()
-
-fun Array<DoubleArray>.round(precision: Int = 3): Array<DoubleArray> =
-  map { it.map { it.round(precision) }.toDoubleArray() }.toTypedArray()
-
 fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
   measureTimeMillis { constructor.power(100, matmul) }
-
-fun SpsMat.elwise(copy: Boolean = false, op: (Double) -> Double) =
-  (if(copy) copy() else this).also { mat ->
-    createCoordinateIterator().forEach { mat[it.row, it.col] = op(it.value) }
-  }
-
-val ACT_TANH: (SpsMat) -> SpsMat = { it.elwise { tanh(it) } }
-val NORM_AVG: (SpsMat) -> SpsMat = { it.meanNorm() }
-
-fun SpsMat.meanNorm(copy: Boolean = false) =
-  nz_values.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
-    Triple(a + e / nz_length.toDouble(), min(b, e), max(c, e))
-  }.let { (μ, min, max) ->
-    elwise(copy) { e -> (e - μ) / (max - min) }
-  }
 
 fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
   IGraph<G, E, V>.toGraphviz() =
@@ -160,20 +111,3 @@ fun CDF.sample(random: Random = Random.Default,
                target: Double = random.nextDouble()) =
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
-
-
-fun DMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
-fun BMatrixRMaj.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) }
-operator fun BooleanMatrix.times(mat: SpsMat): SpsMat = toEJMLSparse() * mat
-operator fun BooleanMatrix.plus(mat: SpsMat): SpsMat = toEJMLSparse() * mat
-operator fun SpsMat.minus(mat: BooleanMatrix): SpsMat = this - mat.toEJMLSparse()
-
-fun DoubleMatrix.toEJMLSparse() = SpsMat(numRows, numCols, numRows).also {
-  for ((i, j) in (0 until numRows) * (0 until numCols)) if(get(i, j) != 0.0) it[i, j] = get(i, j)
-}
-
-
-fun BooleanMatrix.toEJMLSparse(): SpsMat = SpsMat(numRows, numCols, numRows).also {
-  for ((i, j) in (0 until numRows) * (0 until numCols))
-    if (this[i, j]) it[i, j] = 1.0
-}
