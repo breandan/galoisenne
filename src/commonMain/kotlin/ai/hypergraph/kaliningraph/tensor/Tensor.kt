@@ -235,31 +235,6 @@ open class BooleanMatrix constructor(
      BooleanMatrix(algebra, numRows, numCols, data)
 }
 
-open class IntegerMatrix constructor(
-  override val algebra: MatrixField<Int, Field.of<Int>> = INTEGER_FIELD,
-  override val numRows: Int,
-  override val numCols: Int = numRows,
-  override val data: List<Int>,
-) : AbstractMatrix<Int, Field.of<Int>, IntegerMatrix>(algebra, numRows, numCols, data) {
-  constructor(elements: List<Int>) : this(
-    algebra = INTEGER_FIELD,
-    numRows = sqrt(elements.size.toDouble()).toInt(),
-    data = elements
-  )
-
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Int) : this(
-    numRows = numRows,
-    numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
-  )
-
-  constructor(vararg rows: Int) : this(rows.toList())
-
-  operator fun minus(that: IntegerMatrix): IntegerMatrix = with(algebra) { this@IntegerMatrix minus that }
-  override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Int, Field.of<Int>>, data: List<Int>) =
-   IntegerMatrix(algebra as MatrixField<Int, Field.of<Int>>, numRows, numCols, data)
-}
-
 open class DoubleMatrix constructor(
   override val algebra: MatrixField<Double, Field.of<Double>> = DOUBLE_FIELD,
   override val numRows: Int,
@@ -285,7 +260,11 @@ open class DoubleMatrix constructor(
     DoubleMatrix(algebra as MatrixField<Double, Field.of<Double>>, numRows, numCols, data)
 }
 
-fun DoubleMatrix.toBMat() = BooleanMatrix(numRows, numCols) { i, j -> get(i, j) > 0.5 }
+fun DoubleMatrix.toBMat(
+  threshold: Double = (data.maxOf { it } + data.minOf { it }) / 2,
+  partitionFn: (Double) -> Boolean = { it > threshold }
+) = BooleanMatrix(numRows, numCols) { i, j -> partitionFn(get(i, j)) }
+
 operator fun BooleanMatrix.times(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() * mat
 operator fun BooleanMatrix.plus(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() + mat
 operator fun DoubleMatrix.minus(mat: BooleanMatrix): DoubleMatrix = this - mat.toDoubleMatrix()

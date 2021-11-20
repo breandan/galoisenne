@@ -222,6 +222,7 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
 
 interface Encodable { fun encode(): DoubleArray }
 
+
 // https://github.com/amodeus-science/amod
 abstract class TMap: IGraph<TMap, TRoad, TCity>
 abstract class TRoad: IEdge<TMap, TRoad, TCity>
