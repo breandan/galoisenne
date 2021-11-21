@@ -38,7 +38,8 @@ fun IGraph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {
     toFile(File.createTempFile(filename, ".svg"))
   }.show()
-fun BooleanMatrix.show(filename: String = "temp") = matToBase64Img().let { data ->
+
+fun <T> Matrix<T, *, *>.show(filename: String = "temp") = matToBase64Img().let { data ->
   File.createTempFile(filename, ".html").apply {
     writeText("<html><body><img src=\"$data\" height=\"500\" width=\"500\"/></body></html>")
   }

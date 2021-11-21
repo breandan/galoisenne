@@ -1,13 +1,20 @@
 package ai.hypergraph.kaliningraph.image
 
-import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
+import ai.hypergraph.kaliningraph.minMaxNorm
+import ai.hypergraph.kaliningraph.tensor.*
+import kotlin.math.roundToInt
 
-fun BooleanMatrix.matToBase64Img(): String =
-  "data:image/bmp;base64," +
-    BMP().saveBMP(Array(numRows) { r -> IntArray(numCols) { c -> if (get(r, c)) 1 else 0 } }.enlarge(100))
+fun <T> Matrix<T, *, *>.matToBase64Img(
+  pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
+  arr: Array<IntArray> = when (this) {
+    is BooleanMatrix -> data.map { if (it) 255 else 0 }
+    is DoubleMatrix -> minMaxNorm().data.map { (it * 255).roundToInt() }
+    else -> TODO("Renderer for ${this::class.qualifiedName} is undefined")
+  }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry)
+): String = "data:image/bmp;base64," + BMP().saveBMP(arr)
 
-fun Array<IntArray>.enlarge(factor: Int = 2) =
-  map { row -> (1..factor).flatMap { row.flatMap { col -> (1..factor).map { col } } }.toIntArray() }.toTypedArray()
+fun Array<IntArray>.enlarge(factor: Int = 2): Array<IntArray> =
+  map { row -> row.flatMap { col -> (1..factor).map { col } }.let { r -> (1..factor).map { r.toIntArray() } } }.flatten().toTypedArray()
 
 class BMP {
   lateinit var bytes: ByteArray

@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.notebook
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.circuits.Gate
 import ai.hypergraph.kaliningraph.image.matToBase64Img
-import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.typefamily.Graph
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
@@ -16,7 +16,7 @@ internal class Integration: JupyterIntegration() {
       "ai.hypergraph.kaliningraph.circuits.*",
     ).forEach { import(it) }
 
-    render<BooleanMatrix> { HTML("<img src=\"${it.matToBase64Img()}\"/>") }
+    render<Matrix<*, *, *>> { HTML("<img src=\"${it.matToBase64Img()}\" height=\"200\" width=\"200\"/>") }
     render<Graph<*, *, *>> { HTML(it.html()) }
     render<Gate> { HTML(it.graph.html()) }
 

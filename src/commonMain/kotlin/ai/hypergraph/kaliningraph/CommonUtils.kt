@@ -18,6 +18,11 @@ val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 
 val NORM_AVG: (DoubleMatrix) -> DoubleMatrix = { it.meanNorm() }
 
+fun DoubleMatrix.minMaxNorm() =
+  data.fold(0.0 to 0.0) { (a, b), e ->
+    min(a, e) to max(b, e)
+  }.let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
+
 fun DoubleMatrix.meanNorm() =
   data.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
     Triple(a + e / data.size.toDouble(), min(b, e), max(c, e))
