@@ -4,7 +4,10 @@ import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 
 fun BooleanMatrix.matToBase64Img(): String =
   "data:image/bmp;base64," +
-    BMP().saveBMP(Array(numRows) { r -> IntArray(numCols) { c -> if (get(r, c)) 1 else 0 } })
+    BMP().saveBMP(Array(numRows) { r -> IntArray(numCols) { c -> if (get(r, c)) 1 else 0 } }.enlarge(100))
+
+fun Array<IntArray>.enlarge(factor: Int = 2) =
+  map { row -> (1..factor).flatMap { row.flatMap { col -> (1..factor).map { col } } }.toIntArray() }.toTypedArray()
 
 class BMP {
   lateinit var bytes: ByteArray
