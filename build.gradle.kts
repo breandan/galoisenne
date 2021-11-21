@@ -136,8 +136,8 @@ tasks {
   }
 
   listOf(
-    "HelloKaliningraph", "Rewriter", "PrefAttach",
-    "rewriting.CipherSolver", "RegexDemo", "GraphRewrite", "smt.TestSMT"
+    "Rewriter", "PrefAttach",
+    "rewriting.CipherSolver", "RegexDemo", "smt.TestSMT"
   ).forEach { fileName ->
     register(fileName, org.gradle.api.tasks.JavaExec::class) {
       mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")

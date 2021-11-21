@@ -35,7 +35,7 @@ fun makeNFA(input: String) =
   if (regex.regex != input)
     try {
       KRegex(input.ifEmpty { "ε" }).also { regex = it }
-    }catch(ex: Exception) {regex}
+    } catch (ex: Exception) { regex }
   else regex
 
 fun KRegex.toGraphviz() =

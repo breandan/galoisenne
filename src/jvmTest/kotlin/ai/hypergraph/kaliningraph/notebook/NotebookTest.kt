@@ -39,4 +39,5 @@ class RenderingTests: JupyterReplTestCase() {
     println(html)
     html shouldContain "data:image/bmp;base64,"
   }
+
 }

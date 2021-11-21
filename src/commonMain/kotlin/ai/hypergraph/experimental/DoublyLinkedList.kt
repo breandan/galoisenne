@@ -1,4 +1,4 @@
-package ai.hypergraph.kaliningraph.experimental
+package ai.hypergraph.experimental
 
 class LL<T>(val head: T, val next: LL<T>? = null) {
   operator fun plus(t: T): LL<T> =

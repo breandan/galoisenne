@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.experimental
 
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import ai.hypergraph.experimental.DLL
+import kotlin.test.*
 
 class DoublyLinkedListTest {
   @Test
@@ -29,9 +29,7 @@ class DoublyLinkedListTest {
 
   private fun assertDLL(head: DLL<String>) =
     (1 until head.size - 1).map { head[it] }.forEach {
-      val isDLLForward = it.next.prev === it && it.next !== it
-      val isDLLBack = it.prev.next === it && it.prev !== it
-      assertTrue(isDLLForward) { "${it.next.prev} != $it" }
-      assertTrue(isDLLBack) { "${it.prev.next} != $it" }
+      assertTrue("${it.next.prev} != $it") { it.next.prev === it && it.next !== it }
+      assertTrue("${it.prev.next} != $it") { it.prev.next === it && it.prev !== it }
     }
 }

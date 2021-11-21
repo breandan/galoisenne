@@ -1,4 +1,4 @@
-package ai.hypergraph.kaliningraph.experimental
+package ai.hypergraph.experimental
 
 // Immutable circular reference
 class Owl(lay: (Owl) -> Egg) { val egg by lazy { lay(this) } }

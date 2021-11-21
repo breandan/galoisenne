@@ -4,7 +4,7 @@ import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import kotlin.math.roundToInt
 
-fun <T> Matrix<T, *, *>.matToBase64Img(
+fun Matrix<*, *, *>.matToBase64Img(
   pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
   arr: Array<IntArray> = when (this) {
     is BooleanMatrix -> data.map { if (it) 255 else 0 }
@@ -58,28 +58,21 @@ class BMP {
   }
 
   private fun saveBitmapData(rgbValues: Array<IntArray>) {
-    var i = 0
-    while (i < rgbValues.size) {
-      writeLine(i, rgbValues)
-      i++
-    }
+    for (i in rgbValues.indices) writeLine(i, rgbValues)
   }
 
   private fun writeLine(row: Int, rgbValues: Array<IntArray>) {
     val offset = 54
     val rowLength: Int = rgbValues[row].size
     val padding = getPadding(rgbValues[0].size)
-    var i = 0
-    while (i < rowLength) {
+    for (i in 0 until rowLength) {
       val rgb = rgbValues[row][i]
       val temp = offset + 3 * (i + rowLength * row) + row * padding
       bytes[temp] = (rgb shr 16).toByte()
       bytes[temp + 1] = (rgb shr 8).toByte()
       bytes[temp + 2] = rgb.toByte()
-      i++
     }
-    i--
-    val temp = offset + 3 * (i + rowLength * row) + row * padding + 3
+    val temp = offset + 3 * ((rowLength - 1) + rowLength * row) + row * padding + 3
     for (j in 0 until padding) bytes[temp + j] = 0
   }
 

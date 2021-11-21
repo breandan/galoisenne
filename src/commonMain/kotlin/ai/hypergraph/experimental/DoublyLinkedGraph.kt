@@ -1,4 +1,4 @@
-package ai.hypergraph.kaliningraph.experimental
+package ai.hypergraph.experimental
 
 // TODO: Finish implementing doubly linked graph
 interface Vtx<C> {
