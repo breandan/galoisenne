@@ -14,6 +14,15 @@ operator fun IntRange.times(s: IntRange) =
 fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
   new(numRows, numCols, algebra, data.map { op(it) })
 
+operator fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> T.times(m: Matrix<T, R, M>): M =
+  with(m.algebra.ring) { m.elwise { this@times * it  } }
+
+operator fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.times(t: T): M =
+  with(algebra.ring) { elwise { it * t } }
+
+infix fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> List<T>.dot(m: Matrix<T, R, M>): List<T> =
+  with(m.algebra) { m.rows.map { this@dot dot it } }
+
 val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 
 val NORM_AVG: (DoubleMatrix) -> DoubleMatrix = { it.meanNorm() }

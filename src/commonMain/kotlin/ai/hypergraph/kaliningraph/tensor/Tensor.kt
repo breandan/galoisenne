@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.times
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.Random
@@ -50,33 +50,33 @@ interface Matrix<T, R : Ring<T, R>, M : Matrix<T, R, M>> : SparseTensor<Triple<I
  */
 
 interface MatrixRing<T, R : Ring<T, R>> {
-  val algebra: R
+  val ring: R
 
   infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.plus(that: Matrix<T, R, M>): M =
-    join(that) { i, j -> with(this@MatrixRing.algebra) { this@plus[i][j] + that[i][j] } }
+    join(that) { i, j -> with(this@MatrixRing.ring) { this@plus[i][j] + that[i][j] } }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
+    with(ring) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
   infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.times(that: Matrix<T, R, M>): M =
     join(that) { i, j -> this[i] dot that[j] }
 
   companion object {
     operator fun <T, R : Ring<T, R>> invoke(ring: R) =
-      object : MatrixRing<T, R> { override val algebra: R = ring }
+      object : MatrixRing<T, R> { override val ring: R = ring }
   }
 }
 
 // Ring with additive inverse
 interface MatrixField<T, R : Field<T, R>>: MatrixRing<T, R> {
-  override val algebra: R
+  override val ring: R
 
   infix fun <M : Matrix<T, R, M>> Matrix<T, R, M>.minus(that: Matrix<T, R, M>): M =
-    join(that) { i, j -> with(this@MatrixField.algebra) { this@minus[i][j] - that[i][j] } }
+    join(that) { i, j -> with(this@MatrixField.ring) { this@minus[i][j] - that[i][j] } }
 
   companion object {
     operator fun <T, R : Field<T, R>> invoke(field: R) =
-      object : MatrixField<T, R> { override val algebra: R = field }
+      object : MatrixField<T, R> { override val ring: R = field }
   }
 }
 
@@ -140,7 +140,7 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
   override val map: MutableMap<Triple<Int, Int, T>, Int> by lazy {
     indices.fold(mutableMapOf<Triple<Int, Int, T>, Int>()) { map, (r, c) ->
       val element = get(r, c)
-      if (element != algebra.algebra.nil) map[Triple(r, c, element)] = 1
+      if (element != algebra.ring.nil) map[Triple(r, c, element)] = 1
       map
     } as MutableMap<Triple<Int, Int, T>, Int>
   }
@@ -163,7 +163,7 @@ abstract class AbstractMatrix<T, R: Ring<T, R>, M: AbstractMatrix<T, R, M>> cons
 // with the default implementation it will fail at runtime.
 open class FreeMatrix<T> constructor(
   override val algebra: MatrixRing<T, Ring.of<T>> =
-    object : MatrixRing<T, Ring.of<T>> { override val algebra: Ring.of<T> by lazy { TODO() } },
+    object : MatrixRing<T, Ring.of<T>> { override val ring: Ring.of<T> by lazy { TODO() } },
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,

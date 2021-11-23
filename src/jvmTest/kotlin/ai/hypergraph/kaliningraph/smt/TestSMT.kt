@@ -183,7 +183,7 @@ class TestSMT {
   }
 
   class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>> {
-    override val algebra = Ring.of(
+    override val ring = Ring.of(
       nil = instance.nil,
       one = instance.one,
       plus = { a, b -> a.run { this + b } },
