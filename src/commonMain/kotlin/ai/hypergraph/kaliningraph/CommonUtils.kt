@@ -21,7 +21,7 @@ operator fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.times(t: T
   with(algebra.ring) { elwise { it * t } }
 
 infix fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> List<T>.dot(m: Matrix<T, R, M>): List<T> =
-  with(m.algebra) { m.rows.map { this@dot dot it } }
+  with(m.algebra) { m.cols.map { this@dot dot it } }
 
 val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 

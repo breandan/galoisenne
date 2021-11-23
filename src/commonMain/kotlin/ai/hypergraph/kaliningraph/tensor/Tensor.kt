@@ -176,7 +176,7 @@ open class FreeMatrix<T> constructor(
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
   constructor(vararg rows: T) : this(rows.toList())
@@ -201,7 +201,7 @@ open class BooleanMatrix constructor(
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
   constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
@@ -250,7 +250,7 @@ open class DoubleMatrix constructor(
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Double) : this(
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
   constructor(vararg rows: Double) : this(rows.toList())
