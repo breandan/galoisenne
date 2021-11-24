@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.image
 
 import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
+import okio.FileSystem
 import kotlin.math.roundToInt
 
 fun Matrix<*, *, *>.matToBase64Img(

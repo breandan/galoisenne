@@ -92,9 +92,9 @@ kotlin {
 
         // I think we were going to use this to prove termination of graph rewriting
         implementation("org.sosy-lab:java-smt:3.11.0")
-        //implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
-        //implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
-        //implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
+        // implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
+        // implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
+        // implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
@@ -103,7 +103,7 @@ kotlin {
         // implementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
         // https://github.com/jgralab/jgralab/wiki
-        //  implementation("de.uni-koblenz.ist:jgralab:8.1.0")
+        // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
         implementation("com.redislabs:jredisgraph:2.6.0-RC2")
         implementation("io.lacuna:bifurcan:0.2.0-alpha6")

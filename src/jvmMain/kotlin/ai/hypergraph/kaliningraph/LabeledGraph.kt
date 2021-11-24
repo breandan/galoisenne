@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.typefamily.*
 import kotlin.reflect.KProperty
 
-
 /**
  * DSL for labeled graphs - just enumerate paths. Duplicates will be merged.
  */

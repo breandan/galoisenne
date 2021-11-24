@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.circuits.UnlabeledEdge
 import ai.hypergraph.kaliningraph.image.matToBase64Img
-import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.*
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
@@ -15,17 +15,8 @@ import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.*
-import java.awt.image.BufferedImage
-import java.awt.image.BufferedImage.TYPE_INT_RGB
-import java.io.*
-import java.math.*
+import java.io.File
 import java.net.URL
-import java.util.*
-import javax.imageio.ImageIO
-import kotlin.math.*
-import kotlin.random.Random
-import kotlin.system.measureTimeMillis
-
 
 const val THICKNESS = 4.0
 const val DARKMODE = false
@@ -70,12 +61,7 @@ val browserCmd = System.getProperty("os.name").lowercase().let { os ->
 fun File.show() = ProcessBuilder(browserCmd, path).start()
 fun URL.show() = ProcessBuilder(browserCmd, toString()).start()
 
-fun randomString() = UUID.randomUUID().toString().take(5)
-
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
-
-fun <T> powBench(constructor: T, matmul: (T, T) -> T): Long =
-  measureTimeMillis { constructor.power(100, matmul) }
 
 fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
   IGraph<G, E, V>.toGraphviz() =
@@ -91,24 +77,3 @@ fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
     for((vertex, edge) in edgList)
       edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }
-
-// Samples from unnormalized counts with normalized frequency
-fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
-  entries.map { (k, v) -> k to v }.unzip().let { (keys, values) ->
-    val cdf = values.cdf()
-    generateSequence { keys[cdf.sample(random)] }
-  }
-
-fun Collection<Number>.cdf() = CDF(
-  sumOf { it.toDouble() }
-    .let { sum -> map { i -> i.toDouble() / sum } }
-    .runningReduce { acc, d -> d + acc }
-)
-
-class CDF(val cdf: List<Double>): List<Double> by cdf
-
-// Draws a single sample using KS-transform w/binary search
-fun CDF.sample(random: Random = Random.Default,
-               target: Double = random.nextDouble()) =
-  cdf.binarySearch { it.compareTo(target) }
-    .let { if (it < 0) abs(it) - 1 else it }

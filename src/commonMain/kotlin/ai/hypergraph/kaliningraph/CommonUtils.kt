@@ -48,9 +48,6 @@ fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, 
 
 fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
 
-fun <T> T.power(exp: Int, matmul: (T, T) -> T) =
-  generateSequence(this) { matmul(it, this) }.take(exp)
-
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
   Random(hashCode()).let { randomVector(len) { it.nextDouble() } }
@@ -66,3 +63,33 @@ tailrec fun <T> closure(
     visited = visited + toVisit,
     successors = successors
   )
+
+fun randomString(
+  length: Int = 5,
+  alphabet: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+) = List(length) { alphabet.random() }.joinToString("")
+  
+// Samples from unnormalized counts with normalized frequency
+fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
+  entries.map { (k, v) -> k to v }.unzip().let { (keys, values) ->
+    val cdf = values.cdf()
+    generateSequence { keys[cdf.sample(random)] }
+  }
+
+fun Collection<Number>.cdf() = CDF(
+  sumOf { it.toDouble() }
+    .let { sum -> map { i -> i.toDouble() / sum } }
+    .runningReduce { acc, d -> d + acc }
+)
+
+class CDF(val cdf: List<Double>): List<Double> by cdf
+
+// Draws a single sample using KS-transform w/binary search
+fun CDF.sample(random: Random = Random.Default,
+               target: Double = random.nextDouble()) =
+  cdf.binarySearch { it.compareTo(target) }
+    .let { if (it < 0) abs(it) - 1 else it }
+
+fun main() {
+  println("asdf")
+}
