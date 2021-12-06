@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.smt
 
+import ai.hypergraph.kaliningraph.circuits.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
@@ -155,12 +156,12 @@ class TestSMT {
   }
 
   class SMTMatrix(
-    override val algebra: MatrixRing<Formula, Ring.of<Formula>>,
     override val numRows: Int,
     override val numCols: Int = numRows,
     override val data: List<Formula>,
+    override val algebra: Ring.of<Formula>,
   ) : Matrix<Formula, Ring.of<Formula>, SMTMatrix> {
-    constructor(algebra: MatrixRing<Formula, Ring.of<Formula>>, elements: List<Formula>) : this(
+    constructor(algebra: Ring.of<Formula>, elements: List<Formula>) : this(
       algebra = algebra,
       numRows = sqrt(elements.size.toDouble()).toInt(),
       data = elements
@@ -169,7 +170,7 @@ class TestSMT {
     constructor(
       numRows: Int,
       numCols: Int = numRows,
-      algebra: MatrixRing<Formula, Ring.of<Formula>>,
+      algebra: Ring.of<Formula>,
       f: (Int, Int) -> Formula
     ) : this(
       algebra = algebra,
@@ -178,18 +179,17 @@ class TestSMT {
       data = List(numRows * numCols) { f(it / numRows, it % numCols) }
     )
 
-    override fun new(numRows: Int, numCols: Int, algebra: MatrixRing<Formula, Ring.of<Formula>>, data: List<Formula>) =
-      SMTMatrix(algebra, numRows, numCols, data)
+    override fun new(numRows: Int, numCols: Int, data: List<Formula>, algebra: Ring.of<Formula>) =
+      SMTMatrix(numRows, numCols, data, algebra)
   }
 
-  class SMTAlgebra(val instance: SMTInstance): MatrixRing<Formula, Ring.of<Formula>> {
-    override val ring = Ring.of(
+  fun SMTAlgebra(instance: SMTInstance) =
+    Ring.of(
       nil = instance.nil,
       one = instance.one,
       plus = { a, b -> a.run { this + b } },
       times = { a, b -> a.run { this * b } }
     )
-  }
 
   @Test
   fun testIsAssociative() = SMTInstance().solve {
@@ -234,7 +234,7 @@ class TestSMT {
     open val ctx: SolverContext,
     val formula: IntegerFormula,
     val fm: IntegerFormulaManager = ctx.formulaManager.integerFormulaManager
-  ) : IntegerFormula by formula, Group<Formula, Formula> {
+  ) : IntegerFormula by formula, Group<Formula> {
     override val nil: Formula by lazy { Formula(ctx, fm.makeNumber(0)) }
     override val one: Formula by lazy { Formula(ctx, fm.makeNumber(1)) }
     private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = fm.add(this, t)

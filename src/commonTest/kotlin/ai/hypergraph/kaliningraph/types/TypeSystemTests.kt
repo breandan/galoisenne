@@ -65,7 +65,7 @@ class TypeSystemTests {
       println(Vector.of(0L, 1L) + Vector.of(1L, 1L))
     }
 
-  fun <T> BaseType<T>.algebras(): List<Nat<T, *>> = listOf(
+  fun <T> BaseType<T>.algebras(): List<Nat<T>> = listOf(
     Nat.of(
       nil = nil,
       vnext = { this + one }
@@ -103,7 +103,7 @@ class TypeSystemTests {
 
   @ExperimentalTime
   @Suppress("UNCHECKED_CAST")
-  fun <T> Nat<T, *>.benchmark(max: Any) =
+  fun <T> Nat<T>.benchmark(max: Any) =
     measureTimedValue {
       println(
         this::class.simpleName + "<${nil!!::class.simpleName}>" + " results\n" +

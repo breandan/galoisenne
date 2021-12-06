@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import kotlin.test.Test
+import kotlin.test.*
 
 class TensorTest {
   @Test
@@ -33,5 +33,23 @@ class TensorTest {
     println("Query: $condProb")
 
     println(spt.toString())
+  }
+
+  @Test
+  fun matrixDistributivity() {
+    val a = BooleanMatrix.random(3)
+    val b = BooleanMatrix.random(3)
+    val c = BooleanMatrix.random(3)
+
+    assertEquals(a * (b + c), a * b + a * c)
+  }
+
+  @Test
+  fun matmulAssociativity() {
+    val a = BooleanMatrix.random(3)
+    val b = BooleanMatrix.random(3)
+    val c = BooleanMatrix.random(3)
+
+    assertEquals(a * (b * c), (a * b) * c)
   }
 }

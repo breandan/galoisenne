@@ -7,7 +7,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.6.0"
   id("com.google.devtools.ksp") version "1.6.0-1.0.1"
-  kotlin("jupyter.api") version "0.11.0-3"
+  kotlin("jupyter.api") version "0.11.0-16"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -74,11 +74,11 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.0.0.RC" // Cannot be updated without updating Kotlin compiler
+        val kotestVersion = "5.0.0" // Cannot be updated without updating Kotlin compiler
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.8.1")
+        implementation("org.junit.jupiter:junit-jupiter:5.8.2")
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")

@@ -11,17 +11,17 @@ fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Defa
 operator fun IntRange.times(s: IntRange) =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
-fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
-  new(numRows, numCols, algebra, data.map { op(it) })
+fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
+  new(numRows, numCols, data.map { op(it) }, algebra)
 
-operator fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> T.times(m: Matrix<T, R, M>): M =
-  with(m.algebra.ring) { m.elwise { this@times * it  } }
+operator fun <T, R : Ring<T>, M : Matrix<T, R, M>> T.times(m: Matrix<T, R, M>): M =
+  with(m.algebra) { m.elwise { this@times * it  } }
 
-operator fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> Matrix<T, R, M>.times(t: T): M =
-  with(algebra.ring) { elwise { it * t } }
+operator fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.times(t: T): M =
+  with(algebra) { elwise { it * t } }
 
-infix fun <T, R : Ring<T, R>, M : Matrix<T, R, M>> List<T>.dot(m: Matrix<T, R, M>): List<T> =
-  with(m.algebra) { m.cols.map { this@dot dot it } }
+infix fun <T, R : Ring<T>, M : Matrix<T, R, M>> List<T>.dot(m: Matrix<T, R, M>): List<T> =
+  m.cols.map { col -> with(m.algebra) { zip(col).fold(nil) { c, (a, b) -> c + a * b } } }
 
 val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 
