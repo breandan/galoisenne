@@ -24,8 +24,6 @@ class RenderingTests: JupyterReplTestCase() {
     val html = execHtml(
       """LabeledGraph { a - b - c - a - d - c }.A""".trimIndent()
     )
-
-    println(html)
     html shouldContain "data:image/bmp;base64,"
   }
 
@@ -35,9 +33,6 @@ class RenderingTests: JupyterReplTestCase() {
     val html = execHtml(
       """randomMatrix(200, 200)""".trimIndent()
     )
-
-    println(html)
     html shouldContain "data:image/bmp;base64,"
   }
-
 }

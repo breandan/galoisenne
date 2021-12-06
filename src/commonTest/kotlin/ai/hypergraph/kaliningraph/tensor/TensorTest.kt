@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.tensor
 
+import ai.hypergraph.kaliningraph.types.Ring
 import kotlin.test.*
 
 class TensorTest {
@@ -36,7 +37,7 @@ class TensorTest {
   }
 
   @Test
-  fun matrixDistributivity() {
+  fun testBooleanMatrixDistributivity() {
     val a = BooleanMatrix.random(3)
     val b = BooleanMatrix.random(3)
     val c = BooleanMatrix.random(3)
@@ -45,10 +46,10 @@ class TensorTest {
   }
 
   @Test
-  fun matmulAssociativity() {
-    val a = BooleanMatrix.random(3)
-    val b = BooleanMatrix.random(3)
-    val c = BooleanMatrix.random(3)
+  fun testFreeMatrixMultiplicationAssociativity() {
+    val a = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
+    val b = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
+    val c = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
 
     assertEquals(a * (b * c), (a * b) * c)
   }

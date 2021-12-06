@@ -26,10 +26,10 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int,
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
 
   operator fun plus(t: M): M = join(t) { i, j -> with(algebra) { this@Matrix[i, j] + t[i, j] } }
-  operator fun times(t: M): M = join(t) { i, j -> this[i] dot t[j] }
+  operator fun times(t: M): M = join(t) { i, j -> this[i] dot t.transpose()[j] }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(algebra) { zip(es).fold(algebra.nil) { c, (a, b) -> c + a * b } }
+    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce{ a, b -> a + b} }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(numRows: Int, numCols: Int, data: List<T>, algebra: A): M
@@ -130,8 +130,8 @@ open class FreeMatrix<T> constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-  override val algebra: Ring.of<T> = TODO_ALGEBRA(data.first()),
-) : AbstractMatrix<T, Ring.of<T>, FreeMatrix<T>>(numRows, numCols, data, algebra) {
+  override val algebra: Ring<T> = TODO_ALGEBRA(data.first()),
+) : AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(numRows, numCols, data, algebra) {
   constructor(elements: List<T>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -145,7 +145,7 @@ open class FreeMatrix<T> constructor(
 
   constructor(vararg rows: T) : this(rows.toList())
 
-  override fun new(numRows: Int, numCols: Int, data: List<T>, algebra: Ring.of<T>) =
+  override fun new(numRows: Int, numCols: Int, data: List<T>, algebra: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
 }
 
@@ -154,8 +154,8 @@ open class BooleanMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
-  override val algebra: Ring.of<Boolean> = BOOLEAN_ALGEBRA,
-) : AbstractMatrix<Boolean, Ring.of<Boolean>, BooleanMatrix>(numRows, numCols, data, algebra) {
+  override val algebra: Ring<Boolean> = BOOLEAN_ALGEBRA,
+) : AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(numRows, numCols, data, algebra) {
   constructor(elements: List<Boolean>) : this(
     algebra = BOOLEAN_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -169,13 +169,13 @@ open class BooleanMatrix constructor(
   )
 
   constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
-  constructor(rows: String) :
-    this(rows.filter { !it.isWhitespace() }.toCharArray().let { chars ->
-        val values = chars.distinct()
-        if(values.size != 2) { throw Exception("Expected two values") }
-        chars.map { it == values[0] }
-      }
-    )
+  constructor(rows: String) : this(
+    rows.filter { !it.isWhitespace() }.toCharArray().let { chars ->
+      val values = chars.distinct()
+      require(values.size <= 2) { "Expected two values or less" }
+      values.maxOrNull()!!.let { hi -> chars.map { it == hi } }
+    }
+  )
 
   // TODO: Implement Four Russians for speedy boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
   // override fun BooleanMatrix.times(t: BooleanMatrix): BooleanMatrix = TODO()
@@ -194,7 +194,7 @@ open class BooleanMatrix constructor(
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Boolean>, algebra: Ring.of<Boolean>) =
+  override fun new(numRows: Int, numCols: Int, data: List<Boolean>, algebra: Ring<Boolean>) =
      BooleanMatrix(numRows, numCols, data, algebra)
 }
 
@@ -202,8 +202,8 @@ open class DoubleMatrix constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<Double>,
-  override val algebra: Field.of<Double> = DOUBLE_FIELD,
-) : AbstractMatrix<Double, Field.of<Double>, DoubleMatrix>(numRows, numCols, data, algebra) {
+  override val algebra: Field<Double> = DOUBLE_FIELD,
+) : AbstractMatrix<Double, Field<Double>, DoubleMatrix>(numRows, numCols, data, algebra) {
   constructor(elements: List<Double>) : this(
     algebra = DOUBLE_FIELD,
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -221,7 +221,11 @@ open class DoubleMatrix constructor(
   operator fun minus(that: DoubleMatrix): DoubleMatrix =
     join(that) { i, j -> algebra.minus(this[i, j], that[i][j]) }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Double>, algebra: Field.of<Double>) =
+  companion object {
+    fun random(size: Int) = DoubleMatrix(size) { _, _ -> Random.nextDouble() }
+  }
+
+  override fun new(numRows: Int, numCols: Int, data: List<Double>, algebra: Field<Double>) =
     DoubleMatrix(numRows, numCols, data, algebra)
 }
 

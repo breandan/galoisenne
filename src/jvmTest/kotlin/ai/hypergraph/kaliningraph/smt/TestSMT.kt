@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.smt
 
-import ai.hypergraph.kaliningraph.circuits.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
