@@ -21,6 +21,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int,
   val numRows: Int
   val numCols: Int
 
+  // Only include nonzero indices for sparse matrices?
   val indices get() = (0 until numRows) * (0 until numCols)
   val rows get() = data.chunked(numCols)
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
@@ -29,16 +30,15 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int,
   operator fun times(t: M): M = join(t) { i, j -> this[i] dot t.transpose()[j] }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce{ a, b -> a + b} }
+    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce{ a, b -> a + b } }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(numRows: Int, numCols: Int, data: List<T>, algebra: A): M
 // TODO = this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
-  fun join(that: M, op: (Int, Int) -> T): M =
-    if (numCols != that.numRows) {
-      throw Exception("Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}")
-    } else { new(numCols, that.numRows, indices.map { (i, j) -> op(i, j) }, algebra) }
+  fun join(that: M, op: (Int, Int) -> T): M = require(numCols == that.numRows) {
+    "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
+  }.let { new(numCols, that.numRows, indices.map { (i, j) -> op(i, j) }, algebra) }
 
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]

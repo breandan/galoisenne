@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.automata
 
-import java.util.*
 import kotlin.random.Random
 
 
@@ -24,7 +23,6 @@ class KRegex(val regex: String) {
   }
 
   fun check(input: String): String {
-    var timer = -System.nanoTime()
     var currentStates = initialStates
     var tmpStateList = mutableListOf<State>()
     for (element in input) {
@@ -53,16 +51,15 @@ class KRegex(val regex: String) {
       }
     }
 
-    timer += System.nanoTime()
     val result = if (finalStates[0] in currentStates) {
-      "String was accepted (states = ${currentStates.toSet()}) in $timer ns"
+      "String was accepted (states = ${currentStates.toSet()})"
     } else {
-      "String was rejected (states = ${currentStates.toSet()}) in $timer ns"
+      "String was rejected (states = ${currentStates.toSet()})"
     }
     return result
   }
 
-  private fun eClosure(initialState: State, closure: MutableList<State> = LinkedList()): MutableList<State> {
+  private fun eClosure(initialState: State, closure: MutableList<State> = mutableListOf()): MutableList<State> {
     for (i in transitions.indices) {
       if (transitions[i].from === initialState) {
         if (transitions[i].sym == "ε") {
@@ -164,7 +161,7 @@ class KRegex(val regex: String) {
   private fun concat(initialState: State, finalState: State) {
     val tr1 = Transition("ε", initialState, finalState)
     transitions += tr1
-    stackFinal.push(saveFinal)
+    stackFinal.push(saveFinal!!)
     saveFinal = null
   }
 
@@ -181,8 +178,8 @@ class KRegex(val regex: String) {
   }
 
   class State(var stateId: Int = Random.Default.nextInt(9999)) {
-    var previousStates: MutableList<State> = LinkedList()
-    var nextStates: MutableList<State> = LinkedList()
+    var previousStates: MutableList<State> = mutableListOf()
+    var nextStates: MutableList<State> = mutableListOf()
     var initial = false
     var final = false
 
@@ -251,3 +248,11 @@ class KRegex(val regex: String) {
     }
   }
 }
+
+typealias Stack<T> = ArrayDeque<T>
+
+inline fun <T> Stack<T>.push(element: T) = addLast(element) // returns Unit
+
+inline fun <T> Stack<T>.pop() = removeLastOrNull()!!          // returns T?
+
+fun <T> Stack<T>.peek(): T = this[lastIndex]!!

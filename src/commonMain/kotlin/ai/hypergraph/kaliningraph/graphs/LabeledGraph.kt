@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.typefamily.*
+import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty
 
 /**
@@ -35,9 +35,18 @@ class LGBuilder {
     target + LabeledEdge(target, source, label)
 }
 
+interface LGFamily: IGF<LabeledGraph, LabeledEdge, LGVertex> {
+  override val E: (s: LGVertex, t: LGVertex) -> LabeledEdge
+    get() = {s, t -> LabeledEdge(s, t) }
+  override val G: (vertices: Set<LGVertex>) -> LabeledGraph
+    get() = { vertices: Set<LGVertex> -> LabeledGraph(vertices) }
+  override val V: (old: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) -> LGVertex
+    get() = { old: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge> -> LGVertex(old, edgeMap ) }
+}
+
 // TODO: convert to/from other graph types
 open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
-  Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices) {
+  Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices), LGFamily {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
   constructor(builder: LGBuilder.() -> Unit):
     this(LGBuilder().also { it.builder() }.mutGraph.reversed())
@@ -78,7 +87,7 @@ class StatefulGraph: LabeledGraph()
 class LGVertex constructor(
   val label: String = "",
   override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
-): Vertex<LabeledGraph, LabeledEdge, LGVertex>(label) {
+): Vertex<LabeledGraph, LabeledEdge, LGVertex>(label), LGFamily {
   var occupied: Boolean = false
 
   constructor(out: Set<LGVertex> = setOf()) :
@@ -98,7 +107,7 @@ open class LabeledEdge(
   override val source: LGVertex,
   override val target: LGVertex,
   val label: String? = null
-): Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target) {
+): Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target), LGFamily {
   constructor(source: LGVertex, target: LGVertex): this(source, target, null)
 
 }

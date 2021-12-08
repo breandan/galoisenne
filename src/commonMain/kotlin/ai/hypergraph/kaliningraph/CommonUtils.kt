@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.Ring
 import kotlin.math.*
 import kotlin.random.Random
+import kotlin.reflect.KClass
 
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
@@ -90,6 +91,15 @@ fun CDF.sample(random: Random = Random.Default,
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
 
-fun main() {
-  println("asdf")
+
+// Maybe we can hack reification using super type tokens?
+infix fun Any.isA(that: Any) = when {
+  this !is KClass<out Any> && that !is KClass<out Any> -> this::class.isInstance(that)
+  this !is KClass<out Any> && that is KClass<out Any> -> this::class.isInstance(that)
+  this is KClass<out Any> && that is KClass<out Any> -> this.isInstance(that)
+  this is KClass<out Any> && that !is KClass<out Any> -> this.isInstance(that)
+  else -> TODO()
 }
+
+infix fun Collection<Any>.allAre(that: Any) = all { it isA that }
+infix fun Collection<Any>.anyAre(that: Any) = any { it isA that }

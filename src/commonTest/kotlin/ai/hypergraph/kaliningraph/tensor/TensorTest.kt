@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.types.Ring
 import kotlin.test.*
 
 class TensorTest {

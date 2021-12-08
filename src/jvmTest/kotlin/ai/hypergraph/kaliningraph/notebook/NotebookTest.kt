@@ -1,12 +1,9 @@
 package ai.hypergraph.kaliningraph.notebook
 
-import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.tensor.toBMat
 import io.kotest.matchers.string.shouldContain
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlinx.jupyter.testkit.JupyterReplTestCase
 import org.junit.jupiter.api.Test
-
 
 class RenderingTests: JupyterReplTestCase() {
   @Test

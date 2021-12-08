@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.kroneckerDelta
-import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.tensor.DoubleMatrix
-import ai.hypergraph.kaliningraph.tensor.minus
-import ai.hypergraph.kaliningraph.toDoubleMatrix
+import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -19,7 +17,12 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   fun G() = G(setOf())
   fun G(vararg graphs: G): G = G(graphs.toList())
   fun G(vararg vertices: V): G = G(vertices.map { it.graph })
-  fun G(list: List<Any> = emptyList()): G
+  fun G(list: List<Any>): G = when {
+    list.isEmpty() -> setOf()
+    list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
+    list allAre list.first() -> list.map { it as V }.toSet()
+    else -> throw Exception("Unsupported constructor: G(${list.joinToString(",") { it::class.simpleName!! }})")
+  }.let { G(it) }
 
   /**
    * Memoizes the result of evaluating a pure function, indexed by:
@@ -218,6 +221,32 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   fun neighborhood(): G = G(neighbors(0).closure())
 
   override fun encode(): DoubleArray
+}
+
+abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
+  IGraph<G, E, V>, Set<V> by vertices, (V) -> Set<V> by { it: V -> it.neighbors }, IGF<G, E, V>
+  where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) =
+    super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
+  override fun encode() =
+    if (isEmpty()) DoubleArray(10) {0.0} else wl().values.sorted().map { it.toDouble() }.toDoubleArray()
+  // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
+  override fun toString() = asString()
+}
+
+abstract class Edge<G, E, V>(override val source: V, override val target: V) : IEdge<G, E, V>, IGF<G, E, V>
+  where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) = (other as? E)?.let { hashCode() == other.hashCode() } ?: false
+  override fun hashCode(): Int = source.hashCode() + target.hashCode()
+  override fun toString() = "$source→$target"
+}
+
+abstract class Vertex<G, E, V>(override val id: String) : IVertex<G, E, V>, IGF<G, E, V>
+  where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+  override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
+  override fun encode() = id.vectorize()
+  override fun hashCode() = id.hashCode()
+  override fun toString() = id
 }
 
 interface Encodable { fun encode(): DoubleArray }
