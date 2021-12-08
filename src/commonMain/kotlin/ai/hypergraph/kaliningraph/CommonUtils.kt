@@ -42,6 +42,8 @@ fun DoubleMatrix.meanNorm() =
 operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
+fun allPairs(numRows: Int, numCols: Int) = (0 until numRows) * (0 until numCols)
+
 fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
 
