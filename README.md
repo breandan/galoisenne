@@ -58,7 +58,7 @@ Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.k
 
 ## Usage
 
-To construct a graph, the [graph builder DSL](src/jvmMain/kotlin/ai/hypergraph/kaliningraph/LabeledGraph.kt) provides an small alphabet:
+To construct a graph, the [graph builder DSL](src/commonMain/kotlin/ai/hypergraph/kaliningraph/LabeledGraph.kt) provides an small alphabet:
 
 ```kotlin
 val graph = LabeledGraph { a - b - c - d - e; a - c - e }
