@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.display.animate
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
 import kotlin.random.Random

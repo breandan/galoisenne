@@ -1,7 +1,6 @@
+package ai.hypergraph.kaliningraph.graphs
 
-package ai.hypergraph.kaliningraph.circuits
-
-import ai.hypergraph.kaliningraph.circuits.Gate.Companion.wrap
+import ai.hypergraph.kaliningraph.graphs.Gate.Companion.wrap
 import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty

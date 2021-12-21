@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.theory.diameter
+import ai.hypergraph.kaliningraph.graphs.*
 import org.junit.jupiter.api.*
 
 class GraphTest {

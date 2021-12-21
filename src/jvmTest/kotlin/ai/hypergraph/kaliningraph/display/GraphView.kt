@@ -1,8 +1,9 @@
 package ai.hypergraph.kaliningraph.display
 
-import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.image.matToBase64Img
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
+import ai.hypergraph.kaliningraph.visualization.*
 import kweb.*
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent

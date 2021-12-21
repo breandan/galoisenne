@@ -1,20 +1,13 @@
 package ai.hypergraph.kaliningraph.cache
 
-/**
- * NOTE: Be careful when using it because it does not handle errors.
- *
- * @param maxSize maximum number of entries in the cache.
- * @param sizeOf returns the size of entry for key, and value in user defined units. the default returns 1 so that size is the number of entries.
- */
-class LRUCache<K, V>(private val maxSize: Int, private val sizeOf: (key: K, value: V) -> Int) {
-  constructor(maxSize: Int) : this(maxSize, { _, _ -> 1 })
-
+// TODO: LFU Cache
+class LRUCache<K, V>(private val maxSize: Int,
+                     private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }) {
   private val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
   private var size: Int = 0
 
-  init {
-    require(maxSize > 0) { "max size must be grater than 0" }
-  }
+  fun getOrPut(key: K, value: () -> V) =
+    if (key in map) map[key] else value().also { put(key, it) }
 
   fun get(key: K) = map[key]
 

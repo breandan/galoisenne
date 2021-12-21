@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.automata
 
-import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty
 
@@ -27,7 +28,7 @@ open class State(
 
 interface AGFamily: IGF<Automaton, Transition, State> {
   override val G: (vertices: Set<State>) -> Automaton
-    get() = {vertices -> Automaton(vertices) }
+    get() = { vertices -> Automaton(vertices) }
   override val E: (s: State, t: State) -> Transition
     get() = {s, t -> Transition(s, t) }
   override val V: (old: State, edgeMap: (State) -> Set<Transition>) -> State

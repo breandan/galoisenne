@@ -1,6 +1,8 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.display.animate
+import ai.hypergraph.kaliningraph.graphs.LGVertex
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.theory.prefAttach
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent

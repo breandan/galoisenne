@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.math.sqrt
@@ -25,19 +26,25 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   }.let { G(it) }
 
   /**
-   * Memoizes the result of evaluating a pure function, indexed by:
+   * Memoizes the result of evaluating a pure subclass function, indexed by:
    *
    * (1) instance reference, cf. [Graph.hashCode].
    * (2) the most direct caller on the stack (i.e. qualified method name)
    * (3) its arguments if caller is not niladic and [args] are supplied.
    */
 
+  val deepHashCode: Int // Uniquely identifies this class instance, regardless of structure
   fun <T> memoize(
-    classRef: Any = this, // System.identityHashCode(this),
+    classRef: Int = deepHashCode,
     methodRef: Int = Throwable().stackTraceToString().lines()[2].hashCode(),
     args: Array<*>? = null,
+    argsRef: Int = args?.contentDeepHashCode() ?: 0,
     computation: () -> T
-  ): T = computation()
+  ): T = memo.getOrPut(Triple(classRef, methodRef, argsRef)) { computation() as Any } as T
+
+  companion object {
+    val memo = LRUCache<Triple<Int, Int, Int>, Any>(1000)
+  }
 }
 
 typealias AdjList<V> = List<Pair<V, V>>
@@ -183,8 +190,8 @@ class RandomWalk<G, E, V>(
   override fun iterator() = generateSequence(this) { it.tail }.iterator()
 }
 
-interface IEdge<G, E, V>: IGF<G, E, V>
-  where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
+interface IEdge<G, E, V> : IGF<G, E, V>
+        where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val graph: G get() = memoize { target.graph }
   val source: V
   val target: V
@@ -194,8 +201,8 @@ interface IEdge<G, E, V>: IGF<G, E, V>
 }
 
 // TODO: Make this a "view" of the container graph
-interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
-  where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
+interface IVertex<G, E, V> : IGF<G, E, V>, Encodable
+        where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
   val id: String // TODO: Need to think about this more carefully
 
   val graph: G get() = memoize { G(neighbors(-1)) }
@@ -223,25 +230,35 @@ interface IVertex<G, E, V>: IGF<G, E, V>, Encodable
   override fun encode(): DoubleArray
 }
 
+abstract class AGF<G, E, V> : IGF<G, E, V>
+        where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
+  override val deepHashCode: Int = Random.nextInt()
+  override fun hashCode() = deepHashCode
+}
+
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
-  IGraph<G, E, V>, Set<V> by vertices, (V) -> Set<V> by { it: V -> it.neighbors }, IGF<G, E, V>
+  AGF<G, E, V>(), IGraph<G, E, V>,
+  Set<V> by vertices, (V) -> Set<V> by { it: V -> it.neighbors }, IGF<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
   override fun encode() =
-    if (isEmpty()) DoubleArray(10) {0.0} else wl().values.sorted().map { it.toDouble() }.toDoubleArray()
+    if (isEmpty()) DoubleArray(10) { 0.0 }
+    else wl().values.sorted().map { it.toDouble() }.toDoubleArray()
   // https://web.engr.oregonstate.edu/~erwig/papers/InductiveGraphs_JFP01.pdf#page=6
   override fun toString() = asString()
 }
 
-abstract class Edge<G, E, V>(override val source: V, override val target: V) : IEdge<G, E, V>, IGF<G, E, V>
+abstract class Edge<G, E, V>(override val source: V, override val target: V) :
+  AGF<G, E, V>(), IEdge<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? E)?.let { hashCode() == other.hashCode() } ?: false
   override fun hashCode(): Int = source.hashCode() + target.hashCode()
   override fun toString() = "$source→$target"
 }
 
-abstract class Vertex<G, E, V>(override val id: String) : IVertex<G, E, V>, IGF<G, E, V>
+abstract class Vertex<G, E, V>(override val id: String) :
+  AGF<G, E, V>(), IVertex<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
   override fun encode() = id.vectorize()

@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.KRegex
+import ai.hypergraph.kaliningraph.visualization.*
 import guru.nidi.graphviz.*
 import guru.nidi.graphviz.attribute.*
 import guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT

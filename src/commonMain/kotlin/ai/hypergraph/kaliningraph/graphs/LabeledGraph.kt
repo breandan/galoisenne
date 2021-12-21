@@ -1,7 +1,12 @@
-package ai.hypergraph.kaliningraph
+package ai.hypergraph.kaliningraph.graphs
 
+import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.types.Edge
+import ai.hypergraph.kaliningraph.types.Graph
+import ai.hypergraph.kaliningraph.types.IGF
+import ai.hypergraph.kaliningraph.types.Vertex
+import ai.hypergraph.kaliningraph.vectorize
 import kotlin.reflect.KProperty
 
 /**

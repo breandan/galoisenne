@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import org.junit.jupiter.api.*
+import ai.hypergraph.kaliningraph.graphs.*
 
 class LabeledGraphTest {
   val graph = LabeledGraph { a - b - c - d - e; a - c - e }

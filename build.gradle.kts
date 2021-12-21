@@ -131,6 +131,9 @@ kotlin {
 }
 
 tasks {
+  withType<Test> {
+    useJUnitPlatform()
+  }
   processJupyterApiResources {
     libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
   }

@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
-import ai.hypergraph.kaliningraph.circuits.ComputationGraph
+import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.visualization.*
 import ai.hypergraph.kaliningraph.tensor.toBMat
 import ai.hypergraph.kaliningraph.theory.*
 import org.junit.jupiter.api.Test

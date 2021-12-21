@@ -1,6 +1,7 @@
-package ai.hypergraph.kaliningraph
+package ai.hypergraph.kaliningraph.graphs
 
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.vectorize
 
 // TODO: convert to/from other graph types
 // TODO: should we lift TypedGraph and inherit other concrete graphs or introduce a Sheaf type?

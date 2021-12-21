@@ -1,10 +1,10 @@
 package ai.hypergraph.kaliningraph.notebook
 
-import ai.hypergraph.kaliningraph.circuits.Gate
-import ai.hypergraph.kaliningraph.html
+import ai.hypergraph.kaliningraph.graphs.Gate
 import ai.hypergraph.kaliningraph.image.matToBase64Img
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Graph
+import ai.hypergraph.kaliningraph.visualization.html
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 
@@ -12,6 +12,8 @@ internal class Integration: JupyterIntegration() {
   override fun Builder.onLoaded() {
     listOf(
       "ai.hypergraph.kaliningraph.*",
+      "ai.hypergraph.kaliningraph.graphs.*",
+      "ai.hypergraph.kaliningraph.visualization.*",
       "ai.hypergraph.kaliningraph.tensor.*",
       "ai.hypergraph.kaliningraph.circuits.*",
     ).forEach { import(it) }
