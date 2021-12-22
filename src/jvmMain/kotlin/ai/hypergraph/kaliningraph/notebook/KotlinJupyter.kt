@@ -15,7 +15,7 @@ internal class Integration: JupyterIntegration() {
       "ai.hypergraph.kaliningraph.graphs.*",
       "ai.hypergraph.kaliningraph.visualization.*",
       "ai.hypergraph.kaliningraph.tensor.*",
-      "ai.hypergraph.kaliningraph.circuits.*",
+      "ai.hypergraph.kaliningraph.graphs.*",
     ).forEach { import(it) }
 
     render<Matrix<*, *, *>> { HTML("<img src=\"${it.matToBase64Img()}\" height=\"200\" width=\"200\"/>") }
