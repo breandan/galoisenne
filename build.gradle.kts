@@ -5,9 +5,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.6.0"
-  id("com.google.devtools.ksp") version "1.6.0-1.0.1"
-  kotlin("jupyter.api") version "0.11.0-16"
+  kotlin("multiplatform") version "1.6.10"
+  id("com.google.devtools.ksp") version "1.6.10-1.0.2"
+  kotlin("jupyter.api") version "0.11.0-42"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -74,7 +74,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.0.0" // Cannot be updated without updating Kotlin compiler
+        val kotestVersion = "5.0.3"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
