@@ -12,8 +12,26 @@ plugins {
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
+// Stub secrets to let the project sync and build without the publication values set up
+ext["signing.keyId"] = null
+ext["signing.password"] = null
+ext["signing.secretKeyRingFile"] = null
+ext["ossrhUsername"] = null
+ext["ossrhPassword"] = null
+
+val keyId = providers.gradleProperty("signing.gnupg.keyId")
+val password = providers.gradleProperty("signing.gnupg.password")
+val secretKey = providers.gradleProperty("signing.gnupg.key")
 val sonatypeApiUser = providers.gradleProperty("sonatypeApiUser")
 val sonatypeApiKey = providers.gradleProperty("sonatypeApiKey")
+if (keyId.isPresent && password.isPresent && secretKey.isPresent) {
+    ext["signing.keyId"] = keyId
+    ext["signing.password"] = password
+    ext["signing.key"] = secretKey
+    ext["ossrhUsername"] = sonatypeApiUser
+    ext["ossrhPassword"] = sonatypeApiKey
+}
+
 if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
     configure<NexusPublishExtension> {
         repositories {
@@ -30,13 +48,13 @@ if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
     logger.info("Sonatype API key not defined, skipping configuration of Maven Central publishing repository")
 }
 
-val signingKeyId = providers.gradleProperty("signing.gnupg.keyId")
-val signingKeyPassphrase = providers.gradleProperty("signing.gnupg.passphrase")
+fun getExtraString(name: String) = ext[name]?.toString()
+
 signing {
     useGpgCmd()
-    if (signingKeyId.isPresent && signingKeyPassphrase.isPresent) {
-        useInMemoryPgpKeys(signingKeyId.get(), signingKeyPassphrase.get())
-        sign(extensions.getByType<PublishingExtension>().publications)
+    if (keyId.isPresent && password.isPresent) {
+        useInMemoryPgpKeys(keyId.get(), secretKey.get(), password.get())
+        sign(publishing.publications)
     } else {
         logger.info("PGP signing key not defined, skipping signing configuration")
     }
@@ -49,6 +67,8 @@ repositories {
     mavenCentral()
     maven("https://jitpack.io")
 }
+
+val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
 
 kotlin {
     jvm()
@@ -129,20 +149,21 @@ kotlin {
         }
     }
 
-    val publicationsFromMainHost =
-        listOf(jvm() /*js()*/).map { it.name } + "kotlinMultiplatform"
+    /*
+     * Publishing instructions:
+     *
+     *  (1) ./gradlew publishAllPublicationsToSonatypeRepository
+     *  (2) Visit https://s01.oss.sonatype.org/index.html#stagingRepositories
+     *  (3) Close and check content tab.
+     *  (4) Release.
+     *
+     * Adapted from: https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-going-public-4a8k
+     */
 
     publishing {
         publications {
-            matching { it.name in publicationsFromMainHost }.all {
-                val targetPublication = this@all
-                tasks.withType<AbstractPublishToMaven>()
-                    .matching { it.publication == targetPublication }
-                    .configureEach { onlyIf { findProperty("isMainHost") == "true" } }
-            }
             withType<MavenPublication> {
-                artifact(tasks["sourcesJar"])
-
+                artifact(javadocJar.get())
                 pom {
                     url.set("https://github.com/breandan/kaliningraph")
                     name.set("Kaliningraph")
@@ -175,6 +196,7 @@ tasks {
     withType<Test> {
         useJUnitPlatform()
     }
+
     processJupyterApiResources {
         libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
     }
