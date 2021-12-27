@@ -1,13 +1,11 @@
-package ai.hypergraph.kaliningraph
+package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.types.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PeanoTest {
     @Test
     fun peanoTest() {
-
         val five = O
             .plus2()
             .let { it + S3 }
@@ -27,8 +25,6 @@ class PeanoTest {
             .let { it / S2 }
             .let { it + S3 }
 
-
         assertEquals(5, five.toInt())
-
     }
 }
