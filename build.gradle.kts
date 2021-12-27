@@ -7,7 +7,7 @@ plugins {
     `maven-publish`
     kotlin("multiplatform") version "1.6.10"
     id("com.google.devtools.ksp") version "1.6.10-1.0.2"
-    kotlin("jupyter.api") version "0.11.0-42"
+    kotlin("jupyter.api") version "0.11.0-45"
     id("com.github.ben-manes.versions") version "0.39.0"
     id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -203,7 +203,8 @@ tasks {
 
     listOf(
         "Rewriter", "PrefAttach",
-        "rewriting.CipherSolver", "RegexDemo", "smt.TestSMT"
+        "rewriting.CipherSolver", "RegexDemo", "smt.TestSMT",
+        "Presburger"
     ).forEach { fileName ->
         register(fileName, org.gradle.api.tasks.JavaExec::class) {
             mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")

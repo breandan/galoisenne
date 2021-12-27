@@ -5,7 +5,8 @@ data class T2<A, B>(val e1: A, val e2: B)
 data class T3<A, B, C>(val e1: A, val e2: B, val e3: C)
 data class T4<A, B, C, D>(val e1: A, val e2: B, val e3: C, val e4: D)
 
-data class A1<A>(val e1: A)
-data class A2<A>(val e1: A, val e2: A)
-data class A3<A>(val e1: A, val e2: A, val e3: A)
-data class A4<A>(val e1: A, val e2: A, val e3: A, val e4: A)
+typealias A1<A> = T1<A>
+typealias A2<A> = T2<A, A>
+typealias A3<A> = T3<A, A, A>
+typealias A4<A> = T4<A, A, A, A>
+typealias S1 = T2<String, String>
