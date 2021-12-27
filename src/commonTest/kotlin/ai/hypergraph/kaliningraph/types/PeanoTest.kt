@@ -7,6 +7,7 @@ import kotlin.test.assertEquals
 class PeanoTest {
     @Test
     fun peanoTest() {
+
         val one = O
             .plus1()
             .plus1()
@@ -19,14 +20,11 @@ class PeanoTest {
             .minus2()
             .minus1()
             .minus3()
+            .let { it + it }
+            .let { it * it }
+            .minus3()
             .also { println(it.toInt()) }
 
         assertEquals(1, one.toInt())
-
-        val two = one + one
-        assertEquals(2, two.toInt())
-
-        val four = two * two
-        assertEquals(4, four.toInt())
     }
 }
