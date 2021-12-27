@@ -9,4 +9,3 @@ typealias A1<A> = T1<A>
 typealias A2<A> = T2<A, A>
 typealias A3<A> = T3<A, A, A>
 typealias A4<A> = T4<A, A, A, A>
-typealias S1 = T2<String, String>

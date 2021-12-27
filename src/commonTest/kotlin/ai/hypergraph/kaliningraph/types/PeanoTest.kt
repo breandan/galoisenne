@@ -9,22 +9,25 @@ class PeanoTest {
     fun peanoTest() {
 
         val one = O
-            .plus1()
-            .plus1()
             .plus2()
             .plus3()
-            .plus3()
             .plus4()
-            .minus4()
             .minus3()
-            .minus2()
-            .minus1()
             .minus3()
             .let { it + it }
-            .let { it * it }
             .minus3()
-            .also { println(it.toInt()) }
+            .let { it * S2 }
+            .minus4()
+            .let { it * it }
+            .let { it - S2 }
+            .let { it + S3 }
+            .minus4()
+            .let { it + it }
+            .let { it * it }
+            .let { it / S2 }
+            .let { it + S3 }
 
-        assertEquals(1, one.toInt())
+        assertEquals(5, one.toInt())
+
     }
 }
