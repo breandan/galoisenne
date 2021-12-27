@@ -8,9 +8,9 @@ class PeanoTest {
     @Test
     fun peanoTest() {
 
-        val one = O
+        val five = O
             .plus2()
-            .plus3()
+            .let { it + S3 }
             .plus4()
             .minus3()
             .minus3()
@@ -27,7 +27,8 @@ class PeanoTest {
             .let { it / S2 }
             .let { it + S3 }
 
-        assertEquals(5, one.toInt())
+
+        assertEquals(5, five.toInt())
 
     }
 }
