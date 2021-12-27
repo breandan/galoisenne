@@ -72,4 +72,4 @@ fun <W: S<*>, X: S<S<S<S<W>>>>> X.minus4(): W = minus3().minus1()
 @JvmName("2*4") operator fun <W: S<S<O>>, X: S<S<S<S<O>>>>> W.times(x: X) = x * this
 
 @JvmName("n÷1") operator fun <W: S<*>, X: S<O>> W.div(x: X) = this
-@JvmName("4÷2") operator fun <W: S<S<S<S<O>>>>, X: S<S<O>>> W.div(x: X) = x
+@JvmName("4÷2") operator fun <W: S<S<S<S<O>>>>, X: S<S<O>>> W.div(x: X) = S2
