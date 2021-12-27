@@ -4,10 +4,10 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PresburgerTest {
+class PeanoTest {
     @Test
-    fun presburgerTest() {
-        val o = O()
+    fun peanoTest() {
+        val one = O
             .plus1()
             .plus1()
             .plus2()
@@ -21,6 +21,12 @@ class PresburgerTest {
             .minus3()
             .also { println(it.toInt()) }
 
-        assertEquals(1, o.toInt())
+        assertEquals(1, one.toInt())
+
+        val two = one + one
+        assertEquals(2, two.toInt())
+
+        val four = two * two
+        assertEquals(4, four.toInt())
     }
 }
