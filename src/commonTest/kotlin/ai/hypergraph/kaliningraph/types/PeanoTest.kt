@@ -20,10 +20,6 @@ class PeanoTest {
             .let { it - S2 }
             .let { it + S3 }
             .minus4()
-            .let { it + it }
-            .let { it * it }
-            .let { it / S2 }
-            .let { it + S3 }
 
         assertEquals(5, five.toInt())
     }
