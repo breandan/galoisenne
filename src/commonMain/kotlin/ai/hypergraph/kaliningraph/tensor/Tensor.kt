@@ -7,7 +7,7 @@ import kotlin.random.Random
 
 /**
  * Generic matrix which supports overloadable addition and multiplication
- * using an abstract algebra (e.g. tropical semiring). Useful for many
+ * using an abstract algebra (e.g., tropical semiring). Useful for many
  * problems in graph theory.
  *
  * @see [MatrixRing]
@@ -254,7 +254,7 @@ fun BooleanMatrix.toDoubleMatrix() = DoubleMatrix(numRows, numCols) { i, j -> if
 // See: http://conal.net/talks/can-tensor-programming-be-liberated.pdf
 interface SparseTensor<T/*Should be a named tuple or dataclass of some kind*/> {
 // TODO: Precompute specific [Borel] subsets of T's attributes that we expect to be queried at runtime
-// e.g. (n-1)-D slices and 1D fibers
+// e.g., (n-1)-D slices and 1D fibers
 // https://mathoverflow.net/questions/393427/generalization-of-sinkhorn-s-theorem-to-stochastic-tensors
 // private val marginals: MutableMap<List<T>, Int> = mutableMapOf()
   val map: MutableMap<T, Int>

@@ -9,7 +9,7 @@ import kotlin.system.exitProcess
 //  0  1  2  3  <- index of original character
 //
 // Must be a bijection so we do not delete anything.
-// e.g. [1, 0] swaps characters until fixpoint reached.
+// e.g., [1, 0] swaps characters until fixpoint reached.
 // This should generate the following sequence:
 // abcd
 // bacd
@@ -19,8 +19,8 @@ import kotlin.system.exitProcess
 // ...
 // dbca
 // abcd <- fixpoint reached
-// e.g. [2, 0, 1] permutes every abc -> cab
-// e.g. [1, 0, 3, 2] permutes every abcd -> badc
+// e.g., [2, 0, 1] permutes every abc -> cab
+// e.g., [1, 0, 3, 2] permutes every abcd -> badc
 //
 // Qs: Can we generate all possible permutations
 // using just convolution or convolution with aperiodic

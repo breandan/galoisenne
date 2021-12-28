@@ -18,7 +18,7 @@ import info.debatty.java.stringsimilarity.Levenshtein
 //                 mnompn == 123142   /
 //
 // Looking for the longest common isomorphic subsequence.
-// Each index has a length-k canonical form. e.g. k=4
+// Each index has a length-k canonical form. e.g., k=4
 //
 // a b c b a d c...
 // 1 2 3 2...          1: (1), (1, 2), (1, 2, 3), (1, 2, 3, 2)
