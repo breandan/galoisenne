@@ -3,37 +3,38 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
-open class S<X>(val x: S<X>?)
+open class S<X>(val x: X?)
 object O: S<O>(null)
-fun S<*>.toInt(i: Int = 0): Int = x?.toInt(i + 1) ?: i
+fun S<*>.toInt(i: Int = 0): Int = (x as? S<*>)?.toInt(i + 1) ?: i
 
-val S1 = S(O)
-val S2 = S1.plus1()
-val S3 = S1.plus2()
-val S4 = S2.plus2()
-val S5 = S2.plus3()
-val S6 = S3.plus3()
-val S7 = S3.plus4()
-val S8 = S4.plus4()
-val S9 = S4.plus5()
-private typealias L1 = S<O>
-private typealias L2 = S<S<O>>
-private typealias L3 = S<S<S<O>>>
-private typealias L4 = S<S<S<S<O>>>>
-private typealias L5 = S<S<S<S<S<O>>>>>
-private typealias L6 = S<S<S<S<S<S<O>>>>>>
-private typealias L7 = S<S<S<S<S<S<S<O>>>>>>>
-private typealias L8 = S<S<S<S<S<S<S<S<O>>>>>>>>
-private typealias L9 = S<S<S<S<S<S<S<S<S<O>>>>>>>>>
-private typealias Q1 = S<*>
-private typealias Q2<T> = S<S<T>>
-private typealias Q3<T> = S<S<S<T>>>
-private typealias Q4<T> = S<S<S<S<T>>>>
-private typealias Q5<T> = S<S<S<S<S<T>>>>>
-private typealias Q6<T> = S<S<S<S<S<S<T>>>>>>
-private typealias Q7<T> = S<S<S<S<S<S<S<T>>>>>>>
-private typealias Q8<T> = S<S<S<S<S<S<S<S<T>>>>>>>>
-private typealias Q9<T> = S<S<S<S<S<S<S<S<S<T>>>>>>>>>
+val S1: L1 = S(O)
+val S2: L2 = S(S1)
+val S3: L3 = S(S2)
+val S4: L4 = S(S3)
+val S5: L5 = S(S4)
+val S6: L6 = S(S5)
+val S7: L7 = S(S6)
+val S8: L8 = S(S7)
+val S9: L9 = S(S8)
+
+typealias L1 = S<O>
+typealias L2 = Q2<O>
+typealias L3 = Q3<O>
+typealias L4 = Q4<O>
+typealias L5 = Q5<O>
+typealias L6 = Q6<O>
+typealias L7 = Q7<O>
+typealias L8 = Q8<O>
+typealias L9 = Q9<O>
+typealias Q1<T> = S<T>
+typealias Q2<T> = S<S<T>>
+typealias Q3<T> = S<S<S<T>>>
+typealias Q4<T> = S<S<S<S<T>>>>
+typealias Q5<T> = S<S<S<S<S<T>>>>>
+typealias Q6<T> = S<S<S<S<S<S<T>>>>>>
+typealias Q7<T> = S<S<S<S<S<S<S<T>>>>>>>
+typealias Q8<T> = S<S<S<S<S<S<S<S<T>>>>>>>>
+typealias Q9<T> = S<S<S<S<S<S<S<S<S<T>>>>>>>>>
 
 fun <W: S<*>, X: S<W>> W.plus1(): X = S(this) as X
 fun <W: S<*>, X: S<W>> X.minus1(): W = x as W
