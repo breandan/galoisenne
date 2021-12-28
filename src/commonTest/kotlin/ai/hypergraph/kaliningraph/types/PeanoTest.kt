@@ -19,7 +19,6 @@ class PeanoTest {
             .let { it * it }
             .let { it - S2 }
             .let { it + S3 }
-            .minus4()
 
         assertEquals(5, five.toInt())
     }
