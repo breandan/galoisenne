@@ -3,23 +3,24 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
-sealed class B<X>(open val x: X? = null)
-open class T<X>(override val x: X? = null) : B<X>(x) { companion object: T<Nothing>() }
-open class F<X>(override val x: X? = null) : B<X>(x) { companion object: F<Nothing>() }
-object E
+sealed class B<X, P: B<X, P>>(open val x: X? = null) {
+  val T get() = T(this as P)
+  val F get() = F(this as P)
+}
+open class T<X>(override val x: X? = null) : B<X, T<X>>(x) { companion object: T<Nothing>() }
+open class F<X>(override val x: X? = null) : B<X, F<X>>(x) { companion object: F<Nothing>() }
 
-tailrec fun B<*>?.toInt(i: Int = 0, j: Int = 1): Int =
-  if (this == null) i else (x as B<*>?).toInt(i + if (this is T) j else 0, 2 * j)
+tailrec fun B<*, *>?.toInt(i: Int = 0, j: Int = 1): Int =
+  if (this == null) i else (x as B<*, *>?).toInt(i + if (this is T) j else 0, 2 * j)
 
-val U1 = T
-val U2 = F(T)
-val U3 = T(T)
-val U4 = F(F(T))
-val U5 = T(F(T))
-val U6 = F(T(T))
-val U7 = T(T(T))
-val U8 = F(F(F(T)))
-val U9 = T(F(F(T)))
+val TF = T.F
+val TT = T.T
+val TFF = F.F.T
+val TFT = T.F.T
+val TTF = T.T.F
+val TTT = T.T.T
+val TFFF = T.F.F.F
+val TFFT = T.F.F.T
 
 @JvmName("0p1") fun F<Nothing>.plus1(): T<Nothing> = T()
 @JvmName("1p1") fun T<Nothing>.plus1(): F<T<Nothing>> = F(T())

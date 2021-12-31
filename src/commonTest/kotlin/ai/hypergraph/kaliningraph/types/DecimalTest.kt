@@ -3,10 +3,10 @@ package ai.hypergraph.kaliningraph.types
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BinaryTest {
+class DecimalTest {
     @Test
     fun binaryTest() {
-      val fifteen = T.plus1()
+      val thirtytwo = _9_
         .plus1()
         .plus1()
         .plus1()
@@ -19,18 +19,18 @@ class BinaryTest {
         .plus1()
         .plus1()
         .plus1()
-        .plus1().toInt()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
+        .plus1()
 
-      assertEquals(15, fifteen.toInt())
+      assertEquals(32, thirtytwo.toInt())
     }
-
-  @Test
-  fun ltrTest() {
-    @Test
-    fun binaryTest() {
-      val fifteen = T.T.T.T
-
-      assertEquals(15, fifteen.toInt())
-    }
-  }
 }
