@@ -1,6 +1,7 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 
 plugins {
     signing
@@ -193,6 +194,11 @@ kotlin {
 }
 
 tasks {
+    withType<KotlinJvmCompile> {
+      // Remove pending: https://youtrack.jetbrains.com/issue/KT-50617
+      kotlinOptions.useOldBackend = true
+    }
+
     withType<Test> {
         useJUnitPlatform()
     }
