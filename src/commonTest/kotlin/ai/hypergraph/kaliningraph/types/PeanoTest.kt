@@ -25,10 +25,16 @@ class PeanoTest {
 
   @Test
   fun arrayTest() {
-    val t = A(1, 2, 3)
+    val t = V(1, 2, 3)
 //  val e4 = t[S4] // Compile error
     val e3 = t[S3] // Okay
 
     assertEquals(3, e3)
+
+    val m3x3 = V(V(1, 2, 3), V(1, 2, 3), V(1, 2, 3))
+    val m3x2 = V(V(1, 2), V(1, 2), V(1, 2))
+
+    m3x3.times(m3x2)
+//  m3x2.times(m3x2) // Compile error
   }
 }

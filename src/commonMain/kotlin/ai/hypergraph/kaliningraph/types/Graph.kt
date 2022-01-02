@@ -40,10 +40,10 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
     args: Array<*>? = null,
     argsRef: Int = args?.contentDeepHashCode() ?: 0,
     computation: () -> T
-  ): T = memo.getOrPut(A3(classRef, methodRef, argsRef)) { computation() as Any } as T
+  ): T = memo.getOrPut(V3(classRef, methodRef, argsRef)) { computation() as Any } as T
 
   companion object {
-    val memo = LRUCache<A3<Int>, Any>(1000)
+    val memo = LRUCache<V3<Int>, Any>(1000)
   }
 }
 
