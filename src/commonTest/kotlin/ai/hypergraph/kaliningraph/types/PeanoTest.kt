@@ -37,4 +37,11 @@ class PeanoTest {
     m3x3.times(m3x2)
 //  m3x2.times(m3x2) // Compile error
   }
+
+  @Test
+  fun takeTest() {
+    val q = V(1, 2, 3, 4)
+    val r = q.take2(from=S0)
+//    q.take(from=S2, to=S1) // Compile error
+  }
 }

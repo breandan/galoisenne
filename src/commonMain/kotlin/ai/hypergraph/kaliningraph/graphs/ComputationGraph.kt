@@ -119,7 +119,7 @@ open class Gate(
   operator fun getValue(a: Any?, prop: KProperty<*>): Gate = Gate(prop.name)
   open operator fun setValue(builder: CircuitBuilder, prop: KProperty<*>, value: Gate) {
     builder.graph += Gate(prop.name, Gate(Ops.eql, value)).let {
-      ComputationGraph(vertices=it.graph/* TODO: Is this double-boxing a problem? */, root = it)
+     ComputationGraph(vertices=it.graph/* TODO: Is this double-boxing a problem? */, root = it)
     }
   }
 }

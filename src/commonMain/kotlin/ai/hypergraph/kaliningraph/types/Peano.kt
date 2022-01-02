@@ -17,47 +17,6 @@ operator fun S<*>.minus(n: Number): Int = toInt() - n.toInt()
 operator fun S<*>.times(n: Number): Int = toInt() * n.toInt()
 operator fun S<*>.div(n: Number): Int = toInt() / n.toInt()
 
-open class V<E, L: S<*>> internal constructor(vararg val a: E)
-
-typealias V1<E> = V<E, L1>
-typealias V2<E> = V<E, L2>
-typealias V3<E> = V<E, L3>
-typealias V4<E> = V<E, L4>
-typealias V5<E> = V<E, L5>
-typealias V6<E> = V<E, L6>
-typealias V7<E> = V<E, L7>
-typealias V8<E> = V<E, L8>
-typealias V9<E> = V<E, L9>
-
-typealias M<E, R, C> =  V<V<E, C>, R>
-
-fun <E> V(t1: E) = V1(t1)
-fun <E> V(t1: E, t2: E) = V2(t1, t2)
-fun <E> V(t1: E, t2: E, t3: E) = V3(t1, t2, t3)
-fun <E> V(t1: E, t2: E, t3: E, t4: E) = V4(t1, t2, t3, t4)
-fun <E> V(t1: E, t2: E, t3: E, t4: E, t5: E) = V5(t1, t2, t3, t4, t5)
-fun <E> V(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E) = V6(t1, t2, t3, t4, t5, t6)
-fun <E> V(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E) = V7(t1, t2, t3, t4, t5, t6, t7)
-fun <E> V(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E, t8: E) = V8(t1, t2, t3, t4, t5, t6, t7, t8)
-fun <E> V(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E, t8: E, t9: E) = V9(t1, t2, t3, t4, t5, t6, t7, t8, t9)
-
-fun <E> M2x1(t1: E, t2: E): V<V<E, L1>, L2> = V(V(t1), V(t2))
-fun <E> M1x2(t1: E, t2: E): V<V<E, L2>, L1> = V(V(t1, t2))
-//...
-
-// Matmul
-operator fun <E, R: S<*>, C1: S<*>, C2: S<*>> V<V<E, C1>, R>.times(that: V<V<E, C2>, C1>) = M<E, R, C2>()
-
-operator fun <R, L: Q1<R>, E> V<E, L>.get(i1: L0) = a[0]
-operator fun <R, L: Q2<R>, E> V<E, L>.get(i1: L1) = a[1]
-operator fun <R, L: Q3<R>, E> V<E, L>.get(i1: L3) = a[3]
-operator fun <R, L: Q4<R>, E> V<E, L>.get(i1: L4) = a[4]
-
-fun <L: Q1<*>, E> V<E, L>.take1() = V<E, L1>(*a.sliceArray(0..0))
-fun <L: Q2<*>, E> V<E, L>.take2() = V<E, L2>(*a.sliceArray(0..1))
-fun <L: Q3<*>, E> V<E, L>.take3() = V<E, L3>(*a.sliceArray(0..2))
-fun <L: Q4<*>, E> V<E, L>.take4() = V<E, L4>(*a.sliceArray(0..3))
-
 val S0: L0 = O
 val S1: L1 = S(O)
 val S2: L2 = S(S1)
@@ -69,6 +28,7 @@ val S7: L7 = S(S6)
 val S8: L8 = S(S7)
 val S9: L9 = S(S8)
 
+// Literal types
 typealias L0 = O
 typealias L1 = S<O>
 typealias L2 = Q2<O>
@@ -79,15 +39,17 @@ typealias L6 = Q6<O>
 typealias L7 = Q7<O>
 typealias L8 = Q8<O>
 typealias L9 = Q9<O>
+
+// Quotient types, QN represents N or more
 typealias Q1<T> = S<T>
-typealias Q2<T> = S<S<T>>
-typealias Q3<T> = S<S<S<T>>>
-typealias Q4<T> = S<S<S<S<T>>>>
-typealias Q5<T> = S<S<S<S<S<T>>>>>
-typealias Q6<T> = S<S<S<S<S<S<T>>>>>>
-typealias Q7<T> = S<S<S<S<S<S<S<T>>>>>>>
-typealias Q8<T> = S<S<S<S<S<S<S<S<T>>>>>>>>
-typealias Q9<T> = S<S<S<S<S<S<S<S<S<T>>>>>>>>>
+typealias Q2<T> = S<Q1<T>>
+typealias Q3<T> = S<Q2<T>>
+typealias Q4<T> = S<Q3<T>>
+typealias Q5<T> = S<Q4<T>>
+typealias Q6<T> = S<Q5<T>>
+typealias Q7<T> = S<Q6<T>>
+typealias Q8<T> = S<Q7<T>>
+typealias Q9<T> = S<Q8<T>>
 
 fun <W: S<*>, X: S<W>> W.plus1(): X = S(this) as X
 fun <W: S<*>, X: S<W>> X.minus1(): W = x as W
