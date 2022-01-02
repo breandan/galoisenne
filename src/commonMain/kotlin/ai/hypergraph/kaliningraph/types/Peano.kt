@@ -17,6 +17,29 @@ operator fun S<*>.minus(n: Number): Int = toInt() - n.toInt()
 operator fun S<*>.times(n: Number): Int = toInt() * n.toInt()
 operator fun S<*>.div(n: Number): Int = toInt() / n.toInt()
 
+class A<E, L: S<*>> internal constructor(vararg val a: E)
+
+fun <E> A(t1: E) = A<E, L1>(t1)
+fun <E> A(t1: E, t2: E) = A<E, L2>(t1, t2)
+fun <E> A(t1: E, t2: E, t3: E) = A<E, L3>(t1, t2, t3)
+fun <E> A(t1: E, t2: E, t3: E, t4: E) = A<E, L4>(t1, t2, t3, t4)
+fun <E> A(t1: E, t2: E, t3: E, t4: E, t5: E) = A<E, L5>(t1, t2, t3, t4, t5)
+fun <E> A(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E) = A<E, L6>(t1, t2, t3, t4, t5, t6)
+fun <E> A(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E) = A<E, L7>(t1, t2, t3, t4, t5, t6, t7)
+fun <E> A(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E, t8: E) = A<E, L8>(t1, t2, t3, t4, t5, t6, t7, t8)
+fun <E> A(t1: E, t2: E, t3: E, t4: E, t5: E, t6: E, t7: E, t8: E, t9: E) = A<E, L9>(t1, t2, t3, t4, t5, t6, t7, t8, t9)
+
+operator fun <R, L: Q1<R>, E> A<E, L>.get(i1: L0) = a[0]
+operator fun <R, L: Q2<R>, E> A<E, L>.get(i1: L1) = a[1]
+operator fun <R, L: Q3<R>, E> A<E, L>.get(i1: L3) = a[3]
+operator fun <R, L: Q4<R>, E> A<E, L>.get(i1: L4) = a[4]
+
+fun <L: Q1<*>, E> A<E, L>.take1() = A<E, L1>(*a.sliceArray(0..0))
+fun <L: Q2<*>, E> A<E, L>.take2() = A<E, L2>(*a.sliceArray(0..1))
+fun <L: Q3<*>, E> A<E, L>.take3() = A<E, L3>(*a.sliceArray(0..2))
+fun <L: Q4<*>, E> A<E, L>.take4() = A<E, L4>(*a.sliceArray(0..3))
+
+val S0: L0 = O
 val S1: L1 = S(O)
 val S2: L2 = S(S1)
 val S3: L3 = S(S2)
@@ -27,6 +50,7 @@ val S7: L7 = S(S6)
 val S8: L8 = S(S7)
 val S9: L9 = S(S8)
 
+typealias L0 = O
 typealias L1 = S<O>
 typealias L2 = Q2<O>
 typealias L3 = Q3<O>
