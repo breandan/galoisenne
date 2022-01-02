@@ -61,3 +61,5 @@ tailrec fun D<*, *>?.toInt(i: Int = 0, j: Int = 1): Int =
 @JvmName("_79p1") fun <T> _9_<_7_<T>>.plus1(): _0_<_8_<Nothing>> = _0_(_8_())
 @JvmName("_89p1") fun <T> _9_<_8_<T>>.plus1(): _0_<_9_<Nothing>> = _0_(_9_())
 @JvmName("_99p1") fun <T> _9_<_9_<T>>.plus1(): _0_<_0_<_1_<Nothing>>> = _0_(_0_(_1_()))
+
+@JvmName("tpy") operator fun <T, Y: _7_<*>> _2_<T>.plus(n: Y): _0_<_0_<_1_<Nothing>>> = _0_(_0_(_1_()))
