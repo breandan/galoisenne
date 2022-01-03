@@ -44,8 +44,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int,
 
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
-  operator fun get(r: Int): List<T> =
-    data.toList().subList(r * numCols, r * numCols + numCols)
+  operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
 
   fun transpose(): M = new(numCols, numRows, indices.map { (i, j) -> this[j, i] }, algebra)
 }
