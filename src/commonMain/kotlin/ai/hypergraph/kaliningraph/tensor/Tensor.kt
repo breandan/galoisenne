@@ -240,15 +240,7 @@ operator fun BooleanMatrix.plus(mat: DoubleMatrix): DoubleMatrix = toDoubleMatri
 operator fun DoubleMatrix.minus(mat: BooleanMatrix): DoubleMatrix = this - mat.toDoubleMatrix()
 fun BooleanMatrix.toDoubleMatrix() = DoubleMatrix(numRows, numCols) { i, j -> if (get(i, j)) 1.0 else 0.0 }
 
-// TODO: Naperian functors
-// https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/aplicative.pdf
-// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian.hs
-// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian/Vector.hs
-// https://github.com/NickHu/naperian-functors/blob/master/src/Data/Naperian/Symbolic.hs
-// "The main idea is that a rank-n array is essentially a data structure of type
-// D₁(D₂(...(Dₙ a))), where each Dᵢ is a dimension : a container type, categorically
-// a functor; one might think in the first instance of lists."
-
+/**cf. [P]*/
 // Alternatively: a length-2ⁿ array which can be "parsed" into a certain shape?
 // See: http://conal.net/talks/can-tensor-programming-be-liberated.pdf
 interface SparseTensor<T/*Should be a named tuple or dataclass of some kind*/> {
