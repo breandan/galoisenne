@@ -80,7 +80,7 @@ operator fun <A, B> S<A>.rangeTo(x: S<B>) = toInt()..x.toInt()
 // D₁(D₂(...(Dₙ a))), where each Dᵢ is a dimension : a container type, categorically
 // a functor; one might think in the first instance of lists."
 
-// This gives us something like a Church encoded of list
+// This gives us something like a Church encoded list
 class P<E, T/*: P<E, T> /*Recursive type will blow up the compiler*/*/>
 (val head: E, val tail: T? = null) : S<T>(tail) {
   operator fun get(i: Int): E =
@@ -128,15 +128,15 @@ typealias PM2xC<E, C> = P2<PQ1<E, C>>
 typealias PM3xC<E, C> = P3<PQ1<E, C>>
 typealias PMat<E, R, C> = P<P<E, C>, R> // I think this is a bush?
 
-fun <E> PVec(v1: E): P1<E> = P(v1, null)
-fun <E> PVec(v1: E, v2: E): P2<E> = P(v1, P(v2, null))
-fun <E> PVec(v1: E, v2: E, v3: E): P3<E> = P(v1, P(v2, P(v3, null)))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E): P4<E> = P(v1, P(v2, P(v3, P(v4, null))))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E, v5: E): P5<E> = P(v1, P(v2, P(v3, P(v4, P(v5, null)))))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E): P6<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, null))))))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E): P7<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, null)))))))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E): P8<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, null))))))))
-fun <E> PVec(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E, v9: E): P9<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, P(v9, null)))))))))
+fun <E> PV(v1: E): P1<E> = P(v1, null)
+fun <E> PV(v1: E, v2: E): P2<E> = P(v1, P(v2, null))
+fun <E> PV(v1: E, v2: E, v3: E): P3<E> = P(v1, P(v2, P(v3, null)))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E): P4<E> = P(v1, P(v2, P(v3, P(v4, null))))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E): P5<E> = P(v1, P(v2, P(v3, P(v4, P(v5, null)))))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E): P6<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, null))))))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E): P7<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, null)))))))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E): P8<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, null))))))))
+fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E, v9: E): P9<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, P(v9, null)))))))))
 
 
 fun <E, Z: PQ1<E, P>, P> Z.take1(): P1<E> = P(head, null)
@@ -144,7 +144,7 @@ fun <E, Z: PQ2<E, P>, P> Z.take2(): P2<E> = P(head, tail!!.take1())
 fun <E, Z: PQ3<E, P>, P> Z.take3(): P3<E> = P(head, tail!!.take2())
 fun <E, Z: PQ4<E, P>, P> Z.take4(): P4<E> = P(head, tail!!.take3())
 
-fun <E> PMat2x1(t1: E, t2: E): P<P<E, Nothing>, P<P<E, Nothing>, Nothing>> = PVec(PVec(t1), PVec(t2))
-fun <E> PMat1x2(t1: E, t2: E): P<P<E, P<E, Nothing>>, Nothing> = PVec(PVec(t1, t2))
+fun <E> PMat2x1(t1: E, t2: E): P<P<E, Nothing>, P<P<E, Nothing>, Nothing>> = PV(PV(t1), PV(t2))
+fun <E> PMat1x2(t1: E, t2: E): P<P<E, P<E, Nothing>>, Nothing> = PV(PV(t1, t2))
 
 // TODO: How do we express matrix multiplication? Not sure how to match the inner dimension...
