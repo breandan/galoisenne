@@ -13,10 +13,10 @@ import kotlin.random.Random
  * @see [MatrixRing]
  */
 
-interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int, Int, T>> {
+interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Y3<Int, Int, T>> {
   val algebra: A
   val data: List<T>
-  override val map: MutableMap<Triple<Int, Int, T>, Int> get() = TODO()
+  override val map: MutableMap<Y3<Int, Int, T>, Int> get() = TODO()
 
   val numRows: Int
   val numCols: Int
@@ -37,7 +37,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Triple<Int,
 // TODO = this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
 
-  fun join(that: M, idxs: Set<Pair<Int, Int>> = allPairs(numRows, that.numCols), op: (Int, Int) -> T): M =
+  fun join(that: M, idxs: Set<V2<Int>> = allPairs(numRows, that.numCols), op: (Int, Int) -> T): M =
     require(numCols == that.numRows) {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
     }.let { new(numRows, that.numCols, idxs.map { (i, j) -> op(i, j) }, algebra) }
@@ -103,10 +103,10 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
   override val algebra: A,
 ) : Matrix<T, A, M> {
   val values by lazy { data.toSet() }
-  override val map: MutableMap<Triple<Int, Int, T>, Int> by lazy {
+  override val map: MutableMap<Y3<Int, Int, T>, Int> by lazy {
     indices.fold(mutableMapOf()) { map, (r, c) ->
       val element = get(r, c)
-      if (element != algebra.nil) map[Triple(r, c, element)] = 1
+      if (element != algebra.nil) map[Y3(r, c, element)] = 1
       map
     }
   }

@@ -10,7 +10,6 @@ open class TypedGraph<T: Any>
 constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
   Graph<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(vertices), TGFamily<T> {
   constructor(vararg vertices: TypedVertex<T>): this(vertices.toSet())
-  companion object {} // Pseudoconstructor inheritance
 }
 
 interface TGFamily<T: Any>: IGF<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>> {

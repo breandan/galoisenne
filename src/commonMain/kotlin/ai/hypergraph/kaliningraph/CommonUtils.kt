@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.types.Ring
+import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -9,8 +9,8 @@ import kotlin.reflect.KClass
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
 
-operator fun IntRange.times(s: IntRange) =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
+operator fun IntRange.times(s: IntRange): Set<V2<Int>> =
+  flatMap { l -> s.map { r -> l cc r }.toSet() }.toSet()
 
 fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
   new(numRows, numCols, data.map { op(it) }, algebra)
@@ -34,15 +34,15 @@ fun DoubleMatrix.minMaxNorm() =
   }.let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
 
 fun DoubleMatrix.meanNorm() =
-  data.fold(Triple(0.0, 0.0, 0.0)) { (a, b, c), e ->
-    Triple(a + e / data.size.toDouble(), min(b, e), max(c, e))
+  data.fold(Vec(0.0, 0.0, 0.0)) { (a, b, c), e ->
+    Vec(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
 // Returns the Cartesian product of two sets
 operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
   flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
 
-fun allPairs(numRows: Int, numCols: Int) = (0 until numRows) * (0 until numCols)
+fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> = (0 until numRows) * (0 until numCols)
 
 fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()

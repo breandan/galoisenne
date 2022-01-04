@@ -2,10 +2,7 @@ package ai.hypergraph.kaliningraph.graphs
 
 import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
-import ai.hypergraph.kaliningraph.types.Edge
-import ai.hypergraph.kaliningraph.types.Graph
-import ai.hypergraph.kaliningraph.types.IGF
-import ai.hypergraph.kaliningraph.types.Vertex
+import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.vectorize
 import kotlin.reflect.KProperty
 
@@ -57,13 +54,13 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     this(LGBuilder().also { it.builder() }.mutGraph.reversed())
   constructor(graph: String): this(
     graph.split(" ").fold(LabeledGraph()) { acc, it ->
-      acc + P(*it.toList().zipWithNext().map { (a, b) -> a.toString() to b.toString() }.toTypedArray())
+      acc + P(*it.toList().zipWithNext().map { (a, b) -> a.toString() cc b.toString() }.toTypedArray())
     }
   )
   companion object: LabeledGraph() {
     fun P(
-      vararg adjList: Pair<String, String>,
-      p2v: (Pair<String, String>) -> LGVertex = { (s, t) -> LGVertex(s, setOf(LGVertex(t))) }
+      vararg adjList: V2<String>,
+      p2v: (V2<String>) -> LGVertex = { (s, t) -> LGVertex(s, setOf(LGVertex(t))) }
     ) = LabeledGraph(adjList.map { p2v(it) }
       .fold(LabeledGraph()) { acc, v -> acc + v.graph })
   }
@@ -73,7 +70,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
 
   fun S() = BooleanMatrix(vertices.size, 1) { i, j -> this[i].occupied }
 
-  fun rewrite(substitution: Pair<String, String>) =
+  fun rewrite(substitution: V2<String>) =
     randomWalk().take(200).toList().joinToString("")
       .replace(substitution.first, substitution.second)
       .let { LabeledGraph(it) }
@@ -114,5 +111,4 @@ open class LabeledEdge(
   val label: String? = null
 ): Edge<LabeledGraph, LabeledEdge, LGVertex>(source, target), LGFamily {
   constructor(source: LGVertex, target: LGVertex): this(source, target, null)
-
 }

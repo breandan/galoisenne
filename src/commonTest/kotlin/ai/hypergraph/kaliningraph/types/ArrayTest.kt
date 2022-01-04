@@ -19,7 +19,7 @@ class ArrayTest {
 
   @Test
   fun naperianVectorTest() {
-    val t: P3<Int> = PV(1, 2, 3)
+    val t: Ts3<Int> = TV(1, 2, 3)
     assertEquals(3, t.size())
 //  val e4 = t[S4] // Compile error
     val e3 = t[S3] // Okay
@@ -43,9 +43,9 @@ class ArrayTest {
 
   @Test
   fun naperianMatTest() {
-    val m3x3: PM3x3<Int> = PV(PV(1, 2, 3), PV(1, 2, 3), PV(1, 2, 3))
-    val m3x2: PM3x2<Int> = PV(PV(1, 2), PV(1, 2), PV(1, 2))
-    val m2x2: PM2x2<Int> = PV(PV(1, 2), PV(1, 2))
+    val m3x3: TM3x3<Int> = TV(TV(1, 2, 3), TV(1, 2, 3), TV(1, 2, 3))
+    val m3x2: TM3x2<Int> = TV(TV(1, 2), TV(1, 2), TV(1, 2))
+    val m2x2: TM2x2<Int> = TV(TV(1, 2), TV(1, 2))
 
 //    try { m3x3 * m3x2 * m2x2 } catch (e: NotImplementedError) {}
 //  m3x2 * m3x2 // Compile error

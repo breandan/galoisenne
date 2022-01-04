@@ -47,7 +47,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   }
 }
 
-typealias AdjList<V> = List<Pair<V, V>>
+typealias AdjList<V> = List<V2<V>>
 interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
 /*
  * TODO: Which primary interface should we expect graphs to fulfill?
@@ -80,7 +80,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
   val edgList: List<Pair<V, E>> get() = memoize { vertices.flatMap { s -> s.outgoing.map { s to it } } }
-  val adjList: AdjList<V>       get() = memoize { edgList.map { (v, e) -> v to e.target } }
+  val adjList: AdjList<V>       get() = memoize { edgList.map { (v, e) -> v cc e.target } }
   val edgMap: Map<V, Set<E>>    get() = memoize { vertices.associateWith { it.outgoing } }
   val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
   val histogram: Map<V, Int>    get() = memoize { associateWith { this(it).size } }

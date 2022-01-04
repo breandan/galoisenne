@@ -5,8 +5,8 @@ import ai.hypergraph.kaliningraph.times
 /** Corecursive Fibonacci sequence of [Nat]s **/
 tailrec fun <T> Nat<T>.fibonacci(
   n: T,
-  seed: Pair<T, T> = nil to one,
-  fib: (Pair<T, T>) -> Pair<T, T> = { (a, b) -> b to a + b },
+  seed: V2<T> = nil cc one,
+  fib: (V2<T>) -> V2<T> = { (a, b) -> b cc a + b },
   i: T = nil,
 ): T =
   if (i == n) fib(seed).first
@@ -163,7 +163,7 @@ class Rational {
     b = canonicalRatio.second
   }
 
-  private val canonicalRatio: Pair<Int, Int>
+  private val canonicalRatio: V2<Int>
 
   /**
    * TODO: Use [Nat] instead?
@@ -188,7 +188,7 @@ class Rational {
   companion object {
     val ZERO = Rational(0, 1)
     val ONE = Rational(1, 1)
-    fun reduce(a: Int, b: Int) = Pair(a / a.gcd(b), b / a.gcd(b))
+    fun reduce(a: Int, b: Int) = a / a.gcd(b) cc b / a.gcd(b)
 
     // https://github.com/binkley/kotlin-rational/blob/61be6f7df2d579ad83c6810a5f9426a4478b99a2/src/main/kotlin/hm/binkley/math/math-functions.kt#L93
     private tailrec fun Int.gcd(that: Int): Int = when {

@@ -9,6 +9,9 @@ fun main() {
     // val r: Five = apply(t, object: EVAL {})
 }
 
+// Idea: encode the result of A OP B as a join, i.e., C := LUB(A, OP, B)
+// Problem: Must be acyclic, i.e., A * 1 = A, A + 0 = A will not work
+// https://kotlinlang.org/spec/type-system.html#least-upper-bound
 interface N { val i: Int }
 interface I   : N, One, P_I_II, P_I_III, P_I_IV, P_I_V, M_I_II, M_I_III, M_I_IV { override val i get() = 1 }
 interface II  : N, Two, P_I_II, P_II_III, P_II_IV, M_I_II, M_II_III             { override val i get() = 2 }
