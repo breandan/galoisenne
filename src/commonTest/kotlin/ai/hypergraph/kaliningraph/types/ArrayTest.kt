@@ -8,7 +8,7 @@ class ArrayTest {
     val t: V3<Int> = Vec(1, 2, 3)
     assertEquals(3, t.size)
 //  val e4 = t[S4] // Compile error
-    val e3 = t[S2] // Okay
+    val e3 = t[S3] // Okay
 
     assertEquals(3, e3)
     assertEquals(t[S1], 1)

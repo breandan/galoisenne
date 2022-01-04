@@ -58,8 +58,8 @@ operator fun <E, R: S<*>, C: S<*>> Mat<E, R, C>.get(r: Int, c: Int): E = a[r][c]
 
 @JvmName("get1") operator fun <R, L : Q1<R>, E> Vec<E, L>.get(i: L1) = a[0]
 @JvmName("get2") operator fun <R, L : Q2<R>, E> Vec<E, L>.get(i: L2) = a[1]
-@JvmName("get3") operator fun <R, L : Q3<R>, E> Vec<E, L>.get(i: L3) = a[3]
-@JvmName("get4") operator fun <R, L : Q4<R>, E> Vec<E, L>.get(i: L4) = a[4]
+@JvmName("get3") operator fun <R, L : Q3<R>, E> Vec<E, L>.get(i: L3) = a[2]
+@JvmName("get4") operator fun <R, L : Q4<R>, E> Vec<E, L>.get(i: L4) = a[3]
 
 operator fun <T> Array<T>.get(range: IntRange) = sliceArray(range)
 
@@ -85,7 +85,6 @@ class P<E, T/*: P<E, T> /*Recursive type will blow up the compiler*/*/>
 (val head: E, val tail: T? = null) : S<T>(tail) {
   operator fun get(i: Int): E =
     if (i == 0) head else if (tail is P<*, *>) tail[i - 1] as E else throw IndexOutOfBoundsException()
-  operator fun get(s: S<*>): E = get(s.toInt() - 1)
   fun size(): Int = if (tail == null) 1 else if (tail is P<*, *>) 1 + tail.size() else 1
   /** TODO: Maybe possible to make bidirectional, see [ai.hypergraph.experimental.DLL] */
 }
@@ -138,6 +137,10 @@ fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E): P7<E> = P(v1, P(v2,
 fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E): P8<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, null))))))))
 fun <E> PV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E, v9: E): P9<E> = P(v1, P(v2, P(v3, P(v4, P(v5, P(v6, P(v7, P(v8, P(v9, null)))))))))
 
+@JvmName("apget1") operator fun <E, Z: PQ1<E, P>, P> Z.get(i: L1): E = this[0]
+@JvmName("rpget2") operator fun <E, Z: PQ2<E, P>, P> Z.get(i: L2): E = this[1]
+@JvmName("bpget3") operator fun <E, Z: PQ3<E, P>, P> Z.get(i: L3): E = this[2]
+@JvmName("gpget4") operator fun <E, Z: PQ4<E, P>, P> Z.get(i: L4): E = this[3]
 
 fun <E, Z: PQ1<E, P>, P> Z.take1(): P1<E> = P(head, null)
 fun <E, Z: PQ2<E, P>, P> Z.take2(): P2<E> = P(head, tail!!.take1())
