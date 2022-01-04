@@ -3,7 +3,10 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
-open class S<X>(val x: X?)
+open class S<X>(val x: X?) {
+  override fun equals(other: Any?) = if(other is S<*>) if(x == null && other.x == null) true else x == other.x else false
+  override fun hashCode() = x.hashCode().hashCode()
+}
 object O: S<O>(null)
 fun S<*>.toInt(i: Int = 0): Int = (x as? S<*>)?.toInt(i + 1) ?: i
 
@@ -40,7 +43,7 @@ typealias L7 = Q7<O>
 typealias L8 = Q8<O>
 typealias L9 = Q9<O>
 
-// Quotient types, QN represents N or more
+// Quotient types, QN<T> represents T + N, QN<*> represents N or more
 typealias Q1<T> = S<T>
 typealias Q2<T> = S<Q1<T>>
 typealias Q3<T> = S<Q2<T>>

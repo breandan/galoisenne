@@ -20,6 +20,12 @@ typealias Mat<E, R, C> = Vec<Vec<E, C>, R>
 
 infix fun <T> T.cc(that: T) = Vec(this, that)
 
+@JvmName("cc2") infix fun <T1: Vec<E, L>, T2: Vec<E, L1>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q1<L>> = Vec(this.l + that.l, this.a + that.a)
+@JvmName("cc3") infix fun <T1: Vec<E, L>, T2: Vec<E, L2>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q2<L>> = Vec(this.l + that.l, this.a + that.a)
+@JvmName("cc4") infix fun <T1: Vec<E, L>, T2: Vec<E, L3>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q3<L>> = Vec(this.l + that.l, this.a + that.a)
+@JvmName("cc5") infix fun <T1: Vec<E, L>, T2: Vec<E, L4>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q4<L>> = Vec(this.l + that.l, this.a + that.a)
+@JvmName("cc6") infix fun <T1: Vec<E, L>, T2: Vec<E, L5>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q5<L>> = Vec(this.l + that.l, this.a + that.a)
+
 fun <E> Vec(v1: E) = Vec(S1, v1)
 fun <E> Vec(v1: E, v2: E) = Vec(S2, v1, v2)
 fun <E> Vec(v1: E, v2: E, v3: E) = Vec(S3, v1, v2, v3)
@@ -60,6 +66,11 @@ operator fun <E, R: S<*>, C: S<*>> Mat<E, R, C>.get(r: Int, c: Int): E = a[r][c]
 @JvmName("get2") operator fun <R, L : Q2<R>, E> Vec<E, L>.get(i: L2) = a[1]
 @JvmName("get3") operator fun <R, L : Q3<R>, E> Vec<E, L>.get(i: L3) = a[2]
 @JvmName("get4") operator fun <R, L : Q4<R>, E> Vec<E, L>.get(i: L4) = a[3]
+@JvmName("get5") operator fun <R, L : Q5<R>, E> Vec<E, L>.get(i: L5) = a[4]
+@JvmName("get6") operator fun <R, L : Q6<R>, E> Vec<E, L>.get(i: L6) = a[5]
+@JvmName("get7") operator fun <R, L : Q7<R>, E> Vec<E, L>.get(i: L7) = a[6]
+@JvmName("get8") operator fun <R, L : Q8<R>, E> Vec<E, L>.get(i: L8) = a[7]
+@JvmName("get9") operator fun <R, L : Q9<R>, E> Vec<E, L>.get(i: L9) = a[8]
 
 val <R, L : Q1<R>, E> Vec<E, L>.first: E get() = component1()
 val <R, L : Q2<R>, E> Vec<E, L>.second: E get() = component2()

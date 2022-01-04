@@ -61,8 +61,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
     fun P(
       vararg adjList: V2<String>,
       p2v: (V2<String>) -> LGVertex = { (s, t) -> LGVertex(s, setOf(LGVertex(t))) }
-    ) = LabeledGraph(adjList.map { p2v(it) }
-      .fold(LabeledGraph()) { acc, v -> acc + v.graph })
+    ) = LabeledGraph(adjList.map { p2v(it) }.fold(LabeledGraph()) { acc, v -> acc + v.graph })
   }
 
   var accumuator = mutableSetOf<String>()

@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.display.animate
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.types.cc
 import kweb.html.Document
 import kweb.html.events.KeyboardEvent
 import kotlin.random.Random
@@ -24,7 +25,7 @@ fun main() {
       "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
       "Down" in it.key -> {
         val current = graphs.last()
-        val sub = "cdec" to "ijkl"
+        val sub = "cdec" cc "ijkl"
         graphs.add(current.rewrite(sub).also {
           it.description = "${current.randomWalk().take(20).joinToString("")}...$sub"
         })
