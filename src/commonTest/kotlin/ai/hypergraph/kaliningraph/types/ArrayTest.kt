@@ -5,7 +5,7 @@ import kotlin.test.*
 class ArrayTest {
   @Test
   fun vectorTest() {
-    val t = Vec(1, 2, 3)
+    val t = VT(1, 2, 3)
     assertEquals(S3, t.len)
     assertEquals(3, t.size)
 //  val e4 = t[S4] // Compile error
@@ -30,8 +30,8 @@ class ArrayTest {
   }
 
   @Test
-  fun naperianVectorTest() {
-    val t: Ts4<Int> = TV(1, 2, 3, 4)
+  fun naperianVTtorTest() {
+    val t: TS4<Int> = TV(1, 2, 3, 4)
     assertEquals(S4, t.len())
 //  val e4 = t[S5] // Compile error
     val e3 = t[S3] // Okay
@@ -48,9 +48,9 @@ class ArrayTest {
 
   @Test
   fun matMulTest() {
-    val m3x3 = Vec(Vec(1, 2, 3), Vec(1, 2, 3), Vec(1, 2, 3))
-    val m3x2 = Vec(Vec(1, 2), Vec(1, 2), Vec(1, 2))
-    val m2x2 = Vec(Vec(1, 2), Vec(1, 2))
+    val m3x3 = VT(VT(1, 2, 3), VT(1, 2, 3), VT(1, 2, 3))
+    val m3x2 = VT(VT(1, 2), VT(1, 2), VT(1, 2))
+    val m2x2 = VT(VT(1, 2), VT(1, 2))
 
     try { m3x3 * m3x2 * m2x2 } catch (e: NotImplementedError) {}
 //  m3x2 * m3x2 // Compile error

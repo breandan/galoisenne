@@ -34,8 +34,8 @@ fun DoubleMatrix.minMaxNorm() =
   }.let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
 
 fun DoubleMatrix.meanNorm() =
-  data.fold(Vec(0.0, 0.0, 0.0)) { (a, b, c), e ->
-    Vec(a + e / data.size.toDouble(), min(b, e), max(c, e))
+  data.fold(VT(0.0, 0.0, 0.0)) { (a, b, c), e ->
+    VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
 // Returns the Cartesian product of two sets
