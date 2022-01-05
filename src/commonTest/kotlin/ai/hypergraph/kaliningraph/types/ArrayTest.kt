@@ -6,7 +6,7 @@ class ArrayTest {
   @Test
   fun vectorTest() {
     val t = Vec(1, 2, 3)
-    assertEquals(S3, t.l)
+    assertEquals(S3, t.len)
     assertEquals(3, t.size)
 //  val e4 = t[S4] // Compile error
     val e3 = t[S3] // Okay
@@ -18,22 +18,32 @@ class ArrayTest {
 //    t.take4() // Compile error
 
     val t2 = t cc t.take2()
-    assertEquals(S5, t2.l)
+    assertEquals(S5, t2.len)
     assertEquals(2, t2[S5])
+
+    t2[S2..S4]
+//    t2.subvec(S2, S1) // Compile error
+
+    val t3 = t2.drop3().append(0)
+    assertEquals(2, t3[S2])
+    assertEquals(S3, t3.len)
   }
 
   @Test
   fun naperianVectorTest() {
-    val t: Ts3<Int> = TV(1, 2, 3)
-    assertEquals(3, t.size())
-//  val e4 = t[S4] // Compile error
+    val t: Ts4<Int> = TV(1, 2, 3, 4)
+    assertEquals(S4, t.len)
+//  val e4 = t[S5] // Compile error
     val e3 = t[S3] // Okay
 
     assertEquals(3, e3)
     assertEquals(t[S1], 1)
 
-    val r = t.take3()
-//    r.take4() // Compile error
+    val r = t.take4().drop2()
+//    t.take5() // Compile error
+
+    assertEquals(3, r[S1])
+    assertEquals(S2, r.len)
   }
 
   @Test

@@ -9,10 +9,10 @@ data class Y2<A, B>(val e1: A, val e2: B)
 data class Y3<A, B, C>(val e1: A, val e2: B, val e3: C)
 data class Y4<A, B, C, D>(val e1: A, val e2: B, val e3: C, val e4: D)
 
-open class Vec<E, L: S<*>> internal constructor(val l: L, val a: List<E>): List<E> by a {
+open class Vec<E, L: S<*>> internal constructor(val len: L, val a: List<E>): List<E> by a {
   internal constructor(l: L, vararg es: E): this(l, es.toList())
 
-  operator fun get(intRange: IntRange): List<E> = subList(intRange.first, intRange.last)
+  internal fun <A: S<*>, B: S<*>> fetch(intRange: Y2<A, B>): List<E> = subList(intRange.e1.toInt(), intRange.e2.toInt())
 }
 
 /** TODO: Unify this representation with [ai.hypergraph.kaliningraph.tensor.Matrix] */
@@ -20,11 +20,14 @@ typealias Mat<E, R, C> = Vec<Vec<E, C>, R>
 
 infix fun <T> T.cc(that: T) = Vec(this, that)
 
-@JvmName("cc2") infix fun <T1: Vec<E, L>, T2: Vec<E, L1>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q1<L>> = Vec(this.l + that.l, this.a + that.a)
-@JvmName("cc3") infix fun <T1: Vec<E, L>, T2: Vec<E, L2>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q2<L>> = Vec(this.l + that.l, this.a + that.a)
-@JvmName("cc4") infix fun <T1: Vec<E, L>, T2: Vec<E, L3>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q3<L>> = Vec(this.l + that.l, this.a + that.a)
-@JvmName("cc5") infix fun <T1: Vec<E, L>, T2: Vec<E, L4>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q4<L>> = Vec(this.l + that.l, this.a + that.a)
-@JvmName("cc6") infix fun <T1: Vec<E, L>, T2: Vec<E, L5>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q5<L>> = Vec(this.l + that.l, this.a + that.a)
+fun <T1: Vec<E, L>, E, L: S<*>> T1.append(that: E): Vec<E, Q1<L>> = Vec(this.len + S1, this.a + listOf(that))
+fun <T1: Vec<E, L>, E, L: S<*>> T1.prepend(that: E): Vec<E, Q1<L>> = Vec(this.len + S1, listOf(that) + this.a)
+
+@JvmName("cc2") infix fun <T1: Vec<E, L>, T2: Vec<E, L1>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q1<L>> = Vec(this.len + that.len, this.a + that.a)
+@JvmName("cc3") infix fun <T1: Vec<E, L>, T2: Vec<E, L2>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q2<L>> = Vec(this.len + that.len, this.a + that.a)
+@JvmName("cc4") infix fun <T1: Vec<E, L>, T2: Vec<E, L3>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q3<L>> = Vec(this.len + that.len, this.a + that.a)
+@JvmName("cc5") infix fun <T1: Vec<E, L>, T2: Vec<E, L4>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q4<L>> = Vec(this.len + that.len, this.a + that.a)
+@JvmName("cc6") infix fun <T1: Vec<E, L>, T2: Vec<E, L5>, E, L: S<*>> T1.cc(that: T2): Vec<E, Q5<L>> = Vec(this.len + that.len, this.a + that.a)
 
 fun <E> Vec(v1: E) = Vec(S1, v1)
 fun <E> Vec(v1: E, v2: E) = Vec(S2, v1, v2)
@@ -78,12 +81,24 @@ val <R, L : Q3<R>, E> Vec<E, L>.third: E get() = component3()
 
 operator fun <T> Array<T>.get(range: IntRange) = sliceArray(range)
 
-fun <E, Z: Q1<P>, P> Vec<E, Z>.take1() = Vec(S1, this[S0..S1])
-fun <E, Z: Q2<P>, P> Vec<E, Z>.take2() = Vec(S2, this[S0..S2])
-fun <E, Z: Q3<P>, P> Vec<E, Z>.take3() = Vec(S3, this[S0..S3])
-fun <E, Z: Q4<P>, P> Vec<E, Z>.take4() = Vec(S4, this[S0..S4])
+fun <E, Z : Q1<P>, P> Vec<E, Z>.take1(): Vec<E, L1> = Vec(S1, fetch(S0..S1))
+fun <E, Z : Q2<P>, P> Vec<E, Z>.take2(): Vec<E, L2> = Vec(S2, fetch(S0..S2))
+fun <E, Z : Q3<P>, P> Vec<E, Z>.take3(): Vec<E, L3> = Vec(S3, fetch(S0..S3))
+fun <E, Z : Q4<P>, P> Vec<E, Z>.take4(): Vec<E, L4> = Vec(S4, fetch(S0..S4))
 
-operator fun <A, B> S<A>.rangeTo(x: S<B>) = toInt()..x.toInt()
+fun <E, Z : Q2<P>, P> Vec<E, Z>.drop1(): Vec<E, S<P>> = Vec(len - S1, fetch(S1..len))
+fun <E, Z : Q3<P>, P> Vec<E, Z>.drop2(): Vec<E, S<P>> = Vec(len - S2, fetch(S2..len))
+fun <E, Z : Q4<P>, P> Vec<E, Z>.drop3(): Vec<E, S<P>> = Vec(len - S3, fetch(S3..len))
+fun <E, Z : Q5<P>, P> Vec<E, Z>.drop4(): Vec<E, S<P>> = Vec(len - S4, fetch(S4..len))
+
+//                              ┌────j────┐    ┌────k────┐    where j, j are the relative offsets Y - X, Z - Y respectively
+// Encodes the constraint:  P < X    <    Y && Y    <    Z    where X, Y are the start and end of range in a vector of length Z
+@JvmName("sv121") operator fun <E, X: Q1<P>, Y: Q2<X>, Z : Q1<Y>, P> Vec<E, Z>.get(r: Y2<X, Y>): Vec<E, L2> = Vec(S2, fetch(r))
+@JvmName("sv122") operator fun <E, X: Q1<P>, Y: Q2<X>, Z : Q2<Y>, P> Vec<E, Z>.get(r: Y2<X, Y>): Vec<E, L2> = Vec(S2, fetch(r))
+@JvmName("sv221") operator fun <E, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>, P> Vec<E, Z>.get(r: Y2<X, Y>): Vec<E, L2> = Vec(S2, fetch(r))
+@JvmName("sv222") operator fun <E, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>, P> Vec<E, Z>.get(r: Y2<X, Y>): Vec<E, L2> = Vec(S2, fetch(r))
+
+operator fun <A, B> S<A>.rangeTo(that: S<B>) = Y2(this, that)
 
 // ============================= Naperian Functors ==============================
 
@@ -95,9 +110,9 @@ operator fun <A, B> S<A>.rangeTo(x: S<B>) = toInt()..x.toInt()
 // D₁(D₂(...(Dₙ a))), where each Dᵢ is a dimension : a container type, categorically
 // a functor; one might think in the first instance of lists."
 
-// This gives us something like a Church encoded list
-class Ts<H, T/*: Ts<E, T> /*Recursive type will blow up the compiler*/*/>
-(val head: H, val tail: T? = null) {
+// This gives us something like a Church-encoded list
+// Using a recursive type bound T: Ts<H, T> will blow up the compiler
+class Ts<H, T>(val head: H, val tail: T? = null) {
   operator fun get(i: Int): H =
     if (i == 0) head else if (tail is Ts<*, *>) tail[i - 1] as H else throw IndexOutOfBoundsException()
   fun size(): Int = if (tail == null) 1 else if (tail is Ts<*, *>) 1 + tail.size() else 1
@@ -152,6 +167,12 @@ fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E): Ts7<E> = Ts(v1, Ts(
 fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E): Ts8<E> = Ts(v1, Ts(v2, Ts(v3, Ts(v4, Ts(v5, Ts(v6, Ts(v7, Ts(v8, null))))))))
 fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E, v9: E): Ts9<E> = Ts(v1, Ts(v2, Ts(v3, Ts(v4, Ts(v5, Ts(v6, Ts(v7, Ts(v8, Ts(v9, null)))))))))
 
+val <H> Ts1<H>.len: L1 get() = S1
+val <H> Ts2<H>.len: L2 get() = S2
+val <H> Ts3<H>.len: L3 get() = S3
+val <H> Ts4<H>.len: L4 get() = S4
+val <H> Ts5<H>.len: L5 get() = S5
+
 @JvmName("pget1") operator fun <E, Z: TQ1<E, Ts>, Ts> Z.get(i: L1): E = this[0]
 @JvmName("pget2") operator fun <E, Z: TQ2<E, Ts>, Ts> Z.get(i: L2): E = this[1]
 @JvmName("pget3") operator fun <E, Z: TQ3<E, Ts>, Ts> Z.get(i: L3): E = this[2]
@@ -161,6 +182,11 @@ fun <E, Z: TQ1<E, Ts>, Ts> Z.take1(): Ts1<E> = Ts(head, null)
 fun <E, Z: TQ2<E, Ts>, Ts> Z.take2(): Ts2<E> = Ts(head, tail!!.take1())
 fun <E, Z: TQ3<E, Ts>, Ts> Z.take3(): Ts3<E> = Ts(head, tail!!.take2())
 fun <E, Z: TQ4<E, Ts>, Ts> Z.take4(): Ts4<E> = Ts(head, tail!!.take3())
+
+fun <E, Z: TQ2<E, Ts>, Ts> Z.drop1(): TQ1<E, Ts> = tail!!
+fun <E, Z: TQ3<E, Ts>, Ts> Z.drop2(): TQ1<E, Ts> = drop1().drop1()
+fun <E, Z: TQ4<E, Ts>, Ts> Z.drop3(): TQ1<E, Ts> = drop2().drop1()
+fun <E, Z: TQ5<E, Ts>, Ts> Z.drop4(): TQ1<E, Ts> = drop2().drop2()
 
 fun <E> TM2x1(t1: E, t2: E): Ts<Ts<E, Nothing>, Ts<Ts<E, Nothing>, Nothing>> = TV(TV(t1), TV(t2))
 fun <E> TM1x2(t1: E, t2: E): Ts<Ts<E, Ts<E, Nothing>>, Nothing> = TV(TV(t1, t2))
