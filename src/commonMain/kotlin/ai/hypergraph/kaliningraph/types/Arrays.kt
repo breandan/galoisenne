@@ -167,11 +167,11 @@ fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E): Ts7<E> = Ts(v1, Ts(
 fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E): Ts8<E> = Ts(v1, Ts(v2, Ts(v3, Ts(v4, Ts(v5, Ts(v6, Ts(v7, Ts(v8, null))))))))
 fun <E> TV(v1: E, v2: E, v3: E, v4: E, v5: E, v6: E, v7: E, v8: E, v9: E): Ts9<E> = Ts(v1, Ts(v2, Ts(v3, Ts(v4, Ts(v5, Ts(v6, Ts(v7, Ts(v8, Ts(v9, null)))))))))
 
-val <H> Ts1<H>.len: L1 get() = S1
-val <H> Ts2<H>.len: L2 get() = S2
-val <H> Ts3<H>.len: L3 get() = S3
-val <H> Ts4<H>.len: L4 get() = S4
-val <H> Ts5<H>.len: L5 get() = S5
+@JvmName("len1") fun <H> Ts1<H>.len(): L1 = S1
+@JvmName("len2") fun <H> Ts2<H>.len(): L2 = S2
+@JvmName("len3") fun <H> Ts3<H>.len(): L3 = S3
+@JvmName("len4") fun <H> Ts4<H>.len(): L4 = S4
+@JvmName("len5") fun <H> Ts5<H>.len(): L5 = S5
 
 @JvmName("pget1") operator fun <E, Z: TQ1<E, Ts>, Ts> Z.get(i: L1): E = this[0]
 @JvmName("pget2") operator fun <E, Z: TQ2<E, Ts>, Ts> Z.get(i: L2): E = this[1]

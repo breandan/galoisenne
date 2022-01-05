@@ -32,7 +32,7 @@ class ArrayTest {
   @Test
   fun naperianVectorTest() {
     val t: Ts4<Int> = TV(1, 2, 3, 4)
-    assertEquals(S4, t.len)
+    assertEquals(S4, t.len())
 //  val e4 = t[S5] // Compile error
     val e3 = t[S3] // Okay
 
@@ -43,7 +43,7 @@ class ArrayTest {
 //    t.take5() // Compile error
 
     assertEquals(3, r[S1])
-    assertEquals(S2, r.len)
+    assertEquals(S2, r.len())
   }
 
   @Test
