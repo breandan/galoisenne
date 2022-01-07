@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.time.*
 
 class TypeSystemTests {
-  val max = 10
+  val max = 8
 
   @Test
   @ExperimentalTime

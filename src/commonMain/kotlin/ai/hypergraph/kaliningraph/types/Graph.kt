@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
+import kotlin.js.JsName
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -11,8 +12,11 @@ import kotlin.random.Random
 // Interfaces are our only option because we need multiple inheritance
 @Suppress("FunctionName", "UNCHECKED_CAST")
 interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
+  @JsName("G0")
   val G: (vertices: Set<V>) -> G // Graph constructor
+  @JsName("E0")
   val E: (s: V, t: V) -> E // Edge constructor
+  @JsName("V0")
   val V: (old: V, edgeMap: (V) -> Set<E>) -> V // Vertex constructor
 
   fun G() = G(setOf())
@@ -48,7 +52,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
 }
 
 typealias AdjList<V> = List<V2<V>>
-interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
+interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
 /*
  * TODO: Which primary interface should we expect graphs to fulfill?
  *
@@ -83,7 +87,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
   val adjList: AdjList<V>       get() = memoize { edgList.map { (v, e) -> v cc e.target } }
   val edgMap: Map<V, Set<E>>    get() = memoize { vertices.associateWith { it.outgoing } }
   val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
-  val histogram: Map<V, Int>    get() = memoize { associateWith { this(it).size } }
+  val histogram: Map<V, Int>    get() = memoize { associateWith { it.neighbors.size } }
 
   // TODO: Is this still needed?
   val prototype: V?             get() = memoize { vertices.firstOrNull() }
@@ -236,7 +240,7 @@ abstract class AGF<G, E, V> : IGF<G, E, V>
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
   AGF<G, E, V>(), IGraph<G, E, V>,
-  Set<V> by vertices, (V) -> Set<V> by { it: V -> it.neighbors }, IGF<G, E, V>
+  Set<V> by vertices, IGF<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false

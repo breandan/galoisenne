@@ -9,7 +9,7 @@ fun Matrix<*, *, *>.matToBase64Img(
   arr: Array<IntArray> = when (this) {
     is BooleanMatrix -> data.map { if (it) 255 else 0 }
     is DoubleMatrix -> minMaxNorm().data.map { (it * 255).roundToInt() }
-    else -> TODO("Renderer for ${this::class.qualifiedName} is undefined")
+    else -> TODO("Renderer is undefined")
   }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry)
 ): String = "data:image/bmp;base64," + BMP().saveBMP(arr)
 

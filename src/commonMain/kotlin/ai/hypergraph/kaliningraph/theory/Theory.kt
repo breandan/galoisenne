@@ -47,7 +47,7 @@ tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGra
   k: Int = 5,
   label: (V) -> Int = { histogram[it]!! }
 ): Map<V, Int> {
-  val updates = associateWith { this(it).map(label).sorted().hashCode() }
+  val updates = associateWith { it.neighbors.map(label).sorted().hashCode() }
   return if (k <= 0 || all { label(it) == updates[it] }) updates
   else wl(k - 1) { updates[it]!! }
 }
