@@ -111,9 +111,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, (V) -> Set<V>, Encodable
 
   // Symmetric normalized adjacency
   val ASYMNORM: DoubleMatrix
-    get() = memoize {
-      vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) }
-    }
+    get() = memoize { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }
 
   // Graph Laplacian matrix
   val L: DoubleMatrix get() = memoize { D - A }
