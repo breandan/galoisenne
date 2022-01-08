@@ -80,7 +80,6 @@ rootProject.plugins.withType<NodeJsRootPlugin> {
 kotlin {
   jvm()
   js {
-    moduleName = "client"
     browser {
       testTask {
         testLogging {

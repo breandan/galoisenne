@@ -14,4 +14,4 @@ object WelcomeStyles : StyleSheet("WelcomeStyles", isStatic = true) {
 
     fontSize = 14.px
   }
-} 
+}
