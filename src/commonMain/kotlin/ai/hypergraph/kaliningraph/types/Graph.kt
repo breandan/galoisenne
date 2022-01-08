@@ -169,6 +169,9 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun asString() =
     "(" + vertices.joinToString(", ", "{", "}") + ", " +
       edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
+
+  fun toDot() =
+    "digraph { ${edgList.joinToString("\n") { (v, e) -> "${v.id}->${e.target.id}" }}} "
 }
 
 class RandomWalk<G, E, V>(

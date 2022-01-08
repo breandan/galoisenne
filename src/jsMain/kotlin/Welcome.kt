@@ -1,6 +1,9 @@
+import ai.hypergraph.kaliningraph.graphs.*
+import kotlinx.browser.document
 import kotlinx.html.InputType
 import kotlinx.html.js.onChangeFunction
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.events.KeyboardEvent
 import react.Props
 import react.RBuilder
 import react.RComponent
@@ -17,17 +20,22 @@ external interface WelcomeProps : Props {
 data class WelcomeState(val name: String) : State
 
 class Welcome(props: WelcomeProps) : RComponent<WelcomeProps, WelcomeState>(props) {
-
   init {
     state = WelcomeState(props.name)
   }
 
   override fun RBuilder.render() {
+    document.onkeypress = { event: KeyboardEvent ->
+      document.querySelector("svg")!!.remove()
+      renderGraph(LabeledGraph { a - b - LGVertex(event.code) - a }.toDot()).then { document.body!!.append(it) }
+//          test(name)
+//          setState( WelcomeState(name = name) )
+      setState(WelcomeState(name = event.code))
+    }
+
     styledDiv {
-      css {
-        +WelcomeStyles.textContainer
-      }
-      +"Hello, ${state.name}"
+      css { +WelcomeStyles.textContainer }
+      +"Event: ${state.name}"
     }
     styledInput {
       css {
@@ -36,12 +44,8 @@ class Welcome(props: WelcomeProps) : RComponent<WelcomeProps, WelcomeState>(prop
       attrs {
         type = InputType.text
         value = state.name
-        onChangeFunction = { event ->
-          setState(
-            WelcomeState(name = (event.target as HTMLInputElement).value)
-          )
-        }
       }
     }
   }
 }
+

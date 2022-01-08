@@ -117,6 +117,8 @@ kotlin {
         implementation("org.jetbrains.kotlin-wrappers:kotlin-styled:5.3.1-pre.240-kotlin-1.5.30")
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
+        implementation(npm("viz.js", "2.1.2"))
+//        implementation(npm("is-sorted", "1.0.5"))
       }
     }
 
