@@ -1,11 +1,12 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.visualization.*
 import ai.hypergraph.kaliningraph.tensor.toBMat
 import ai.hypergraph.kaliningraph.theory.*
+import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 
+// ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.HelloKaliningraph"
 class HelloKaliningraph {
   @Test
   fun test() {

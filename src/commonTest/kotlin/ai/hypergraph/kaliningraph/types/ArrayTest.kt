@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.test.*
 
+// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.ArrayTest"
 class ArrayTest {
   @Test
   fun vectorTest() {

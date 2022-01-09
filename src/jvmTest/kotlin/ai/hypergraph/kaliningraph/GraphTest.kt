@@ -1,9 +1,10 @@
 package ai.hypergraph.kaliningraph
 
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.theory.diameter
-import ai.hypergraph.kaliningraph.graphs.*
 import org.junit.jupiter.api.*
 
+// ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.GraphTest"
 class GraphTest {
   val graph = LabeledGraph { a - b - c - d - e; a - c - e }
   @Test

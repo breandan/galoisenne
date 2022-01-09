@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.visualization
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.graphs.UnlabeledEdge
 import ai.hypergraph.kaliningraph.image.matToBase64Img
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.*

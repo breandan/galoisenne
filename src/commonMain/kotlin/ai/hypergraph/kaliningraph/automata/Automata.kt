@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.js.JsName
 import kotlin.reflect.KProperty
 
 open class Automaton(override val vertices: Set<State> = setOf(State()))

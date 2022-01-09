@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.allPairs
 import kotlin.jvm.JvmName
 
 // Multi-typed arrays

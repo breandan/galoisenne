@@ -89,8 +89,6 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
   val histogram: Map<V, Int>    get() = memoize { associateWith { it.neighbors.size } }
 
-  // TODO: Is this still needed?
-  val prototype: V?             get() = memoize { vertices.firstOrNull() }
   // TODO: Move the following ceremony into named tensor
   //-------
   val index: VIndex<G, E, V>    get() = memoize { VIndex(vertices) }

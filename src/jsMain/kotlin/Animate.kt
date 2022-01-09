@@ -3,7 +3,7 @@ import ai.hypergraph.kaliningraph.image.matToBase64Img
 import kotlinx.browser.document
 import kotlinx.html.*
 import kotlinx.html.dom.append
-import org.w3c.dom.*
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.KeyboardEvent
 
 var viz = Viz()

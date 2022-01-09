@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.circuits
 
-import ai.hypergraph.kaliningraph.graphs.ComputationGraph
-import ai.hypergraph.kaliningraph.graphs.def
+import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 

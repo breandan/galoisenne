@@ -1,13 +1,8 @@
 package ai.hypergraph.kaliningraph.rewriting
 
-import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.graphs.ComputationGraph
-import ai.hypergraph.kaliningraph.graphs.Gate
-import ai.hypergraph.kaliningraph.graphs.TypedVertex
+import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.*
-
-import org.junit.jupiter.api.Test
 
 class GraphRewriteTests {
   @Test

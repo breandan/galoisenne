@@ -1,8 +1,8 @@
 package ai.hypergraph.kaliningraph.types
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
+// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.PeanoTest"
 class PeanoTest {
   @Test
   fun peanoTest() {
