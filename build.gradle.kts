@@ -79,28 +79,7 @@ rootProject.plugins.withType<NodeJsRootPlugin> {
 
 kotlin {
   jvm()
-  js {
-    browser {
-      testTask {
-        testLogging {
-          showExceptions = true
-          exceptionFormat = FULL
-          showCauses = true
-          showStackTraces = true
-        }
-      }
-    }
-    nodejs {
-      testTask {
-        testLogging {
-          showExceptions = true
-          exceptionFormat = FULL
-          showCauses = true
-          showStackTraces = true
-        }
-      }
-    }
-  }
+  js { browser() }
 
   sourceSets {
     val commonMain by getting {
