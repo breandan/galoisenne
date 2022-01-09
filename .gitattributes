@@ -1,2 +1,3 @@
 latex/** linguist-detectable=false
 notebooks/** linguist-detectable=false
+**/*.html linguist-detectable=false
