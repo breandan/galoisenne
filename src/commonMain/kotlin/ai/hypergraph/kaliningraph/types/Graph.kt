@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.cache.LRUCache
+import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.js.JsName
@@ -169,7 +170,18 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
       edgList.joinToString(", ", "{", "}") { (v, e) -> "${v.id}→${e.target.id}" } + ")"
 
   fun toDot() =
-    "digraph { ${edgList.joinToString("\n") { (v, e) -> "${v.id}->${e.target.id}" }}} "
+    """
+      strict digraph {
+          graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
+          ${
+      vertices.joinToString("\n") {
+        """"${it.id}" ["color"="black","fontcolor"="black","fontname"="Helvetica","fontsize"="20","penwidth"="4.0","shape"="Mrecord", "label"="$it"]""" }
+          } 
+          ${edgList.joinToString("\n") { (v, e) -> 
+        """"${v.id}" -> "${e.target.id}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="4.0","label"=""]""" }
+          }
+      }
+    """.trimIndent()
 }
 
 class RandomWalk<G, E, V>(
