@@ -14,7 +14,8 @@ fun Matrix<*, *, *>.matToBase64Img(
 ): String = "data:image/bmp;base64," + BMP().saveBMP(arr)
 
 fun Array<IntArray>.enlarge(factor: Int = 2): Array<IntArray> =
-  map { row -> row.flatMap { col -> (1..factor).map { col } }.let { r -> (1..factor).map { r.toIntArray() } } }.flatten().toTypedArray()
+  map { row -> row.flatMap { col -> (0 until factor).map { col } }
+    .let { r -> (0 until factor).map { r.toIntArray() } } }.flatten().toTypedArray()
 
 class BMP {
   lateinit var bytes: ByteArray

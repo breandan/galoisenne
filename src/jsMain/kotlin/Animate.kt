@@ -7,30 +7,30 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.KeyboardEvent
 
 var viz = Viz()
+
+// Used to animate graph rewrite process with a keyboard
 fun animate(initial: LabeledGraph, transition: (KeyboardEvent, MutableList<LabeledGraph>) -> Unit) {
   val graphs = mutableListOf(initial)
 
   document.body!!.apply {
-    append.p { +"Use k/j to grow graph, and l/h keys to evolve the graph..." }
-
-    viz.renderSVGElement(graphs.last().toDot()).then {
-      querySelector("svg")?.remove()
-      append(it)
-    }
-
     onkeypress = { keyEvent: KeyboardEvent ->
+      removeAllTags("div")
       removeAllTags("svg")
-      removeAllTags("img")
-      removeAllTags("p")
 
       transition(keyEvent, graphs)
       viz.renderSVGElement(graphs.last().toDot()).then { append(it) }
-
-      graphs.last().run {
-        append { img { src = A.matToBase64Img() } }
-        append { img { src = S().matToBase64Img() } }
-        append { img { src = (A.transpose() * S()).matToBase64Img() } }
-        append { p { +description; setAttribute("style", "font-size:20px") } }
+      append {
+        div {
+          graphs.last().run {
+            p { +"Adjacency Matrix"; setAttribute("style", "font-size:20px") }
+            img { src = A.matToBase64Img() }
+            p { +"S"; setAttribute("style", "font-size:20px") }
+            img { src = S().matToBase64Img() }
+            p { +"S'"; setAttribute("style", "font-size:20px") }
+            img { src = (A.transpose() * S()).matToBase64Img() }
+            p { +description; setAttribute("style", "font-size:20px") }
+          }
+        }
       }
     }
   }

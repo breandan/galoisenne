@@ -1,6 +1,9 @@
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.sample
 import ai.hypergraph.kaliningraph.theory.prefAttach
+import kotlinx.browser.document
+import kotlinx.html.dom.append
+import kotlinx.html.p
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.random.Random
 
@@ -33,4 +36,6 @@ fun prefAttach() =
         ).graph
       })
     }
+  }.also {
+    document.body?.append?.p { +"Use k/j to grow graph, and l/h keys to evolve the graph..." }
   }
