@@ -174,6 +174,8 @@ kotlin {
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
+        implementation("org.eclipse.collections:eclipse-collections-api:11.0.0")
+        implementation("org.eclipse.collections:eclipse-collections:11.0.0")
       }
     }
 
