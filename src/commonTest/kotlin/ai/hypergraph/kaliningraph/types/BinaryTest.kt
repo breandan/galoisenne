@@ -2,10 +2,12 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.test.*
 
+// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.BinaryTest"
 class BinaryTest {
     @Test
     fun binaryTest() {
-      val fifteen = T<Nothing>().plus1()
+      val fifteen = F<Nothing>().plus1()
+        .plus1()
         .plus1()
         .plus1()
         .plus1()

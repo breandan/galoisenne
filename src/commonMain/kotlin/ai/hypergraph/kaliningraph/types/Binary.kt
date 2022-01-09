@@ -22,11 +22,23 @@ val TTT = T.T.T
 val TFFF = T.F.F.F
 val TFFT = T.F.F.T
 
-@JvmName("0p1") fun F<Nothing>.plus1(): T<Nothing> = T()
-@JvmName("1p1") fun T<Nothing>.plus1(): F<T<Nothing>> = F(T())
-@JvmName("ibpi") fun <B> T<B>.plus1(): T<B> = T(x)
-@JvmName("obpi") fun <B> F<B>.plus1(): T<B> = T(x)
-@JvmName("oibpi") fun <B> T<F<B>>.plus1(): F<T<B>> = F(T(x!!.x))
-@JvmName("3p1") fun T<T<Nothing>>.plus1(): F<F<T<Nothing>>> = F(F(T()))
-@JvmName("iiobpi") fun <B> T<T<F<B>>>.plus1(): F<F<T<B>>> = F(F(T(x!!.x!!.x)))
-@JvmName("iiiepi") fun T<T<T<Nothing>>>.plus1(): F<F<F<T<Nothing>>>> = F(F(F(T(x!!.x!!.x))))
+typealias B_0<B> = F<B>
+typealias B_01<B> = T<B_0<B>>
+typealias B_03<B> = T<B_01<B>>
+typealias B_07<B> = T<B_03<B>>
+typealias B_015<B> = T<B_07<B>>
+
+typealias B_1<B> = T<B>
+typealias B_2<B> = F<B_1<B>>
+typealias B_4<B> = F<B_2<B>>
+typealias B_8<B> = F<B_4<B>>
+typealias B_16<B> = F<B_8<B>>
+
+@JvmName("0p1") fun F<Nothing>.plus1(): B_1<Nothing> = T()
+@JvmName("1p1") fun T<Nothing>.plus1(): B_2<Nothing> = F(T())
+@JvmName("3p1") fun T<T<Nothing>>.plus1(): B_4<Nothing> = F(F(T()))
+@JvmName("7p1") fun T<T<T<Nothing>>>.plus1(): B_8<Nothing> = F(F(F(T(x!!.x!!.x))))
+
+@JvmName("obpi") fun <B> B_0<B>.plus1(): B_1<B> = T(x)
+@JvmName("oibpi") fun <B> B_01<B>.plus1(): B_2<B> = F(T(x!!.x))
+@JvmName("iiobpi") fun <B> B_03<B>.plus1(): B_4<B> = F(F(T(x!!.x!!.x)))
