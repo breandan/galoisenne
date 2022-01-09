@@ -7,10 +7,10 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform")
+  kotlin("multiplatform") version "1.6.10"
   id("com.google.devtools.ksp") version "1.6.10-1.0.2"
   kotlin("jupyter.api") version "0.11.0-47"
-  id("com.github.ben-manes.versions") version "0.39.0"
+  id("com.github.ben-manes.versions") version "0.41.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
@@ -71,7 +71,6 @@ repositories {
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
-
 
 rootProject.plugins.withType<NodeJsRootPlugin> {
   rootProject.the<NodeJsRootExtension>().nodeVersion = "16.0.0"
