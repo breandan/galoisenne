@@ -9,7 +9,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform")
   id("com.google.devtools.ksp") version "1.6.10-1.0.2"
-  kotlin("jupyter.api") version "0.11.0-45"
+  kotlin("jupyter.api") version "0.11.0-47"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -112,13 +112,11 @@ kotlin {
 
     val jsMain by getting {
       dependencies {
-        implementation("org.jetbrains.kotlin-wrappers:kotlin-react:17.0.2-pre.240-kotlin-1.5.30")
-        implementation("org.jetbrains.kotlin-wrappers:kotlin-react-dom:17.0.2-pre.240-kotlin-1.5.30")
-        implementation("org.jetbrains.kotlin-wrappers:kotlin-styled:5.3.1-pre.240-kotlin-1.5.30")
+        implementation(kotlin("stdlib-js"))
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
-        implementation(npm("viz.js", "2.1.2"))
-//        implementation(npm("is-sorted", "1.0.5"))
+
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.3")
       }
     }
 
@@ -148,8 +146,6 @@ kotlin {
         val multikVersion = "0.1.1"
         implementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
-
-        implementation("com.github.kwebio:kweb-core:0.7.33")
 
         // I think we were going to use this to prove termination of graph rewriting
         implementation("org.sosy-lab:java-smt:3.11.0")
@@ -241,6 +237,19 @@ tasks {
 
   withType<Test> {
     useJUnitPlatform()
+    testLogging {
+      events = setOf(
+        FAILED,
+        PASSED,
+        SKIPPED,
+        STANDARD_OUT
+      )
+      exceptionFormat = FULL
+      showExceptions = true
+      showCauses = true
+      showStackTraces = true
+      showStandardStreams = true
+    }
   }
 
   processJupyterApiResources {
@@ -257,30 +266,13 @@ tasks {
     }
   }
 
-  named<Test>("jvmTest") {
-    useJUnitPlatform()
-    testLogging {
-      events = setOf(
-        FAILED,
-        PASSED,
-        SKIPPED,
-        STANDARD_OUT
-      )
-      exceptionFormat = FULL
-      showExceptions = true
-      showCauses = true
-      showStackTraces = true
-      showStandardStreams = true
-    }
-  }
-
   /*
    * To deploy to Maven Local and start the notebook, run:
    *
    * ./gradlew [build publishToMavenLocal] jupyterRun -x test
    */
 
-  val jupyterRun by creating(org.gradle.api.tasks.Exec::class) {
+  val jupyterRun by creating(Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
 }

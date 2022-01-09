@@ -2,12 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>JS Client</title>
+  <title>Kaliningraph JS Client</title>
 </head>
 <body>
-Use j/k to grow graph, and l/h keys to evolve the graph.
 <div id="root"></div>
-<script src="kaliningraph.js"></script>
 <script>
   /*
 Viz.js 2.1.2 (Graphviz 2.40.1, Expat 2.2.5, Emscripten 1.37.36)
@@ -436,11 +434,6 @@ Viz.js 2.1.2 (Graphviz 2.40.1, Emscripten 1.37.36)
 
   })(typeof self !== 'undefined' ? self : this);
 </script>
-<script>
-  var viz = new Viz();
-function renderGraph(s) {
-  return viz.renderSVGElement(s)
-}
-</script>
+<script src="kaliningraph.js"></script>
 </body>
 </html>

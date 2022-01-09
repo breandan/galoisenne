@@ -1,29 +1,23 @@
-package ai.hypergraph.kaliningraph
-
-import ai.hypergraph.kaliningraph.display.animate
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.types.cc
-import kweb.html.Document
-import kweb.html.events.KeyboardEvent
+import org.w3c.dom.events.KeyboardEvent
 import kotlin.random.Random
 
 @ExperimentalStdlibApi
-fun main() {
+fun rewriter() {
   animate(
     LabeledGraph("abcdecfghia").also { println(it) }
-  ) { _: Document, it: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
+  ) { event: KeyboardEvent, graphs: MutableList<LabeledGraph> ->
     when {
-      "Left" in it.key -> {
-      }
-      "Right" in it.key -> {
+      "h" in event.key -> {}
+      "l" in event.key -> {
         val current = graphs.last()
         if (current.none { it.occupied }) {
-          current.takeWhile { Random.Default.nextDouble() < 0.5 }
-            .forEach { it.occupied = true }
+          current.takeWhile { Random.Default.nextDouble() < 0.5 }.forEach { it.occupied = true }
         } else current.propagate()
       }
-      "Up" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
-      "Down" in it.key -> {
+      "k" in event.key -> if (graphs.size > 1) graphs.removeLastOrNull()
+      "j" in event.key -> {
         val current = graphs.last()
         val sub = "cdec" cc "ijkl"
         graphs.add(current.rewrite(sub).also {
