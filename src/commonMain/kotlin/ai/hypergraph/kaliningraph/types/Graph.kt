@@ -60,13 +60,13 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
  * 1. a set Set<V>
  *   - Pros: Simple, has precedent cf. https://github.com/maxitg/SetReplace/
  *   - Cons: Finite, no consistency constraints on edges
- * 2. a [partial] function E ⊆ V×V / (V) -> Set<V> / graph(v)
+ * 2. a [partial] function E ⊆ V×V / (V) -> Set<V>
  *   - Pros: Mathematically analogous, can represent infinite graphs
- *   - Cons: Memoization seems tricky to handle
- * 3. a [multi]map Map<V, Set<V>> / graph[v]
- *   - Pros: Computationally efficient representation
+ *   - Cons: Disallowed on JS, see https://discuss.kotlinlang.org/t/extending-function-in-class/15176
+ * 3. a [multi]map Map<V, Set<V>>
+ *   - Pros: Computationally efficient representation, graph[v] <=> graph(v)
  *   - Cons: Finite, incompatible with Set<V> perspective
- * 4. a semiring
+ * 4. a semiring, see https://en.wikipedia.org/wiki/Semiring#Definition
  *   - Pros: Useful for describing many algebraic path problems
  *   - Cons: Esoteric API / unsuitable as an abstract interface
  *
