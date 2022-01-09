@@ -158,7 +158,6 @@ open class BooleanMatrix constructor(
   override val algebra: Ring<Boolean> = BOOLEAN_ALGEBRA,
 ) : AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(numRows, numCols, data, algebra) {
   constructor(elements: List<Boolean>) : this(
-    algebra = BOOLEAN_ALGEBRA,
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
@@ -206,7 +205,6 @@ open class DoubleMatrix constructor(
   override val algebra: Field<Double> = DOUBLE_FIELD,
 ) : AbstractMatrix<Double, Field<Double>, DoubleMatrix>(numRows, numCols, data, algebra) {
   constructor(elements: List<Double>) : this(
-    algebra = DOUBLE_FIELD,
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
