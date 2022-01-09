@@ -79,7 +79,13 @@ rootProject.plugins.withType<NodeJsRootPlugin> {
 
 kotlin {
   jvm()
-  js { browser() }
+  js {
+    browser {
+      testTask {
+        enabled = false
+      }
+    }
+  }
 
   sourceSets {
     val commonMain by getting {
