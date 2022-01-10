@@ -156,40 +156,52 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ## Research Questions
 
-* Is subgraph isomorphism feasible using random walks?
-   - Treat graph as a sequence and run string convolution
-   - Generate lazy random walk and halt after K steps
-   - Convolve permuted variants of query in parallel
-   - Need some kind of label permutation / edit distance metric
-* How could we implement graph grammars/rewriting?
-   - [Rewrites](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/Rewriter.kt) as string substitution on the random walk sequence
-   - Reconstruct graph from rewritten string using adjacency matrix
-   - ~~Is there an algebraic definition for graph grammars?~~
-   - ~~Maybe graph convolution. How to encode rewrites as a kernel?~~
-   - ~~Rectangular matrix multiplication or square with upper bound?~~
-   - ~~May be possible to represent using tensor contraction~~
-   - Need to look into hyperedge replacement grammars
-   - How do we identify confluent rewrite systems?
-* What are the advantages and disadvantages of graph rewriting?
-   - Graphs as vertices and rewrites as edges in a nested graph?
-   - Reduction/canonicalization versus expansion graph grammar
-* What happens if we represent the graph as a symbolic matrix?
-   - Could we propagate functions instead of just values?
-   - What if matrix elements were symbolic expressions? (cf. [KeOps](https://proceedings.neurips.cc/paper/2020/file/a6292668b36ef412fa3c4102d1311a62-Paper.pdf))
-   - Should we represent the whole matrix as a big bold symbol?
-* Is there an efficient way to parallelize arithmetic circuits?
-   - Translate formula graph to matrix using Miller's evaluator
-   - How to distribute the work evenly across sparse matrices
-* What are some good way to [visualize](https://setosa.io/ev/markov-chains/) random walks?
-   - Display states, transitions and graph occupancy side-by-side
-* Is there a connection between linear algebra and λ-calculus?
-   - λ expressions can be represented as a graph/matrix
-   - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
-   - Look into [optimal beta reduction](https://www.youtube.com/channel/UCKQa6Ls95RhShE0kQsiXzVw) and Lamping's [optimal reduction algorithm](https://doi.org/10.1145%2F96709.96711)
-* Is it possible to encode a tensor in the Kotlin type system?
+* What is the best way to represent a graph?
+  - [Type family](/src/commonMain/kotlin/ai/hypergraph/kaliningraph/types/Graph.kt)
+  - [Matrix semiring](/src/commonMain/kotlin/ai/hypergraph/kaliningraph/tensor/Tensor.kt)
+  - [Kernel embedding](/src/commonMain/kotlin/ai/hypergraph/kaliningraph/theory/Theory.kt)
+* Is it possible to statically check tensor arithmetic in the Kotlin type system?
   - [Church arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/ChurchTest.kt)
   - [Binary arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/BinaryTest.kt)
   - [Decimal arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/DecimalTest.kt)
+  - [Multidimensional arrays](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/ArrayTest.kt)
+* How computationally powerful is matrix multiplication?
+  - Can we do [SAT/SMT solving using a matrix semiring](/src/jvmTest/kotlin/ai/hypergraph/kaliningraph/smt/TestSMT.kt)?
+  - What does asymptotically optimal CFG parsing look like? (e.g., [Valiant](https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf))
+  - Can we simulate [finite automata / regular expressions](/src/commonMain/kotlin/ai/hypergraph/kaliningraph/automata)?
+* Is subgraph isomorphism feasible using random walks?
+  - Treat graph as a sequence and run string convolution
+  - Generate lazy random walk and halt after K steps
+  - Convolve permuted variants of query in parallel
+  - Need some kind of label permutation / edit distance metric
+* How do we represent a tensor/hypergraph?
+  - [Naperian functor](https://www.cs.ox.ac.uk/people/jeremy.gibbons/publications/aplicative.pdf)
+  - Sparse recursive dictionary
+* How could we implement graph grammars/rewriting?
+  - [Rewrites](/src/jsMain/kotlin/Rewriter.kt) as string substitution on the random walk sequence
+  - Reconstruct graph from rewritten string using adjacency matrix
+  - ~~Is there an algebraic definition for graph grammars?~~
+  - ~~Maybe graph convolution. How to encode rewrites as a kernel?~~
+  - ~~Rectangular matrix multiplication or square with upper bound?~~
+  - ~~May be possible to represent using tensor contraction~~
+  - Need to look into hyperedge replacement grammars
+  - How do we identify confluent rewrite systems?
+* What are the advantages and disadvantages of graph rewriting?
+  - Graphs as vertices and rewrites as edges in a nested graph?
+  - Reduction/canonicalization versus expansion graph grammar
+* What happens if we represent the graph as a symbolic matrix?
+  - Could we propagate functions instead of just values?
+  - What if matrix elements were symbolic expressions? (cf. [KeOps](https://proceedings.neurips.cc/paper/2020/file/a6292668b36ef412fa3c4102d1311a62-Paper.pdf))
+  - Should we represent the whole matrix as a big bold symbol?
+* Is there an efficient way to parallelize arithmetic circuits?
+  - Translate formula graph to matrix using Miller's evaluator
+  - How to distribute the work evenly across sparse matrices
+* What are some good way to [visualize](https://setosa.io/ev/markov-chains/) random walks?
+  - Display states, transitions and graph occupancy side-by-side
+* Is there a connection between linear algebra and λ-calculus?
+  - λ expressions can be represented as a graph/matrix
+  - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
+  - Look into [optimal beta reduction](https://www.youtube.com/channel/UCKQa6Ls95RhShE0kQsiXzVw) and Lamping's [optimal reduction algorithm](https://doi.org/10.1145%2F96709.96711)
 
 ## References
 

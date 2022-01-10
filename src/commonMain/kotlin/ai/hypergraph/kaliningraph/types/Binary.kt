@@ -48,3 +48,14 @@ typealias B_16<B> = F<B_8<B>>
 @JvmName("b_01p1") fun <B> B_01<B>.plus1(): B_2<B> = F(x!!.plus1())
 @JvmName("b_03p1") fun <B> B_03<B>.plus1(): B_4<B> = F(x!!.plus1())
 @JvmName("b_07p1") fun <B> B_07<B>.plus1(): B_8<B> = F(x!!.plus1())
+
+// TODO: Enumerate all binary summands [2^N - D, 2^n - 1] + D for all (D, N)
+///  *00 + 10 -> *10
+///  *01 + 10 -> *11
+/// *010 + 10 -> *100
+/// *011 + 10 -> *101
+///*0110 + 10 -> *1000
+///*0111 + 10 -> *1001
+
+// TODO: Alternatively, we could just implement RCA/CLA in full
+// https://en.wikipedia.org/wiki/Adder_(electronics)#Adders_supporting_multiple_bits
