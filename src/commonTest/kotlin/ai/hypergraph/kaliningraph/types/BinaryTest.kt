@@ -6,23 +6,27 @@ import kotlin.test.*
 class BinaryTest {
     @Test
     fun binaryTest() {
-      val fifteen = F<Nothing>().plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
-        .plus1()
+      var i = 0
+      val fifteen =
+        F<Nothing>().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus1()
 
-      assertEquals(15, fifteen.toInt())
+      assertEquals(T.T.T.T, fifteen)
+      assertEquals(T.F.F.F.T, fifteen.plus1().plus1())
     }
 
   @Test
