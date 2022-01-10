@@ -186,6 +186,10 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
    - λ expressions can be represented as a graph/matrix
    - Maybe [Arrighi and Dowek](https://lmcs.episciences.org/3203/pdf) (2017) have the answer?
    - Look into [optimal beta reduction](https://www.youtube.com/channel/UCKQa6Ls95RhShE0kQsiXzVw) and Lamping's [optimal reduction algorithm](https://doi.org/10.1145%2F96709.96711)
+* Is it possible to encode a tensor in the Kotlin type system?
+  - [Church arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/ChurchTest.kt)
+  - [Binary arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/BinaryTest.kt)
+  - [Decimal arithmetic](/src/commonTest/kotlin/ai/hypergraph/kaliningraph/types/DecimalTest.kt)
 
 ## References
 

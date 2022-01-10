@@ -2,10 +2,10 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.test.*
 
-// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.PeanoTest"
-class PeanoTest {
+// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.ChurchTest"
+class ChurchTest {
   @Test
-  fun peanoTest() {
+  fun churchTest() {
     val five = O
       .plus2()
       .let { it + S3 }
