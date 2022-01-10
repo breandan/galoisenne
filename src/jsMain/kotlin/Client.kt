@@ -6,8 +6,9 @@ import kotlin.js.Promise
 @OptIn(ExperimentalStdlibApi::class)
 fun main() {
   window.onload = {
-    prefAttach()
+//    prefAttach()
 //    rewriter()
+    cfgParser()
   }
 }
 

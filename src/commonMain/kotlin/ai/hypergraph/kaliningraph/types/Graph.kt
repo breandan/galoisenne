@@ -92,6 +92,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
 
   // TODO: Move the following ceremony into named tensor
   //-------
+  operator fun get(cond: (V) -> Boolean): Set<V> = vertices.filter(cond).toSet()
   val index: VIndex<G, E, V>    get() = memoize { VIndex(vertices) }
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
   class VIndex<G: IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>(val set: Set<V>) {

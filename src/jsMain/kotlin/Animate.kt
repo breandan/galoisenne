@@ -9,32 +9,40 @@ import org.w3c.dom.events.KeyboardEvent
 var viz = Viz()
 
 // Used to animate graph rewrite process with a keyboard
-fun animate(initial: LabeledGraph, transition: (KeyboardEvent, MutableList<LabeledGraph>) -> Unit) {
+fun animate(initial: LabeledGraph, renderState: Boolean = true, transition: (KeyboardEvent, MutableList<LabeledGraph>) -> Unit) {
   val graphs = mutableListOf(initial)
 
   document.body!!.apply {
-    onkeypress = { keyEvent: KeyboardEvent ->
-      removeAllTags("div")
-      removeAllTags("svg")
-
-      transition(keyEvent, graphs)
+    fun doRender() {
       viz.renderSVGElement(graphs.last().toDot()).then { append(it) }
       append {
         div {
           graphs.last().run {
             p { +"Adjacency Matrix"; setAttribute("style", "font-size:20px") }
             img { src = A.matToBase64Img() }
-            p { +"S"; setAttribute("style", "font-size:20px") }
-            img { src = S().matToBase64Img() }
-            p { +"S'"; setAttribute("style", "font-size:20px") }
-            img { src = (A.transpose() * S()).matToBase64Img() }
+            if (renderState) {
+              p { +"S"; setAttribute("style", "font-size:20px") }
+              img { src = S().matToBase64Img() }
+              p { +"S'"; setAttribute("style", "font-size:20px") }
+              img { src = (A.transpose() * S()).matToBase64Img() }
+            }
             p { +description; setAttribute("style", "font-size:20px") }
           }
         }
       }
     }
+    doRender()
+    onkeypress = { keyEvent: KeyboardEvent ->
+      removeAllTags("div")
+      removeAllTags("svg")
+
+      transition(keyEvent, graphs)
+      doRender()
+    }
   }
 }
+
+
 
 fun HTMLElement.removeAllTags(named: String): Unit =
   querySelector(named)?.run { remove(); removeAllTags(named) } ?: Unit
