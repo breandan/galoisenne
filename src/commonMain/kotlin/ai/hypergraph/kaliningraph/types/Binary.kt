@@ -4,8 +4,8 @@ package ai.hypergraph.kaliningraph.types
 import kotlin.jvm.JvmName
 
 sealed class B<X, P : B<X, P>>(open val x: X? = null) {
-  val T get() = T(this as P)
-  val F get() = F(this as P)
+  val T: T<P> get() = T(this as P)
+  val F: F<P> get() = F(this as P)
 
   override fun equals(other: Any?) = toString() == other.toString()
   override fun hashCode() = this::class.hashCode() + x.hashCode()
