@@ -38,10 +38,10 @@ var i = 0
 fun cfgParser(toParse: String = "aaabbb", mutableList: MutableList<String> = toParse.mapIndexed { i, c -> "$i:$c" }.toMutableList()) =
   animate(initial = LabeledGraph {
     //https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
-    S - LGVertex("XY").also { it - X; it - Y};
-    X - LGVertex("XA").also{ it - A ; it - X}; X - LGVertex("AA").also { it - A};
-    Y - LGVertex("YB").also { it - B ; it - Y}; Y - LGVertex("BB").also { it - B};
-    A - a; B - b
+    "S" - "XY".also { it - "X" ; it - "Y" }
+    "X" - "XA".also { it - "A" ; it - "X" }; "X" - "AA".also { it - "A" }
+    "Y" - "YB".also { it - "B" ; it - "Y" }; "Y" - "BB".also { it - "B" }
+    "A" - a; "B" - b
 
     mutableList.forEach { LGVertex(it).let { it - it } }
   }.reversed(),

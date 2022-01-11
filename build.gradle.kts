@@ -217,11 +217,6 @@ kotlin {
 }
 
 tasks {
-  withType<KotlinJvmCompile> {
-    // Remove pending: https://youtrack.jetbrains.com/issue/KT-50617
-    kotlinOptions.useOldBackend = true
-  }
-
   withType<Test> {
     useJUnitPlatform()
     testLogging {

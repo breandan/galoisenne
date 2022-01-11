@@ -16,16 +16,11 @@ class LGBuilder {
   val d by LGVertex(); val e by LGVertex(); val f by LGVertex()
   val g by LGVertex(); val h by LGVertex(); val i by LGVertex()
   val j by LGVertex(); val k by LGVertex(); val l by LGVertex()
-
-  val A by LGVertex(); val B by LGVertex(); val C by LGVertex()
-  val D by LGVertex(); val E by LGVertex(); val F by LGVertex()
-  val G by LGVertex(); val H by LGVertex(); val I by LGVertex()
-  val J by LGVertex(); val K by LGVertex(); val L by LGVertex()
-  val M by LGVertex(); val N by LGVertex(); val O by LGVertex()
-  val P by LGVertex(); val Q by LGVertex(); val R by LGVertex()
-  val S by LGVertex(); val T by LGVertex(); val U by LGVertex()
-  val V by LGVertex(); val W by LGVertex(); val X by LGVertex()
-  val Y by LGVertex(); val Z by LGVertex()
+  val m by LGVertex(); val n by LGVertex(); val o by LGVertex()
+  val p by LGVertex(); val q by LGVertex(); val r by LGVertex()
+  val s by LGVertex(); val t by LGVertex(); val u by LGVertex()
+  val v by LGVertex(); val w by LGVertex(); val x by LGVertex()
+  val y by LGVertex(); val z by LGVertex()
 
   operator fun LGVertex.minus(v: LGVertex) =
     LGVertex(v.id) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
