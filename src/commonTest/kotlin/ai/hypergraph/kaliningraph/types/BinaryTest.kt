@@ -13,13 +13,11 @@ class BinaryTest {
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus2().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus1().also { assertEquals(i++, it.toInt()) }
+          .plus2().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
