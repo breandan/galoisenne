@@ -2,7 +2,8 @@ package ai.hypergraph.kaliningraph.types
 
 import org.junit.jupiter.api.Test
 
-// ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.GraphTest"
+// ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.GenBinTest"
+// TODO: enumerate all combos and drop unchanged leading digits
 class GenBinTest {
   @Test
   fun genBinTest() {
