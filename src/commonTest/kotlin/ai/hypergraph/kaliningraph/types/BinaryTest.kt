@@ -40,7 +40,7 @@ class BinaryTest {
 
     assertEquals(T.T.F.T, thirteen)
 
-    val twelve: F<F<T<T<Ø>>>> =
+    val twelve =
       F.also { assertEquals(0, it.toInt()) }
         .plus2().also { assertEquals(2, it.toInt()) }
         .plus2().also { assertEquals(4, it.toInt()) }
@@ -58,4 +58,9 @@ class BinaryTest {
 
     assertEquals(15, fifteen.toInt())
   }
+
+//  @Test
+//  fun flipAllTest() {
+//    val q = T(T(F(T(F)))).flipAll()
+//  }
 }

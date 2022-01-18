@@ -7,14 +7,22 @@ sealed class B<X, P : B<X, P>>(open val x: X? = null) {
   val T: T<P> get() = T(this as P)
   val F: F<P> get() = F(this as P)
 
+  abstract fun flip(): B<X, *>
   override fun equals(other: Any?) = toString() == other.toString()
   override fun hashCode() = this::class.hashCode() + x.hashCode()
   override fun toString() = "" + (x ?: "") + if (this is T) "1" else "0"
 }
 
-open class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x) { companion object: T<Ø>(Ø) }
-open class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x) { companion object: F<Ø>(Ø) }
-@Suppress("NonAsciiCharacters", "ClassName") object Ø: B<Ø, Ø>(null)
+open class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x) {
+  companion object: T<Ø>(Ø)
+  override fun flip(): F<X> = F(x)
+}
+open class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x) {
+  companion object: F<Ø>(Ø)
+  override fun flip(): T<X> = T(x)
+}
+@Suppress("NonAsciiCharacters", "ClassName")
+object Ø: B<Ø, Ø>(null) { override fun flip() = Ø }
 
 fun B<*, *>.toInt(): Int = toInt(toString())
 tailrec fun toInt(s: String, sum: Int = 0): Int =
@@ -59,13 +67,14 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b15p2") fun B_15<Ø>.plus2() = plus1().plus1()
 
 @JvmName("b?0x2p2") fun <K: B<*, *>> B_0x2<K>.plus2() = plus1().plus1()
-@JvmName("b?0x3p2") fun <K: B<*, *>> B_0x3<K>.plus2() = plus1().plus1()
-@JvmName("b?0x4p2") fun <K: B<*, *>> B_0x4<K>.plus2() = plus1().plus1()
 @JvmName("b?01p2") fun <K: B<*, *>> B_1<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?02p2") fun <K: B<*, *>> B_2<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?03p2") fun <K: B<*, *>> B_3<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?06p2") fun <K: B<*, *>> B_6<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?07p2") fun <K: B<*, *>> B_7<F<K>>.plus2() = plus1().plus1()
+
+//@JvmName("flipTT") fun <X: T<Y>, Y> X.flipAll()/*:F<???>*/= F(x.flipAll())
+//@JvmName("flipFF") fun <X: F<Y>, Y> X.flipAll()/*:T<???>*/= F(x.flipAll())
 
 // TODO: Enumerate all binary summands [2^N - D, 2^n - 1] + D for all (D, N)
 ///  *00 + 10 -> *10
