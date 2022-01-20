@@ -29,22 +29,24 @@ tailrec fun toInt(s: String, sum: Int = 0): Int =
   if (s.isEmpty()) sum else toInt(s.substring(1), (sum shl 1) + s[0].digitToInt())
 
 // Left padded with 0, B_0N indicates a binary string *0{B_0N}
-typealias B_0x1<B> = F<B>
-typealias B_0x2<B> = B_0x1<F<B>>
+typealias B_0<B> = F<B>
+typealias B_0x2<B> = B_0<F<B>>
 typealias B_0x3<B> = B_0x2<F<B>>
 typealias B_0x4<B> = B_0x3<F<B>>
 
 typealias B_1<B> = T<B>
 typealias B_2<B> = F<T<B>>
 typealias B_3<B> = T<B_1<B>>
+typealias B_5<B> = T<F<T<F<B>>>>
 typealias B_6<B> = F<B_3<B>>
 typealias B_7<B> = T<B_3<B>>
+typealias B_13<B> = T<F<B_3<B>>>
 typealias B_14<B> = F<B_7<B>>
 typealias B_15<B> = T<B_7<B>>
 typealias B_30<B> = F<B_15<B>>
 typealias B_31<B> = T<B_15<B>>
 
-@JvmName("b0p1") fun B_0x1<Ø>.plus1() = T(Ø)
+@JvmName("b0p1") fun B_0<Ø>.plus1() = T(Ø)
 @JvmName("b1p1") fun B_1<Ø>.plus1() = F(x.plus1())
 @JvmName("b3p1") fun B_3<Ø>.plus1() = F(x.plus1())
 @JvmName("b7p1") fun B_7<Ø>.plus1() = F(x.plus1())
@@ -55,6 +57,7 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b_01p1") fun <K> B_1<F<K>>.plus1() = F(x.plus1())
 @JvmName("b_03p1") fun <K> B_3<F<K>>.plus1() = F(x.plus1())
 @JvmName("b_07p1") fun <K> B_7<F<K>>.plus1() = F(x.plus1())
+@JvmName("b_015p1") fun <K> B_15<F<K>>.plus1() = F(x.plus1())
 
 @JvmName("b0p2") fun Ø.plus2() = plus1().plus1()
 @JvmName("b0p2") fun F<Ø>.plus2() = plus1().plus1()
@@ -66,12 +69,35 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b14p2") fun B_14<Ø>.plus2() = plus1().plus1()
 @JvmName("b15p2") fun B_15<Ø>.plus2() = plus1().plus1()
 
-@JvmName("b?0x2p2") fun <K: B<*, *>> B_0x2<K>.plus2() = plus1().plus1()
+@JvmName("b?00p2") fun <K: B<*, *>> B_0<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?01p2") fun <K: B<*, *>> B_1<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?02p2") fun <K: B<*, *>> B_2<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?03p2") fun <K: B<*, *>> B_3<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?06p2") fun <K: B<*, *>> B_6<F<K>>.plus2() = plus1().plus1()
 @JvmName("b?07p2") fun <K: B<*, *>> B_7<F<K>>.plus2() = plus1().plus1()
+@JvmName("b?014p2") fun <K: B<*, *>> B_14<F<K>>.plus2() = plus1().plus1()
+@JvmName("b?015p2") fun <K: B<*, *>> B_15<F<K>>.plus2() = plus1().plus1()
+
+@JvmName("b0p3") fun Ø.plus3() = plus2().plus1()
+@JvmName("b0p3") fun F<Ø>.plus3() = plus2().plus1()
+@JvmName("b1p3") fun B_1<Ø>.plus3() = plus2().plus1()
+@JvmName("b2p3") fun B_2<Ø>.plus3() = plus2().plus1()
+@JvmName("b3p3") fun B_3<Ø>.plus3() = plus2().plus1()
+@JvmName("b6p3") fun B_6<Ø>.plus3() = plus2().plus1()
+@JvmName("b7p3") fun B_7<Ø>.plus3() = plus2().plus1()
+@JvmName("b14p3") fun B_14<Ø>.plus3() = plus2().plus1()
+@JvmName("b15p3") fun B_15<Ø>.plus3() = plus2().plus1()
+
+@JvmName("b?00p3") fun <K: B<*, *>> B_0<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?01p3") fun <K: B<*, *>> B_1<F<F<K>>>.plus3() = plus2().plus1()
+@JvmName("b?02p3") fun <K: B<*, *>> B_2<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?03p3") fun <K: B<*, *>> B_3<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?05p3") fun <K: B<*, *>> B_5<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?06p3") fun <K: B<*, *>> B_6<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?07p3") fun <K: B<*, *>> B_7<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?013p3") fun <K: B<*, *>> B_13<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?014p3") fun <K: B<*, *>> B_14<F<K>>.plus3() = plus2().plus1()
+@JvmName("b?015p3") fun <K: B<*, *>> B_15<F<K>>.plus3() = plus2().plus1()
 
 //@JvmName("flipTT") fun <X: T<Y>, Y> X.flipAll()/*:F<???>*/= F(x.flipAll())
 //@JvmName("flipFF") fun <X: F<Y>, Y> X.flipAll()/*:T<???>*/= F(x.flipAll())
