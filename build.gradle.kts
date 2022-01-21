@@ -9,7 +9,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.6.10"
   id("com.google.devtools.ksp") version "1.6.10-1.0.2"
-  kotlin("jupyter.api") version "0.11.0-47"
+  kotlin("jupyter.api") version "0.11.0-53"
   id("com.github.ben-manes.versions") version "0.41.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -111,14 +111,14 @@ kotlin {
         implementation(kotlin("reflect"))
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:21.3.0")
+        implementation("org.graalvm.js:js:22.0.0")
       }
     }
 
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.0.3"
+        val kotestVersion = "5.1.0"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
@@ -155,7 +155,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.5.1" }
+        val tinkerpopVersion by extra { "3.5.2" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
