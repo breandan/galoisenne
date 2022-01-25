@@ -13,9 +13,9 @@ class BinaryTest {
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus2().also { i++; assertEquals(i++, it.toInt()) }
-          .plus3().also { i+=2; assertEquals(i++, it.toInt()) }
-          .plus2().also { i++; assertEquals(i++, it.toInt()) }
+          .plus2().also { i+=2; assertEquals(i, it.toInt()) }
+          .plus3().also { i+=3; assertEquals(i, it.toInt()) }
+          .plus2().also { i+=2; assertEquals(i, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
@@ -27,7 +27,7 @@ class BinaryTest {
 
   @Test
   fun binaryPlus2Test() {
-    val thirteen: T<F<T<T<Ø>>>> =
+    val thirteen =
       T.also { assertEquals(1, it.toInt()) }
         .plus2().also { assertEquals(3, it.toInt()) }
         .plus2().also { assertEquals(5, it.toInt()) }
@@ -55,6 +55,17 @@ class BinaryTest {
     val fifteen = T.T.T.T
 
     assertEquals(15, fifteen.toInt())
+  }
+
+  @Test
+  fun plusMinusTest() {
+    val t0: T<T<Ø>> = T(T(Ø))
+    val t1: T<T<Ø>> = F(F(T(Ø))).minus3().plus2()
+    assertEquals(t0, t1)
+    val t2: T<T<Ø>> = t1.minus1().plus1()
+    assertEquals(t1, t2)
+    val t3: T<T<Ø>> = t2.minus2().plus1().plus1()
+    assertEquals(t2, t3)
   }
 
 //  @Test
