@@ -49,6 +49,12 @@ typealias B_18<B> = F<B_9<B>>
 typealias B_30<B> = F<B_15<B>>
 typealias B_31<B> = T<B_15<B>>
 
+fun <K: B<*, *>> K.shl() = F
+fun <K: B<*, *>> K.times2() = F
+fun <K: B<*, *>> K.times4() = F.F
+fun <K: B<*, *>> K.times8() = F.F.F
+fun <K: B<*, *>> K.times16() = F.F.F.F
+
 @JvmName("bnp1") fun Ø.plus1() = T(Ø)
 @JvmName("b0p1") fun B_0<Ø>.plus1() = T(Ø)
 @JvmName("b1p1") fun B_1<Ø>.plus1() = F(x.plus1())
@@ -62,8 +68,19 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b_07p1") fun <K: B<*, *>> B_7<F<K>>.plus1() = F(x.plus1())
 @JvmName("b_015p1") fun <K: B<*, *>> B_15<F<K>>.plus1() = F(x.plus1())
 
-@JvmName("b0p2") fun Ø.plus2(): F<T<Ø>> = plus1().plus1()
-@JvmName("b0p2") fun F<Ø>.plus2(): F<T<Ø>> = plus1().plus1()
+@JvmName("b1m1") fun B_1<Ø>.minus1() = F(Ø)
+@JvmName("b2m1") fun B_2<Ø>.minus1() = T(Ø)
+@JvmName("b4m1") fun B_4<Ø>.minus1() = T(x.minus1())
+@JvmName("b8m1") fun B_8<Ø>.minus1() = T(x.minus1())
+@JvmName("b16m1") fun B_16<Ø>.minus1() = T(x.minus1())
+
+@JvmName("b_1m1") fun <K: B<*, *>> B_1<K>.minus1() = F(x)
+@JvmName("b_2m1") fun <K: B<*, *>> B_2<K>.minus1() = T(x.minus1())
+@JvmName("b_4m1") fun <K: B<*, *>> B_4<K>.minus1() = T(x.minus1())
+@JvmName("b_8m1") fun <K: B<*, *>> B_8<K>.minus1() = T(x.minus1())
+@JvmName("b_16m1") fun <K: B<*, *>> B_16<K>.minus1() = T(x.minus1())
+
+@JvmName("b0p2") fun B_0<Ø>.plus2(): F<T<Ø>> = plus1().plus1()
 @JvmName("b1p2") fun B_1<Ø>.plus2(): T<T<Ø>> = plus1().plus1()
 @JvmName("b2p2") fun B_2<Ø>.plus2(): F<F<T<Ø>>> = plus1().plus1()
 @JvmName("b3p2") fun B_3<Ø>.plus2(): T<F<T<Ø>>> = plus1().plus1()
@@ -80,37 +97,6 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b?07p2") fun <K: B<*, *>> B_7<F<K>>.plus2(): T<F<F<T<K>>>> = plus1().plus1()
 @JvmName("b?014p2") fun <K: B<*, *>> B_14<F<K>>.plus2(): F<F<F<F<T<K>>>>> = plus1().plus1()
 @JvmName("b?015p2") fun <K: B<*, *>> B_15<F<K>>.plus2(): T<F<F<F<T<K>>>>> = plus1().plus1()
-
-@JvmName("b0p3") fun Ø.plus3(): T<T<Ø>> = plus2().plus1()
-@JvmName("b0p3") fun F<Ø>.plus3(): T<T<Ø>> = plus2().plus1()
-@JvmName("b2p3") fun B_2<Ø>.plus3(): T<F<T<Ø>>> = plus2().plus1()
-@JvmName("b3p3") fun B_3<Ø>.plus3(): F<T<T<Ø>>> = plus2().plus1()
-@JvmName("b6p3") fun B_6<Ø>.plus3(): T<F<F<T<Ø>>>> = plus2().plus1()
-@JvmName("b7p3") fun B_7<Ø>.plus3(): F<T<F<T<Ø>>>> = plus2().plus1()
-@JvmName("b14p3") fun B_14<Ø>.plus3(): T<F<F<F<T<Ø>>>>> = plus2().plus1()
-@JvmName("b15p3") fun B_15<Ø>.plus3(): F<T<F<F<T<Ø>>>>> = plus2().plus1()
-
-@JvmName("b?00p3") fun <K: B<*, *>> B_0<F<K>>.plus3(): T<T<K>> = plus2().plus1()
-@JvmName("b?02p3") fun <K: B<*, *>> B_2<F<K>>.plus3(): T<F<T<K>>> = plus2().plus1()
-@JvmName("b?03p3") fun <K: B<*, *>> B_3<F<K>>.plus3(): F<T<T<K>>> = plus2().plus1()
-@JvmName("b?05p3") fun <K: B<*, *>> B_5<F<K>>.plus3(): F<F<F<T<F<K>>>>> = plus2().plus1()
-@JvmName("b?06p3") fun <K: B<*, *>> B_6<F<K>>.plus3(): T<F<F<T<K>>>> = plus2().plus1()
-@JvmName("b?07p3") fun <K: B<*, *>> B_7<F<K>>.plus3(): F<T<F<T<K>>>> = plus2().plus1()
-@JvmName("b?013p3") fun <K: B<*, *>> B_13<F<K>>.plus3(): F<F<F<F<T<K>>>>> = plus2().plus1()
-@JvmName("b?014p3") fun <K: B<*, *>> B_14<F<K>>.plus3(): T<F<F<F<T<K>>>>> = plus2().plus1()
-@JvmName("b?015p3") fun <K: B<*, *>> B_15<F<K>>.plus3(): F<T<F<F<T<K>>>>> = plus2().plus1()
-
-@JvmName("b1m1") fun B_1<Ø>.minus1() = F(Ø)
-@JvmName("b2m1") fun B_2<Ø>.minus1() = T(Ø)
-@JvmName("b4m1") fun B_4<Ø>.minus1() = T(x.minus1())
-@JvmName("b8m1") fun B_8<Ø>.minus1() = T(x.minus1())
-@JvmName("b16m1") fun B_16<Ø>.minus1() = T(x.minus1())
-
-@JvmName("b_1m1") fun <K: B<*, *>> B_1<K>.minus1() = F(x)
-@JvmName("b_2m1") fun <K: B<*, *>> B_2<K>.minus1() = T(x.minus1())
-@JvmName("b_4m1") fun <K: B<*, *>> B_4<K>.minus1() = T(x.minus1())
-@JvmName("b_8m1") fun <K: B<*, *>> B_8<K>.minus1() = T(x.minus1())
-@JvmName("b_16m1") fun <K: B<*, *>> B_16<K>.minus1() = T(x.minus1())
 
 @JvmName("b2m2") fun B_2<Ø>.minus2() = minus1().minus1()
 @JvmName("b3m2") fun B_3<Ø>.minus2() = minus1().minus1()
@@ -129,6 +115,24 @@ typealias B_31<B> = T<B_15<B>>
 @JvmName("b_9m2") fun <K: B<*, *>> B_9<K>.minus2() = minus1().minus1()
 @JvmName("b_16m2") fun <K: B<*, *>> B_16<K>.minus2() = minus1().minus1()
 @JvmName("b_17m2") fun <K: B<*, *>> B_17<K>.minus2() = minus1().minus1()
+
+@JvmName("b0p3") fun F<Ø>.plus3(): T<T<Ø>> = plus2().plus1()
+@JvmName("b2p3") fun B_2<Ø>.plus3(): T<F<T<Ø>>> = plus2().plus1()
+@JvmName("b3p3") fun B_3<Ø>.plus3(): F<T<T<Ø>>> = plus2().plus1()
+@JvmName("b6p3") fun B_6<Ø>.plus3(): T<F<F<T<Ø>>>> = plus2().plus1()
+@JvmName("b7p3") fun B_7<Ø>.plus3(): F<T<F<T<Ø>>>> = plus2().plus1()
+@JvmName("b14p3") fun B_14<Ø>.plus3(): T<F<F<F<T<Ø>>>>> = plus2().plus1()
+@JvmName("b15p3") fun B_15<Ø>.plus3(): F<T<F<F<T<Ø>>>>> = plus2().plus1()
+
+@JvmName("b?00p3") fun <K: B<*, *>> B_0<F<K>>.plus3(): T<T<K>> = plus2().plus1()
+@JvmName("b?02p3") fun <K: B<*, *>> B_2<F<K>>.plus3(): T<F<T<K>>> = plus2().plus1()
+@JvmName("b?03p3") fun <K: B<*, *>> B_3<F<K>>.plus3(): F<T<T<K>>> = plus2().plus1()
+@JvmName("b?05p3") fun <K: B<*, *>> B_5<F<K>>.plus3(): F<F<F<T<F<K>>>>> = plus2().plus1()
+@JvmName("b?06p3") fun <K: B<*, *>> B_6<F<K>>.plus3(): T<F<F<T<K>>>> = plus2().plus1()
+@JvmName("b?07p3") fun <K: B<*, *>> B_7<F<K>>.plus3(): F<T<F<T<K>>>> = plus2().plus1()
+@JvmName("b?013p3") fun <K: B<*, *>> B_13<F<K>>.plus3(): F<F<F<F<T<K>>>>> = plus2().plus1()
+@JvmName("b?014p3") fun <K: B<*, *>> B_14<F<K>>.plus3(): T<F<F<F<T<K>>>>> = plus2().plus1()
+@JvmName("b?015p3") fun <K: B<*, *>> B_15<F<K>>.plus3(): F<T<F<F<T<K>>>>> = plus2().plus1()
 
 @JvmName("b3m3") fun B_3<Ø>.minus3() = minus2().minus1()
 @JvmName("b4m3") fun B_4<Ø>.minus3() = minus2().minus1()

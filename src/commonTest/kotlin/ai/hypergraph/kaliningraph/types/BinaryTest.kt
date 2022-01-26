@@ -47,7 +47,11 @@ class BinaryTest {
         .plus2().also { assertEquals(10, it.toInt()) }
         .plus2().also { assertEquals(12, it.toInt()) }
 
-    assertEquals(T.T.F.F, twelve)
+  }
+
+  @Test
+  fun shlTest() {
+    assertEquals(T.T.shl().shl(), T.T.F.F)
   }
 
   @Test
