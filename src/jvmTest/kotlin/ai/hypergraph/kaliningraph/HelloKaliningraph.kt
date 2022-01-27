@@ -6,7 +6,9 @@ import ai.hypergraph.kaliningraph.theory.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 
-// ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.HelloKaliningraph"
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.HelloKaliningraph"
+*/
 class HelloKaliningraph {
   @Test
   fun test() {

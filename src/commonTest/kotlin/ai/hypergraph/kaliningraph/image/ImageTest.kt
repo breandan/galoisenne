@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.image
 
 import kotlin.test.*
 
-// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.image.ImageTest"
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.image.ImageTest"
+*/
 
 class ImageTest {
   fun Array<IntArray>.to2DList() = map { it.toList() }

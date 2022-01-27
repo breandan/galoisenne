@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.test.*
 
-// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.BinaryTest"
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.BinaryTest"
+*/
 class BinaryTest {
     @Test
     fun binaryMixedTest() {
@@ -13,9 +15,9 @@ class BinaryTest {
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
-          .plus2().also { i+=2; assertEquals(i, it.toInt()) }
-          .plus3().also { i+=3; assertEquals(i, it.toInt()) }
-          .plus2().also { i+=2; assertEquals(i, it.toInt()) }
+          .plus2().also { i++; assertEquals(i++, it.toInt()) }
+          .plus3().also { i+=2; assertEquals(i++, it.toInt()) }
+          .plus2().also { i++; assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
           .plus1().also { assertEquals(i++, it.toInt()) }
@@ -46,7 +48,6 @@ class BinaryTest {
         .plus2().also { assertEquals(8, it.toInt()) }
         .plus2().also { assertEquals(10, it.toInt()) }
         .plus2().also { assertEquals(12, it.toInt()) }
-
   }
 
   @Test
@@ -74,18 +75,18 @@ class BinaryTest {
 
   object P
   object Q
-  object `;` // required to normalize even length sequences
+  object e // required to normalize even length sequences
   object `+`
 
-  infix fun <T> T.Q(e: `;`): T = this
-  infix fun <T> T.P(e: `;`): T = this
+  infix fun <T> T.Q(e: e): T = this
+  infix fun <T> T.P(e: e): T = this
   infix fun <Y, T> T.Q(t: Y): Pair<T, Pair<Q, Y>> = this to (Q to t)
   infix fun <Y, T> T.P(t: Y): Pair<T, Pair<P, Y>> = this to (P to t)
   operator fun <Y, T> T.plus(t: Y): Pair<T, Pair<`+`, Y>> = this to (`+` to t)
 
   fun syntaxExperiment() {
     // Maybe we can perform computation at a keystroke level?
-    val q = Q P P P Q + Q Q P P `;`
+    val q = Q P P P Q + Q Q P P e
     val r = P Q P Q P
   }
 

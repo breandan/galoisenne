@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.test.*
 
-// ./gradlew cleanTest jvmTest --tests "ai.hypergraph.kaliningraph.types.ChurchTest"
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.ChurchTest"
+*/
 class ChurchTest {
   @Test
   fun churchTest() {

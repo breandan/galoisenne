@@ -2,7 +2,9 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import kotlin.js.Promise
 
-// ./gradlew jsBrowserRun --continuous
+/*
+./gradlew jsBrowserRun --continuous
+*/
 @OptIn(ExperimentalStdlibApi::class)
 fun main() {
   window.onload = {
