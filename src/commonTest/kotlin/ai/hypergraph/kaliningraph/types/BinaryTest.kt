@@ -76,13 +76,13 @@ class BinaryTest {
   object P
   object Q
   object e // required to normalize even length sequences
-  object `+`
+  object plus
 
   infix fun <T> T.Q(e: e): T = this
   infix fun <T> T.P(e: e): T = this
   infix fun <Y, T> T.Q(t: Y): Pair<T, Pair<Q, Y>> = this to (Q to t)
   infix fun <Y, T> T.P(t: Y): Pair<T, Pair<P, Y>> = this to (P to t)
-  operator fun <Y, T> T.plus(t: Y): Pair<T, Pair<`+`, Y>> = this to (`+` to t)
+  operator fun <Y, T> T.plus(t: Y): Pair<T, Pair<plus, Y>> = this to (plus to t)
 
   fun syntaxExperiment() {
     // Maybe we can perform computation at a keystroke level?
