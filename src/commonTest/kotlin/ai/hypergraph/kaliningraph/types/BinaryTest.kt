@@ -72,6 +72,23 @@ class BinaryTest {
     assertEquals(t2, t3)
   }
 
+  object P
+  object Q
+  object `;` // required to normalize even length sequences
+  object `+`
+
+  infix fun <T> T.Q(e: `;`): T = this
+  infix fun <T> T.P(e: `;`): T = this
+  infix fun <Y, T> T.Q(t: Y): Pair<T, Pair<Q, Y>> = this to (Q to t)
+  infix fun <Y, T> T.P(t: Y): Pair<T, Pair<P, Y>> = this to (P to t)
+  operator fun <Y, T> T.plus(t: Y): Pair<T, Pair<`+`, Y>> = this to (`+` to t)
+
+  fun syntaxExperiment() {
+    // Maybe we can perform computation at a keystroke level?
+    val q = Q P P P Q + Q Q P P `;`
+    val r = P Q P Q P
+  }
+
 //  @Test
 //  fun flipAllTest() {
 //    val q = T(T(F(T(F)))).flipAll()
