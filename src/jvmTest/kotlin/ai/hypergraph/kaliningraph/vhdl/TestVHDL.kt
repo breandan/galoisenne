@@ -140,8 +140,12 @@ private fun String.runVHDL() {
 }
 
 fun runCommand(command: String): Boolean =
-  ProcessBuilder(*command.split(" ").toTypedArray())
-    .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-    .redirectError(ProcessBuilder.Redirect.INHERIT)
-    .start()
-    .waitFor(60, TimeUnit.MINUTES)
+  try {
+    ProcessBuilder(*command.split(" ").toTypedArray())
+      .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+      .redirectError(ProcessBuilder.Redirect.INHERIT)
+      .start()
+      .waitFor(60, TimeUnit.MINUTES)
+  } catch (e: Exception) {
+    false
+  }
