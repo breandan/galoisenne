@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 */
 class TestVHDL {
     /*
-  ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testOutput"
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testOutput"
      */
     @Test
     fun testOutput() {
@@ -35,7 +35,7 @@ class TestVHDL {
     }
 
     /*
-  ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testSignedInteger"
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testSignedInteger"
      */
 
     @Test
@@ -143,6 +143,8 @@ class TestVHDL {
                     assert (C = x"00000000")
                         report "A + B = -1"
                         severity note;
+                        
+                    assert false report "Test done." severity note;
                 end process;
               end tb;
             """.trimIndent().also { writeText(it) }

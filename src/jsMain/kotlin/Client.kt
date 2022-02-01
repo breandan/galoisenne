@@ -7,13 +7,15 @@ import kotlin.js.Promise
 */
 @OptIn(ExperimentalStdlibApi::class)
 fun main() {
-  window.onload = {
-//    prefAttach()
-//    rewriter()
-    cfgParser()
-  }
+    window.onhashchange = {
+        when (it.newURL.substringAfter("#")) {
+            "prefattach" -> prefAttach()
+            "rewriter" -> rewriter()
+            "cfgparser" -> cfgParser()
+        }
+    }
 }
 
 external class Viz {
-  fun renderSVGElement(p: String): Promise<HTMLElement>
+    fun renderSVGElement(p: String): Promise<HTMLElement>
 }

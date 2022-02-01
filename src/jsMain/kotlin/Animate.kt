@@ -4,6 +4,7 @@ import kotlinx.browser.document
 import kotlinx.html.*
 import kotlinx.html.dom.append
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.asList
 import org.w3c.dom.events.KeyboardEvent
 
 var viz = Viz()
@@ -13,6 +14,7 @@ fun animate(initial: LabeledGraph, renderState: Boolean = true, transition: (Key
   val graphs = mutableListOf(initial)
 
   document.body!!.apply {
+      querySelector("root").run { childNodes.asList().forEach { removeChild(it) } }
     fun doRender() {
       viz.renderSVGElement(graphs.last().toDot()).then { append(it) }
       append {
@@ -41,8 +43,6 @@ fun animate(initial: LabeledGraph, renderState: Boolean = true, transition: (Key
     }
   }
 }
-
-
 
 fun HTMLElement.removeAllTags(named: String): Unit =
   querySelector(named)?.run { remove(); removeAllTags(named) } ?: Unit
