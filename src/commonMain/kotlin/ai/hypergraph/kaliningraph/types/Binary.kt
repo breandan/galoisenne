@@ -34,7 +34,6 @@ open class U(val i: Int) : B<Any, U>() {
 @Suppress("NonAsciiCharacters", "ClassName")
 object Ø: B<Ø, Ø>(null) { override fun flip() = Ø }
 
-
 /**
  *     i │  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
  *    ───┼───────────────────┼────────────────────┼───────────────────┐ ┐
@@ -88,143 +87,156 @@ typealias B_32<B> = F<F<F<F<F<T<B>>>>>>
 typealias B_33<B> = T<F<F<F<F<T<B>>>>>>
 typealias B_34<B> = F<T<F<F<F<T<B>>>>>>
 
-val B0: B_0<Ø> = F(Ø)
-val B1: B_1<Ø> = T(Ø)
-val B2: B_2<Ø> = T.F
-val B3: B_3<Ø> = T.T
+typealias B0 = F<Ø>
+typealias B1 = T<Ø>
+typealias B2 = F<T<Ø>>
+typealias B3 = T<T<Ø>>
+typealias B4 = F<F<T<Ø>>>
+typealias B5 = T<F<T<Ø>>>
+typealias B6 = F<T<T<Ø>>>
+typealias B7 = T<T<T<Ø>>>
 
-@JvmName("bnp1") operator fun Ø.plus(t: T<Ø>) = B1
-@JvmName("b0p1") operator fun B_0<Ø>.plus(t: T<Ø>) = B1
-@JvmName("b1p1") operator fun B_1<Ø>.plus(t: T<Ø>): B_2<Ø> = F(x + B1)
-@JvmName("b3p1") operator fun B_3<Ø>.plus(t: T<Ø>): B_4<Ø> = F(x + B1)
-@JvmName("b7p1") operator fun B_7<Ø>.plus(t: T<Ø>): B_8<Ø> = F(x + B1)
-@JvmName("b15p1") operator fun B_15<Ø>.plus(t: T<Ø>): B_16<Ø> = F(x + B1)
-@JvmName("b31p1") operator fun B_31<Ø>.plus(t: T<Ø>): B_32<Ø> = F(x + B1)
+val b0: B0 = F
+val b1: B1 = T
+val b2: B2 = T.F
+val b3: B3 = T.T
+val b4: B4 = T.F.F
+val b5: B5 = T.F.T
+val b6: B6 = T.T.F
+val b7: B7 = T.T.T
+
+@JvmName("bnp1") operator fun Ø.plus(t: T<Ø>) = b1
+@JvmName("b0p1") operator fun B_0<Ø>.plus(t: T<Ø>) = b1
+@JvmName("b1p1") operator fun B_1<Ø>.plus(t: T<Ø>): B_2<Ø> = F(x + b1)
+@JvmName("b3p1") operator fun B_3<Ø>.plus(t: T<Ø>): B_4<Ø> = F(x + b1)
+@JvmName("b7p1") operator fun B_7<Ø>.plus(t: T<Ø>): B_8<Ø> = F(x + b1)
+@JvmName("b15p1") operator fun B_15<Ø>.plus(t: T<Ø>): B_16<Ø> = F(x + b1)
+@JvmName("b31p1") operator fun B_31<Ø>.plus(t: T<Ø>): B_32<Ø> = F(x + b1)
 
 @JvmName("b?0p1") operator fun <K: B<*, *>> B_0<K>.plus(t: T<Ø>) = T(x)
-@JvmName("b?01p1") operator fun <K: B<*, *>> B_1<F<K>>.plus(t: T<Ø>) = F(x + B1)
-@JvmName("b?03p1") operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + B1)
-@JvmName("b?07p1") operator fun <K: B<*, *>> B_7<F<K>>.plus(t: T<Ø>) = F(x + B1)
-@JvmName("b?015p1") operator fun <K: B<*, *>> B_15<F<K>>.plus(t: T<Ø>) = F(x + B1)
-@JvmName("b?031p1") operator fun <K: B<*, *>> B_31<F<K>>.plus(t: T<Ø>) = F(x + B1)
+@JvmName("b?01p1") operator fun <K: B<*, *>> B_1<F<K>>.plus(t: T<Ø>) = F(x + b1)
+@JvmName("b?03p1") operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + b1)
+@JvmName("b?07p1") operator fun <K: B<*, *>> B_7<F<K>>.plus(t: T<Ø>) = F(x + b1)
+@JvmName("b?015p1") operator fun <K: B<*, *>> B_15<F<K>>.plus(t: T<Ø>) = F(x + b1)
+@JvmName("b?031p1") operator fun <K: B<*, *>> B_31<F<K>>.plus(t: T<Ø>) = F(x + b1)
 
-@JvmName("b1m1") operator fun B_1<Ø>.minus(t: T<Ø>): B_0<Ø> = B0
-@JvmName("b2m1") operator fun B_2<Ø>.minus(t: T<Ø>): B_1<Ø> = B1
-@JvmName("b4m1") operator fun B_4<Ø>.minus(t: T<Ø>): B_3<Ø> = T(x - B1)
-@JvmName("b8m1") operator fun B_8<Ø>.minus(t: T<Ø>): B_7<Ø> = T(x - B1)
-@JvmName("b16m1") operator fun B_16<Ø>.minus(t: T<Ø>): B_15<Ø> = T(x - B1)
-@JvmName("b32m1") operator fun B_32<Ø>.minus(t: T<Ø>): B_31<Ø> = T(x - B1)
+@JvmName("b1m1") operator fun B_1<Ø>.minus(t: T<Ø>): B_0<Ø> = b0
+@JvmName("b2m1") operator fun B_2<Ø>.minus(t: T<Ø>): B_1<Ø> = b1
+@JvmName("b4m1") operator fun B_4<Ø>.minus(t: T<Ø>): B_3<Ø> = T(x - b1)
+@JvmName("b8m1") operator fun B_8<Ø>.minus(t: T<Ø>): B_7<Ø> = T(x - b1)
+@JvmName("b16m1") operator fun B_16<Ø>.minus(t: T<Ø>): B_15<Ø> = T(x - b1)
+@JvmName("b32m1") operator fun B_32<Ø>.minus(t: T<Ø>): B_31<Ø> = T(x - b1)
 
 @JvmName("b?1p1") operator fun <K: B<*, *>> B_1<K>.minus(t: T<Ø>) = F(x)
-@JvmName("b?2m1") operator fun <K: B<*, *>> B_2<K>.minus(t: T<Ø>) = T(x - B1)
-@JvmName("b?4m1") operator fun <K: B<*, *>> B_4<K>.minus(t: T<Ø>) = T(x - B1)
-@JvmName("b?8m1") operator fun <K: B<*, *>> B_8<K>.minus(t: T<Ø>) = T(x - B1)
-@JvmName("b?16m1") operator fun <K: B<*, *>> B_16<K>.minus(t: T<Ø>) = T(x - B1)
-@JvmName("b?32m1") operator fun <K: B<*, *>> B_32<K>.minus(t: T<Ø>) = T(x - B1)
+@JvmName("b?2m1") operator fun <K: B<*, *>> B_2<K>.minus(t: T<Ø>) = T(x - b1)
+@JvmName("b?4m1") operator fun <K: B<*, *>> B_4<K>.minus(t: T<Ø>) = T(x - b1)
+@JvmName("b?8m1") operator fun <K: B<*, *>> B_8<K>.minus(t: T<Ø>) = T(x - b1)
+@JvmName("b?16m1") operator fun <K: B<*, *>> B_16<K>.minus(t: T<Ø>) = T(x - b1)
+@JvmName("b?32m1") operator fun <K: B<*, *>> B_32<K>.minus(t: T<Ø>) = T(x - b1)
 
 //@JvmName("b_p_") operator fun <K: B<*, *>> K.plus(k: K) = F(k)
 //@JvmName("b_m_") operator fun <K: B<*, *>> K.minus(k: K) = F(Ø)
 
-@JvmName("bop0p2") operator fun B_0<Ø>.plus(r: B_2<Ø>): B_2<Ø> = plus(B1) + B1
-@JvmName("bop1p2") operator fun B_1<Ø>.plus(r: B_2<Ø>): B_3<Ø> = plus(B1) + B1
-@JvmName("bop2p2") operator fun B_2<Ø>.plus(r: B_2<Ø>): B_4<Ø> = plus(B1) + B1
-@JvmName("bop3p2") operator fun B_3<Ø>.plus(r: B_2<Ø>): B_5<Ø> = plus(B1) + B1
-@JvmName("bop6p2") operator fun B_6<Ø>.plus(r: B_2<Ø>): B_8<Ø> = plus(B1) + B1
-@JvmName("bop7p2") operator fun B_7<Ø>.plus(r: B_2<Ø>): B_9<Ø> = plus(B1) + B1
-@JvmName("bop14p2") operator fun B_14<Ø>.plus(r: B_2<Ø>): B_16<Ø> = plus(B1) + B1
-@JvmName("bop15p2") operator fun B_15<Ø>.plus(r: B_2<Ø>): B_17<Ø> = plus(B1) + B1
-@JvmName("bop30p2") operator fun B_30<Ø>.plus(r: B_2<Ø>): B_32<Ø> = plus(B1) + B1
-@JvmName("bop31p2") operator fun B_31<Ø>.plus(r: B_2<Ø>): B_33<Ø> = plus(B1) + B1
+@JvmName("bop0p2") operator fun B_0<Ø>.plus(r: B_2<Ø>): B_2<Ø> = plus(b1) + b1
+@JvmName("bop1p2") operator fun B_1<Ø>.plus(r: B_2<Ø>): B_3<Ø> = plus(b1) + b1
+@JvmName("bop2p2") operator fun B_2<Ø>.plus(r: B_2<Ø>): B_4<Ø> = plus(b1) + b1
+@JvmName("bop3p2") operator fun B_3<Ø>.plus(r: B_2<Ø>): B_5<Ø> = plus(b1) + b1
+@JvmName("bop6p2") operator fun B_6<Ø>.plus(r: B_2<Ø>): B_8<Ø> = plus(b1) + b1
+@JvmName("bop7p2") operator fun B_7<Ø>.plus(r: B_2<Ø>): B_9<Ø> = plus(b1) + b1
+@JvmName("bop14p2") operator fun B_14<Ø>.plus(r: B_2<Ø>): B_16<Ø> = plus(b1) + b1
+@JvmName("bop15p2") operator fun B_15<Ø>.plus(r: B_2<Ø>): B_17<Ø> = plus(b1) + b1
+@JvmName("bop30p2") operator fun B_30<Ø>.plus(r: B_2<Ø>): B_32<Ø> = plus(b1) + b1
+@JvmName("bop31p2") operator fun B_31<Ø>.plus(r: B_2<Ø>): B_33<Ø> = plus(b1) + b1
 
-@JvmName("bop?00p2") operator fun <K: B<*, *>> B_0<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?01p2") operator fun <K: B<*, *>> B_1<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?02p2") operator fun <K: B<*, *>> B_2<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?03p2") operator fun <K: B<*, *>> B_3<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?06p2") operator fun <K: B<*, *>> B_6<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?07p2") operator fun <K: B<*, *>> B_7<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?014p2") operator fun <K: B<*, *>> B_14<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?015p2") operator fun <K: B<*, *>> B_15<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?030p2") operator fun <K: B<*, *>> B_30<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
-@JvmName("bop?031p2") operator fun <K: B<*, *>> B_31<F<K>>.plus(r: B_2<Ø>) = plus(B1) + B1
+@JvmName("bop?00p2") operator fun <K: B<*, *>> B_0<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?01p2") operator fun <K: B<*, *>> B_1<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?02p2") operator fun <K: B<*, *>> B_2<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?03p2") operator fun <K: B<*, *>> B_3<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?06p2") operator fun <K: B<*, *>> B_6<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?07p2") operator fun <K: B<*, *>> B_7<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?014p2") operator fun <K: B<*, *>> B_14<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?015p2") operator fun <K: B<*, *>> B_15<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?030p2") operator fun <K: B<*, *>> B_30<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
+@JvmName("bop?031p2") operator fun <K: B<*, *>> B_31<F<K>>.plus(r: B_2<Ø>) = plus(b1) + b1
 
-@JvmName("bop2m2") operator fun B_2<Ø>.minus(r: B_2<Ø>): B_0<Ø> = minus(B1) - B1
-@JvmName("bop3m2") operator fun B_3<Ø>.minus(r: B_2<Ø>): B_1<Ø> = minus(B1) - B1
-@JvmName("bop4m2") operator fun B_4<Ø>.minus(r: B_2<Ø>): B_2<Ø> = minus(B1) - B1
-@JvmName("bop5m2") operator fun B_5<Ø>.minus(r: B_2<Ø>): B_3<Ø> = minus(B1) - B1
-@JvmName("bop8m2") operator fun B_8<Ø>.minus(r: B_2<Ø>): B_6<Ø> = minus(B1) - B1
-@JvmName("bop9m2") operator fun B_9<Ø>.minus(r: B_2<Ø>): B_7<Ø> = minus(B1) - B1
-@JvmName("bop16m2") operator fun B_16<Ø>.minus(r: B_2<Ø>): B_14<Ø> = minus(B1) - B1
-@JvmName("bop17m2") operator fun B_17<Ø>.minus(r: B_2<Ø>): B_15<Ø> = minus(B1) - B1
-@JvmName("bop32m2") operator fun B_32<Ø>.minus(r: B_2<Ø>): B_30<Ø> = minus(B1) - B1
-@JvmName("bop33m2") operator fun B_33<Ø>.minus(r: B_2<Ø>): B_31<Ø> = minus(B1) - B1
+@JvmName("bop2m2") operator fun B_2<Ø>.minus(r: B_2<Ø>): B_0<Ø> = minus(b1) - b1
+@JvmName("bop3m2") operator fun B_3<Ø>.minus(r: B_2<Ø>): B_1<Ø> = minus(b1) - b1
+@JvmName("bop4m2") operator fun B_4<Ø>.minus(r: B_2<Ø>): B_2<Ø> = minus(b1) - b1
+@JvmName("bop5m2") operator fun B_5<Ø>.minus(r: B_2<Ø>): B_3<Ø> = minus(b1) - b1
+@JvmName("bop8m2") operator fun B_8<Ø>.minus(r: B_2<Ø>): B_6<Ø> = minus(b1) - b1
+@JvmName("bop9m2") operator fun B_9<Ø>.minus(r: B_2<Ø>): B_7<Ø> = minus(b1) - b1
+@JvmName("bop16m2") operator fun B_16<Ø>.minus(r: B_2<Ø>): B_14<Ø> = minus(b1) - b1
+@JvmName("bop17m2") operator fun B_17<Ø>.minus(r: B_2<Ø>): B_15<Ø> = minus(b1) - b1
+@JvmName("bop32m2") operator fun B_32<Ø>.minus(r: B_2<Ø>): B_30<Ø> = minus(b1) - b1
+@JvmName("bop33m2") operator fun B_33<Ø>.minus(r: B_2<Ø>): B_31<Ø> = minus(b1) - b1
 
-@JvmName("bop?2m2") operator fun <K: B<*, *>> B_2<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?3m2") operator fun <K: B<*, *>> B_3<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?4m2") operator fun <K: B<*, *>> B_4<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?5m2") operator fun <K: B<*, *>> B_5<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?8m2") operator fun <K: B<*, *>> B_8<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?9m2") operator fun <K: B<*, *>> B_9<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?16m2") operator fun <K: B<*, *>> B_16<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?17m2") operator fun <K: B<*, *>> B_17<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?32m2") operator fun <K: B<*, *>> B_32<K>.minus(r: B_2<Ø>) = minus(B1) - B1
-@JvmName("bop?33m2") operator fun <K: B<*, *>> B_33<K>.minus(r: B_2<Ø>) = minus(B1) - B1
+@JvmName("bop?2m2") operator fun <K: B<*, *>> B_2<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?3m2") operator fun <K: B<*, *>> B_3<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?4m2") operator fun <K: B<*, *>> B_4<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?5m2") operator fun <K: B<*, *>> B_5<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?8m2") operator fun <K: B<*, *>> B_8<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?9m2") operator fun <K: B<*, *>> B_9<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?16m2") operator fun <K: B<*, *>> B_16<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?17m2") operator fun <K: B<*, *>> B_17<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?32m2") operator fun <K: B<*, *>> B_32<K>.minus(r: B_2<Ø>) = minus(b1) - b1
+@JvmName("bop?33m2") operator fun <K: B<*, *>> B_33<K>.minus(r: B_2<Ø>) = minus(b1) - b1
 
 
-@JvmName("bop0p3") operator fun B_0<Ø>.plus(r: B_3<Ø>): B_3<Ø> = plus(B2) + B1
-@JvmName("bop1p3") operator fun B_1<Ø>.plus(r: B_3<Ø>): B_4<Ø> = plus(B2) + B1
-@JvmName("bop2p3") operator fun B_2<Ø>.plus(r: B_3<Ø>): B_5<Ø> = plus(B2) + B1
-@JvmName("bop3p3") operator fun B_3<Ø>.plus(r: B_3<Ø>): B_6<Ø> = plus(B2) + B1
-@JvmName("bop5p3") operator fun B_5<Ø>.plus(r: B_3<Ø>): B_8<Ø> = plus(B2) + B1
-@JvmName("bop6p3") operator fun B_6<Ø>.plus(r: B_3<Ø>): B_9<Ø> = plus(B2) + B1
-@JvmName("bop7p3") operator fun B_7<Ø>.plus(r: B_3<Ø>): B_10<Ø> = plus(B2) + B1
-@JvmName("bop13p3") operator fun B_13<Ø>.plus(r: B_3<Ø>): B_16<Ø> = plus(B2) + B1
-@JvmName("bop14p3") operator fun B_14<Ø>.plus(r: B_3<Ø>): B_17<Ø> = plus(B2) + B1
-@JvmName("bop15p3") operator fun B_15<Ø>.plus(r: B_3<Ø>): B_18<Ø> = plus(B2) + B1
-@JvmName("bop29p3") operator fun B_29<Ø>.plus(r: B_3<Ø>): B_32<Ø> = plus(B2) + B1
-@JvmName("bop30p3") operator fun B_30<Ø>.plus(r: B_3<Ø>): B_33<Ø> = plus(B2) + B1
-@JvmName("bop31p3") operator fun B_31<Ø>.plus(r: B_3<Ø>): B_34<Ø> = plus(B2) + B1
+@JvmName("bop0p3") operator fun B_0<Ø>.plus(r: B_3<Ø>): B_3<Ø> = plus(b2) + b1
+@JvmName("bop1p3") operator fun B_1<Ø>.plus(r: B_3<Ø>): B_4<Ø> = plus(b2) + b1
+@JvmName("bop2p3") operator fun B_2<Ø>.plus(r: B_3<Ø>): B_5<Ø> = plus(b2) + b1
+@JvmName("bop3p3") operator fun B_3<Ø>.plus(r: B_3<Ø>): B_6<Ø> = plus(b2) + b1
+@JvmName("bop5p3") operator fun B_5<Ø>.plus(r: B_3<Ø>): B_8<Ø> = plus(b2) + b1
+@JvmName("bop6p3") operator fun B_6<Ø>.plus(r: B_3<Ø>): B_9<Ø> = plus(b2) + b1
+@JvmName("bop7p3") operator fun B_7<Ø>.plus(r: B_3<Ø>): B_10<Ø> = plus(b2) + b1
+@JvmName("bop13p3") operator fun B_13<Ø>.plus(r: B_3<Ø>): B_16<Ø> = plus(b2) + b1
+@JvmName("bop14p3") operator fun B_14<Ø>.plus(r: B_3<Ø>): B_17<Ø> = plus(b2) + b1
+@JvmName("bop15p3") operator fun B_15<Ø>.plus(r: B_3<Ø>): B_18<Ø> = plus(b2) + b1
+@JvmName("bop29p3") operator fun B_29<Ø>.plus(r: B_3<Ø>): B_32<Ø> = plus(b2) + b1
+@JvmName("bop30p3") operator fun B_30<Ø>.plus(r: B_3<Ø>): B_33<Ø> = plus(b2) + b1
+@JvmName("bop31p3") operator fun B_31<Ø>.plus(r: B_3<Ø>): B_34<Ø> = plus(b2) + b1
 
-@JvmName("bop?00p3") operator fun <K: B<*, *>> B_0<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?01p3") operator fun <K: B<*, *>> B_1<F<F<K>>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?02p3") operator fun <K: B<*, *>> B_2<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?03p3") operator fun <K: B<*, *>> B_3<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?05p3") operator fun <K: B<*, *>> B_5<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?06p3") operator fun <K: B<*, *>> B_6<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?07p3") operator fun <K: B<*, *>> B_7<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?013p3") operator fun <K: B<*, *>> B_13<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?014p3") operator fun <K: B<*, *>> B_14<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?015p3") operator fun <K: B<*, *>> B_15<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?029p3") operator fun <K: B<*, *>> B_29<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?030p3") operator fun <K: B<*, *>> B_30<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
-@JvmName("bop?031p3") operator fun <K: B<*, *>> B_31<F<K>>.plus(r: B_3<Ø>) = plus(B2) + B1
+@JvmName("bop?00p3") operator fun <K: B<*, *>> B_0<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?01p3") operator fun <K: B<*, *>> B_1<F<F<K>>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?02p3") operator fun <K: B<*, *>> B_2<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?03p3") operator fun <K: B<*, *>> B_3<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?05p3") operator fun <K: B<*, *>> B_5<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?06p3") operator fun <K: B<*, *>> B_6<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?07p3") operator fun <K: B<*, *>> B_7<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?013p3") operator fun <K: B<*, *>> B_13<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?014p3") operator fun <K: B<*, *>> B_14<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?015p3") operator fun <K: B<*, *>> B_15<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?029p3") operator fun <K: B<*, *>> B_29<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?030p3") operator fun <K: B<*, *>> B_30<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
+@JvmName("bop?031p3") operator fun <K: B<*, *>> B_31<F<K>>.plus(r: B_3<Ø>) = plus(b2) + b1
 
-@JvmName("bop3m3") operator fun B_3<Ø>.minus(r: B_3<Ø>): B_0<Ø> = minus(B2) - B1
-@JvmName("bop4m3") operator fun B_4<Ø>.minus(r: B_3<Ø>): B_1<Ø> = minus(B2) - B1
-@JvmName("bop5m3") operator fun B_5<Ø>.minus(r: B_3<Ø>): B_2<Ø> = minus(B2) - B1
-@JvmName("bop6m3") operator fun B_6<Ø>.minus(r: B_3<Ø>): B_3<Ø> = minus(B2) - B1
-@JvmName("bop8m3") operator fun B_8<Ø>.minus(r: B_3<Ø>): B_5<Ø> = minus(B2) - B1
-@JvmName("bop9m3") operator fun B_9<Ø>.minus(r: B_3<Ø>): B_6<Ø> = minus(B2) - B1
-@JvmName("bop10m3") operator fun B_10<Ø>.minus(r: B_3<Ø>): B_7<Ø> = minus(B2) - B1
-@JvmName("bop16m3") operator fun B_16<Ø>.minus(r: B_3<Ø>): B_13<Ø> = minus(B2) - B1
-@JvmName("bop17m3") operator fun B_17<Ø>.minus(r: B_3<Ø>): B_14<Ø> = minus(B2) - B1
-@JvmName("bop18m3") operator fun B_18<Ø>.minus(r: B_3<Ø>): B_15<Ø> = minus(B2) - B1
-@JvmName("bop32m3") operator fun B_32<Ø>.minus(r: B_3<Ø>): B_29<Ø> = minus(B2) - B1
-@JvmName("bop33m3") operator fun B_33<Ø>.minus(r: B_3<Ø>): B_30<Ø> = minus(B2) - B1
-@JvmName("bop34m3") operator fun B_34<Ø>.minus(r: B_3<Ø>): B_31<Ø> = minus(B2) - B1
+@JvmName("bop3m3") operator fun B_3<Ø>.minus(r: B_3<Ø>): B_0<Ø> = minus(b2) - b1
+@JvmName("bop4m3") operator fun B_4<Ø>.minus(r: B_3<Ø>): B_1<Ø> = minus(b2) - b1
+@JvmName("bop5m3") operator fun B_5<Ø>.minus(r: B_3<Ø>): B_2<Ø> = minus(b2) - b1
+@JvmName("bop6m3") operator fun B_6<Ø>.minus(r: B_3<Ø>): B_3<Ø> = minus(b2) - b1
+@JvmName("bop8m3") operator fun B_8<Ø>.minus(r: B_3<Ø>): B_5<Ø> = minus(b2) - b1
+@JvmName("bop9m3") operator fun B_9<Ø>.minus(r: B_3<Ø>): B_6<Ø> = minus(b2) - b1
+@JvmName("bop10m3") operator fun B_10<Ø>.minus(r: B_3<Ø>): B_7<Ø> = minus(b2) - b1
+@JvmName("bop16m3") operator fun B_16<Ø>.minus(r: B_3<Ø>): B_13<Ø> = minus(b2) - b1
+@JvmName("bop17m3") operator fun B_17<Ø>.minus(r: B_3<Ø>): B_14<Ø> = minus(b2) - b1
+@JvmName("bop18m3") operator fun B_18<Ø>.minus(r: B_3<Ø>): B_15<Ø> = minus(b2) - b1
+@JvmName("bop32m3") operator fun B_32<Ø>.minus(r: B_3<Ø>): B_29<Ø> = minus(b2) - b1
+@JvmName("bop33m3") operator fun B_33<Ø>.minus(r: B_3<Ø>): B_30<Ø> = minus(b2) - b1
+@JvmName("bop34m3") operator fun B_34<Ø>.minus(r: B_3<Ø>): B_31<Ø> = minus(b2) - b1
 
-@JvmName("bop?3m3") operator fun <K: B<*, *>> B_3<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?4m3") operator fun <K: B<*, *>> B_4<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?5m3") operator fun <K: B<*, *>> B_5<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?6m3") operator fun <K: B<*, *>> B_6<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?8m3") operator fun <K: B<*, *>> B_8<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?9m3") operator fun <K: B<*, *>> B_9<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?10m3") operator fun <K: B<*, *>> B_10<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?16m3") operator fun <K: B<*, *>> B_16<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?17m3") operator fun <K: B<*, *>> B_17<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?18m3") operator fun <K: B<*, *>> B_18<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?32m3") operator fun <K: B<*, *>> B_32<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?33m3") operator fun <K: B<*, *>> B_33<K>.minus(r: B_3<Ø>) = minus(B2) - B1
-@JvmName("bop?34m3") operator fun <K: B<*, *>> B_34<K>.minus(r: B_3<Ø>) = minus(B2) - B1
+@JvmName("bop?3m3") operator fun <K: B<*, *>> B_3<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?4m3") operator fun <K: B<*, *>> B_4<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?5m3") operator fun <K: B<*, *>> B_5<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?6m3") operator fun <K: B<*, *>> B_6<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?8m3") operator fun <K: B<*, *>> B_8<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?9m3") operator fun <K: B<*, *>> B_9<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?10m3") operator fun <K: B<*, *>> B_10<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?16m3") operator fun <K: B<*, *>> B_16<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?17m3") operator fun <K: B<*, *>> B_17<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?18m3") operator fun <K: B<*, *>> B_18<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?32m3") operator fun <K: B<*, *>> B_32<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?33m3") operator fun <K: B<*, *>> B_33<K>.minus(r: B_3<Ø>) = minus(b2) - b1
+@JvmName("bop?34m3") operator fun <K: B<*, *>> B_34<K>.minus(r: B_3<Ø>) = minus(b2) - b1
 
 
 @JvmName("b_t0") operator fun <K: B<*, *>> K.times(t: F<Ø>) = t
@@ -279,13 +291,15 @@ val B3: B_3<Ø> = T.T
 //@JvmName("flipTT") fun <X: T<Y>, Y> X.flipAll()/*:F<???>*/= F(x.flipAll())
 //@JvmName("flipFF") fun <X: F<Y>, Y> X.flipAll()/*:T<???>*/= F(x.flipAll())
 
-// TODO: Enumerate all binary summands [2^N - D, 2^n - 1] + D for all (D, N)
-///  *00 + 10 -> *10
-///  *01 + 10 -> *11
-/// *010 + 10 -> *100
-/// *011 + 10 -> *101
-///*0110 + 10 -> *1000
-///*0111 + 10 -> *1001
+// TODO: Can we express boolean predicates >, < efficiently?
+// 100100:
+// 1000000* >
+//  ***** <
+// 11**** >
+// 101*** >
+// 10011* >
+// 100101 >
+// 1000** <
 
 // TODO: Alternatively, we could just implement RCA/CLA in full
 // https://en.wikipedia.org/wiki/Adder_(electronics)#Adders_supporting_multiple_bits

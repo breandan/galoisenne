@@ -11,48 +11,48 @@ class BinaryTest {
       var i = 0
       val fifteen =
         F.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B2 }.also { i++; assertEquals(i++, it.toInt()) }
-          .let { it + B3 }.also { i+=2; assertEquals(i++, it.toInt()) }
-          .let { it + B2 }.also { i++; assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }.also { assertEquals(i++, it.toInt()) }
-          .let { it + B1 }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b2 }.also { i++; assertEquals(i++, it.toInt()) }
+          .let { it + b3 }.also { i+=2; assertEquals(i++, it.toInt()) }
+          .let { it + b2 }.also { i++; assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }.also { assertEquals(i++, it.toInt()) }
+          .let { it + b1 }
 
       assertEquals(T.T.T.T, fifteen)
-      assertEquals(T.F.F.F.T, fifteen.let { it + B1 }.let { it + B1 })
+      assertEquals(T.F.F.F.T, fifteen.let { it + b1 }.let { it + b1 })
     }
 
   @Test
   fun binaryPlus2Test() {
     val thirteen =
       T.also { assertEquals(1, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(3, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(5, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(7, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(9, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(11, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(13, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(3, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(5, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(7, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(9, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(11, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(13, it.toInt()) }
 
     assertEquals(T.T.F.T, thirteen)
 
     val twelve =
       F.also { assertEquals(0, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(2, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(4, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(6, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(8, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(10, it.toInt()) }
-        .let { it + B2 }.also { assertEquals(12, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(2, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(4, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(6, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(8, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(10, it.toInt()) }
+        .let { it + b2 }.also { assertEquals(12, it.toInt()) }
   }
 
   @Test
   fun shlTest() {
-    assertEquals(T.T * B2 * B2, T.T.F.F)
+    assertEquals(T.T * b2 * b2, T.T.F.F)
   }
 
   @Test
@@ -65,11 +65,11 @@ class BinaryTest {
   @Test
   fun plusMinusTest() {
     val t0: T<T<Ø>> = T(T(Ø))
-    val t1: T<T<Ø>> = F(F(T(Ø))).let { it - B3 }.let { it + B2 }
+    val t1: T<T<Ø>> = F(F(T(Ø))).let { it - b3 }.let { it + b2 }
     assertEquals(t0, t1)
-    val t2: T<T<Ø>> = t1.let { it - B1 }.let { it + B1 }
+    val t2: T<T<Ø>> = t1.let { it - b1 }.let { it + b1 }
     assertEquals(t1, t2)
-    val t3: T<T<Ø>> = t2.let { it - B2 }.let { it + B1 }.let { it + B1 }
+    val t3: T<T<Ø>> = t2.let { it - b2 }.let { it + b1 }.let { it + b1 }
     assertEquals(t2, t3)
   }
 

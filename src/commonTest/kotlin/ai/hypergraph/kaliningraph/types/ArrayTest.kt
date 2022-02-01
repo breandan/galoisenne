@@ -24,8 +24,9 @@ class ArrayTest {
     assertEquals(S5, t2.len)
     assertEquals(2, t2[S5])
 
-    t2[S2..S4]
-//    t2.subvec(S2, S1) // Compile error
+      t2[S2..S4]
+//    t2[S2..S1] // Compile error
+//    t2[S3..S5] // Compile error
 
     val t3 = t2.drop3().append(0)
     assertEquals(2, t3[S2])

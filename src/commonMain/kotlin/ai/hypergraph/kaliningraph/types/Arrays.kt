@@ -93,10 +93,10 @@ fun <E, Z : Q5<P>, P> VT<E, Z>.drop4(): VT<E, S<P>> = VT(len - S4, fetch(S4..len
 
 //                              ┌────j────┐    ┌────k────┐    where j, j are the relative offsets Y - X, Z - Y respectively
 // Encodes the constraint:  P < X    <    Y && Y    <    Z    where X, Y are the start and end of range in a vector of length Z
-@JvmName("sv121") operator fun <E, X: Q1<P>, Y: Q2<X>, Z : Q1<Y>, P> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv122") operator fun <E, X: Q1<P>, Y: Q2<X>, Z : Q2<Y>, P> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv221") operator fun <E, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>, P> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv222") operator fun <E, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>, P> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv121") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv122") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv221") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv222") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
 
 operator fun <A, B> S<A>.rangeTo(that: S<B>) = Y2(this, that)
 
