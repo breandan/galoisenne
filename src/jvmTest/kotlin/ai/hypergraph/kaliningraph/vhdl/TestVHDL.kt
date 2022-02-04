@@ -151,7 +151,7 @@ class TestVHDL {
 
         runCommand("ghdl -a ${adder.absolutePath} ${testadder.absolutePath}")
         runCommand("ghdl -e testbench")
-        runCommand("ghdl -r testbench --wave=wave.ghw")
+        runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
 
@@ -257,7 +257,7 @@ class TestVHDL {
 
         runCommand("ghdl -a ${adder.absolutePath} ${testadder.absolutePath}")
         runCommand("ghdl -e testbench")
-        runCommand("ghdl -r testbench --wave=wave.ghw")
+        runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
 
@@ -343,7 +343,7 @@ class TestVHDL {
 
         runCommand("ghdl -a ${ram.absolutePath} ${testram.absolutePath}")
         runCommand("ghdl -e testbench")
-        runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=10000ns")
+        runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=1000ns")
         runCommand("open wave.ghw")
     }
 
@@ -452,7 +452,7 @@ class TestVHDL {
 
         runCommand("ghdl -a ${file.absolutePath} ${designFile.absolutePath}")
         runCommand("ghdl -e testbench")
-        runCommand("ghdl -r testbench --wave=wave.ghw")
+        runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
 }

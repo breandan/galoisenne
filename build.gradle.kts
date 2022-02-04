@@ -3,6 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   signing
@@ -12,6 +13,7 @@ plugins {
   kotlin("jupyter.api") version "0.11.0-53"
   id("com.github.ben-manes.versions") version "0.41.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    kotlin("jvm") version "1.6.10"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
@@ -257,4 +259,15 @@ tasks {
   val jupyterRun by creating(Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
+}
+dependencies {
+    implementation(kotlin("stdlib-jdk8"))
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }
