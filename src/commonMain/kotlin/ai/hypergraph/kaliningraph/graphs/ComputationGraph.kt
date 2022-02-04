@@ -45,8 +45,8 @@ interface CGFamily: IGF<ComputationGraph, UnlabeledEdge, Gate> {
 open class ComputationGraph(override val vertices: Set<Gate> = setOf(),
                             val root: Gate? = vertices.firstOrNull()) :
   Graph<ComputationGraph, UnlabeledEdge, Gate>(vertices), CGFamily {
-  constructor(vertices: Set<Gate> = setOf()): this(vertices, vertices.firstOrNull())
-  constructor(builder: CircuitBuilder.() -> Unit) : this(CircuitBuilder().also { it.builder() }.graph)
+    constructor(vertices: Set<Gate> = setOf()) : this(vertices, vertices.firstOrNull())
+    constructor(builder: CircuitBuilder.() -> Unit) : this(CircuitBuilder().also { it.builder() }.graph)
 }
 
 interface Op
@@ -145,5 +145,4 @@ class NFunction(
 }
 
 open class UnlabeledEdge(override val source: Gate, override val target: Gate):
-  Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target), CGFamily {
-}
+  Edge<ComputationGraph, UnlabeledEdge, Gate>(source, target), CGFamily

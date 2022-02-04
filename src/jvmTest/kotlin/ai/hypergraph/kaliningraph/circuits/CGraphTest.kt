@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 class CGraphTest {
   @Test
-  fun testCircuitBuilder() {
+  fun testRTLBuilder() {
      ComputationGraph {
       val funA by def(a, b, c) { a + b + c }
       j = funA(3, 2, 1) + b * c
