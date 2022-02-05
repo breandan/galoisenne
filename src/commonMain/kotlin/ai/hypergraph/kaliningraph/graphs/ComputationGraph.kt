@@ -91,8 +91,7 @@ open class Gate(
   constructor(id: String = randomString(), op: Op = Ops.id, vararg gates: Gate) :
     this(id, op, { s -> gates.toSet().map { t -> UnlabeledEdge(s, t) }.toSet() })
   constructor(id: String = randomString(), edgeMap: (Gate) -> Set<UnlabeledEdge>): this(id, Ops.id, edgeMap)
-  constructor(gate: Gate, edgeMap: (Gate) -> Set<UnlabeledEdge>) :
-    this(id = gate.id, edgeMap = edgeMap)
+  constructor(gate: Gate, edgeMap: (Gate) -> Set<UnlabeledEdge>) : this(gate.id, gate.op, edgeMap)
 
   companion object {
     fun wrap(value: Any): Gate = if (value is Gate) value else Gate(value.toString())

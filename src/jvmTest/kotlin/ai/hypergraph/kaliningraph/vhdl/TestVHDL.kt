@@ -360,8 +360,8 @@ class TestVHDL {
           entity gate is
           port(
           """.trimIndent() +
-          inputVars.joinToString("\n", "\n","\n") { "    $it: in std_logic;" } +
-          """
+            inputVars.joinToString("\n", "\n", "\n") { "    $it: in std_logic;" } +
+            """
               q: out std_logic
           );
           end gate;
@@ -384,19 +384,19 @@ class TestVHDL {
         val designFile = genArithmeticCircuit(circuit).let { File("design.vhd").apply { writeText(it) } }
         val vars = circuit.allVars()
 
-        val test1: Pair<Map<String,Int >,Int> = mapOf(
+        val test1: Pair<Map<String, Int>, Int> = mapOf(
             "a" to 1,
             "b" to 0,
             "c" to 1
         ) to 0
 
-        val test2: Pair<Map<String,Int >,Int> = mapOf(
+        val test2: Pair<Map<String, Int>, Int> = mapOf(
             "a" to 1,
             "b" to 1,
             "c" to 1
         ) to 1
 
-        val test3: Pair<Map<String,Int >,Int> = mapOf(
+        val test3: Pair<Map<String, Int>, Int> = mapOf(
             "a" to 1,
             "b" to 0,
             "c" to 1
@@ -417,8 +417,8 @@ class TestVHDL {
           component gate is
           port(
           """.trimIndent() +
-          vars.joinToString("\n", "\n","\n") { "    $it: in std_logic;" } +
-          """
+                vars.joinToString("\n", "\n", "\n") { "    $it: in std_logic;" } +
+                """
             q: out std_logic);
           end component;
 
@@ -455,23 +455,23 @@ class TestVHDL {
         runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
-}
 
-// Test case for a boolean circuit
-fun Pair<Map<String, Int>, Int>.toTest() =
-    first.entries.joinToString("; ", "", ";") { (k, v) -> "${k}_in <= '$v'" }
+    // Test case for a boolean circuit
+    fun Pair<Map<String, Int>, Int>.toTest() =
+        first.entries.joinToString("; ", "", ";") { (k, v) -> "${k}_in <= '$v'" }
 
-private fun String.runVHDL() {
-    File("hello.vhd").apply { writeText(this@runVHDL) }
-    runCommand("ghdl -a hello.vhd")
-    runCommand("ghdl -e hello_world")
-    runCommand("ghdl -r hello_world")
-}
-
-fun runCommand(command: String): Boolean =
-    try {
-        ProcessBuilder(*command.split(" ").toTypedArray())
-            .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
-    } catch (e: Exception) {
-        false
+    private fun String.runVHDL() {
+        File("hello.vhd").apply { writeText(this@runVHDL) }
+        runCommand("ghdl -a hello.vhd")
+        runCommand("ghdl -e hello_world")
+        runCommand("ghdl -r hello_world")
     }
+
+    fun runCommand(command: String): Boolean =
+        try {
+            ProcessBuilder(*command.split(" ").toTypedArray())
+                .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
+        } catch (e: Exception) {
+            false
+        }
+}

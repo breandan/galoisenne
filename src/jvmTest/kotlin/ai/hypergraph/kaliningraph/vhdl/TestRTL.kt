@@ -19,6 +19,7 @@ class TestRTL {
             E = C + 5
         }.show()
     }
+
 /*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.simpleTest"
 */
@@ -37,7 +38,7 @@ class TestRTL {
     fun testReassignment() {
         RTLGraph {
             A = B + B
-            A = 2 + B
+            A = 2 + A
             A = C + C
         }.show()
     }
@@ -61,24 +62,22 @@ class TestRTL {
 /*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.testDotProduct"
 */
-
     @Test
     fun testDotProduct() {
         RTLGraph {
             A = malloc(4);
             B = malloc(4);
-            C = malloc(4);
-            C[0] = A[0] * B[0];
-            C[1] = A[1] * B[1];
-            C[2] = A[2] * B[2];
-            C[3] = A[3] * B[3];
+            C = malloc(1);
+            C[0] = A[0] * B[0] +
+                    A[1] * B[1] +
+                    A[2] * B[2] +
+                    A[3] * B[3];
         }.show()
     }
 
 /*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.testConvolution"
 */
-
     @Test
     fun testConvolution() {
         RTLGraph {

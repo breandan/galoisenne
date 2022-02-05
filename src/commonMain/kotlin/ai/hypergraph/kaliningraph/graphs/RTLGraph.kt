@@ -10,13 +10,19 @@ import kotlin.reflect.KProperty
 class RTLBuilder {
     var graph = RTLGraph()
 
-    var A by RTLVar("A", builder=this); var B by RTLVar("B", builder=this); var C by RTLVar("C",builder=this); var D by RTLVar("D", builder=this)
-    var E by RTLVar("E", builder=this); var F by RTLVar("F", builder=this); var G by RTLVar("G",builder=this); var H by RTLVar("H", builder=this)
-    var I by RTLVar("I", builder=this); var J by RTLVar("J", builder=this); var K by RTLVar("K",builder=this); var L by RTLVar("L", builder=this)
-    var M by RTLVar("M", builder=this); var N by RTLVar("N", builder=this); var O by RTLVar("O",builder=this); var P by RTLVar("P", builder=this)
-    var Q by RTLVar("Q", builder=this); var R by RTLVar("R", builder=this); var S by RTLVar("S",builder=this); var T by RTLVar("T", builder=this)
-    var U by RTLVar("U", builder=this); var V by RTLVar("V", builder=this); var W by RTLVar("W",builder=this); var X by RTLVar("X", builder=this)
-    var Y by RTLVar("Y", builder=this); var Z by RTLVar("Z", builder=this)
+    var A by RTLVar("A", this); var B by RTLVar("B", this)
+    var C by RTLVar("C", this); var D by RTLVar("D", this)
+    var E by RTLVar("E", this); var F by RTLVar("F", this)
+    var G by RTLVar("G", this); var H by RTLVar("H", this)
+    var I by RTLVar("I", this); var J by RTLVar("J", this)
+    var K by RTLVar("K", this); var L by RTLVar("L", this)
+    var M by RTLVar("M", this); var N by RTLVar("N", this)
+    var O by RTLVar("O", this); var P by RTLVar("P", this)
+    var Q by RTLVar("Q", this); var R by RTLVar("R", this)
+    var S by RTLVar("S", this); var T by RTLVar("T", this)
+    var U by RTLVar("U", this); var V by RTLVar("V", this)
+    var W by RTLVar("W", this); var X by RTLVar("X", this)
+    var Y by RTLVar("Y", this); var Z by RTLVar("Z", this)
 
     var RAM by RTLVar(builder=this)
     val mostRecent: MutableMap<RTLGate, RTLGate> = mutableMapOf()
@@ -62,6 +68,7 @@ object RTLOps {
 open class RTLGate(
     id: String = randomString(),
     val op: Op = RTLOps.id,
+    // Allows a RTLGate to access its builder and update the graph before finalization
     open val builder: RTLBuilder? = null,
     override val edgeMap: (RTLGate) -> Set<RTLEdge>
 ) : Vertex<RTLGraph, RTLEdge, RTLGate>(id), RTLFamily {
@@ -80,30 +87,34 @@ open class RTLGate(
 
     override fun toString() = if(op == RTLOps.id) id else op.toString()
 
-    operator fun get(that: Any) = RTLGate(RTLOps.get, findBuilder(), mostRecentInstance(), wrap(that))
-    operator fun plus(that: Any) = RTLGate(RTLOps.sum, findBuilder(), mostRecentInstance(), wrap(that))
-    operator fun times(that: Any) = RTLGate(RTLOps.prod, findBuilder(), mostRecentInstance(), wrap(that))
+    operator fun get(that: Any) = RTLGate(RTLOps.get, builder(), mostRecentInstance(), wrap(that))
+    operator fun plus(that: Any) = RTLGate(RTLOps.sum, builder(), mostRecentInstance(), wrap(that))
+    operator fun times(that: Any) = RTLGate(RTLOps.prod, builder(), mostRecentInstance(), wrap(that))
 
     operator fun getValue(a: Any?, prop: KProperty<*>): RTLGate = RTLGate(prop.name, a as? RTLBuilder)
     open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: RTLGate) {
-        val builder = findBuilder()
-        val newGate = RTLGate(prop.name, builder, RTLGate(RTLOps.set, builder, value))
+        val builder = builder()
+        val newGate = RTLGate(
+            builder().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
+            builder,
+            RTLGate(RTLOps.set, builder, value)
+        )
         builder.graph += newGate.let { RTLGraph(it.graph, it) }
         builder.mostRecent[this] = newGate
     }
 
-    fun findBuilder() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
+    fun builder() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
 
-    fun mostRecentInstance() = findBuilder().mostRecent[this] ?: this
+    fun mostRecentInstance() = builder().mostRecent[this] ?: this
 
     operator fun set(index: Any, value: Any) {
-        val builder = findBuilder()
+        val builder = builder()
         val mri = mostRecentInstance()
         val newGate = RTLGate(
             mri.id + "'", builder, RTLGate(
                 RTLOps.set,
                 builder,
-                mri, //this, //TODO: WHY??
+                mri,
                 wrap(value),
                 wrap(index),
             )
@@ -113,7 +124,7 @@ open class RTLGate(
     }
 }
 
-class RTLVar(val name: String = randomString(), override val builder: RTLBuilder) : RTLGate(name)
+class RTLVar(val name: String = randomString(), override val builder: RTLBuilder) : RTLGate(name, builder)
 
 open class RTLEdge(override val source: RTLGate, override val target: RTLGate):
     Edge<RTLGraph, RTLEdge, RTLGate>(source, target), RTLFamily
