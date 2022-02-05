@@ -22,8 +22,8 @@
 \begin{document}
     \maketitle
 
-\section{VHDL generation}
-\subsection{Simple test}
+\section*{III. VHDL generation}
+\subsection*{1. Simple test}
 
 \begin{lstlisting}
 RAM = malloc(4);
@@ -32,7 +32,7 @@ RAM[3] = RAM[0] * RAM[1] + RAM[2]
 
 \includegraphics[scale=0.25]{rtd31}
 
-\pagebreak\subsection{Vector multiplication}
+\pagebreak\subsection*{2. Vector multiplication}
 
 \begin{lstlisting}
 A = malloc(4);
@@ -46,7 +46,7 @@ C[3] = A[3] * B[3];
 
 \includegraphics[scale=0.25]{rtd32}
 
-\pagebreak\subsection{Dot product}
+\pagebreak\subsection*{3. Dot product}
 
 \begin{lstlisting}
 A = malloc(4);
@@ -60,7 +60,7 @@ C[0] = A[0] * B[0] +
 
 \includegraphics[scale=0.25]{rtd33}
 
-\pagebreak\subsection{Convolution}
+\pagebreak\subsection*{4. Convolution}
 
 \begin{lstlisting}
 A = malloc(6);
@@ -72,6 +72,53 @@ C[2] = A[2] * W[0] + A[3] * W[1] + A[4] * W[2];
 C[3] = A[3] * W[0] + A[4] * W[1] + A[5] * W[2];
 \end{lstlisting}
 
-    \includegraphics[scale=0.25]{rtd34}
+\includegraphics[scale=0.25]{rtd34}
 
+\pagebreak\section*{IV. Extensions/Optimizations}
+
+\subsection*{1. Simple variable test}
+
+\begin{lstlisting}
+I = 0;
+I = 1;
+I = I+J;
+\end{lstlisting}
+
+\includegraphics[scale=0.25]{rtd41}
+
+\pagebreak\subsection*{2. Simple loop test}
+
+\begin{lstlisting}
+S = 0.w
+for(i in 0..3) { // 4 iterations
+    S = S + i.w
+}
+\end{lstlisting}
+
+\includegraphics[scale=0.25]{rtd42}
+
+\pagebreak\subsection*{3. Sum of array}
+
+\begin{lstlisting}
+A = malloc(4);
+S = 0.w;
+for (i in 0..3) { // 4 iterations
+    S += A[i]
+}
+\end{lstlisting}
+
+\includegraphics[scale=0.25]{rtd43}
+
+\pagebreak\subsection*{4. Dot product}
+
+\begin{lstlisting}
+A = malloc(4);
+B = malloc(4);
+S = 0.w;
+for (i in 0..3) { // 4 iterations
+    S = S + A[i] * B[i];
+}
+\end{lstlisting}
+
+\includegraphics[scale=0.25]{rtd44}
 \end{document}

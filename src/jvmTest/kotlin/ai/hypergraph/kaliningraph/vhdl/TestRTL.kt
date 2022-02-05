@@ -90,4 +90,60 @@ class TestRTL {
             C[3] = A[3] * W[0] + A[4] * W[1] + A[5] * W[2];
         }.show()
     }
+
+/*
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.simpleVariableTest"
+*/
+    @Test
+    fun simpleVariableTest() {
+        RTLGraph {
+            I = 1.w
+            J = 1.w
+            I = I+J;
+        }.show()
+    }
+
+/*
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.simpleLoopTest"
+*/
+    @Test
+    fun simpleLoopTest() {
+        RTLGraph {
+            S = 0.w
+            for(i in 0..3) {
+                S = S + i.w
+            }
+        }.show()
+    }
+
+/*
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.sumOfArrayTest"
+*/
+
+    @Test
+    fun sumOfArrayTest() {
+        RTLGraph {
+            A = malloc(4);
+            S = 0.w;
+            for (i in 0..3) { // 4 iterations
+                S += A[i]
+            }
+        }.show()
+    }
+
+/*
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestRTL.dotProductLoopTest"
+*/
+
+    @Test
+    fun dotProductLoopTest() {
+        RTLGraph {
+            A = malloc(4);
+            B = malloc(4);
+            S = 0.w;
+            for (i in 0..3) { // 4 iterations
+                S = S + A[i] * B[i];
+            }
+        }.show()
+    }
 }

@@ -30,10 +30,8 @@ class RTLBuilder {
     operator fun Any.plus(that: RTLGate) = that * this// wrap(this, that) { a, b -> a + b }
     operator fun Any.times(that: RTLGate) = that * this// wrap(this, that) { a, b -> a * b }
 
+    val Number.w: RTLGate get() = RTLGate.wrap(this, this@RTLBuilder)
     fun malloc(that: Any) = RTLGate(RTLOps.malloc, this, RTLGate.wrap(that))
-
-    fun wrap(left: Any, right: Any, op: (RTLGate, RTLGate) -> RTLGate): RTLGate =
-        op(RTLGate.wrap(left), RTLGate.wrap(right))
 }
 
 operator fun Any.plus(that: RTLGate) = RTLGate.wrap(this, that) { a, b -> a + b }
@@ -80,35 +78,35 @@ open class RTLGate(
     constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, gate.op, null, edgeMap)
 
     companion object {
-        fun wrap(value: Any): RTLGate = if (value is RTLGate) value.mostRecentInstance() else RTLGate(value.toString())
+        fun wrap(value: Any, builder: RTLBuilder? = null): RTLGate = if (value is RTLGate) value.mostRecentInstance() else RTLGate(value.toString(), builder)
         fun wrap(left: Any, right: Any, op: (RTLGate, RTLGate) -> RTLGate): RTLGate = op(wrap(left), wrap(right))
         fun wrapAll(vararg values: Any): Array<RTLGate> = values.map { wrap(it) }.toTypedArray()
     }
 
     override fun toString() = if(op == RTLOps.id) id else op.toString()
 
-    operator fun get(that: Any) = RTLGate(RTLOps.get, builder(), mostRecentInstance(), wrap(that))
-    operator fun plus(that: Any) = RTLGate(RTLOps.sum, builder(), mostRecentInstance(), wrap(that))
-    operator fun times(that: Any) = RTLGate(RTLOps.prod, builder(), mostRecentInstance(), wrap(that))
+    operator fun get(that: Any) = RTLGate(RTLOps.get, bldr(), mostRecentInstance(), wrap(that))
+    operator fun plus(that: Any) = RTLGate(RTLOps.sum, bldr(), mostRecentInstance(), wrap(that))
+    operator fun times(that: Any) = RTLGate(RTLOps.prod, bldr(), mostRecentInstance(), wrap(that))
 
     operator fun getValue(a: Any?, prop: KProperty<*>): RTLGate = RTLGate(prop.name, a as? RTLBuilder)
-    open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: RTLGate) {
-        val builder = builder()
+    open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: Any) {
+        val builder = bldr()
         val newGate = RTLGate(
-            builder().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
+            bldr().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
             builder,
-            RTLGate(RTLOps.set, builder, value)
+            RTLGate(RTLOps.set, builder, wrap(value))
         )
         builder.graph += newGate.let { RTLGraph(it.graph, it) }
         builder.mostRecent[this] = newGate
     }
 
-    fun builder() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
+    fun bldr() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
 
-    fun mostRecentInstance() = builder().mostRecent[this] ?: this
+    fun mostRecentInstance() = bldr().mostRecent[this] ?: this
 
     operator fun set(index: Any, value: Any) {
-        val builder = builder()
+        val builder = bldr()
         val mri = mostRecentInstance()
         val newGate = RTLGate(
             mri.id + "'", builder, RTLGate(
