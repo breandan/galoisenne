@@ -10,10 +10,9 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.6.10"
   id("com.google.devtools.ksp") version "1.6.10-1.0.2"
-  kotlin("jupyter.api") version "0.11.0-53"
+  kotlin("jupyter.api") version "0.11.0-56"
   id("com.github.ben-manes.versions") version "0.41.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-    kotlin("jvm") version "1.6.10"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
@@ -113,7 +112,7 @@ kotlin {
         implementation(kotlin("reflect"))
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.0.0")
+        implementation("org.graalvm.js:js:22.0.2")
       }
     }
 
@@ -259,15 +258,4 @@ tasks {
   val jupyterRun by creating(Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
-}
-dependencies {
-    implementation(kotlin("stdlib-jdk8"))
-}
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = "1.8"
-}
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
 }

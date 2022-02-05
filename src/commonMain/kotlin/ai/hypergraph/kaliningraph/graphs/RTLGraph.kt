@@ -79,8 +79,7 @@ open class RTLGate(
     constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, null, edgeMap)
 
     companion object {
-        fun wrap(value: Any): RTLGate = if (value is RTLGate) value.mostRecentInstance()
-        else if(value is RTLVar) value.mostRecentInstance() else RTLGate(value.toString())
+        fun wrap(value: Any): RTLGate = if (value is RTLGate) value.mostRecentInstance() else RTLGate(value.toString())
         fun wrap(left: Any, right: Any, op: (RTLGate, RTLGate) -> RTLGate): RTLGate = op(wrap(left), wrap(right))
         fun wrapAll(vararg values: Any): Array<RTLGate> = values.map { wrap(it) }.toTypedArray()
     }
