@@ -112,7 +112,7 @@ kotlin {
         implementation(kotlin("reflect"))
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.0.2")
+        implementation("org.graalvm.js:js:22.0.0.2")
       }
     }
 
