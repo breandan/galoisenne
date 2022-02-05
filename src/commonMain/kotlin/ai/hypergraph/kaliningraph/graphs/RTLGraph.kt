@@ -19,13 +19,7 @@ class RTLBuilder {
     var Y by RTLVar("Y", builder=this); var Z by RTLVar("Z", builder=this)
 
     var RAM by RTLVar(builder=this)
-    val mostRecent: MutableMap<RTLGate, RTLGate> by lazy {
-        mutableMapOf(
-            RAM to RAM,
-            A to A, B to B, C to C, D to D, E to E, F to F, G to G, H to H, I to I, J to J, K to K, L to L, M to M,
-            N to N, O to O, P to P, Q to Q, R to R, S to S, T to T, U to U, V to V, W to W, X to X, Y to Y, Z to Z,
-        )
-    }
+    val mostRecent: MutableMap<RTLGate, RTLGate> = mutableMapOf()
 
     operator fun Any.plus(that: RTLGate) = that * this// wrap(this, that) { a, b -> a + b }
     operator fun Any.times(that: RTLGate) = that * this// wrap(this, that) { a, b -> a * b }
@@ -76,7 +70,7 @@ open class RTLGate(
     constructor(id: String, op: Op = RTLOps.id, builder: RTLBuilder? = null, vararg gates: RTLGate) :
             this(id, op, builder, { s -> gates.toSet().map { t -> RTLEdge(s, t) }.toSet() })
     constructor(id: String, builder: RTLBuilder? = null, edgeMap: (RTLGate) -> Set<RTLEdge>): this(id, RTLOps.id, builder, edgeMap)
-    constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, null, edgeMap)
+    constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, gate.op, null, edgeMap)
 
     companion object {
         fun wrap(value: Any): RTLGate = if (value is RTLGate) value.mostRecentInstance() else RTLGate(value.toString())
@@ -93,7 +87,6 @@ open class RTLGate(
     operator fun getValue(a: Any?, prop: KProperty<*>): RTLGate = RTLGate(prop.name, a as? RTLBuilder)
     open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: RTLGate) {
         val builder = findBuilder()
-        val mri = mostRecentInstance()
         val newGate = RTLGate(prop.name, builder, RTLGate(RTLOps.set, builder, value))
         builder.graph += newGate.let { RTLGraph(it.graph, it) }
         builder.mostRecent[this] = newGate
