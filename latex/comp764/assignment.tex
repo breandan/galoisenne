@@ -22,6 +22,22 @@
 \begin{document}
     \maketitle
 
+In our DSL, we consider all variables to be immutable and reassignment will instantiate a phantom instance. Subsequent references will point to the latest instance of the variable, and is denoted using a extra \texttt{'} character in GraphViz. The RTL DSL is untyped and consists of the following operators:
+
+\begin{lstlisting}
+         <CONST> ::= 0 | ... | 9 | <CONST> <CONST> | <CONST>.w
+           <VAR> ::= RAM | A | ... | Z
+            <OP> ::= + | *
+          <EXPR> ::= <CONST> | <VAR> | <VAR>[<CONST>] | <EXPR> <OP> <EXPR>
+        <MALLOC> ::= <MALLOC>(<CONST>)
+     <STATEMENT> ::= <VAR> = <EXPR> | <INDEX> = <EXPR> | <VAR> = <MALLOC>
+          <LOOP> ::= for(i in <CONST>..<CONST>) { <STATEMENT> }
+\end{lstlisting}
+
+Tests for VHDL generation can be found in:
+    
+    \texttt{src/jvmTest/kotlin/ai/hypergraph/kaliningraph/vhdl/*}.
+
 \section*{III. VHDL generation}
 \subsection*{1. Simple test}
 
