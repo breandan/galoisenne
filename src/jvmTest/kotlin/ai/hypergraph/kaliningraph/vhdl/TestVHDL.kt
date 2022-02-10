@@ -19,10 +19,10 @@ class TestVHDL {
          use std.textio.all; --  Imports the standard textio package.
          
          --  Defines a design entity, without any ports.
-         entity hello_world is
-         end hello_world;
+         entity hello is
+         end hello;
          
-         architecture behaviour of hello_world is
+         architecture behaviour of hello is
          begin
             process
                variable l : line;
@@ -33,6 +33,35 @@ class TestVHDL {
             end process;
          end behaviour;
         """.trimIndent().runVHDL()
+    }
+
+    /*
+./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testInputOutput"
+     */
+    @Test
+    fun testInputOutput() {
+        """
+         library ieee;
+         use ieee.std_logic_1164.all;
+         use std.textio.all;
+         
+         entity input_output is
+         end input_output;
+         
+         architecture behaviour of input_output is
+         begin
+            process
+               variable a : integer;
+               variable b : std_logic_vector(3 downto 1);
+               variable l : line;
+            begin
+               a := 10;
+               write (l, "1 + 2 = " & integer'image(1 + a));
+               writeline (output, l);
+               wait;
+            end process;
+         end behaviour;
+        """.trimIndent().runVHDL("input_output")
     }
 
     /*
@@ -347,124 +376,35 @@ class TestVHDL {
         runCommand("open wave.ghw")
     }
 
-    fun String.allVars(ops: List<String> = listOf("and", "or")) =
-        split("\\W+".toRegex()).filter { it.all { it.isLetterOrDigit() } && it !in ops && it.isNotEmpty() }.distinct()
-
-    fun genArithmeticCircuit(
-        circuit: String,
-        inputVars: List<String> = circuit.allVars()
-    ) = """
-          library IEEE;
-          use IEEE.std_logic_1164.all;
-
-          entity gate is
-          port(
-          """.trimIndent() +
-            inputVars.joinToString("\n", "\n", "\n") { "    $it: in std_logic;" } +
-            """
-              q: out std_logic
-          );
-          end gate;
-
-          architecture rtl of gate is
-          begin
-            process(a, b) is
-            begin
-              q <= $circuit;
-            end process;
-          end rtl;
-        """.trimIndent()
-
     /*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testCircuitGen"
    */
     @Test
     fun testCircuitGen() {
-        val circuit = "a and (b and c)"
+        val circuit = """
+            q := a and (b and c);
+            r := a and (c or b);
+        """.trimMargin()
+
+        val test1 = mapOf("a" to 1, "b" to 0, "c" to 1 ) to mapOf("q" to 0)
+        val test2 = mapOf("a" to 1, "b" to 1, "c" to 1 ) to mapOf("q" to 1)
+        val test3 = mapOf("a" to 1, "b" to 0, "c" to 1 ) to mapOf("q" to 0)
+
         val designFile = genArithmeticCircuit(circuit).let { File("design.vhd").apply { writeText(it) } }
-        val vars = circuit.allVars()
+        val testBench = genTestBench(circuit, test1, test2, test3).let { File("testbench.vhd").apply { writeText(it) } }
 
-        val test1: Pair<Map<String, Int>, Int> = mapOf(
-            "a" to 1,
-            "b" to 0,
-            "c" to 1
-        ) to 0
-
-        val test2: Pair<Map<String, Int>, Int> = mapOf(
-            "a" to 1,
-            "b" to 1,
-            "c" to 1
-        ) to 1
-
-        val test3: Pair<Map<String, Int>, Int> = mapOf(
-            "a" to 1,
-            "b" to 0,
-            "c" to 1
-        ) to 0
-
-        val testbench = """
-          -- Testbench for Boolean gate
-          library IEEE;
-          use IEEE.std_logic_1164.all;
-
-          entity testbench is
-          -- empty
-          end testbench;
-
-          architecture tb of testbench is
-
-          -- DUT component
-          component gate is
-          port(
-          """.trimIndent() +
-                vars.joinToString("\n", "\n", "\n") { "    $it: in std_logic;" } +
-                """
-            q: out std_logic);
-          end component;
-
-          signal ${vars.joinToString(", ") { "${it}_in" }}, q_out: std_logic;
-
-          begin
-            -- Connect DUT
-            DUT: gate port map(${vars.joinToString(", ") { "${it}_in" }}, q_out);
-
-            process
-            begin
-              ${test1.toTest()}
-              wait for 3 ns;
-              assert(q_out='${test1.second}') report "Fail $test1" severity error;
-              
-              ${test2.toTest()}
-              wait for 3 ns;
-              assert(q_out='${test2.second}') report "Fail $test2" severity error;
-              
-              ${test3.toTest()}
-              wait for 3 ns;
-              assert(q_out='${test3.second}') report "Fail $test3" severity error;
-
-              assert false report "Test done." severity note;
-              wait;
-            end process;
-          end tb;
-        """.trimIndent()
-
-        val file = testbench.let { File("testbench.vhd").apply { writeText(it) } }
-
-        runCommand("ghdl -a ${file.absolutePath} ${designFile.absolutePath}")
+        runCommand("ghdl -a ${testBench.absolutePath} ${designFile.absolutePath}")
         runCommand("ghdl -e testbench")
         runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
 
-    // Test case for a boolean circuit
-    fun Pair<Map<String, Int>, Int>.toTest() =
-        first.entries.joinToString("; ", "", ";") { (k, v) -> "${k}_in <= '$v'" }
-
-    private fun String.runVHDL() {
-        File("hello.vhd").apply { writeText(this@runVHDL) }
-        runCommand("ghdl -a hello.vhd")
-        runCommand("ghdl -e hello_world")
-        runCommand("ghdl -r hello_world")
+    private fun String.runVHDL(name: String = "hello") {
+        File("$name.vhd").apply { writeText(this@runVHDL) }
+        runCommand("ghdl -a $name.vhd")
+        runCommand("ghdl -e $name")
+        runCommand("ghdl -r $name --wave=$name.ghw --stop-time=100ns")
+//        runCommand("open $name.ghw")
     }
 
     fun runCommand(command: String): Boolean =

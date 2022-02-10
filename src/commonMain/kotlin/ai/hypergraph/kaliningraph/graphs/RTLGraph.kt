@@ -31,11 +31,9 @@ class RTLBuilder {
     operator fun Any.times(that: RTLGate) = that * this// wrap(this, that) { a, b -> a * b }
 
     val Number.w: RTLGate get() = RTLGate.wrap(this, this@RTLBuilder)
-    fun malloc(that: Any) = RTLGate(RTLOps.malloc, this, RTLGate.wrap(that))
+//    fun malloc(that: Any) = RTLGate(RTLOps.malloc, this, RTLGate.wrap(that))
+    fun malloc(that: Int) = RTLGate(RTLOps.malloc, this, RTLGate.wrap(that))
 }
-
-operator fun Any.plus(that: RTLGate) = RTLGate.wrap(this, that) { a, b -> a + b }
-operator fun Any.times(that: RTLGate) = RTLGate.wrap(this, that) { a, b -> a * b }
 
 interface RTLFamily: IGF<RTLGraph, RTLEdge, RTLGate> {
     override val E: (s: RTLGate, t: RTLGate) -> RTLEdge
@@ -48,7 +46,27 @@ interface RTLFamily: IGF<RTLGraph, RTLEdge, RTLGate> {
 
 open class RTLGraph(override val vertices: Set<RTLGate> = setOf(), val root: RTLGate? = vertices.firstOrNull()) :
     Graph<RTLGraph, RTLEdge, RTLGate>(vertices), RTLFamily {
-    constructor(vertices: Set<RTLGate> = setOf()): this(vertices, vertices.firstOrNull())
+    fun compile() = """
+       --  Hello world program.
+       use std.textio.all; --  Imports the standard textio package.
+       
+       --  Defines a design entity, without any ports.
+       entity hello_world is
+       end hello_world;
+       
+       architecture behaviour of hello_world is
+       begin
+          process
+             variable l : line;
+          begin
+             write (l, String'("Hello world!"));
+             writeline (output, l);
+             wait;
+          end process;
+       end behaviour;
+    """.trimIndent()
+
+    constructor(vertices: Set<RTLGate> = setOf()) : this(vertices, vertices.firstOrNull())
     constructor(build: RTLBuilder.() -> Unit) : this(RTLBuilder().also { it.build() }.graph.reversed())
 }
 
@@ -92,13 +110,18 @@ open class RTLGate(
     operator fun getValue(a: Any?, prop: KProperty<*>): RTLGate = RTLGate(prop.name, a as? RTLBuilder)
     open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: Any) {
         val builder = bldr()
-        val newGate = RTLGate(
-            bldr().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
-            builder,
-            RTLGate(RTLOps.set, builder, wrap(value))
-        )
-        builder.graph += newGate.let { RTLGraph(it.graph, it) }
-        builder.mostRecent[this] = newGate
+        if (value is RTLGate && op == RTLOps.malloc)
+            for (i in 1..value.neighbors.first().id.toInt())
+                builder.graph += RTLGate(prop.name + "[$i]" ).let { RTLGraph(it.graph, it) }
+        else {
+            val newGate = RTLGate(
+                bldr().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
+                builder,
+                RTLGate(RTLOps.set, builder, wrap(value))
+            )
+            builder.graph += newGate.let { RTLGraph(it.graph, it) }
+            builder.mostRecent[this] = newGate
+        }
     }
 
     fun bldr() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
@@ -109,7 +132,9 @@ open class RTLGate(
         val builder = bldr()
         val mri = mostRecentInstance()
         val newGate = RTLGate(
-            mri.id + "'", builder, RTLGate(
+            mri.id + "'",
+            builder,
+            RTLGate(
                 RTLOps.set,
                 builder,
                 mri,

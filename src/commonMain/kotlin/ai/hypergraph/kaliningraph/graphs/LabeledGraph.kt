@@ -37,8 +37,7 @@ class LGBuilder {
   class ProtoEdge(val source: LGVertex, val label: String)
 
   // Arithmetic is right-associative, so we construct in reverse and flip after
-  operator fun ProtoEdge.minus(target: LGVertex) =
-    target + LabeledEdge(target, source, label)
+  operator fun ProtoEdge.minus(target: LGVertex) = target + LabeledEdge(target, source, label)
 }
 
 interface LGFamily: IGF<LabeledGraph, LabeledEdge, LGVertex> {
@@ -96,7 +95,7 @@ class LGVertex constructor(
   var occupied: Boolean = false
 
   constructor(out: Set<LGVertex> = setOf()) :
-    this(randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+    this(label = randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(label: String, out: Set<LGVertex> = emptySet()) :
     this(label = label, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
   constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) :
