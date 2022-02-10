@@ -29,6 +29,7 @@ class RTLBuilder {
 
     operator fun Any.plus(that: RTLGate) = that * this// wrap(this, that) { a, b -> a + b }
     operator fun Any.times(that: RTLGate) = that * this// wrap(this, that) { a, b -> a * b }
+    var vhdl = ""
 
     val Number.w: RTLGate get() = RTLGate.wrap(this, this@RTLBuilder)
 //    fun malloc(that: Any) = RTLGate(RTLOps.malloc, this, RTLGate.wrap(that))
@@ -46,25 +47,6 @@ interface RTLFamily: IGF<RTLGraph, RTLEdge, RTLGate> {
 
 open class RTLGraph(override val vertices: Set<RTLGate> = setOf(), val root: RTLGate? = vertices.firstOrNull()) :
     Graph<RTLGraph, RTLEdge, RTLGate>(vertices), RTLFamily {
-    fun compile() = """
-       --  Hello world program.
-       use std.textio.all; --  Imports the standard textio package.
-       
-       --  Defines a design entity, without any ports.
-       entity hello_world is
-       end hello_world;
-       
-       architecture behaviour of hello_world is
-       begin
-          process
-             variable l : line;
-          begin
-             write (l, String'("Hello world!"));
-             writeline (output, l);
-             wait;
-          end process;
-       end behaviour;
-    """.trimIndent()
 
     constructor(vertices: Set<RTLGate> = setOf()) : this(vertices, vertices.firstOrNull())
     constructor(build: RTLBuilder.() -> Unit) : this(RTLBuilder().also { it.build() }.graph.reversed())
@@ -103,6 +85,27 @@ open class RTLGate(
 
     override fun toString() = if(op == RTLOps.id) id else op.toString()
 
+    fun asCircuit(l: String = neighbors.firstOrNull()?.asCircuit() ?:"",
+                  r: String = neighbors.lastOrNull()?.asCircuit() ?: "",
+                  i: String = neighbors.firstOrNull { it.id.toIntOrNull() != null }?.id ?: ""): String = when(op) {
+        RTLOps.malloc -> (1..neighbors.first().id.toInt()).joinToString("\n") { " '0'" }
+        RTLOps.id -> id.dropLastWhile { it == '\'' }
+        RTLOps.get -> l + i
+        RTLOps.sum ->
+            if (l.toIntOrNull() != null && r.toIntOrNull() != null)
+                "(" + (if (l.toInt() == 1 || r.toInt() == 1) 1 else 0) + ")"
+            else if (l.toIntOrNull() != null) "(${if (l.toInt() > 0) '1' else '0'} or $r)"
+            else if (r.toIntOrNull() != null) "($l or ${if (r.toInt() > 0) '1' else '0'})"
+            else "($l or $r)"
+        RTLOps.prod ->
+            if (l.toIntOrNull() != null && r.toIntOrNull() != null)
+                "(" + (if (l.toInt() == 1 && r.toInt() == 1) 1 else 0) + ")"
+            else if (l.toIntOrNull() != null) "(${if (l.toInt() > 0) '1' else '0'} and $r)"
+            else if (r.toIntOrNull() != null) "($l and ${if (r.toInt() > 0) '1' else '0'})"
+            else "($l and $r)"
+        else -> ""
+    }
+
     operator fun get(that: Any) = RTLGate(RTLOps.get, bldr(), mostRecentInstance(), wrap(that))
     operator fun plus(that: Any) = RTLGate(RTLOps.sum, bldr(), mostRecentInstance(), wrap(that))
     operator fun times(that: Any) = RTLGate(RTLOps.prod, bldr(), mostRecentInstance(), wrap(that))
@@ -110,18 +113,18 @@ open class RTLGate(
     operator fun getValue(a: Any?, prop: KProperty<*>): RTLGate = RTLGate(prop.name, a as? RTLBuilder)
     open operator fun setValue(builder: RTLBuilder, prop: KProperty<*>, value: Any) {
         val builder = bldr()
-        if (value is RTLGate && op == RTLOps.malloc)
-            for (i in 1..value.neighbors.first().id.toInt())
-                builder.graph += RTLGate(prop.name + "[$i]" ).let { RTLGraph(it.graph, it) }
-        else {
-            val newGate = RTLGate(
-                bldr().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
-                builder,
-                RTLGate(RTLOps.set, builder, wrap(value))
-            )
-            builder.graph += newGate.let { RTLGraph(it.graph, it) }
-            builder.mostRecent[this] = newGate
+        val newGate = RTLGate(
+            bldr().mostRecent[this]?.let { it.id + "'" } ?: prop.name,
+            builder,
+            RTLGate(RTLOps.set, builder, wrap(value))
+        )
+        builder.graph += newGate.let { RTLGraph(it.graph, it) }
+        builder.vhdl += (value as RTLGate).asCircuit().lines().let {
+            if (it.size > 1)
+                it.mapIndexed { i, l -> "${prop.name}$i := $l;" }.joinToString("\n", "\n", "\n")
+            else it.joinToString("\n", "\n", "\n") { l -> "${prop.name} := $l;" }
         }
+        builder.mostRecent[this] = newGate
     }
 
     fun bldr() = (if (builder != null) builder else graph.vertices.firstOrNull { it.builder != null }!!.builder)!!
@@ -142,6 +145,7 @@ open class RTLGate(
                 wrap(index),
             )
         )
+        builder.vhdl += "$id$index := " + (value as RTLGate).asCircuit() + ";\n"
         builder.graph += newGate.let { RTLGraph(vertices = it.graph, root = it) }
         builder.mostRecent[this] = newGate
     }

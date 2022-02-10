@@ -190,7 +190,7 @@ class TestVHDL {
 
     @Test
     fun testMultiplication() {
-        val adder = """
+        val multiplier = """
             -- Implements signed multiplication of two integers
             library IEEE;
             use IEEE.std_logic_1164.all;
@@ -233,9 +233,9 @@ class TestVHDL {
                 end process;
                 C <= product;
             end architecture;
-        """.trimIndent().let { File("adder.vhd").apply { writeText(it) } }
+        """.trimIndent().let { File("multiplier.vhd").apply { writeText(it) } }
 
-        val testadder = """
+        val testmultiplier = """
             -- Testbench for RCA
             library IEEE;
             use IEEE.std_logic_1164.all;
@@ -284,7 +284,7 @@ class TestVHDL {
             end architecture;
         """.trimIndent().let { File("testbench.vhd").apply { writeText(it) } }
 
-        runCommand("ghdl -a ${adder.absolutePath} ${testadder.absolutePath}")
+        runCommand("ghdl -a ${multiplier.absolutePath} ${testmultiplier.absolutePath}")
         runCommand("ghdl -e testbench")
         runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
@@ -398,20 +398,20 @@ class TestVHDL {
         runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
         runCommand("open wave.ghw")
     }
-
-    private fun String.runVHDL(name: String = "hello") {
-        File("$name.vhd").apply { writeText(this@runVHDL) }
-        runCommand("ghdl -a $name.vhd")
-        runCommand("ghdl -e $name")
-        runCommand("ghdl -r $name --wave=$name.ghw --stop-time=100ns")
-//        runCommand("open $name.ghw")
-    }
-
-    fun runCommand(command: String): Boolean =
-        try {
-            ProcessBuilder(*command.split(" ").toTypedArray())
-                .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
-        } catch (e: Exception) {
-            false
-        }
 }
+
+fun String.runVHDL(name: String = "hello") {
+    File("$name.vhd").apply { writeText(this@runVHDL) }
+    runCommand("ghdl -a $name.vhd")
+    runCommand("ghdl -e $name")
+    runCommand("ghdl -r $name --wave=$name.ghw --stop-time=100ns")
+//        runCommand("open $name.ghw")
+}
+
+fun runCommand(command: String): Boolean =
+    try {
+        ProcessBuilder(*command.split(" ").toTypedArray())
+            .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
+    } catch (e: Exception) {
+        false
+    }

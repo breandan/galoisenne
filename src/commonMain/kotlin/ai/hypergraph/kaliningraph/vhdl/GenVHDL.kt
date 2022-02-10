@@ -4,8 +4,9 @@ fun genArithmeticCircuit(
     circuit: String,
     inputVars: List<String> = circuit.allVars()
 ) = """
-          library IEEE;
-          use IEEE.std_logic_1164.all;
+          library ieee;
+          use ieee.std_logic_1164.all;
+          use ieee.numeric_std.all;
 
           entity gate is
           port(
@@ -30,12 +31,16 @@ fun genArithmeticCircuit(
           end rtl;
         """.trimIndent()
 
+fun genTestBench(circuit: String) =
+    genTestBench(circuit, circuit.allVars().map { it to 0 }.toMap() to mapOf() )
+
 fun genTestBench(circuit: String, vararg tests: Pair<Map<String, Int>, Map<String, Int>>): String {
     val vars: List<String> = circuit.allVars()
     return """
           -- Testbench for Boolean gate
-          library IEEE;
-          use IEEE.std_logic_1164.all;
+          library ieee;
+          use ieee.std_logic_1164.all;
+          use ieee.numeric_std.all;
 
           entity testbench is
           -- empty
@@ -66,7 +71,7 @@ fun genTestBench(circuit: String, vararg tests: Pair<Map<String, Int>, Map<Strin
                 tests.joinToString("\n\n") { test ->
                 """
                   ${test.genPreconditions(vars)}
-                  wait for 10 ns;
+                  wait for 20 ns;
                   ${test.genPostconditions()}
                 """
                 }
@@ -82,11 +87,11 @@ fun genTestBench(circuit: String, vararg tests: Pair<Map<String, Int>, Map<Strin
 // Test case for a boolean circuit
 fun Pair<Map<String, Int>, Map<String, Int>>.genPreconditions(allVars: List<String>) =
     first.entries.joinToString("; ", "", ";") { (k, v) -> "${k}_in_sig <= '$v'" } +
-            allVars.filter { it !in first }.joinToString("; ", "", ";") { "${it}_in_sig <= '0'" }
+            allVars.filter { it !in first }.joinToString("; ", "\n", "") { "${it}_in_sig <= '0'" }
 
 
 fun Pair<Map<String, Int>, Map<String, Int>>.genPostconditions() =
     second.entries.joinToString("\n") { (k, v) -> """assert(${k}_out_sig='$v') report "Failed $k != $v" severity error;""" }
 
-fun String.allVars(ops: List<String> = listOf("and", "or")) =
-    split("\\W+".toRegex()).filter { it.all { it.isLetterOrDigit() } && it !in ops && it.isNotEmpty() }.distinct()
+fun String.allVars(ops: List<String> = listOf("and", "or")): List<String> =
+    split("\\W+".toRegex()).filter { it.all { it.isLetterOrDigit() } && it !in ops && it.isNotEmpty() }.distinct().filter { it.any { it.isLetter() } }
