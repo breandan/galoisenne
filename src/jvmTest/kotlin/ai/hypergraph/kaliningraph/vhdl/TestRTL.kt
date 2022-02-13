@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.vhdl
 import ai.hypergraph.kaliningraph.graphs.RTLGraph
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
+import java.io.File
 
 // https://bitbucket.org/cdubach/comp764ecse688_winter2022/src/8ffacfc111cf9690be87d2e72f80c5a2c66032c9/part3.md
 class TestRTL {
@@ -17,7 +18,9 @@ class TestRTL {
             C = A + 6
             D = C + 1
             E = C + 5
-        }.show()
+        }
+            .also { println(it.last().bldr().vhdl) }
+            .also { it.show() }
     }
 
 /*
@@ -28,7 +31,9 @@ class TestRTL {
         RTLGraph {
             RAM = malloc(4)
             RAM[3] = RAM[0] * RAM[1] + RAM[2]
-        }.show()
+        }
+            .also { println(it.last().bldr().vhdl) }
+            .also { it.show() }
     }
 
 /*
@@ -40,7 +45,9 @@ class TestRTL {
             A = B + B
             A = 2 + A
             A = C + C
-        }.show()
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -56,7 +63,9 @@ class TestRTL {
             C[1] = A[1] * B[1];
             C[2] = A[2] * B[2];
             C[3] = A[3] * B[3];
-        }.show()
+        }
+        .also { it.show() }
+        .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -69,10 +78,12 @@ class TestRTL {
             B = malloc(4);
             C = malloc(1);
             C[0] = A[0] * B[0] +
-                    A[1] * B[1] +
-                    A[2] * B[2] +
-                    A[3] * B[3];
-        }.show()
+                   A[1] * B[1] +
+                   A[2] * B[2] +
+                   A[3] * B[3];
+        }
+            .also { it.show() }
+            .also {it.compileAndRun() }
     }
 
 /*
@@ -88,7 +99,9 @@ class TestRTL {
             C[1] = A[1] * W[0] + A[2] * W[1] + A[3] * W[2];
             C[2] = A[2] * W[0] + A[3] * W[1] + A[4] * W[2];
             C[3] = A[3] * W[0] + A[4] * W[1] + A[5] * W[2];
-        }.show()
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -99,8 +112,10 @@ class TestRTL {
         RTLGraph {
             I = 1.w
             J = 1.w
-            I = I+J;
-        }.show()
+            I = I + J;
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -113,7 +128,9 @@ class TestRTL {
             for(i in 0..3) {
                 S = S + i.w
             }
-        }.show()
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -128,7 +145,9 @@ class TestRTL {
             for (i in 0..3) { // 4 iterations
                 S += A[i]
             }
-        }.show()
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -144,6 +163,20 @@ class TestRTL {
             for (i in 0..3) { // 4 iterations
                 S = S + A[i] * B[i];
             }
-        }.show()
+        }
+            .also { it.show() }
+            .also { println(it.last().bldr().vhdl) }
     }
+}
+
+fun RTLGraph.compileAndRun() {
+    val circuit = last().bldr().vhdl
+    println(circuit)
+    val designFile = genArithmeticCircuit(circuit).let { File("design.vhd").apply { writeText(it) } }
+    val testBench = genTestBench(circuit).let { File("testbench.vhd").apply { writeText(it) } }
+
+    runCommand("ghdl -a ${testBench.absolutePath} ${designFile.absolutePath}")
+    runCommand("ghdl -e testbench")
+    runCommand("ghdl -r testbench --wave=wave.ghw --stop-time=100ns")
+    runCommand("open wave.ghw")
 }
