@@ -291,7 +291,7 @@ val b7: B7 = T.T.T
 //@JvmName("flipTT") fun <X: T<Y>, Y> X.flipAll()/*:F<???>*/= F(x.flipAll())
 //@JvmName("flipFF") fun <X: F<Y>, Y> X.flipAll()/*:T<???>*/= F(x.flipAll())
 
-// TODO: Can we express boolean predicates >, < efficiently?
+// TODO: Can we express Boolean predicates >, < efficiently?
 // 100100:
 // 1000000* >
 //  ***** <

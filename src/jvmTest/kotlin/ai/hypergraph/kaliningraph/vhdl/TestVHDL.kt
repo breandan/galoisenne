@@ -456,7 +456,7 @@ class TestVHDL {
         runCommand("open wave.ghw")
     }
 
-    // Test case for a boolean circuit
+    // Test case for a Boolean circuit
     fun Pair<Map<String, Int>, Int>.toTest() =
         first.entries.joinToString("; ", "", ";") { (k, v) -> "${k}_in <= '$v'" }
 
