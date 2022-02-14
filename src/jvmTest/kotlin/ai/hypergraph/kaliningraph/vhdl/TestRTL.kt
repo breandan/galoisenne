@@ -19,8 +19,8 @@ class TestRTL {
             D = C + 1
             E = C + 5
         }
-            .also { println(it.last().bldr().vhdl) }
-            .also { it.show() }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -32,8 +32,8 @@ class TestRTL {
             RAM = malloc(4)
             RAM[3] = RAM[0] * RAM[1] + RAM[2]
         }
-            .also { println(it.last().bldr().vhdl) }
-            .also { it.show() }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -46,8 +46,8 @@ class TestRTL {
             A = 2 + A
             A = C + C
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -64,8 +64,8 @@ class TestRTL {
             C[2] = A[2] * B[2];
             C[3] = A[3] * B[3];
         }
+        .also { it.compileAndRun() }
         .also { it.show() }
-        .also { println(it.last().bldr().vhdl) }
     }
 
 /*
@@ -82,8 +82,8 @@ class TestRTL {
                    A[2] * B[2] +
                    A[3] * B[3];
         }
-            .also { it.show() }
-            .also {it.compileAndRun() }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -100,8 +100,8 @@ class TestRTL {
             C[2] = A[2] * W[0] + A[3] * W[1] + A[4] * W[2];
             C[3] = A[3] * W[0] + A[4] * W[1] + A[5] * W[2];
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -114,8 +114,8 @@ class TestRTL {
             J = 1.w
             I = I + J;
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -125,12 +125,12 @@ class TestRTL {
     fun simpleLoopTest() {
         RTLGraph {
             S = 0.w
-            for(i in 0..3) {
+            for (i in 0..3) {
                 S = S + i.w
             }
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -146,8 +146,8 @@ class TestRTL {
                 S += A[i]
             }
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 
 /*
@@ -164,16 +164,17 @@ class TestRTL {
                 S = S + A[i] * B[i];
             }
         }
-            .also { it.show() }
-            .also { println(it.last().bldr().vhdl) }
+        .also { it.compileAndRun() }
+        .also { it.show() }
     }
 }
 
 fun RTLGraph.compileAndRun() {
-    val circuit = last().bldr().vhdl
+    val circuit = vhdl()
     println(circuit)
     val designFile = genArithmeticCircuit(circuit).let { File("design.vhd").apply { writeText(it) } }
     val testBench = genTestBench(circuit).let { File("testbench.vhd").apply { writeText(it) } }
+    return
 
     runCommand("ghdl -a ${testBench.absolutePath} ${designFile.absolutePath}")
     runCommand("ghdl -e testbench")

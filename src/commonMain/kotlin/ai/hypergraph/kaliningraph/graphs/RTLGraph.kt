@@ -50,6 +50,8 @@ open class RTLGraph(override val vertices: Set<RTLGate> = setOf(), val root: RTL
 
     constructor(vertices: Set<RTLGate> = setOf()) : this(vertices, vertices.firstOrNull())
     constructor(build: RTLBuilder.() -> Unit) : this(RTLBuilder().also { it.build() }.graph.reversed())
+
+    fun vhdl(): String = last().bldr().vhdl
 }
 
 @Suppress("ClassName")
@@ -89,7 +91,7 @@ open class RTLGate(
                   r: String = neighbors.lastOrNull()?.asCircuit() ?: "",
                   i: String = neighbors.firstOrNull { it.id.toIntOrNull() != null }?.id ?: ""): String = when(op) {
         RTLOps.malloc -> (1..neighbors.first().id.toInt()).joinToString("\n") { " '0'" }
-        RTLOps.id -> id.dropLastWhile { it == '\'' }
+        RTLOps.id -> id.dropLastWhile { it == '\'' }.let { if(it.toIntOrNull() == null) it else "'$it'" }
         RTLOps.get -> l + i
         RTLOps.sum ->
             if (l.toIntOrNull() != null && r.toIntOrNull() != null)

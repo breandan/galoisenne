@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit.MINUTES
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL"
 */
 class TestVHDL {
-    /*
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testOutput"
-     */
+*/
     @Test
     fun testOutput() {
         """
@@ -35,9 +35,9 @@ class TestVHDL {
         """.trimIndent().runVHDL()
     }
 
-    /*
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testInputOutput"
-     */
+*/
     @Test
     fun testInputOutput() {
         """
@@ -64,9 +64,9 @@ class TestVHDL {
         """.trimIndent().runVHDL("input_output")
     }
 
-    /*
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testAddition"
-     */
+*/
 
     @Test
     fun testAddition() {
@@ -116,7 +116,6 @@ class TestVHDL {
         """.trimIndent().let { File("adder.vhd").apply { writeText(it) } }
 
         val testadder = """
-            
             -- Testbench for RCA
             library IEEE;
             use IEEE.std_logic_1164.all;
@@ -184,9 +183,9 @@ class TestVHDL {
         runCommand("open wave.ghw")
     }
 
-    /*
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testMultiplication"
-     */
+*/
 
     @Test
     fun testMultiplication() {
@@ -290,9 +289,9 @@ class TestVHDL {
         runCommand("open wave.ghw")
     }
 
-    /*
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testRAM"
-     */
+*/
 
     @Test
     fun testRAM() {
@@ -376,9 +375,14 @@ class TestVHDL {
         runCommand("open wave.ghw")
     }
 
-    /*
+
+    // Four types of graphs:
+    // AST -> DFG -> Data path -> State machine
+    // Enable signal, load store, multiplexer...
+
+/*
 ./gradlew :cleanJvmTest :jvmTest --tests "ai.hypergraph.kaliningraph.vhdl.TestVHDL.testCircuitGen"
-   */
+*/
     @Test
     fun testCircuitGen() {
         val circuit = """
@@ -412,6 +416,4 @@ fun runCommand(command: String): Boolean =
     try {
         ProcessBuilder(*command.split(" ").toTypedArray())
             .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
-    } catch (e: Exception) {
-        false
-    }
+    } catch (e: Exception) { false }
