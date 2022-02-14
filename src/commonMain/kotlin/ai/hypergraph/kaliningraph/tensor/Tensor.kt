@@ -177,7 +177,7 @@ open class BooleanMatrix constructor(
     }
   )
 
-  // TODO: Implement Four Russians for speedy boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
+  // TODO: Implement Four Russians for speedy Boolean matmuls https://arxiv.org/pdf/0811.1714.pdf#page=5
   // override fun BooleanMatrix.times(t: BooleanMatrix): BooleanMatrix = TODO()
 
   val isFull by lazy { data.all { it } }
