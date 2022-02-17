@@ -31,7 +31,7 @@ dependencies {
 </dependency>
 ```
 
-### Jupyter Notebook
+### Jupyter notebook
 
 To access notebook support, use the following line magic:
 
@@ -44,7 +44,7 @@ For more information, explore our tutorials:
 * [Hello Kaliningraph.ipynb](notebooks/Hello%20Kaliningraph.ipynb)
 * [Program Graphs.ipynb](notebooks/Program%20Graphs.ipynb)
 
-## Graphs, Inductively
+## Graphs, inductively
 
 What are graphs? A [graph](src/commonMain/kotlin/ai/hypergraph/kaliningraph/types/Graph.kt) is a (possibly empty) set of vertices.
 
@@ -52,7 +52,19 @@ What are vertices? A vertex is a unique label with neighbors (possibly containin
 
 What are neighbors? Neighbors are a graph.
 
-## Getting Started
+## Circuits, inductively
+
+What is a circuit? A circuit is either:
+
+* A Boolean logic gate (e.g., `and`, `or`, `not`)
+* A circuit that takes two inputs and swaps them `(a, b) -> (b, a)`
+* A circuit that takes one input and gives one output `a -> b`
+* The serial composition of two circuits `(a->c, c->d) -> (a->d)`
+* The parallel composition of two circuits `(a->b, c->d) -> (a, b) -> (c, d)`
+
+[//]: # (Editorial: The problem with digital circuit design is that it uses the wrong abstractions. Our friends in EE are not bad engineers -- hardware designers are clearly intelligent people -- they just did not study computer science and lack the time or imagination to think for themselves. CPUs are finite state machines -- thus, they are exactly equivalent to Boolean algebra -- sequential logic is NOT necessary! Scheduling, resource binding, register allocation, datapath generation, control generation, all the way down to place and route -- ALL OF THIS be encoded as SAT constraints on a Boolean domain. Unroll the loops! I tried to explain this to them, but they would not listen. One day, they may see the light.)
+
+## Getting started
 
 Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
 
@@ -146,13 +158,13 @@ Code2Vec generation and visualization is supported. The following demo was gener
 
 ![](src/jvmMain/resources/clusters.svg)
 
-## Automata-Based Regex
+## Automata-based RegEx
 
 A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`. You should see something like this:
 
 ![](regex_demo.png)
 
-## Research Questions
+## Research questions
 
 * What is the best way to represent a graph?
   - [Type family](/src/commonMain/kotlin/ai/hypergraph/kaliningraph/types/Graph.kt)
@@ -236,7 +248,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Fully Persistent Graphs – Which One To Choose?](http://web.engr.oregonstate.edu/~erwig/papers/PersistentGraphs_IFL97.pdf), Erwig (1997)
 * [The Program Dependence Graph and its Use for Optimization](https://www.cs.utexas.edu/~pingali/CS395T/2009fa/papers/ferrante87.pdf), Ferrante et al. (1987)
 
-### Graph Rewriting
+### Graph rewriting
 
 - [Factor Graph Grammars](https://arxiv.org/abs/2010.12048), Chiang and Riley (2020)
 - [Seam: Provably Safe Local Edits on Graphs](https://cs.stanford.edu/people/sharmar/pubs/seam.pdf), Papadakis et al. (2017)
@@ -296,7 +308,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [The Art of the Propagator](http://dspace.mit.edu/bitstream/handle/1721.1/44215/MIT-CSAIL-TR-2009-002.pdf), Radul and Sussman (2009)
 - [Fusion, propagation, and structuring in belief networks](https://bi.snu.ac.kr/~scai/Info/AI/Fusion,%20Propagation,%20and%20Structuring%20in%20Belief%20Networks.pdf), Pearl (1986)
 
-### Random Walks
+### Random walks
 
 - [Random Walks on Graphs: A Survey](https://web.cs.elte.hu/~lovasz/erdos.pdf), Lovász (1993)
 - [String Edit Distance, Random Walks and Graph Matching](https://doi.org/10.1007/3-540-70659-3_10), Kelly and Hancock (2002)
@@ -307,7 +319,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [KnightKing: A Fast Distributed Graph Random Walk Engine](https://doi.org/10.1145/3341301.3359634), Yang et al. (2019)
 - [Graph Learning with 1D Convolutions on Random Walks](https://arxiv.org/abs/2102.08786), Toenshoff et al. (2021)
 
-### Software Engineering
+### Software engineering
 
 * [Getting F-Bounded Polymorphism into Shape](https://www.cs.cornell.edu/~ross/publications/shapes/shapes-pldi14-tr.pdf), Tate (2014)
 * [Frequent Subgraph Analysis and its Software Engineering Applications](https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=case1496835753068605&disposition=attachment), Henderson (2017)
@@ -315,7 +327,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [Finally, a Polymorphic Linear Algebra Language](https://drops.dagstuhl.de/opus/volltexte/2019/10817/pdf/LIPIcs-ECOOP-2019-25.pdf), Shaikhha and Parreaux (2019)
 * [Towards an API for the Real Numbers](https://dl.acm.org/doi/pdf/10.1145/3385412.3386037), Boehm (2020)
 
-### Proof Search
+### Proof search
 
 - [Generative Language Modeling for Automated Theorem Proving](https://arxiv.org/pdf/2009.03393.pdf), Polu et al. (2020)
 - [Towards Proof Synthesis Guided by Neural Machine Translation for Intuitionistic Propositional Logic](https://arxiv.org/pdf/1706.06462.pdf), Sekiyama et al. (2020)
@@ -323,7 +335,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Tree Neural Networks in HOL4](https://arxiv.org/pdf/2009.01827.pdf), Gauthier (2020)
 - [Modelling High-Level Mathematical Reasoning in Mechanised Declarative Proofs](https://arxiv.org/pdf/2006.09265.pdf), Li et al. (2020)
 
-### Code Search
+### Code search
 
 - [Approximate Online Pattern Matching in Sub-linear Time](https://arxiv.org/pdf/1810.03551.pdf), Chakraborty et al. (2018)
 - [Improved online algorithms for jumbled matching](https://doi.org/10.1016/j.dam.2018.05.028), Ghuman et al. (2018)
@@ -359,7 +371,7 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 * [dk.brics.automata](https://github.com/cs-au-dk/dk.brics.automaton)
 * [LearnLib](https://github.com/Learnlib/learnlib)
 
-# Special Thanks
+# Special thanks
 
 The following individuals have helped inspire this project through their enthusiasm and thoughtful feedback. Please check out their work.
 
