@@ -8,9 +8,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.6.20-M1"
+  kotlin("multiplatform") version "1.6.20-RC"
   id("com.google.devtools.ksp") version "1.6.20-M1-1.0.2"
-  kotlin("jupyter.api") version "0.11.0-60"
+  kotlin("jupyter.api") version "0.11.0-61"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
