@@ -62,7 +62,7 @@ val a2z = z2a.entries.associate { (k, v) -> v to k }
 
 // TODO: https://cs.github.com/?scopeName=All+repos&scope=&q=%E9%9B%B6+%E4%B8%80+%E4%BA%8C+%E4%B8%89+%E5%9B%9B+%E4%BA%94+%E5%85%AD+%E4%B8%83+%E5%85%AB+%E4%B9%9D+Arabic++language%3AJava
 fun String.toArabic() = map { if (this in z2a) z2a[this]!! else this }.joinToString("")
-fun String.到中文() = map { if (this in a2z) a2z[this]!! else this }.joinToString("")
+fun String.toChinese() = map { if (this in a2z) a2z[this]!! else this }.joinToString("")
 
 typealias 一型 = 一<无>
 typealias 二型 = 二<无>
