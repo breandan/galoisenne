@@ -3,12 +3,12 @@ package ai.hypergraph.kaliningraph.types
 import kotlin.test.*
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.算数测试"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.types.AbacusTest"
 */
 @Suppress("ClassName", "NonAsciiCharacters")
-class 算盘测试 {
+class AbacusTest {
   @Test
-  fun 算数测试() {
+  fun testAbacus() {
     val 二十一 = 十七 加 四
 
     val 四十二 = 十七
