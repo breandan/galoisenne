@@ -18,7 +18,7 @@ sealed class 数<丁, 己: 数<丁, 己>>(open val 中: 丁? = null, open val �
 
   override fun equals(other: Any?) = toString() == other.toString()
   override fun hashCode() = this::class.hashCode() + 中.hashCode()
-  override fun toString() = if (this is 未) i.toString().toChinese() else (中 ?: "").toString() + 码
+  override fun toString() = (中 ?: "").toString() + 码
   fun toInt() = toString().toArabic().toInt()
 }
 
@@ -34,7 +34,7 @@ open class 八<丁>(override val 中: 丁? = null, override val 码: String = "�
 open class 九<丁>(override val 中: 丁? = null, override val 码: String = "九") : 数<丁, 九<丁>>(中) { companion object: 九<无>() }
 
 object 无: 数<无, 无>(null)
-open class 未(val i: Int): 数<未, 未>(null)
+open class 未(val i: Int, override val 码: String = i.toString().toChinese()): 数<未, 未>(null)
 
 val 十: 十型 = 一.零
 val 十一: 十一型 = 一.一
