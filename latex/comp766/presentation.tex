@@ -7,6 +7,8 @@
 % Packages
 \usepackage{natbib}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{sourcecodepro}
 \usepackage{listings}
@@ -20,6 +22,7 @@
 \usepackage{color}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{mathtools}
 \usetikzlibrary{backgrounds}
 
 \setbeamertemplate{navigation symbols}{}
@@ -111,9 +114,9 @@
         \begin{center}
             \begin{tabular}{|c|c|c|}
                 \hline
-                Polynomial & $k(\mathbf{x},\mathbf{y}):=(\mathbf{x}^{T}\mathbf{y}+r)^{n}$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d}, n \in \mathbb N, r\geq 0$ \\ \hline
-                Laplacian & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|}{\sigma}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
-                Gaussian RBF & $k(\mathbf {x}, \mathbf {y}):=\exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|^{2}}{2\sigma ^{2}}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
+                Polynomial & $k(\mathbf{x},\mathbf{y})\coloneqq (\mathbf{x}^{T}\mathbf{y}+r)^{n}$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d}, n \in \mathbb N, r\geq 0$ \\ \hline
+                Laplacian & $k(\mathbf {x}, \mathbf {y})\coloneqq \exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|}{\sigma}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
+                Gaussian RBF & $k(\mathbf {x}, \mathbf {y})\coloneqq \exp \left(-{\frac {\|\mathbf {x} -\mathbf {y} \|^{2}}{2\sigma ^{2}}}\right)$ & $\quad \mathbf{x},\mathbf{y}\in \mathbb {R} ^{d},\sigma >0$ \\ \hline
             \end{tabular}
         \end{center}
 
@@ -121,12 +124,12 @@
         \begin{center}
             \begin{tabular}{|c|l|l|}
                 \hline
-                RW & $k_\times(G, H) := \sum\limits_{i, j = 1}^{|V_\times|}[\sum\limits_{n=1}^\infty\mathbf{\lambda}^{n}A^n_\times]_{ij} = \mathbf{e}^\intercal(\mathbf{I} - \lambda A_\times)^{-1}\mathbf{e}$ & $\mathcal O(n^6)$ \\\hline
-                SP & $k_{SP}(G, H) := \sum\limits_{s_1\in SD(G)}\sum\limits_{s_2 \in SD(H)} k(s_1, s_2)$ & $\mathcal O(n^4)$ \\\hline
+                RW & $k_\times(G, H) \coloneqq \sum\limits_{i, j = 1}^{|V_\times|}[\sum\limits_{n=1}^\infty\mathbf{\lambda}^{n}A^n_\times]_{ij} = \mathbf{e}^\intercal(\mathbf{I} - \lambda A_\times)^{-1}\mathbf{e}$ & $\mathcal O(n^6)$ \\\hline
+                SP & $k_{SP}(G, H) \coloneqq \sum\limits_{s_1\in SD(G)}\sum\limits_{s_2 \in SD(H)} k(s_1, s_2)$ & $\mathcal O(n^4)$ \\\hline
                 WL & \begin{tabular}
-                         $l^{(i)}(G) :=$ \begin{cases}
+                         $l^{(i)}(G) \coloneqq$ \begin{cases}
                                              $\text{deg}_v, \forall v \in G$&$i = 1$\\$HASH(\{\{l^{(i-1)}(u), \forall u \in \mathcal{N}(v)\}\})$&$i > 1$
-                         \end{cases}\\$k_{WL}(G, H):=\langle\psi_{WL}(G), \psi_{WL}(H)\rangle$
+                         \end{cases}\\$k_{WL}(G, H) \coloneqq \langle\psi_{WL}(G), \psi_{WL}(H)\rangle$
                 \end{tabular} & $\mathcal O(hm)$ \\\hline
             \end{tabular}
         \end{center}
@@ -162,13 +165,13 @@
         \begin{center}
             \begin{tabular}{ c c c }
                 \textbf{Scalar Product} & \textbf{Vector Dot Product} & \textbf{Random Variable} \\
-                $\langle x,y\rangle := xy$ &
+                $\langle x,y\rangle \coloneqq xy$ &
                 $\left\langle {\begin{bmatrix}
                                    x_{1}\\\vdots \\x_{n}
                 \end{bmatrix}},{\begin{bmatrix}
                                     y_{1}\\\vdots \\y_{n}
-                \end{bmatrix}}\right\rangle :=x^{\textsf {T}}y$ &
-                $\langle X,Y\rangle :=\operatorname {\mathbb E} (XY)$
+                \end{bmatrix}}\right\rangle \coloneqq x^{\textsf {T}}y$ &
+                $\langle X,Y\rangle \coloneqq \operatorname {\mathbb E} (XY)$
             \end{tabular}
         \end{center}
     \end{frame}
@@ -209,20 +212,7 @@
         \frametitle{Hilbert Space Embedding of Distributions}
         Maps distributions into potentially infinite dimensional feature spaces:
         \begin{equation}
-            \mu_X := \mathbb{E}_X[\phi(X)] = \int_{\mathcal X} \phi(x)p(x)dx : \mathcal P \mapsto \mathcal F
-        \end{equation}
-        By choosing the right kernel, we can make this mapping injective.
-        \begin{align}
-            f(p(x)) &= \tilde{f}(\mu_x), f:\mathcal P \mapsto \mathbb R\\
-            \mathcal{T} \circ p(x) &= \tilde{\mathcal T} \circ \mu_x, \tilde{\mathcal T}: \mathcal F \mapsto \mathbb R^d
-        \end{align}
-    \end{frame}
-
-    \begin{frame}
-        \frametitle{Hilbert Space Embedding of Distributions}
-        Maps distributions into potentially infinite dimensional feature spaces:
-        \begin{equation}
-            \mu_X := \mathbb{E}_X[\phi(X)] = \int_{\mathcal X} \phi(x)p(x)dx : \mathcal P \mapsto \mathcal F
+            \mu_X \coloneqq \mathbb{E}_X[\phi(X)] = \int_{\mathcal X} \phi(x)p(x)dx : \mathcal P \mapsto \mathcal F
         \end{equation}
         By choosing the right kernel, we can make this mapping injective.
         \begin{align}

@@ -1,0 +1,77 @@
+%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
+\documentclass[sigplan,10pt,review,anonymous]{acmart}
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For double-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For single-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission, w/ required CCS and ACM Reference
+%\documentclass[sigplan]{acmart}\settopmatter{}
+
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+%\acmConference[ARRAY'22]{ACM SIGPLAN Conference on Programming Languages}{June 13, 2022}{San Diego, CA, USA}
+%\acmYear{2018}
+%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2018}           %% If different from \acmYear
+
+%% Bibliography style
+%\bibliographystyle{ACM-Reference-Format}
+
+
+\begin{document}
+
+%% Title information
+\title{A Type Family for Algebraic Graphs}
+\subtitle{With applications to inductive representation learning on source code}
+\begin{abstract}
+
+\end{abstract}
+\maketitle
+
+\section{Introduction}
+
+When developing scientific software of sufficient complexity, one is faced with an inevitable choice: do we cobble together a one-off solution to the problem at hand or write generic code that can be reused for many foreseeable problems? There exists a constant tension between doing just enough to get the job done and anticipating future requirements that may arise during the course of a project. Aim too low, and it becomes necessary to completely rewrite the code whenever a new feature is added. Aim too high, and we run the risk of premature abstraction and unnecessary complexity. Yet experience tells us there are patterns of such universal applicability that abstraction reveals connections to other disciplines which would not be anticipated without first seeking abstraction. Graphs are one such example.
+
+In this paper, we will explore the idea of generic programming on graphs, which are ubiquitous datastructures in computer science. We will begin by defining a type family for graphs, then show how this type family can be used for inductive graph representation learning. Using this idea, we develop a DSL for graph rewriting with applications to source code transformation. Our DSL has broad applicability to learning on source code and inductive programming.
+
+semirings on graphs
+
+matrix-based parsing
+
+graph representation learning
+
+type families
+
+concatenative languages
+
+embedded DSLs
+
+open source implementation
+
+%% Bibliography
+\bibliography{acmart}
+
+
+%% Appendix
+\appendix
+\section{Appendix}
+
+Text of appendix \ldots
+
+\end{document}
