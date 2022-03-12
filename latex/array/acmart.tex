@@ -31,16 +31,16 @@
 %\copyrightyear{2018}           %% If different from \acmYear
 
 %% Bibliography style
-%\bibliographystyle{ACM-Reference-Format}
+\bibliographystyle{acmart}
 
-
+\input{preamble.tex}
 \begin{document}
 
 %% Title information
 \title{A Type Family for Algebraic Graphs}
 \subtitle{With applications to inductive representation learning on source code}
 \begin{abstract}
-
+In the following paper, we introduce a novel graph programming framework for representation learning on source code. This framework is capable of parsing code, simulating execution, performing source-to-source transformations and learning to fill holes using pure matrix multiplication. We provide a type-theoretic basis for graph-programming and prove it is Turing Complete. We describe its implementation in the Kotlin language, use the tool to experimentally parse some source code, then generate, localize and repair a simple bug using delta debugging. Finally we give experimental results and directions for future research.
 \end{abstract}
 \maketitle
 
@@ -50,7 +50,7 @@ When developing scientific software of sufficient complexity, one is faced with 
 
 In this paper, we will explore the idea of generic programming on graphs, which are ubiquitous datastructures in computer science. We will begin by defining a type family for graphs, then show how this type family can be used for inductive graph representation learning. Using this idea, we develop a DSL for graph rewriting with applications to source code transformation. Our DSL has broad applicability to learning on source code and inductive programming.
 
-semirings on graphs
+TODO: semirings on graphs
 
 matrix-based parsing
 
@@ -64,14 +64,411 @@ embedded DSLs
 
 open source implementation
 
+\section{Type Family}
+
+We adapt the type family introduced by Greenman et al.~\citep{greenman2014getting}.
+
+\begin{lstlisting}
+interface GraphFamily<G, E, V> where
+  G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>
+
+interface Graph<G, E, V>: GraphFamily<G, E, V> where
+  G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>
+
+interface Edge<G, E, V>: GraphFamily<G, E, V> where
+  G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>
+
+interface Vertex<G, E, V>: GraphFamily<G, E, V> where
+  G: Graph<G, E, V>, E: Edge<G, E, V>, V: Vertex<G, E, V>
+
+class Map: Graph<Map, Road, City>
+class Road: Edge<Map, Road, City>
+class City: Vertex<Map, Road, City>
+\end{lstlisting}
+
+\section{Language Parsing}
+
+Language is linear data structure composed of atomic symbols which can be concatenated to form new words and phrases. For example, this document. Natural language has very flexible set of rules for composition which are learned by example and can adapt over time to the needs of its users.
+
+Artificial languages are also languages, but with a precise set of rules. By design, the rules for composing these languages are much more rigid to enable their mechanical interpretation. A vast number of domain-specific languages, called programming languages, have emerged in recent years.
+
+The distinction between natural and artificial languages are not discontinuous, but rather fall along a spectrum of minimum description length. Linguists have developed various taxonomies for languages based on their algorithmic and information complexity. In practice, most examples are at worst, weakly linear context free due to physical constraints.
+
+The question arises, is there a useful superset of computable languages? Various equivalent definitions have been proposed from Peano arithmetic, to Turing machines, to Sch\"onfinkel's combinatory logic, to Church's $\lambda$-calculus. Although complete, these languages are inconsistent (G\"odel). However, Presburger (1929) proposes a slightly weaker language which is both complete and consistent, $P \Coloneqq 0 \mid 1$:
+
+\begin{enumerate}
+  \item $0 \neq S(0)            $
+  \item $S(x) = S(y) \rightarrow x = y    $
+  \item $x + 0 = x              $
+  \item $x + S(y) = S(x + y)    $
+  \item $(P(0) \land \forall x.(P(x) \rightarrow P(S(x))) \rightarrow \forall y.P(y)$
+\end{enumerate}
+
+Via staging, we can embed any ASCII-based language in $C$. For example, consider the programming language...
+
+What about types? Since $C$ is both complete and consistent, we have boolean judgements. Judgemental equality is simply string equality.
+
+In concatenative programming, words typically denote function application in the point-free style. What if we took a more granular approach and allowed each symbol to be a higher-order function?
+
+\section{Graph Constructor}
+
+Syntactically our language can be compiled into a graph. Given a sequence $S\in C$, we first perform a byte pair encoding to compress the sequence. Then we have the following semantics:
+
+\begin{enumerate}
+  \item $\texttt{car cdr}, G \Coloneqq S_0 S_{1\ldots n}, \{\}$
+  \item $\texttt{car cdr}, G \vdash \texttt{cdr}, G \oplus (\texttt{car}, \texttt{cdr.car})$
+\end{enumerate}
+
+Concatenation of two graphs $G_1, G_2: V\times E \times V$ we define as:
+
+\begin{enumerate}
+  \item $G_1 \oplus G_2 \Coloneqq (V_1\cup V_2)\times (E_1\cup E_2) $
+\end{enumerate}
+
+For example, suppose we have the following two graphs, $G_1, G_2$. $G_1 \oplus G_2$ can be visualized by gluing together the nodes and edges:\\
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[scale=0.55]
+    \node[shape=circle,draw=black] (A) at (0,2.5)  {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4)  {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1)  {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (6.5,2.5){$s_4$};
+    \node[shape=circle,draw=black] (E) at (4,4)    {$s_2$};
+    \node[shape=circle,draw=black] (F) at (4,1)    {$s_3$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+    \path [->](C) edge node {\hspace{0.85cm}$\oplus$} (B);
+
+    \path [->] (D) edge node[left] {} (E);
+    \path [->](D) edge node[left] {} (F);
+    \path [->](F) edge node {\hspace{4cm}$=$} (E);
+  \end{tikzpicture}
+%  \hspace{0.2cm}
+  \begin{tikzpicture}[scale=0.55]
+    \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+    \path [->](C) edge node {} (B);
+
+    \path [->] (D) edge node[left] {} (B);
+    \path [->](D) edge node[left] {} (C);
+  \end{tikzpicture}
+\end{figure}
+
+Now suppose we have an edge-labeled graph: we could either take the product or union of the edge labels.
+
+Concatenation of two edge-labeled graphs $LG_1, LG_2: (V \times E \times \Sigma^* \times V)$ can take two forms. We define two operators:
+
+\begin{enumerate}
+  \item $G_1 \oplus G_2 \Coloneqq (V_1 \cup V_2) \times (\Sigma_1^* \cup \Sigma_2^*) \times (E_1\cup E_2) $
+  \item $G_1 \oplus G_2 \Coloneqq (V_1 \cup V_2) \times \Big((E_1 \cup E_2) \rtimes (\Sigma^*_1 \cup \Sigma_2^*)\Big) $
+\end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \node[shape=circle,draw=black] (A) at (0,2.5)  {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4)  {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1)  {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (6.5,2.5){$s_4$};
+    \node[shape=circle,draw=black] (E) at (4,4)    {$s_2$};
+    \node[shape=circle,draw=black] (F) at (4,1)    {$s_3$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+    \path [->](C) edge node {\colorbox{white}{\texttt{ab}}} (B);
+
+    \path [->] (D) edge node[left] {} (E);
+    \path [->](D) edge node[left] {} (F);
+    \path [->](F) edge node {\colorbox{white}{\texttt{bc}}} (E);
+  \end{tikzpicture}\\
+\end{figure}
+
+$G\oplus_1 G'$ repeats shared edges with unique labels. $G\oplus_2 G'$ combines shared edges, and unions the labels.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}
+    \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+
+    \path [->](C) edge [bend left] node[top] {\colorbox{white}{\texttt{ab}}} (B);
+    \path [->](C) edge [bend right] node[top] {\colorbox{white}{\texttt{bc}}} (B);
+
+    \path [->] (D) edge node[left] {} (B);
+    \path [->](D) edge node[left] {} (C);
+  \end{tikzpicture}
+  \begin{tikzpicture}
+    \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+
+    \path [->](C) edge node[top] {\colorbox{white}{\texttt{ab, bc}}} (B);
+
+    \path [->] (D) edge node[left] {} (B);
+    \path [->](D) edge node[left] {} (C);
+  \end{tikzpicture}
+\end{figure}
+
+\section{Algebra on Languages}
+
+We recall that a language is just a set of strings, i.e. a finite-length sequences of symbols. The concatenation of two languages is essentially the Cartesian product over strings:
+
+$X \circ Y \coloneqq \{xy \mid x \in X, y \in Y\}$.
+
+It is known that all recursive languages are closed under concatenation, union and intersection. As a recursive language, Presburger arithmetic too, falls under this category.
+
+\section{From computation to graphs}\label{sec:graphs}
+
+Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of representing a wide variety of procedural and relational information. A graph can be represented as a matrix $\{\mathbb{B}, \mathbb{N}, \mathbb{R}\}^{n\times n}$, with entries describing the presence, label, or distance between vertices. Linear algebra provides a unifying framework for studying many graph algorithms and program analysis tasks~\citep{kepner2011graph}. Graphs can also be defined algebraically, using an algebraic data type~\cite{erwig2001inductive, mokhov2017algebraic}, e.g.:\\
+
+\begin{center}
+\begin{table}[H]
+\begin{tabular}{lcl}
+  vertex  & $\rightarrow$ & int \\
+  adj     & $\rightarrow$ & [vertex] \\
+  context & $\rightarrow$ & (adj, vertex, adj) \\
+  graph   & $\rightarrow$ & empty | context \& graph \\
+\end{tabular}
+\end{table}
+\end{center}
+
+The graph sum emerges naturally, however there are multiple valid ways to define a graph product. As we will show, this data structure can be used to describe many fundamental computational processes.
+
+\subsection{Algebraic graphs}\label{subsec:algebraic-graphs}
+
+The connection between algebra and graphs runs deep, unifying many seemingly disparate topics. It is possible to implement many fundamental computer science algorithms in a much simpler way as iterated matrix multiplication on a semiring algebra. A commutative monoid $(S, \cdot, \circled{1})$ is a set $S$ with a binary operator $\cdot: S \times S \rightarrow S$ which has the following properties:
+
+\begin{prooftree}
+  \bottomAlignProof
+  \AxiomC{$a \cdot (b \cdot c)$}
+  \UnaryInfC{$(a \cdot b) \cdot c$}
+  \noLine
+  \UnaryInfC{}
+  \noLine
+  \UnaryInfC{\textit{Associativity}}
+  \DisplayProof
+  \hskip 2.5em
+  \bottomAlignProof
+  \AxiomC{$a \cdot \circled 1$}
+  \UnaryInfC{$a$\vphantom{$()$}}
+  \noLine
+  \UnaryInfC{}
+  \noLine
+  \UnaryInfC{\textit{Neutrality}}
+  \DisplayProof
+  \hskip 2.5em
+  \bottomAlignProof
+  \AxiomC{$a \cdot b$}
+  \UnaryInfC{$b \cdot a$\vphantom{$()$}}
+  \noLine
+  \UnaryInfC{}
+  \noLine
+  \UnaryInfC{\textit{Commutativity}}
+\end{prooftree}
+
+\noindent A semiring algebra, denoted $(S, \oplus, \otimes, \circled{0}, \circled{1})$, is a set together with two binary operators $\oplus, \otimes: S \times S \rightarrow S$ such that $(S, \oplus, \circled{0})$ is a commutative monoid and $(S, \otimes, \circled{1})$ is a monoid. It has the following additional properties:
+
+\footnotesize
+\begin{prooftree}
+  \bottomAlignProof
+  \AxiomC{$a \otimes (b \oplus c)$}
+  \UnaryInfC{$(a \otimes b) \oplus (a \otimes c)$}
+  \noLine
+  \UnaryInfC{}
+  \AxiomC{$(a \oplus b) \otimes c$}
+  \UnaryInfC{$(a \otimes c) \oplus (b \otimes c)$}
+  \noLine
+  \UnaryInfC{}
+  \noLine
+  \BinaryInfC{\textit{Distributivity}}
+  \DisplayProof
+  \bottomAlignProof
+  \AxiomC{$a \otimes \circled 0$}
+  \UnaryInfC{$\circled 0$\vphantom{$()$}}
+  \noLine
+  \UnaryInfC{}
+  \noLine
+  \UnaryInfC{\textit{Annihilation}}
+\end{prooftree}
+\normalsize
+
+\noindent It is possible solve a wide variety of path problems using iterated matrix multiplication on semirings. Known as \textit{propagation} or \textit{message passing}, this procedure consists of two steps: \textit{aggregate} and \textit{update}. Let $\delta_{st}$ denote some distance metric on a path between two vertices $s$ and $t$ in a graph. To obtain $\delta_{st}$, one may run the following procedure on a desired path algebra until convergence:
+
+\begin{center}
+  \begin{tabular}{lc}
+    $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & & &
+  \end{tabular}
+  \begin{tabular}{c|c{1cm}c{1cm}|c{1cm}c{1cm}|c}
+    S                           & $\oplus$ & $\otimes$ & $\circled{0}$ & $\circled{1}$ & Path     \\\hline
+    $\mathbb R \cup \{\infty\}$ & min      & +         &   $\infty$    &      0        & Shortest \\
+    $\mathbb R \cup \{\infty\}$ & max      & +         &   $-\infty$   &      0        & Longest  \\
+    $\mathbb R \cup \{\infty\}$ & max      & min       &       0       &   $\infty$    & Widest   \\
+  \end{tabular}
+\end{center}
+
+\noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra, belief, constraint, error and expectation propagation, Markov chains, and others can all be neatly expressed as message passing on a semiring algebra. We refer the curious reader to~\cite{gondran2008graphs,baras2010path} for a more complete summary of the algebraic path problem and its many wonderful applications.
+
+%According to the Perron-Frobenius theorem, if $\mathbf M: \mathbb{R}^{n \times n}_{>0}$ then $\mathbf M$ has a unique largest eigenvalue $\lambda \in \mathcal T$ and dominant eigenvector $\mathbf{q} \in \mathcal T^{n}$. Assuming $\mathcal{T}$, $\lim_{i\rightarrow \infty} \mathbf{M}^i \mathbf{v} = c\mathbf{q}$ where $c$ is a constant.
+%
+%$f(x, y) = \begin{bmatrix} \frac{cos^2(x+2y)}{x} & 0.2 \\ 0.2 & \frac{sin^2(x-2y)}{y} \end{bmatrix} * \begin{bmatrix}x\\y\end{bmatrix} = \begin{bmatrix}cos^2(x+2y)\\sin^2(x-2y)\end{bmatrix}$
+%
+%\begin{tikzpicture}
+%  \begin{axis}[
+%    xmin = -5, xmax = 5,
+%    ymin = -1.5, ymax = 1.5,
+%    axis equal image,
+%    view = {0}{90},
+%  ]
+%    \addplot3[
+%    quiver = {
+%      u = {sqrt(cos(deg(x+2*y))^2)+0.2*y},
+%      v = {sqrt(sin(deg(x-2*y))^2)+0.2*x},
+%    },
+%    -stealth,
+%    samples=40,
+%    quiver/scale arrows=0.3
+%    ] {0};
+%  \end{axis}
+%\end{tikzpicture}
+
+\subsection{Programs as graphs}\label{sec:program-graphs}
+
+Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. To effectively reason about programs in semantically similar but syntactically diverse settings requires models which incorporate features from the call graph~\cite{liu2019neural} and surrounding typing context~\cite{allamanis2017learning}. Many semantic structures, such as data and control flow~\cite{si2018learning} can be represented as a directed acyclic graph, which admits linear-time solutions to a variety of graph problems, including topological sorting, single-source shortest path and reachability queries. Many useful graph representations have been proposed in the literature, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg} down to boolean and arithmetic circuits~\citep{miller1988efficient}.
+
 %% Bibliography
 \bibliography{acmart}
+\pagebreak\appendix
 
+\section{Grammar}
+In our DSL, we consider all variables to be immutable and reassignment will instantiate a phantom instance. Subsequent references will point to the latest instance of the variable, and is denoted using a extra \texttt{'} character in GraphViz. The RTL DSL is untyped and consists of the following operators:
 
-%% Appendix
-\appendix
-\section{Appendix}
+\begin{lstlisting}
+ <CONST> ::= 0 | ... | 9 | <CONST> <CONST> | <CONST>.w
+   <VAR> ::= RAM | A | ... | Z
+    <OP> ::= + | *
+  <EXPR> ::= <CONST> | <VAR> |
+             <VAR>[<CONST>] | <EXPR> <OP> <EXPR>
+<MALLOC> ::= <MALLOC>(<CONST>)
+<ASSIGN> ::= <VAR> = <EXPR> |
+             <INDEX> = <EXPR> | <VAR> = <MALLOC>
+  <LOOP> ::= for(i in <CONST>..<CONST>) { <STATEMENT> }
+\end{lstlisting}
+\normalsize
 
-Text of appendix \ldots
+\section{Examples}
+\subsection*{1. Simple test}
 
+\begin{lstlisting}
+RAM = malloc(4);
+RAM[3] = RAM[0] * RAM[1] + RAM[2]
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd31}
+
+\subsection*{2. Vector multiplication}
+
+\begin{lstlisting}
+A = malloc(4);
+B = malloc(4);
+C = malloc(4);
+C[0] = A[0] * B[0];
+C[1] = A[1] * B[1];
+C[2] = A[2] * B[2];
+C[3] = A[3] * B[3];
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd32}
+
+\subsection*{3. Dot product}
+
+\begin{lstlisting}
+A = malloc(4);
+B = malloc(4);
+C = malloc(1);
+C[0] = A[0] * B[0] +
+       A[1] * B[1] +
+       A[2] * B[2] +
+       A[3] * B[3];
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd33}
+
+\subsection*{4. Convolution}
+
+\begin{lstlisting}
+A = malloc(6);
+W = malloc(3);
+C = malloc(4);
+C[0] = A[0] * W[0] + A[1] * W[1] + A[2] * W[2];
+C[1] = A[1] * W[0] + A[2] * W[1] + A[3] * W[2];
+C[2] = A[2] * W[0] + A[3] * W[1] + A[4] * W[2];
+C[3] = A[3] * W[0] + A[4] * W[1] + A[5] * W[2];
+\end{lstlisting}
+
+\includegraphics[scale=0.05]{rtd34}
+
+\section*{IV. Extensions/Optimizations}
+
+\subsection*{1. Simple variable test}
+
+\begin{lstlisting}
+I = 0;
+I = 1;
+I = I+J;
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd41}
+
+\subsection*{2. Simple loop test}
+
+\begin{lstlisting}
+S = 0.w
+for(i in 0..3) { S = S + i.w }
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd42}
+
+\subsection*{3. Sum of array}
+
+\begin{lstlisting}
+A = malloc(4);
+S = 0.w;
+for (i in 0..3) { S += A[i] }
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd43}
+
+\subsection*{4. Dot product}
+
+\begin{lstlisting}
+A = malloc(4);
+B = malloc(4);
+S = 0.w;
+for (i in 0..3) { // 4 iterations
+    S = S + A[i] * B[i];
+}
+\end{lstlisting}
+
+\includegraphics[scale=0.1]{rtd44}
 \end{document}

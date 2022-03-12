@@ -27,6 +27,8 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
     else -> throw Exception("Unsupported constructor: G(${list.joinToString(",") { it::class.simpleName!! }})")
   }.let { G(it) }
 
+  val deepHashCode: Int // Uniquely identifies this class instance, regardless of structure
+
   /**
    * Memoizes the result of evaluating a pure subclass function, indexed by:
    *
@@ -34,8 +36,6 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
    * (2) the most direct caller on the stack (i.e. qualified method name)
    * (3) its arguments if caller is not niladic and [args] are supplied.
    */
-
-  val deepHashCode: Int // Uniquely identifies this class instance, regardless of structure
   fun <T> memoize(
     classRef: Int = deepHashCode,
     methodRef: Int = Throwable().stackTraceToString().lines()[2].hashCode(),
@@ -286,3 +286,19 @@ interface Encodable { fun encode(): DoubleArray }
 abstract class TMap: IGraph<TMap, TRoad, TCity>
 abstract class TRoad: IEdge<TMap, TRoad, TCity>
 abstract class TCity: IVertex<TMap, TRoad, TCity>
+
+interface SGF<G, E, V> where
+  G: SGraph<G, E, V>, E: SEdge<G, E, V>, V: SVertex<G, E, V> { /*...*/ }
+
+interface SGraph<G, E, V>: SGF<G, E, V> where
+  G: SGraph<G, E, V>, E: SEdge<G, E, V>, V: SVertex<G, E, V> { /*...*/ }
+
+interface SEdge<G, E, V>: SGF<G, E, V> where
+  G: SGraph<G, E, V>, E: SEdge<G, E, V>, V: SVertex<G, E, V> { /*...*/ }
+
+interface SVertex<G, E, V>: SGF<G, E, V> where
+  G: SGraph<G, E, V>, E: SEdge<G, E, V>, V: SVertex<G, E, V> { /*...*/ }
+
+class SMap: SGraph<SMap, SRoad, SCity> { /*...*/ }
+class SRoad: SEdge<SMap, SRoad, SCity> { /*...*/ }
+class SCity: SVertex<SMap, SRoad, SCity> { /*...*/ }
