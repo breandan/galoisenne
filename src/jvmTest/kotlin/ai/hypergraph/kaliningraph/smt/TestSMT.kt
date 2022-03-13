@@ -10,8 +10,13 @@ import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
 import kotlin.math.*
+import kotlin.random.Random
 import kotlin.reflect.KProperty
+import kotlin.test.assertEquals
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSMT"
+ */
 class TestSMT {
   @Test
   // https://en.wikipedia.org/wiki/Taxicab_number
@@ -35,7 +40,7 @@ class TestSMT {
         (c pwr 2 gt bigNum) and
         (d pwr 2 gt bigNum)
 
-    val isNontrivial = f and containsNegative and areLarge and fm.distinct(listOf(a, b, c, d))
+    val isNontrivial = f and containsNegative and areLarge and ifm.distinct(listOf(a, b, c, d))
 
     val solution = solveFor(a, b, c, d).subjectTo(isNontrivial)
     println(solution)
@@ -123,6 +128,9 @@ class TestSMT {
     }
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSMT.testBistochastic"
+*/
   @Test
   fun testBistochastic() = SMTInstance().solve {
     val dim = 7
@@ -131,8 +139,8 @@ class TestSMT {
 
     val sum by IntVar()
 
-    fun FreeMatrix<Formula>.isStochastic() =
-      rows.map { it.reduce { a, b: Formula -> a.run { this + b } } eq sum }
+    fun FreeMatrix<SMTF>.isStochastic() =
+      rows.map { it.reduce { a, b: SMTF -> a.run { this + b } } eq sum }
         .reduce { a, b -> a and b }
 
     val isBistochastic = m.isStochastic() and m.transpose().isStochastic()
@@ -143,7 +151,8 @@ class TestSMT {
 
     val positive = m.data.map { it gt 0 }.reduce { a, b -> a and b }
 
-    val solution = solveFor(*m.data.toTypedArray()).subjectTo(isBistochastic and assymetric and positive)
+    val solution = solveFor(*m.data.toTypedArray())
+      .subjectTo(isBistochastic and assymetric and positive)
 
     val sol = m.rows.map { i -> i.map { solution[it]!! } }
     sol.forEach { println(it.joinToString(" ")) }
@@ -157,10 +166,10 @@ class TestSMT {
   class SMTMatrix(
     override val numRows: Int,
     override val numCols: Int = numRows,
-    override val data: List<Formula>,
-    override val algebra: Ring.of<Formula>,
-  ) : Matrix<Formula, Ring.of<Formula>, SMTMatrix> {
-    constructor(algebra: Ring.of<Formula>, elements: List<Formula>) : this(
+    override val data: List<SMTF>,
+    override val algebra: Ring.of<SMTF>,
+  ) : Matrix<SMTF, Ring.of<SMTF>, SMTMatrix> {
+    constructor(algebra: Ring.of<SMTF>, elements: List<SMTF>) : this(
       algebra = algebra,
       numRows = sqrt(elements.size.toDouble()).toInt(),
       data = elements
@@ -169,8 +178,8 @@ class TestSMT {
     constructor(
       numRows: Int,
       numCols: Int = numRows,
-      algebra: Ring.of<Formula>,
-      f: (Int, Int) -> Formula
+      algebra: Ring.of<SMTF>,
+      f: (Int, Int) -> SMTF
     ) : this(
       algebra = algebra,
       numRows = numRows,
@@ -178,11 +187,11 @@ class TestSMT {
       data = List(numRows * numCols) { f(it / numRows, it % numCols) }
     )
 
-    override fun new(numRows: Int, numCols: Int, data: List<Formula>, algebra: Ring.of<Formula>) =
+    override fun new(numRows: Int, numCols: Int, data: List<SMTF>, algebra: Ring.of<SMTF>) =
       SMTMatrix(numRows, numCols, data, algebra)
   }
 
-  fun SMTAlgebra(instance: SMTInstance) =
+  fun DefaultSMTAlgebra(instance: SMTInstance) =
     Ring.of(
       nil = instance.nil,
       one = instance.one,
@@ -192,7 +201,7 @@ class TestSMT {
 
   @Test
   fun testIsAssociative() = SMTInstance().solve {
-    val SMT_ALGEBRA = SMTAlgebra(this)
+    val SMT_ALGEBRA = DefaultSMTAlgebra(this)
 
     val dim = 2
     val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
@@ -202,7 +211,7 @@ class TestSMT {
     val plusAssoc = ((a + b) + c) eq (a + (b + c))
 //    val multAssoc = ((a * b) * c) eq (a * (b * c)) //TODO: why is this so slow?
 
-    val goal = qm.forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
+    val goal = qfm.forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
     val shouldBeTrue = prove(goal)
 
     println(shouldBeTrue)
@@ -212,7 +221,7 @@ class TestSMT {
 
   @Test
   fun testIsDistributive() = SMTInstance().solve {
-    val SMT_ALGEBRA = SMTAlgebra(this)
+    val SMT_ALGEBRA = DefaultSMTAlgebra(this)
 
     val dim = 2
     val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
@@ -221,7 +230,7 @@ class TestSMT {
 
     val plusDistrib = (a * (b + c)) neq (a * b + a * c)
 
-    val goal = qm.exists((a.data + b.data + c.data).map { it.formula }, plusDistrib)
+    val goal = qfm.exists((a.data + b.data + c.data).map { it.formula }, plusDistrib)
     val shouldBeFalse = prove(goal)
 
     println(shouldBeFalse)
@@ -229,37 +238,63 @@ class TestSMT {
     Assertions.assertFalse(shouldBeFalse)
   }
 
-  open class Formula(
-    open val ctx: SolverContext,
-    val formula: IntegerFormula,
-    val fm: IntegerFormulaManager = ctx.formulaManager.integerFormulaManager
-  ) : IntegerFormula by formula, Group<Formula> {
-    override val nil: Formula by lazy { Formula(ctx, fm.makeNumber(0)) }
-    override val one: Formula by lazy { Formula(ctx, fm.makeNumber(1)) }
-    private operator fun IntegerFormula.plus(t: IntegerFormula): IntegerFormula = fm.add(this, t)
-    private operator fun IntegerFormula.times(t: IntegerFormula) = fm.multiply(this, t)
-    override fun Formula.plus(t: Formula): Formula = Formula(ctx, formula + t.formula)
-    override fun Formula.times(t: Formula): Formula = Formula(ctx, formula * t.formula)
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSMT.testMatInv"
+*/
+
+  @Test
+  fun testMatInv() = SMTInstance().solve {
+    val SMT_ALGEBRA = DefaultSMTAlgebra(this)
+    val dim = 3
+    val a = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> SMTF(i + j) }
+    val b = SMTMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
+
+    val isInverse = (a * b * a).data.zip(a.data)
+      .map { (a1, a2) -> a1.eq(a2) }
+      .reduce { i, j -> i and j }
+
+    val solution = solveFor(*b.data.toTypedArray()).subjectTo(isInverse)
+
+    val sol = b.rows.map { i -> i.map { solution[it]!! } }
+    val maxLen = sol.flatten().maxOf { it.toString().length }
+    sol.forEach { println(it.joinToString(" ") { it.toString().padStart(maxLen) }) }
+
+    val aDoub = DoubleMatrix(dim, dim) { i, j -> (i + j).toDouble() }
+    val sDoub = DoubleMatrix(dim, dim) { i, j -> sol[i][j].toDouble() }
+    assertEquals(aDoub * sDoub * aDoub, aDoub)
+  }
+
+  open class SMTF(open val ctx: SMTInstance, val formula: IntegerFormula):
+    IntegerFormula by formula, Group<SMTF> {
+    private fun SMTF(f: SMTInstance.() -> Any) = SMTF(ctx, ctx.wrap(ctx.f()))
+    
+    override val nil: SMTF by lazy { SMTF { 0 } }
+    override val one: SMTF by lazy { SMTF { 1 } }
+    override fun SMTF.plus(t: SMTF): SMTF = SMTF { this@SMTF pls t }
+    override fun SMTF.times(t: SMTF): SMTF = SMTF { this@SMTF mul t }
 
     override fun toString() = formula.toString()
     override fun hashCode() = formula.hashCode()
     override fun equals(other: Any?) =
-      other is Formula && other.formula == this.formula || other is IntegerFormula && formula == other
+      other is SMTF && other.formula == this.formula || 
+        other is IntegerFormula && formula == other
   }
 
   class SMTInstance(
     val solverContext: SolverContext = SolverContextFactory.createSolverContext(PRINCESS),
-    val fm: IntegerFormulaManager = solverContext.formulaManager.integerFormulaManager,
-    val bm: BooleanFormulaManager = solverContext.formulaManager.booleanFormulaManager,
-    val qm: QuantifiedFormulaManager = solverContext.formulaManager.quantifiedFormulaManager
+    val ifm: IntegerFormulaManager = solverContext.formulaManager.integerFormulaManager,
+    val bfm: BooleanFormulaManager = solverContext.formulaManager.booleanFormulaManager,
+    val qfm: QuantifiedFormulaManager = solverContext.formulaManager.quantifiedFormulaManager
   ) {
-    fun solve(function: SMTInstance.() -> Unit) = this.function()
+    fun solve(function: SMTInstance.() -> Unit) = function()
 
-    fun IntVar() = IntVrb(fm)
-    fun IntVar(name: String) = Formula(solverContext, fm.makeVariable(name))
+    fun IntVar() = IntVrb(ifm)
+    fun IntVar(name: String) = SMTF(this, ifm.makeVariable(name))
 
-    val nil: Formula = Formula(solverContext, fm.makeNumber(0))
-    val one: Formula = Formula(solverContext, fm.makeNumber(1))
+    fun SMTF(i: Int) = SMTF(this, ifm.makeNumber(i.toLong()))
+    val nil: SMTF = SMTF(this, ifm.makeNumber(0))
+    val one: SMTF = SMTF(this, ifm.makeNumber(1))
 
     class IntVrb(val mgr: IntegerFormulaManager) {
       operator fun getValue(nothing: Nothing?, property: KProperty<*>) = mgr.makeVariable(property.name)
@@ -268,7 +303,7 @@ class TestSMT {
     fun solveFor(vararg fs: IntegerFormula) =
       ProofContext(*fs.map {
         // TODO: Necessary to unwrap because error: "Cannot get the formula info of type Formula in the Solver!"
-        if (it is Formula) it.formula else it
+        if (it is SMTF) it.formula else it
       }.toTypedArray())
 
     class ProofContext(vararg val fs: IntegerFormula)
@@ -287,52 +322,43 @@ class TestSMT {
         !prover.isUnsat
       }
 
-    fun wrap(number: Any): IntegerFormula =
-      when (number) {
-        is Number -> fm.makeNumber("$number")
-        is Formula -> number.formula
-        is IntegerFormula -> number
-        else -> throw NumberFormatException("Bad number $number (${number.javaClass.name})")
+    fun wrap(input: Any): IntegerFormula =
+      when (input) {
+        is Number -> ifm.makeNumber("$input")
+        is SMTF -> input.formula
+        is IntegerFormula -> input
+        else -> throw NumberFormatException("Bad number $input (${input.javaClass.name})")
       }
 
-    infix fun Any.pls(b: Any) = fm.add(wrap(this), wrap(b))
+    infix fun Any.pls(b: Any) = ifm.add(wrap(this), wrap(b))
 
-    infix fun Any.mns(b: Any) = fm.subtract(wrap(this), wrap(b))
+    infix fun Any.mns(b: Any) = ifm.subtract(wrap(this), wrap(b))
 
-    infix fun Any.mul(b: Any) = fm.multiply(wrap(this), wrap(b))
+    infix fun Any.mul(b: Any) = ifm.multiply(wrap(this), wrap(b))
 
-    infix fun Any.dvd(b: Any) = fm.divide(wrap(this), wrap(b))
+    infix fun Any.dvd(b: Any) = ifm.divide(wrap(this), wrap(b))
 
     infix fun Any.pwr(b: Int) = (2..b).fold(wrap(this)) { a, _ -> a mul this }
 
-    infix fun Any.lt(b: Any) = fm.lessThan(wrap(this), wrap(b))
-    infix fun Any.gt(b: Any) = fm.greaterThan(wrap(this), wrap(b))
-    infix fun Any.eq(b: Any) = fm.equal(wrap(this), wrap(b))
-    infix fun Any.neq(b: Any) = bm.not(eq(b))
+    infix fun Any.lt(b: Any) = ifm.lessThan(wrap(this), wrap(b))
+    infix fun Any.gt(b: Any) = ifm.greaterThan(wrap(this), wrap(b))
+    infix fun Any.eq(b: Any) = ifm.equal(wrap(this), wrap(b))
+    infix fun Any.neq(b: Any) = bfm.not(eq(b))
 
-    infix fun BooleanFormula.and(b: BooleanFormula) = bm.and(this, b)
-    infix fun BooleanFormula.or(b: BooleanFormula) = bm.or(this, b)
+    infix fun BooleanFormula.and(b: BooleanFormula) = bfm.and(this, b)
+    infix fun BooleanFormula.or(b: BooleanFormula) = bfm.or(this, b)
 
     fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
-    fun makeFormula(m1: Matrix<Formula, *, *>, m2: Matrix<Formula, *, *>, fmap: (Formula, Formula) -> BooleanFormula) =
+    fun makeFormula(m1: Matrix<SMTF, *, *>, m2: Matrix<SMTF, *, *>, ifmap: (SMTF, SMTF) -> BooleanFormula) =
       m1.rows.zip(m2.rows)
-        .map { (a, b) -> a.zip(b).map {(a, b) ->fmap(a, b)} }
+        .map { (a, b) -> a.zip(b).map { (a, b) -> ifmap(a, b) } }
         .flatten().reduce { a, b -> a and b }
 
-    infix fun Matrix<Formula, *, *>.eq(other: Matrix<Formula, *, *>) =
+    infix fun Matrix<SMTF, *, *>.eq(other: Matrix<SMTF, *, *>) =
       makeFormula(this, other) { a, b -> a eq b }
 
-    infix fun Matrix<Formula, *, *>.neq(other: Matrix<Formula, *, *>) =
+    infix fun Matrix<SMTF, *, *>.neq(other: Matrix<SMTF, *, *>) =
       makeFormula(this, other) { a, b -> a neq b }
   }
-}
-
-fun main() = TestSMT().run {
-  testTaxiCab()
-  testSumOfCubes()
-  testNonLinear()
-  testBistochastic()
-  testIsAssociative()
-  testIsDistributive()
 }
