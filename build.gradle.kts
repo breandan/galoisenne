@@ -119,7 +119,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.1.0"
+        val kotestVersion = "5.2.1"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
@@ -134,10 +134,13 @@ kotlin {
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
         // I think we were going to use this to prove termination of graph rewriting
-        implementation("org.sosy-lab:java-smt:3.11.0")
-        // implementation("org.sosy-lab:javasmt-solver-z3:4.8.10")
-        // implementation("org.sosy-lab:javasmt-solver-z3-native:z3-4.4.1-788-g8df145d")
-        // implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.6")
+        implementation("org.sosy-lab:java-smt:3.12.0")
+
+//        val libZ3Version = "4.8.14"
+//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version")
+//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3")
+//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java")
+         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))

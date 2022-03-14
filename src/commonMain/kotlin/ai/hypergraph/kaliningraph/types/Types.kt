@@ -78,7 +78,7 @@ interface Group<T>: Nat<T> {
 
   class of<T>(
     override val nil: T, override val one: T,
-    val plus: (T, T) -> T
+    val plus: T.(T, T) -> T
   ): Group<T> {
     override fun T.plus(t: T) = plus(this, t)
   }
@@ -90,8 +90,8 @@ interface Ring<T>: Group<T> {
 
   open class of<T>(
     override val nil: T, override val one: T,
-    val plus: (T, T) -> T,
-    val times: (T, T) -> T
+    val plus: T.(T, T) -> T,
+    val times: T.(T, T) -> T
   ): Ring<T> {
     override fun T.plus(t: T) = plus(this, t)
     override fun T.times(t: T) = times(this, t)
@@ -111,10 +111,10 @@ interface Field<T>: Ring<T> {
   operator fun T.div(t: T): T = div(this, t)
   class of<T>(
     override val nil: T, override val one: T,
-    val plus: (T, T) -> T,
-    val times: (T, T) -> T,
-    val minus: (T, T) -> T,
-    val div: (T, T) -> T
+    val plus: T.(T, T) -> T,
+    val times: T.(T, T) -> T,
+    val minus: T.(T, T) -> T,
+    val div: T.(T, T) -> T
   ): Field<T> {
     override fun T.plus(t: T) = plus(this, t)
     override fun T.times(t: T) = times(this, t)
