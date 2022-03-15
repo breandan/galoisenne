@@ -5,14 +5,23 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class TestSAT {
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
+  */
+
   @Test
   fun testBMatInv() = SMTInstance().solve {
     val SAT_ALGEBRA = DefaultSATAlgebra()
-    val dim = 2
-    val A = FreeMatrix(dim, dim, SAT_ALGEBRA) { i, j -> Literal((i + j) % 2 == 0) }
+    val dim = 5
+    // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
+    // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
+    val p = (0 until dim).shuffled()
+    println("Permutation:\n" + p.joinToString(","))
+    val A = FreeMatrix(dim, dim, SAT_ALGEBRA) { i, j -> Literal(j == p[i]) }
+    println("Permutation matrix:")
+    A.rows.forEach {
+      println(it.joinToString(" ") { it.toString().first() + "" })
+    }
     val B = FreeMatrix(dim, dim, SAT_ALGEBRA) { i, j -> BoolVar("b$i$j") }
 
     val isInverse = (A * B * A) eq A
@@ -23,11 +32,12 @@ class TestSAT {
 
     val sol = B.rows.map { i -> i.map { solution[it]!! } }
     val maxLen = sol.flatten().maxOf { it.toString().length }
+    println("Inverse permutation matrix:")
     sol.forEach {
-      println(it.joinToString(" ") { it.toString().padStart(maxLen) })
+      println(it.joinToString(" ") { it.toString().first() + "" })
     }
 
-    val a = BooleanMatrix(dim, dim) { i, j -> (i + j) % 2 == 0 }
+    val a = BooleanMatrix(dim, dim) { i, j -> j == p[i] }
     val b = BooleanMatrix(dim, dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
   }
