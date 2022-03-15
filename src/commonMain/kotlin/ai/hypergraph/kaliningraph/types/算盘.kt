@@ -1,4 +1,4 @@
-@file:Suppress("unused", "ObjectPropertyName", "ClassName", "PropertyName", "NonAsciiCharacters", "FunctionName")
+@file:Suppress("unused", "ObjectPropertyName", "ClassName", "PropertyName", "NonAsciiCharacters", "FunctionName", "UNUSED_PARAMETER")
 
 package ai.hypergraph.kaliningraph.types
 

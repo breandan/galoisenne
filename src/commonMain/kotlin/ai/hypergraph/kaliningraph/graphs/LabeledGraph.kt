@@ -56,7 +56,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   constructor(builder: LGBuilder.() -> Unit):
     this(LGBuilder().also { it.builder() }.mutGraph.reversed())
   constructor(graph: String): this(
-    graph.split(Regex("\\s*")).fold(LabeledGraph()) { acc, it ->
+    graph.split(Regex("\\s+")).fold(LabeledGraph()) { acc, it ->
       acc + P(*it.toList().zipWithNext().map { (a, b) -> a.toString() cc b.toString() }.toTypedArray())
     }
   )
