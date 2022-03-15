@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.smt
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.*
 import org.sosy_lab.java_smt.SolverContextFactory
+import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.*
 import java.math.BigInteger
@@ -11,36 +12,36 @@ import kotlin.reflect.KProperty
 
 // Builder for SAT/SMT Instance - single use only!
 class SMTInstance(
-  val solverContext: SolverContext =
-    SolverContextFactory.createSolverContext(SolverContextFactory.Solvers.PRINCESS),
-  val ifm: IntegerFormulaManager = solverContext.formulaManager.integerFormulaManager,
-  val bfm: BooleanFormulaManager = solverContext.formulaManager.booleanFormulaManager,
-  val qfm: QuantifiedFormulaManager = solverContext.formulaManager.quantifiedFormulaManager
+  val solver: Solvers = Solvers.PRINCESS,
+  val context: SolverContext = SolverContextFactory.createSolverContext(solver),
+  val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
+  val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
+  val qfm: QuantifiedFormulaManager = context.formulaManager.quantifiedFormulaManager
 ): IntegerFormulaManager by ifm, QuantifiedFormulaManager by qfm {
   fun DefaultSMTAlgebra() =
     Ring.of(
-      nil = SMTF(0),
-      one = SMTF(1),
+      nil = Literal(0),
+      one = Literal(1),
       plus = { a, b -> a + b },
       times = { a, b -> a * b }
     )
 
   fun DefaultSATAlgebra() =
     Ring.of(
-      nil = SATF(false),
-      one = SATF(true),
+      nil = Literal(false),
+      one = Literal(true),
       plus = { a, b -> a or b },
       times = { a, b -> a and b }
     )
 
   fun solve(function: SMTInstance.() -> Unit) = function()
-  fun BoolVar() = BoolVrb(this)
-  fun BoolVar(name: String) = SATF(this, bfm.makeVariable(name))
-  fun SATF(b: Boolean) = SATF(this, bfm.makeBoolean(b))
+  fun BoolVar(): BoolVrb = BoolVrb(this)
+  fun BoolVar(name: String): SATF = SATF(this, bfm.makeVariable(name))
+  fun Literal(b: Boolean): SATF = SATF(this, bfm.makeBoolean(b))
 
   fun IntVar() = IntVrb(this)
   fun IntVar(name: String) = SMTF(this, makeVariable(name))
-  fun SMTF(i: Int) = SMTF(this, makeNumber(i.toLong()))
+  fun Literal(i: Int) = SMTF(this, makeNumber(i.toLong()))
 
   class IntVrb(val smtInstance: SMTInstance) {
     operator fun getValue(nothing: Nothing?, property: KProperty<*>) =
@@ -53,11 +54,12 @@ class SMTInstance(
   }
 
   fun solveFormula(vararg bs: BooleanFormula) =
-    solverContext.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)
+    context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
         assert(!prover.isUnsat) { "Unsat!" }
-        prover.modelAssignments
+        prover.modelAssignments// This may not assign all free variables?
+//        associateWith { prover.model.evaluate(it) /*Can be null?*/ }
       }
 
   fun solveInteger(vararg constraints: BooleanFormula): Map<IntegerFormula, Int> =
@@ -67,7 +69,7 @@ class SMTInstance(
     solveFormula(*constraints).associate { it.key as BooleanFormula to it.value as Boolean }
 
   fun prove(goal: BooleanFormula) =
-    solverContext.newProverEnvironment().use { prover ->
+    context.newProverEnvironment().use { prover ->
       prover.push(goal)
       !prover.isUnsat
     }
@@ -121,11 +123,11 @@ class SMTInstance(
     .map { (a, b) -> a.zip(b).map { (a, b) -> ifmap(a, b) } }
     .flatten().reduce { a, b -> a and b }
 
-  infix fun <T> Matrix<T, *, *>.eq(other: Matrix<T, *, *>): BooleanFormula =
-    makeFormula(this, other) { a, b -> a as Any eq b as Any }
+  infix fun <T> Matrix<T, *, *>.eq(that: Matrix<T, *, *>): BooleanFormula =
+    makeFormula(this, that) { a, b -> a as Any eq b as Any }
 
-  infix fun <T> Matrix<T, *, *>.neq(other: Matrix<T, *, *>): BooleanFormula =
-    bfm.not(this eq other)
+  infix fun <T> Matrix<T, *, *>.neq(that: Matrix<T, *, *>): BooleanFormula =
+    bfm.not(this eq that)
 }
 
 open class SATF(
@@ -144,7 +146,7 @@ open class SATF(
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =
     other is SATF && other.formula == this.formula ||
-      other is IntegerFormula && formula == other
+      other is BooleanFormula && formula == other
 }
 
 open class SMTF(

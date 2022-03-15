@@ -2,16 +2,8 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.times
-import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
-import org.sosy_lab.java_smt.SolverContextFactory
-import org.sosy_lab.java_smt.SolverContextFactory.Solvers.PRINCESS
-import org.sosy_lab.java_smt.api.*
-import org.sosy_lab.java_smt.api.NumeralFormula.IntegerFormula
-import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.GENERATE_MODELS
-import java.math.BigInteger
 import kotlin.math.*
-import kotlin.reflect.KProperty
 import kotlin.test.*
 
 /*
@@ -211,7 +203,7 @@ class TestSMT {
   fun testMatInv() = SMTInstance().solve {
     val SMT_ALGEBRA = DefaultSMTAlgebra()
     val dim = 10
-    val A = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> SMTF(i + j) }
+    val A = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> Literal(i + j) }
     val B = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
 
     val isInverse = (A * B * A) eq A
