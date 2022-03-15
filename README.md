@@ -70,17 +70,25 @@ Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.k
 
 ## Usage
 
-To construct a graph, the [graph builder DSL](src/commonMain/kotlin/ai/hypergraph/kaliningraph/LabeledGraph.kt) provides an small alphabet:
+Kaliningraph treats string adjacency and graph adjacency as the same. To construct a graph, simply enumerate [walks](https://en.wikipedia.org/wiki/Path_(graph_theory)). 
+
+This can be done using a raw string, in which case unique characters will form the vertex set. Whitespace delimits walks:
 
 ```kotlin
-val graph = LabeledGraph { a - b - c - d - e; a - c - e }
+val graph = LabeledGraph { "abcde ace" }
 ```
 
-This is the same as:
+Vertices can also be linked via the `-` operator. The [graph builder DSL](src/commonMain/kotlin/ai/hypergraph/kaliningraph/graphs/LabeledGraph.kt) provides a small alphabet:
+
+```kotlin
+val graph = LabeledGraph { a - b - "c" - d - e; a - c - e }
+```
+
+This is equivalent to:
 
 ```kotlin
 val abcde = LabeledGraph { a - b - c - d - e }
-val ace = LabeledGraph { a - c - e }
+val ace = LabeledGraph { a - "c" - e }
 val graph = abcde + ace
 ```
 

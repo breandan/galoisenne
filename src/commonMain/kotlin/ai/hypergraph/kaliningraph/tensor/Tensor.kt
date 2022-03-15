@@ -144,6 +144,17 @@ open class FreeMatrix<T> constructor(
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
+  constructor(
+    numRows: Int,
+    numCols: Int = numRows,
+    algebra: Ring<T>,
+    f: (Int, Int) -> T
+  ) : this(
+    algebra = algebra,
+    numRows = numRows,
+    numCols = numCols,
+    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+  )
   constructor(vararg rows: T) : this(rows.toList())
 
   override fun new(numRows: Int, numCols: Int, data: List<T>, algebra: Ring<T>) =
