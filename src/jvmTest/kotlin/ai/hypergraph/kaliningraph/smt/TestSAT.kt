@@ -17,12 +17,12 @@ class TestSAT {
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
     val p = (0 until dim).shuffled()
     println("Permutation:\n" + p.joinToString(","))
-    val A = FreeMatrix(dim, dim, SAT_ALGEBRA) { i, j -> Literal(j == p[i]) }
+    val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> Literal(j == p[i]) }
     println("Permutation matrix:")
     A.rows.forEach {
       println(it.joinToString(" ") { it.toString().first() + "" })
     }
-    val B = FreeMatrix(dim, dim, SAT_ALGEBRA) { i, j -> BoolVar("b$i$j") }
+    val B = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BoolVar("b$i$j") }
 
     val isInverse = (A * B * A) eq A
 
@@ -37,8 +37,8 @@ class TestSAT {
       println(it.joinToString(" ") { it.toString().first() + "" })
     }
 
-    val a = BooleanMatrix(dim, dim) { i, j -> j == p[i] }
-    val b = BooleanMatrix(dim, dim) { i, j -> sol[i][j] }
+    val a = BooleanMatrix(dim) { i, j -> j == p[i] }
+    val b = BooleanMatrix(dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
   }
 }

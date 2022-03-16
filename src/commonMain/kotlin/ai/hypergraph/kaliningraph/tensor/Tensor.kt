@@ -26,82 +26,91 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Y3<Int, Int
   val rows get() = data.chunked(numCols)
   val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
 
-  operator fun plus(t: M): M = join(t) { i, j -> with(algebra) { this@Matrix[i, j] + t[i, j] } }
-  operator fun times(t: M): M = join(t) { i, j -> this[i] dot t.transpose()[j] }
+  operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
+  operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose()[j] }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce{ a, b -> a + b } }
+    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numRows: Int, numCols: Int, data: List<T>, algebra: A): M
+  fun new(numRows: Int, numCols: Int, data: List<T>, alg: A = algebra): M
 // TODO = this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
-
-  fun join(that: M, idxs: Set<V2<Int>> = allPairs(numRows, that.numCols), op: (Int, Int) -> T): M =
+  fun join(
+    that: M,
+    ids: Set<V2<Int>> = allPairs(numRows, that.numCols),
+    op: A.(Int, Int) -> T
+  ): M =
     require(numCols == that.numRows) {
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-    }.let { new(numRows, that.numCols, idxs.map { (i, j) -> op(i, j) }, algebra) }
+    }.let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
 
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
 
-  fun transpose(): M = new(numCols, numRows, indices.map { (i, j) -> this[j, i] }, algebra)
+  fun transpose(): M = new(numCols, numRows, indices.map { (i, j) -> this[j, i] })
 }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
-val BOOLEAN_ALGEBRA = Ring.of(
-  nil = false,
-  one = true,
-  plus = { a, b -> a || b },
-  times = { a, b -> a && b }
-)
+val BOOLEAN_ALGEBRA: Ring<Boolean> =
+  Ring.of(
+    nil = false,
+    one = true,
+    plus = { a, b -> a || b },
+    times = { a, b -> a && b }
+  )
 
-val INTEGER_FIELD = Field.of(
-  nil = 0,
-  one = 1,
-  plus = { a, b -> a + b },
-  minus = { a, b -> a - b },
-  times = { a, b -> a * b },
-  div = { _, _ -> throw NotImplementedError("Division not defined on integer field.") }
-)
+val INTEGER_FIELD: Field<Int> =
+  Field.of(
+    nil = 0,
+    one = 1,
+    plus = { a, b -> a + b },
+    minus = { a, b -> a - b },
+    times = { a, b -> a * b },
+    div = { _, _ -> throw NotImplementedError("Division not defined on integer field.") }
+  )
 
-val DOUBLE_FIELD = Field.of(
-  nil = 0.0,
-  one = 1.0,
-  plus = { a, b -> a + b },
-  minus = { a, b -> a - b },
-  times = { a, b -> a * b },
-  div = { a, b -> a / b }
-)
+val DOUBLE_FIELD: Field<Double> =
+  Field.of(
+    nil = 0.0,
+    one = 1.0,
+    plus = { a, b -> a + b },
+    minus = { a, b -> a - b },
+    times = { a, b -> a * b },
+    div = { a, b -> a / b }
+  )
 
-val MINPLUS_ALGEBRA = Ring.of(
-  nil = Int.MAX_VALUE,
-  one = 0,
-  plus = { a, b -> min(a, b) },
-  times = { a, b -> a + b }
-)
+val MINPLUS_ALGEBRA: Ring<Int> =
+  Ring.of(
+    nil = Int.MAX_VALUE,
+    one = 0,
+    plus = { a, b -> min(a, b) },
+    times = { a, b -> a + b }
+  )
 
-val MAXPLUS_ALGEBRA = Ring.of(
-  nil = Int.MIN_VALUE,
-  one = 0,
-  plus = { a, b -> max(a, b) },
-  times = { a, b -> a + b }
-)
+val MAXPLUS_ALGEBRA: Ring<Int> =
+  Ring.of(
+    nil = Int.MIN_VALUE,
+    one = 0,
+    plus = { a, b -> max(a, b) },
+    times = { a, b -> a + b }
+  )
 
-private fun <T> TODO_ALGEBRA(t: T) = Ring.of(
-  nil = t,
-  one = t,
-  plus = { a, b -> TODO() },
-  times = { a, b -> TODO() }
-)
+private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
+  Ring.of(
+    nil = t,
+    one = t,
+    plus = { a, b -> TODO() },
+    times = { a, b -> TODO() }
+  )
 
 abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constructor(
+  override val algebra: A,
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-  override val algebra: A,
-) : Matrix<T, A, M> {
+): Matrix<T, A, M> {
   val values by lazy { data.toSet() }
   override val map: MutableMap<Y3<Int, Int, T>, Int> by lazy {
     indices.fold(mutableMapOf()) { map, (r, c) ->
@@ -132,7 +141,7 @@ open class FreeMatrix<T> constructor(
   override val numCols: Int = numRows,
   override val data: List<T>,
   override val algebra: Ring<T> = TODO_ALGEBRA(data.first()),
-) : AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(numRows, numCols, data, algebra) {
+): AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(algebra, numRows, numCols, data) {
   constructor(elements: List<T>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -145,9 +154,9 @@ open class FreeMatrix<T> constructor(
   )
 
   constructor(
+    algebra: Ring<T>,
     numRows: Int,
     numCols: Int = numRows,
-    algebra: Ring<T>,
     f: (Int, Int) -> T
   ) : this(
     algebra = algebra,
@@ -157,7 +166,7 @@ open class FreeMatrix<T> constructor(
   )
   constructor(vararg rows: T) : this(rows.toList())
 
-  override fun new(numRows: Int, numCols: Int, data: List<T>, algebra: Ring<T>) =
+  override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
 }
 
@@ -167,20 +176,20 @@ open class BooleanMatrix constructor(
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
   override val algebra: Ring<Boolean> = BOOLEAN_ALGEBRA,
-) : AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(numRows, numCols, data, algebra) {
-  constructor(elements: List<Boolean>) : this(
+): AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(algebra, numRows, numCols, data) {
+  constructor(elements: List<Boolean>): this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
   )
 
-  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean) : this(
+  constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean): this(
     numRows = numRows,
     numCols = numCols,
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
-  constructor(vararg rows: Short) : this(rows.fold("") { a, b -> a + b })
-  constructor(rows: String) : this(
+  constructor(vararg rows: Short): this(rows.fold("") { a, b -> a + b })
+  constructor(rows: String): this(
     rows.filter { !it.isWhitespace() }.toCharArray().let { chars ->
       val values = chars.distinct()
       require(values.size <= 2) { "Expected two values or less" }
@@ -205,8 +214,8 @@ open class BooleanMatrix constructor(
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Boolean>, algebra: Ring<Boolean>) =
-     BooleanMatrix(numRows, numCols, data, algebra)
+  override fun new(numRows: Int, numCols: Int, data: List<Boolean>, alg: Ring<Boolean>) =
+     BooleanMatrix(numRows, numCols, data, alg)
 }
 
 open class DoubleMatrix constructor(
@@ -214,7 +223,7 @@ open class DoubleMatrix constructor(
   override val numCols: Int = numRows,
   override val data: List<Double>,
   override val algebra: Field<Double> = DOUBLE_FIELD,
-) : AbstractMatrix<Double, Field<Double>, DoubleMatrix>(numRows, numCols, data, algebra) {
+): AbstractMatrix<Double, Field<Double>, DoubleMatrix>(algebra, numRows, numCols, data) {
   constructor(elements: List<Double>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -229,14 +238,14 @@ open class DoubleMatrix constructor(
   constructor(vararg rows: Double) : this(rows.toList())
 
   operator fun minus(that: DoubleMatrix): DoubleMatrix =
-    join(that) { i, j -> algebra.minus(this[i, j], that[i][j]) }
+    join(that) { i, j -> algebra.minus(this@DoubleMatrix[i, j], that[i][j]) }
 
   companion object {
     fun random(size: Int) = DoubleMatrix(size) { _, _ -> Random.nextDouble() }
   }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Double>, algebra: Field<Double>) =
-    DoubleMatrix(numRows, numCols, data, algebra)
+  override fun new(numRows: Int, numCols: Int, data: List<Double>, alg: Field<Double>) =
+    DoubleMatrix(numRows, numCols, data, alg)
 }
 
 fun DoubleMatrix.toBMat(

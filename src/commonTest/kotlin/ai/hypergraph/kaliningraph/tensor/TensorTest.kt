@@ -46,9 +46,9 @@ class TensorTest {
 
   @Test
   fun testFreeMatrixMultiplicationAssociativity() {
-    val a = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
-    val b = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
-    val c = FreeMatrix(numRows = 2, numCols = 2, data = listOf(0, 1, 2, 3), algebra = INTEGER_FIELD)
+    val a = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
+    val b = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
+    val c = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
 
     assertEquals(a * (b * c), (a * b) * c)
   }

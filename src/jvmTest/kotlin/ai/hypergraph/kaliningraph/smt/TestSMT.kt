@@ -161,9 +161,9 @@ class TestSMT {
     val SMT_ALGEBRA = DefaultSMTAlgebra()
 
     val dim = 2
-    val a = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
-    val b = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
-    val c = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
+    val a = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
+    val b = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("b$i$j") }
+    val c = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("c$i$j") }
 
     val plusAssoc = ((a + b) + c) eq (a + (b + c))
 //    val multAssoc = ((a * b) * c) eq (a * (b * c)) // TODO: why is this so slow?
@@ -181,9 +181,9 @@ class TestSMT {
     val SMT_ALGEBRA = DefaultSMTAlgebra()
 
     val dim = 2
-    val a = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
-    val b = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("b$i$j") }
-    val c = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("c$i$j") }
+    val a = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
+    val b = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("b$i$j") }
+    val c = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("c$i$j") }
 
     val plusDistrib = (a * (b + c)) neq (a * b + a * c)
 
@@ -203,8 +203,8 @@ class TestSMT {
   fun testMatInv() = SMTInstance().solve {
     val SMT_ALGEBRA = DefaultSMTAlgebra()
     val dim = 10
-    val A = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> Literal(i + j) }
-    val B = FreeMatrix(dim, dim, SMT_ALGEBRA) { i, j -> IntVar("a$i$j") }
+    val A = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> Literal(i + j) }
+    val B = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
 
     val isInverse = (A * B * A) eq A
 
