@@ -16,7 +16,11 @@ import kotlin.random.Random
 interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Y3<Int, Int, T>> {
   val algebra: A
   val data: List<T>
+
+  // TODO: Tensor stuff
   override val map: MutableMap<Y3<Int, Int, T>, Int> get() = TODO()
+  fun shape() = numRows to numCols /** TODO: return [Y3] instead */
+  operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
 
   val numRows: Int
   val numCols: Int
@@ -45,11 +49,10 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Y3<Int, Int
       "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
     }.let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
 
-  operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
 
-  fun transpose(): M = new(numCols, numRows, indices.map { (i, j) -> this[j, i] })
+  fun transpose(): M = new(numCols, numRows, cols.flatten())
 }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
@@ -162,7 +165,7 @@ open class FreeMatrix<T> constructor(
     algebra = algebra,
     numRows = numRows,
     numCols = numCols,
-    data = List(numRows * numCols) { f(it / numRows, it % numCols) }
+    data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
   constructor(vararg rows: T) : this(rows.toList())
 

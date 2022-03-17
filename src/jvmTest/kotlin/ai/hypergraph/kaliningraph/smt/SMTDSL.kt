@@ -18,7 +18,7 @@ class SMTInstance(
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
   val qfm: QuantifiedFormulaManager = context.formulaManager.quantifiedFormulaManager
 ): IntegerFormulaManager by ifm, QuantifiedFormulaManager by qfm {
-  fun DefaultSMTAlgebra() =
+  val SMT_ALGEBRA =
     Ring.of(
       nil = Literal(0),
       one = Literal(1),
@@ -26,7 +26,7 @@ class SMTInstance(
       times = { a, b -> a * b }
     )
 
-  fun DefaultSATAlgebra() =
+  val SAT_ALGEBRA =
     Ring.of(
       nil = Literal(false),
       one = Literal(true),

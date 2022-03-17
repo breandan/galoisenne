@@ -158,8 +158,6 @@ class TestSMT {
 
   @Test
   fun testIsAssociative() = SMTInstance().solve {
-    val SMT_ALGEBRA = DefaultSMTAlgebra()
-
     val dim = 2
     val a = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
     val b = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("b$i$j") }
@@ -178,8 +176,6 @@ class TestSMT {
 
   @Test
   fun testIsDistributive() = SMTInstance().solve {
-    val SMT_ALGEBRA = DefaultSMTAlgebra()
-
     val dim = 2
     val a = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
     val b = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("b$i$j") }
@@ -201,7 +197,6 @@ class TestSMT {
 
   @Test
   fun testMatInv() = SMTInstance().solve {
-    val SMT_ALGEBRA = DefaultSMTAlgebra()
     val dim = 10
     val A = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> Literal(i + j) }
     val B = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }

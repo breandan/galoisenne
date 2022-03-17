@@ -5,13 +5,12 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 class TestSAT {
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
+*/
 
   @Test
   fun testBMatInv() = SMTInstance().solve {
-    val SAT_ALGEBRA = DefaultSATAlgebra()
     val dim = 5
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
@@ -41,4 +40,47 @@ class TestSAT {
     val b = BooleanMatrix(dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatInv"
+*/
+  @Test
+  fun testRepeatInv() = repeat(100) { testBMatInv() }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testSetIntersectionOneHot"
+*/
+  @Test
+  fun testSetIntersectionOneHot() = SMTInstance().solve {
+    val dim = 9
+    val card = 5
+    val universe = (1 until dim).toList().toIntArray()
+    fun draw() = universe.toSet().shuffled()
+      .take(card).map { universe.indexOf(it) }
+
+    val setA = draw()
+    val setB = draw()
+
+    val A = FreeMatrix(SAT_ALGEBRA, card, dim) { i, j -> Literal(setA[i] == j) }
+    val X = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
+      if (i == j) BoolVar("$i") else Literal(false)
+    }
+    val B = FreeMatrix(SAT_ALGEBRA, card, dim) { i, j -> Literal(setB[i] == j) }
+    val dontCare = BoolVar("dc")
+    val Y = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> dontCare }
+
+    val intersection = (A * X * B.transpose()) eq Y
+    val solution = solveBoolean(intersection)
+
+    val expected = setA.toSet().intersect(setB.toSet())
+    val actual = solution.filter { "dc" !in it.key.toString() }
+      .keys.map { it.toString().toInt() }.toSet()
+    assertEquals(expected, actual)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
+*/
+  @Test
+  fun testRepeatSetInt() = repeat(100) { testSetIntersectionOneHot() }
 }
