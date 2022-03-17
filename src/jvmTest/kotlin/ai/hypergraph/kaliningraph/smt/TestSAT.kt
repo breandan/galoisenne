@@ -8,14 +8,13 @@ class TestSAT {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
 */
-
   @Test
   fun testBMatInv() = SMTInstance().solve {
-    val dim = 5
+    val dim = 10
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
     val p = (0 until dim).shuffled()
-    println("Permutation:\n" + p.joinToString(","))
+    println("Permutation:\n" + p.joinToString(" "))
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> Literal(j == p[i]) }
     println("Permutation matrix:")
     A.rows.forEach {
@@ -52,35 +51,39 @@ class TestSAT {
 */
   @Test
   fun testSetIntersectionOneHot() = SMTInstance().solve {
-    val dim = 9
-    val card = 5
-    val universe = (1 until dim).toList().toIntArray()
-    fun draw() = universe.toSet().shuffled()
-      .take(card).map { universe.indexOf(it) }
+    val dim = 20
+    val len = 14
+    val universe = (1 until dim).toList()
 
-    val setA = draw()
-    val setB = draw()
+    fun draw() = universe.shuffled().take(len).map { universe.indexOf(it) }
 
-    val A = FreeMatrix(SAT_ALGEBRA, card, dim) { i, j -> Literal(setA[i] == j) }
+    val setA = draw().toSet()
+    val setB = draw().toSet()
+    fun Set<Int>.encodeAsMatrix() =
+      FreeMatrix(SAT_ALGEBRA, len, dim) { i, j ->
+        Literal(elementAt(i) == j)
+      }
+
+    val A = setA.encodeAsMatrix()
     val X = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
       if (i == j) BoolVar("$i") else Literal(false)
     }
-    val B = FreeMatrix(SAT_ALGEBRA, card, dim) { i, j -> Literal(setB[i] == j) }
+    val B = setB.encodeAsMatrix()
     val dontCare = BoolVar("dc")
-    val Y = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> dontCare }
+    val Y = FreeMatrix(SAT_ALGEBRA, dim) { _, _ -> dontCare }
 
     val intersection = (A * X * B.transpose()) eq Y
     val solution = solveBoolean(intersection)
 
-    val expected = setA.toSet().intersect(setB.toSet())
-    val actual = solution.filter { "dc" !in it.key.toString() }
-      .keys.map { it.toString().toInt() }.toSet()
+    val expected = setA intersect setB
+    val actual = (solution.keys - dontCare.formula).map { "$it".toInt() }.toSet()
+
     assertEquals(expected, actual)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
+  */
   @Test
   fun testRepeatSetInt() = repeat(100) { testSetIntersectionOneHot() }
 }

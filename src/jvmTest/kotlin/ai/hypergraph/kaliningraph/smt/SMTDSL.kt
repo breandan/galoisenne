@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.smt
 
+import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.*
 import org.sosy_lab.java_smt.SolverContextFactory
@@ -36,7 +37,7 @@ class SMTInstance(
 
   fun solve(function: SMTInstance.() -> Unit) = function()
   fun BoolVar(): BoolVrb = BoolVrb(this)
-  fun BoolVar(name: String): SATF = SATF(this, bfm.makeVariable(name))
+  fun BoolVar(name: String = randomString()): SATF = SATF(this, bfm.makeVariable(name))
   fun Literal(b: Boolean): SATF = SATF(this, bfm.makeBoolean(b))
 
   fun IntVar() = IntVrb(this)
