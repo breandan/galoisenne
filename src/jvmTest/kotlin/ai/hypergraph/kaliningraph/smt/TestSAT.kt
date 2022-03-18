@@ -60,9 +60,7 @@ class TestSAT {
     val setA = draw().toSet()
     val setB = draw().toSet()
     fun Set<Int>.encodeAsMatrix() =
-      FreeMatrix(SAT_ALGEBRA, len, dim) { i, j ->
-        Literal(elementAt(i) == j)
-      }
+      FreeMatrix(SAT_ALGEBRA, len, dim) { i, j -> Literal(elementAt(i) == j) }
 
     val A = setA.encodeAsMatrix()
     val X = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
@@ -81,9 +79,9 @@ class TestSAT {
     assertEquals(expected, actual)
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
+*/
   @Test
   fun testRepeatSetInt() = repeat(100) { testSetIntersectionOneHot() }
 }

@@ -13,13 +13,13 @@ import kotlin.random.Random
  * @see [MatrixRing]
  */
 
-interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Y3<Int, Int, T>> {
+interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, Int, T>> {
   val algebra: A
   val data: List<T>
 
   // TODO: Tensor stuff
-  override val map: MutableMap<Y3<Int, Int, T>, Int> get() = TODO()
-  fun shape() = numRows to numCols /** TODO: return [Y3] instead */
+  override val map: MutableMap<Π3<Int, Int, T>, Int> get() = TODO()
+  fun shape() = numRows to numCols /** TODO: return [Π3] instead */
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
 
   val numRows: Int
@@ -115,10 +115,10 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
   override val data: List<T>,
 ): Matrix<T, A, M> {
   val values by lazy { data.toSet() }
-  override val map: MutableMap<Y3<Int, Int, T>, Int> by lazy {
+  override val map: MutableMap<Π3<Int, Int, T>, Int> by lazy {
     indices.fold(mutableMapOf()) { map, (r, c) ->
       val element = get(r, c)
-      if (element != algebra.nil) map[Y3(r, c, element)] = 1
+      if (element != algebra.nil) map[Π(r, c, element)] = 1
       map
     }
   }

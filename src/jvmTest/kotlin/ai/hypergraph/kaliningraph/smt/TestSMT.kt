@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.times
 import org.junit.jupiter.api.Test
 import kotlin.math.*
@@ -87,7 +88,7 @@ class TestSMT {
     val range = (-10..10).toSet()
     val erange = (2..8).toSet()
     range.let { it * it * it * erange }
-      .map { Fermat(it.first.first.first, it.first.first.second, it.first.second, it.second) }
+      .map { (w, x, y, z) -> Fermat(w, x, y, z) }
       .filter { it.isValidSolution() }
       .forEach { println(it) }
 

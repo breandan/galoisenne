@@ -1,18 +1,33 @@
+@file:Suppress("ClassName", "NonAsciiCharacters")
+
 package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.allPairs
 import kotlin.jvm.JvmName
 
 // Multi-typed arrays
-data class Y1<A>(val e1: A)
-data class Y2<A, B>(val e1: A, val e2: B)
-data class Y3<A, B, C>(val e1: A, val e2: B, val e3: C)
-data class Y4<A, B, C, D>(val e1: A, val e2: B, val e3: C, val e4: D)
+data class Π1<A>(val π1: A)
+data class Π2<A, B>(val π1: A, val π2: B)
+data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C)
+data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
+
+fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
+fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
+fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
+
+operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Π2<T, Y>> =
+  flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()
+
+@JvmName("cartProdPair") operator fun <T: Π2<A, B>, A, B, Z> Set<T>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
+  flatMap { l -> s.map { r -> Π(l.π1, l.π2, r) }.toSet() }.toSet()
+
+@JvmName("cartProdTriple") operator fun <T: Π3<A, B, C>, A, B, C, Z> Set<T>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
+  flatMap { l -> s.map { r -> Π(l.π1, l.π2, l.π3, r) }.toSet() }.toSet()
 
 open class VT<E, L: S<*>> internal constructor(val len: L, val a: List<E>): List<E> by a {
   internal constructor(l: L, vararg es: E): this(l, es.toList())
 
-  internal fun <A: S<*>, B: S<*>> fetch(intRange: Y2<A, B>): List<E> = subList(intRange.e1.toInt(), intRange.e2.toInt())
+  internal fun <A: S<*>, B: S<*>> fetch(intRange: Π2<A, B>): List<E> = subList(intRange.π1.toInt(), intRange.π2.toInt())
 }
 
 /** TODO: Unify this representation with [ai.hypergraph.kaliningraph.tensor.Matrix] */
@@ -93,12 +108,12 @@ fun <E, Z : Q5<P>, P> VT<E, Z>.drop4(): VT<E, S<P>> = VT(len - S4, fetch(S4..len
 
 //                              ┌────j────┐    ┌────k────┐    where j, j are the relative offsets Y - X, Z - Y respectively
 // Encodes the constraint:  P < X    <    Y && Y    <    Z    where X, Y are the start and end of range in a vector of length Z
-@JvmName("sv121") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv122") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv221") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
-@JvmName("sv222") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Y2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv121") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Π2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv122") operator fun <E, P, X: Q1<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Π2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv221") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Π2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
+@JvmName("sv222") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Π2<X, Y>): VT<E, L2> = VT(S2, fetch(r))
 
-operator fun <A, B> S<A>.rangeTo(that: S<B>) = Y2(this, that)
+operator fun <A, B> S<A>.rangeTo(that: S<B>) = Π2(this, that)
 
 // ============================= Naperian Functors ==============================
 

@@ -38,11 +38,8 @@ fun DoubleMatrix.meanNorm() =
     VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
-// Returns the Cartesian product of two sets
-operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Pair<T, Y>> =
-  flatMap { l -> s.map { r -> l to r }.toSet() }.toSet()
-
-fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> = (0 until numRows) * (0 until numCols)
+fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
+  (0 until numRows) * (0 until numCols)
 
 fun randomVector(size: Int, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(size) { rand() }.toDoubleArray()
