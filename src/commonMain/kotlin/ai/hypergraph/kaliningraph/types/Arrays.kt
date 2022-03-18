@@ -19,8 +19,8 @@ data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C) {
 data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
 
 fun <A, B> List<Π2<A, B>>.toMap() = associate { it.π1 to it.π2 }
-fun <A, B> Sequence<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip().let { (a, b) -> a pp b }
-fun <A, B> List<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip()
+@JvmName("unzipSequence") fun <A, B> Sequence<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip().let { (a, b) -> a pp b }
+@JvmName("unzipList") fun <A, B> List<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip()
 fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
 fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
