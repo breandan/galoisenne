@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.rewriting
 
+import ai.hypergraph.kaliningraph.types.*
 import info.debatty.java.stringsimilarity.Levenshtein
 
 // Experiment: probabilistic subgraph ismorphism as
@@ -56,9 +57,9 @@ fun main() {
  */
 
 fun <E> List<E>.canonicalize(): List<Int> =
-  fold(listOf<Int>() to setOf<E>()) { (l, s), e ->
-    if (e in s) l + s.indexOf(e) to s
-    else l + s.size to s + e
+  fold(listOf<Int>() pp setOf<E>()) { (l, s), e ->
+    if (e in s) l + s.indexOf(e) pp s
+    else l + s.size pp s + e
   }.first
 
 /**
@@ -85,14 +86,14 @@ fun <E, F> isogramSearch(
     val candidate = it.joinToString()
     Levenshtein().distance(queryCF, candidate).toInt()
   }
-): List<Pair<List<E>, List<F>>> {
+): List<Π2<List<E>, List<F>>> {
   val traceA = trace.isogramIndex()
   val traceB = query.isogramIndex()
   val lcs = (traceA.keys intersect traceB.keys).sortedBy(metric)
   return lcs.map {
     val a = traceA[it]!!.map { idx -> trace.subList(idx, idx + it.size) }
     val b = traceB[it]!!.map { idx -> query.subList(idx, idx + it.size) }
-    a.first() to b.first() // Take first occurrence of n matches
+    a.first() pp b.first() // Take first occurrence of n matches
   }.take(takeTopK)
 }
 

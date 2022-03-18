@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.vhdl
 
+import ai.hypergraph.kaliningraph.types.*
+
 fun genArithmeticCircuit(
     circuit: String,
     inputVars: List<String> = circuit.allVars()
@@ -32,12 +34,12 @@ fun genArithmeticCircuit(
         """.trimIndent()
 
 fun genTestBench(circuit: String) =
-    genTestBench(circuit, circuit.allVars().associateWith { 0 } to mapOf() )
+    genTestBench(circuit, circuit.allVars().associateWith { 0 } cc mapOf() )
 
 fun genTestBench(
-    circuit: String,
-    vararg tests: Pair<Map<String, Int>, Map<String, Int>>,
-    vars: List<String> = circuit.allVars()
+  circuit: String,
+  vararg tests: V2<Map<String, Int>>,
+  vars: List<String> = circuit.allVars()
 ): String = """
 -- Testbench for Boolean gate
 library ieee;
@@ -85,11 +87,11 @@ end tb;
 """.trimIndent()
 
 // Test case for a boolean circuit
-fun Pair<Map<String, Int>, Map<String, Int>>.genPreconditions(allVars: List<String>) =
+fun V2<Map<String, Int>>.genPreconditions(allVars: List<String>) =
     first.entries.joinToString("\n", "", "") { (k, v) -> "\t${k}_in_sig <= '$v';" } +
         allVars.filter { it !in first }.joinToString("\n", "\n", "\n") { "\t${it}_in_sig <= '0';" }
 
-fun Pair<Map<String, Int>, Map<String, Int>>.genPostconditions(indent: String = "     ") =
+fun V2<Map<String, Int>>.genPostconditions(indent: String = "     ") =
     second.entries.joinToString("\n$indent") { (k, v) ->
         "\tassert(${k}_out_sig='$v') report \"Failed $k != $v\" severity error;"
     }

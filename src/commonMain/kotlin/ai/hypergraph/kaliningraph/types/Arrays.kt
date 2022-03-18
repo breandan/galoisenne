@@ -7,24 +7,43 @@ import kotlin.jvm.JvmName
 
 // Multi-typed arrays
 data class Π1<A>(val π1: A)
-data class Π2<A, B>(val π1: A, val π2: B)
-data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C)
+data class Π2<A, B>(val π1: A, val π2: B) {
+  val first = π1
+  val second = π2
+}
+data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C) {
+  val first = π1
+  val second = π2
+  val third = π3
+}
 data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
+
+fun <A, B> List<Π2<A, B>>.toMap() = associate { it.π1 to it.π2 }
+fun <A, B> Sequence<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip().let { (a, b) -> a pp b }
+fun <A, B> List<Π2<A, B>>.unzip() = map { it.π1 to it.π2 }.unzip()
+fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
 fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
 fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
 fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
 
-operator fun <T, Y> Set<T>.times(s: Set<Y>): Set<Π2<T, Y>> =
+infix fun <A, Z> A.pp(that: Z) = Π(this, that)
+infix fun <A, B, Z> Π2<A, B>.pp(that: Z) = Π3(π1, π2, that)
+infix fun <A, B, C, Z> Π3<A, B, C>.pp(that: Z) = Π4(π1, π2, π3, that)
+
+operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()
 
 @JvmName("cartProdPair") operator fun <T: Π2<A, B>, A, B, Z> Set<T>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
   flatMap { l -> s.map { r -> Π(l.π1, l.π2, r) }.toSet() }.toSet()
 
+@JvmName("cartProdPairPair") operator fun <T: Π2<A, B>, A, B, U: Π2<C, D>, C, D> Set<T>.times(s: Set<U>): Set<Π2<T, U>> =
+  flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()
+
 @JvmName("cartProdTriple") operator fun <T: Π3<A, B, C>, A, B, C, Z> Set<T>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
   flatMap { l -> s.map { r -> Π(l.π1, l.π2, l.π3, r) }.toSet() }.toSet()
 
-open class VT<E, L: S<*>> internal constructor(val len: L, val a: List<E>): List<E> by a {
+open class VT<E, L: S<*>> internal constructor(val len: L, val l: List<E>): List<E> by l {
   internal constructor(l: L, vararg es: E): this(l, es.toList())
 
   internal fun <A: S<*>, B: S<*>> fetch(intRange: Π2<A, B>): List<E> = subList(intRange.π1.toInt(), intRange.π2.toInt())
@@ -35,14 +54,14 @@ typealias Mat<E, R, C> = VT<VT<E, C>, R>
 
 infix fun <T> T.cc(that: T) = VT(this, that)
 
-fun <T1: VT<E, L>, E, L: S<*>> T1.append(that: E): VT<E, Q1<L>> = VT(this.len + S1, this.a + listOf(that))
-fun <T1: VT<E, L>, E, L: S<*>> T1.prepend(that: E): VT<E, Q1<L>> = VT(this.len + S1, listOf(that) + this.a)
+fun <T1: VT<E, L>, E, L: S<*>> T1.append(that: E): VT<E, Q1<L>> = VT(this.len + S1, this.l + listOf(that))
+fun <T1: VT<E, L>, E, L: S<*>> T1.prepend(that: E): VT<E, Q1<L>> = VT(this.len + S1, listOf(that) + this.l)
 
-@JvmName("cc2") infix fun <T1: VT<E, L>, T2: VT<E, L1>, E, L: S<*>> T1.cc(that: T2): VT<E, Q1<L>> = VT(this.len + that.len, this.a + that.a)
-@JvmName("cc3") infix fun <T1: VT<E, L>, T2: VT<E, L2>, E, L: S<*>> T1.cc(that: T2): VT<E, Q2<L>> = VT(this.len + that.len, this.a + that.a)
-@JvmName("cc4") infix fun <T1: VT<E, L>, T2: VT<E, L3>, E, L: S<*>> T1.cc(that: T2): VT<E, Q3<L>> = VT(this.len + that.len, this.a + that.a)
-@JvmName("cc5") infix fun <T1: VT<E, L>, T2: VT<E, L4>, E, L: S<*>> T1.cc(that: T2): VT<E, Q4<L>> = VT(this.len + that.len, this.a + that.a)
-@JvmName("cc6") infix fun <T1: VT<E, L>, T2: VT<E, L5>, E, L: S<*>> T1.cc(that: T2): VT<E, Q5<L>> = VT(this.len + that.len, this.a + that.a)
+@JvmName("cc2") infix fun <T1: VT<E, L>, T2: VT<E, L1>, E, L: S<*>> T1.cc(that: T2): VT<E, Q1<L>> = VT(this.len + that.len, this.l + that.l)
+@JvmName("cc3") infix fun <T1: VT<E, L>, T2: VT<E, L2>, E, L: S<*>> T1.cc(that: T2): VT<E, Q2<L>> = VT(this.len + that.len, this.l + that.l)
+@JvmName("cc4") infix fun <T1: VT<E, L>, T2: VT<E, L3>, E, L: S<*>> T1.cc(that: T2): VT<E, Q3<L>> = VT(this.len + that.len, this.l + that.l)
+@JvmName("cc5") infix fun <T1: VT<E, L>, T2: VT<E, L4>, E, L: S<*>> T1.cc(that: T2): VT<E, Q4<L>> = VT(this.len + that.len, this.l + that.l)
+@JvmName("cc6") infix fun <T1: VT<E, L>, T2: VT<E, L5>, E, L: S<*>> T1.cc(that: T2): VT<E, Q5<L>> = VT(this.len + that.len, this.l + that.l)
 
 fun <E> VT(v1: E) = VT(S1, v1)
 fun <E> VT(v1: E, v2: E) = VT(S2, v1, v2)
@@ -77,18 +96,18 @@ fun <E> Mat1x2(t1: E, t2: E): Mat<E, L1, L2> = Mat(S1, S2, t1, t2)
 //...Optional pseudoconstructors
 
 operator fun <E, R: S<*>, C1: S<*>, C2: S<*>> Mat<E, R, C1>.times(that: Mat<E, C1, C2>): Mat<E, R, C2> = TODO()
-operator fun <E, R: S<*>, C: S<*>> Mat<E, R, C>.get(r: Int, c: Int): E = a[r][c]
+operator fun <E, R: S<*>, C: S<*>> Mat<E, R, C>.get(r: Int, c: Int): E = l[r][c]
 //fun <E, R: S<*>, C: S<*>> Mat<E, R, C>.transpose(): Mat<E, C, R> = Mat { r, c -> this[c][r]}
 
-@JvmName("get1") operator fun <R, L : Q1<R>, E> VT<E, L>.get(i: L1) = a[0]
-@JvmName("get2") operator fun <R, L : Q2<R>, E> VT<E, L>.get(i: L2) = a[1]
-@JvmName("get3") operator fun <R, L : Q3<R>, E> VT<E, L>.get(i: L3) = a[2]
-@JvmName("get4") operator fun <R, L : Q4<R>, E> VT<E, L>.get(i: L4) = a[3]
-@JvmName("get5") operator fun <R, L : Q5<R>, E> VT<E, L>.get(i: L5) = a[4]
-@JvmName("get6") operator fun <R, L : Q6<R>, E> VT<E, L>.get(i: L6) = a[5]
-@JvmName("get7") operator fun <R, L : Q7<R>, E> VT<E, L>.get(i: L7) = a[6]
-@JvmName("get8") operator fun <R, L : Q8<R>, E> VT<E, L>.get(i: L8) = a[7]
-@JvmName("get9") operator fun <R, L : Q9<R>, E> VT<E, L>.get(i: L9) = a[8]
+@JvmName("get1") operator fun <R, L : Q1<R>, E> VT<E, L>.get(i: L1) = l[0]
+@JvmName("get2") operator fun <R, L : Q2<R>, E> VT<E, L>.get(i: L2) = l[1]
+@JvmName("get3") operator fun <R, L : Q3<R>, E> VT<E, L>.get(i: L3) = l[2]
+@JvmName("get4") operator fun <R, L : Q4<R>, E> VT<E, L>.get(i: L4) = l[3]
+@JvmName("get5") operator fun <R, L : Q5<R>, E> VT<E, L>.get(i: L5) = l[4]
+@JvmName("get6") operator fun <R, L : Q6<R>, E> VT<E, L>.get(i: L6) = l[5]
+@JvmName("get7") operator fun <R, L : Q7<R>, E> VT<E, L>.get(i: L7) = l[6]
+@JvmName("get8") operator fun <R, L : Q8<R>, E> VT<E, L>.get(i: L8) = l[7]
+@JvmName("get9") operator fun <R, L : Q9<R>, E> VT<E, L>.get(i: L9) = l[8]
 
 val <R, L : Q1<R>, E> VT<E, L>.first: E get() = component1()
 val <R, L : Q2<R>, E> VT<E, L>.second: E get() = component2()

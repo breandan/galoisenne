@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.tensor
 
+import ai.hypergraph.kaliningraph.types.cc
 import kotlin.test.*
 
 class TensorTest {
@@ -12,12 +13,12 @@ class TensorTest {
 
     // Probability DSL for Markovian
     fun <T> SparseTensor<T>.P(that: (T) -> Boolean, given: (T) -> Boolean = { true }) =
-      map.entries.fold(0 to 0) { (n, d), (k, v) ->
-        val (a, b) = given(k) to that(k)
+      map.entries.fold(0 cc 0) { (n, d), (k, v) ->
+        val (a, b) = given(k) cc that(k)
         when {
-          a && b -> n + v to d + v
-          a -> n to d + v
-          else -> n to d
+          a && b -> n + v cc d + v
+          a -> n cc d + v
+          else -> n cc d
         }
       }.let { (n, d) -> n.toDouble() / d.toDouble().coerceAtLeast(1.0) }
 

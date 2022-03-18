@@ -19,7 +19,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   // TODO: Tensor stuff
   override val map: MutableMap<Π3<Int, Int, T>, Int> get() = TODO()
-  fun shape() = numRows to numCols /** TODO: return [Π3] instead */
+  fun shape() = numRows cc numCols /** TODO: return [Π3] instead */
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
 
   val numRows: Int

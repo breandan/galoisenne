@@ -29,8 +29,8 @@ val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 val NORM_AVG: (DoubleMatrix) -> DoubleMatrix = { it.meanNorm() }
 
 fun DoubleMatrix.minMaxNorm() =
-  data.fold(0.0 to 0.0) { (a, b), e ->
-    min(a, e) to max(b, e)
+  data.fold(0.0 cc 0.0) { (a, b), e ->
+    min(a, e) cc max(b, e)
   }.let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
 
 fun DoubleMatrix.meanNorm() =
@@ -71,7 +71,7 @@ fun randomString(
   
 // Samples from unnormalized counts with normalized frequency
 fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
-  entries.map { (k, v) -> k to v }.unzip()
+  entries.map { (k, v) -> k pp v }.unzip()
       .let { (keys, values) -> generateSequence { keys[values.cdf().sample(random)] } }
 
 fun Collection<Number>.cdf() = CDF(

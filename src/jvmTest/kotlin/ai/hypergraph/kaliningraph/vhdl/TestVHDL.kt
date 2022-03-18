@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.vhdl
 
+import ai.hypergraph.kaliningraph.types.cc
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.lang.ProcessBuilder.Redirect.INHERIT
@@ -390,9 +391,9 @@ class TestVHDL {
             r := a and (c or b);
         """.trimMargin()
 
-        val test1 = mapOf("a" to 1, "b" to 0, "c" to 1 ) to mapOf("q" to 0)
-        val test2 = mapOf("a" to 1, "b" to 1, "c" to 1 ) to mapOf("q" to 1)
-        val test3 = mapOf("a" to 1, "b" to 0, "c" to 1 ) to mapOf("q" to 0)
+        val test1 = mapOf("a" to 1, "b" to 0, "c" to 1 ) cc mapOf("q" to 0)
+        val test2 = mapOf("a" to 1, "b" to 1, "c" to 1 ) cc mapOf("q" to 1)
+        val test3 = mapOf("a" to 1, "b" to 0, "c" to 1 ) cc mapOf("q" to 0)
 
         val designFile = genArithmeticCircuit(circuit).let { File("design.vhd").apply { writeText(it) } }
         val testBench = genTestBench(circuit, test1, test2, test3).let { File("testbench.vhd").apply { writeText(it) } }
