@@ -171,6 +171,13 @@ open class FreeMatrix<T> constructor(
 
   override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
+
+  override fun toString() =
+    cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+      rows.joinToString("\n") {
+        it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString(" ")
+      }
+    }
 }
 
 // Concrete subclasses

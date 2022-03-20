@@ -42,7 +42,7 @@ class LGBuilder {
 
 interface LGFamily: IGF<LabeledGraph, LabeledEdge, LGVertex> {
   override val E: (s: LGVertex, t: LGVertex) -> LabeledEdge
-    get() = {s, t -> LabeledEdge(s, t) }
+    get() = { s, t -> LabeledEdge(s, t) }
   override val G: (vertices: Set<LGVertex>) -> LabeledGraph
     get() = { vertices: Set<LGVertex> -> LabeledGraph(vertices) }
   override val V: (old: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) -> LGVertex

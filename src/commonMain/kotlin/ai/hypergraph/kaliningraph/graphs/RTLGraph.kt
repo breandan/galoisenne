@@ -24,7 +24,7 @@ class RTLBuilder {
     var W by RTLVar("W", this); var X by RTLVar("X", this)
     var Y by RTLVar("Y", this); var Z by RTLVar("Z", this)
 
-    var RAM by RTLVar(builder=this)
+    var RAM by RTLVar(builder = this)
     val mostRecent: MutableMap<RTLGate, RTLGate> = mutableMapOf()
 
     operator fun Any.plus(that: RTLGate) = that * this// wrap(this, that) { a, b -> a + b }
