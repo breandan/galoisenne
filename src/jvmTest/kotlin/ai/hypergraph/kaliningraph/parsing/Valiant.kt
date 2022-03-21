@@ -6,15 +6,6 @@ import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Assertions.*
 
 class Valiant {
-// http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
-
-// The above procedure specifies a recogniser: by finding the closure of I(w)
-// one finds if w is parsable, but not the corresponding parse tree. However,
-// one can obtain a proper parser by using sets of parse trees (instead of non-
-// terminals) and extending (·) to combine parse trees.
-
-// https://arxiv.org/pdf/1601.07724.pdf#page=3
-
   class CFG(
     val grammar: List<Π2<String, List<String>>>
   ): List<Π2<String, List<String>>> by grammar {
@@ -32,6 +23,7 @@ class Valiant {
       .map { (k, v) -> k pp v[0] }.toSet()
   }
 
+  // This is not a proper ring, but close enough.
   fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
     Ring.of(
       // 0 = ∅
@@ -52,13 +44,27 @@ class Valiant {
       }
     )
 
-// σi = {A | (A -> w[i]) ∈ P}
-
+  // Converts tokens to UT matrix using constructor: σi = {A | (A -> w[i]) ∈ P}
   fun List<String>.toMatrix(cfg: CFG): FreeMatrix<Set<String>> =
     FreeMatrix(makeAlgebra(cfg), size + 1) { i, j ->
       if (i + 1 != j) emptySet() // Enforce upper triangularity
       else cfg.terminals.filter { (_, v) -> this[j - 1] == v }.unzip().first.toSet()
     }
+
+  /**
+   * Checks whether a given string is valid by computing the transitive closure
+   * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
+   * empty, the string is invalid. If the entry is S, it parses.
+   *
+   * See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
+   *
+   * "The following procedure specifies a recogniser: by finding the closure of
+   *  I(w) one finds if w is parsable, but not the corresponding parse tree.
+   *  However, one can obtain a proper parser by using sets of parse trees
+   *  (instead of non-terminals) and extending (·) to combine parse trees."
+   *
+   * Taken from: https://arxiv.org/pdf/1601.07724.pdf#page=3
+   */
 
   fun CFG.isValid(
     s: String = "",
@@ -138,5 +144,6 @@ class Valiant {
 
     assertTrue(cfg.isValid(tokens = "()(()())()".map { it.toString() }))
     assertFalse(cfg.isValid(tokens = "()(()()()".map { it.toString() }))
+    assertTrue(cfg.isValid(tokens = "()(())".map { it.toString() }))
   }
 }
