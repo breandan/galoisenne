@@ -10,12 +10,20 @@ class Valiant {
     val grammar: List<Π2<String, List<String>>>
   ): List<Π2<String, List<String>>> by grammar {
     constructor(vararg productions: String): this(
-      productions.map {
+      productions.filter { it.isNotBlank() }.map {
         it.split("->").map { it.trim() }.let { it[0] pp it[1] }
       }.map { (k, v) -> k pp v.split(" ") }
     )
 
     constructor(grammar: String): this(*grammar.lines().toTypedArray())
+
+    init {
+      grammar.forEach {
+        assert(it.π2.size <= 2) {
+          "Production not in Chomsky normal form: ${it.first} -> ${it.second}"
+        }
+      }
+    }
 
     val nonterminals = grammar.filter { it.π2.size == 2 }
       .map { (k, v) -> k pp (v[0] pp v[1]) }.toSet()
@@ -124,12 +132,12 @@ class Valiant {
      Y -> B B
      A -> a
      B -> b
-    """.trimIndent())
+    """)
 
     assertTrue(cfg.isValid(tokens = "aaabbb".map { it.toString() }))
     assertTrue(cfg.isValid(tokens = "aabb".map { it.toString() }))
     assertFalse(cfg.isValid(tokens = "abab".map { it.toString() }))
-}
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyckLanguage"
@@ -143,10 +151,11 @@ class Valiant {
      C -> S B
      A -> (
      B -> )
-    """.trimIndent())
+    """)
 
     assertTrue(cfg.isValid(tokens = "()(()())()".map { it.toString() }))
     assertFalse(cfg.isValid(tokens = "()(()()()".map { it.toString() }))
     assertTrue(cfg.isValid(tokens = "()(())".map { it.toString() }))
+    assertTrue(cfg.isValid(tokens = "()()".map { it.toString() }))
   }
 }
