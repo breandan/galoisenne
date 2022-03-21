@@ -25,53 +25,65 @@ class Valiant {
     )
 
     constructor(grammar: String): this(*grammar.lines().toTypedArray())
+
+    val nonterminals = grammar.filter { it.π2.size == 2 }
+      .map { (k, v) -> k pp (v[0] pp v[1]) }.toSet()
+    val terminals = grammar.filter { it.π2.size == 1 }
+      .map { (k, v) -> k pp v[0] }.toSet()
   }
 
   fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
     Ring.of(
       // 0 = ∅
       nil = setOf(),
-      // TODO: Unneeded, find a more suitable algebra?
+      // TODO: Seems unused, maybe find a more specific algebra?
       one = setOf(),
       // x + y = x ∪ y
       plus = { x, y -> x union y },
       // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 ::= A1 A2) ∈ P}
       times = { x, y ->
-        cfg.filter { (_, A) -> A.size == 2 && A[0] in x && A[1] in y }
-          .map { it.first }.toSet()
+        infix fun Set<String>.join(that: Set<String>) =
+          cfg.nonterminals
+            .filter { (_, A) -> A.π1 in this && A.π2 in that }
+            .map { it.first }
+            .toSet()
+
+        x join y
       }
     )
 
 // σi = {A | (A ::= w[i]) ∈ P}
 
   fun List<String>.toMatrix(cfg: CFG): FreeMatrix<Set<String>> =
-    FreeMatrix(makeAlgebra(cfg), size) { i, j ->
-      if (i != j) emptySet() // Enforce upper triangularity
-      else cfg.filter { (_, v) -> v.size == 1 && this[j] == v[0] }.unzip().first.toSet()
+    FreeMatrix(makeAlgebra(cfg), size + 1) { i, j ->
+      if (i + 1 != j) emptySet() // Enforce upper triangularity
+      else cfg.terminals.filter { (_, v) -> this[j - 1] == v }.unzip().first.toSet()
     }
 
   fun CFG.isValid(
-    s: String, 
+    s: String = "",
     tokens: List<String> = s.split(" "),
-    matrix: FreeMatrix<Set<String>> = tokens.toMatrix(this).also { println(it) }
+    matrix: FreeMatrix<Set<String>> = tokens.toMatrix(this)
+      .also { println("Initial configuration:\n$it\n") }
   ) = matrix
 // Not good, because multiplication is not associative?
-    .let { W -> W + (W * W) + (W * W * W) + (W * W * W * W) }
-// Valiant's (1975) original definition producing all bracketings:
-//  .let { W -> W + W * W + W * (W * W) + (W * W) * W + (W * W) * (W * W) }
-// Bernardy and Jansson uses the smallest solution to the following equation:
-//  .seekFixpoint { it + it * it }
-    .also { println(it) }[0, tokens.size - 1]
+//  .let { W -> W + (W * W) + (W * W * W) + (W * W * W * W) }
+// Valiant's (1975) original definition produces all bracketings:
+//  .let { W -> W + W * W + W * (W * W) + (W * W) * W + (W * W) * (W * W) /*...*/ }
+// Bernardy and Jansson uses the smallest solution to: C = W + C * C
+  .seekFixpoint { it + it * it }
+    .also { println("Final configuration:\n$it\n") }[0].last()
     .isNotEmpty()
 
-  tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(op: (T) -> T): T =
-    if (this.also { println(it.toString()) } == op(this)) this else op(this).seekFixpoint(op)
+  tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T =
+    if (this.also { println("Iteration $i.)\n$it\n") } == op(this)) this
+    else op(this).seekFixpoint(i + 1, op)
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testSimpleGrammar"
 */
 
-//  @Test
+  @Test
   fun testSimpleGrammar() {
     val cfg = CFG(
         "   S ::= NP VP ", // -- a Noun Phrase + a Verb Phrase
@@ -88,6 +100,25 @@ class Valiant {
         " Det ::= a     ", // -- Determiner
     )
 
-    assertTrue(cfg.isValid("she eats fish with a fork"))
+    assertTrue(cfg.isValid("she eats a fish with a fork"))
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testAABB"
+*/
+  @Test
+  fun testAABB() {
+//    https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
+    val cfg = CFG("""
+     S ::= X Y
+     X ::= X A
+     X ::= A A
+     Y ::= Y B
+     Y ::= B B
+     A ::= a
+     B ::= b
+    """.trimIndent())
+
+    assertTrue(cfg.isValid(tokens = "aabb".map { it.toString() }))
   }
 }
