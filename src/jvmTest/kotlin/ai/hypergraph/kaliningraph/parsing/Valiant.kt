@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import org.junit.jupiter.api.Test
 import ai.hypergraph.kaliningraph.types.*
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 
 class Valiant {
 // http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
@@ -20,7 +20,7 @@ class Valiant {
   ): List<Π2<String, List<String>>> by grammar {
     constructor(vararg productions: String): this(
       productions.map {
-        it.split("::=").map { it.trim() }.let { it[0] pp it[1] }
+        it.split("->").map { it.trim() }.let { it[0] pp it[1] }
       }.map { (k, v) -> k pp v.split(" ") }
     )
 
@@ -40,7 +40,7 @@ class Valiant {
       one = setOf(),
       // x + y = x ∪ y
       plus = { x, y -> x union y },
-      // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 ::= A1 A2) ∈ P}
+      // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P}
       times = { x, y ->
         infix fun Set<String>.join(that: Set<String>) =
           cfg.nonterminals
@@ -52,7 +52,7 @@ class Valiant {
       }
     )
 
-// σi = {A | (A ::= w[i]) ∈ P}
+// σi = {A | (A -> w[i]) ∈ P}
 
   fun List<String>.toMatrix(cfg: CFG): FreeMatrix<Set<String>> =
     FreeMatrix(makeAlgebra(cfg), size + 1) { i, j ->
@@ -86,18 +86,18 @@ class Valiant {
   @Test
   fun testSimpleGrammar() {
     val cfg = CFG(
-        "   S ::= NP VP ", // -- a Noun Phrase + a Verb Phrase
-        "  VP ::= eats  ", //
-        "  VP ::= VP PP ", // -- a VP can end with a PP or an NP
-        "  VP ::= VP NP ", //
-        "  PP ::= P NP  ", // -- Preposition Phrase ("with a fork")
-        "   P ::= with  ", // -- Proposition(s)
-        "  NP ::= she   ", //
-        "  NP ::= Det N ", // -- Noun Phrase ("a fish")
-        "  NP ::= NP PP ", // -- optional "a fish with a fork"
-        "   N ::= fish  ", // -- Nouns
-        "   N ::= fork  ", //
-        " Det ::= a     ", // -- Determiner
+        "   S -> NP VP ", // -- a Noun Phrase + a Verb Phrase
+        "  VP -> eats  ", //
+        "  VP -> VP PP ", // -- a VP can end with a PP or an NP
+        "  VP -> VP NP ", //
+        "  PP -> P NP  ", // -- Preposition Phrase ("with a fork")
+        "   P -> with  ", // -- Proposition(s)
+        "  NP -> she   ", //
+        "  NP -> Det N ", // -- Noun Phrase ("a fish")
+        "  NP -> NP PP ", // -- optional "a fish with a fork"
+        "   N -> fish  ", // -- Nouns
+        "   N -> fork  ", //
+        " Det -> a     ", // -- Determiner
     )
 
     assertTrue(cfg.isValid("she eats a fish with a fork"))
@@ -110,15 +110,33 @@ class Valiant {
   fun testAABB() {
 //    https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
     val cfg = CFG("""
-     S ::= X Y
-     X ::= X A
-     X ::= A A
-     Y ::= Y B
-     Y ::= B B
-     A ::= a
-     B ::= b
+     S -> X Y
+     X -> X A
+     X -> A A
+     Y -> Y B
+     Y -> B B
+     A -> a
+     B -> b
     """.trimIndent())
 
     assertTrue(cfg.isValid(tokens = "aabb".map { it.toString() }))
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyckLanguage"
+*/
+  @Test
+  fun testDyckLanguage() {
+    val cfg = CFG("""
+     S -> A B
+     S -> A C
+     S -> S S
+     C -> S B
+     A -> (
+     B -> )
+    """.trimIndent())
+
+    assertTrue(cfg.isValid(tokens = "()(()())()".map { it.toString() }))
+    assertFalse(cfg.isValid(tokens = "()(()()()".map { it.toString() }))
   }
 }
