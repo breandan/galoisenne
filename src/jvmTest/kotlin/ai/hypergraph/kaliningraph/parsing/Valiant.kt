@@ -107,6 +107,7 @@ class Valiant {
     )
 
     assertTrue(cfg.isValid("she eats a fish with a fork"))
+    assertFalse(cfg.isValid("she eats fish with"))
   }
 
 /*
@@ -125,8 +126,10 @@ class Valiant {
      B -> b
     """.trimIndent())
 
+    assertTrue(cfg.isValid(tokens = "aaabbb".map { it.toString() }))
     assertTrue(cfg.isValid(tokens = "aabb".map { it.toString() }))
-  }
+    assertFalse(cfg.isValid(tokens = "abab".map { it.toString() }))
+}
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyckLanguage"
