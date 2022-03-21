@@ -19,19 +19,30 @@ class Valiant {
 
     init {
       grammar.forEach {
-        assert(it.π2.size <= 2) {
-          "Production not in Chomsky normal form: ${it.first} -> ${it.second}"
-        }
+        if (it.second.size in 1..2)
+          println("Production not in Chomsky normal form: ${it.first} -> ${it.second}")
       }
+
+      println("Parsed grammar:\n$this")
     }
 
-    val nonterminals = grammar.filter { it.π2.size == 2 }
+    val normalForm = grammar.normalize()
+    val nonterminals = grammar.filter { it.second.size == 2 }
       .map { (k, v) -> k pp (v[0] pp v[1]) }.toSet()
-    val terminals = grammar.filter { it.π2.size == 1 }
+    val terminals = grammar.filter { it.second.size == 1 }
       .map { (k, v) -> k pp v[0] }.toSet()
+
+    val names = (('A'..'Z') + ('0'..'9')).let { it + (it.toSet() * it.toSet()).map { it.toString() } }
+
+    private fun <T: List<Π2<String, List<String>>>> T.normalize(): T =
+      TODO()
+
+    override fun toString() =
+      grammar.joinToString("\n") { (a, b) -> "$a -> ${b.joinToString(" ")}"}
   }
 
   // This is not a proper ring, but close enough.
+  // TODO: https://aclanthology.org/J99-4004.pdf#page=8
   fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
     Ring.of(
       // 0 = ∅
@@ -42,9 +53,9 @@ class Valiant {
       plus = { x, y -> x union y },
       // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P}
       times = { x, y ->
-        infix fun Set<String>.join(that: Set<String>) =
+        infix fun Set<String>.join(that: Set<String>): Set<String> =
           cfg.nonterminals
-            .filter { (_, A) -> A.π1 in this && A.π2 in that }
+            .filter { (_, A) -> A.first in this && A.second in that }
             .map { it.first }
             .toSet()
 

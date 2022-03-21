@@ -35,33 +35,39 @@ val canonical: MutableList<LabeledGraph> = mutableListOf(
 )
 var i = 0
 
-fun cfgParser(toParse: String = "aaabbb", mutableList: MutableList<String> = toParse.mapIndexed { i, c -> "$i:$c" }.toMutableList()) =
-  animate(initial = LabeledGraph {
-    //https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
-    "S" - "XY".also { it - "X" ; it - "Y" }
-    "X" - "XA".also { it - "A" ; it - "X" }; "X" - "AA".also { it - "A" }
-    "Y" - "YB".also { it - "B" ; it - "Y" }; "Y" - "BB".also { it - "B" }
-    "A" - a; "B" - b
+fun cfgParser(toParse: String = "aaabbb",
+              mutableList: MutableList<String> = toParse.mapIndexed { i, c -> "$i:$c" }
+                .toMutableList()
+) =
+  animate(
+    initial = LabeledGraph {
+      //https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
+      "S" - "XY".also { it - "X"; it - "Y" }
+      "X" - "XA".also { it - "A"; it - "X" }; "X" - "AA".also { it - "A" }
+      "Y" - "YB".also { it - "B"; it - "Y" }; "Y" - "BB".also { it - "B" }
+      "A" - a; "B" - b
 
-    mutableList.forEach { LGVertex(it).let { it - it } }
-  }.reversed(),
-    false) { it: KeyboardEvent, graphs ->
+      mutableList.forEach { LGVertex(it).let { it - it } }
+    }.reversed(),
+    false
+  ) { it: KeyboardEvent, graphs ->
     val last = graphs.last()
     i++
     when {
       "k" in it.key -> { graphs.dropLast(1) }
       "j" in it.key -> {
         val newList = mutableListOf<String>()
-        val chunks =  mutableList.mapIndexedNotNull { i, lbl ->
+        val chunks = mutableList.mapIndexedNotNull { i, lbl ->
           val aVert = last[{ it.label == lbl }].first()
-          val nonterminals = last[{ it.label == lbl.substringAfter(":") }].first().neighbors
-          if(nonterminals.isNotEmpty()) {
+          val nonterminals =
+            last[{ it.label == lbl.substringAfter(":") }].first().neighbors
+          if (nonterminals.isNotEmpty()) {
             val mergeLabel = nonterminals.joinToString(",") { "$i:${it.label}" }
             newList.add(mergeLabel)
             LabeledGraph { LGVertex(mergeLabel).let { aVert - it } }
           } else null
         }
-        if(i < 2) {
+        if (i < 2) {
           graphs.add(last + chunks.reduce { lg1, lg2 -> lg1 + lg2 })
           mutableList.clear(); mutableList.addAll(newList)
         } else {
@@ -70,8 +76,10 @@ fun cfgParser(toParse: String = "aaabbb", mutableList: MutableList<String> = toP
       }
     }
   }.also {
-    document.body?.append {p { +"""Initial string: $toParse""" }
-      p {+"""
+    document.body?.append {
+      p { +"""Initial string: $toParse""" }
+      p {
+        +"""
       |CFG = {
       |  S → XY,
       |  X → XA | AA,
@@ -79,5 +87,7 @@ fun cfgParser(toParse: String = "aaabbb", mutableList: MutableList<String> = toP
       |  A → a,
       |  B → b
       |}
-    """.trimMargin() } }
+    """.trimMargin()
+      }
+    }
   }

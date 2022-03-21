@@ -20,5 +20,6 @@ class LabeledGraphTest {
   )
 
   @Test
-  fun testStringConstructor() = Assertions.assertEquals(graph, LabeledGraph("abcde ace"))
+  fun testStringConstructor() =
+    Assertions.assertEquals(graph, LabeledGraph("abcde ace"))
 }
