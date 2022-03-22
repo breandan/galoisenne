@@ -7,16 +7,20 @@ import kotlin.jvm.JvmName
 
 // Multi-typed arrays
 data class Π1<A>(val π1: A)/*: V1<A> by VT(π1)*/
-data class Π2<A, B>(val π1: A, val π2: B) /*:V2<super A & B> by VT(π1, π2)*/ {
+data class Π2<A, B>(val π1: A, val π2: B) {
   val first = π1
   val second = π2
 }
-data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C)/*: V3<T> by VT(π1, π2, π3)*/ {
+data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C) {
   val first = π1
   val second = π2
   val third = π3
 }
-data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)/*: V4<T> by VT(π1, π2, π3, π4)*/
+data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
+
+fun <A: T, B: T, T> Π2<A, B>.toVT(): V2<T> = VT(π1, π2)
+fun <A: T, B: T, C: T, T> Π3<A, B, C>.toVT(): V3<T> = VT(π1, π2, π3)
+fun <A: T, B: T, C: T, D: T, T> Π4<A, B, C, D>.toVT(): V4<T> = VT(π1, π2, π3, π4)
 
 fun <A, B> List<Π2<A, B>>.toMap() = associate { it.π1 to it.π2 }
 @JvmName("unzipSequence") fun <A, B> Sequence<Π2<A, B>>.unzip() =
@@ -50,7 +54,7 @@ interface VT<E, L: S<*>> : List<E> {
   open val l: List<E>
   fun <A: S<*>, B: S<*>> fetch(intRange: Pair<A, B>): List<E> = subList(intRange.first.toInt(), intRange.second.toInt())
 
-  class of<E, L: S<*>>(override val len: L, override val l: List<E>):VT<E, L>, List<E> by l {
+  class of<E, L: S<*>>(override val len: L, override val l: List<E>): VT<E, L>, List<E> by l {
     internal constructor(l: L, vararg es: E): this(l, es.toList())
   }
 }
