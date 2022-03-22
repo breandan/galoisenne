@@ -1,18 +1,19 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.parsing.CFG.Companion.expandOr
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.math.exp
 
-class CFG(
-  val grammar: List<Π2<String, List<String>>>,
-  val normalForm: List<Π2<String, List<String>>> = grammar.normalize()
-): List<Π2<String, List<String>>> by normalForm {
+typealias Production = Π2<String, List<String>>
+typealias Grammar = Set<Production>
+
+class CFL(
+  val grammar: Grammar,
+  val normalForm: Grammar = grammar.normalize()
+): Grammar by normalForm {
   constructor(vararg productions: String): this(
     productions.filter { it.isNotBlank() }.map {
       it.split("->").map { it.trim() }.let { it[0] pp it[1] }
-    }.map { (k, v) -> k pp v.split(" ") }
+    }.map { (k, v) -> k pp v.split(" ") }.toSet()
   )
 
   constructor(grammar: String): this(*grammar.lines().toTypedArray())
@@ -21,58 +22,58 @@ class CFG(
     .map { (k, v) -> k pp (v[0] pp v[1]) }.toSet()
   val terminals = normalForm.filter { it.second.size == 1 }
     .map { (k, v) -> k pp v[0] }.toSet()
+  val variables = normalForm.unzip().first.toSet()
 
   companion object {
     val freshNames: List<String> = (('A'..'Z') + ('0'..'9')).let { it.map { "$it" } }
       .let { it + (it.toSet() * it.toSet()).map { it.toVT().joinToString("") } }
 
-    private fun <T: Π2<String, List<String>>> List<T>.normalize(): List<T> =
-      expandOr().elimVarUnitProductions().refactorRHS().terminalsToUnitProds()
+    // http://firsov.ee/cert-norm/cfg-norm.pdf
+    private fun Grammar.normalize(): Grammar =
+      expandOr().elimVarUnitProds().refactorRHS().terminalsToUnitProds()
 
-    private fun <T: Π2<String, List<String>>> List<T>.expandOr(): List<T> =
+    private fun Grammar.expandOr(): Grammar =
       map { (a, b) ->
         b.fold(listOf(listOf<String>())) { acc, s ->
           if (s == "|") (acc + listOf())
           else (acc.dropLast(1) + listOf(acc.last() + s))
         }.map { a pp it }
-      }.flatten() as List<T>
+      }.flatten().toSet()
 
     // Drop variable unit productions: (A -> B, B -> C, B -> D) -> (A -> C, A -> D)
-    private fun <T: Π2<String, List<String>>> List<T>.elimVarUnitProductions(
-      previouslyDeleted: List<String> = emptyList() // TODO: Is it needed?
-    ): List<T> {
+    private fun Grammar.elimVarUnitProds(): Grammar {
       val variables = unzip().first.toSet()
       val upToDelete =
         firstOrNull { (_, b) -> b.size == 1 && b.first() in variables } ?: return this
-      val newGrammar: List<T> = filter { it != upToDelete }.map { (a, b) ->
+      val newGrammar: Grammar = filter { it != upToDelete }.map { (a, b) ->
         val (replacement, toRepl) = upToDelete
         (if(a == toRepl.first()) replacement else a) pp b
-      }.elimVarUnitProductions() as List<T>
+      }.toSet().elimVarUnitProds() as Grammar
       return if (this == newGrammar) this else newGrammar
     }
 
     // Refactors long productions, e.g., (A -> BCD) -> (A -> BE, E -> CD)
-    private fun <T: Π2<String, List<String>>> List<T>.refactorRHS(): List<T> {
+    private fun Grammar.refactorRHS(): Grammar {
       val variables = unzip().first.toSet()
       val longProduction = firstOrNull { it.second.size > 2 } ?: return this
       val (longLHS, longRHS) = longProduction
       val freshName = freshNames.firstOrNull { it !in variables }!!
       val newProduction = freshName pp longRHS.takeLast(2)
       val shorterProduction = longLHS pp (longRHS.dropLast(2) + freshName)
-      val newGrammar = (map { if(it == longProduction) shorterProduction else it } + newProduction) as List<T>
+      val newGrammar = (map { if(it == longProduction) shorterProduction else it } + newProduction).toSet()
       return if (this == newGrammar) this else newGrammar.refactorRHS()
     }
 
-    private fun <T: Π2<String, List<String>>> List<T>.terminalsToUnitProds(): List<T> {
+    private fun Grammar.terminalsToUnitProds(): Grammar {
       val variables = unzip().first.toSet()
-      val hasTerminalOnRHS = firstOrNull {
+      val mixedTermVarProd = firstOrNull {
         it.second.any { it !in variables } && it.second.any { it in variables }
       } ?: return this
       val freshName = freshNames.firstOrNull { it !in variables }!!
-      val idxOfTerminal = hasTerminalOnRHS.second.indexOfFirst { it !in variables }
-      val freshRHS = hasTerminalOnRHS.second.mapIndexed { i, s -> if (i == idxOfTerminal) freshName else s }
-      val newProduction = freshName pp listOf(hasTerminalOnRHS.second[idxOfTerminal])
-      val newGrammar = (map { if(it == hasTerminalOnRHS) (hasTerminalOnRHS.first pp freshRHS) else it } + newProduction) as List<T>
+      val idxOfTerminal = mixedTermVarProd.second.indexOfFirst { it !in variables }
+      val freshRHS = mixedTermVarProd.second.mapIndexed { i, s -> if (i == idxOfTerminal) freshName else s }
+      val newProduction = freshName pp listOf(mixedTermVarProd.second[idxOfTerminal])
+      val newGrammar = (map { if(it == mixedTermVarProd) (mixedTermVarProd.first pp freshRHS) else it } + newProduction).toSet()
       return if (this == newGrammar) this else newGrammar.terminalsToUnitProds()
     }
   }
@@ -83,7 +84,7 @@ class CFG(
 
 // This is not a proper ring, but close enough.
 // TODO: https://aclanthology.org/J99-4004.pdf#page=8
-fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
+fun makeAlgebra(cfl: CFL): Ring<Set<String>> =
   Ring.of(
     // 0 = ∅
     nil = setOf(),
@@ -94,7 +95,7 @@ fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
     // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P}
     times = { x, y ->
       infix fun Set<String>.join(that: Set<String>): Set<String> =
-        cfg.nonterminals
+        cfl.nonterminals
           .filter { (_, A) -> A.first in this && A.second in that }
           .map { it.first }
           .toSet()
@@ -104,10 +105,11 @@ fun makeAlgebra(cfg: CFG): Ring<Set<String>> =
   )
 
 // Converts tokens to UT matrix using constructor: σi = {A | (A -> w[i]) ∈ P}
-fun List<String>.toMatrix(cfg: CFG): FreeMatrix<Set<String>> =
-  FreeMatrix(makeAlgebra(cfg), size + 1) { i, j ->
+fun List<String>.toMatrix(cfl: CFL): FreeMatrix<Set<String>> =
+  FreeMatrix(makeAlgebra(cfl), size + 1) { i, j ->
     if (i + 1 != j) emptySet() // Enforce upper triangularity
-    else cfg.terminals.filter { (_, v) -> this[j - 1] == v }.unzip().first.toSet()
+    else cfl.terminals.filter { (_, v) -> this[j - 1] == v }
+      .unzip().first.toSet()
   }
 
 /**
@@ -125,7 +127,7 @@ fun List<String>.toMatrix(cfg: CFG): FreeMatrix<Set<String>> =
  * Taken from: https://arxiv.org/pdf/1601.07724.pdf#page=3
  */
 
-fun CFG.isValid(
+fun CFL.isValid(
   s: String = "",
   tokens: List<String> = s.split(" "),
   matrix: FreeMatrix<Set<String>> = tokens.toMatrix(this)

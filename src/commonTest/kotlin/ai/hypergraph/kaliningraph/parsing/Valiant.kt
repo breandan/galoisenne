@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.types.toVT
 import kotlin.test.*
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant"
@@ -10,7 +11,7 @@ class Valiant {
 */
   @Test
   fun testSimpleGrammar() {
-    val cfg = CFG(
+    val cfl = CFL(
         "   S -> NP VP ", // -- a Noun Phrase + a Verb Phrase
         "  VP -> eats  ", //
         "  VP -> VP PP ", // -- a VP can end with a PP or an NP
@@ -25,8 +26,8 @@ class Valiant {
         " Det -> a     ", // -- Determiner
     )
 
-    assertTrue(cfg.isValid("she eats a fish with a fork"))
-    assertFalse(cfg.isValid("she eats fish with"))
+    assertTrue(cfl.isValid("she eats a fish with a fork"))
+    assertFalse(cfl.isValid("she eats fish with"))
   }
 
 /*
@@ -35,7 +36,7 @@ class Valiant {
   @Test
   fun testAABB() {
 //    https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
-    val cfg = CFG("""
+    val cfl = CFL("""
      S -> X Y
      X -> X A
      X -> A A
@@ -45,9 +46,9 @@ class Valiant {
      B -> b
     """)
 
-    assertTrue(cfg.isValid(tokens = "aaabbb".map { it.toString() }))
-    assertTrue(cfg.isValid(tokens = "aabb".map { it.toString() }))
-    assertFalse(cfg.isValid(tokens = "abab".map { it.toString() }))
+    assertTrue(cfl.isValid(tokens = "aaabbb".map { it.toString() }))
+    assertTrue(cfl.isValid(tokens = "aabb".map { it.toString() }))
+    assertFalse(cfl.isValid(tokens = "abab".map { it.toString() }))
   }
 
 /*
@@ -55,7 +56,7 @@ class Valiant {
 */
   @Test
   fun testDyckLanguage() {
-    val cfg = CFG("""
+    val cfl = CFL("""
      S -> A B
      S -> A C
      S -> S S
@@ -64,10 +65,22 @@ class Valiant {
      B -> )
     """)
 
-    assertTrue(cfg.isValid(tokens = "()(()())()".map { it.toString() }))
-    assertFalse(cfg.isValid(tokens = "()(()()()".map { it.toString() }))
-    assertTrue(cfg.isValid(tokens = "()(())".map { it.toString() }))
-    assertTrue(cfg.isValid(tokens = "()()".map { it.toString() }))
+    assertTrue(cfl.isValid(tokens = "()(()())()".map { it.toString() }))
+    assertFalse(cfl.isValid(tokens = "()(()()()".map { it.toString() }))
+    assertTrue(cfl.isValid(tokens = "()(())".map { it.toString() }))
+    assertTrue(cfl.isValid(tokens = "()()".map { it.toString() }))
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyck2Language"
+*/
+  fun testDyck2Language() {
+    // TODO: fix
+    val cfl = CFL("""S -> ( ) | [ ] | ( S ) | [ S ]""".trimIndent())
+
+    println(cfl)
+
+    assertTrue(cfl.isValid(tokens = "()[()()]()".map { it.toString() }))
   }
 
 /*
@@ -75,12 +88,15 @@ class Valiant {
 */
   @Test
   fun testNormalization() {
-    val cfg = CFG("""
-      S -> a X b X 
-      X -> a Y | b Y
-      Y -> X | c
-    """.trimIndent())
+    val cfl = CFL("""
+        S -> a X b X 
+        X -> a Y | b Y
+        Y -> X | c
+      """.trimIndent())
 
-    assertTrue(cfg.normalForm.all { (_, b) -> b.size in 1..2 })
+    cfl.normalForm
+      .forEach { (_, b) -> assertContains(1..2, b.size) }
+    cfl.nonterminals.flatMap { it.second.toVT() }
+      .forEach { assertContains(cfl.variables, it) }
   }
 }

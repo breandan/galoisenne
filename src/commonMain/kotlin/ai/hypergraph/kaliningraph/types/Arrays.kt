@@ -25,7 +25,7 @@ fun <A: T, B: T, C: T, D: T, T> Π4<A, B, C, D>.toVT(): V4<T> = VT(π1, π2, π3
 fun <A, B> List<Π2<A, B>>.toMap() = associate { it.π1 to it.π2 }
 @JvmName("unzipSequence") fun <A, B> Sequence<Π2<A, B>>.unzip() =
   map { it.π1 to it.π2 }.unzip().let { (a, b) -> a pp b }
-@JvmName("unzipList") fun <A, B> List<Π2<A, B>>.unzip() =
+@JvmName("unzipList") fun <A, B> Iterable<Π2<A, B>>.unzip() =
   map { it.π1 to it.π2 }.unzip()
 fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
