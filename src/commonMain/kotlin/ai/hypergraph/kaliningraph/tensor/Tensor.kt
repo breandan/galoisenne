@@ -258,6 +258,10 @@ open class DoubleMatrix constructor(
     DoubleMatrix(numRows, numCols, data, alg)
 }
 
+tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T =
+  if (this.also { println("Iteration $i.)\n$it\n") } == op(this)) this
+  else op(this).seekFixpoint(i + 1, op)
+
 fun DoubleMatrix.toBMat(
   threshold: Double = (data.maxOf { it } + data.minOf { it }) / 2,
   partitionFn: (Double) -> Boolean = { it > threshold }

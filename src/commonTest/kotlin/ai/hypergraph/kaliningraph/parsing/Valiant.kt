@@ -11,7 +11,7 @@ class Valiant {
 */
   @Test
   fun testSimpleGrammar() {
-    val cfl = CFL(
+    CFL(
         "   S -> NP VP ", // -- a Noun Phrase + a Verb Phrase
         "  VP -> eats  ", //
         "  VP -> VP PP ", // -- a VP can end with a PP or an NP
@@ -24,10 +24,10 @@ class Valiant {
         "   N -> fish  ", // -- Nouns
         "   N -> fork  ", //
         " Det -> a     ", // -- Determiner
-    )
-
-    assertTrue(cfl.isValid("she eats a fish with a fork"))
-    assertFalse(cfl.isValid("she eats fish with"))
+    ).run {
+      assertTrue(isValid("she eats a fish with a fork"))
+      assertFalse(isValid("she eats fish with"))
+    }
   }
 
 /*
@@ -36,7 +36,7 @@ class Valiant {
   @Test
   fun testAABB() {
 //    https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=3
-    val cfl = CFL("""
+    CFL("""
      S -> X Y
      X -> X A
      X -> A A
@@ -44,11 +44,11 @@ class Valiant {
      Y -> B B
      A -> a
      B -> b
-    """)
-
-    assertTrue(cfl.isValid(tokens = "aaabbb".map { it.toString() }))
-    assertTrue(cfl.isValid(tokens = "aabb".map { it.toString() }))
-    assertFalse(cfl.isValid(tokens = "abab".map { it.toString() }))
+    """).run {
+      assertTrue(isValid(tokens = "aaabbb".map { it.toString() }))
+      assertTrue(isValid(tokens = "aabb".map { it.toString() }))
+      assertFalse(isValid(tokens = "abab".map { it.toString() }))
+    }
   }
 
 /*
@@ -56,19 +56,19 @@ class Valiant {
 */
   @Test
   fun testDyckLanguage() {
-    val cfl = CFL("""
+    CFL("""
      S -> A B
      S -> A C
      S -> S S
      C -> S B
      A -> (
      B -> )
-    """)
-
-    assertTrue(cfl.isValid(tokens = "()(()())()".map { it.toString() }))
-    assertFalse(cfl.isValid(tokens = "()(()()()".map { it.toString() }))
-    assertTrue(cfl.isValid(tokens = "()(())".map { it.toString() }))
-    assertTrue(cfl.isValid(tokens = "()()".map { it.toString() }))
+    """).run {
+      assertTrue(isValid(tokens = "()(()())()".map { it.toString() }))
+      assertFalse(isValid(tokens = "()(()()()".map { it.toString() }))
+      assertTrue(isValid(tokens = "()(())".map { it.toString() }))
+      assertTrue(isValid(tokens = "()()".map { it.toString() }))
+    }
   }
 
 /*
@@ -76,11 +76,11 @@ class Valiant {
 */
   fun testDyck2Language() {
     // TODO: fix
-    val cfl = CFL("""S -> ( ) | [ ] | ( S ) | [ S ]""".trimIndent())
+    CFL("""S -> ε | ( ) | [ ] | ( S ) | [ S ]""").run {
+      println(this)
 
-    println(cfl)
-
-    assertTrue(cfl.isValid(tokens = "()[()()]()".map { it.toString() }))
+      assertTrue(isValid(tokens = "()[()()]()".map { it.toString() }))
+    }
   }
 
 /*
@@ -88,15 +88,13 @@ class Valiant {
 */
   @Test
   fun testNormalization() {
-    val cfl = CFL("""
+    CFL("""
         S -> a X b X 
         X -> a Y | b Y
         Y -> X | c
-      """.trimIndent())
-
-    cfl.normalForm
-      .forEach { (_, b) -> assertContains(1..2, b.size) }
-    cfl.nonterminals.flatMap { it.second.toVT() }
-      .forEach { assertContains(cfl.variables, it) }
+      """).run {
+      normalForm.forEach { (_, b) -> assertContains(1..2, b.size) }
+      nonterminals.flatMap { it.second.toVT() }.forEach { assertContains(variables, it) }
+    }
   }
 }

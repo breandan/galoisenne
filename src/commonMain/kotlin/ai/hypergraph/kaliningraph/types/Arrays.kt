@@ -7,27 +7,21 @@ import kotlin.jvm.JvmName
 
 // Multi-typed arrays
 data class Π1<A>(val π1: A)/*: V1<A> by VT(π1)*/
-data class Π2<A, B>(val π1: A, val π2: B) {
-  val first = π1
-  val second = π2
-}
-data class Π3<A, B, C>(val π1: A, val π2: B, val π3: C) {
-  val first = π1
-  val second = π2
-  val third = π3
-}
+
+typealias Π2<A, B> = Pair<A, B>
+val <A, B> Π2<A, B>.π1: A get() = first
+val <A, B> Π2<A, B>.π2: B get() = second
+
+typealias Π3<A, B, C> = Triple<A, B, C>
+val <A, B, C> Π3<A, B, C>.π1: A get() = first
+val <A, B, C> Π3<A, B, C>.π2: B get() = second
+val <A, B, C> Π3<A, B, C>.π3: C get() = third
+
 data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
 
 fun <A: T, B: T, T> Π2<A, B>.toVT(): V2<T> = VT(π1, π2)
 fun <A: T, B: T, C: T, T> Π3<A, B, C>.toVT(): V3<T> = VT(π1, π2, π3)
 fun <A: T, B: T, C: T, D: T, T> Π4<A, B, C, D>.toVT(): V4<T> = VT(π1, π2, π3, π4)
-
-fun <A, B> List<Π2<A, B>>.toMap() = associate { it.π1 to it.π2 }
-@JvmName("unzipSequence") fun <A, B> Sequence<Π2<A, B>>.unzip() =
-  map { it.π1 to it.π2 }.unzip().let { (a, b) -> a pp b }
-@JvmName("unzipList") fun <A, B> Iterable<Π2<A, B>>.unzip() =
-  map { it.π1 to it.π2 }.unzip()
-fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
 fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
 fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
@@ -58,6 +52,8 @@ interface VT<E, L: S<*>> : List<E> {
     internal constructor(l: L, vararg es: E): this(l, es.toList())
   }
 }
+
+fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
 infix fun <T> T.cc(that: T) = VT(this, that)
 

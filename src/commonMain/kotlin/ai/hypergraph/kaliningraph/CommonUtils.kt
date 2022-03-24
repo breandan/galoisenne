@@ -71,7 +71,7 @@ fun randomString(
   
 // Samples from unnormalized counts with normalized frequency
 fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
-  entries.map { (k, v) -> k pp v }.unzip()
+  entries.map { (k, v) -> k to v }.unzip()
       .let { (keys, values) -> generateSequence { keys[values.cdf().sample(random)] } }
 
 fun Collection<Number>.cdf() = CDF(

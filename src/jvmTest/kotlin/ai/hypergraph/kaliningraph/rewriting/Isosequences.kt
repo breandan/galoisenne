@@ -57,9 +57,9 @@ fun main() {
  */
 
 fun <E> List<E>.canonicalize(): List<Int> =
-  fold(listOf<Int>() pp setOf<E>()) { (l, s), e ->
-    if (e in s) l + s.indexOf(e) pp s
-    else l + s.size pp s + e
+  fold(listOf<Int>() to setOf<E>()) { (l, s), e ->
+    if (e in s) l + s.indexOf(e) to s
+    else l + s.size to s + e
   }.first
 
 /**
@@ -93,7 +93,7 @@ fun <E, F> isogramSearch(
   return lcs.map {
     val a = traceA[it]!!.map { idx -> trace.subList(idx, idx + it.size) }
     val b = traceB[it]!!.map { idx -> query.subList(idx, idx + it.size) }
-    a.first() pp b.first() // Take first occurrence of n matches
+    a.first() to b.first() // Take first occurrence of n matches
   }.take(takeTopK)
 }
 

@@ -81,7 +81,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
-  val edgList: List<Π2<V, E>> get() = memoize { vertices.flatMap { s -> s.outgoing.map { s pp it } } }
+  val edgList: List<Π2<V, E>> get() = memoize { vertices.flatMap { s -> s.outgoing.map { s to it } } }
   val adjList: AdjList<V>       get() = memoize { edgList.map { (v, e) -> v cc e.target } }
   val edgMap: Map<V, Set<E>>    get() = memoize { vertices.associateWith { it.outgoing } }
   val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
@@ -94,7 +94,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
   class VIndex<G: IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>(val set: Set<V>) {
     val array: List<V> = set.toList()
-    val map: Map<V, Int> = array.mapIndexed { index, a -> a pp index }.toMap()
+    val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     //    operator fun get(it: IVertex<G, E, V>): Int? = map[it]
     operator fun get(it: Int): V = array[it]
   }
@@ -145,7 +145,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun reversed(): G =
     (vertices.associateWith { setOf<E>() } +
       vertices.flatMap { src ->
-        src.outgoing.map { edge -> edge.target pp E(edge.target, src) }
+        src.outgoing.map { edge -> edge.target to E(edge.target, src) }
       }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
       .map { (k, v) -> V(k) { v } }.toSet().let { G(it) }
 
