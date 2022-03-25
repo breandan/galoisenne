@@ -7,34 +7,64 @@ typealias Production = Π2<String, List<String>>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 typealias Grammar = Set<Production>
-val Grammar.variables: Set<String> get() = unzip().first.toSet()
+val Grammar.variables: Map<String, Int> get() = unzip().first.groupingBy { it }.eachCount()
 val Grammar.nonterminals: Set<Pair<String, List<String>>> get() =
   filter { it.RHS.size > 1 }.map { (lhs, rhs) -> lhs to rhs }.toSet()
 val Grammar.terminals: Set<Pair<String, String>> get() =
-  filter { it.RHS.size == 1 }.map { (lhs, rhs) -> lhs to rhs[0] }.toSet()
+  filter { it.RHS.size == 1 && it.RHS[0] !in variables }
+    .map { (lhs, rhs) -> lhs to rhs[0] }.toSet()
+fun Grammar.prettyPrint() =
+  joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ")}
 
 class CFL(
   val grammar: Grammar,
   val normalForm: Grammar = grammar.normalize()
 ): Grammar by normalForm {
-  constructor(vararg productions: String): this(
-    productions.filter { it.isNotBlank() }.map { line ->
-      val prod = line.split("->").map { it.trim() }
-      if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1]
-      else throw Exception("Invalid production: $line")
-    }.map { (k, v) -> k to v.split(" ") }.toSet()
-  )
-
-  constructor(grammar: String): this(*grammar.lines().toTypedArray())
+  constructor(vararg productions: String): this(productions.joinToString("\n") )
+  constructor(grammar: String): this(grammar.parse())
 
   companion object {
-    val freshNames: List<String> = (('A'..'Z') + ('0'..'9')).let { it.map { "$it" } }
-      .let { it + (it.toSet() * it.toSet()).map { it.toVT().joinToString("") } }
+    val freshNames: Set<String> = ('A'..'Z').map { "$it" }
+      .let { (it.toSet() * it.toSet()).map { it.toVT().joinToString("") } }.toSet()
+
+    fun String.parse() =
+      lines().filter { it.isNotBlank() }.map { line ->
+        val prod = line.split("->").map { it.trim() }
+        if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1]
+        else throw Exception("Invalid production: $line")
+      }.map { (k, v) -> k to v.split(" ") }.toSet()
+
+    fun CFLCFL(names: Map<String, String>) = CFL("""
+        GRAMMAR -> PROD | GRAMMAR ::NL:: GRAMMAR
+        PROD -> LHS ::= RHS
+        NAME -> ${names.values.joinToString(" | ")}
+        LHS -> NAME
+        RHS -> NAME | RHS RHS | RHS ::OR:: RHS
+      """.parse()).also { println("CFLCFL:\n: $it") }
+
+    // TODO: fix autovalidation
+    fun String.validate(
+      presets: Map<String, String> =
+        mapOf("|" to "::OR::", "->" to "::=", "\n" to "::NL::"),
+      dict: Map<String, String> = split(Regex("\\s+"))
+        .filter { it.isNotBlank() && it !in presets }
+        .toSet().zip(freshNames.filter { it !in this }).toMap().also { println(it) }
+    ): String = (presets + dict).entries
+      .fold(this) { acc, (from, to) -> acc.replace(from, to) }
+      .let {
+        println(it)
+        if (CFLCFL(dict).isValid(it)) this else throw Exception("Bad CFL: $it") }
 
     // http://firsov.ee/cert-norm/cfg-norm.pdf
     // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
     private fun Grammar.normalize(): Grammar =
-      expandOr().elimVarUnitProds().refactorRHS().terminalsToUnitProds()
+      addStartSymbol().expandOr().elimVarUnitProds()
+        .refactorRHS().terminalsToUnitProds().removeUselessSymbols()
+
+    val START_SYMBOL = "START"
+
+    private fun Grammar.addStartSymbol() =
+      this + variables.keys.map { START_SYMBOL to listOf(it) }.toSet()
 
     // Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
     fun Grammar.expandOr(): Grammar =
@@ -53,18 +83,62 @@ class CFL(
      *  - Delete all productions with an empty RHS
      */
 
-    // Drop variable unit productions: (A -> B, B -> C, B -> D) -> (A -> C, A -> D)
-    private fun Grammar.elimVarUnitProds(): Grammar {
-      val unitProdToDrop =
-        firstOrNull { it.RHS.size == 1 && it.RHS[0] in variables } ?: return this
-      val newGrammar: Grammar = filter { it != unitProdToDrop }.map { (a, b) ->
-        (if(a == unitProdToDrop.RHS[0]) unitProdToDrop.LHS else a) to b
-      }.toSet()
-      return if (this == newGrammar) this else newGrammar.elimVarUnitProds()
+    /**
+     * Eliminate all non-genereating and unreachable symbols.
+     *
+     * All terminal-producing symbols are generating.
+     * If A -> [..] and all symbols in [..] are generating, then A is generating
+     * No other symbols are generating.
+     *
+     * START is reachable.
+     * If S -> [..] is reachable, then all variables in [..] are reachable.
+     * No other symbols are reachable.
+     *
+     * A useful symbol is both generating and reachable.
+     */
+
+    private fun Grammar.removeUselessSymbols(
+      generating: Set<String> = generatingSymbols(),
+      reachable: Set<String> = reachableSymbols(),
+    ): Grammar = filter { (s, _) -> s in generating && s in reachable }.toSet()
+
+    private fun Grammar.reachableSymbols(
+      from: Set<String> = setOf(START_SYMBOL),
+      reachables: Set<String> = from
+    ): Set<String> = if(from.isEmpty()) reachables
+    else filter { it.LHS in from }
+      .map { (_, rhs) -> rhs.filter { it in variables && it !in reachables } }
+      .flatten().toSet().let { reachableSymbols(it, reachables + it) }
+
+    private fun Grammar.generatingSymbols(
+      from: Set<String> = terminals.unzip().first.toSet(),
+      generating: Set<String> = from
+    ): Set<String> = if(from.isEmpty()) generating
+    else filter { it.LHS !in generating && it.RHS.all { it in generating } }
+      .unzip().first.toSet().let { generatingSymbols(it, generating + it) }
+
+
+    /* Drops variable unit productions, for example:
+     * Initial grammar: (A -> B, B -> c, B -> d) ->
+     * After expansion: (A -> B, A -> c, A -> d, B -> c, B -> d) ->
+     * After elimination: (A -> c, A -> d, B -> c, B -> D)
+     */
+    private tailrec fun Grammar.elimVarUnitProds(
+      toVisit: Set<String> = variables.keys,
+      vars: Set<String> = variables.keys,
+      toElim: String? = toVisit.firstOrNull()
+    ): Grammar {
+      fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
+      if (toElim == null) return filter { !it.isVariableUnitProd() }.toSet()
+      val varsThatMapToMe =
+        filter { it.RHS.size == 1 && it.RHS[0] == toElim }.unzip().first.toSet()
+      val thingsIMapTo = filter { it.LHS == toElim }.unzip().second.toSet()
+      return (varsThatMapToMe * thingsIMapTo).fold(this) { g, p -> g + p }
+        .elimVarUnitProds(toVisit.drop(1).toSet(), vars)
     }
 
     // Refactors long productions, e.g., (A -> BCD) -> (A -> BE, E -> CD)
-    private fun Grammar.refactorRHS(): Grammar {
+    private tailrec fun Grammar.refactorRHS(): Grammar {
       val longProd = firstOrNull { it.RHS.size > 2 } ?: return this
       val freshName = freshNames.firstOrNull { it !in variables }!!
       val newProd = freshName to longProd.RHS.takeLast(2)
@@ -74,7 +148,7 @@ class CFL(
     }
 
     // Replaces terminals in non-unit productions, e.g., (A -> bC) -> (A -> BC, B -> b)
-    private fun Grammar.terminalsToUnitProds(): Grammar {
+    private tailrec fun Grammar.terminalsToUnitProds(): Grammar {
       val mixedProd = nonterminals.firstOrNull { it.RHS.any { it !in variables } } ?: return this
       val freshName = freshNames.firstOrNull { it !in variables }!!
       val idxOfTerminal = mixedProd.RHS.indexOfFirst { it !in variables }
