@@ -27,9 +27,8 @@ fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
 fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
 fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
 
-infix fun <A, Z> A.pp(that: Z) = Π(this, that)
-infix fun <A, B, Z> Π2<A, B>.pp(that: Z) = Π(π1, π2, that)
-infix fun <A, B, C, Z> Π3<A, B, C>.pp(that: Z) = Π(π1, π2, π3, that)
+infix fun <A, B, Z> Π2<A, B>.to(that: Z) = Π(π1, π2, that)
+infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
 
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()

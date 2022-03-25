@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.types.toVT
 import kotlin.test.*
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant"
@@ -74,12 +73,20 @@ class Valiant {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyck2Language"
 */
+  @Test
   fun testDyck2Language() {
-    // TODO: fix
-    CFL("""S -> ε | ( ) | [ ] | ( S ) | [ S ]""").run {
-      println(this)
-
+    CFL("""S -> ( ) | [ ] | ( S ) | [ S ] | S S""").run {
       assertTrue(isValid(tokens = "()[()()]()".map { it.toString() }))
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDyck3Language"
+*/
+  @Test
+  fun testDyck3Language() {
+    CFL("""S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""").run {
+      assertTrue(isValid(tokens = "{()[(){}()]()}".map { it.toString() }))
     }
   }
 
@@ -89,12 +96,35 @@ class Valiant {
   @Test
   fun testNormalization() {
     CFL("""
-        S -> a X b X 
-        X -> a Y | b Y
-        Y -> X | c
-      """).run {
+      S -> a X b X
+      X -> a Y | b Y
+      Y -> X | c
+    """).run {
+      println(this)
       normalForm.forEach { (_, b) -> assertContains(1..2, b.size) }
-      nonterminals.flatMap { it.second.toVT() }.forEach { assertContains(variables, it) }
+      nonterminals.unzip().second.flatten()
+        .forEach { assertContains(variables, it) }
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testDropUnitProds"
+*/
+  @Test
+  fun testDropUnitProds() {
+    CFL("""
+      S -> A
+      A -> B
+      B -> C
+      B -> D
+      C -> c
+      D -> d
+    """).run { assertEquals(CFL("S -> c | d").toString(), toString()) }
+
+    CFL("""
+      S -> C | D
+      C -> c
+      D -> d
+    """).run { assertEquals(CFL("S -> c | d").toString(), toString()) }
   }
 }
