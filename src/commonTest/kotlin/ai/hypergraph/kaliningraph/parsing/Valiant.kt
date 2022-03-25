@@ -113,14 +113,14 @@ class Valiant {
 */
   @Test
   fun testDropUnitProds() {
-//    CFL("""
-//      S -> A
-//      A -> B
-//      B -> C
-//      B -> D
-//      C -> c
-//      D -> d
-//    """).run { assertEquals(CFL("S -> c | d").toString(), toString()) }
+    CFL("""
+      S -> A
+      A -> B
+      B -> C
+      B -> D
+      C -> c
+      D -> d
+    """).run { assertEquals(CFL("S -> c | d").toString(), toString()) }
 
     CFL("""
       S -> C | D
