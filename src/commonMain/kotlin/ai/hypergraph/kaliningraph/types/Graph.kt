@@ -138,49 +138,39 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
     """.trimIndent()
 }
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by G { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by cache { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
 // Adjacency matrix
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A: BooleanMatrix        by G { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A_AUG: BooleanMatrix    by G { A + A.transpose() + BooleanMatrix.one(size) }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A: BooleanMatrix        by cache { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A_AUG: BooleanMatrix    by cache { A + A.transpose() + BooleanMatrix.one(size) }
 
 // Symmetric normalized adjacency
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ASYMNORM: DoubleMatrix  by G { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ASYMNORM: DoubleMatrix  by cache { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }
 
 // Graph Laplacian matrix
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.L: DoubleMatrix         by G { D - A }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.I: DoubleMatrix         by G { DoubleMatrix(size, size, ::kroneckerDelta) }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.L: DoubleMatrix         by cache { D - A }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.I: DoubleMatrix         by cache { DoubleMatrix(size, size, ::kroneckerDelta) }
 // Symmetric normalized Laplacian
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.LSYMNORM: DoubleMatrix  by G { I - ASYMNORM }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.LSYMNORM: DoubleMatrix  by cache { I - ASYMNORM }
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ENCODED: DoubleMatrix   by G { vertices.map { it.encode() }.toTypedArray().toDoubleMatrix() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ENCODED: DoubleMatrix   by cache { vertices.map { it.encode() }.toTypedArray().toDoubleMatrix() }
 
 // TODO: Implement APSP distance matrix using algebraic Floyd-Warshall
 //       https://doi.org/10.1137/1.9780898719918.ch5
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by G { vertices.associateWith { it.neighbors.size } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edges: Set<E>           by G { edgMap.values.flatten().toSet() }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgList: List<Π2<V, E>> by G { vertices.flatMap { s -> s.outgoing.map { s to it } } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.adjList: AdjList<V>     by G { edgList.map { (v, e) -> v cc e.target } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by G { vertices.associateWith { it.outgoing } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by G { associateWith { it.neighbors.size } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by cache { vertices.associateWith { it.neighbors.size } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edges: Set<E>           by cache { edgMap.values.flatten().toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgList: List<Π2<V, E>> by cache { vertices.flatMap { s -> s.outgoing.map { s to it } } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.adjList: AdjList<V>     by cache { edgList.map { (v, e) -> v cc e.target } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by cache { vertices.associateWith { it.outgoing } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by cache { associateWith { it.neighbors.size } }
 
 val cache = LRUCache<String, Any>(1000)
 fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
-  G(caller: Int = getCaller(), fn: IGraph<G, E, V>.() -> T) =
-  ReadOnlyProperty<IGraph<G, E, V>, T> { graph, _ ->
-    cache.getOrPut("G${graph.deepHashCode}$caller") { graph.fn() as Any } as T
-  }
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
-  E(caller: Int = getCaller(), fn: IEdge<G, E, V>.() -> T) =
-  ReadOnlyProperty<IEdge<G, E, V>, T> { edge, _ ->
-    cache.getOrPut("E${edge.deepHashCode}$caller") { edge.fn() as Any } as T
-  }
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
-  V(caller: Int = getCaller(), fn: IVertex<G, E, V>.() -> T) =
-  ReadOnlyProperty<IVertex<G, E, V>, T> { vertex, _ ->
-    cache.getOrPut("V${vertex.deepHashCode}$caller") { vertex.fn() as Any } as T
+fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
+  ReadOnlyProperty<Y, T> { y, _ ->
+    val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
+    cache.getOrPut("${y!!::class.simpleName}${id}$caller") { y.fn() as Any } as T
   }
 
 class RandomWalk<G, E, V>(
@@ -213,7 +203,7 @@ interface IEdge<G, E, V> : IGF<G, E, V>
   operator fun component2() = target
 }
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IEdge<G, E, V>.graph: G by E { target.graph }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IEdge<G, E, V>.graph: G by cache { target.graph }
 
 // TODO: Make this a "view" of the container graph
 interface IVertex<G, E, V> : IGF<G, E, V>, Encodable
@@ -239,10 +229,10 @@ interface IVertex<G, E, V> : IGF<G, E, V>, Encodable
   override fun encode(): DoubleArray
 }
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.graph: G by V { G(neighbors(-1)) }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.incoming: Set<E> by V { graph.reversed().edgMap[this] ?: emptySet() }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outgoing: Set<E> by V { edgeMap(this as V).toSet() }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.neighbors: Set<V> by V { outgoing.map { it.target }.toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.graph: G          by cache { G(neighbors(-1)) }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.incoming: Set<E>  by cache { graph.reversed().edgMap[this] ?: emptySet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outgoing: Set<E>  by cache { edgeMap(this as V).toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.neighbors: Set<V> by cache { outgoing.map { it.target }.toSet() }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outdegree: Int get() = neighbors.size
 
 abstract class AGF<G, E, V> : IGF<G, E, V>

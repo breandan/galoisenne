@@ -10,21 +10,15 @@ typealias Grammar = Set<Production>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 val Grammar.symbols: Set<String>
-  by lazy { variables + terminals.map { it.π2 }.flatten().toSet() }
+  by cache { variables + terminals.map { it.π2 }.flatten().toSet() }
 
-val Grammar.variables: Set<String> by lazy { map { it.π1 }.toSet() }
+val Grammar.variables: Set<String> by cache { map { it.π1 }.toSet() }
 val Grammar.nonterminals: Set<Production>
-  by lazy { filter { it !in terminals }.toSet() }
-val Grammar.terminals: Set<Production>
-  by lazy {
-    filter { it.RHS.size == 1 && it.RHS[0] !in variables }
-      .map { (lhs, rhs) -> lhs to rhs }.toSet()
-  }
-
-fun <T> lazy(caller: Int = getCaller(), fn: Grammar.() -> T) =
-  ReadOnlyProperty<Grammar, T> { grammar, _ ->
-    cache.getOrPut("${grammar.hashCode()}$caller") { grammar.fn() as Any } as T
-  }
+  by cache { filter { it !in terminals }.toSet() }
+val Grammar.terminals: Set<Production> by cache {
+  filter { it.RHS.size == 1 && it.RHS[0] !in variables }
+    .map { (lhs, rhs) -> lhs to rhs }.toSet()
+}
 
 fun Grammar.prettyPrint() =
   joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
