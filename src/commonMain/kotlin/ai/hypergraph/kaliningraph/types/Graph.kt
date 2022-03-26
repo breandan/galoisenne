@@ -161,11 +161,11 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by G { associateWith { it.neighbors.size } }
 
 fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> G(computation: IGraph<G, E, V>.() -> T) =
-  ReadOnlyProperty<IGraph<G,E,V>, T> { grammar, _ -> grammar.computation() }
+  ReadOnlyProperty<IGraph<G,E,V>, T> { graph, _ -> graph.computation() }
 fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> E(computation: IEdge<G, E, V>.() -> T) =
-  ReadOnlyProperty<IEdge<G,E,V>, T> { grammar, _ -> grammar.computation() }
+  ReadOnlyProperty<IEdge<G,E,V>, T> { edge, _ -> edge.computation() }
 fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> V(computation: IVertex<G, E, V>.() -> T) =
-  ReadOnlyProperty<IVertex<G,E,V>, T> { grammar, _ -> grammar.computation() }
+  ReadOnlyProperty<IVertex<G,E,V>, T> { vertex, _ -> vertex.computation() }
 
 class RandomWalk<G, E, V>(
   val rand: Random = Random.Default,
