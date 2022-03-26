@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.theory.diameter
+import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.*
 
 /*

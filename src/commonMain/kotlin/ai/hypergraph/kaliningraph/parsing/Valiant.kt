@@ -2,17 +2,28 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.properties.ReadOnlyProperty
 
 typealias Production = Π2<String, List<String>>
+typealias Grammar = Set<Production>
+
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
-typealias Grammar = Set<Production>
-val Grammar.symbols: Set<String> get() = variables.keys + terminals.map { it.second }.flatten().toSet()
-val Grammar.variables: Map<String, Int> get() = unzip().first.groupingBy { it }.eachCount()
-val Grammar.nonterminals: Set<Production> get() = filter { it !in terminals }.toSet()
-val Grammar.terminals: Set<Production> get() =
-  filter { it.RHS.size == 1 && it.RHS[0] !in variables }
-    .map { (lhs, rhs) -> lhs to rhs }.toSet()
+val Grammar.symbols: Set<String>
+  by lazy { variables.keys + terminals.map { it.π2 }.flatten().toSet() }
+val Grammar.variables: Map<String, Int>
+  by lazy { unzip().first.groupingBy { it }.eachCount() }
+val Grammar.nonterminals: Set<Production>
+  by lazy { filter { it !in terminals }.toSet() }
+val Grammar.terminals: Set<Production>
+  by lazy {
+    filter { it.RHS.size == 1 && it.RHS[0] !in variables }
+      .map { (lhs, rhs) -> lhs to rhs }.toSet()
+  }
+
+fun <T> lazy(computation: Grammar.() -> T) =
+  ReadOnlyProperty<Grammar, T> { grammar, _ -> grammar.computation() }
+
 fun Grammar.prettyPrint() =
   joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
 
@@ -24,6 +35,7 @@ class CFL(
   constructor(grammar: String): this(grammar.parse())
 
   companion object {
+
     val freshNames: Set<String> = ('A'..'Z').map { "$it" }
       .let { it.toSet().let { it + (it * it).map { (a, b) -> a + b } }.toSet() }
 
@@ -50,9 +62,9 @@ class CFL(
         .zip(freshNames.filter { it !in this }).toMap(),
       dict: Map<String, String> = (presets + nameDict)
     ): String = lines().filter { it.isNotBlank() }.joinToString(" ::NL:: ")
-        .split(whitespace).filter { it.isNotBlank() }
-        .joinToString(" ") { dict[it] ?: it }
-        .let { if (CFLCFL(dict).isValid(it)) this else throw Exception("Bad CFL: $it") }
+      .split(whitespace).filter { it.isNotBlank() }
+      .joinToString(" ") { dict[it] ?: it }
+      .let { if (CFLCFL(dict).isValid(it)) this else throw Exception("Bad CFL: $it") }
 
     // http://firsov.ee/cert-norm/cfg-norm.pdf
     // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf

@@ -1,10 +1,7 @@
 package ai.hypergraph.kaliningraph.graphs
 
 import ai.hypergraph.kaliningraph.randomString
-import ai.hypergraph.kaliningraph.types.Edge
-import ai.hypergraph.kaliningraph.types.Graph
-import ai.hypergraph.kaliningraph.types.IGF
-import ai.hypergraph.kaliningraph.types.Vertex
+import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty
 
 class RTLBuilder {

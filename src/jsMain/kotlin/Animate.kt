@@ -1,5 +1,6 @@
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.image.matToBase64Img
+import ai.hypergraph.kaliningraph.types.*
 import kotlinx.browser.document
 import kotlinx.html.*
 import kotlinx.html.dom.append

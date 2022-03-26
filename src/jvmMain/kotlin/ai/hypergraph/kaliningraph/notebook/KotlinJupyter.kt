@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.notebook
 import ai.hypergraph.kaliningraph.graphs.Gate
 import ai.hypergraph.kaliningraph.image.matToBase64Img
 import ai.hypergraph.kaliningraph.tensor.Matrix
-import ai.hypergraph.kaliningraph.types.Graph
+import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.html
 import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
@@ -13,9 +13,9 @@ internal class Integration: JupyterIntegration() {
     listOf(
       "ai.hypergraph.kaliningraph.*",
       "ai.hypergraph.kaliningraph.graphs.*",
+      "ai.hypergraph.kaliningraph.types.*",
       "ai.hypergraph.kaliningraph.visualization.*",
       "ai.hypergraph.kaliningraph.tensor.*",
-      "ai.hypergraph.kaliningraph.graphs.*",
     ).forEach { import(it) }
 
     render<Matrix<*, *, *>> { HTML("<img src=\"${it.matToBase64Img()}\" height=\"200\" width=\"200\"/>") }

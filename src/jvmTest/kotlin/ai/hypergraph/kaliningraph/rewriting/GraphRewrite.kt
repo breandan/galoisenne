@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.rewriting
 
 import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.*
 

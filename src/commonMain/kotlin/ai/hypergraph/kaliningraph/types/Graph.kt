@@ -1,12 +1,12 @@
 package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.js.JsName
 import kotlin.math.sqrt
+import kotlin.properties.ReadOnlyProperty
 import kotlin.random.Random
 
 // Provides caching and inheritable constructors for reified parameters <G, E, V>
@@ -26,27 +26,6 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
     list allAre list.first() -> list.map { it as V }.toSet()
     else -> throw Exception("Unsupported constructor: G(${list.joinToString(",") { it::class.simpleName!! }})")
   }.let { G(it) }
-
-  val deepHashCode: Int // Uniquely identifies this class instance, regardless of structure
-
-  /**
-   * Memoizes the result of evaluating a pure subclass function, indexed by:
-   *
-   * (1) instance reference, cf. [Graph.hashCode].
-   * (2) the most direct caller on the stack (i.e. qualified method name)
-   * (3) its arguments if caller is not niladic and [args] are supplied.
-   */
-  fun <T> memoize(
-    classRef: Int = deepHashCode,
-    methodRef: Int = Throwable().stackTraceToString().lines()[2].hashCode(),
-    args: Array<*>? = null,
-    argsRef: Int = args?.contentDeepHashCode() ?: 0,
-    computation: () -> T
-  ): T = memo.getOrPut(VT(classRef, methodRef, argsRef)) { computation() as Any } as T
-
-  companion object {
-    val memo = LRUCache<V3<Int>, Any>(1000)
-  }
 }
 
 typealias AdjList<V> = List<V2<V>>
@@ -81,16 +60,11 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
 
   where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
   val vertices: Set<V>
-  val edgList: List<Π2<V, E>> get() = memoize { vertices.flatMap { s -> s.outgoing.map { s to it } } }
-  val adjList: AdjList<V>       get() = memoize { edgList.map { (v, e) -> v cc e.target } }
-  val edgMap: Map<V, Set<E>>    get() = memoize { vertices.associateWith { it.outgoing } }
-  val edges: Set<E>             get() = memoize { edgMap.values.flatten().toSet() }
-  val histogram: Map<V, Int>    get() = memoize { associateWith { it.neighbors.size } }
 
   // TODO: Move the following ceremony into named tensor
   //-------
   operator fun get(cond: (V) -> Boolean): Set<V> = vertices.filter(cond).toSet()
-  val index: VIndex<G, E, V>    get() = memoize { VIndex(vertices) }
+  val index: VIndex<G, E, V> get() = VIndex(vertices)
   operator fun get(vertexIdx: Int): V = index[vertexIdx]
   class VIndex<G: IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>(val set: Set<V>) {
     val array: List<V> = set.toList()
@@ -103,29 +77,6 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
 //    this[index[n0]!!, index[n1]!!] = value
 //  }
   //-------
-
-  val D: DoubleMatrix get() = memoize { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
-
-  // Adjacency matrix
-  val A: BooleanMatrix get() = memoize { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
-  val A_AUG: BooleanMatrix get() = memoize { A + A.transpose() + BooleanMatrix.one(size) }
-
-  // Symmetric normalized adjacency
-  val ASYMNORM: DoubleMatrix
-    get() = memoize { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }
-
-  // Graph Laplacian matrix
-  val L: DoubleMatrix get() = memoize { D - A }
-  val I: DoubleMatrix get() = memoize { DoubleMatrix(size, size, ::kroneckerDelta) }
-  // Symmetric normalized Laplacian
-  val LSYMNORM: DoubleMatrix get() = memoize { I - ASYMNORM }
-
-  val ENCODED: DoubleMatrix get() = memoize { vertices.map { it.encode() }.toTypedArray().toDoubleMatrix() }
-
-  // TODO: Implement APSP distance matrix using algebraic Floyd-Warshall
-  //       https://doi.org/10.1137/1.9780898719918.ch5
-
-  val degMap: Map<V, Int> get() = memoize { vertices.associateWith { it.neighbors.size } }
 
   // Implements graph merge. For all vertices in common, merge their neighbors.
   // TODO: Figure out how to implement this operator "correctly"
@@ -182,6 +133,40 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
     """.trimIndent()
 }
 
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by G { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
+
+// Adjacency matrix
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A: BooleanMatrix        by G { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A_AUG: BooleanMatrix    by G { A + A.transpose() + BooleanMatrix.one(size) }
+
+// Symmetric normalized adjacency
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ASYMNORM: DoubleMatrix  by G { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }
+
+// Graph Laplacian matrix
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.L: DoubleMatrix         by G { D - A }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.I: DoubleMatrix         by G { DoubleMatrix(size, size, ::kroneckerDelta) }
+// Symmetric normalized Laplacian
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.LSYMNORM: DoubleMatrix  by G { I - ASYMNORM }
+
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ENCODED: DoubleMatrix   by G { vertices.map { it.encode() }.toTypedArray().toDoubleMatrix() }
+
+// TODO: Implement APSP distance matrix using algebraic Floyd-Warshall
+//       https://doi.org/10.1137/1.9780898719918.ch5
+
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by G { vertices.associateWith { it.neighbors.size } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edges: Set<E>           by G { edgMap.values.flatten().toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgList: List<Π2<V, E>> by G { vertices.flatMap { s -> s.outgoing.map { s to it } } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.adjList: AdjList<V>     by G { edgList.map { (v, e) -> v cc e.target } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by G { vertices.associateWith { it.outgoing } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by G { associateWith { it.neighbors.size } }
+
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> G(computation: IGraph<G, E, V>.() -> T) =
+  ReadOnlyProperty<IGraph<G,E,V>, T> { grammar, _ -> grammar.computation() }
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> E(computation: IEdge<G, E, V>.() -> T) =
+  ReadOnlyProperty<IEdge<G,E,V>, T> { grammar, _ -> grammar.computation() }
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> V(computation: IVertex<G, E, V>.() -> T) =
+  ReadOnlyProperty<IVertex<G,E,V>, T> { grammar, _ -> grammar.computation() }
+
 class RandomWalk<G, E, V>(
   val rand: Random = Random.Default,
   val graph: G,
@@ -205,7 +190,6 @@ class RandomWalk<G, E, V>(
 
 interface IEdge<G, E, V> : IGF<G, E, V>
         where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-  val graph: G get() = memoize { target.graph }
   val source: V
   val target: V
 
@@ -213,18 +197,14 @@ interface IEdge<G, E, V> : IGF<G, E, V>
   operator fun component2() = target
 }
 
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IEdge<G, E, V>.graph: G by E { target.graph }
+
 // TODO: Make this a "view" of the container graph
 interface IVertex<G, E, V> : IGF<G, E, V>, Encodable
         where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
   val id: String // TODO: Need to think about this more carefully
 
-  val graph: G get() = memoize { G(neighbors(-1)) }
-  val incoming: Set<E> get() = memoize { graph.reversed().edgMap[this] ?: emptySet() }
-  val outgoing: Set<E> get() = memoize { edgeMap(this as V).toSet() }
   val edgeMap: (V) -> Set<E> // Make a self-loop by passing this
-
-  val neighbors get() = memoize { outgoing.map { it.target }.toSet() }
-  val outdegree get() = neighbors.size
 
   // tailrec prohibited on open members? may be possible with deep recursion
   // https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-deep-recursive-function/
@@ -243,15 +223,14 @@ interface IVertex<G, E, V> : IGF<G, E, V>, Encodable
   override fun encode(): DoubleArray
 }
 
-abstract class AGF<G, E, V> : IGF<G, E, V>
-        where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
-  override val deepHashCode: Int = Random.nextInt()
-  override fun hashCode() = deepHashCode
-}
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.graph: G by V { G(neighbors(-1)) }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.incoming: Set<E> by V { graph.reversed().edgMap[this] ?: emptySet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outgoing: Set<E> by V { edgeMap(this as V).toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.neighbors: Set<V> by V { outgoing.map { it.target }.toSet() }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outdegree: Int get() = neighbors.size
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
-  AGF<G, E, V>(), IGraph<G, E, V>,
-  Set<V> by vertices, IGF<G, E, V>
+  IGF<G, E, V>, IGraph<G, E, V>, Set<V> by vertices
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
@@ -263,7 +242,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
 }
 
 abstract class Edge<G, E, V>(override val source: V, override val target: V) :
-  AGF<G, E, V>(), IEdge<G, E, V>
+  IGF<G, E, V>, IEdge<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? E)?.let { hashCode() == other.hashCode() } ?: false
   override fun hashCode(): Int = source.hashCode() + target.hashCode()
@@ -271,7 +250,7 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V) :
 }
 
 abstract class Vertex<G, E, V>(override val id: String) :
-  AGF<G, E, V>(), IVertex<G, E, V>
+  IGF<G, E, V>, IVertex<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
   override fun encode() = id.vectorize()

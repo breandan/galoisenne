@@ -1,4 +1,5 @@
 import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.types.*
 import kotlinx.browser.document
 import kotlinx.html.dom.append
 import kotlinx.html.p
