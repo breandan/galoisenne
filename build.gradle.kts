@@ -8,8 +8,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.6.20-RC"
-  id("com.google.devtools.ksp") version "1.6.20-RC-1.0.4"
+  kotlin("multiplatform") version "1.6.20-RC2"
+  id("com.google.devtools.ksp") version "1.6.20-RC2-1.0.4"
   kotlin("jupyter.api") version "0.11.0-62"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -64,7 +64,7 @@ signing {
 }
 
 group = "ai.hypergraph"
-version = "0.1.9"
+version = "0.2.0"
 
 repositories {
   mavenCentral()
