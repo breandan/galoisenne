@@ -1,6 +1,10 @@
+// How are we supposed to resolve this warning? https://youtrack.jetbrains.com/issue/KT-24643
+@file:Suppress("DELEGATE_USES_EXTENSION_PROPERTY_TYPE_PARAMETER_WARNING")
+
 package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
@@ -17,6 +21,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   @JsName("E0") val E: (s: V, t: V) -> E // Edge constructor
   @JsName("V0") val V: (old: V, edgeMap: (V) -> Set<E>) -> V // Vertex constructor
 
+  val deepHashCode: Int
   fun G() = G(setOf())
   fun G(vararg graphs: G): G = G(graphs.toList())
   fun G(vararg vertices: V): G = G(vertices.map { it.graph })
@@ -160,12 +165,23 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by G { vertices.associateWith { it.outgoing } }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by G { associateWith { it.neighbors.size } }
 
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> G(computation: IGraph<G, E, V>.() -> T) =
-  ReadOnlyProperty<IGraph<G,E,V>, T> { graph, _ -> graph.computation() }
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> E(computation: IEdge<G, E, V>.() -> T) =
-  ReadOnlyProperty<IEdge<G,E,V>, T> { edge, _ -> edge.computation() }
-fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> V(computation: IVertex<G, E, V>.() -> T) =
-  ReadOnlyProperty<IVertex<G,E,V>, T> { vertex, _ -> vertex.computation() }
+val cache = LRUCache<String, Any>(1000)
+fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
+  G(caller: Int = getCaller(), fn: IGraph<G, E, V>.() -> T) =
+  ReadOnlyProperty<IGraph<G, E, V>, T> { graph, _ ->
+    cache.getOrPut("G${graph.deepHashCode}$caller") { graph.fn() as Any } as T
+  }
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
+  E(caller: Int = getCaller(), fn: IEdge<G, E, V>.() -> T) =
+  ReadOnlyProperty<IEdge<G, E, V>, T> { edge, _ ->
+    cache.getOrPut("E${edge.deepHashCode}$caller") { edge.fn() as Any } as T
+  }
+fun <T, G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>>
+  V(caller: Int = getCaller(), fn: IVertex<G, E, V>.() -> T) =
+  ReadOnlyProperty<IVertex<G, E, V>, T> { vertex, _ ->
+    cache.getOrPut("V${vertex.deepHashCode}$caller") { vertex.fn() as Any } as T
+  }
 
 class RandomWalk<G, E, V>(
   val rand: Random = Random.Default,
@@ -229,8 +245,14 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.neighbors: Set<V> by V { outgoing.map { it.target }.toSet() }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outdegree: Int get() = neighbors.size
 
+abstract class AGF<G, E, V> : IGF<G, E, V>
+  where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
+  override val deepHashCode: Int = Random.nextInt()
+  override fun hashCode() = deepHashCode
+}
+
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
-  IGF<G, E, V>, IGraph<G, E, V>, Set<V> by vertices
+  AGF<G, E, V>(), IGraph<G, E, V>, Set<V> by vertices
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) =
     super.equals(other) || (other as? G)?.isomorphicTo(this as G) ?: false
@@ -242,7 +264,7 @@ abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
 }
 
 abstract class Edge<G, E, V>(override val source: V, override val target: V) :
-  IGF<G, E, V>, IEdge<G, E, V>
+  AGF<G, E, V>(), IEdge<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? E)?.let { hashCode() == other.hashCode() } ?: false
   override fun hashCode(): Int = source.hashCode() + target.hashCode()
@@ -250,7 +272,7 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V) :
 }
 
 abstract class Vertex<G, E, V>(override val id: String) :
-  IGF<G, E, V>, IVertex<G, E, V>
+  AGF<G, E, V>(), IVertex<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
   override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
   override fun encode() = id.vectorize()

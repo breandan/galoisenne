@@ -10,9 +10,9 @@ typealias Grammar = Set<Production>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 val Grammar.symbols: Set<String>
-  by lazy { variables.keys + terminals.map { it.π2 }.flatten().toSet() }
-val Grammar.variables: Map<String, Int>
-  by lazy { unzip().first.groupingBy { it }.eachCount() }
+  by lazy { variables + terminals.map { it.π2 }.flatten().toSet() }
+
+val Grammar.variables: Set<String> by lazy { map { it.π1 }.toSet() }
 val Grammar.nonterminals: Set<Production>
   by lazy { filter { it !in terminals }.toSet() }
 val Grammar.terminals: Set<Production>
@@ -21,8 +21,10 @@ val Grammar.terminals: Set<Production>
       .map { (lhs, rhs) -> lhs to rhs }.toSet()
   }
 
-fun <T> lazy(computation: Grammar.() -> T) =
-  ReadOnlyProperty<Grammar, T> { grammar, _ -> grammar.computation() }
+fun <T> lazy(caller: Int = getCaller(), fn: Grammar.() -> T) =
+  ReadOnlyProperty<Grammar, T> { grammar, _ ->
+    cache.getOrPut("${grammar.hashCode()}$caller") { grammar.fn() as Any } as T
+  }
 
 fun Grammar.prettyPrint() =
   joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
@@ -31,11 +33,10 @@ class CFL(
   val grammar: Grammar,
   val normalForm: Grammar = grammar.normalize()
 ): Grammar by normalForm {
-  constructor(vararg productions: String): this(productions.joinToString("\n") )
+  constructor(vararg productions: String): this(productions.joinToString("\n"))
   constructor(grammar: String): this(grammar.parse())
 
   companion object {
-
     val freshNames: Set<String> = ('A'..'Z').map { "$it" }
       .let { it.toSet().let { it + (it * it).map { (a, b) -> a + b } }.toSet() }
 
@@ -75,7 +76,7 @@ class CFL(
     val START_SYMBOL = "START"
 
     private fun Grammar.addStartSymbol() =
-      this + variables.keys.map { START_SYMBOL to listOf(it) }.toSet()
+      this + variables.map { START_SYMBOL to listOf(it) }.toSet()
 
     // Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
     fun Grammar.expandOr(): Grammar =
@@ -121,11 +122,11 @@ class CFL(
       .flatten().toSet().let { reachableSymbols(it, reachables + it) }
 
     private fun Grammar.generatingSymbols(
-      from: Set<String> = terminals.unzip().second.flatten().toSet(),
+      from: Set<String> = terminals.map { it.π2 }.flatten().toSet(),
       generating: Set<String> = from
     ): Set<String> = if (from.isEmpty()) generating
     else filter { it.LHS !in generating && it.RHS.all { it in generating } }
-      .unzip().first.toSet().let { generatingSymbols(it, generating + it) }
+      .map { it.π1 }.toSet().let { generatingSymbols(it, generating + it) }
 
     /* Drops variable unit productions, for example:
      * Initial grammar: (A -> B, B -> c, B -> d) ->
@@ -133,15 +134,15 @@ class CFL(
      * After elimination: (A -> c, A -> d, B -> c, B -> D)
      */
     private tailrec fun Grammar.elimVarUnitProds(
-      toVisit: Set<String> = variables.keys,
-      vars: Set<String> = variables.keys,
+      toVisit: Set<String> = variables,
+      vars: Set<String> = variables,
       toElim: String? = toVisit.firstOrNull()
     ): Grammar {
       fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
       if (toElim == null) return filter { !it.isVariableUnitProd() }.toSet()
       val varsThatMapToMe =
-        filter { it.RHS.size == 1 && it.RHS[0] == toElim }.unzip().first.toSet()
-      val thingsIMapTo = filter { it.LHS == toElim }.unzip().second.toSet()
+        filter { it.RHS.size == 1 && it.RHS[0] == toElim }.map { it.π1 }.toSet()
+      val thingsIMapTo = filter { it.LHS == toElim }.map { it.π2 }.toSet()
       return (varsThatMapToMe * thingsIMapTo).fold(this) { g, p -> g + p }
         .elimVarUnitProds(toVisit.drop(1).toSet(), vars)
     }
@@ -222,7 +223,7 @@ class CFL(
   private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
     FreeMatrix(makeAlgebra(), size + 1) { i, j ->
       if (i + 1 != j) emptySet() // Enforce upper triangularity
-      else terminals.filter { (_, v) -> this[j - 1] == v[0] }.unzip().π1.toSet()
+      else terminals.filter { (_, v) -> this[j - 1] == v[0] }.map { it.π1 }.toSet()
     }
 
   override fun toString() = normalForm.prettyPrint()
