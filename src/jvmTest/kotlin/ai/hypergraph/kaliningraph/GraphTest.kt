@@ -32,8 +32,7 @@ class GraphTest {
     Assertions.assertEquals(graph.toSet(), graph.vertices.flatMap { it.neighbors + it }.toSet())
 
   @Test
-  fun testDiameter() =
-    Assertions.assertEquals(2, graph.diameter())
+  fun testDiameter() = Assertions.assertEquals(2, graph.diameter())
 
   // TODO: Test whether graph is closed under other circumstances
 }

@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.times
 import org.junit.jupiter.api.Test
 import kotlin.math.*
 import kotlin.test.*
@@ -139,7 +138,7 @@ class TestSMT {
 
     val isBistochastic = m.isStochastic() and m.transpose().isStochastic()
 
-    val assymetric = m.indices
+    val assymetric = m.idxs
       .mapNotNull { (i, j) -> if (i != j) m[j][i] neq m[i][j] else null }
       .reduce { a, b -> a and b }
 

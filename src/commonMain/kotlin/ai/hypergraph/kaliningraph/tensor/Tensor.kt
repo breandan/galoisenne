@@ -39,10 +39,9 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
     that: M,
     ids: Set<V2<Int>> = allPairs(numRows, that.numCols),
     op: A.(Int, Int) -> T
-  ): M =
-    require(numCols == that.numRows) {
-      "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-    }.let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
+  ): M = require(numCols == that.numRows) {
+    "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
+  }.let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
 
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
@@ -51,7 +50,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 }
 
 // Only include nonzero indices for sparse matrices?
-val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.indices by cache { allPairs(numRows, numCols) }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.idxs by cache { allPairs(numRows, numCols) }
 val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.rows by cache { data.chunked(numCols) }
 val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols by cache { (0 until numCols).map { c -> rows.map { it[c] } } }
 
@@ -116,7 +115,7 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
 ): Matrix<T, A, M> {
   val values by lazy { data.toSet() }
   override val map: MutableMap<Π3<Int, Int, T>, Int> by lazy {
-    indices.fold(mutableMapOf()) { map, (r, c) ->
+    idxs.fold(mutableMapOf()) { map, (r, c) ->
       val element = get(r, c)
       if (element != algebra.nil) map[Π(r, c, element)] = 1
       map

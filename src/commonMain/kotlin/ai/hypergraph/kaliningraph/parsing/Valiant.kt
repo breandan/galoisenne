@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.properties.ReadOnlyProperty
 
 typealias Production = Π2<String, List<String>>
 typealias Grammar = Set<Production>
@@ -206,14 +205,14 @@ class CFL(
       one = setOf(),
       // x + y = x ∪ y
       plus = { x, y -> x union y },
-      // x · y = {A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P}
+      // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
       times = { x, y -> x join y }
     )
 
   private infix fun Set<String>.join(that: Set<String>): Set<String> =
     nonterminals.filter { (_, r) -> r[0] in this && r[1] in that }.map { it.π1 }.toSet()
 
-  // Converts tokens to UT matrix using constructor: σi = {A | (A -> w[i]) ∈ P}
+  // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
   private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
     FreeMatrix(makeAlgebra(), size + 1) { i, j ->
       if (i + 1 != j) emptySet() // Enforce upper triangularity
