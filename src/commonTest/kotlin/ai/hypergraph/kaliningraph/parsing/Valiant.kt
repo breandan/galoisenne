@@ -1,8 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.parsing.CFL.Companion.parse
-import ai.hypergraph.kaliningraph.parsing.CFL.Companion.validate
 import kotlin.test.*
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant"
 */
@@ -32,15 +32,15 @@ class Valiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testBNFParsing"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testVerySimpleGrammar"
 */
   @Test
-  fun testBNFParsing() {
+  fun testVerySimpleGrammar() {
     CFL("""
         S -> A | B
         A -> a | A A
         B -> b | B B
-      """.validate().parse()).run {
+      """.parse()).run {
       assertTrue(isValid(tokens = "aaaa".map { it.toString() }))
       assertTrue(isValid(tokens = "bbbb".map { it.toString() }))
       assertFalse(isValid(tokens = "abab".map { it.toString() }))

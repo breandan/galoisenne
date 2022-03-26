@@ -28,7 +28,7 @@ class CFL(
   val normalForm: Grammar = grammar.normalize()
 ): Grammar by normalForm {
   constructor(vararg productions: String): this(productions.joinToString("\n"))
-  constructor(grammar: String): this(grammar.parse())
+  constructor(grammar: String): this(grammar.validate().parse())
 
   companion object {
     val freshNames: Set<String> = ('A'..'Z').map { "$it" }
