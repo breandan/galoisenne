@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.parsing.CFL.Companion.parse
+import ai.hypergraph.kaliningraph.parsing.CFL.Companion.validate
 import kotlin.test.*
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant"
@@ -26,6 +28,22 @@ class Valiant {
     ).run {
       assertTrue(isValid("she eats a fish with a fork"))
       assertFalse(isValid("she eats fish with"))
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.Valiant.testBNFParsing"
+*/
+  @Test
+  fun testBNFParsing() {
+    CFL("""
+        S -> A | B
+        A -> a | A A
+        B -> b | B B
+      """.validate().parse()).run {
+      assertTrue(isValid(tokens = "aaaa".map { it.toString() }))
+      assertTrue(isValid(tokens = "bbbb".map { it.toString() }))
+      assertFalse(isValid(tokens = "abab".map { it.toString() }))
     }
   }
 
@@ -78,6 +96,7 @@ class Valiant {
     CFL("""S -> ( ) | [ ] | ( S ) | [ S ] | S S""").run {
       println("Grammar: $this")
       assertTrue(isValid(tokens = "()[()()]()".map { it.toString() }))
+      assertFalse(isValid(tokens = "([()()]()".map { it.toString() }))
     }
   }
 
@@ -88,6 +107,7 @@ class Valiant {
   fun testDyck3Language() {
     CFL("""S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""").run {
       assertTrue(isValid(tokens = "{()[(){}()]()}".map { it.toString() }))
+      assertFalse(isValid(tokens = "{()[(){()]()}".map { it.toString() }))
     }
   }
 

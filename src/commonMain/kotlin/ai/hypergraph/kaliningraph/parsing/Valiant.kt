@@ -7,14 +7,14 @@ typealias Production = Π2<String, List<String>>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 typealias Grammar = Set<Production>
+val Grammar.symbols: Set<String> get() = variables.keys + terminals.map { it.second }.flatten().toSet()
 val Grammar.variables: Map<String, Int> get() = unzip().first.groupingBy { it }.eachCount()
-val Grammar.nonterminals: Set<Pair<String, List<String>>> get() =
-  filter { it.RHS.size > 1 }.map { (lhs, rhs) -> lhs to rhs }.toSet()
-val Grammar.terminals: Set<Pair<String, String>> get() =
+val Grammar.nonterminals: Set<Production> get() = filter { it !in terminals }.toSet()
+val Grammar.terminals: Set<Production> get() =
   filter { it.RHS.size == 1 && it.RHS[0] !in variables }
-    .map { (lhs, rhs) -> lhs to rhs[0] }.toSet()
+    .map { (lhs, rhs) -> lhs to rhs }.toSet()
 fun Grammar.prettyPrint() =
-  joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ")}
+  joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
 
 class CFL(
   val grammar: Grammar,
@@ -25,7 +25,7 @@ class CFL(
 
   companion object {
     val freshNames: Set<String> = ('A'..'Z').map { "$it" }
-      .let { (it.toSet() * it.toSet()).map { it.toVT().joinToString("") } }.toSet()
+      .let { it.toSet().let { it + (it * it).map { (a, b) -> a + b } }.toSet() }
 
     fun String.parse() =
       lines().filter { it.isNotBlank() }.map { line ->
@@ -40,20 +40,19 @@ class CFL(
         NAME -> ${names.values.joinToString(" | ")}
         LHS -> NAME
         RHS -> NAME | RHS RHS | RHS ::OR:: RHS
-      """.parse()).also { println("CFLCFL:\n: $it") }
+      """.parse())
 
-    // TODO: fix autovalidation
     fun String.validate(
-      presets: Map<String, String> =
-        mapOf("|" to "::OR::", "->" to "::=", "\n" to "::NL::"),
-      dict: Map<String, String> = split(Regex("\\s+"))
-        .filter { it.isNotBlank() && it !in presets }
-        .toSet().zip(freshNames.filter { it !in this }).toMap().also { println(it) }
-    ): String = (presets + dict).entries
-      .fold(this) { acc, (from, to) -> acc.replace(from, to) }
-      .let {
-        println(it)
-        if (CFLCFL(dict).isValid(it)) this else throw Exception("Bad CFL: $it") }
+      presets: Map<String, String> = mapOf("|" to "::OR::", "->" to "::="),
+      whitespace: Regex = Regex("\\s+"),
+      nameDict: Map<String, String> = split(whitespace)
+        .filter { it.isNotBlank() && it !in presets }.toSet()
+        .zip(freshNames.filter { it !in this }).toMap(),
+      dict: Map<String, String> = (presets + nameDict)
+    ): String = lines().filter { it.isNotBlank() }.joinToString(" ::NL:: ")
+        .split(whitespace).filter { it.isNotBlank() }
+        .joinToString(" ") { dict[it] ?: it }
+        .let { if (CFLCFL(dict).isValid(it)) this else throw Exception("Bad CFL: $it") }
 
     // http://firsov.ee/cert-norm/cfg-norm.pdf
     // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
@@ -103,20 +102,18 @@ class CFL(
     ): Grammar = filter { (s, _) -> s in generating && s in reachable }.toSet()
 
     private fun Grammar.reachableSymbols(
-      from: Set<String> = setOf(START_SYMBOL),
-      reachables: Set<String> = from
-    ): Set<String> = if(from.isEmpty()) reachables
-    else filter { it.LHS in from }
+      src: Set<String> = setOf(START_SYMBOL),
+      reachables: Set<String> = src
+    ): Set<String> = if (src.isEmpty()) reachables else filter { it.LHS in src }
       .map { (_, rhs) -> rhs.filter { it in variables && it !in reachables } }
       .flatten().toSet().let { reachableSymbols(it, reachables + it) }
 
     private fun Grammar.generatingSymbols(
-      from: Set<String> = terminals.unzip().first.toSet(),
+      from: Set<String> = terminals.unzip().second.flatten().toSet(),
       generating: Set<String> = from
-    ): Set<String> = if(from.isEmpty()) generating
+    ): Set<String> = if (from.isEmpty()) generating
     else filter { it.LHS !in generating && it.RHS.all { it in generating } }
       .unzip().first.toSet().let { generatingSymbols(it, generating + it) }
-
 
     /* Drops variable unit productions, for example:
      * Initial grammar: (A -> B, B -> c, B -> d) ->
@@ -140,7 +137,7 @@ class CFL(
     // Refactors long productions, e.g., (A -> BCD) -> (A -> BE, E -> CD)
     private tailrec fun Grammar.refactorRHS(): Grammar {
       val longProd = firstOrNull { it.RHS.size > 2 } ?: return this
-      val freshName = freshNames.firstOrNull { it !in variables }!!
+      val freshName = freshNames.firstOrNull { it !in symbols }!!
       val newProd = freshName to longProd.RHS.takeLast(2)
       val shortProd = longProd.LHS to (longProd.RHS.dropLast(2) + freshName)
       val newGrammar = (map { if(it == longProd) shortProd else it } + newProd).toSet()
@@ -150,7 +147,7 @@ class CFL(
     // Replaces terminals in non-unit productions, e.g., (A -> bC) -> (A -> BC, B -> b)
     private tailrec fun Grammar.terminalsToUnitProds(): Grammar {
       val mixedProd = nonterminals.firstOrNull { it.RHS.any { it !in variables } } ?: return this
-      val freshName = freshNames.firstOrNull { it !in variables }!!
+      val freshName = freshNames.firstOrNull { it !in symbols }!!
       val idxOfTerminal = mixedProd.RHS.indexOfFirst { it !in variables }
       val freshRHS = mixedProd.RHS.mapIndexed { i, s -> if (i == idxOfTerminal) freshName else s }
       val newProduction = freshName to listOf(mixedProd.RHS[idxOfTerminal])
@@ -167,9 +164,11 @@ class CFL(
 
   fun isValid(
     s: String = "",
-    tokens: List<String> = s.split(" "),
-    matrix: FreeMatrix<Set<String>> = tokens.toMatrix()
-      .also { println("Initial configuration:\n$it\n") }
+    tokens: List<String> = s.split(" ").filter { it.isNotBlank() },
+    matrix: FreeMatrix<Set<String>> = tokens.toMatrix().also {
+      println("Checking input string (length=${it.numRows}) = $tokens")
+      println("Initial configuration:\n$it\n")
+    }
   ) = matrix
 // Not good, because multiplication is not associative?
 //  .let { W -> W + (W * W) + (W * W * W) + (W * W * W * W) }
@@ -211,10 +210,8 @@ class CFL(
   private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
     FreeMatrix(makeAlgebra(), size + 1) { i, j ->
       if (i + 1 != j) emptySet() // Enforce upper triangularity
-      else terminals.filter { (_, v) -> this[j - 1] == v }
-        .unzip().first.toSet()
+      else terminals.filter { (_, v) -> this[j - 1] == v[0] }.unzip().π1.toSet()
     }
 
-  override fun toString() =
-    normalForm.joinToString("\n") { (a, b) -> "$a -> ${b.joinToString(" ")}"}
+  override fun toString() = normalForm.prettyPrint()
 }

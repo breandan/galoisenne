@@ -259,7 +259,8 @@ open class DoubleMatrix constructor(
 }
 
 tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T =
-  if (this == op(this)) this else op(this).seekFixpoint(i + 1, op)
+  if (this == op(this)) this.also { println("Converged in $i iterations.") }
+  else op(this).seekFixpoint(i + 1, op)
 
 fun DoubleMatrix.toBMat(
   threshold: Double = (data.maxOf { it } + data.minOf { it }) / 2,
