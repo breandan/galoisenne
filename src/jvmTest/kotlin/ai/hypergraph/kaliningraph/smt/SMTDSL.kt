@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.randomString
 import ai.hypergraph.kaliningraph.tensor.Matrix
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers

@@ -25,11 +25,6 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   val numRows: Int
   val numCols: Int
 
-  // Only include nonzero indices for sparse matrices?
-  val indices get() = allPairs(numRows, numCols)
-  val rows get() = data.chunked(numCols)
-  val cols get() = (0 until numCols).map { c -> rows.map { it[c] } }
-
   operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
   operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose()[j] }
 
@@ -54,6 +49,11 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   fun transpose(): M = new(numCols, numRows, cols.flatten())
 }
+
+// Only include nonzero indices for sparse matrices?
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.indices by cache { allPairs(numRows, numCols) }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.rows by cache { data.chunked(numCols) }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols by cache { (0 until numCols).map { c -> rows.map { it[c] } } }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
 val BOOLEAN_ALGEBRA: Ring<Boolean> =

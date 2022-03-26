@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.parsing.CFL.Companion.parse
 import kotlin.test.*
 
 /*
@@ -40,7 +39,7 @@ class Valiant {
         S -> A | B
         A -> a | A A
         B -> b | B B
-      """.parse()).run {
+      """).run {
       assertTrue(isValid(tokens = "aaaa".map { it.toString() }))
       assertTrue(isValid(tokens = "bbbb".map { it.toString() }))
       assertFalse(isValid(tokens = "abab".map { it.toString() }))
