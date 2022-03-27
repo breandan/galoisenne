@@ -14,9 +14,20 @@ val Grammar.symbols: Set<String>
 val Grammar.variables: Set<String> by cache { map { it.π1 }.toSet() }
 val Grammar.nonterminals: Set<Production>
   by cache { filter { it !in terminals }.toSet() }
+val Grammar.asBidiMap: BidiMap by cache { BidiMap(this) }
 val Grammar.terminals: Set<Production> by cache {
   filter { it.RHS.size == 1 && it.RHS[0] !in variables }
     .map { (lhs, rhs) -> lhs to rhs }.toSet()
+}
+
+// Maps variables to expansions and expansions to variables in a Grammar
+class BidiMap(gram: Grammar) {
+  val LHS2RHS: Map<String, Set<List<String>>> =
+    gram.groupBy({ it.π1 }, { it.π2 }).map { (k, v) -> k to v.toSet() }.toMap()
+  val RHS2LHS: Map<List<String>, Set<String>> =
+    gram.groupBy({ it.π2 }, { it.π1 }).map { (k, v) -> k to v.toSet() }.toMap()
+  operator fun get(p: List<String>): Set<String> = RHS2LHS[p] ?: emptySet()
+  operator fun get(p: String): Set<List<String>> = LHS2RHS[p] ?: emptySet()
 }
 
 fun Grammar.prettyPrint() =
@@ -52,6 +63,15 @@ class CFL constructor(
       times = { x, y -> x join y }
     )
 
+  private infix fun Set<String>.join(that: Set<String>): Set<String> =
+    (this * that).map { asBidiMap[it.toList()] }.flatten().toSet()
+
+  // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
+  private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
+    FreeMatrix(makeAlgebra(), size + 1) { i, j ->
+      if (i + 1 != j) emptySet() else asBidiMap[listOf(this[j - 1])]
+    }
+
   /**
    * Checks whether a given string is valid by computing the transitive closure
    * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
@@ -74,16 +94,6 @@ class CFL constructor(
     .seekFixpoint { it + it * it }
     .also { println("Final configuration:\n$it\n") }[0].last()
     .isNotEmpty()
-
-  private infix fun Set<String>.join(that: Set<String>): Set<String> =
-    nonterminals.filter { (_, r) -> r[0] in this && r[1] in that }.map { it.π1 }.toSet()
-
-  // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-  private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
-    FreeMatrix(makeAlgebra(), size + 1) { i, j ->
-      if (i + 1 != j) emptySet() // Enforce upper triangularity
-      else terminals.filter { (_, v) -> this[j - 1] == v[0] }.map { it.π1 }.toSet()
-    }
 
   override fun toString() = normalForm.prettyPrint()
 }

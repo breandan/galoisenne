@@ -272,7 +272,6 @@ abstract class Vertex<G, E, V>(override val id: String) :
 
 interface Encodable { fun encode(): DoubleArray }
 
-
 // https://github.com/amodeus-science/amod
 abstract class TMap: IGraph<TMap, TRoad, TCity>
 abstract class TRoad: IEdge<TMap, TRoad, TCity>
