@@ -25,9 +25,9 @@ class ValiantTest {
         N -> fish  
         N -> fork  
       Det -> a     
-    """.let { CFL(it) }.run {
-      assertTrue(isValid("she eats a fish with a fork"))
-      assertFalse(isValid("she eats fish with"))
+    """.let { cfl ->
+      assertTrue("she eats a fish with a fork".matches(cfl))
+      assertFalse("she eats fish with".matches(cfl))
     }
   }
 
@@ -40,10 +40,10 @@ class ValiantTest {
       S -> A | B
       A -> a | A A
       B -> b | B B
-    """.let { CFL(it) }.run {
-      assertTrue(isValid(tokens = "aaaa".map { it.toString() }))
-      assertTrue(isValid(tokens = "bbbb".map { it.toString() }))
-      assertFalse(isValid(tokens = "abab".map { it.toString() }))
+    """.let { cfl ->
+      assertTrue("aaaa".matches(cfl))
+      assertTrue("bbbb".matches(cfl))
+      assertFalse("abab".matches(cfl))
     }
   }
 
@@ -62,10 +62,10 @@ class ValiantTest {
       Y -> B B
       A -> a
       B -> b
-    """.let { CFL(it) }.run {
-      assertTrue(isValid(tokens = "aaabbb".map { it.toString() }))
-      assertTrue(isValid(tokens = "aabb".map { it.toString() }))
-      assertFalse(isValid(tokens = "abab".map { it.toString() }))
+    """.let { cfl ->
+      assertTrue("aaabbb".matches(cfl))
+      assertTrue("aabb".matches(cfl))
+      assertFalse("abab".matches(cfl))
     }
   }
 
@@ -81,11 +81,11 @@ class ValiantTest {
       C -> S B
       A -> (
       B -> )
-    """.let { CFL(it) }.run {
-      assertTrue(isValid(tokens = "()(()())()".map { it.toString() }))
-      assertFalse(isValid(tokens = "()(()()()".map { it.toString() }))
-      assertTrue(isValid(tokens = "()(())".map { it.toString() }))
-      assertTrue(isValid(tokens = "()()".map { it.toString() }))
+    """.let { cfl ->
+      assertTrue("()(()())()".matches(cfl))
+      assertFalse("()(()()()".matches(cfl))
+      assertTrue("()(())".matches(cfl))
+      assertTrue("()()".matches(cfl))
     }
   }
 
@@ -94,10 +94,10 @@ class ValiantTest {
 */
   @Test
   fun testDyck2Language() {
-    CFL("""S -> ( ) | [ ] | ( S ) | [ S ] | S S""").run {
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".let { cfl ->
       println("Grammar: $this")
-      assertTrue(isValid(tokens = "()[()()]()".map { it.toString() }))
-      assertFalse(isValid(tokens = "([()()]()".map { it.toString() }))
+      assertTrue("()[()()]()".matches(cfl))
+      assertFalse("([()()]()".matches(cfl))
     }
   }
 
@@ -106,9 +106,9 @@ class ValiantTest {
 */
   @Test
   fun testDyck3Language() {
-    CFL("""S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""").run {
-      assertTrue(isValid(tokens = "{()[(){}()]()}".map { it.toString() }))
-      assertFalse(isValid(tokens = "{()[(){()]()}".map { it.toString() }))
+  """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".let { cfl ->
+      assertTrue("{()[(){}()]()}".matches(cfl))
+      assertFalse("{()[(){()]()}".matches(cfl))
     }
   }
 
@@ -121,10 +121,10 @@ class ValiantTest {
       S -> a X b X
       X -> a Y | b Y
       Y -> X | c
-    """.let { CFL(it) }.run {
+    """.parseCFL().let { cfl ->
       println(this)
-      normalForm.forEach { (_, b) -> assertContains(1..2, b.size) }
-      nonterminals.flatMap { it.π2 }.forEach { assertContains(variables, it) }
+      cfl.forEach { (_, b) -> assertContains(1..2, b.size) }
+      cfl.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfl.variables, it) }
     }
   }
 
@@ -133,6 +133,7 @@ class ValiantTest {
 */
   @Test
   fun testDropUnitProds() {
+    val normalForm = "S -> c | d".parseCFL()
     """
       S -> A
       A -> B
@@ -140,14 +141,12 @@ class ValiantTest {
       B -> D
       C -> c
       D -> d
-    """.let { CFL(it) }
-    .run { assertEquals(CFL("S -> c | d").toString(), toString()) }
+    """.parseCFL().let { cfl -> assertEquals(normalForm, cfl) }
 
     """
       S -> C | D
       C -> c
       D -> d
-    """.let { CFL(it) }
-    .run { assertEquals(CFL("S -> c | d").toString(), toString()) }
+    """.parseCFL().let { cfl -> assertEquals(normalForm, cfl) }
   }
 }

@@ -4,109 +4,95 @@ import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 
 typealias Production = Π2<String, List<String>>
-typealias Grammar = Set<Production>
+typealias CFL = Set<Production>
 
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
-val Grammar.symbols: Set<String>
-  by cache { variables + terminals.flatMap { it.π2 }.toSet() }
+val CFL.symbols: Set<String> by cache { variables + terminals.flatMap { it.π2 }.toSet() }
 
-val Grammar.variables: Set<String> by cache { map { it.π1 }.toSet() }
-val Grammar.nonterminals: Set<Production>
-  by cache { filter { it !in terminals }.toSet() }
-val Grammar.asBidiMap: BidiMap by cache { BidiMap(this) }
-val Grammar.terminals: Set<Production> by cache {
-  filter { it.RHS.size == 1 && it.RHS[0] !in variables }
-    .map { (lhs, rhs) -> lhs to rhs }.toSet()
+val CFL.variables: Set<String> by cache { map { it.π1 }.toSet() }
+val CFL.nonterminals: Set<Production> by cache { filter { it !in terminals } }
+val CFL.bimap: BiMap by cache { BiMap(this) }
+val CFL.terminals: Set<Production> by cache {
+  filter { it.RHS.size == 1 && it.RHS[0] !in variables }.toSet()
 }
+val CFL.normalForm: CFL by cache { normalize() }
 
 // Maps variables to expansions and expansions to variables in a Grammar
-class BidiMap(gram: Grammar) {
-  val LHS2RHS: Map<String, Set<List<String>>> =
-    gram.groupBy({ it.π1 }, { it.π2 }).map { (k, v) -> k to v.toSet() }.toMap()
-  val RHS2LHS: Map<List<String>, Set<String>> =
-    gram.groupBy({ it.π2 }, { it.π1 }).map { (k, v) -> k to v.toSet() }.toMap()
+class BiMap(cfl: CFL) {
+  val LHS2RHS = cfl.groupBy({ it.π1 }, { it.π2 }).mapValues { it.value.toSet() }
+  val RHS2LHS = cfl.groupBy({ it.π2 }, { it.π1 }).mapValues { it.value.toSet() }
   operator fun get(p: List<String>): Set<String> = RHS2LHS[p] ?: emptySet()
   operator fun get(p: String): Set<List<String>> = LHS2RHS[p] ?: emptySet()
 }
 
-fun Grammar.prettyPrint() =
-  joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
+fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
 
-class CFL constructor(
-  private val initialGrammar: Grammar,
-  val normalForm: Grammar = initialGrammar.normalize()
-): Grammar by normalForm {
-  constructor(grammar: String): this(grammar.validate().parse())
+fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFL())
+fun String.matches(cfl: CFL): Boolean = cfl.isValid(this)
 
-  /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
-   *
-   * "The following procedure specifies a recogniser: by finding the closure of
-   *  I(w) one finds if w is parsable, but not the corresponding parse tree.
-   *  However, one can obtain a proper parser by using sets of parse trees
-   *  (instead of non-terminals) and extending (·) to combine parse trees."
-   *
-   * Taken from: https://arxiv.org/pdf/1601.07724.pdf#page=3
-   *
-   * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
-   */
+/* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
+ *
+ * "The following procedure specifies a recogniser: by finding the closure of
+ *  I(w) one finds if w is parsable, but not the corresponding parse tree.
+ *  However, one can obtain a proper parser by using sets of parse trees
+ *  (instead of non-terminals) and extending (·) to combine parse trees."
+ *
+ * Taken from: https://arxiv.org/pdf/1601.07724.pdf#page=3
+ *
+ * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
+ */
 
-  fun makeAlgebra(): Ring<Set<String>> = // Not a proper ring, but close enough.
-    Ring.of(
-      // 0 = ∅
-      nil = setOf(),
-      // TODO: Seems unused, maybe find a more specific algebra?
-      one = setOf(),
-      // x + y = x ∪ y
-      plus = { x, y -> x union y },
-      // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
-      times = { x, y -> x join y }
-    )
+fun CFL.makeAlgebra(): Ring<Set<String>> = // Not a proper ring, but close enough.
+  Ring.of(
+    // 0 = ∅
+    nil = setOf(),
+    // TODO: Seems unused, maybe find a more specific algebra?
+    one = setOf(),
+    // x + y = x ∪ y
+    plus = { x, y -> x union y },
+    // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
+    times = { x, y -> join(x, y) }
+  )
 
-  private infix fun Set<String>.join(that: Set<String>): Set<String> =
-    (this * that).flatMap { asBidiMap[it.toList()] }.toSet()
+private fun CFL.join(l: Set<String>, r: Set<String>): Set<String> =
+  (l * r).flatMap { bimap[it.toList()] }.toSet()
 
-  // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-  private fun List<String>.toMatrix(): FreeMatrix<Set<String>> =
-    FreeMatrix(makeAlgebra(), size + 1) { i, j ->
-      if (i + 1 != j) emptySet() else asBidiMap[listOf(this[j - 1])]
-    }
+// Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
+private fun CFL.toMatrix(str: List<String>): FreeMatrix<Set<String>> =
+  FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
+    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])]
+  }
 
-  /**
-   * Checks whether a given string is valid by computing the transitive closure
-   * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
-   * empty, the string is invalid. If the entry is S, it parses.
-   */
+/**
+ * Checks whether a given string is valid by computing the transitive closure
+ * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
+ * empty, the string is invalid. If the entry is S, it parses.
+ */
 
-  fun isValid(
-    str: String = "",
-    tokens: List<String> = str.split(" ").filter { it.isNotBlank() },
-    matrix: FreeMatrix<Set<String>> = tokens.toMatrix().also {
-      println("Checking input string (length=${it.numRows}) = $tokens")
-      println("Initial configuration:\n$it\n")
-    }
-  ) = matrix
-// Not good, because multiplication is not associative?
-//  .let { W -> W + (W * W) + (W * W * W) + (W * W * W * W) }
-// Valiant's (1975) original definition produces all bracketings:
-//  .let { W -> W + W * W + W * (W * W) + (W * W) * W + (W * W) * (W * W) /*...*/ }
-// Bernardy and Jansson uses the smallest solution to: C = W + C * C
-    .seekFixpoint { it + it * it }
-    .also { println("Final configuration:\n$it\n") }[0].last()
-    .isNotEmpty()
+fun CFL.isValid(str: String): Boolean =
+  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
+    .filter { it.isNotBlank() }.let { isValid(it) }
 
-  override fun toString() = normalForm.prettyPrint()
-}
+fun CFL.isValid(
+  tokens: List<String>,
+  matrix: FreeMatrix<Set<String>> = toMatrix(tokens).also {
+    println("Checking input string (length=${it.numRows}) = $tokens")
+    println("Initial configuration:\n$it\n")
+  }
+) = matrix.seekFixpoint { it + it * it }
+  .also { println("Final configuration:\n$it\n") }[0].last()
+  .isNotEmpty()
 
 private val freshNames: Set<String> = ('A'..'Z').map { "$it" }.toSet()
   .let { it + (it * it).map { (a, b) -> a + b } }.toSet()
 
-fun String.parse() =
+fun String.parseCFL(): CFL =
   lines().filter { it.isNotBlank() }.map { line ->
     val prod = line.split("->").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
-  }.toSet()
+  }.toSet().normalForm
 
 fun CFLCFL(names: Map<String, String>) = """
     GRAMMAR -> PROD | GRAMMAR ::NL:: GRAMMAR
@@ -114,7 +100,7 @@ fun CFLCFL(names: Map<String, String>) = """
     NAME -> ${names.values.joinToString(" | ")}
     LHS -> NAME
     RHS -> NAME | RHS RHS | RHS ::OR:: RHS
-  """.let { CFL(it.parse()) }
+  """.parseCFL()
 
 fun String.validate(
   presets: Map<String, String> = mapOf("|" to "::OR::", "->" to "::="),
@@ -129,17 +115,17 @@ fun String.validate(
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
-private fun Grammar.normalize(): Grammar =
+private fun CFL.normalize(): CFL =
   addGlobalStartSymbol().expandOr().elimVarUnitProds()
     .refactorRHS().terminalsToUnitProds().removeUselessSymbols()
 
 val START_SYMBOL = "START"
 
-private fun Grammar.addGlobalStartSymbol() =
+private fun CFL.addGlobalStartSymbol() =
   this + variables.map { START_SYMBOL to listOf(it) }.toSet()
 
 // Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
-fun Grammar.expandOr(): Grammar =
+private fun CFL.expandOr(): CFL =
   flatMap { prod ->
     prod.RHS.fold(listOf(listOf<String>())) { acc, s ->
       if (s == "|") (acc + listOf(listOf()))
@@ -169,19 +155,19 @@ fun Grammar.expandOr(): Grammar =
  * A useful symbol is both generating and reachable.
  */
 
-private fun Grammar.removeUselessSymbols(
+private fun CFL.removeUselessSymbols(
   generating: Set<String> = generatingSymbols(),
   reachable: Set<String> = reachableSymbols(),
-): Grammar = filter { (s, _) -> s in generating && s in reachable }.toSet()
+): CFL = filter { (s, _) -> s in generating && s in reachable }
 
-private fun Grammar.reachableSymbols(
+private fun CFL.reachableSymbols(
   src: Set<String> = setOf(START_SYMBOL),
   reachables: Set<String> = src
 ): Set<String> = if (src.isEmpty()) reachables else filter { it.LHS in src }
   .flatMap { (_, rhs) -> rhs.filter { it in variables && it !in reachables } }
   .toSet().let { reachableSymbols(it, reachables + it) }
 
-private fun Grammar.generatingSymbols(
+private fun CFL.generatingSymbols(
   from: Set<String> = terminals.flatMap { it.π2 }.toSet(),
   generating: Set<String> = from
 ): Set<String> = if (from.isEmpty()) generating
@@ -193,13 +179,13 @@ else filter { it.LHS !in generating && it.RHS.all { it in generating } }
  * After expansion: (A -> B, A -> c, A -> d, B -> c, B -> d) ->
  * After elimination: (A -> c, A -> d, B -> c, B -> D)
  */
-private tailrec fun Grammar.elimVarUnitProds(
+private tailrec fun CFL.elimVarUnitProds(
   toVisit: Set<String> = variables,
   vars: Set<String> = variables,
   toElim: String? = toVisit.firstOrNull()
-): Grammar {
+): CFL {
   fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
-  if (toElim == null) return filter { !it.isVariableUnitProd() }.toSet()
+  if (toElim == null) return filter { !it.isVariableUnitProd() }
   val varsThatMapToMe =
     filter { it.RHS.size == 1 && it.RHS[0] == toElim }.map { it.π1 }.toSet()
   val thingsIMapTo = filter { it.LHS == toElim }.map { it.π2 }.toSet()
@@ -208,7 +194,7 @@ private tailrec fun Grammar.elimVarUnitProds(
 }
 
 // Refactors long productions, e.g., (A -> BCD) -> (A -> BE, E -> CD)
-private tailrec fun Grammar.refactorRHS(): Grammar {
+private tailrec fun CFL.refactorRHS(): CFL {
   val longProd = firstOrNull { it.RHS.size > 2 } ?: return this
   val freshName = freshNames.firstOrNull { it !in symbols }!!
   val newProd = freshName to longProd.RHS.takeLast(2)
@@ -218,7 +204,7 @@ private tailrec fun Grammar.refactorRHS(): Grammar {
 }
 
 // Replaces terminals in non-unit productions, e.g., (A -> bC) -> (A -> BC, B -> b)
-private tailrec fun Grammar.terminalsToUnitProds(): Grammar {
+private tailrec fun CFL.terminalsToUnitProds(): CFL {
   val mixProd = nonterminals.firstOrNull { it.RHS.any { it !in variables } } ?: return this
   val freshName = freshNames.firstOrNull { it !in symbols }!!
   val termIdx = mixProd.RHS.indexOfFirst { it !in variables }

@@ -42,6 +42,9 @@ operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
 @JvmName("cartProdTriple") operator fun <E: Π3<A, B, C>, A, B, C, Z> Set<E>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
   flatMap { l -> s.map { r -> Π(l.π1, l.π2, l.π3, r) }.toSet() }.toSet()
 
+// IDK why the Kotlin stdlib provides this for Map but not Set
+public inline fun <T> Set<T>.filter(predicate: (T) -> Boolean): Set<T> = filterTo(HashSet(), predicate)
+
 interface VT<E, L: S<*>> : List<E> {
   open val len: L
   open val l: List<E>
@@ -52,7 +55,7 @@ interface VT<E, L: S<*>> : List<E> {
   }
 }
 
-fun <A> List<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
+fun <A> Iterable<V2<A>>.unzip() = map { it[S1] to it[S2] }.unzip()
 
 infix fun <T> T.cc(that: T) = VT(this, that)
 
