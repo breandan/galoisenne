@@ -10,6 +10,7 @@ val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 val CFL.symbols: Set<String> by cache { variables + terminals.flatMap { it.π2 }.toSet() }
 
+val CFL.alphabet: Set<String> by cache { symbols - variables }
 val CFL.variables: Set<String> by cache { map { it.π1 }.toSet() }
 val CFL.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFL.bimap: BiMap by cache { BiMap(this) }
@@ -27,6 +28,16 @@ class BiMap(cfl: CFL) {
 }
 
 fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
+
+fun String.solve(cfl: String, allowEmptyStrings: Boolean = false): Set<String> =
+  solve(cfl.validate().parseCFL(), allowEmptyStrings)
+
+fun String.solve(cfl: CFL, allowEmptyStrings: Boolean = false): Set<String> =
+  if ("_" !in this && matches(cfl)) setOf(this)
+  else if("_" in this)
+    (cfl.alphabet + (if (allowEmptyStrings) setOf("") else setOf()))
+    .flatMap { replaceFirst("_", it).solve(cfl) }.toSet()
+  else emptySet()
 
 fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFL())
 fun String.matches(cfl: CFL): Boolean = cfl.isValid(this)

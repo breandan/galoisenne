@@ -90,6 +90,42 @@ class ValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
+*/
+  @Test
+  fun testDyckSolver() {
+    """
+     S -> ( ) | ( S ) | S S
+    """.let { cfl ->
+      val ss = "(__()__)".solve(cfl, allowEmptyStrings = false)
+      val ps = setOf("(((())))", "(()()())", "(()())()", "()(()())", "()(())()")
+      assertEquals(ps, ss)
+//      val eps = setOf("(((())))", "(()()())", "(()())()", "(()()))", "(()())",
+//        "((())))", "((()))", "()(()())", "()(())()", "()(()))", "()(())",
+//        "()()())", "()()()", "()())", "(())()", "(()))", "(())")
+//      val ess = "(__()__)".solve(cfl, allowEmptyStrings = true)
+//      assertEquals(eps, ess)
+    }
+  }
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck2Solver"
+*/
+  @Test
+  fun testDyck2Solver() {
+    """
+     S -> ( ) | ( S ) | [ S ] | S S
+    """.let { cfl ->
+      val solutions = "(__()__)".solve(cfl, allowEmptyStrings = false)
+      println(solutions)
+      assertTrue(solutions.all {
+        it.count { it == '[' } == it.count { it == ']' } &&
+          it.count { it == '(' } == it.count { it == ')' }
+      })
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck2Language"
 */
   @Test
