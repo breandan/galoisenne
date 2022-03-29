@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.coroutines.*
+import kotlinx.datetime.*
 import kotlin.test.*
+import kotlin.time.*
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest"
@@ -143,10 +145,34 @@ class ValiantTest {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
       val sols = "(______()______)".solve(cfl)
-        .map { println(it); it }.take(5).toList()
+        .map { println(it); it }.take(100).toList()
       println("Solutions: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.benchmarkNaiveSearch"
+*/
+
+  @Test
+  fun benchmarkNaiveSearch() {
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
+      println("Total Holes, Instances Checked, Solutions Found")
+      for (len in 2..10 step 2) {
+        val template = List(len) { "_" }.joinToString("")
+        fun now() = Clock.System.now().toEpochMilliseconds()
+        val startTime = now()
+        var totalChecked = 0
+        val sols = template
+          .genCandidates(cfl, cfl.alphabet)
+          .map { totalChecked++; it }
+          .filter { it.matches(cfl) }.distinct()
+          .takeWhile { now() - startTime < 20000 }.toList()
+
+        println("$len".padEnd(11) + ", $totalChecked".padEnd(19) + ", ${sols.size}")
+      }
     }
   }
 
