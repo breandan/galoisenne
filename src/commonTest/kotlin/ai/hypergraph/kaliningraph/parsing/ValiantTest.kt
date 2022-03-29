@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.π2
-import kotlinx.coroutines.*
 import kotlinx.datetime.*
 import kotlin.test.*
-import kotlin.time.*
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest"
