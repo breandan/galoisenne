@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
 
 typealias Production = Π2<String, List<String>>
@@ -34,24 +35,25 @@ fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(
  * over all holes takes O(|Σ|^n) where n is the number of holes.
  */
 
-fun String.solve(
+fun String.solve(cfl: CFL, fillers: Set<String> = cfl.alphabet): Sequence<String> =
+  genCandidates(cfl, fillers).filter { it.matches(cfl) }.distinct()
+
+fun String.genCandidates(
   cfl: CFL,
   fillers: Set<String> = cfl.alphabet,
-  numSamples: Int = 10
-): Set<String> =
-  if ("_" !in this) if (matches(cfl)) setOf(this) else emptySet()
-  else (fillers * holeIndices()).shuffled().asSequence()
-    .flatMap { (s, i) -> replaceHole(i, s).solve(cfl, fillers) }
-    .take(numSamples).toSet()
+  blankChar: Char = '_',
+  numHoles: Int = count { it == blankChar },
+  builtString: List<String> = listOf()
+): Sequence<String> =
+  if (numHoles == 0) fold("" to builtString.shuffled()) { (a, b), c ->
+    if(c == blankChar) (a + b.first()) to b.drop(1) else (a + c) to b
+  }.let { sequenceOf(it.first) }
+  else fillers.shuffled().asSequence().flatMap { f ->
+    genCandidates(cfl, fillers, blankChar, numHoles - 1, builtString + f)
+  }
 
-fun String.holeIndices() =
-  mapIndexedNotNull { i, c -> if(c == '_') i else null }.toSet()
-
-fun String.replaceHole(idx: Int, with: String): String =
-  mapIndexed { i, c -> if(i == idx) with else "$c" }.joinToString("")
-
-fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFL())
-fun String.matches(cfl: CFL): Boolean = cfl.isValid(this)
+fun String.matches(cfl: String) = matches(cfl.validate().parseCFL())
+fun String.matches(cfl: CFL) = cfl.isValid(this)
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -97,15 +99,17 @@ fun CFL.isValid(str: String): Boolean =
 fun CFL.isValid(
   tokens: List<String>,
   matrix: FreeMatrix<Set<String>> = toMatrix(tokens).also {
-    println("Checking input string (length=${it.numRows}) = $tokens")
-    println("Initial configuration:\n$it\n")
+//    println("Checking input string (length=${it.numRows}) = $tokens")
+//    println("Initial configuration:\n$it\n")
   }
 ): Boolean = matrix.seekFixpoint { it + it * it }
-  .also { println("Final configuration:\n$it\n") }[0].last()
+//  .also { println("Final configuration:\n$it\n") }
+  .let { it[0].last() }
   .let { START_SYMBOL in it }
 
-private val freshNames: Set<String> = ('A'..'Z').map { "$it" }.toSet()
-  .let { it + (it * it).map { (a, b) -> a + b } }.toSet()
+private val freshNames: Sequence<String> =
+  ('A'..'Z').map { "$it" }.asSequence()
+  .let { it + (it * it).map { (a, b) -> a + b } }
 
 fun String.parseCFL(): CFL =
   lines().filter(String::isNotBlank).map { line ->
@@ -123,14 +127,14 @@ fun CFLCFL(names: Map<String, String>) = """
 
 fun String.validate(
   presets: Map<String, String> = mapOf("|" to "::OR::", "->" to "::="),
-  space: Regex = Regex("\\s+"),
-  nameDict: Map<String, String> = split(space)
-    .filter { it.isNotBlank() && it !in presets }.toSet()
-    .zip(freshNames.filter { it !in this }).toMap(),
+  ws: Regex = Regex("\\s+"),
+  tokens: List<String> = split(ws).filter { it.isNotBlank() && it !in presets },
+  nameDict: Map<String, String> =
+    freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
   names: Map<String, String> = (presets + nameDict)
 ): String = lines().filter(String::isNotBlank).joinToString(" ::NL:: ")
-  .split(space).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
-  .let { println(it); if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
+  .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
+  .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf

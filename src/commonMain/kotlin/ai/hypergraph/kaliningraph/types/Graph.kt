@@ -165,7 +165,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by cache { vertices.associateWith { it.outgoing } }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by cache { associateWith { it.neighbors.size } }
 
-val cache = LRUCache<String, Any>(1000)
+val cache = LRUCache<String, Any>(10000)
 fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->

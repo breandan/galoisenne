@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.π2
+import kotlinx.coroutines.*
 import kotlin.test.*
 
 /*
@@ -127,7 +128,8 @@ class ValiantTest {
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFL().let { cfl ->
-      val sols = "(__()__)".solve(cfl, fillers = cfl.alphabet + "")
+      val sols = "(____()____)".solve(cfl, fillers = cfl.alphabet + "")
+        .map { println(it); it }.take(5).toList()
       println("Solutions: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
@@ -140,7 +142,8 @@ class ValiantTest {
   @Test
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
-      val sols = "(__()__)".solve(cfl)
+      val sols = "(______()______)".solve(cfl)
+        .map { println(it); it }.take(5).toList()
       println("Solutions: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }

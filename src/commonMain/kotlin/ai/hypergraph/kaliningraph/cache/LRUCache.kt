@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.cache
 
 // TODO: LFU Cache
-class LRUCache<K, V>(private val maxSize: Int,
-                     private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }) {
+class LRUCache<K, V>(
+  private val maxSize: Int,
+  private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }
+) {
   private val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
   private var size: Int = 0
 
@@ -26,15 +28,16 @@ class LRUCache<K, V>(private val maxSize: Int,
     return prev
   }
 
-  private tailrec fun trimToSize() {
+  private fun trimToSize() {
     if (size <= maxSize || map.isEmpty()) return
-
-    val toEvict = map.entries.iterator().next()
-    val key = toEvict.key
-    val value = toEvict.value
-    map.remove(key)
-    size -= sizeOf(key, value)
-    trimToSize()
+    try {
+      val toEvict = map.entries.iterator().next()
+      val key = toEvict.key
+      val value = toEvict.value
+      map.remove(key)
+      size -= sizeOf(key, value)
+      trimToSize()
+    } catch (e: Exception) {}
   }
 
   override fun toString() = "$size/$maxSize cached=$map"

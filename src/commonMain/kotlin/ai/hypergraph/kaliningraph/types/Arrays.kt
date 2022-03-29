@@ -28,19 +28,20 @@ fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
 fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
 
 infix fun <A, B, Z> Π2<A, B>.to(that: Z) = Π(π1, π2, that)
+infix fun <A, B, C, D> Π2<A, B>.to(that: Π2<C, D>): Π2<Π2<A, B>, Π2<C, D>> = Π(this, that)
 infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
 
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
-  flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()
+  flatMap { s.map(it::to).toSet() }.toSet()
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
-  flatMap { l -> s.map { r -> Π(l.π1, l.π2, r) }.toSet() }.toSet()
+  flatMap { s.map(it::to).toSet() }.toSet()
 
-@JvmName("cartProdPairPair") operator fun <E: Π2<A, B>, A, B, U: Π2<C, D>, C, D> Set<E>.times(s: Set<U>): Set<Π2<E, U>> =
-  flatMap { l -> s.map { r -> Π(l, r) }.toSet() }.toSet()
+@JvmName("cartProdPairPair") operator fun <A, B, C, D> Set<Π2<A, B>>.times(s: Set<Π2<C, D>>): Set<Π2<Π2<A, B>, Π2<C, D>>> =
+  flatMap { s.map(it::to).toSet() }.toSet()
 
 @JvmName("cartProdTriple") operator fun <E: Π3<A, B, C>, A, B, C, Z> Set<E>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
-  flatMap { l -> s.map { r -> Π(l.π1, l.π2, l.π3, r) }.toSet() }.toSet()
+  flatMap { s.map(it::to).toSet() }.toSet()
 
 // IDK why the Kotlin stdlib provides this for Map but not Set
 public inline fun <T> Set<T>.filter(predicate: (T) -> Boolean): Set<T> = filterTo(HashSet(), predicate)

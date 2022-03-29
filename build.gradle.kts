@@ -90,8 +90,9 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common"))
-        implementation(kotlin("reflect"))
+          implementation(kotlin("stdlib-common"))
+          implementation(kotlin("reflect"))
+          implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
       }
     }
 
@@ -173,6 +174,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
+        implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0-native-mt")
       }
     }
   }

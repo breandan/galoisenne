@@ -10,7 +10,10 @@ fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Defa
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
 
 operator fun IntRange.times(s: IntRange): Set<V2<Int>> =
-  flatMap { l -> s.map { r -> l cc r }.toSet() }.toSet()
+  flatMap { s.map(it::cc).toSet() }.toSet()
+
+infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
+  flatMap { other.map(it::to) }
 
 fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
   new(numRows, numCols, data.map { op(it) }, algebra)

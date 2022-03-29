@@ -257,7 +257,7 @@ open class DoubleMatrix constructor(
 
 tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
   val next = op(this)
-  return if (this == next) next.also { println("Converged in $i iterations.") }
+  return if (this == next) next//.also { println("Converged in $i iterations") }
   else next.seekFixpoint(i + 1, op)
 }
 
