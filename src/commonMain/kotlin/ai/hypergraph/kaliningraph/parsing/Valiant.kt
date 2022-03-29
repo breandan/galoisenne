@@ -8,9 +8,8 @@ typealias CFL = Set<Production>
 
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
-val CFL.symbols: Set<String> by cache { variables + terminals.flatMap { it.π2 }.toSet() }
-
-val CFL.alphabet: Set<String> by cache { symbols - variables }
+val CFL.symbols: Set<String> by cache { variables + alphabet }
+val CFL.alphabet: Set<String> by cache { terminals.flatMap { it.π2 }.toSet() }
 val CFL.variables: Set<String> by cache { map { it.π1 }.toSet() }
 val CFL.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFL.bimap: BiMap by cache { BiMap(this) }
@@ -29,15 +28,27 @@ class BiMap(cfl: CFL) {
 
 fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
 
-fun String.solve(cfl: String, allowEmptyStrings: Boolean = false): Set<String> =
-  solve(cfl.validate().parseCFL(), allowEmptyStrings)
+/*
+ * Takes a grammar and a partially complete string where '_' denotes holes, and
+ * returns a set of completed strings consistent with that grammar. Naive search
+ * over all holes takes O(|Σ|^n) where n is the number of holes.
+ */
 
-fun String.solve(cfl: CFL, allowEmptyStrings: Boolean = false): Set<String> =
-  if ("_" !in this && matches(cfl)) setOf(this)
-  else if("_" in this)
-    (cfl.alphabet + (if (allowEmptyStrings) setOf("") else setOf()))
-    .flatMap { replaceFirst("_", it).solve(cfl) }.toSet()
-  else emptySet()
+fun String.solve(
+  cfl: CFL,
+  fillers: Set<String> = cfl.alphabet,
+  numSamples: Int = 10
+): Set<String> =
+  if ("_" !in this) if (matches(cfl)) setOf(this) else emptySet()
+  else (fillers * holeIndices()).shuffled().asSequence()
+    .flatMap { (s, i) -> replaceHole(i, s).solve(cfl, fillers) }
+    .take(numSamples).toSet()
+
+fun String.holeIndices() =
+  mapIndexedNotNull { i, c -> if(c == '_') i else null }.toSet()
+
+fun String.replaceHole(idx: Int, with: String): String =
+  mapIndexed { i, c -> if(i == idx) with else "$c" }.joinToString("")
 
 fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFL())
 fun String.matches(cfl: CFL): Boolean = cfl.isValid(this)
@@ -54,8 +65,8 @@ fun String.matches(cfl: CFL): Boolean = cfl.isValid(this)
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun CFL.makeAlgebra(): Ring<Set<String>> = // Not a proper ring, but close enough.
-  Ring.of(
+fun makeAlgebra(cfl: CFL): Ring<Set<String>> =
+  Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
     // TODO: Seems unused, maybe find a more specific algebra?
@@ -63,7 +74,7 @@ fun CFL.makeAlgebra(): Ring<Set<String>> = // Not a proper ring, but close enoug
     // x + y = x ∪ y
     plus = { x, y -> x union y },
     // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
-    times = { x, y -> join(x, y) }
+    times = { x, y -> cfl.join(x, y) }
   )
 
 private fun CFL.join(l: Set<String>, r: Set<String>): Set<String> =
@@ -71,7 +82,7 @@ private fun CFL.join(l: Set<String>, r: Set<String>): Set<String> =
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 private fun CFL.toMatrix(str: List<String>): FreeMatrix<Set<String>> =
-  FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
+  FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])]
   }
 
@@ -91,9 +102,9 @@ fun CFL.isValid(
     println("Checking input string (length=${it.numRows}) = $tokens")
     println("Initial configuration:\n$it\n")
   }
-) = matrix.seekFixpoint { it + it * it }
+): Boolean = matrix.seekFixpoint { it + it * it }
   .also { println("Final configuration:\n$it\n") }[0].last()
-  .isNotEmpty()
+  .let { START_SYMBOL in it }
 
 private val freshNames: Set<String> = ('A'..'Z').map { "$it" }.toSet()
   .let { it + (it * it).map { (a, b) -> a + b } }.toSet()

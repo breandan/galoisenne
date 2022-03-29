@@ -89,39 +89,37 @@ class ValiantTest {
     }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
-*/
+  fun String.dyckCheck() =
+    fold(mutableMapOf("<>" to 0, "()" to 0, "[]" to 0, "{}" to 0)) { a, c ->
+      a.apply {
+        keys.firstOrNull { c in it }
+          ?.let { a[it] = a[it]!! + 2 * it.indexOf(c) - 1 }
+      }
+    }.values.sum() == 0
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
+  */
   @Test
   fun testDyckSolver() {
-    """
-     S -> ( ) | ( S ) | S S
-    """.let { cfl ->
-      val ss = "(__()__)".solve(cfl, allowEmptyStrings = false)
-      val ps = setOf("(((())))", "(()()())", "(()())()", "()(()())", "()(())()")
-      assertEquals(ps, ss)
-//      val eps = setOf("(((())))", "(()()())", "(()())()", "(()()))", "(()())",
-//        "((())))", "((()))", "()(()())", "()(())()", "()(()))", "()(())",
-//        "()()())", "()()()", "()())", "(())()", "(()))", "(())")
-//      val ess = "(__()__)".solve(cfl, allowEmptyStrings = true)
-//      assertEquals(eps, ess)
+    """S -> ( ) | ( S ) | S S""".parseCFL().let { cfl ->
+      val sols = "(__()__)".solve(cfl, fillers = cfl.alphabet + "")
+      println("Solutions: ${sols.joinToString(", ")}")
+
+      sols.forEach { assertTrue(it.dyckCheck()) }
     }
   }
 
-  /*
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck2Solver"
 */
   @Test
   fun testDyck2Solver() {
-    """
-     S -> ( ) | ( S ) | [ S ] | S S
-    """.let { cfl ->
-      val solutions = "(__()__)".solve(cfl, allowEmptyStrings = false)
-      println(solutions)
-      assertTrue(solutions.all {
-        it.count { it == '[' } == it.count { it == ']' } &&
-          it.count { it == '(' } == it.count { it == ')' }
-      })
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
+      val sols = "(__()__)".solve(cfl)
+      println("Solutions: ${sols.joinToString(", ")}")
+
+      sols.forEach { assertTrue(it.dyckCheck()) }
     }
   }
 
