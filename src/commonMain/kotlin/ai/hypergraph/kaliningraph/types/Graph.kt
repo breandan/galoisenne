@@ -142,7 +142,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 
 // Adjacency matrix
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A: BooleanMatrix        by cache { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A_AUG: BooleanMatrix    by cache { A + A.transpose() + BooleanMatrix.one(size) }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A_AUG: BooleanMatrix    by cache { A + A.transpose + BooleanMatrix.one(size) }
 
 // Symmetric normalized adjacency
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.ASYMNORM: DoubleMatrix  by cache { vwise { v, n -> 1.0 / sqrt(v.outdegree.toDouble() * n.outdegree.toDouble()) } }

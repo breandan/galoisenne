@@ -26,7 +26,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   val numCols: Int
 
   operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
-  operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose()[j] }
+  operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose[j] }
 
   infix fun List<T>.dot(es: List<T>): T =
     with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
@@ -45,14 +45,13 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
-
-  fun transpose(): M = new(numCols, numRows, cols.flatten())
 }
 
 // Only include nonzero indices for sparse matrices?
-val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.idxs by cache { allPairs(numRows, numCols) }
-val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.rows by cache { data.chunked(numCols) }
-val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols by cache { (0 until numCols).map { c -> rows.map { it[c] } } }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.idxs      by cache { allPairs(numRows, numCols) }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.rows      by cache { data.chunked(numCols) }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols      by cache { (0 until numCols).map { c -> rows.map { it[c] } } }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.transpose by cache { new(numCols, numRows, cols.flatten()) }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
 val BOOLEAN_ALGEBRA: Ring<Boolean> =
@@ -102,7 +101,6 @@ val MAXPLUS_ALGEBRA: Ring<Int> =
 private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
   Ring.of(
     nil = t,
-    one = t,
     plus = { a, b -> TODO() },
     times = { a, b -> TODO() }
   )
@@ -257,9 +255,11 @@ open class DoubleMatrix constructor(
     DoubleMatrix(numRows, numCols, data, alg)
 }
 
-tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T =
-  if (this == op(this)) this.also { println("Converged in $i iterations.") }
-  else op(this).seekFixpoint(i + 1, op)
+tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
+  val next = op(this)
+  return if (this == next) next.also { println("Converged in $i iterations.") }
+  else next.seekFixpoint(i + 1, op)
+}
 
 fun DoubleMatrix.toBMat(
   threshold: Double = (data.maxOf { it } + data.minOf { it }) / 2,

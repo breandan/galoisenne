@@ -9,8 +9,8 @@ typealias CFL = Set<Production>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() = second
 val CFL.symbols: Set<String> by cache { variables + alphabet }
-val CFL.alphabet: Set<String> by cache { terminals.flatMap { it.π2 }.toSet() }
-val CFL.variables: Set<String> by cache { map { it.π1 }.toSet() }
+val CFL.alphabet: Set<String> by cache { terminals.flatMap { it.RHS }.toSet() }
+val CFL.variables: Set<String> by cache { map { it.LHS }.toSet() }
 val CFL.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFL.bimap: BiMap by cache { BiMap(this) }
 val CFL.terminals: Set<Production> by cache {
@@ -20,10 +20,10 @@ val CFL.normalForm: CFL by cache { normalize() }
 
 // Maps variables to expansions and expansions to variables in a Grammar
 class BiMap(cfl: CFL) {
-  val LHS2RHS = cfl.groupBy({ it.π1 }, { it.π2 }).mapValues { it.value.toSet() }
-  val RHS2LHS = cfl.groupBy({ it.π2 }, { it.π1 }).mapValues { it.value.toSet() }
-  operator fun get(p: List<String>): Set<String> = RHS2LHS[p] ?: emptySet()
-  operator fun get(p: String): Set<List<String>> = LHS2RHS[p] ?: emptySet()
+  val L2RHS = cfl.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
+  val R2LHS = cfl.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
+  operator fun get(p: List<String>): Set<String> = R2LHS[p] ?: emptySet()
+  operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
 fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
@@ -69,8 +69,6 @@ fun makeAlgebra(cfl: CFL): Ring<Set<String>> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
-    // TODO: Seems unused, maybe find a more specific algebra?
-    one = setOf(),
     // x + y = x ∪ y
     plus = { x, y -> x union y },
     // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
@@ -94,7 +92,7 @@ private fun CFL.toMatrix(str: List<String>): FreeMatrix<Set<String>> =
 
 fun CFL.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter { it.isNotBlank() }.let { isValid(it) }
+    .filter(String::isNotBlank).let(::isValid)
 
 fun CFL.isValid(
   tokens: List<String>,
@@ -110,18 +108,17 @@ private val freshNames: Set<String> = ('A'..'Z').map { "$it" }.toSet()
   .let { it + (it * it).map { (a, b) -> a + b } }.toSet()
 
 fun String.parseCFL(): CFL =
-  lines().filter { it.isNotBlank() }.map { line ->
+  lines().filter(String::isNotBlank).map { line ->
     val prod = line.split("->").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
   }.toSet().normalForm
 
 fun CFLCFL(names: Map<String, String>) = """
-    GRAMMAR -> PROD | GRAMMAR ::NL:: GRAMMAR
-    PROD -> LHS ::= RHS
-    NAME -> ${names.values.joinToString(" | ")}
-    LHS -> NAME
-    RHS -> NAME | RHS RHS | RHS ::OR:: RHS
+    CFL -> PRD | CFL ::NL:: CFL
+    PRD -> VAR ::= RHS
+    VAR -> ${names.values.joinToString(" | ")}
+    RHS -> VAR | RHS RHS | RHS ::OR:: RHS
   """.parseCFL()
 
 fun String.validate(
@@ -131,9 +128,9 @@ fun String.validate(
     .filter { it.isNotBlank() && it !in presets }.toSet()
     .zip(freshNames.filter { it !in this }).toMap(),
   names: Map<String, String> = (presets + nameDict)
-): String = lines().filter { it.isNotBlank() }.joinToString(" ::NL:: ")
-  .split(space).filter { it.isNotBlank() }.joinToString(" ") { names[it] ?: it }
-  .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
+): String = lines().filter(String::isNotBlank).joinToString(" ::NL:: ")
+  .split(space).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
+  .let { println(it); if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
@@ -144,7 +141,7 @@ private fun CFL.normalize(): CFL =
 val START_SYMBOL = "START"
 
 private fun CFL.addGlobalStartSymbol() =
-  this + variables.map { START_SYMBOL to listOf(it) }.toSet()
+  this + variables.map { START_SYMBOL to listOf(it) }
 
 // Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFL.expandOr(): CFL =
@@ -183,18 +180,18 @@ private fun CFL.removeUselessSymbols(
 ): CFL = filter { (s, _) -> s in generating && s in reachable }
 
 private fun CFL.reachableSymbols(
-  src: Set<String> = setOf(START_SYMBOL),
-  reachables: Set<String> = src
+  src: List<String> = listOf(START_SYMBOL),
+  reachables: Set<String> = src.toSet()
 ): Set<String> = if (src.isEmpty()) reachables else filter { it.LHS in src }
   .flatMap { (_, rhs) -> rhs.filter { it in variables && it !in reachables } }
-  .toSet().let { reachableSymbols(it, reachables + it) }
+  .let { reachableSymbols(it, reachables + it) }
 
 private fun CFL.generatingSymbols(
-  from: Set<String> = terminals.flatMap { it.π2 }.toSet(),
-  generating: Set<String> = from
+  from: List<String> = terminals.flatMap { it.RHS },
+  generating: Set<String> = from.toSet()
 ): Set<String> = if (from.isEmpty()) generating
 else filter { it.LHS !in generating && it.RHS.all { it in generating } }
-  .map { it.π1 }.toSet().let { generatingSymbols(it, generating + it) }
+  .map { it.LHS }.let { generatingSymbols(it, generating + it) }
 
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
@@ -209,8 +206,8 @@ private tailrec fun CFL.elimVarUnitProds(
   fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
   if (toElim == null) return filter { !it.isVariableUnitProd() }
   val varsThatMapToMe =
-    filter { it.RHS.size == 1 && it.RHS[0] == toElim }.map { it.π1 }.toSet()
-  val thingsIMapTo = filter { it.LHS == toElim }.map { it.π2 }.toSet()
+    filter { it.RHS.size == 1 && it.RHS[0] == toElim }.map { it.LHS }.toSet()
+  val thingsIMapTo = filter { it.LHS == toElim }.map { it.RHS }.toSet()
   return (varsThatMapToMe * thingsIMapTo).fold(this) { g, p -> g + p }
     .elimVarUnitProds(toVisit.drop(1).toSet(), vars)
 }

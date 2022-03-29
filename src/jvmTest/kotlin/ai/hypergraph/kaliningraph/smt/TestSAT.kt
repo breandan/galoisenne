@@ -70,7 +70,7 @@ class TestSAT {
     val dontCare = BoolVar("dc")
     val Y = FreeMatrix(SAT_ALGEBRA, dim) { _, _ -> dontCare }
 
-    val intersection = (A * X * B.transpose()) eq Y
+    val intersection = (A * X * B.transpose) eq Y
     val solution = solveBoolean(intersection)
 
     val expected = setA intersect setB

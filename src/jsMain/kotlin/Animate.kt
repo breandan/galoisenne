@@ -27,7 +27,7 @@ fun animate(initial: LabeledGraph, renderState: Boolean = true, transition: (Key
               p { +"S"; setAttribute("style", "font-size:20px") }
               img { src = S().matToBase64Img() }
               p { +"S'"; setAttribute("style", "font-size:20px") }
-              img { src = (A.transpose() * S()).matToBase64Img() }
+              img { src = (A.transpose * S()).matToBase64Img() }
             }
             p { +description; setAttribute("style", "font-size:20px") }
           }

@@ -136,7 +136,7 @@ class TestSMT {
       rows.map { it.reduce { a, b: SMTF -> a.run { this + b } } eq sum }
         .reduce { a, b -> a and b }
 
-    val isBistochastic = m.isStochastic() and m.transpose().isStochastic()
+    val isBistochastic = m.isStochastic() and m.transpose.isStochastic()
 
     val assymetric = m.idxs
       .mapNotNull { (i, j) -> if (i != j) m[j][i] neq m[i][j] else null }

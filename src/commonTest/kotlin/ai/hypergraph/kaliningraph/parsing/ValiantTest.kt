@@ -70,6 +70,30 @@ class ValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testArithmetic"
+*/
+  @Test
+  fun testArithmetic() {
+    """
+      S -> S + S | S * S | S - S | S / S | ( S )
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      S -> X | Y | Z
+    """.let { cfl ->
+      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
+      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
+      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testCFLValidationFails"
+*/
+//  @Test
+//  fun testCFLValidationFails() {
+//    assertFails { """( S ) -> S""".validate() }
+//  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckLanguage"
 */
   @Test

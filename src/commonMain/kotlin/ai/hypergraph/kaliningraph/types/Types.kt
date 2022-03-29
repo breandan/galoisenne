@@ -89,7 +89,7 @@ interface Ring<T>: Group<T> {
   override fun T.times(t: T): T
 
   open class of<T>(
-    override val nil: T, override val one: T,
+    override val nil: T, override val one: T = nil,
     val plus: T.(T, T) -> T,
     val times: T.(T, T) -> T
   ): Ring<T> {
