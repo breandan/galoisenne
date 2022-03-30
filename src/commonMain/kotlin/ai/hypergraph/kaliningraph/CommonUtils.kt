@@ -71,7 +71,22 @@ fun randomString(
   length: Int = 5,
   alphabet: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 ) = List(length) { alphabet.random() }.joinToString("")
-  
+
+// Iterates through the Cartesian product space without repetition by generating
+// a lazy stochastic sequence of tuples. Can be viewed as a random space-filling
+// curve in n-dimensional space. This method can sample without replacement from
+// an arbitrarily large product space in linear time and space.
+
+fun <T> lazyRandomSpaceFillingCurve(
+  base: Set<T>,
+  dimension: Int = 1,
+  tuple: List<T> = emptyList()
+): Sequence<List<T>> =
+  if (dimension == 0) sequenceOf(tuple.shuffled())
+  else base.shuffled().asSequence().flatMap {
+    lazyRandomSpaceFillingCurve(base, dimension - 1, tuple + it)
+  }
+
 // Samples from unnormalized counts with normalized frequency
 fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
   entries.map { (k, v) -> k to v }.unzip()

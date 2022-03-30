@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.*
 
 typealias Production = Π2<String, List<String>>
@@ -38,18 +38,13 @@ fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(
 fun String.solve(cfl: CFL, fillers: Set<String> = cfl.alphabet): Sequence<String> =
   genCandidates(cfl, fillers).filter { it.matches(cfl) }.distinct()
 
-fun String.genCandidates(
-  cfl: CFL,
-  fillers: Set<String> = cfl.alphabet,
-  blankChar: Char = '_',
-  numHoles: Int = count { it == blankChar },
-  builtString: List<String> = listOf()
-): Sequence<String> =
-  if (numHoles == 0) fold("" to builtString.shuffled()) { (a, b), c ->
-    if(c == blankChar) (a + b.first()) to b.drop(1) else (a + c) to b
-  }.let { sequenceOf(it.first) }
-  else fillers.shuffled().asSequence().flatMap { f ->
-    genCandidates(cfl, fillers, blankChar, numHoles - 1, builtString + f)
+val HOLE_MARKER = '_'
+
+fun String.genCandidates(cfl: CFL, fillers: Set<String> = cfl.alphabet) =
+  lazyRandomSpaceFillingCurve(fillers, count { it == HOLE_MARKER }).map {
+    fold("" to it.shuffled()) { (a, b), c ->
+      if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
+    }.first
   }
 
 fun String.matches(cfl: String) = matches(cfl.validate().parseCFL())
@@ -112,14 +107,9 @@ fun CFL.isValid(str: String): Boolean =
 
 fun CFL.isValid(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<String>> = toMatrix(tokens).also {
-//    println("Checking input string (length=${it.numRows}) = $tokens")
-//    println("Initial configuration:\n$it\n")
-  }
-): Boolean = matrix.seekFixpoint { it + it * it }
-//  .also { println("Final configuration:\n$it\n") }
-  .let { it[0].last() }
-  .let { START_SYMBOL in it }
+  matrix: FreeMatrix<Set<String>> = toMatrix(tokens),
+  finalConfig: FreeMatrix<Set<String>> = matrix.seekFixpoint { it + it * it }
+): Boolean = START_SYMBOL in finalConfig[0].last()
 
 private val freshNames: Sequence<String> =
   ('A'..'Z').map { "$it" }.asSequence()
