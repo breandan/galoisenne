@@ -86,6 +86,20 @@ private fun CFL.toMatrix(str: List<String>): FreeMatrix<Set<String>> =
     if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])]
   }
 
+/*
+Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
+It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
+Lee shows that a faster procedure for BMM would automatically give a fast
+procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
+BMM, encoding to SAT becomes straightforward using Tseitin (1968).
+
+TODO: Lower this matrix onto SAT. Steps:
+  1.) Encode CFL as BMM.
+  2.) Symbolically evaluate BMM to get a Boolean formula.
+  3.) Encode symbolic Boolean formula as CNF using Tsetin.
+  4.) Run SAT solver and decode variable assignments.
+ */
+
 /**
  * Checks whether a given string is valid by computing the transitive closure
  * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
