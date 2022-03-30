@@ -142,8 +142,7 @@ class ValiantTest {
   @Test
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
-      val sols = "(______()______)".solve(cfl)
-        .map { println(it); it }.take(100).toList()
+      val sols = "(____()____)".solve(cfl).take(5).toList()
       println("Solutions: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
