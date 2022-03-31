@@ -169,6 +169,19 @@ class ValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testLFSR"
+*/
+  @Test
+  fun testLFSR() {
+    // Tests whether LFSR is maximal
+    for(i in 4..10) {
+      val size = LFSR(i).toList().distinct().size
+      println("$i: ${2.0.pow(i).toInt()} / ${size + 1}")
+      assertEquals(2.0.pow(i).toInt(), size + 1)
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.benchmarkNaiveSearch"
 */
   @Test
