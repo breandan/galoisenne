@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.smt
 
-import ai.hypergraph.kaliningraph.randomString
+import ai.hypergraph.kaliningraph.sampling.randomString
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*

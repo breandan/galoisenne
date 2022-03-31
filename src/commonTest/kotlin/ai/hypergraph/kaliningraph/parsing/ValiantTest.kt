@@ -1,9 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.types.*
-import kotlinx.datetime.*
-import kotlin.math.pow
+import ai.hypergraph.kaliningraph.types.π2
+import kotlinx.datetime.Clock
+import kotlin.collections.*
 import kotlin.test.*
 
 /*
@@ -131,7 +130,7 @@ class ValiantTest {
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFL().let { cfl ->
       val sols = "(____()____)".solve(cfl, fillers = cfl.alphabet + "")
-        .map { println(it); it }.toList()
+        .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
 
@@ -145,39 +144,13 @@ class ValiantTest {
   @Test
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
-      val sols = "(___()___)".solve(cfl).map { println(it); it }.toList()
+      val sols = "(___()___)".solve(cfl)
+        .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
       println("Solutions found: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
-    }
-  }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testExhaustiveSearch"
-*/
-  @Test
-  fun testExhaustiveSearch() {
-    // Checks whether the exhaustive search is truly exhaustive
-    ((2..5).toSet() * (2..5).toSet()).forEach { (s, dim) ->
-      val base = (0 until s).map { it.digitToChar().toString() }.toSet()
-      val sfc = exhaustiveSearch(base, dim).toSet()
-      assertEquals(sfc, sfc.distinct().toSet())
-      assertEquals(s.toDouble().pow(dim).toInt(), sfc.size)
-    }
-  }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testLFSR"
-*/
-  @Test
-  fun testLFSR() {
-    // Tests whether LFSR is maximal
-    for(i in 4..10) {
-      val size = LFSR(i).toList().distinct().size
-      println("$i: ${2.0.pow(i).toInt()} / ${size + 1}")
-      assertEquals(2.0.pow(i).toInt(), size + 1)
     }
   }
 
@@ -188,7 +161,7 @@ class ValiantTest {
   fun benchmarkNaiveSearch() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
       println("Total Holes, Instances Checked, Solutions Found")
-      for (len in 2..10 step 2) {
+      for (len in 2..6 step 2) {
         val template = List(len) { "_" }.joinToString("")
         fun now() = Clock.System.now().toEpochMilliseconds()
         val startTime = now()
@@ -234,7 +207,7 @@ class ValiantTest {
   @Test
   fun testDyck3Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFL().let { cfl ->
-      val sols = "(_____()_____)".solve(cfl)
+      val sols = "(____()____)".solve(cfl)
         .map { println(it); it }.take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
@@ -252,7 +225,7 @@ class ValiantTest {
       X -> a Y | b Y
       Y -> X | c
     """.parseCFL().let { cfl ->
-      println(this)
+      println(cfl)
       cfl.forEach { (_, b) -> assertContains(1..2, b.size) }
       cfl.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfl.variables, it) }
     }

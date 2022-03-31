@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.graphs
 
 import ai.hypergraph.kaliningraph.graphs.Gate.Companion.wrap
-import ai.hypergraph.kaliningraph.randomString
+import ai.hypergraph.kaliningraph.sampling.randomString
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty
 

@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.theory
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.randomMatrix
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 

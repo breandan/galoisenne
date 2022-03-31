@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 
@@ -41,7 +42,7 @@ fun String.solve(cfl: CFL, fillers: Set<String> = cfl.alphabet): Sequence<String
 val HOLE_MARKER = '_'
 
 fun String.genCandidates(cfl: CFL, fillers: Set<String> = cfl.alphabet) =
-  exhaustiveSearch(fillers, count { it == HOLE_MARKER }).map {
+  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
       if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
     }.first

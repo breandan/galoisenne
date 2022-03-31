@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.graphs
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.randomString
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.reflect.KProperty
