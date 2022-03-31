@@ -36,13 +36,13 @@ fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(
  */
 
 fun String.solve(cfl: CFL, fillers: Set<String> = cfl.alphabet): Sequence<String> =
-  genCandidates(cfl, fillers).filter { it.matches(cfl) }.distinct()
+  genCandidates(cfl, fillers).filter { it.matches(cfl) }
 
 val HOLE_MARKER = '_'
 
 fun String.genCandidates(cfl: CFL, fillers: Set<String> = cfl.alphabet) =
-  lazyRandomSpaceFillingCurve(fillers, count { it == HOLE_MARKER }).map {
-    fold("" to it.shuffled()) { (a, b), c ->
+  exhaustiveSearch(fillers, count { it == HOLE_MARKER }).map {
+    fold("" to it) { (a, b), c ->
       if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
     }.first
   }

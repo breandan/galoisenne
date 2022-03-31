@@ -72,20 +72,40 @@ fun randomString(
   alphabet: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
 ) = List(length) { alphabet.random() }.joinToString("")
 
-// Iterates through the Cartesian product space without repetition by generating
-// a lazy stochastic sequence of tuples. Can be viewed as a random space-filling
-// curve in n-dimensional space. This method can sample without replacement from
-// an arbitrarily large product space in linear time and space.
 
-fun <T> lazyRandomSpaceFillingCurve(
+inline fun <reified T> exhaustiveSearch(
   base: Set<T>,
   dimension: Int = 1,
-  tuple: List<T> = emptyList()
-): Sequence<List<T>> =
-  if (dimension == 0) sequenceOf(tuple.shuffled())
-  else base.shuffled().asSequence().flatMap {
-    lazyRandomSpaceFillingCurve(base, dimension - 1, tuple + it)
-  }
+  asList: Array<T> = base.toTypedArray()
+) = mls(base.size, dimension).map { it.map { asList[it] } }
+
+/*TODO: Iterate over the Cartesian product space without repetition generating
+ * a lazy stochastic sequence of tuples. Can be viewed as a random space-filling
+ * curve in n-dimensional space. This method can sample without replacement from
+ * an arbitrarily large product space in linear time and space.
+ * https://www.nayuki.io/page/galois-linear-feedback-shift-register
+ * https://gist.github.com/rgov/891712/40fc067e1df176667ec4618aa197d0453307cac0
+ * https://en.wikipedia.org/wiki/Maximum_length_sequence
+ * https://en.wikipedia.org/wiki/Gray_code#n-ary_Gray_code
+ */
+
+fun mls(base: Int, digits: Int, l: List<Int> = emptyList()): Sequence<List<Int>> =
+  if (Int.MAX_VALUE < base.toDouble().pow(digits)) {
+    println("Large sample space detected, sampling with replacement")
+    generateSequence { List(digits) { Random.nextInt(base) } }
+  } else if (digits <= 0) sequenceOf(l)
+  else (0 until base).asSequence()
+    .flatMap { mls(base, digits - 1, l + it) }
+
+//TODO: Generalize to non-binary case
+// https://dl.acm.org/doi/pdf/10.1145/321765.321777
+// https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Non-binary_Galois_LFSR
+fun LFSR(): Sequence<Int> = sequence {
+  var vec = 0xACE1u
+  val bit = ((vec shr 0) xor (vec shr 2) xor (vec shr 3) xor (vec shr 5)) and 1u
+  vec = (vec shr 1) or (bit shl 15)
+  yield(vec.toInt())
+}
 
 // Samples from unnormalized counts with normalized frequency
 fun <T> Map<T, Number>.sample(random: Random = Random.Default) =

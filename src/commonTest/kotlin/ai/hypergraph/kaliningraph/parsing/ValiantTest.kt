@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.types.π2
+import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.types.*
 import kotlinx.datetime.*
+import kotlin.math.pow
 import kotlin.test.*
 
 /*
@@ -122,15 +124,16 @@ class ValiantTest {
       }
     }.values.sum() == 0
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
+*/
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFL().let { cfl ->
       val sols = "(____()____)".solve(cfl, fillers = cfl.alphabet + "")
-        .map { println(it); it }.take(5).toList()
-      println("Solutions: ${sols.joinToString(", ")}")
+        .map { println(it); it }.toList()
+      println("${sols.distinct().size}/${sols.size}")
+      println("Solutions found: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
     }
@@ -142,17 +145,32 @@ class ValiantTest {
   @Test
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
-      val sols = "(____()____)".solve(cfl).take(5).toList()
-      println("Solutions: ${sols.joinToString(", ")}")
+      val sols = "(___()___)".solve(cfl).map { println(it); it }.toList()
+      println("${sols.distinct().size}/${sols.size}")
+
+      println("Solutions found: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }
     }
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testExhaustiveSearch"
+*/
+  @Test
+  fun testExhaustiveSearch() {
+    // Checks whether the exhaustive search is truly exhaustive
+    ((2..5).toSet() * (2..5).toSet()).forEach { (s, dim) ->
+      val base = (0 until s).map { it.digitToChar().toString() }.toSet()
+      val sfc = exhaustiveSearch(base, dim).toSet()
+      assertEquals(sfc, sfc.distinct().toSet())
+      assertEquals(s.toDouble().pow(dim).toInt(), sfc.size)
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.benchmarkNaiveSearch"
 */
-
   @Test
   fun benchmarkNaiveSearch() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
@@ -193,6 +211,21 @@ class ValiantTest {
   """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".let { cfl ->
       assertTrue("{()[(){}()]()}".matches(cfl))
       assertFalse("{()[(){()]()}".matches(cfl))
+    }
+  }
+
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck3Solver"
+*/
+  @Test
+  fun testDyck3Solver() {
+    """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFL().let { cfl ->
+      val sols = "(_____()_____)".solve(cfl)
+        .map { println(it); it }.take(5).toList()
+      println("Solution found: ${sols.joinToString(", ")}")
+
+      sols.forEach { assertTrue(it.dyckCheck()) }
     }
   }
 
