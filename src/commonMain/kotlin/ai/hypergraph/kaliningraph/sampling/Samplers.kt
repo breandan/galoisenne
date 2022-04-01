@@ -1,6 +1,8 @@
 package ai.hypergraph.kaliningraph.sampling
 
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.toDoubleMatrix
+import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.*
 
@@ -151,16 +153,57 @@ val generator = mapOf(
 // than our set cardinality until it emits a value in range: "Hasty Pudding trick"
 // All values will be unique.
 
-fun LFSR(degree: Int = 16): Sequence<UInt> = sequence {
+fun LFSR(
+  degree: Int = 16,
+  primitivePolynomial: List<Int> = generator[degree]!!.random().toString(2)
+    .mapIndexedNotNull { i, c -> if (c == '1') i else null }
+): Sequence<UInt> = //LFSRM(degree)
+  sequence {
   val vec0 = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt()
   var vec = vec0
-  val taps = generator[degree]!!.random().toString(2)
-    .mapIndexedNotNull { i, c -> if (c == '1') i else null }
   do {
-    val bit = taps.map { vec shr it }.fold(0u) { a, c -> a xor c } and 1u
+    val bit = primitivePolynomial.map { vec shr it }
+      .fold(0u) { a, c -> a xor c } and 1u
     vec = (vec shr 1) or (bit shl (degree - 1))
     yield(vec)
   } while (vec != vec0)
+}
+
+val algebra = Ring.of(
+  nil = false,
+  one = true,
+  plus = { x, y -> x xor y },
+  times = { x, y -> x and y }
+)
+
+private fun State(
+  degree: Int,
+  initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
+  initialState: List<Boolean> = initialValue.toBitList(degree),
+) = FreeMatrix(algebra, degree, 1) { r, _ -> initialState[r] }
+
+// https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Matrix_forms
+private fun TransitionMatrix(degree: Int, polynomial: List<Boolean>) =
+  FreeMatrix(algebra, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
+
+private fun PrimitivePolynomial(length: Int) =
+  generator[length]!!.random().toString(2).map { it == '1' }
+
+fun LFSRM(
+  degree: Int,
+  initialVec: FreeMatrix<Boolean> = State(degree),
+  primitivePolynomial: List<Boolean> = PrimitivePolynomial(degree - 1),
+  matrix: FreeMatrix<Boolean> = TransitionMatrix(degree, primitivePolynomial)
+): Sequence<UInt> = sequence {
+  var m: FreeMatrix<Boolean>
+  do {
+    m = matrix * initialVec
+    println(matrix)
+    println()
+    println(m)
+    println()
+    yield(m.data.toInt().toUInt())
+  } while (m != initialVec)
 }
 
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
@@ -169,6 +212,7 @@ fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
   cardinalities: List<Int> = dimensions.map { it.size },
+  // Shuffle coordinates to increase entropy of sampling
   shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
   bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens(),
   degree: Int = bitLens.sum().also { println("Sampling with LFSR(GF(2^$it))") }

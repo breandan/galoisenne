@@ -1,7 +1,5 @@
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.times
-
 /** Corecursive Fibonacci sequence of [Nat]s **/
 tailrec fun <T> Nat<T>.fibonacci(
   n: T,
