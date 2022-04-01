@@ -1,6 +1,6 @@
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.sample
+import ai.hypergraph.kaliningraph.sampling.sample
 import ai.hypergraph.kaliningraph.theory.prefAttach
 import kotlinx.browser.document
 import kotlinx.html.dom.append
