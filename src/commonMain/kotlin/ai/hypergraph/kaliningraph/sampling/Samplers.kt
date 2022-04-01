@@ -157,16 +157,17 @@ fun LFSR(
   degree: Int = 16,
   primitivePolynomial: List<Int> = generator[degree]!!.random().toString(2)
     .mapIndexedNotNull { i, c -> if (c == '1') i else null }
-): Sequence<UInt> = //LFSRM(degree)
+): Sequence<UInt> = // LFSRM(degree)
   sequence {
   val vec0 = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt()
   var vec = vec0
+  var i = 0
   do {
     val bit = primitivePolynomial.map { vec shr it }
       .fold(0u) { a, c -> a xor c } and 1u
     vec = (vec shr 1) or (bit shl (degree - 1))
     yield(vec)
-  } while (vec != vec0)
+  } while (++i < 2.0.pow(degree).toInt() - 1)
 }
 
 val algebra = Ring.of(
@@ -176,7 +177,7 @@ val algebra = Ring.of(
   times = { x, y -> x and y }
 )
 
-private fun State(
+private fun RandomVector(
   degree: Int,
   initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
   initialState: List<Boolean> = initialValue.toBitList(degree),
@@ -187,23 +188,20 @@ private fun TransitionMatrix(degree: Int, polynomial: List<Boolean>) =
   FreeMatrix(algebra, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
 
 private fun PrimitivePolynomial(length: Int) =
-  generator[length]!!.random().toString(2).map { it == '1' }
+  generator[length]!!.first().toString(2).map { it == '1' }
 
 fun LFSRM(
   degree: Int,
-  initialVec: FreeMatrix<Boolean> = State(degree),
-  primitivePolynomial: List<Boolean> = PrimitivePolynomial(degree - 1),
+  initialVec: FreeMatrix<Boolean> = RandomVector(degree),
+  primitivePolynomial: List<Boolean> = PrimitivePolynomial(degree),
   matrix: FreeMatrix<Boolean> = TransitionMatrix(degree, primitivePolynomial)
 ): Sequence<UInt> = sequence {
-  var m: FreeMatrix<Boolean>
+  var i = 0
+  var s: FreeMatrix<Boolean> = initialVec
   do {
-    m = matrix * initialVec
-    println(matrix)
-    println()
-    println(m)
-    println()
-    yield(m.data.toInt().toUInt())
-  } while (m != initialVec)
+    s = matrix * s
+    yield(s.data.toUInt())
+  } while (++i < 2.0.pow(degree).toInt() - 1)
 }
 
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
@@ -225,6 +223,7 @@ fun <T> MDSamplerWithoutReplacement(
 
 private fun List<Int>.toBitLens(): List<Int> = map { ceil(log2(it.toDouble())).toInt() }
 private fun List<Boolean>.toInt() = joinToString("") { if(it) "1" else "0" }.toInt(2)
+private fun List<Boolean>.toUInt() = joinToString("") { if(it) "1" else "0" }.toUInt(2)
 private fun UInt.toBitList(len: Int): List<Boolean> =
   toString(2).padStart(len, '0').map { it == '1' }
 

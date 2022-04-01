@@ -29,9 +29,11 @@ class SamplingTest {
   fun testLFSR() {
     // Tests whether LFSR cycles through its maximal period
     for (i in 4..10) {
-      val size = LFSR(i).toList().distinct().size
-      println("$i: ${2.0.pow(i).toInt()} / ${size + 1}")
-      assertEquals(2.0.pow(i).toInt(), size + 1)
+      val list = LFSR(i).toList()
+      val distinct = list.distinct()
+      println("$i: ${list.size + 1} / ${2.0.pow(i).toInt()}")
+      assertEquals(2.0.pow(i).toInt(), list.size + 1)
+      assertEquals(2.0.pow(i).toInt(), distinct.size + 1)
     }
   }
 
