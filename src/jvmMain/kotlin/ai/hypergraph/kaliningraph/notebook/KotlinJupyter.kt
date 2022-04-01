@@ -14,6 +14,7 @@ internal class Integration: JupyterIntegration() {
       "ai.hypergraph.kaliningraph.*",
       "ai.hypergraph.kaliningraph.graphs.*",
       "ai.hypergraph.kaliningraph.types.*",
+      "ai.hypergraph.kaliningraph.sampling.*",
       "ai.hypergraph.kaliningraph.visualization.*",
       "ai.hypergraph.kaliningraph.tensor.*",
     ).forEach { import(it) }
