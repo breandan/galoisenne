@@ -28,23 +28,25 @@ fun randomString(
  * https://en.wikipedia.org/wiki/Gray_code#n-ary_Gray_code
  */
 
-fun <T> exhaustiveSearch(base: Set<T>, dimension: Int = 1): Sequence<List<T>> =
-  exhaustiveSearch(List(dimension) { base })
+fun <T> findAll(base: Set<T>, dimension: Int = 1): Sequence<List<T>> =
+  findAll(List(dimension) { base })
 
-fun <T> exhaustiveSearch(
+fun <T> findAll(
   dimensions: List<Set<T>>,
   cardinalities: List<Int> = dimensions.map { it.size },
   asList: List<List<T>> = dimensions.map { it.shuffled() }
-): Sequence<List<T>> = mls(cardinalities).map { (asList zip it).map { (l, i) -> l[i] } }
+): Sequence<List<T>> =
+   all(cardinalities).map { (asList zip it).map { (l, i) -> l[i] } }
 
-fun mls(base: List<Int>, l: List<Int> = emptyList()): Sequence<List<Int>> =
-  if (base.isEmpty()) sequenceOf(l)
-  else (0 until base[0]).asSequence().flatMap { mls(base.drop(1), l + it) }
+fun all(i: List<Int>, l: List<Int> = emptyList()): Sequence<List<Int>> =
+  if (i.isEmpty()) sequenceOf(l)
+  else (0 until i[0]).asSequence().flatMap { all(i.drop(1), l + it) }
 
 // TODO: Compute minimal elements of GF(p^e) dynamically
-// https://link.springer.com/content/pdf/bbm%3A978-3-642-54649-5%2F1.pdf#page=5
-// http://www-math.ucdenver.edu/~wcherowi/courses/m7823/polynomials.pdf
 // https://math.stackexchange.com/questions/2232179/how-to-find-minimal-polynomial-for-an-element-in-mboxgf2m
+// http://crc.stanford.edu/crc_papers/CRC-TR-04-03.pdf#page=24
+// https://link.springer.com/content/pdf/bbm%3A978-3-642-54649-5%2F1.pdf#page=5
+
 val generator = mapOf(
   // Degree to binary polynomial coefficients in decimal form
   // https://link.springer.com/content/pdf/bbm%3A978-1-4615-1509-8%2F1.pdf
@@ -188,7 +190,7 @@ private fun TransitionMatrix(degree: Int, polynomial: List<Boolean>) =
   FreeMatrix(algebra, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
 
 private fun PrimitivePolynomial(length: Int) =
-  generator[length]!!.first().toString(2).map { it == '1' }
+  generator[length]!!.random().toString(2).map { it == '1' }
 
 fun LFSRM(
   degree: Int,
@@ -215,7 +217,7 @@ fun <T> MDSamplerWithoutReplacement(
   bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens(),
   degree: Int = bitLens.sum().also { println("Sampling with LFSR(GF(2^$it))") }
 ): Sequence<List<T>> =
-  if (degree < 4) exhaustiveSearch(dimensions).shuffled()
+  if (degree < 4) findAll(dimensions).shuffled()
   else if (degree !in generator) throw Exception("Space is too large!")
   else LFSR(degree).map { it.toBitList(degree) }.hastyPuddingTrick(cardinalities)
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
