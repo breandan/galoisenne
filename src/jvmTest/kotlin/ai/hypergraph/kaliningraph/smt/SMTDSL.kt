@@ -39,8 +39,18 @@ class SMTInstance(
     Ring.of(
       nil = Literal(0),
       one = Literal(1),
-      plus = { a, b -> (a + b) mod 2 },
-      times = { a, b -> (a * b) mod 2 }
+      plus = { a, b ->
+        if (a == nil) b
+        else if (b == nil) a
+        else if (a == one && b == one) nil
+        else (a + b) mod 2
+      },
+      times = { a, b ->
+        if (a == nil || b == nil) nil
+        else if (a == one) b
+        else if (b == one) a
+        else (a * b) mod 2
+      }
     )
 
   val SAT_ALGEBRA =

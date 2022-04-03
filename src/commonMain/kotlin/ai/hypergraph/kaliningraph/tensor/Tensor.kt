@@ -29,6 +29,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
   operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose[j] }
+  fun <Y> map(f: (T) -> Y) = new(numRows, numCols, data.map(f) as List<T>)
 
   infix fun List<T>.dot(es: List<T>): T =
     with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }

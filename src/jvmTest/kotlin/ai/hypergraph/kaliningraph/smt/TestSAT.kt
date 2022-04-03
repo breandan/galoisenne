@@ -58,6 +58,9 @@ class TestSAT {
      }
 
      println("A:\n$A")
+     println("Solving for UT entries:\n" +
+       (A + A * A).map { if(it.toString() != "0") 1 else "" }
+     )
 
      val isFixpoint = A + A * A eqUT A
      val solution = solveInteger(isFixpoint)
@@ -65,7 +68,7 @@ class TestSAT {
 
      println("Decoding:\n$D")
 
-     assertEquals(D, D + D*D)
+     assertEquals(D, D + D * D)
      println("Passed.")
   }
 
