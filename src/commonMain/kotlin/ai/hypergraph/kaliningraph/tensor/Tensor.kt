@@ -18,6 +18,8 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   val data: List<T>
 
   // TODO: Tensor stuff
+  // TODO: create a constructor that takes a List<Pair<List<Int>, T>>
+  //       for sparse tensors, e.g.: [([1, 2, 3], "a"), ([2, 4, 1], "b"), ...]
   override val map: MutableMap<Π3<Int, Int, T>, Int> get() = TODO()
   fun shape() = numRows cc numCols /** TODO: return [Π3] instead */
   operator fun get(r: Any, c: Any): T = TODO("Implement support for named indexing")
@@ -98,6 +100,14 @@ val MAXPLUS_ALGEBRA: Ring<Int> =
     times = { a, b -> a + b }
   )
 
+val GF2_ALGEBRA: Ring<Int> =
+  Ring.of(
+    nil = 0,
+    one = 1,
+    plus = { a, b -> a + b % 2 },
+    times = { a, b -> a * b % 2 }
+  )
+
 private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
   Ring.of(
     nil = t,
@@ -147,6 +157,12 @@ open class FreeMatrix<T> constructor(
     data = elements
   )
 
+  constructor(algebra: Ring<T>, elements: List<T>) : this(
+    algebra = algebra,
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> T) : this(
     numRows = numRows,
     numCols = numCols,
@@ -164,7 +180,7 @@ open class FreeMatrix<T> constructor(
     numCols = numCols,
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
-  constructor(vararg rows: T) : this(rows.toList())
+
 
   override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
@@ -201,6 +217,16 @@ open class BooleanMatrix constructor(
       val values = chars.distinct()
       require(values.size <= 2) { "Expected two values or less" }
       values.maxOrNull()!!.let { hi -> chars.map { it == hi } }
+    }
+  )
+
+  constructor(
+    numRows: Int,
+    numCols: Int = numRows,
+    values: List<Π2<Π2<Int, Int>, Boolean>>
+  ): this(numRows, numCols,
+    values.toMap().let { map ->
+      List(numRows * numCols) { map[it / numCols to it % numCols] ?: false }
     }
   )
 

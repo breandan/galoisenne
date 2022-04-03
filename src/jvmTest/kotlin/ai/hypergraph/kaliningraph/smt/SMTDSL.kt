@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.sampling.randomString
 import ai.hypergraph.kaliningraph.tensor.Matrix
-import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
@@ -26,6 +25,22 @@ class SMTInstance(
       one = Literal(1),
       plus = { a, b -> a + b },
       times = { a, b -> a * b }
+    )
+
+  val XOR_SMT_ALGEBRA =
+    Ring.of(
+      nil = Literal(false),
+      one = Literal(true),
+      plus = { a, b -> a xor b },
+      times = { a, b -> a and b }
+    )
+
+  val GF2_SMT_ALGEBRA =
+    Ring.of(
+      nil = Literal(0),
+      one = Literal(1),
+      plus = { a, b -> (a + b) mod 2 },
+      times = { a, b -> (a * b) mod 2 }
     )
 
   val SAT_ALGEBRA =
@@ -93,14 +108,11 @@ class SMTInstance(
     }
 
   infix fun Any.pls(b: Any) = add(wrapInt(this), wrapInt(b))
-
   infix fun Any.mns(b: Any) = subtract(wrapInt(this), wrapInt(b))
-
   infix fun Any.mul(b: Any) = multiply(wrapInt(this), wrapInt(b))
-
   infix fun Any.dvd(b: Any) = divide(wrapInt(this), wrapInt(b))
-
   infix fun Any.pwr(b: Int) = (2..b).fold(wrapInt(this)) { a, _ -> a mul this }
+  infix fun Any.mod(b: Any) = modulo(wrapInt(this), wrapInt(b))
 
   infix fun Any.lt(b: Any) = lessThan(wrapInt(this), wrapInt(b))
   infix fun Any.gt(b: Any) = greaterThan(wrapInt(this), wrapInt(b))
@@ -114,16 +126,27 @@ class SMTInstance(
   fun Any.negate() = bfm.not(wrapBool(this))
   infix fun Any.and(b: Any) = bfm.and(wrapBool(this), wrapBool(b))
   infix fun Any.or(b: Any) = bfm.or(wrapBool(this), wrapBool(b))
+  infix fun Any.xor(b: Any) = bfm.or(wrapBool(this), wrapBool(b))
 
   fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
   fun <T> makeFormula(
     m1: Matrix<T, *, *>,
     m2: Matrix<T, *, *>,
+    filter: (Int, Int) -> Boolean = { _, _ -> true },
     ifmap: (T, T) -> BooleanFormula
-  ) = m1.rows.zip(m2.rows)
-    .map { (a, b) -> a.zip(b).map { (a, b) -> ifmap(a, b) } }
-    .flatten().reduce { a, b -> a and b }
+  ) =
+    if (m1.shape() != m2.shape()) throw Exception("Shape mismatch!")
+    else m1.data.zip(m2.data)
+      .filterIndexed { i, _ -> filter(i / m1.numCols, i % m1.numCols) }
+      .filter { (a, b) -> a != b }
+      .also { println("Filtered ${m1.data.size - it.size}") }
+      .map { (a, b) -> ifmap(a, b) }
+      .reduce { a, b -> a and b }
+
+  // Only compare upper triangular entries of the matrix
+  infix fun <T> Matrix<T, *, *>.eqUT(that: Matrix<T, *, *>): BooleanFormula =
+    makeFormula(this, that, { r, c -> r < c }) { a, b -> a as Any eq b as Any }
 
   infix fun <T> Matrix<T, *, *>.eq(that: Matrix<T, *, *>): BooleanFormula =
     makeFormula(this, that) { a, b -> a as Any eq b as Any }
@@ -142,8 +165,12 @@ open class SATF(
   override val one: SATF by lazy { SATF { 1 } }
   override fun SATF.plus(t: SATF): SATF = SATF { formula or t.formula }
   override fun SATF.times(t: SATF): SATF = SATF { formula and t.formula }
-  infix fun SATF.or(t: SATF): SATF = SATF { formula or t.formula }
-  infix fun SATF.and(t: SATF): SATF = SATF { formula and t.formula }
+
+  infix fun or(t: Any): SATF = SATF { formula or t }
+  infix fun xor(t: Any): SATF = SATF { formula xor t }
+  infix fun and(t: Any): SATF = SATF { formula and t }
+
+  fun toBool() = toString().toBooleanStrictOrNull()
   override fun toString() = formula.toString()
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =
@@ -162,6 +189,9 @@ open class SMTF(
   override fun SMTF.plus(t: SMTF): SMTF = SMTF { this@SMTF pls t }
   override fun SMTF.times(t: SMTF): SMTF = SMTF { this@SMTF mul t }
 
+  infix fun mod(t: Any): SMTF = SMTF { formula mod t }
+
+  fun toInt() = toString().toIntOrNull()
   override fun toString() = formula.toString()
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =

@@ -42,7 +42,7 @@
 %% Title information
 \title{Probabilistic Array Programming with Galois Theory}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and can be straightfowardly compile to various backends, including low level formats like SMT and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and straightforwardly compiles to various backends, including low level formats like SMT and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
 \end{abstract}
 \maketitle
 
@@ -114,36 +114,36 @@ And suppose we have a string: \texttt{\_\_\_\_\_+3}. What could fit inside? We g
 Our core DSL provides the following langauge features:
 
 \begin{itemize}
-  \item type-class based abstract algebra
-  \item sparse multidimensional arrays
-  \item spectral and algebraic graph theory
-  \item various message passing schemes
-  \item graph matching and rewriting
-  \item weighted and unweighted PRNGs
-  \item lazy sequence generation
-  \item browser-based visualizations
-  \item high-level synthesis to VHDL/netlist
-  \item abacus-based dependent types simulating GF$(2^n)$
-  \item tensor API inspired by Naperian functors~\citep{gibbons2017aplicative}
-  \item type-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
-  \item type-family for graphs inspired by Greenman ~\citep{greenman2014getting}
-  \item nested datatypes inspired Bird and Meertens~\cite{bird1998nested}
+  \item Type-class based abstract algebra
+  \item Sparse multidimensional arrays
+  \item Spectral and algebraic graph theory
+  \item Various message passing schemes
+  \item Graph matching and rewriting
+  \item Weighted and unweighted PRNGs
+  \item Lazy sequence generation
+  \item Browser-based visualizations
+  \item High-level synthesis to VHDL/netlist
+  \item Abacus-based dependent types simulating GF$(2^n)$
+  \item Tensor API inspired by Naperian functors~\citep{gibbons2017aplicative}
+  \item Type-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
+  \item Type-family for graphs inspired by Greenman ~\citep{greenman2014getting}
+  \item Nested datatypes inspired Bird and Meertens~\cite{bird1998nested}
 \end{itemize}
 
 We have implemented the following algorithms using our DSL:
 
 \begin{itemize}
-  \item Mergable sparse stochastic tensors
-  \item Markov chains sampling
+  \item Monoidal counting tensors
+  \item Higher order Markov chains
+  \item Multistochastic tensor balancing
   \item CFL parsing using Valiant's algorithm
-  \item Regular language parsing with Brzowoski
-  \item differential cryptanalysis
+  \item Regular language parsing
   \item tSNE dimensionality reduction for DFGs
-  \item pseudorandom enumerative synthesis
-  \item automatic differentiation
+  \item Pseudorandom tree synthesis
+  \item Automatic differentiation
   \item PCFG generation
-  \item probabilistic circuits
-  \item multidimensional sampling with LFSRs
+  \item Probabilistic circuits
+  \item Multidimensional sampling with LFSRs
   \item Markov Chain Monte Carlo sampling
   \item Low-rank matrix completion with SAT/SMT
 \end{itemize}

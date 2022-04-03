@@ -2,8 +2,12 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
 import org.junit.jupiter.api.Test
+import org.sosy_lab.java_smt.api.BooleanFormula
 import kotlin.test.assertEquals
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT"
+*/
 class TestSAT {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
@@ -38,6 +42,31 @@ class TestSAT {
     val a = BooleanMatrix(dim) { i, j -> j == p[i] }
     val b = BooleanMatrix(dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
+*/
+   @Test
+   fun testUTGF2MatFixpoint() = SMTInstance().solve {
+     val dim = 6
+     val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
+     val A = FreeMatrix(GF2_SMT_ALGEBRA, dim) { i, j ->
+       if (i to j in setVars) Literal(1)
+       else if (j >= i + 1) IntVar("V$i.$j")
+       else Literal(0)
+     }
+
+     println("A:\n$A")
+
+     val isFixpoint = A + A * A eqUT A
+     val solution = solveInteger(isFixpoint)
+     val D = FreeMatrix(GF2_ALGEBRA, A.data.map { solution[it] ?: it.toString().toInt() })
+
+     println("Decoding:\n$D")
+
+     assertEquals(D, D + D*D)
+     println("Passed.")
   }
 
 /*

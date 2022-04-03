@@ -53,6 +53,8 @@ interface VT<E, L: S<*>> : List<E> {
 
   class of<E, L: S<*>>(override val len: L, override val l: List<E>): VT<E, L>, List<E> by l {
     internal constructor(l: L, vararg es: E): this(l, es.toList())
+
+    override fun equals(other: Any?) = (other as? VT<E, L>)?.l == l
   }
 }
 

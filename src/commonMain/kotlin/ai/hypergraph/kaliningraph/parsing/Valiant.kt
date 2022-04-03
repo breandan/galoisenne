@@ -94,6 +94,9 @@ TODO: Lower this matrix onto SAT. Steps:
   2.) Symbolically evaluate BMM to get a Boolean formula.
   3.) Encode symbolic Boolean formula as CNF using Tsetin.
   4.) Run SAT solver and decode variable assignments.
+
+  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
+  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
  */
 
 /**
