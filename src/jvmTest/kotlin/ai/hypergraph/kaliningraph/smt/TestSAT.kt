@@ -100,7 +100,7 @@ class TestSAT {
     }
     val B = setB.encodeAsMatrix()
     val dontCare = BoolVar("dc")
-    val Y = FreeMatrix(SAT_ALGEBRA, dim) { _, _ -> dontCare }
+    val Y = FreeMatrix(SAT_ALGEBRA, len) { _, _ -> dontCare }
 
     val intersection = (A * X * B.transpose) eq Y
     val solution = solveBoolean(intersection)

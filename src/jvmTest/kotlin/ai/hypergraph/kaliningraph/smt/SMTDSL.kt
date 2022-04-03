@@ -146,11 +146,10 @@ class SMTInstance(
     filter: (Int, Int) -> Boolean = { _, _ -> true },
     ifmap: (T, T) -> BooleanFormula
   ) =
-    if (m1.shape() != m2.shape()) throw Exception("Shape mismatch!")
+    if (m1.shape() != m2.shape())
+      throw Exception("Shape mismatch: ${m1.shape()}!=${m2.shape()}")
     else m1.data.zip(m2.data)
       .filterIndexed { i, _ -> filter(i / m1.numCols, i % m1.numCols) }
-      .filter { (a, b) -> a != b }
-      .also { println("Filtered ${m1.data.size - it.size}") }
       .map { (a, b) -> ifmap(a, b) }
       .reduce { a, b -> a and b }
 

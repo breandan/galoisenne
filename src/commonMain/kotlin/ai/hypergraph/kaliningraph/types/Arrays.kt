@@ -55,6 +55,7 @@ interface VT<E, L: S<*>> : List<E> {
     internal constructor(l: L, vararg es: E): this(l, es.toList())
 
     override fun equals(other: Any?) = (other as? VT<E, L>)?.l == l
+    override fun toString() = l.toString()
   }
 }
 
