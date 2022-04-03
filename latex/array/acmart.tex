@@ -42,13 +42,13 @@
 %% Title information
 \title{Probabilistic Array Programming with Galois Theory}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, sampling without replacement from arbitrarily large sets, graph representation learning and sketch-based program synthesis using only sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and admits efficient lowering onto netlist. We describe how to parse a CFL, sketch simple programs, and lower onto VHDL and SMT.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and can be straightfowardly compile to various backends, including low level formats like SMT and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
 \end{abstract}
 \maketitle
 
 \section{Introduction}
 
-A Galois field is a field containing a finite set of elements. For example, consider $\mathbb{Z}/n$ where $n$ is prime. The theory of context free languages are a special case on GF(2). Let $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ be a CFG in Chomsky Normal Form. We can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$, as follows. Let $\mathcal P(V)$ be our domain, $0 := \varnothing$, $\oplus := \cup$, and $\otimes$ be:
+A Galois field is a field containing a finite set of elements. For example, consider $\mathbb{Z}/n$ where $n$ is prime. The theory of context free grammars are a special case on GF(2)~\citep{jansson2016certified, bakinova2020formal}. Let $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ be a CFG in Chomsky Normal Form. We can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$, as follows. Let $\mathcal P(V)$ be our domain, $0 := \varnothing$, $\oplus := \cup$, and $\otimes$ be:
 
 \[
 l \otimes r := \{V \mid \langle S, S'\rangle \in l \times r, (V\rightarrow SS') \in P\}
@@ -66,14 +66,16 @@ We initialize $\mathbf{M}^0[i, j](\mathcal{G}, \sigma) \coloneqq \{V_i \mid (V_i
 \end{pmatrix}
 \]
 
-where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{V^*}(S) \iff \mathds{1}_\mathcal{G}(\sigma)$.
+\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{V^*}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 
-This procedure is known to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound (currently $\omega < 2.37286$ as of writing this manuscript). Assuming sparsity, this can be reduced to linearithmic time, and represents the best known bounds for CFL recognition.
+This procedure is known~\citep{lee2002fast} to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the Boolean matrix multiplication upper bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this can be reduced to linearithmic time, and represents the best known asymptotic bounds for CFL recognition to date.
 
-GF(2) can also be used to sample without replacement from arbitrarily large sets. Let $M: GF(2)^{n\times n}$ be a square matrix defined as $M^0[i, j] = P_j \text{ if } i=0 \text{ else } \mathds{1}[j = i - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$. Concretely, this can be expressed as a Boolean semiring where $\otimes := \underline{\vee}, \oplus := \vee$ are lifted to matrices in the usual way:
+A similar procedure can be used to learn, parse and synthesize PCFGs and other weighted semirings~\citep{goodman1999semiring}, many of which can be expressed in GF(2) exactly or approximately. All of these can be expressed as discrete distributions, which can be efficiently sampled using a generator function over Galois fields.
+
+GF(2) can be used to sample without replacement from arbitrarily large sets. Let $M: \text{GF}(2)^{n\times n}$ be a square matrix defined as $M^0[i, j] = P_j \text{ if } i=0 \text{ else } \mathds{1}[j = i - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$. Concretely, this can be expressed as a Boolean semiring where $\otimes := \underline{\vee}, \oplus := \vee$ are lifted to matrices in the usual way:
 
 \[
-\mathbf{M}^tV^\intercal = \begin{pmatrix}
+\mathbf{M}^tV = \begin{pmatrix}
   P_0 & P_1 & P_2 & P_3 & P_4 \\
   1 & 0 & 0 & 0 & 0 \\
   0 & 1 & 0 & 0 & 0 \\
@@ -89,14 +91,14 @@ GF(2) can also be used to sample without replacement from arbitrarily large sets
 \end{pmatrix}
 \]
 
-Selecting coefficients $P_j$ from any primitive polynomial produces a fixpoint operator generating an ergodic sequence over $GF(2^n)$ with periodicity $2^n - 1$. That is, given an initial state $V \neq \mathbf{0}$, matrix powering $M^{t}V^\intercal$, $t\in [1, 2^n]$ will cycle through the full state space in pseudorandom order before repeating. This construction, known as a linear finite state register (LFSR) can be used to sample without replacement from indexed sets $|S_V|<\infty$ in $\mathcal{O}(\log |S|)$ space and time.
+Selecting coefficients $P_j$ from any primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, given an initial state $V \neq \mathbf{0}$, the sequence $\mathbf{V} = \begin{bmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{bmatrix}$ will cycle through the full state space in pseudorandom order without repetition. This construction, known as a linear finite state register (LFSR) samples without replacement from indexed sets $|S_V|<\infty$ in $\mathcal{O}(\log |S|)$ space and time.
 
-\section{Method}
+To build more complex distributions over GF(2), we need a fast inverse transform sampler.
 
 We can use these two observations to do program synthesis. Suppose we have the following CFL:
 
 \[
-  \hspace{10}S \rightarrow x\hspace{10}
+  \hspace{5}S \rightarrow x\hspace{10}
   S \rightarrow y\hspace{10}
   S \rightarrow z\hspace{10}
   S \rightarrow S + S\hspace{10}
@@ -105,6 +107,47 @@ We can use these two observations to do program synthesis. Suppose we have the f
 \]
 
 And suppose we have a string: \texttt{\_\_\_\_\_+3}. What could fit inside? We generate $\Sigma^5$ and check.
+
+
+\section{Implementation}
+
+Our core DSL provides the following langauge features:
+
+\begin{itemize}
+  \item type-class based abstract algebra
+  \item sparse multidimensional arrays
+  \item spectral and algebraic graph theory
+  \item various message passing schemes
+  \item graph matching and rewriting
+  \item weighted and unweighted PRNGs
+  \item lazy sequence generation
+  \item browser-based visualizations
+  \item high-level synthesis to VHDL/netlist
+  \item abacus-based dependent types simulating GF$(2^n)$
+  \item tensor API inspired by Naperian functors~\citep{gibbons2017aplicative}
+  \item type-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
+  \item type-family for graphs inspired by Greenman ~\citep{greenman2014getting}
+  \item nested datatypes inspired Bird and Meertens~\cite{bird1998nested}
+\end{itemize}
+
+We have implemented the following algorithms using our DSL:
+
+\begin{itemize}
+  \item Mergable sparse stochastic tensors
+  \item Markov chains sampling
+  \item CFL parsing using Valiant's algorithm
+  \item Regular language parsing with Brzowoski
+  \item differential cryptanalysis
+  \item tSNE dimensionality reduction for DFGs
+  \item pseudorandom enumerative synthesis
+  \item automatic differentiation
+  \item PCFG generation
+  \item probabilistic circuits
+  \item multidimensional sampling with LFSRs
+  \item Markov Chain Monte Carlo sampling
+  \item Low-rank matrix completion with SAT/SMT
+\end{itemize}
+
 
 %When developing scientific software of sufficient complexity, one is faced with an inevitable choice: do we cobble together a one-off solution to the problem at hand or write generic code that can be reused for many foreseeable problems? There exists a constant tension between doing just enough to get the job done and anticipating future requirements that may arise during the course of a project. Aim too low, and it becomes necessary to completely rewrite the code whenever a new feature is added. Aim too high, and we run the risk of premature abstraction and unnecessary complexity. Yet experience tells us there are patterns of such universal applicability that abstraction reveals connections to other disciplines which would not be anticipated without first seeking abstraction. Graphs are one such example.
 
@@ -146,29 +189,29 @@ class Road: Edge<Map, Road, City>
 class City: Vertex<Map, Road, City>
 \end{lstlisting}
 
-\section{Language Parsing}
-
-Language is linear data structure composed of atomic symbols which can be concatenated to form new words and phrases. For example, this document. Natural language has very flexible set of rules for composition which are learned by example and can adapt over time to the needs of its users.
-
-Artificial languages are also languages, but with a precise set of rules. By design, the rules for composing these languages are much more rigid to enable their mechanical interpretation. A vast number of domain-specific languages, called programming languages, have emerged in recent years.
-
-The distinction between natural and artificial languages are not discontinuous, but rather fall along a spectrum of minimum description length. Linguists have developed various taxonomies for languages based on their algorithmic and information complexity. In practice, most examples are at worst, weakly linear context free due to physical constraints.
-
-The question arises, is there a useful superset of computable languages? Various equivalent definitions have been proposed from Peano arithmetic, to Turing machines, to Sch\"onfinkel's combinatory logic, to Church's $\lambda$-calculus. Although complete, these languages are inconsistent (G\"odel). However, Presburger (1929) proposes a slightly weaker language which is both complete and consistent, $P \Coloneqq 0 \mid 1$:
-
-\begin{enumerate}
-  \item $0 \neq S(0)            $
-  \item $S(x) = S(y) \rightarrow x = y    $
-  \item $x + 0 = x              $
-  \item $x + S(y) = S(x + y)    $
-  \item $(P(0) \land \forall x.(P(x) \rightarrow P(S(x))) \rightarrow \forall y.P(y)$
-\end{enumerate}
-
-Via staging, we can embed any ASCII-based language in $C$. For example, consider the programming language...
-
-What about types? Since $C$ is both complete and consistent, we have boolean judgements. Judgemental equality is simply string equality.
-
-In concatenative programming, words typically denote function application in the point-free style. What if we took a more granular approach and allowed each symbol to be a higher-order function?
+%\section{Language Parsing}
+%
+%Language is linear data structure composed of atomic symbols which can be concatenated to form new words and phrases. For example, this document. Natural language has very flexible set of rules for composition which are learned by example and can adapt over time to the needs of its users.
+%
+%Artificial languages are also languages, but with a precise set of rules. By design, the rules for composing these languages are much more rigid to enable their mechanical interpretation. A vast number of domain-specific languages, called programming languages, have emerged in recent years.
+%
+%The distinction between natural and artificial languages are not discontinuous, but rather fall along a spectrum of minimum description length. Linguists have developed various taxonomies for languages based on their algorithmic and information complexity. In practice, most examples are at worst, weakly linear context free due to physical constraints.
+%
+%The question arises, is there a useful superset of computable languages? Various equivalent definitions have been proposed from Peano arithmetic, to Turing machines, to Sch\"onfinkel's combinatory logic, to Church's $\lambda$-calculus. Although complete, these languages are inconsistent (G\"odel). However, Presburger (1929) proposes a slightly weaker language which is both complete and consistent, $P \Coloneqq 0 \mid 1$:
+%
+%\begin{enumerate}
+%  \item $0 \neq S(0)            $
+%  \item $S(x) = S(y) \rightarrow x = y    $
+%  \item $x + 0 = x              $
+%  \item $x + S(y) = S(x + y)    $
+%  \item $(P(0) \land \forall x.(P(x) \rightarrow P(S(x))) \rightarrow \forall y.P(y)$
+%\end{enumerate}
+%
+%Via staging, we can embed any ASCII-based language in $C$. For example, consider the programming language...
+%
+%What about types? Since $C$ is both complete and consistent, we have boolean judgements. Judgemental equality is simply string equality.
+%
+%In concatenative programming, words typically denote function application in the point-free style. What if we took a more granular approach and allowed each symbol to be a higher-order function?
 
 \section{Graph Constructor}
 
