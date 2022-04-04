@@ -195,7 +195,7 @@ open class FreeMatrix<T> constructor(
     FreeMatrix(numRows, numCols, data, algebra)
 
   override fun toString() =
-    cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+    "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
       rows.joinToString("\n") {
         it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString(" ")
       }

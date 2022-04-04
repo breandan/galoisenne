@@ -115,14 +115,6 @@ class ValiantTest {
     }
   }
 
-  fun String.dyckCheck() =
-    fold(mutableMapOf("<>" to 0, "()" to 0, "[]" to 0, "{}" to 0)) { a, c ->
-      a.apply {
-        keys.firstOrNull { c in it }
-          ?.let { a[it] = a[it]!! + 2 * it.indexOf(c) - 1 }
-      }
-    }.values.sum() == 0
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
 */
@@ -143,7 +135,8 @@ class ValiantTest {
 */
   @Test
   fun testDyck2Solver() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl: CFL ->
+      println("CFL parsed: ${cfl.prettyPrint()}")
       val sols = "(___()___)".solve(cfl)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")

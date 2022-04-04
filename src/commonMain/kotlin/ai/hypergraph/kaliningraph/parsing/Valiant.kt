@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -28,7 +29,7 @@ class BiMap(cfl: CFL) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
+fun CFL.prettyPrint() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
 
 /*
  * Takes a grammar and a partially complete string where '_' denotes holes, and
@@ -37,7 +38,13 @@ fun CFL.toString() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(
  */
 
 fun String.solve(cfl: CFL, fillers: Set<String> = cfl.alphabet): Sequence<String> =
-  genCandidates(cfl, fillers).filter { it.matches(cfl) }
+  genCandidates(cfl, fillers).filter {
+    (it.matches(cfl) to it.dyckCheck()).also { (valiant, stack) ->
+      // Should never see either of these statements if we did our job correctly
+      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
+      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
+    }.first
+  }
 
 val HOLE_MARKER = '_'
 
@@ -113,11 +120,13 @@ fun CFL.isValid(
   tokens: List<String>,
   matrix: FreeMatrix<Set<String>> = toMatrix(tokens),
   finalConfig: FreeMatrix<Set<String>> = matrix.seekFixpoint { it + it * it }
-): Boolean = START_SYMBOL in finalConfig[0].last()
+): Boolean = (START_SYMBOL in finalConfig[0].last())
+//  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =
   ('A'..'Z').map { "$it" }.asSequence()
   .let { it + (it * it).map { (a, b) -> a + b } }
+    .filter { it != START_SYMBOL }
 
 fun String.parseCFL(): CFL =
   lines().filter(String::isNotBlank).map { line ->
@@ -152,8 +161,22 @@ private fun CFL.normalize(): CFL =
 
 val START_SYMBOL = "START"
 
-private fun CFL.addGlobalStartSymbol() =
-  this + variables.map { START_SYMBOL to listOf(it) }
+infix fun Char.matches(that: Char) =
+  if (this == ')' && that == '(') true
+  else if (this == ']' && that == '[') true
+  else if (this == '}' && that == '{') true
+  else this == '>' && that == '<'
+
+fun String.dyckCheck() =
+  filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
+    stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
+  }.isEmpty()
+
+private fun CFL.addGlobalStartSymbol() = this + variables
+//  .also { println("Vars: $it") }
+//    .filter { v -> none { v in it.second } }
+//    .also { println("Orphans: $it") }
+    .map { START_SYMBOL to listOf(it) }
 
 // Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFL.expandOr(): CFL =

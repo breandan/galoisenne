@@ -42,7 +42,7 @@
 %% Title information
 \title{Probabilistic Array Programming with Galois Theory}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and straightforwardly compiles to various backends, including low level formats like SMT and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and straightforwardly compiles to various backends, including SMT and netlist as well as IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
 \end{abstract}
 \maketitle
 
@@ -68,7 +68,7 @@ We initialize $\mathbf{M}^0[i, j](\mathcal{G}, \sigma) \coloneqq \{V_i \mid (V_i
 
 \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{V^*}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 
-This procedure is known~\citep{lee2002fast} to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the Boolean matrix multiplication upper bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this can be reduced to linearithmic time, and represents the best known asymptotic bounds for CFL recognition to date.
+This procedure is known~\citep{lee2002fast} to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the Boolean matrix multiplication upper bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this can be reduced to linearithmic time, and represents the best asymptotic bounds for CFL recognition to date.
 
 A similar procedure can be used to learn, parse and synthesize PCFGs and other weighted semirings~\citep{goodman1999semiring}, many of which can be expressed in GF(2) exactly or approximately. All of these can be expressed as discrete distributions, which can be efficiently sampled using a generator function over Galois fields.
 
