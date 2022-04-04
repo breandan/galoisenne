@@ -14,13 +14,12 @@ import kotlin.reflect.KProperty
 /**
  * java_smt API is a mess to debug, maybe output smt2 script directly by
  * dogfooding our own DSL [ai.hypergraph.kaliningraph.graphs.ComputationGraph]
- *
+ * Plus, it would allow us to run this on multiplatform and not just JVM.
  * Builder for SAT/SMT Instance - single use only!
  */
 // https://mathsat.fbk.eu/smt2examples.html
 class SMTInstance(
   val solver: Solvers = Solvers.SMTINTERPOL,
-
   val context: SolverContext = SolverContextFactory.createSolverContext(solver),
   val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
@@ -63,8 +62,18 @@ class SMTInstance(
     Ring.of(
       nil = Literal(false),
       one = Literal(true),
-      plus = { a, b -> a or b },
-      times = { a, b -> a and b }
+      plus = { a, b ->
+          if (a == one || b == one) one
+          else if (a == nil) b
+          else if (b == nil) a
+          else a or b
+      },
+      times = { a, b ->
+          if (a == nil || b == nil) nil
+          else if (a == one) b
+          else if (b == one) a
+          else a and b
+      }
     )
 
   fun solve(function: SMTInstance.() -> Unit) = function()
@@ -176,8 +185,8 @@ open class SATF(
 ): BooleanFormula by formula, Group<SATF> {
   private fun SATF(f: SMTInstance.() -> Any) = SATF(ctx, ctx.wrapBool(ctx.f()))
 
-  override val nil: SATF by lazy { SATF { 0 } }
-  override val one: SATF by lazy { SATF { 1 } }
+  override val nil: SATF by lazy { SATF { false } }
+  override val one: SATF by lazy { SATF { true } }
   override fun SATF.plus(t: SATF): SATF = SATF { formula or t.formula }
   override fun SATF.times(t: SATF): SATF = SATF { formula and t.formula }
 
