@@ -32,7 +32,7 @@ class SMTInstance(
       times = { a, b -> a * b }
     )
 
-  val XOR_SMT_ALGEBRA =
+  val XOR_SAT_ALGEBRA =
     Ring.of(
       nil = Literal(false),
       one = Literal(true),
@@ -163,7 +163,7 @@ class SMTInstance(
     ifmap: (T, T) -> BooleanFormula
   ) =
     if (m1.shape() != m2.shape())
-      throw Exception("Shape mismatch: ${m1.shape()}!=${m2.shape()}")
+      throw Exception("Shape mismatch: ${m1.shape()} != ${m2.shape()}")
     else m1.data.zip(m2.data)
       .filterIndexed { i, _ -> filter(i / m1.numCols, i % m1.numCols) }
       .map { (a, b) -> ifmap(a, b) }

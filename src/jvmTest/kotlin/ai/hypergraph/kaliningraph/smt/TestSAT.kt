@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
+import kotlin.collections.filter
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
@@ -47,7 +49,7 @@ class TestSAT {
    fun testUTXORMatFixpoint() = SMTInstance().solve {
      val dim = 20
      val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
-     val A = FreeMatrix(XOR_SMT_ALGEBRA, dim) { i, j ->
+     val A = FreeMatrix(XOR_SAT_ALGEBRA, dim) { i, j ->
        if (i to j in setVars) Literal(true)
        else if (j >= i + 1) BoolVar("V$i.$j")
        else Literal(false)
@@ -56,12 +58,12 @@ class TestSAT {
      val fpOp = A + A * A
 
      println("A:\n$A")
-     println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" } )
+     println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" })
 
      val isFixpoint = fpOp eqUT A
 
      val solution = solveBoolean(isFixpoint)
-     val D = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it] ?: it.toBool()!! } )
+     val D = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it] ?: it.toBool()!! })
 
      println("Decoding:\n$D")
 
@@ -167,6 +169,65 @@ class TestSAT {
 
     assertEquals(expected, actual)
   }
+
+  fun <T> Collection<T>.powerset(): Set<Set<T>> = when {
+    isEmpty() -> setOf(setOf())
+    else -> drop(1).powerset().let { it + it.map { it + first() } }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testTwoWayJoin"
+*/
+  fun testTwoWayJoin() = SMTInstance().solve {
+    val vars = setOf("A", "B", "C", "D")
+    val grammar = setOf(
+      "A" to ("A" to "C"),
+      "B" to ("C" to "D"),
+      "C" to ("C" to "A")
+    )
+
+    val pwrset = vars.powerset() - setOf(emptySet())
+    val allPairs = pwrset * pwrset
+    val allTriples = allPairs.map { (s1, s2) ->
+      val s3 = (s1 * s2).flatMap { (a, b) ->
+        grammar.filter { (a to b) == it.second }.map { it.first } }.toSet()
+      (s1 to s2 to s3)//.also { println("" + it.first + " join " + it.second + " := " + it.third) }
+    }
+
+    val designMatrix = FreeMatrix(XOR_SAT_ALGEBRA, vars.size) { r, c ->
+      BoolVar("G$r.$c")
+    }
+
+    val constraint = allTriples.map { (s1, s2, s3) ->
+      val (X, Y, Z) = encSetToMat(vars, s1) to encSetToMat(vars, s2) to encSetToMat(vars, s3)
+//      println("X:\n$X")
+//      println("Y:\n$Y")
+//      println("Z:\n$Z")
+      val tx = (X * designMatrix).transpose * Y
+      if(tx.data.zip(Z.data).any { (a, b) ->
+          a == Literal(true) && b == Literal(false) ||
+            b == Literal(true) && a == Literal(false)
+        }) {
+        println(tx)
+        println(Z)
+        println()
+        println()
+      }
+
+      tx eq Z
+    }.reduce { acc, formula -> acc and formula }
+
+    val solution = solveBoolean(constraint)
+
+    val G = BooleanMatrix(designMatrix.data.map { solution[it]!! })
+
+    println(G)
+  }
+
+  fun <T> SMTInstance.encSetToMat(universe: Set<T>, set: Set<T>, indU: List<T> = universe.toList()) =
+    FreeMatrix(SAT_ALGEBRA, universe.size) { r:Int, c: Int ->
+      Literal(r == c && indU[r] in set)
+    }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
