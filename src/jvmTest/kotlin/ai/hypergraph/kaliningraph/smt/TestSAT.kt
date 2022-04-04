@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 import kotlin.test.assertEquals
 
 /*
@@ -70,6 +71,35 @@ class TestSAT {
 
      assertEquals(D, D + D * D)
      println("Passed.")
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTBMatFixpoint"
+*/
+  @Test
+  fun testUTBMatFixpoint() = SMTInstance().solve {
+    val dim = 20
+    val setVars = setOf(0 to dim - 1)
+    val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
+      if (i to j in setVars) Literal(true)
+      else if (j >= i + 1 && j * i % 3 < 1 ) BoolVar("V$i.$j")
+      else Literal(false)
+    }
+
+    val fpOp = A + A * A
+
+    println("A:\n$A")
+    println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" } )
+
+    val isFixpoint = fpOp eqUT A
+
+    val solution = solveBoolean(isFixpoint)
+    val D = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it] ?: it.toBool()!! } )
+
+    println("Decoding:\n${D.toString().replace("0", " ")}")
+
+    assertEquals(D, D + D * D)
+    println("Passed.")
   }
 
 /*
