@@ -8,8 +8,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.6.20-RC2"
-  id("com.google.devtools.ksp") version "1.6.20-RC2-1.0.4"
+  kotlin("multiplatform") version "1.6.20"
+  id("com.google.devtools.ksp") version "1.6.20-1.0.4"
   kotlin("jupyter.api") version "0.11.0-62"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -119,7 +119,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.2.1"
+        val kotestVersion = "5.2.2"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
