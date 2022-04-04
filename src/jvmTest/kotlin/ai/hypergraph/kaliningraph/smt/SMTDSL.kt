@@ -11,14 +11,20 @@ import java.math.BigInteger
 import kotlin.math.pow
 import kotlin.reflect.KProperty
 
-// Builder for SAT/SMT Instance - single use only!
+/**
+ * java_smt API is a mess to debug, maybe output smt2 script directly by
+ * dogfooding our own DSL [ai.hypergraph.kaliningraph.graphs.ComputationGraph]
+ *
+ * Builder for SAT/SMT Instance - single use only!
+ */
+// https://mathsat.fbk.eu/smt2examples.html
 class SMTInstance(
-  val solver: Solvers = Solvers.PRINCESS,
+  val solver: Solvers = Solvers.SMTINTERPOL,
+
   val context: SolverContext = SolverContextFactory.createSolverContext(solver),
   val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
-  val qfm: QuantifiedFormulaManager = context.formulaManager.quantifiedFormulaManager
-): IntegerFormulaManager by ifm, QuantifiedFormulaManager by qfm {
+): IntegerFormulaManager by ifm {
   val SMT_ALGEBRA =
     Ring.of(
       nil = Literal(0),
@@ -136,7 +142,7 @@ class SMTInstance(
   fun Any.negate() = bfm.not(wrapBool(this))
   infix fun Any.and(b: Any) = bfm.and(wrapBool(this), wrapBool(b))
   infix fun Any.or(b: Any) = bfm.or(wrapBool(this), wrapBool(b))
-  infix fun Any.xor(b: Any) = bfm.or(wrapBool(this), wrapBool(b))
+  infix fun Any.xor(b: Any) = bfm.xor(wrapBool(this), wrapBool(b))
 
   fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 

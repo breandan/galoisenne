@@ -65,6 +65,14 @@ val BOOLEAN_ALGEBRA: Ring<Boolean> =
     times = { a, b -> a && b }
   )
 
+val XOR_ALGEBRA =
+  Ring.of(
+    nil = false,
+    one = true,
+    plus = { a, b -> a xor b },
+    times = { a, b -> a and b }
+  )
+
 val INTEGER_FIELD: Field<Int> =
   Field.of(
     nil = 0,
@@ -206,6 +214,12 @@ open class BooleanMatrix constructor(
     data = elements
   )
 
+  constructor(algebra: Ring<Boolean>, elements: List<Boolean>): this(
+    algebra = algebra,
+    numRows = sqrt(elements.size.toDouble()).toInt(),
+    data = elements
+  )
+
   constructor(numRows: Int, numCols: Int = numRows, f: (Int, Int) -> Boolean): this(
     numRows = numRows,
     numCols = numCols,
@@ -244,7 +258,7 @@ open class BooleanMatrix constructor(
     fun random(size: Int) = BooleanMatrix(size) { _, _ -> Random.nextBoolean() }
   }
 
-  override fun toString() = data.foldIndexed("") { i, a, b ->
+  override fun toString() = "\n" + data.foldIndexed("") { i, a, b ->
     a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
   }
 

@@ -49,12 +49,12 @@ class TestSAT {
 */
    @Test
    fun testUTGF2MatFixpoint() = SMTInstance().solve {
-     val dim = 6
+     val dim = 20
      val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
-     val A = FreeMatrix(GF2_SMT_ALGEBRA, dim) { i, j ->
-       if (i to j in setVars) Literal(1)
-       else if (j >= i + 1) IntVar("V$i.$j")
-       else Literal(0)
+     val A = FreeMatrix(XOR_SMT_ALGEBRA, dim) { i, j ->
+       if (i to j in setVars) Literal(false)
+       else if (j >= i + 1) BoolVar("V$i.$j")
+       else Literal(false)
      }
 
      println("A:\n$A")
@@ -63,8 +63,11 @@ class TestSAT {
      )
 
      val isFixpoint = A + A * A eqUT A
-     val solution = solveInteger(isFixpoint)
-     val D = FreeMatrix(GF2_ALGEBRA, A.data.map { solution[it] ?: it.toString().toInt() })
+
+//     println("Formula:\n $isFixpoint")
+
+     val solution = solveBoolean(isFixpoint)
+     val D = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it] ?: it.toBool()!! } )
 
      println("Decoding:\n$D")
 
