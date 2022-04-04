@@ -9,46 +9,42 @@ import kotlin.test.assertEquals
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT"
 */
 class TestSAT {
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
-*/
+  val rand = Random(0.also { println("Using seed: $it") })
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
+  */
   @Test
   fun testBMatInv() = SMTInstance().solve {
-    val dim = 13
+    val dim = 10
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
-    val p = (0 until dim).shuffled()
+    val p = (0 until dim).shuffled(rand)
     println("Permutation:\n" + p.joinToString(" "))
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> Literal(j == p[i]) }
-    println("Permutation matrix:")
-    A.rows.forEach {
-      println(it.joinToString(" ") { it.toString().first() + "" })
-    }
+    val P = BooleanMatrix(A.data.map { it.toBool()!! })
+    println("Permutation matrix:$P")
     val B = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BoolVar("B$i$j") }
 
     val isInverse = (A * B * A) eq A
-
     val solution = solveBoolean(isInverse)
 
 //    println(solution.entries.joinToString("\n") { it.key.toString() + "," + it.value })
 
-    val sol = B.rows.map { i -> i.map { solution[it]!! } }
-    val maxLen = sol.flatten().maxOf { it.toString().length }
-    println("Inverse permutation matrix:")
-    sol.forEach {
-      println(it.joinToString(" ") { it.toString().first() + "" })
-    }
+    val sol = BooleanMatrix(B.data.map { solution[it]!!})
+    println("Inverse permutation matrix:$sol")
 
     val a = BooleanMatrix(dim) { i, j -> j == p[i] }
     val b = BooleanMatrix(dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
+    // https://math.stackexchange.com/questions/98549/the-transpose-of-a-permutation-matrix-is-its-inverse
+    assertEquals(P.transpose, b)
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTXORMatFixpoint"
 */
    @Test
-   fun testUTGF2MatFixpoint() = SMTInstance().solve {
+   fun testUTXORMatFixpoint() = SMTInstance().solve {
      val dim = 20
      val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
      val A = FreeMatrix(XOR_SMT_ALGEBRA, dim) { i, j ->
@@ -71,6 +67,35 @@ class TestSAT {
 
      assertEquals(D, D + D * D)
      println("Passed.")
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
+*/
+
+  fun testUTGF2MatFixpoint() = SMTInstance().solve {
+    val dim = 20
+    val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
+    val A = FreeMatrix(GF2_SMT_ALGEBRA, dim) { i, j ->
+      if (i to j in setVars) Literal(1)
+      else if (j >= i + 1) IntVar("V$i.$j")
+      else Literal(0)
+    }
+
+    val fpOp = A + A * A
+
+    println("A:\n$A")
+    println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" } )
+
+    val isFixpoint = fpOp eqUT A
+
+    val solution = solveInteger(isFixpoint)
+    val D = FreeMatrix(INTEGER_FIELD, A.data.map { solution[it] ?: it.toInt()!! } )
+
+    println("Decoding:\n$D")
+
+    assertEquals(D, D + D * D)
+    println("Passed.")
   }
 
 /*
@@ -117,7 +142,7 @@ class TestSAT {
     val len = 20
     val universe = (1 until dim).toList()
 
-    fun draw() = universe.shuffled().take(len).map { universe.indexOf(it) }
+    fun draw() = universe.shuffled(rand).take(len).map { universe.indexOf(it) }
 
     val setA = draw().toSet()
     val setB = draw().toSet()

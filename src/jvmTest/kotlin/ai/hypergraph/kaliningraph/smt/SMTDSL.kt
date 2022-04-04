@@ -50,6 +50,7 @@ class SMTInstance(
         else if (a == one && b == one) nil
         else (a + b) mod 2
       },
+      // TODO: * Unsupported by SMTInterpol
       times = { a, b ->
         if (a == nil || b == nil) nil
         else if (a == one) b
