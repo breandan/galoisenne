@@ -5,6 +5,9 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlinx.jupyter.testkit.JupyterReplTestCase
 import org.junit.jupiter.api.Test
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.notebook.RenderingTests"
+*/
 class RenderingTests: JupyterReplTestCase() {
   @Test
   fun `labeled graph is rendered to html`() {
