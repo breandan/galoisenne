@@ -297,6 +297,10 @@ open class DoubleMatrix constructor(
     DoubleMatrix(numRows, numCols, data, alg)
 }
 
+operator fun Double.times(value: DoubleMatrix): DoubleMatrix = value * this
+operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
+  DoubleMatrix(numRows, numCols, data.map { it * value })
+
 tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
   val next = op(this)
   return if (this == next) next//.also { println("Converged in $i iterations") }
