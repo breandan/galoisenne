@@ -190,12 +190,13 @@ open class FreeMatrix<T> constructor(
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
+  override fun hashCode() = data.hashCode()
 
   override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
 
   override fun toString() =
-    "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+    "Shape: ${shape()}/${rows.size to rows[0].size}\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
       rows.joinToString("\n") {
         it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString(" ")
       }

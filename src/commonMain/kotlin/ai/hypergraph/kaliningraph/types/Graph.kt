@@ -170,7 +170,9 @@ fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
-    cache.getOrPut("${y!!::class.simpleName}${id}$caller") { y.fn() as Any } as T
+    val csg = "${y!!::class.simpleName}${id}$caller"
+//    y.fn()
+    cache.getOrPut(csg) { y.fn() as Any } as T
   }
 
 class RandomWalk<G, E, V>(

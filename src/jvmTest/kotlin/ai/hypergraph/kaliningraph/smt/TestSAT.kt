@@ -140,32 +140,37 @@ class TestSAT {
 */
   @Test
   fun testSetIntersectionOneHot() = SMTInstance().solve {
-    val dim = 30
-    val len = 20
-    val universe = (1 until dim).toList()
+    val dim = 10
+    val len = 6
+    val universe = (0 until dim).toList()
 
     fun draw() = universe.shuffled(rand).take(len).map { universe.indexOf(it) }
 
     val setA = draw().toSet()
     val setB = draw().toSet()
-    fun Set<Int>.encodeAsMatrix() =
-      FreeMatrix(SAT_ALGEBRA, len, dim) { i, j -> Literal(elementAt(i) == j) }
+    fun Set<Int>.encodeAsMatrix(universe: Set<Int>, dim: Int = universe.size) =
+      FreeMatrix(SAT_ALGEBRA, size, dim) { i, j -> Literal(elementAt(i) == universe.elementAt(j)) }
 
-    val A = setA.encodeAsMatrix()
+    val A = setA.encodeAsMatrix(universe.toSet())
     val X = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
-      if (i == j) BoolVar("B$i") else Literal(false)
+      if (i == j) BoolVar("B$i") else BoolVar("OD$i.$j")
     }
-    val B = setB.encodeAsMatrix()
+    val B = setB.encodeAsMatrix(universe.toSet())
     val dontCare = BoolVar("dc")
     val Y = FreeMatrix(SAT_ALGEBRA, len) { _, _ -> dontCare }
+
+    println("A:$A")
+    println("X:$X")
+    println("B:$B")
+    println("Y:$Y")
 
     val intersection = (A * X * B.transpose) eq Y
     val solution = solveBoolean(intersection)
 
     val expected = setA intersect setB
-    val actual = (solution.keys - dontCare.formula).map { "$it".drop(1).toInt() }.toSet()
+    val actual = solution.keys.mapNotNull { "$it".drop(1).toIntOrNull() }.toSet()
     println("Expected: $expected")
-    println("Actual  : $expected")
+    println("Actual  : $actual")
 
     assertEquals(expected, actual)
   }
@@ -178,53 +183,109 @@ class TestSAT {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testTwoWayJoin"
 */
+  @Test
   fun testTwoWayJoin() = SMTInstance().solve {
-    val vars = setOf("A", "B", "C", "D")
+    val vars = setOf("A", "B", "C", "D", "E", "F", "G", "H", "I")
     val grammar = setOf(
       "A" to ("A" to "C"),
       "B" to ("C" to "D"),
+      "B" to ("E" to "H"),
       "C" to ("C" to "A")
     )
 
-    val pwrset = vars.powerset() - setOf(emptySet())
-    val allPairs = pwrset * pwrset
-    val allTriples = allPairs.map { (s1, s2) ->
-      val s3 = (s1 * s2).flatMap { (a, b) ->
-        grammar.filter { (a to b) == it.second }.map { it.first } }.toSet()
-      (s1 to s2 to s3)//.also { println("" + it.first + " join " + it.second + " := " + it.third) }
-    }
-
-    val designMatrix = FreeMatrix(XOR_SAT_ALGEBRA, vars.size) { r, c ->
-      BoolVar("G$r.$c")
-    }
-
-    val constraint = allTriples.map { (s1, s2, s3) ->
-      val (X, Y, Z) = encSetToMat(vars, s1) to encSetToMat(vars, s2) to encSetToMat(vars, s3)
-//      println("X:\n$X")
-//      println("Y:\n$Y")
-//      println("Z:\n$Z")
-      val tx = (X * designMatrix).transpose * Y
-      if(tx.data.zip(Z.data).any { (a, b) ->
-          a == Literal(true) && b == Literal(false) ||
-            b == Literal(true) && a == Literal(false)
-        }) {
-        println(tx)
-        println(Z)
-        println()
-        println()
+    fun <T> Set<T>.encodeAsMatrix(
+      universe: Set<T>,
+      rows: Int,
+      cols: Int = universe.size,
+    ) = FreeMatrix(SAT_ALGEBRA, rows, cols) { i, j ->
+        Literal(if (size <= i) false else elementAt(i) == universe.elementAt(j))
       }
 
-      tx eq Z
+    // We only use off-diagonal entries
+    val odMat = FreeMatrix(SAT_ALGEBRA, vars.size) { i, j ->
+      if(i == j) Literal(true) else BoolVar("OD$i.$j")
+    }
+
+    fun <T> Set<T>.encodeAsDMatrix( universe: Set<T>, ) =
+      FreeMatrix(SAT_ALGEBRA, universe.size) { i, j ->
+        if (i == j) Literal(universe.elementAt(i) in this)
+        else odMat[i, j]
+      }
+
+    fun join(s1: Set<String>, s2: Set<String>) =
+      (s1 * s2).flatMap { (a, b) ->
+        grammar.filter { (a to b) == it.second }.map { it.first } }.toSet()
+
+    val pwrset = vars.powerset() - setOf(emptySet())
+    val allPairs = (pwrset * pwrset)
+    val allTriples = allPairs.mapNotNull { (s1, s2) ->
+      val s3 = join(s1, s2)
+      if(s3.isEmpty()) null else (s1 to s2 to s3)
+    //.also { println("" + it.first + " join " + it.second + " := " + it.third) }
+    }
+
+//    val designMatrix = FreeMatrix(SAT_ALGEBRA, vars.size) { r, c ->
+//      BoolVar("G$r.$c")
+//    }
+
+    val constraint = allTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
+      val rows = maxOf(s1.size, s2.size)
+
+      val (X, Y, designMatrix) =
+      s1.encodeAsMatrix(vars, rows) to
+      s2.encodeAsMatrix(vars, rows) to
+      s3.encodeAsDMatrix(vars)
+
+//      println("S1: $s1")
+//      println(X.toString())
+//      println("S2: $s2")
+//      println(Y.toString())
+//      println("S3: $s3")
+//      println(designMatrix)
+      val tx = (X * designMatrix * designMatrix * Y.transpose)
+//      println(i)
+//      println()
+
+      val dontCare = BoolVar("dc$i")
+      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
+      tx eq DC
     }.reduce { acc, formula -> acc and formula }
 
     val solution = solveBoolean(constraint)
 
-    val G = BooleanMatrix(designMatrix.data.map { solution[it]!! })
+    val G = FreeMatrix(odMat.data.map { solution[it]?.let{ if(it) "1" else "0" } ?: "UNK" })
 
-    println(G)
+    println("Design matrix: $G")
+
+    allTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
+      val rows = maxOf(s1.size, s2.size)
+
+      val (X, Y) = s1.encodeAsMatrix(vars, rows) to s2.encodeAsMatrix(vars, rows)
+      // Synthesized * operator
+      val D = FreeMatrix(SAT_ALGEBRA, G.numRows) { i, j ->
+        if(i== j) BoolVar("K$i") else Literal(G[i, j] == "1")
+      }
+
+      val tx = (X * D * D * Y.transpose) // * D * is UNSAT but * D * D * is SAT?
+      val dontCare = BoolVar("DDC$i")
+      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
+
+      val diag = solveBoolean(tx eq DC)
+
+      val actual = diag.keys.mapNotNull { "$it".drop(1).toIntOrNull() }
+        .toSet().map { vars.elementAt(it) }
+      val expected = s3
+
+//      println("Expected: $expected")
+//      println("Actual  : $actual")
+    }
   }
 
-  fun <T> SMTInstance.encSetToMat(universe: Set<T>, set: Set<T>, indU: List<T> = universe.toList()) =
+
+  fun <T> SMTInstance.encSetToMat(
+    universe: Set<T>, set: Set<T>,
+    indU: List<T> = universe.toList(),
+  ) =
     FreeMatrix(SAT_ALGEBRA, universe.size) { r:Int, c: Int ->
       Literal(r == c && indU[r] in set)
     }
