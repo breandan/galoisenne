@@ -128,12 +128,12 @@ private val freshNames: Sequence<String> =
   .let { it + (it * it).map { (a, b) -> a + b } }
     .filter { it != START_SYMBOL }
 
-fun String.parseCFL(): CFL =
+fun String.parseCFL(normalize: Boolean = true): CFL =
   lines().filter(String::isNotBlank).map { line ->
     val prod = line.split("->").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
-  }.toSet().normalForm
+  }.toSet().let { if (normalize) it.normalForm else it }
 
 fun CFLCFL(names: Map<String, String>) = """
     CFL -> PRD | CFL ::NL:: CFL

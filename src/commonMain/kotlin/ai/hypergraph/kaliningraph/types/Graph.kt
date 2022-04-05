@@ -167,11 +167,12 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 
 val cache = LRUCache<String, Any>(10000)
 fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
+// If you believe there may be a bug here, it's really important to
+// check hashCode() / deepHashCode - we expect this to be unique!
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
     val csg = "${y!!::class.simpleName}${id}$caller"
-//    y.fn()
     cache.getOrPut(csg) { y.fn() as Any } as T
   }
 

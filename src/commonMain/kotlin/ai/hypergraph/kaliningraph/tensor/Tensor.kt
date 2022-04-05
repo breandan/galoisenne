@@ -146,11 +146,29 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
       }
     }
 
-  override fun equals(other: Any?) =
-    other is FreeMatrix<*> && data.zip(other.data).all { (a, b) -> a == b } ||
-      other is Matrix<*, *, *> && other.data == data
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || this::class != other::class) return false
+    if (!super.equals(other)) return false
 
-  override fun hashCode() = data.hashCode()
+    other as FreeMatrix<*>
+
+    if (numRows != other.numRows) return false
+    if (numCols != other.numCols) return false
+    if (data != other.data) return false
+    if (algebra != other.algebra) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = super.hashCode()
+    result = 31 * result + numRows
+    result = 31 * result + numCols
+    result = 31 * result + data.hashCode()
+    result = 31 * result + algebra.hashCode()
+    return result
+  }
 }
 
 // A free matrix has no associated algebra by default. If you try to do math
@@ -190,13 +208,11 @@ open class FreeMatrix<T> constructor(
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
-  override fun hashCode() = data.hashCode()
-
   override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
     FreeMatrix(numRows, numCols, data, algebra)
 
   override fun toString() =
-    "Shape: ${shape()}/${rows.size to rows[0].size}\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+    cols.map { it.maxOf { "$it".length } }.let { colWidth ->
       rows.joinToString("\n") {
         it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString(" ")
       }

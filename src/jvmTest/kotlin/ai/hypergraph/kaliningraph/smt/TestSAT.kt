@@ -1,11 +1,12 @@
 package ai.hypergraph.kaliningraph.smt
 
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import kotlin.collections.filter
 import kotlin.random.Random
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT"
@@ -185,13 +186,15 @@ class TestSAT {
 */
   @Test
   fun testTwoWayJoin() = SMTInstance().solve {
+    val cfl = """
+      A -> A C
+      B -> C D
+      B -> E H
+      C -> C A
+    """.parseCFL(false)
+    println(cfl.prettyPrint())
     val vars = setOf("A", "B", "C", "D", "E", "F", "G", "H", "I")
-    val grammar = setOf(
-      "A" to ("A" to "C"),
-      "B" to ("C" to "D"),
-      "B" to ("E" to "H"),
-      "C" to ("C" to "A")
-    )
+    val grammar = cfl
 
     fun <T> Set<T>.encodeAsMatrix(
       universe: Set<T>,
@@ -206,7 +209,7 @@ class TestSAT {
       if(i == j) Literal(true) else BoolVar("OD$i.$j")
     }
 
-    fun <T> Set<T>.encodeAsDMatrix( universe: Set<T>, ) =
+    fun <T> Set<T>.encodeAsDMatrix(universe: Set<T>) =
       FreeMatrix(SAT_ALGEBRA, universe.size) { i, j ->
         if (i == j) Literal(universe.elementAt(i) in this)
         else odMat[i, j]
@@ -214,14 +217,13 @@ class TestSAT {
 
     fun join(s1: Set<String>, s2: Set<String>) =
       (s1 * s2).flatMap { (a, b) ->
-        grammar.filter { (a to b) == it.second }.map { it.first } }.toSet()
+        grammar.filter { listOf(a, b) == it.second }.map { it.first } }.toSet()
 
     val pwrset = vars.powerset() - setOf(emptySet())
     val allPairs = (pwrset * pwrset)
     val allTriples = allPairs.mapNotNull { (s1, s2) ->
       val s3 = join(s1, s2)
       if(s3.isEmpty()) null else (s1 to s2 to s3)
-    //.also { println("" + it.first + " join " + it.second + " := " + it.third) }
     }
 
 //    val designMatrix = FreeMatrix(SAT_ALGEBRA, vars.size) { r, c ->
@@ -236,24 +238,29 @@ class TestSAT {
       s2.encodeAsMatrix(vars, rows) to
       s3.encodeAsDMatrix(vars)
 
-//      println("S1: $s1")
-//      println(X.toString())
-//      println("S2: $s2")
-//      println(Y.toString())
-//      println("S3: $s3")
-//      println(designMatrix)
-      val tx = (X * designMatrix * designMatrix * Y.transpose)
-//      println(i)
-//      println()
+      println("S1: $s1")
+      println(X.toString())
+      println("S2: $s2")
+      println(Y.toString())
+      println("S3: $s3")
+      println(designMatrix)
+
+      // https://dl.acm.org/doi/pdf/10.1145/3318464.3380607
+      // http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/gwwz.pdf
+      val tx = X * designMatrix * designMatrix * Y.transpose
+      println()
+      println()
 
       val dontCare = BoolVar("dc$i")
       val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
       tx eq DC
     }.reduce { acc, formula -> acc and formula }
 
+    println("Solving:${allTriples.size}")
+
     val solution = solveBoolean(constraint)
 
-    val G = FreeMatrix(odMat.data.map { solution[it]?.let{ if(it) "1" else "0" } ?: "UNK" })
+    val G = FreeMatrix(odMat.data.map { solution[it]?.let { if(it) "1" else "0" } ?: "UNK" })
 
     println("Design matrix: $G")
 
@@ -263,7 +270,7 @@ class TestSAT {
       val (X, Y) = s1.encodeAsMatrix(vars, rows) to s2.encodeAsMatrix(vars, rows)
       // Synthesized * operator
       val D = FreeMatrix(SAT_ALGEBRA, G.numRows) { i, j ->
-        if(i== j) BoolVar("K$i") else Literal(G[i, j] == "1")
+        if(i == j) BoolVar("K$i") else Literal(G[i, j] == "1")
       }
 
       val tx = (X * D * D * Y.transpose) // * D * is UNSAT but * D * D * is SAT?
@@ -272,23 +279,14 @@ class TestSAT {
 
       val diag = solveBoolean(tx eq DC)
 
-      val actual = diag.keys.mapNotNull { "$it".drop(1).toIntOrNull() }
+      val actual = diag.keys
+        .mapNotNull { "$it".drop(1).toIntOrNull() }
         .toSet().map { vars.elementAt(it) }
-      val expected = s3
 
-//      println("Expected: $expected")
+//      println("Expected: $s3")
 //      println("Actual  : $actual")
     }
   }
-
-
-  fun <T> SMTInstance.encSetToMat(
-    universe: Set<T>, set: Set<T>,
-    indU: List<T> = universe.toList(),
-  ) =
-    FreeMatrix(SAT_ALGEBRA, universe.size) { r:Int, c: Int ->
-      Literal(r == c && indU[r] in set)
-    }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"

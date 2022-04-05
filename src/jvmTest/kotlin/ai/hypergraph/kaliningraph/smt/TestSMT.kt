@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Test
+import java.lang.AssertionError
 import kotlin.math.*
 import kotlin.test.*
 
@@ -155,15 +157,16 @@ class TestSMT {
   }
 
 
-//  @Test
+  @Test
   fun testIsAssociative() = SMTInstance().solve {
     val dim = 2
     val a = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("a$i$j") }
     val b = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("b$i$j") }
     val c = FreeMatrix(SMT_ALGEBRA, dim) { i, j -> IntVar("c$i$j") }
 
-    val plusAssoc = ((a + b) + c) eq (a + (b + c))
-    val multAssoc = ((a * b) * c) eq (a * (b * c)) // TODO: why is this so slow?
+    val plusAssoc = ((a + b) + c) neq (a + (b + c))
+
+    assertThrows<Error> { solveInteger(plusAssoc) }
 
   // Not all solvers support quantifiers
 //    val goal = forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
