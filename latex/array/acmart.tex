@@ -40,16 +40,17 @@
 \begin{document}
 
 %% Title information
-\title{Probabilistic Array Programming with Galois Theory}
+\title{Probabilistic Array Programming on Galois Fields}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of parsing context free languages, modeling discrete distributions, graph representation learning and sketch-based program synthesis using sparse matrix multiplication on $GF(p^n)$. This representation allows us to leverage complexity-theoretic lower bounds and straightforwardly compiles to various backends, including SMT and netlist as well as IRs such as JVM, LLVM, and JS using the same codebase. We describe its implementation and a few use cases, including learning and sketching simple programs.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, parsing context free languages, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching simple programs via SAT/SMT encoding.
 \end{abstract}
 \maketitle
 
 \section{Introduction}
 
-A Galois field is a field containing a finite set of elements. For example, consider $\mathbb{Z}/n$ where $n$ is prime. The theory of context free grammars are a special case on GF(2)~\citep{jansson2016certified, bakinova2020formal}. Let $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ be a CFG in Chomsky Normal Form. We can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$, as follows. Let $\mathcal P(V)$ be our domain, $0 := \varnothing$, $\oplus := \cup$, and $\otimes$ be:
+A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}/n$ where $n$ is prime. We are primarily interested in GF$(2^n)$, taking values on $\{0, 1\}^n$, due to its amenability to SAT/SMT encoding, well-studied theoretical properties, circuit synthesizability and broad applicability to signal processing and computational linguistics. For example, the theory of context free grammars are a special case~\citep{jansson2016certified, bakinova2020formal}: let $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ be a CFG in Chomsky Normal Form. We can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$, as follows. Let $\mathcal P(V)$ be our domain, $0 := \varnothing$, $\oplus := \cup$, and $\otimes$ be defined as:
 
+\vspace{-7pt}
 \[
 l \otimes r := \{V \mid \langle S, S'\rangle \in l \times r, (V\rightarrow SS') \in P\}
 \]
@@ -68,12 +69,22 @@ We initialize $\mathbf{M}^0[i, j](\mathcal{G}, \sigma) \coloneqq \{V_i \mid (V_i
 
 \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{V^*}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 
-This procedure is known~\citep{lee2002fast} to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the Boolean matrix multiplication upper bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this can be reduced to linearithmic time, and represents the best asymptotic bounds for CFL recognition to date.
+This procedure can be lowered onto binary matrices by noting the output of $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and thus representable as fixed-length vectors. Full details of this bisimilarity can be found in Valiant~\citep{valiant1975general} and Lee~\citep{lee2002fast}, later shown to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this technique can typically be reduced to linearithmic time, and is among the best asymptotic bounds for CFL recognition to date.
 
-A similar procedure can be used to learn, parse and synthesize PCFGs and other weighted semirings~\citep{goodman1999semiring}, many of which can be expressed in GF(2) exactly or approximately. All of these can be expressed as discrete distributions, which can be efficiently sampled using a generator function over Galois fields.
+A similar procedure can be used to learn, parse and sample from probabilistic grammars such as PCFGs~\citep{goodman1999semiring} and probabilistic circuits~\citep{peharz2015foundations} using semirings, many of which have carrier sets which can be neatly expressed as elements of GF(2). Known as \textit{propagation} or \textit{message passing}, this procedure consists of two steps: \textit{aggregate} and \textit{update}. Let $\delta_{st}$ denote some distance metric on a path between vertices $s$ and $t$ in a graph. To obtain $\delta_{st}$, one may run the following procedure using a desired path algebra until convergence:
 
-GF(2) can be used to sample without replacement from arbitrarily large sets. Let $M: \text{GF}(2)^{n\times n}$ be a square matrix defined as $M^0[i, j] = P_j \text{ if } i=0 \text{ else } \mathds{1}[j = i - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$. Concretely, this can be expressed as a Boolean semiring where $\otimes := \underline{\vee}, \oplus := \vee$ are lifted to matrices in the usual way:
+\begin{center}
+  \begin{tabular}{lc}
+    $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & & &
+  \end{tabular}
+\end{center}
 
+\vspace{-5pt}
+\noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra, belief, constraint, error and expectation propagation, Markov chains, and others can all be neatly expressed as message passing on a semiring algebra. We refer the curious reader to Gondran~\citep{gondran2008graphs} and Baras~\citep{baras2010path} for a more complete survey of the algebraic path problem and its many wonderful applications across computer science.
+
+GF(2) can be used to sample without replacement from arbitrarily large sets. Let $M: \text{GF}(2^{n\times n})$ be a square matrix defined as $M^0[i, j] = P_j \text{ if } i=0 \text{ else } \mathds{1}[j = i - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$. Concretely, this can be expressed as a Boolean semiring where $\otimes := \underline{\vee}, \oplus := \vee$ are lifted to matrices in the usual way:
+
+\vspace{-5pt}
 \[
 \mathbf{M}^tV = \begin{pmatrix}
   P_0 & P_1 & P_2 & P_3 & P_4 \\
@@ -91,23 +102,23 @@ GF(2) can be used to sample without replacement from arbitrarily large sets. Let
 \end{pmatrix}
 \]
 
-Selecting coefficients $P_j$ from any primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, given an initial state $V \neq \mathbf{0}$, the sequence $\mathbf{V} = \begin{bmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{bmatrix}$ will cycle through the full state space in pseudorandom order without repetition. This construction, known as a linear finite state register (LFSR) samples without replacement from indexed sets $|S_V|<\infty$ in $\mathcal{O}(\log |S|)$ space and time.
+Selecting coefficients $P_j$ from any primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, given an initial state $V \neq \mathbf{0}$, the sequence $\mathbf{V} = \begin{bmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{bmatrix}$ will cycle through its full state space in pseudorandom order. Known as a linear finite state register (LFSR), this circuit samples without replacement from indexed sets $|S_V|<\infty$ in $\mathcal{O}(\log |S|)$ space and time and may be used to construct more complex distributions via inversion sampling.
 
-To build more complex distributions over GF(2), we need a fast inverse transform sampler.
+Last but not least, we can compute all pairwise interactions between two sets of sets by encoding them as incidence matrices and computing diagonal entries of $AXB^\intercal$ which indicate $A \cap B$. This construction has many applications in database theory~\citep{deep2020fast} and combinatorial matrix theory~\citep{brualdi1991combinatorial}. For example, we can use it to compute $P(A \cap B)$
 
-We can use these two observations to do program synthesis. Suppose we have the following CFL:
+In the following section we describe some applications for these constructions for defining probabilistic programming languages,
 
-\[
-  \hspace{5}S \rightarrow x\hspace{10}
-  S \rightarrow y\hspace{10}
-  S \rightarrow z\hspace{10}
-  S \rightarrow S + S\hspace{10}
-  S \rightarrow S * S\hspace{10}
-  S \rightarrow (S)\hspace{10}
-\]
-
-And suppose we have a string: \texttt{\_\_\_\_\_+3}. What could fit inside? We generate $\Sigma^5$ and check.
-
+%Finally, all of these can be implemented using
+%\[
+%  \hspace{5}S \rightarrow x\hspace{10}
+%  S \rightarrow y\hspace{10}
+%  S \rightarrow z\hspace{10}
+%  S \rightarrow S + S\hspace{10}
+%  S \rightarrow S * S\hspace{10}
+%  S \rightarrow (S)\hspace{10}
+%\]
+%
+%And suppose we have a string: \texttt{\_\_\_\_\_+3}. What could fit inside? We generate $\Sigma^5$ and check.
 
 \section{Implementation}
 
@@ -415,22 +426,6 @@ The connection between algebra and graphs runs deep, unifying many seemingly dis
   \UnaryInfC{\textit{Annihilation}}
 \end{prooftree}
 \normalsize
-
-\noindent It is possible solve a wide variety of path problems using iterated matrix multiplication on semirings. Known as \textit{propagation} or \textit{message passing}, this procedure consists of two steps: \textit{aggregate} and \textit{update}. Let $\delta_{st}$ denote some distance metric on a path between two vertices $s$ and $t$ in a graph. To obtain $\delta_{st}$, one may run the following procedure on a desired path algebra until convergence:
-
-\begin{center}
-  \begin{tabular}{lc}
-    $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & & &
-  \end{tabular}
-  \begin{tabular}{c|c{1cm}c{1cm}|c{1cm}c{1cm}|c}
-    S                           & $\oplus$ & $\otimes$ & $\circled{0}$ & $\circled{1}$ & Path     \\\hline
-    $\mathbb R \cup \{\infty\}$ & min      & +         &   $\infty$    &      0        & Shortest \\
-    $\mathbb R \cup \{\infty\}$ & max      & +         &   $-\infty$   &      0        & Longest  \\
-    $\mathbb R \cup \{\infty\}$ & max      & min       &       0       &   $\infty$    & Widest   \\
-  \end{tabular}
-\end{center}
-
-\noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra, belief, constraint, error and expectation propagation, Markov chains, and others can all be neatly expressed as message passing on a semiring algebra. We refer the curious reader to~\cite{gondran2008graphs,baras2010path} for a more complete summary of the algebraic path problem and its many wonderful applications.
 
 %According to the Perron-Frobenius theorem, if $\mathbf M: \mathbb{R}^{n \times n}_{>0}$ then $\mathbf M$ has a unique largest eigenvalue $\lambda \in \mathcal T$ and dominant eigenvector $\mathbf{q} \in \mathcal T^{n}$. Assuming $\mathcal{T}$, $\lim_{i\rightarrow \infty} \mathbf{M}^i \mathbf{v} = c\mathbf{q}$ where $c$ is a constant.
 %
