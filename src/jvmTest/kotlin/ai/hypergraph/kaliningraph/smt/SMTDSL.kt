@@ -100,7 +100,7 @@ class SMTInstance(
     context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
-        assert(!prover.isUnsat) { "Unsat!" }
+        if(!prover.isUnsat) throw Exception("Unsat!")
         prover.modelAssignments// This may not assign all free variables?
 //        associateWith { prover.model.evaluate(it) /*Can be null?*/ }
       }

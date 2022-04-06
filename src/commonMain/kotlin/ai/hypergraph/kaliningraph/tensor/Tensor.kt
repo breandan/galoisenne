@@ -31,6 +31,9 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose[j] }
   fun <Y> map(f: (T) -> Y) = new(numRows, numCols, data.map(f) as List<T>)
 
+  fun getElements(filterBy: (Int, Int) -> Boolean) =
+    allPairs(numRows, numCols).mapNotNull { (r, c) -> if(filterBy(r, c)) this[r, c] else null }
+
   infix fun List<T>.dot(es: List<T>): T =
     with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
 

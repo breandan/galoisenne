@@ -120,7 +120,7 @@ class ValiantTest {
 */
   @Test
   fun testDyckSolver() {
-    """S -> ( ) | ( S ) | S S""".parseCFL().let { cfl ->
+    """S -> ( ) | ( S ) | S S""".parseCFG().let { cfl ->
       val sols = "(____()____)".solve(cfl, fillers = cfl.alphabet + "")
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
@@ -135,9 +135,9 @@ class ValiantTest {
 */
   @Test
   fun testDyck2Solver() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl: CFL ->
-      println("CFL parsed: ${cfl.prettyPrint()}")
-      val sols = "(___()___)".solve(cfl)
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { CFG: CFG ->
+      println("CFL parsed: ${CFG.prettyPrint()}")
+      val sols = "(___()___)".solve(CFG)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
@@ -152,7 +152,7 @@ class ValiantTest {
 */
   @Test
   fun benchmarkNaiveSearch() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFL().let { cfl ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { cfl ->
       println("Total Holes, Instances Checked, Solutions Found")
       for (len in 2..6 step 2) {
         val template = List(len) { "_" }.joinToString("")
@@ -200,7 +200,7 @@ class ValiantTest {
 */
   @Test
   fun testDyck3Solver() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFL().let { cfl ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfl ->
       val sols = "(____()____)".solve(cfl)
         .map { println(it); it }.take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
@@ -218,7 +218,7 @@ class ValiantTest {
       S -> a X b X
       X -> a Y | b Y
       Y -> X | c
-    """.parseCFL().let { cfl ->
+    """.parseCFG().let { cfl ->
       println(cfl)
       cfl.forEach { (_, b) -> assertContains(1..2, b.size) }
       cfl.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfl.variables, it) }
@@ -230,7 +230,7 @@ class ValiantTest {
 */
   @Test
   fun testDropUnitProds() {
-    val normalForm = "S -> c | d".parseCFL()
+    val normalForm = "S -> c | d".parseCFG()
     """
       S -> A
       A -> B
@@ -238,12 +238,12 @@ class ValiantTest {
       B -> D
       C -> c
       D -> d
-    """.parseCFL().let { cfl -> assertEquals(normalForm, cfl) }
+    """.parseCFG().let { cfl -> assertEquals(normalForm, cfl) }
 
     """
       S -> C | D
       C -> c
       D -> d
-    """.parseCFL().let { cfl -> assertEquals(normalForm, cfl) }
+    """.parseCFG().let { cfl -> assertEquals(normalForm, cfl) }
   }
 }
