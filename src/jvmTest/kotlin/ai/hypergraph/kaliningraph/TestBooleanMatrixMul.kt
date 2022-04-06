@@ -3,6 +3,9 @@ package ai.hypergraph.kaliningraph
 import ai.hypergraph.kaliningraph.tensor.BooleanMatrix
 import org.junit.jupiter.api.*
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.TestBooleanMatrixMul"
+*/
 class TestBooleanMatrixMul {
   @Test
   fun testMatMul() {
@@ -10,7 +13,7 @@ class TestBooleanMatrixMul {
     val b = BooleanMatrix(1, 1, 0, 0, 0, 0, 0, 1, 1)
     val c = BooleanMatrix(1, 0, 1, 0, 0, 1, 0, 1, 1)
 
-    Assertions.assertEquals(a * (b + c), a * b + a * c)
+    Assertions.assertTrue(a * (b + c) == a * b + a * c)
   }
 
   @Test
@@ -20,7 +23,7 @@ class TestBooleanMatrixMul {
       val b = BooleanMatrix.random(4)
       val c = BooleanMatrix.random(4)
 
-      Assertions.assertEquals(a * (b + c), a * b + a * c, "$a\n$b\n$c")
+      Assertions.assertTrue(a * (b + c) == a * b + a * c, "$a\n$b\n$c")
     }
   }
 }

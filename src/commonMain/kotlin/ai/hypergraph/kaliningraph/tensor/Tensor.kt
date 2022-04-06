@@ -149,9 +149,8 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || this::class != other::class) return false
-    if (!super.equals(other)) return false
 
-    other as FreeMatrix<*>
+    other as AbstractMatrix<*, *, *>
 
     if (numRows != other.numRows) return false
     if (numCols != other.numCols) return false
@@ -162,7 +161,7 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
   }
 
   override fun hashCode(): Int {
-    var result = super.hashCode()
+    var result = 1
     result = 31 * result + numRows
     result = 31 * result + numCols
     result = 31 * result + data.hashCode()

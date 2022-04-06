@@ -238,18 +238,18 @@ class TestSAT {
       s2.encodeAsMatrix(vars, rows) to
       s3.encodeAsDMatrix(vars)
 
-      println("S1: $s1")
-      println(X.toString())
-      println("S2: $s2")
-      println(Y.toString())
-      println("S3: $s3")
-      println(designMatrix)
+//      println("S1: $s1")
+//      println(X.toString())
+//      println("S2: $s2")
+//      println(Y.toString())
+//      println("S3: $s3")
+//      println(designMatrix)
 
       // https://dl.acm.org/doi/pdf/10.1145/3318464.3380607
       // http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/gwwz.pdf
       val tx = X * designMatrix * designMatrix * Y.transpose
-      println()
-      println()
+//      println()
+//      println()
 
       val dontCare = BoolVar("dc$i")
       val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
