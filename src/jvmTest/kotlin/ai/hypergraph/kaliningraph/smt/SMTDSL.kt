@@ -100,7 +100,12 @@ class SMTInstance(
     context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
-        if(!prover.isUnsat) throw Exception("Unsat!")
+
+        if(prover.isUnsat) {
+          println("Unsat core:\n" + prover.unsatCore.joinToString("\n"))
+          throw Exception("Unsat!")
+        }
+
         prover.modelAssignments// This may not assign all free variables?
 //        associateWith { prover.model.evaluate(it) /*Can be null?*/ }
       }
@@ -196,10 +201,10 @@ open class SATF(
   infix fun and(t: Any): SATF = SATF { formula and t }
 
   fun toBool() = toString().toBooleanStrictOrNull()
-  override fun toString() = formula.toString()
+  override fun toString() = formula.toString().let { if("true" == it) "1" else "0" }
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =
-    other is SATF && other.formula == this.formula ||
+    other is SATF && other.formula.toString() == this.formula.toString() ||
       other is BooleanFormula && formula == other
 }
 

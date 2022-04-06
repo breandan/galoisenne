@@ -158,7 +158,7 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
     if (numRows != other.numRows) return false
     if (numCols != other.numCols) return false
     if (data != other.data) return false
-    if (algebra != other.algebra) return false
+//    if (algebra != other.algebra) return false
 
     return true
   }
@@ -214,7 +214,7 @@ open class FreeMatrix<T> constructor(
     FreeMatrix(numRows, numCols, data, algebra)
 
   override fun toString() =
-    cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+    "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
       rows.joinToString("\n") {
         it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString(" ")
       }

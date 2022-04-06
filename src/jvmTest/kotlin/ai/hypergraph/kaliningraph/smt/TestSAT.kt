@@ -182,9 +182,31 @@ class TestSAT {
     else -> drop(1).powerset().let { it + it.map { it + first() } }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieMethod"
-*/
+  /*
+ ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testMatEq"
+ */
+  @Test
+  fun testMatEq() = SMTInstance().solve {
+    infix fun List<SATF>.vecEq(that: List<SATF>): BooleanFormula =
+      zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
+
+    infix fun FreeMatrix<List<SATF>>.matEq(that: FreeMatrix<List<SATF>>): BooleanFormula =
+      makeFormula(this, that) { a, b -> a vecEq b }
+
+    val mvars = FreeMatrix(10) { r, c -> List(10) { BoolVar("R$r.$c.$it") } }
+    val lits = FreeMatrix( 10) { r, c -> List(10) { Literal(Random.nextBoolean()) } }
+    val testveq = mvars matEq lits
+
+    val ts = solveBoolean(testveq)
+
+    val solution = FreeMatrix(mvars.data.map{ it.map{ Literal(ts[it]!!) } })
+
+    assertEquals(lits, solution)
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieMethod"
+  */
   @Test
   fun testXujieMethod() = SMTInstance().solve {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
@@ -208,19 +230,14 @@ class TestSAT {
     val vecOne = List(ntList.size) { Literal(false) }
     val SAT_VALIANT_ALGEBRA =
       Ring.of(
-        nil = List(ntList.size) { Literal(false) },
-        one = List(ntList.size) { Literal(true) },
-        plus = { a, b ->
-          if (a == vecOne || b == vecOne) vecOne
-          else if (a == vecNil) b
-          else if (b == vecNil) a
-          else a union b
-        },
+        nil = vecNil,
+        one = vecOne,
+        plus = { a, b -> a union b },
         times = { a, b -> a join b }
       )
 
     infix fun List<SATF>.vecEq(that: List<SATF>): BooleanFormula =
-      reduceIndexed { index, acc, satf -> acc and (satf eq that[index]) }
+      zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
 
     infix fun FreeMatrix<List<SATF>>.matEq(that: FreeMatrix<List<SATF>>): BooleanFormula =
       makeFormula(this, that) { a, b -> a vecEq b }
@@ -248,9 +265,12 @@ class TestSAT {
         .reduce { acc, satf -> acc xor satf }
 
     // Encodes that each blank can only be one nonterminal
-    fun uniquenessConstraints(): SATF =
-      holeVariables.map { bitVec -> bitVec.mustBeOnlyOneTerminal(cfg) }
-        .reduce { acc, it -> acc and it }
+    fun uniquenessConstraints(): SATF {
+      println("Uniqueness constraints:")
+        return holeVariables.map { bitVec ->
+          bitVec.mustBeOnlyOneTerminal(cfg).also { println("$it") }
+        }.reduce { acc, it -> acc and it }
+      }
 
     val strToSolve = "(__()__)"
     val words = strToSolve.map { "$it" }
@@ -262,7 +282,7 @@ class TestSAT {
         this[r, c].let {
           if (it == vecNil) "0"
           else if (it.all { "$it" in setOf("false", "true") }) "LV$r$c"
-          else "BV$r$c"
+          else "BV$r$c[len=${it.toString().length}]"
         }
       }
 
@@ -277,11 +297,22 @@ class TestSAT {
     println("Test join 1*2: " + (diag[1] join diag[2]))
     println()
 
-    val fixpointMatrix = initialMatrix.let{it + it * it }
+    val fixpointMatrix = initialMatrix.let {
+      (it + it * it).let { it + it * it }
+    }
     println("Fixpoint matrix:\n${fixpointMatrix.fillStructure()}")
     val fpDiag = fixpointMatrix.getElements { r, c -> c == r + 1 }
-    println("Index    :" + ntList.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
+    println("Index   : " + ntList.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
     fpDiag.forEachIndexed { i, it-> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
+
+    println("\nDiag2\n")
+      val fpDiag2 = fixpointMatrix.getElements { r, c -> c == r + 2 }
+      fpDiag2.forEachIndexed { i, it-> println("BV$i${i+1}: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
+
+    println("\nDiag3\n")
+
+    val fpDiag3 = fixpointMatrix.getElements { r, c -> c == r + 3 }
+    fpDiag3.forEachIndexed { i, it-> println("BV$i${i+1}: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
 
     val constraint = initialMatrix.isInGrammar() and uniquenessConstraints()
 
