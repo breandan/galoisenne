@@ -13,20 +13,20 @@ import kotlin.test.*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT"
 */
 class TestSAT {
-  val rand = Random(0.also { println("Using seed: $it") })
+  val rand = Random(Random.nextInt().also { println("Using seed: $it") })
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
   */
   @Test
-  fun testBMatInv() = SMTInstance().solve {
+  fun testBMatInv() = repeat(100) { SMTInstance().solve {
     val dim = 10
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
     val p = (0 until dim).shuffled(rand)
-    println("Permutation:\n" + p.joinToString(" "))
+//    println("Permutation:\n" + p.joinToString(" "))
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> Literal(j == p[i]) }
     val P = BooleanMatrix(A.data.map { it.toBool()!! })
-    println("Permutation matrix:$P")
+//    println("Permutation matrix:$P")
     val B = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BoolVar("B$i$j") }
 
     val isInverse = (A * B * A) eq A
@@ -35,14 +35,14 @@ class TestSAT {
 //    println(solution.entries.joinToString("\n") { it.key.toString() + "," + it.value })
 
     val sol = BooleanMatrix(B.data.map { solution[it]!!})
-    println("Inverse permutation matrix:$sol")
+//    println("Inverse permutation matrix:$sol")
 
     val a = BooleanMatrix(dim) { i, j -> j == p[i] }
     val b = BooleanMatrix(dim) { i, j -> sol[i][j] }
     assertEquals(a * b * a, a)
     // https://math.stackexchange.com/questions/98549/the-transpose-of-a-permutation-matrix-is-its-inverse
     assertEquals(P.transpose, b)
-  }
+  }}
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTXORMatFixpoint"
@@ -77,6 +77,7 @@ class TestSAT {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
 */
 
+//  @Test
   fun testUTGF2MatFixpoint() = SMTInstance().solve {
     val dim = 20
     val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
@@ -132,16 +133,11 @@ class TestSAT {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatInv"
-*/
-//  @Test
-  fun testRepeatInv() = repeat(100) { testBMatInv() }
-
-/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testSetIntersectionOneHot"
 */
   @Test
-  fun testSetIntersectionOneHot() = SMTInstance().solve {
+  fun testSetIntersectionOneHot() = repeat(100) {
+    SMTInstance().solve {
     val dim = 10
     val len = 6
     val universe = (0 until dim).toList()
@@ -175,16 +171,14 @@ class TestSAT {
     println("Actual  : $actual")
 
     assertEquals(expected, actual)
-  }
+  }}
 
-  fun <T> Collection<T>.powerset(): Set<Set<T>> = when {
-    isEmpty() -> setOf(setOf())
-    else -> drop(1).powerset().let { it + it.map { it + first() } }
-  }
+  fun <T> Collection<T>.powerset(): Set<Set<T>> =
+    (if (!isEmpty()) drop(1).powerset().let { it + it.map { it + first() } } else setOf())
 
-  /*
- ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testMatEq"
- */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testMatEq"
+*/
   @Test
   fun testMatEq() = SMTInstance().solve {
     infix fun List<SATF>.vecEq(that: List<SATF>): BooleanFormula =
@@ -204,23 +198,59 @@ class TestSAT {
     assertEquals(lits, solution)
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testVecJoin"
+*/
+  @Test
+  fun testVecJoin() {
+    val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
+    val ntIndex: Map<String, Int> = cfg.variables.mapIndexed { i, v -> v to i }.toMap()
+    val ntList: List<String> = cfg.variables.toList()
+
+    fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
+      List(left.size) { i ->
+        bimap[ntList[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+          .map { (B, C) -> (left[ntIndex[B]!!] and right[ntIndex[C]!!]) }
+          .fold(false) { acc, satf -> acc or satf }
+      }
+
+    fun CFG.toBitVec(nonterminals: Set<String>) = variables.map { it in nonterminals }
+    fun CFG.toNTSet(nonterminals: List<Boolean>) =
+      nonterminals.mapIndexedNotNull { i, it -> if(it) variables.elementAt(i) else null }.toSet()
+
+    val pwrsetSquared = cfg.variables.powerset().let { it * it }
+
+    /*
+     * Checks that bitvector joins faithfully encode set join, i.e.:
+     *
+     *      S   ⋈   S' = Z for all subsets S', S' in P(Variables)
+     *      ⇵       ⇵    ⇵
+     *      V   ☒   V' = Z'
+     */
+    pwrsetSquared.forEach { (a, b) ->
+      with(cfg) {
+        assertEquals(toBitVec(join(a, b)), join(toBitVec(a), toBitVec(b)))
+        assertEquals(join(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
+      }
+    }
+  }
+
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieMethod"
   */
   @Test
   fun testXujieMethod() = SMTInstance().solve {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
-  "".solve(cfg)
-    println("Normalized: ${cfg.prettyPrint()}")
+      .also { println("Normalized CFG:\n${it.prettyPrint()}") }
+
     val ntIndex: Map<String, Int> = cfg.variables.mapIndexed { i, v -> v to i }.toMap()
     val ntList: List<String> = cfg.variables.toList()
 
-    infix fun List<SATF>.join(that: List<SATF>): List<SATF> =
-      List(size) { i ->
-        val nonterminal = ntList[i]
-        cfg.bimap[nonterminal].filter { 1 < it.size }.map { it[0] to it[1] }
-          .map { (B, C) -> (this[ntIndex[B]!!] and that[ntIndex[C]!!]) }
-          .fold(Literal(false)) { acc, satf -> acc or satf }
+    fun CFG.join(left: List<SATF>, right: List<SATF>): List<SATF> =
+      List(left.size) { i ->
+        bimap[ntList[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+          .map { (B, C) -> (left[ntIndex[B]!!] and right[ntIndex[C]!!]) }
+          .fold(left[0].ctx.Literal(false)) { acc, satf -> acc or satf }
       }
 
     infix fun List<SATF>.union(that: List<SATF>): List<SATF> =
@@ -233,7 +263,7 @@ class TestSAT {
         nil = vecNil,
         one = vecOne,
         plus = { a, b -> a union b },
-        times = { a, b -> a join b }
+        times = { a, b -> cfg.join(a, b) }
       )
 
     infix fun List<SATF>.vecEq(that: List<SATF>): BooleanFormula =
@@ -247,14 +277,19 @@ class TestSAT {
       ((this + this * this)
         .let { it + it * it }
         .let { it + it * it }
-        matEq this) and this[0].last()[ntIndex[START_SYMBOL]!!]
+        .let { it + it * it }
+      matEq this) and this[0].last().let { cornerBitVec ->
+        cornerBitVec[ntIndex[START_SYMBOL]!!] and
+          ntList.mapIndexedNotNull { i, it -> if(it !in setOf(START_SYMBOL, "S")) i else null }
+            .map { cornerBitVec[it].negate() }.reduce { acc, it -> acc and it }
+      }
 
     val holeVariables = mutableListOf<List<SATF>>()
     val grammarVariables = mutableListOf<List<SATF>>()
 
     fun List<String>.constructInitialMatrix(cfg: CFG) =
       FreeMatrix(SAT_VALIANT_ALGEBRA, size + 1) { r, c ->
-        if(c <= r) vecNil
+        if (c <= r) vecNil
         else if (c == r + 1) {
           val word = this[c - 1]
           if (word == "_") List(ntList.size) { k -> BoolVar("B.$r.$c.$k") }.also { holeVariables.add(it) } // Blank
@@ -263,8 +298,12 @@ class TestSAT {
         else List(ntList.size) { k -> BoolVar("G.$r.$c.$k") }.also{ grammarVariables.add(it) }  // Upper triangular
       }
 
+    // Encodes the constraint that a bit-vector representing a unary production
+    // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
+    // grammar, the bitvector must not have the configuration [A=1 B=1 C=0 D=1],
+    // it should be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
     fun List<SATF>.mustBeOnlyOneTerminal(cfg: CFG): SATF =
-      // terminal        set of nontermials it can represent
+      // terminal        set of nonterminals it can represent
       cfg.alphabet.map { cfg.bimap[listOf(it)] }.map { nts ->
         val (insiders, outsiders) = ntList.partition { it in nts }
         (insiders.map { nt -> this[ntIndex[nt]!!] } + // All of these
@@ -272,16 +311,16 @@ class TestSAT {
             .reduce { acc, satf -> acc and satf }.let { SATF(this@solve, it) }
       }.reduce { acc, satf -> acc xor satf }
 
-
     // Encodes that each blank can only be one nonterminal
     fun uniquenessConstraints(holeVariables: List<List<SATF>>): SATF =
-        holeVariables.map { bitVec -> bitVec.mustBeOnlyOneTerminal(cfg) }.reduce { acc, it -> acc and it }
+        holeVariables.map { bitVec -> bitVec.mustBeOnlyOneTerminal(cfg) }
+          .reduce { acc, it -> acc and it }
 
     val strToSolve = "(__()__)"
     val words = strToSolve.map { "$it" }
     val initialMatrix = words.constructInitialMatrix(cfg)
 
-    // Display fill structure of bit vector variables without contents
+    // Summarize fill structure of bit vector variables
     fun FreeMatrix<List<SATF>>.fillStructure() =
       FreeMatrix(numRows, numCols) { r, c ->
         this[r, c].let {
@@ -308,46 +347,47 @@ class TestSAT {
 
     val constraint = initialMatrix.isInGrammar() and uniquenessConstraints(holeVariables)
 
-    try {
-      val solution = solveBoolean(constraint)
+    val solution = solveBoolean(constraint)
 
-      fun List<Boolean>.toNonterminals(cfg: CFG): Set<String> =
-        mapIndexedNotNull { i, it -> if (it) ntList[i] else null }.toSet()
-      fun List<Boolean>.toTerminal(cfg: CFG): String? =
-        toNonterminals(cfg).let { set ->
-          cfg.alphabet.firstOrNull { word -> cfg.bimap[listOf(word)] == set }
-        }
+    fun List<Boolean>.toNonterminals(cfg: CFG): Set<String> =
+      mapIndexedNotNull { i, it -> if (it) cfg.variables.elementAt(i) else null }.toSet()
 
-      println("Number of variables participating and resolved nonterminals")
-      FreeMatrix(initialMatrix.numRows) { r, c ->
-          val bitVec = initialMatrix[r, c]
-          val decoded = bitVec.map { solution[it] }
-          if(decoded.all { it != null } && c == r + 1)
-            (decoded as List<Boolean>)
-              .let { bv -> bv.toTerminal(cfg) + "=" + bv.toNonterminals(cfg).joinToString(",", "[", "]") }
-          else if (decoded.all { it == null }) {
-            if (bitVec.all { it == Literal(false) }) "0"
-            else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
-              bitVec.map { it.toBool()!! }.toTerminal(cfg) ?: "UNK"
-            else "MIX"
-          } else if(r == 0 && c == initialMatrix.numCols - 1)
-            decoded.mapIndexedNotNull { i, b -> if(b == true) ntList[i] else if(b == null) ntList[i] + "?" else null }.joinToString(",", "[", "]")
-          else decoded.mapIndexedNotNull { i: Int, b: Boolean? ->
-            if (b == true) ntList[i] else null
-          }.let { nts -> "[${nts.size}/${decoded.size}]" }
-      }.also { println("$it\n") }
+    fun List<Boolean>.toTerminal(cfg: CFG): String? =
+      toNonterminals(cfg).let { set ->
+        cfg.alphabet.firstOrNull { word -> cfg.bimap[listOf(word)] == set }
+      }
 
-      val fillers = holeVariables.map { bitVec ->
-        bitVec.map { solution[it]!! }.toTerminal(cfg)
-      }.toMutableList()
+    println("Number of variables participating and resolved nonterminals")
+    FreeMatrix(initialMatrix.numRows) { r, c ->
+      val bitVec = initialMatrix[r, c]
+      val decoded = bitVec.map { solution[it] }
+      if(decoded.all { it != null } && c == r + 1)
+        (decoded as List<Boolean>)
+          .let { bv -> bv.toTerminal(cfg) + "=" + bv.toNonterminals(cfg).joinToString(",", "[", "]") }
+      else if (decoded.all { it == null }) {
+        if (bitVec.all { it == Literal(false) }) "0"
+        else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
+          bitVec.map { it.toBool()!! }.toTerminal(cfg) ?: "UNK"
+        else "MIX"
+      } else if(r == 0 && c == initialMatrix.numCols - 1)
+        decoded.mapIndexedNotNull { i, b ->
+          if(b == true) ntList[i] else if(b == null) ntList[i] + "?" else null
+        }.joinToString(",", "[", "]")
+      else decoded.mapIndexedNotNull { i: Int, b: Boolean? ->
+        if (b == true) ntList[i] else null
+      }.let { nts -> "[${nts.size}/${decoded.size}]" }
+    }.also { println("$it\n") }
 
-      val decodedString = strToSolve.map { it }
-        .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
+    val fillers = holeVariables.map { bitVec ->
+      bitVec.map { solution[it]!! }.toTerminal(cfg)
+    }.toMutableList()
 
-      val isValid = cfg.isValid(decodedString)
-      println("$decodedString is ${if (isValid) "" else "not "}valid according to Valiant!")
-      assertTrue(isValid)
-    } catch (e: Exception) { e.printStackTrace() }
+    val decodedString = strToSolve.map { it }
+      .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
+
+    val isValid = cfg.isValid(decodedString)
+    println("$decodedString is ${if (isValid) "" else "not "}valid according to Valiant!")
+//    assertTrue(isValid)
   }
 
 /*
@@ -355,15 +395,14 @@ class TestSAT {
 */
   @Test
   fun testMatrixJoin() = SMTInstance().solve {
-    val cfl = """
+    val grammar = """
       A -> A C
       B -> C D
       B -> E H
       C -> C A
     """.parseCFG(false)
-    println(cfl.prettyPrint())
+    println(grammar.prettyPrint())
     val vars = setOf("A", "B", "C", "D", "E", "F", "G", "H", "I")
-    val grammar = cfl
 
     fun <T> Set<T>.encodeAsMatrix(
       universe: Set<T>,
@@ -384,22 +423,18 @@ class TestSAT {
         else odMat[i, j]
       }
 
-    fun join(s1: Set<String>, s2: Set<String>) =
-      (s1 * s2).flatMap { (a, b) ->
-        grammar.filter { listOf(a, b) == it.second }.map { it.first } }.toSet()
-
-    val pwrset = vars.powerset() - setOf(emptySet())
+    val pwrset = vars.powerset()
     val allPairs = (pwrset * pwrset)
-    val allTriples = allPairs.mapNotNull { (s1, s2) ->
-      val s3 = join(s1, s2)
-      if(s3.isEmpty()) null else (s1 to s2 to s3)
+    val nonemptyTriples = allPairs.mapNotNull { (s1, s2) ->
+      val s3 = grammar.join(s1, s2)
+      if (s3.isEmpty()) null else (s1 to s2 to s3)
     }
 
 //    val designMatrix = FreeMatrix(SAT_ALGEBRA, vars.size) { r, c ->
 //      BoolVar("G$r.$c")
 //    }
 
-    val constraint = allTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
+    val constraint = nonemptyTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
       val rows = maxOf(s1.size, s2.size)
 
       val (X, Y, designMatrix) =
@@ -425,7 +460,7 @@ class TestSAT {
       tx eq DC
     }.reduce { acc, formula -> acc and formula }
 
-    println("Solving:${allTriples.size}")
+    println("Solving:${nonemptyTriples.size}")
 
     val solution = solveBoolean(constraint)
 
@@ -433,7 +468,7 @@ class TestSAT {
 
     println("Design matrix: $G")
 
-    allTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
+    nonemptyTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
       val rows = maxOf(s1.size, s2.size)
 
       val (X, Y) = s1.encodeAsMatrix(vars, rows) to s2.encodeAsMatrix(vars, rows)
@@ -456,10 +491,4 @@ class TestSAT {
 //      println("Actual  : $actual")
     }
   }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testRepeatSetInt"
-*/
-//  @Test
-  fun testRepeatSetInt() = repeat(100) { testSetIntersectionOneHot() }
 }

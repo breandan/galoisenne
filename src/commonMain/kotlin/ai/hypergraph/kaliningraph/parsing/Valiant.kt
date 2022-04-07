@@ -18,10 +18,6 @@ val CFG.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.terminals: Set<Production>
   by cache { filter { it.RHS.size == 1 && it.RHS[0] !in variables }.toSet() }
-val CFG.initializers: Map<String, Set<String>>
-  by cache { alphabet.map { it to bimap[listOf(it)] }.toMap() }
-val CFG.inverseInits: Map<Set<String>, String>
-  by cache { initializers.map { (a, b) -> b to a }.toMap() }
 val CFG.normalForm: CFG by cache { normalize() }
 
 // Maps variables to expansions and expansions to variables in a Grammar
@@ -83,7 +79,7 @@ fun makeAlgebra(CFG: CFG): Ring<Set<String>> =
     times = { x, y -> CFG.join(x, y) }
   )
 
-private fun CFG.join(l: Set<String>, r: Set<String>): Set<String> =
+fun CFG.join(l: Set<String>, r: Set<String>): Set<String> =
   (l * r).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
