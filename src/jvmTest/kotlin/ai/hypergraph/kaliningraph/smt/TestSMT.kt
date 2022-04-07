@@ -166,7 +166,7 @@ class TestSMT {
 
     val plusAssoc = ((a + b) + c) neq (a + (b + c))
 
-    assertThrows<Error> { solveInteger(plusAssoc) }
+    assertThrows<Exception> { solveInteger(plusAssoc) }
 
   // Not all solvers support quantifiers
 //    val goal = forall((a.data + b.data + c.data).map { it.formula }, plusAssoc)
