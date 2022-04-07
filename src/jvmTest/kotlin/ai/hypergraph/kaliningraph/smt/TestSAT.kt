@@ -174,7 +174,7 @@ class TestSAT {
   }}
 
   fun <T> Collection<T>.powerset(): Set<Set<T>> =
-    (if (!isEmpty()) drop(1).powerset().let { it + it.map { it + first() } } else setOf())
+    (if (1 < size) drop(1).powerset().let { it + it.map { it + first() } } else setOf(setOf(first())))
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testMatEq"
@@ -218,7 +218,8 @@ class TestSAT {
     fun CFG.toNTSet(nonterminals: List<Boolean>) =
       nonterminals.mapIndexedNotNull { i, it -> if(it) variables.elementAt(i) else null }.toSet()
 
-    val pwrsetSquared = cfg.variables.powerset().let { it * it }
+    val pwrsetSquared = cfg.variables.take(5).powerset().let { it * it }
+    println("Cardinality:" + pwrsetSquared.size)
 
     /*
      * Checks that bitvector joins faithfully encode set join, i.e.:
@@ -423,9 +424,8 @@ class TestSAT {
         else odMat[i, j]
       }
 
-    val pwrset = vars.powerset()
-    val allPairs = (pwrset * pwrset)
-    val nonemptyTriples = allPairs.mapNotNull { (s1, s2) ->
+    val allSubsetPairs = vars.powerset().let { it * it }
+    val nonemptyTriples = allSubsetPairs.mapNotNull { (s1, s2) ->
       val s3 = grammar.join(s1, s2)
       if (s3.isEmpty()) null else (s1 to s2 to s3)
     }
@@ -434,7 +434,7 @@ class TestSAT {
 //      BoolVar("G$r.$c")
 //    }
 
-    val constraint = nonemptyTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
+      val constraint = nonemptyTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
       val rows = maxOf(s1.size, s2.size)
 
       val (X, Y, designMatrix) =
