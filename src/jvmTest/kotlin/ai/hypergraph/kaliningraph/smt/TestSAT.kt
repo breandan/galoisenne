@@ -214,18 +214,18 @@ class TestSAT {
     println("Normalized: ${cfg.prettyPrint()}")
     val ntIndex: Map<String, Int> = cfg.variables.mapIndexed { i, v -> v to i }.toMap()
     val ntList: List<String> = cfg.variables.toList()
-  // Should be vectors
+
     infix fun List<SATF>.join(that: List<SATF>): List<SATF> =
       List(size) { i ->
         val nonterminal = ntList[i]
         cfg.bimap[nonterminal].filter { 1 < it.size }.map { it[0] to it[1] }
-          .fold(Literal(false)) { acc, (B, C) ->
-            acc or (this[ntIndex[B]!!] and that[ntIndex[C]!!])
-          }
+          .map { (B, C) -> (this[ntIndex[B]!!] and that[ntIndex[C]!!]) }
+          .fold(Literal(false)) { acc, satf -> acc or satf }
       }
 
     infix fun List<SATF>.union(that: List<SATF>): List<SATF> =
       List(size) { i -> this[i] or that[i] }
+
     val vecNil = List(ntList.size) { Literal(false) }
     val vecOne = List(ntList.size) { Literal(false) }
     val SAT_VALIANT_ALGEBRA =
@@ -244,9 +244,14 @@ class TestSAT {
 
     fun FreeMatrix<List<SATF>>.isInGrammar() =
       //   SOLVE FOR FIXPOINT      AND    ENSURE START SYMBOL IN UPPER CORNER
-      ((this + this * this) matEq this) and this[0].last()[ntIndex[START_SYMBOL]!!]
+      ((this + this * this)
+        .let { it + it * it }
+        .let { it + it * it }
+        matEq this) and this[0].last()[ntIndex[START_SYMBOL]!!]
 
     val holeVariables = mutableListOf<List<SATF>>()
+    val grammarVariables = mutableListOf<List<SATF>>()
+
     fun List<String>.constructInitialMatrix(cfg: CFG) =
       FreeMatrix(SAT_VALIANT_ALGEBRA, size + 1) { r, c ->
         if(c <= r) vecNil
@@ -255,17 +260,16 @@ class TestSAT {
           if (word == "_") List(ntList.size) { k -> BoolVar("B.$r.$c.$k") }.also { holeVariables.add(it) } // Blank
           else cfg.bimap[listOf(word)].let { nts -> ntList.map { Literal(it in nts) } } // Terminal
         }
-        else List(ntList.size) { k -> BoolVar("DC.$r.$c.$k") } // Upper triangular
+        else List(ntList.size) { k -> BoolVar("G.$r.$c.$k") }.also{ grammarVariables.add(it) }  // Upper triangular
       }
 
     fun List<SATF>.mustBeOnlyOneTerminal(cfg: CFG): SATF =
       // terminal        set of nontermials it can represent
       cfg.alphabet.map { cfg.bimap[listOf(it)] }.map { nts ->
         val (insiders, outsiders) = ntList.partition { it in nts }
-        insiders.map { nt -> this[ntIndex[nt]!!] } // All of these
-          .reduce { acc, satf -> acc and satf } and
-          outsiders.map { nt -> this[ntIndex[nt]!!] } // None of these
-            .reduce { acc, satf -> acc and satf.negate() }
+        (insiders.map { nt -> this[ntIndex[nt]!!] } + // All of these
+          outsiders.map { nt -> this[ntIndex[nt]!!].negate() }) // None of these
+            .reduce { acc, satf -> acc and satf }.let { SATF(this@solve, it) }
       }.reduce { acc, satf -> acc xor satf }
 
 
@@ -302,22 +306,19 @@ class TestSAT {
     println("Index   : " + ntList.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
     fpDiag.forEachIndexed { i, it-> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
 
-    val constraint = initialMatrix.isInGrammar() and
-      uniquenessConstraints(holeVariables)
+    val constraint = initialMatrix.isInGrammar() and uniquenessConstraints(holeVariables)
 
     try {
       val solution = solveBoolean(constraint)
 
       fun List<Boolean>.toNonterminals(cfg: CFG): Set<String> =
         mapIndexedNotNull { i, it -> if (it) ntList[i] else null }.toSet()
-      infix fun Boolean.implies(that: Boolean): Boolean = !this or that
-      fun List<Boolean>.subsumes(other: List<Boolean>) =
-        zip(other).all { (a, b) -> b implies a }
       fun List<Boolean>.toTerminal(cfg: CFG): String? =
-        cfg.alphabet.firstOrNull { word ->
-          subsumes(cfg.bimap[listOf(word)].let { nts -> ntList.map { it in nts } })
+        toNonterminals(cfg).let { set ->
+          cfg.alphabet.firstOrNull { word -> cfg.bimap[listOf(word)] == set }
         }
 
+      println("Number of variables participating and resolved nonterminals")
       FreeMatrix(initialMatrix.numRows) { r, c ->
           val bitVec = initialMatrix[r, c]
           val decoded = bitVec.map { solution[it] }
@@ -326,35 +327,26 @@ class TestSAT {
               .let { bv -> bv.toTerminal(cfg) + "=" + bv.toNonterminals(cfg).joinToString(",", "[", "]") }
           else if (decoded.all { it == null }) {
             if (bitVec.all { it == Literal(false) }) "0"
-            if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
-              bitVec.map { it.toBool()!! }.toTerminal(cfg) ?: "0"
+            else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
+              bitVec.map { it.toBool()!! }.toTerminal(cfg) ?: "UNK"
             else "MIX"
-          }
+          } else if(r == 0 && c == initialMatrix.numCols - 1)
+            decoded.mapIndexedNotNull { i, b -> if(b == true) ntList[i] else if(b == null) ntList[i] + "?" else null }.joinToString(",", "[", "]")
           else decoded.mapIndexedNotNull { i: Int, b: Boolean? ->
             if (b == true) ntList[i] else null
           }.let { nts -> "[${nts.size}/${decoded.size}]" }
-      }.also { println(it) }
+      }.also { println("$it\n") }
+
       val fillers = holeVariables.map { bitVec ->
         bitVec.map { solution[it]!! }.toTerminal(cfg)
       }.toMutableList()
 
       val decodedString = strToSolve.map { it }
         .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
-      println(decodedString)
-      /*
 
-    0 ( [5/12]            [8/12]        [7/12]  [8/12]  [8/12]        [4/12]        [4/12]
-    0 0 (=[G,START,C,I,H] [8/12]        [8/12]  [8/12]  [8/12]        [4/12]        [4/12]
-    0 0 0                 )=[G,F,E,D,J] [11/12] [12/12] [12/12]       [8/12]        [8/12]
-    0 0 0                 0             (       [12/12] [12/12]       [8/12]        [8/12]
-    0 0 0                 0             0       )       [10/12]       [8/12]        [6/12]
-    0 0 0                 0             0       0       )=[G,F,E,D,J] [7/12]        [7/12]
-    0 0 0                 0             0       0       0             )=[G,F,E,D,J] [3/12]
-    0 0 0                 0             0       0       0             0             )
-    0 0 0                 0             0       0       0             0             0
-    (()())))
-
-       */
+      val isValid = cfg.isValid(decodedString)
+      println("$decodedString is ${if (isValid) "" else "not "}valid according to Valiant!")
+      assertTrue(isValid)
     } catch (e: Exception) { e.printStackTrace() }
   }
 
