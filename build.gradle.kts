@@ -1,16 +1,14 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   signing
   `maven-publish`
   kotlin("multiplatform") version "1.6.20"
   id("com.google.devtools.ksp") version "1.6.20-1.0.4"
-  kotlin("jupyter.api") version "0.11.0-62"
+  kotlin("jupyter.api") version "0.11.0-71"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -101,7 +99,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.3")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.5")
       }
     }
 

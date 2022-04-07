@@ -356,7 +356,7 @@ class TestSAT {
       val bitVec = initialMatrix[r, c]
       val decoded = bitVec.map { solution[it] }
       if (decoded.all { it != null } && c == r + 1)
-        (decoded as List<Boolean>)
+        decoded.map { it!! }
           .let { bv -> cfg.terminal(bv) + "=" + cfg.nonterminals(bv).joinToString(",", "[", "]") }
       else if (decoded.all { it == null }) {
         if (bitVec.all { it == Literal(false) }) "0"
