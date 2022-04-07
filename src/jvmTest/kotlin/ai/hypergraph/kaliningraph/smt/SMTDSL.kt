@@ -200,8 +200,8 @@ open class SATF(
   infix fun xor(t: Any): SATF = SATF { formula xor t }
   infix fun and(t: Any): SATF = SATF { formula and t }
 
-  fun toBool() = toString().toBooleanStrictOrNull()
-  override fun toString() = formula.toString().let { if("true" == it) "1" else "0" }
+  fun toBool() = formula.toString().toBooleanStrictOrNull()
+  override fun toString() = formula.toString().let { if("true" == it) "1" else if("false" == it) "0" else it }
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =
     other is SATF && other.formula.toString() == this.formula.toString() ||
