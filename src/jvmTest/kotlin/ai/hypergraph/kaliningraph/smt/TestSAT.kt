@@ -260,17 +260,18 @@ class TestSAT {
 
     fun List<SATF>.mustBeOnlyOneTerminal(cfg: CFG): SATF =
       // terminal        set of nontermials it can represent
-      cfg.alphabet.map { cfg.bimap[listOf(it)] }
-        .map { it.map { nt -> this[ntIndex[nt]!!] }.reduce { acc, satf -> acc and satf } }
-        .reduce { acc, satf -> acc xor satf }
+      cfg.alphabet.map { cfg.bimap[listOf(it)] }.map { nts ->
+        val (insiders, outsiders) = ntList.partition { it in nts }
+        insiders.map { nt -> this[ntIndex[nt]!!] } // All of these
+          .reduce { acc, satf -> acc and satf } and
+          outsiders.map { nt -> this[ntIndex[nt]!!] } // None of these
+            .reduce { acc, satf -> acc and satf.negate() }
+      }.reduce { acc, satf -> acc xor satf }
+
 
     // Encodes that each blank can only be one nonterminal
-    fun uniquenessConstraints(): SATF {
-      println("Uniqueness constraints:")
-        return holeVariables.map { bitVec ->
-          bitVec.mustBeOnlyOneTerminal(cfg).also { println("$it") }
-        }.reduce { acc, it -> acc and it }
-      }
+    fun uniquenessConstraints(holeVariables: List<List<SATF>>): SATF =
+        holeVariables.map { bitVec -> bitVec.mustBeOnlyOneTerminal(cfg) }.reduce { acc, it -> acc and it }
 
     val strToSolve = "(__()__)"
     val words = strToSolve.map { "$it" }
@@ -292,10 +293,6 @@ class TestSAT {
 
     println("Index    :" + ntList.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
     diag.forEachIndexed { i, it-> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
-    println()
-    println("Test join 0*1: " + (diag[0] join diag[1]))
-    println("Test join 1*2: " + (diag[1] join diag[2]))
-    println()
 
     val fixpointMatrix = initialMatrix.let {
       (it + it * it).let { it + it * it }
@@ -305,23 +302,38 @@ class TestSAT {
     println("Index   : " + ntList.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
     fpDiag.forEachIndexed { i, it-> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
 
-    println("\nDiag2\n")
-      val fpDiag2 = fixpointMatrix.getElements { r, c -> c == r + 2 }
-      fpDiag2.forEachIndexed { i, it-> println("BV$i${i+1}: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
-
-    println("\nDiag3\n")
-
-    val fpDiag3 = fixpointMatrix.getElements { r, c -> c == r + 3 }
-    fpDiag3.forEachIndexed { i, it-> println("BV$i${i+1}: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
-
-    val constraint = initialMatrix.isInGrammar() and uniquenessConstraints()
+    val constraint = initialMatrix.isInGrammar() and
+      uniquenessConstraints(holeVariables)
 
     try {
       val solution = solveBoolean(constraint)
 
+      fun List<Boolean>.toNonterminals(cfg: CFG): Set<String> =
+        mapIndexedNotNull { i, it -> if (it) ntList[i] else null }.toSet()
+      infix fun Boolean.implies(that: Boolean): Boolean = !this or that
+      fun List<Boolean>.subsumes(other: List<Boolean>) =
+        zip(other).all { (a, b) -> b implies a }
       fun List<Boolean>.toTerminal(cfg: CFG): String? =
-        cfg.inverseInits[mapIndexedNotNull { i, it -> if (it) ntList[i] else null }.toSet()]
+        cfg.alphabet.firstOrNull { word ->
+          subsumes(cfg.bimap[listOf(word)].let { nts -> ntList.map { it in nts } })
+        }
 
+      FreeMatrix(initialMatrix.numRows) { r, c ->
+          val bitVec = initialMatrix[r, c]
+          val decoded = bitVec.map { solution[it] }
+          if(decoded.all { it != null } && c == r + 1)
+            (decoded as List<Boolean>)
+              .let { bv -> bv.toTerminal(cfg) + "=" + bv.toNonterminals(cfg).joinToString(",", "[", "]") }
+          else if (decoded.all { it == null }) {
+            if (bitVec.all { it == Literal(false) }) "0"
+            if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
+              bitVec.map { it.toBool()!! }.toTerminal(cfg) ?: "0"
+            else "MIX"
+          }
+          else decoded.mapIndexedNotNull { i: Int, b: Boolean? ->
+            if (b == true) ntList[i] else null
+          }.let { nts -> "[${nts.size}/${decoded.size}]" }
+      }.also { println(it) }
       val fillers = holeVariables.map { bitVec ->
         bitVec.map { solution[it]!! }.toTerminal(cfg)
       }.toMutableList()
@@ -329,7 +341,21 @@ class TestSAT {
       val decodedString = strToSolve.map { it }
         .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
       println(decodedString)
-    } catch(e: Exception) { println("UNSAT!") }
+      /*
+
+    0 ( [5/12]            [8/12]        [7/12]  [8/12]  [8/12]        [4/12]        [4/12]
+    0 0 (=[G,START,C,I,H] [8/12]        [8/12]  [8/12]  [8/12]        [4/12]        [4/12]
+    0 0 0                 )=[G,F,E,D,J] [11/12] [12/12] [12/12]       [8/12]        [8/12]
+    0 0 0                 0             (       [12/12] [12/12]       [8/12]        [8/12]
+    0 0 0                 0             0       )       [10/12]       [8/12]        [6/12]
+    0 0 0                 0             0       0       )=[G,F,E,D,J] [7/12]        [7/12]
+    0 0 0                 0             0       0       0             )=[G,F,E,D,J] [3/12]
+    0 0 0                 0             0       0       0             0             )
+    0 0 0                 0             0       0       0             0             0
+    (()())))
+
+       */
+    } catch (e: Exception) { e.printStackTrace() }
   }
 
 /*

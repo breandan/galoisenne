@@ -7,6 +7,7 @@ import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.*
 import org.sosy_lab.java_smt.api.NumeralFormula.*
+import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*
 import java.math.BigInteger
 import kotlin.math.pow
 import kotlin.reflect.KProperty
@@ -97,7 +98,7 @@ class SMTInstance(
   }
 
   fun solveFormula(vararg bs: BooleanFormula) =
-    context.newProverEnvironment(SolverContext.ProverOptions.GENERATE_MODELS)
+    context.newProverEnvironment(GENERATE_MODELS, GENERATE_UNSAT_CORE)
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
 
