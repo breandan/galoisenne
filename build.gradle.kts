@@ -111,6 +111,35 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
         implementation("org.graalvm.js:js:22.0.0.2")
+
+        // Markovian deps
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3") // TODO: why?
+        implementation("org.jetbrains.lets-plot:lets-plot-jfx:2.3.0-rc2")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.1.1")
+
+//  https://arxiv.org/pdf/1908.10693.pdf
+//  implementation("com.datadoghq:sketches-java:0.7.0")
+
+        // Cache PMF/CDF lookups for common queries
+        implementation("com.github.ben-manes.caffeine:caffeine:3.0.5")
+
+        implementation("org.apache.datasketches:datasketches-java:3.1.0")
+
+//  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
+
+//  implementation("com.github.TUK-CPS:jAADD:-SNAPSHOT")
+        implementation("ca.umontreal.iro.simul:ssj:3.3.1")
+
+        // MPJ (required for Poon's SPN)
+        implementation(files("$projectDir/libs/mpj-0.44.jar"))
+
+        val multik_version = "0.1.1"
+//  val multik_version = "0.1.1" // tests fail
+        implementation("org.jetbrains.kotlinx:multik-api:$multik_version")
+        implementation("org.jetbrains.kotlinx:multik-jvm:$multik_version")
+//  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
       }
     }
 

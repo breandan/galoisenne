@@ -301,7 +301,7 @@ class TestSAT {
       grammarVariables: MutableList<List<SATF>> = mutableListOf()
     ): Π3<FreeMatrix<List<SATF>>, MutableList<List<SATF>>, MutableList<List<SATF>>> =
       FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-        if (c <= r) List(variables.size) {Literal(false)}
+        if (c <= r) List(variables.size) { Literal(false) }
         else if (c == r + 1) {
           val word = words[c - 1]
           if (word == "_") List(variables.size) { k -> BoolVar("B.$r.$c.$k") }
