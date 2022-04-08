@@ -1,7 +1,7 @@
 package ai.hypergraph.markovian.mcmc
 
+import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.types.*
-import com.github.benmanes.caffeine.cache.*
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
 import org.apache.datasketches.frequencies.*
@@ -102,8 +102,7 @@ open class MarkovChain<T>(
 
   // TODO: mergeable cache?
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
-  val dists: Cache<List<Int>, Dist> =
-    Caffeine.newBuilder().maximumSize(10_000).build()
+  val dists: LRUCache<List<Int>, Dist> = LRUCache(10_000)
 
   operator fun get(vararg variables: T?): Double =
     get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
@@ -145,7 +144,7 @@ open class MarkovChain<T>(
     },
     memNext: (Sequence<T>) -> (Sequence<T>) = { ts ->
       val idxs = ts.map { dictionary[it] }.toList()
-      val dist = dists.get(idxs) {
+      val dist = dists.getOrPut(idxs) {
         // seems to work? I wonder why we don't need to use multiplication
         // to express conditional probability? Just disintegration?
         // https://blog.wtf.sg/posts/2021-03-14-smoothing-with-backprop

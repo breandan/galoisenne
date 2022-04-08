@@ -8,8 +8,8 @@ class LRUCache<K, V>(
   private val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
   private var size: Int = 0
 
-  fun getOrPut(key: K, value: () -> V) =
-    if (key in map) map[key] else value().also { put(key, it) }
+  fun getOrPut(key: K, value: () -> V): V =
+    if (key in map) map[key]!! else value().also { put(key, it) }
 
   fun get(key: K) = map[key]
 

@@ -113,17 +113,15 @@ kotlin {
         implementation("org.graalvm.js:js:22.0.0.2")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-jfx:2.3.0-rc2")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.1.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.2.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
-        implementation("com.github.ben-manes.caffeine:caffeine:3.0.5")
 
         implementation("org.apache.datasketches:datasketches-java:3.1.0")
 
