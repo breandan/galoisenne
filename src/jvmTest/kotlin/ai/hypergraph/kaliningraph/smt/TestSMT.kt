@@ -46,6 +46,36 @@ class TestSMT {
     )
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
+*/
+
+  //  @Test
+  fun testUTGF2MatFixpoint() = SMTInstance().solve {
+    val dim = 20
+    val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
+    val A = FreeMatrix(GF2_SMT_ALGEBRA, dim) { i, j ->
+      if (i to j in setVars) Literal(1)
+      else if (j >= i + 1) IntVar("V$i.$j")
+      else Literal(0)
+    }
+
+    val fpOp = A + A * A
+
+    println("A:\n$A")
+    println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" } )
+
+    val isFixpoint = fpOp eqUT A
+
+    val solution = solveInteger(isFixpoint)
+    val D = FreeMatrix(INTEGER_FIELD, A.data.map { solution[it] ?: it.toInt()!! } )
+
+    println("Decoding:\n$D")
+
+    assertEquals(D, D + D * D)
+    println("Passed.")
+  }
+
 //  @Test
   // https://en.wikipedia.org/wiki/Sums_of_three_cubes
   fun testSumOfCubes() = SMTInstance().solve {

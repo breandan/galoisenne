@@ -137,7 +137,7 @@ class ValiantTest {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "(___()___)".solve(CFG)
+      val sols = "__________".solve(CFG)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 

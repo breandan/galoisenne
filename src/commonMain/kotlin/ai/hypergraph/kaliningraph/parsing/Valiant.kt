@@ -155,8 +155,12 @@ fun String.validate(
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
 private fun CFG.normalize(): CFG =
-  addGlobalStartSymbol().expandOr().elimVarUnitProds()
-    .refactorRHS().terminalsToUnitProds().removeUselessSymbols()
+  addGlobalStartSymbol()
+    .expandOr()
+    .elimVarUnitProds()
+    .refactorRHS()
+    .terminalsToUnitProds()
+    .removeUselessSymbols()
 
 val START_SYMBOL = "START"
 

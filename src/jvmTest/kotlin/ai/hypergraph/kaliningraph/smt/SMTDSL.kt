@@ -1,11 +1,13 @@
 package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.sampling.randomString
-import ai.hypergraph.kaliningraph.tensor.Matrix
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import com.google.common.collect.ImmutableList
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.*
+import org.sosy_lab.java_smt.api.Model.ValueAssignment
 import org.sosy_lab.java_smt.api.NumeralFormula.*
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*
 import java.math.BigInteger
@@ -97,7 +99,7 @@ class SMTInstance(
       smtInstance.let { SATF(it, it.bfm.makeVariable(property.name)) }
   }
 
-  fun solveFormula(vararg bs: BooleanFormula) =
+  fun solveFormula(vararg bs: BooleanFormula): ImmutableList<ValueAssignment> =
     context.newProverEnvironment(GENERATE_MODELS, GENERATE_UNSAT_CORE)
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
@@ -111,11 +113,23 @@ class SMTInstance(
 //        associateWith { prover.model.evaluate(it) /*Can be null?*/ }
       }
 
-  fun solveInteger(vararg constraints: BooleanFormula): Map<IntegerFormula, Int> =
-    solveFormula(*constraints).associate { it.key as IntegerFormula to (it.value as BigInteger).toInt() }
+  class Solution<T>(dict: Map<*, T>) {
+    val dict = dict.map { (k, v) -> k.toString() to v }.toMap()
+    val keys = dict.keys
+    operator fun get(any: Any): T? = dict[any.toString()]
+  }
 
-  fun solveBoolean(vararg constraints: BooleanFormula): Map<BooleanFormula, Boolean> =
-    solveFormula(*constraints).associate { it.key as BooleanFormula to it.value as Boolean }
+  fun solveInteger(vararg constraints: BooleanFormula): Solution<Int> =
+    solveFormula(*constraints)
+      .associate { it.key as IntegerFormula to (it.value as BigInteger).toInt() }
+      .let { Solution(it) }
+
+  fun solveInteger(satf: SATF): Solution<Int> = solveInteger(satf.formula)
+
+  fun solveBoolean(satf: SATF): Solution<Boolean> =
+    solveFormula(satf.formula)
+      .associate { it.key as BooleanFormula to it.value as Boolean }
+      .let { Solution(it) }
 
   fun prove(goal: BooleanFormula) =
     context.newProverEnvironment().use { prover ->
@@ -139,26 +153,26 @@ class SMTInstance(
       else -> throw NumberFormatException("Bad boolean $input (${input.javaClass.name})")
     }
 
-  infix fun Any.pls(b: Any) = add(wrapInt(this), wrapInt(b))
-  infix fun Any.mns(b: Any) = subtract(wrapInt(this), wrapInt(b))
-  infix fun Any.mul(b: Any) = multiply(wrapInt(this), wrapInt(b))
-  infix fun Any.dvd(b: Any) = divide(wrapInt(this), wrapInt(b))
-  infix fun Any.pwr(b: Int) = (2..b).fold(wrapInt(this)) { a, _ -> a mul this }
-  infix fun Any.mod(b: Any) = modulo(wrapInt(this), wrapInt(b))
+  infix fun Any.pls(b: Any): IntegerFormula = add(wrapInt(this), wrapInt(b))
+  infix fun Any.mns(b: Any): IntegerFormula = subtract(wrapInt(this), wrapInt(b))
+  infix fun Any.mul(b: Any): IntegerFormula = multiply(wrapInt(this), wrapInt(b))
+  infix fun Any.dvd(b: Any): IntegerFormula = divide(wrapInt(this), wrapInt(b))
+  infix fun Any.pwr(b: Int): IntegerFormula = (2..b).fold(wrapInt(this)) { a, _ -> a mul this }
+  infix fun Any.mod(b: Any): IntegerFormula = modulo(wrapInt(this), wrapInt(b))
 
-  infix fun Any.lt(b: Any) = lessThan(wrapInt(this), wrapInt(b))
-  infix fun Any.gt(b: Any) = greaterThan(wrapInt(this), wrapInt(b))
-  infix fun Any.eq(b: Any) =
-    if (listOf(this, b).all { it is BooleanFormula || it is Boolean })
+  infix fun Any.lt(b: Any): BooleanFormula = lessThan(wrapInt(this), wrapInt(b))
+  infix fun Any.gt(b: Any): BooleanFormula = greaterThan(wrapInt(this), wrapInt(b))
+  infix fun Any.eq(b: Any): BooleanFormula =
+    if (listOf(this, b).all { it is BooleanFormula || it is Boolean || it is SATF })
       bfm.xor(wrapBool(this), wrapBool(b)).negate()
     else equal(wrapInt(this), wrapInt(b))
 
-  infix fun Any.neq(b: Any) = eq(b).negate()
+  infix fun Any.neq(b: Any): BooleanFormula = eq(b).negate()
 
-  fun Any.negate() = bfm.not(wrapBool(this))
-  infix fun Any.and(b: Any) = bfm.and(wrapBool(this), wrapBool(b))
-  infix fun Any.or(b: Any) = bfm.or(wrapBool(this), wrapBool(b))
-  infix fun Any.xor(b: Any) = bfm.xor(wrapBool(this), wrapBool(b))
+  fun Any.negate(): BooleanFormula = bfm.not(wrapBool(this))
+  infix fun Any.and(b: Any): BooleanFormula = bfm.and(wrapBool(this), wrapBool(b))
+  infix fun Any.or(b: Any): BooleanFormula = bfm.or(wrapBool(this), wrapBool(b))
+  infix fun Any.xor(b: Any): BooleanFormula = bfm.xor(wrapBool(this), wrapBool(b))
 
   fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
@@ -176,20 +190,22 @@ class SMTInstance(
       .reduce { a, b -> a and b }
 
   // Only compare upper triangular entries of the matrix
-  infix fun <T> Matrix<T, *, *>.eqUT(that: Matrix<T, *, *>): BooleanFormula =
+  infix fun <T> Matrix<T, *, *>.eqUT(that: Matrix<T, *, *>): SATF =
     makeFormula(this, that, { r, c -> r < c }) { a, b -> a as Any eq b as Any }
+      .let { SATF(this@SMTInstance, it) }
 
-  infix fun <T> Matrix<T, *, *>.eq(that: Matrix<T, *, *>): BooleanFormula =
+  infix fun <T> Matrix<T, *, *>.eq(that: Matrix<T, *, *>): SATF =
     makeFormula(this, that) { a, b -> a as Any eq b as Any }
+      .let { SATF(this@SMTInstance, it) }
 
-  infix fun <T> Matrix<T, *, *>.neq(that: Matrix<T, *, *>): BooleanFormula =
-    bfm.not(this eq that)
+  infix fun <T> Matrix<T, *, *>.neq(that: Matrix<T, *, *>): SATF =
+    (this eq that).negate()
 }
 
 open class SATF(
   open val ctx: SMTInstance,
   val formula: BooleanFormula
-): BooleanFormula by formula, Group<SATF> {
+) : Group<SATF> {
   private fun SATF(f: SMTInstance.() -> Any) = SATF(ctx, ctx.wrapBool(ctx.f()))
 
   override val nil: SATF by lazy { SATF { false } }
@@ -200,9 +216,15 @@ open class SATF(
   infix fun or(t: Any): SATF = SATF { formula or t }
   infix fun xor(t: Any): SATF = SATF { formula xor t }
   infix fun and(t: Any): SATF = SATF { formula and t }
+  infix fun eq(t: Any): SATF = SATF { formula eq t }
+  fun negate(): SATF = SATF { formula.negate() }
 
   fun toBool() = formula.toString().toBooleanStrictOrNull()
-  override fun toString() = formula.toString().let { if("true" == it) "1" else if("false" == it) "0" else it }
+  override fun toString() = when ("$formula") {
+    "true" -> "1"
+    "false" -> "0"
+    else -> "$formula"
+  }
   override fun hashCode() = formula.hashCode()
   override fun equals(other: Any?) =
     other is SATF && other.formula.toString() == this.formula.toString() ||

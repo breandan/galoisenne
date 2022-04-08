@@ -1,4 +1,6 @@
-package ai.hypergraph.markovian.experiments//import com.analog.lyric.dimple.model.core.FactorGraph
+package ai.hypergraph.markovian.experiments
+
+//import com.analog.lyric.dimple.model.core.FactorGraph
 //import com.analog.lyric.dimple.model.variables.RealJoint
 //
 //fun main() {
