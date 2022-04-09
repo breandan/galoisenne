@@ -42,7 +42,7 @@
 %% Title information
 \title{Probabilistic Array Programming on Galois Fields}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, parsing context free languages, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching simple programs via SAT/SMT encoding.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, parsing context free languages, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching syntax and simple programs via SAT/SMT encoding.
 \end{abstract}
 \maketitle
 
@@ -52,46 +52,55 @@ A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}
 
 \vspace{-7pt}
 \[
-l \otimes r := \{V \mid \langle S, S'\rangle \in l \times r, (V\rightarrow SS') \in P\}
+a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
 \]
 
-We initialize $\mathbf{M}^0[i, j](\mathcal{G}, \sigma) \coloneqq \{V_i \mid (V_i \rightarrow \sigma_i) \in P\}$ where $j = i+1$, then search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
+\noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
 
+\vspace{-5}
 \[
 \mathbf{M}^* = \begin{pmatrix}
-            \varnothing & V_1 & \ldots & \ldots & V^* \\
-            \varnothing & \varnothing & V_2 & \ldots & \ldots \\
-            \varnothing & \varnothing & \varnothing & V_3 & \ldots \\
-            \varnothing & \varnothing & \varnothing & \varnothing & V_4 \\
+            \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
+            \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
+            \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
+            \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
             \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
 \end{pmatrix}
 \]
 
-\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{V^*}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 
 This procedure can be lowered onto binary matrices by noting the output of $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and thus representable as fixed-length vectors. Full details of this bisimilarity can be found in Valiant~\citep{valiant1975general} and Lee~\citep{lee2002fast}, later shown to have time complexity $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound (currently $\omega < 2.763$~\citep{harris2021improved} as of writing this manuscript). Assuming sparsity, this technique can typically be reduced to linearithmic time, and is among the best asymptotic bounds for CFL recognition to date.
 
-A similar procedure can be used to learn, parse and sample from probabilistic grammars such as PCFGs~\citep{goodman1999semiring} and probabilistic circuits~\citep{peharz2015foundations} using semirings, many of which have carrier sets which can be neatly expressed as elements of GF(2). Known as \textit{propagation} or \textit{message passing}, this procedure consists of two steps: \textit{aggregate} and \textit{update}. Let $\delta_{st}$ denote some distance metric on a path between vertices $s$ and $t$ in a graph. To obtain $\delta_{st}$, one may run the following procedure using a desired path algebra until convergence:
+A similar procedure may be used to learn, parse and sample from probabilistic grammars such as PCFGs~\citep{goodman1999semiring} and probabilistic circuits~\citep{peharz2015foundations} using \textit{semirings}, many of which have carrier sets which can be neatly expressed as elements of GF$(2^n)$. Known as \textit{propagation} or \textit{message passing}, this procedure consists of two steps: \textit{aggregate} and \textit{update}. Let $\delta_{st}$ denote some distance metric on a path between vertices $s$ and $t$ in a graph. To obtain $\delta_{st}$, one may run the following procedure using a desired path algebra until convergence:\\
 
-\begin{center}
-  \begin{tabular}{lc}
-    $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & & &
-  \end{tabular}
-\end{center}
+\vspace{-7}
+  \hspace{-12}\begin{tabular}{lcr}
+    $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & &
+    \bgroup
+    \def\arraystretch{1.2}
+    \begin{tabular}{c{1cm}c{1cm}|c{1cm}c{1cm}|c}
+      $\oplus$ & $\otimes$ & $\circled{0}$ & $\circled{1}$ & Path     \\\hline
+      min      & +         &   $\infty$    &      0        & Shortest \\
+      max      & +         &   $-\infty$   &      0        & Longest  \\
+      max      & min       &       0       &   $\infty$    & Widest   \\
+      $\vee$   & $\underline{\vee}$ &  $\circ$   &  $\top$  & Random \\
+    \end{tabular}
+    \egroup
+  \end{tabular}\\
 
-\vspace{-5pt}
-\noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra, belief, constraint, error and expectation propagation, Markov chains, and others can all be neatly expressed as message passing on a semiring algebra. We refer the curious reader to Gondran~\citep{gondran2008graphs} and Baras~\citep{baras2010path} for a more complete survey of the algebraic path problem and its many wonderful applications across computer science.
+\noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra's shortest path, as well as belief, constraint, error, expectation and backpropagation can be neatly expressed as semiring algebras. We refer the curious reader to Gondran~\citep{gondran2008graphs} and Baras~\citep{baras2010path} for an extensive survey of the algebraic path problem and its many wonderful applications throughout statistics and computer science.
 
-GF(2) can be used to sample without replacement from arbitrarily large sets. Let $M: \text{GF}(2^{n\times n})$ be a square matrix defined as $M^0[i, j] = P_j \text{ if } i=0 \text{ else } \mathds{1}[j = i - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$. Concretely, this can be expressed as a Boolean semiring where $\otimes := \underline{\vee}, \oplus := \vee$ are lifted to matrices in the usual way:
+GF$(2^n)$ can also be used to search over highly complex state spaces and sample without replacement from arbitrarily large sets. Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix defined as $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\otimes := \underline{\vee}, \oplus := \vee$ lifted to matrices in the usual way:
 
-\vspace{-5pt}
+\vspace{-7}
 \[
 \mathbf{M}^tV = \begin{pmatrix}
   P_0 & P_1 & P_2 & P_3 & P_4 \\
-  1 & 0 & 0 & 0 & 0 \\
-  0 & 1 & 0 & 0 & 0 \\
-  0 & 0 & 1 & 0 & 0 \\
-  0 & 0 & 0 & 1 & 0
+  \top & \circ & \circ & \circ & \circ \\
+  \circ & \top & \circ & \circ & \circ \\
+  \circ & \circ & \top & \circ & \circ \\
+  \circ & \circ & \circ & \top & \circ
 \end{pmatrix}^t
 \begin{pmatrix}
       V_0 \\
@@ -102,11 +111,13 @@ GF(2) can be used to sample without replacement from arbitrarily large sets. Let
 \end{pmatrix}
 \]
 
-Selecting coefficients $P_j$ from any primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, given an initial state $V \neq \mathbf{0}$, the sequence $\mathbf{V} = \begin{bmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{bmatrix}$ will cycle through its full state space in pseudorandom order. Known as a linear finite state register (LFSR), this circuit samples without replacement from indexed sets $|S_V|<\infty$ in $\mathcal{O}(\log |S|)$ space and time and may be used to construct more complex distributions via inversion sampling.
+Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} and produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repeating. Known as a linear finite state register (LFSR), this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time, often used for weighted search and density estimation via inverse transform sampling.
 
-Last but not least, we can compute all pairwise interactions between two sets of sets by encoding them as incidence matrices and computing diagonal entries of $AXB^\intercal$ which indicate $A \cap B$. This construction has many applications in database theory~\citep{deep2020fast} and combinatorial matrix theory~\citep{brualdi1991combinatorial}. For example, we can use it to compute $P(A \cap B)$
+Taken together, these fairly simple constructions make for highly flexible primitives that may be composed together to represent distributions on non-trivial algebraic data types such as bounded-width regular and context free languages.
 
-In the following section we describe some applications for these constructions for defining probabilistic programming languages,
+%Last but not least, we can compute all pairwise interactions between two sets of sets by encoding them as incidence matrices and computing diagonal entries of $AXB^\intercal$ which indicate $A \cap B$. This construction has many applications in database theory~\citep{deep2020fast} and combinatorial matrix theory~\citep{brualdi1991combinatorial}. For example, we can use it to compute $P(A \cap B)$
+
+%In the following section we describe some applications for these constructions for defining probabilistic programming languages,
 
 %Finally, all of these can be implemented using
 %\[
