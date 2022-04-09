@@ -117,17 +117,18 @@ class SMTInstance(
     val dict = dict.map { (k, v) -> k.toString() to v }.toMap()
     val keys = dict.keys
     operator fun get(any: Any): T? = dict[any.toString()]
+    override fun toString() = dict.toString()
   }
 
+  fun solveInteger(satf: SATF): Solution<Int> = solveInteger(satf.formula)
   fun solveInteger(vararg constraints: BooleanFormula): Solution<Int> =
     solveFormula(*constraints)
       .associate { it.key as IntegerFormula to (it.value as BigInteger).toInt() }
       .let { Solution(it) }
 
-  fun solveInteger(satf: SATF): Solution<Int> = solveInteger(satf.formula)
-
-  fun solveBoolean(satf: SATF): Solution<Boolean> =
-    solveFormula(satf.formula)
+  fun solveBoolean(satf: SATF): Solution<Boolean> = solveBoolean(satf.formula)
+  fun solveBoolean(satf: BooleanFormula): Solution<Boolean> =
+    solveFormula(satf)
       .associate { it.key as BooleanFormula to it.value as Boolean }
       .let { Solution(it) }
 
@@ -230,6 +231,8 @@ open class SATF(
     other is SATF && other.formula.toString() == this.formula.toString() ||
       other is BooleanFormula && formula == other
 }
+
+//open class SATL(ctx: SMTInstance, formula: BooleanFormula): SATF(ctx, formula)
 
 open class SMTF(
   open val ctx: SMTInstance,

@@ -12,9 +12,9 @@ import kotlin.test.*
 */
 class TestSAT {
   val rand = Random(Random.nextInt().also { println("Using seed: $it") })
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testBMatInv"
+*/
   @Test
   fun testBMatInv() = repeat(100) { SMTInstance().solve {
     val dim = 10
@@ -157,9 +157,9 @@ class TestSAT {
     assertEquals(lits, solution)
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testVecJoin"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testVecJoin"
+*/
   @Test
   fun testVecJoin() {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
@@ -182,21 +182,23 @@ class TestSAT {
     }
   }
 
+  val xujieGrammar = """
+       S -> L1 T1
+       S -> L2 T2
+      T1 -> S R1
+      T2 -> S R2
+      L1 -> (
+      L2 -> [
+      R1 -> )
+      R2 -> ]
+    """
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieExample"
 */
   @Test
   fun testXujieExample() {
-    val cfg = """
-      S -> L1 T1
-      L1 -> (
-      T1 -> S R1
-      S -> L2 T2
-      L2 -> [
-      T2 -> S R2
-      R1 -> )
-      R2 -> ]
-    """.trimIndent().parseCFG(normalize=false)
+    val cfg = xujieGrammar.trimIndent().parseCFG(normalize=false)
 
     (setOf("T2", "T1", "S") to setOf("T2", "S", "R1", "R2")).let { (a, b) ->
       with(cfg) {
@@ -216,34 +218,49 @@ class TestSAT {
     }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testSingleStepMultiplication"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testSingleStepMultiplication"
+*/
   @Test
   fun testSingleStepMultiplication() = SMTInstance().solve {
-    val cfg = """
-      S -> L1 T1
-      L1 -> (
-      T1 -> S R1
-      S -> L2 T2
-      L2 -> [
-      T2 -> S R2
-      R1 -> )
-      R2 -> ]
-    """.trimIndent().parseCFG(normalize=false)
+    xujieGrammar.trimIndent().parseCFG(normalize = false).let { cfg ->
+      (setOf("T1", "S", "L2") to setOf("T2", "S", "R1", "R2")).let { (a, b) ->
+        val trueJoin = cfg.join(a, b)
+        println("True join: $trueJoin")
 
-    (setOf("T2", "T1", "S") to setOf("T2", "S", "R1", "R2")).let { (a, b) ->
-      val litA = cfg.toBitVec(a).map { Literal(it) }
-      val satB = cfg.toBitVec(b).map { BoolVar("BV$it") }
-      val litC = cfg.join(litA, satB)
-//      val solution = solveBoolean(litC[cfg.variables.indexOf("S")])
-//      println(solution)
+        val litA: List<SATF> = cfg.toBitVec(a).toLitVec(this)
+        val satB: List<SATF> = List(cfg.toBitVec(b).size) { i -> BoolVar("BV$i") }
+        val litC: List<SATF> = cfg.toBitVec(cfg.join(a, b)).toLitVec(this)
+
+        println("\nSolving for B:")
+        val solution = solveBoolean(cfg.join(litA, satB) vecEq litC)
+        println(solution)
+        println("B=" + satB.map { solution[it] ?: false }.decodeWith(cfg))
+
+        val satA: List<SATF> = List(cfg.toBitVec(b).size) { i -> BoolVar("AV$i") }
+        val litB: List<SATF> = cfg.toBitVec(b).toLitVec(this)
+
+        println("\nSolving for A:")
+        val solution1 = solveBoolean(cfg.join(satA, litB) vecEq litC)
+        println(solution1)
+        println("A=" + satA.map { solution1[it] ?: false }.decodeWith(cfg))
+
+        val satC: List<SATF> = List(cfg.toBitVec(b).size) { i -> BoolVar("CV$i") }
+
+        println("\nSolving for C:")
+        val solution2 = solveBoolean(cfg.join(litA, litB) vecEq satC)
+        println(solution2)
+        val bitVecJoin = satC.map { solution2[it]!! }.decodeWith(cfg)
+        println("C=$bitVecJoin")
+
+        assertEquals(trueJoin, bitVecJoin)
+      }
     }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieMethod"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testXujieMethod"
+*/
   @Test
   fun testXujieMethod() = SMTInstance().solve {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()

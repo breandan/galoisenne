@@ -25,10 +25,15 @@ fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
 infix fun List<SATF>.union(that: List<SATF>): List<SATF> =
   List(size) { i -> this[i] or that[i] }
 
+fun List<Boolean>.toLitVec(using: SMTInstance): List<SATF> =
+  with(using) { map { Literal(it) } }
 
-fun CFG.toBitVec(nonterminals: Set<String>) = variables.map { it in nonterminals }
-fun CFG.toNTSet(nonterminals: List<Boolean>) =
+fun CFG.toBitVec(nonterminals: Set<String>): List<Boolean> = variables.map { it in nonterminals }
+fun CFG.toNTSet(nonterminals: List<Boolean>): Set<String> =
   nonterminals.mapIndexedNotNull { i, it -> if(it) variables.elementAt(i) else null }.toSet()
+
+fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
+  mapIndexedNotNull { i, it -> if(it) cfg.variables.elementAt(i) else null }.toSet()
 
 infix fun List<SATF>.vecEq(that: List<SATF>): SATF =
   zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
