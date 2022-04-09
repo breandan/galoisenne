@@ -42,13 +42,7 @@ infix fun FreeMatrix<List<SATF>>.matEq(that: FreeMatrix<List<SATF>>): SATF =
   data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<SATF>>): SATF =
-  //   SOLVE FOR FIXPOINT      AND    ENSURE START SYMBOL IN UPPER CORNER
-  ((mat + mat * mat) matEq mat) and mat[0].last().let { cornerBitVec ->
-    cornerBitVec[variables.indexOf(START_SYMBOL)] and
-      // Maybe unnecessary but no other symbols in upper corner?
-      variables.mapIndexedNotNull { i, it -> if(it !in setOf(START_SYMBOL, "S")) i else null }
-        .map { cornerBitVec[it].negate() }.reduce { acc, it -> acc and it }
-  }
+  mat[0].last()[variables.indexOf(START_SYMBOL)]
 
 // Encodes the constraint that a bit-vector representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
@@ -64,9 +58,12 @@ fun CFG.mustBeOnlyOneTerminal(bitvec: List<SATF>): SATF =
   }.reduce { acc, satf -> acc xor satf }
 
 // Encodes that each blank can only be one nonterminal
-fun CFG.uniquenessConstraints(holeVariables: List<List<SATF>>): SATF =
+fun CFG.uniquenessConstraints(
+  smtInstance: SMTInstance,
+  holeVariables: List<List<SATF>>
+): SATF =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
-    .reduce { acc, it -> acc and it }
+    .fold(smtInstance.Literal(true)) { acc, it -> acc and it }
 
 fun CFG.makeSATAlgebra(smtInstance: SMTInstance) =
   with(smtInstance) {
@@ -82,19 +79,16 @@ fun CFG.constructSATMatrix(
   smtInstance: SMTInstance,
   words: List<String>,
   holeVariables: MutableList<List<SATF>> = mutableListOf(),
-  grammarVariables: MutableList<List<SATF>> = mutableListOf()
-): Π3<FreeMatrix<List<SATF>>, MutableList<List<SATF>>, MutableList<List<SATF>>> =
+): Π2<FreeMatrix<List<SATF>>, MutableList<List<SATF>>> =
   with(smtInstance) {
     FreeMatrix(makeSATAlgebra(smtInstance), words.size + 1) { r, c ->
-      if (c <= r) List(variables.size) { Literal(false) }
-      else if (c == r + 1) {
+      if (c == r + 1) {
         val word = words[c - 1]
         if (word == "_") List(variables.size) { k -> BoolVar("B.$r.$c.$k") }
           .also { holeVariables.add(it) } // Blank
         else bimap[listOf(word)].let { nts -> variables.map { Literal(it in nts) } } // Terminal
-      } else List(variables.size) { k -> BoolVar("G.$r.$c.$k") }
-        .also { grammarVariables.add(it) }  // Upper triangular
-    } to holeVariables to grammarVariables
+      } else List(variables.size) { Literal(false) }
+    } to holeVariables
   }
 
 

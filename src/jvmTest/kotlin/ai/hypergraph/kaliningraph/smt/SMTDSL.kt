@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.*
+import org.sosy_lab.java_smt.api.BasicProverEnvironment.AllSatCallback
 import org.sosy_lab.java_smt.api.Model.ValueAssignment
 import org.sosy_lab.java_smt.api.NumeralFormula.*
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*

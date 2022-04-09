@@ -263,56 +263,58 @@ class TestSAT {
 */
   @Test
   fun testXujieMethod() = SMTInstance().solve {
-    val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
-      .also { println("Normalized CFG:\n${it.prettyPrint()}") }
+    val cfg = "S -> ( S ) | [ S ] | [ ] | | ( ) | S S".parseCFG()
 
-    val strToSolve = "(__()__)"
+    val strToSolve = "[_()_[__]_()__".also { println("$it is being synthesized...") }
+
     val words = strToSolve.map { "$it" }
-    val (initialMatrix, holeVariables, _) = cfg.constructSATMatrix(this, words)
+    val (initialMatrix, holeVariables) = cfg.constructSATMatrix(this, words)
+    val decodeMat = FreeMatrix(initialMatrix.algebra, initialMatrix.numRows) { r, c ->
+      List(initialMatrix.data.first().size) { BoolVar("D.$r.$c.$it") }
+    }
 
-    println("Initial  matrix:\n${initialMatrix.fillStructure()}")
+//    println("Initial  matrix:\n${initialMatrix}")
+//    val diag = initialMatrix.getElements { r, c -> c == r + 1 }
+//    println("Index    :" + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
+//    diag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
 
-    val diag = initialMatrix.getElements { r, c -> c == r + 1 }
+    val fixpointMatrix = words.fold(initialMatrix) { acc, it -> acc + acc * acc }
 
-    println("Index    :" + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
-    diag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
+//    println("Fixpoint matrix:\n${fixpointMatrix.fillStructure()}")
+//    val fpDiag = fixpointMatrix.getElements { r, c -> c == r + 1 }
+//    println("Index   : " + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
+//    fpDiag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
 
-    val fixpointMatrix = initialMatrix.let { it + it * it }
-    println("Fixpoint matrix:\n${fixpointMatrix.fillStructure()}")
-    val fpDiag = fixpointMatrix.getElements { r, c -> c == r + 1 }
-    println("Index   : " + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
-    fpDiag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
-
-    val constraint =
-      cfg.run { isInGrammar(initialMatrix) and uniquenessConstraints(holeVariables) }
+    val constraint = cfg.run {
+      cfg.isInGrammar(fixpointMatrix) and
+        uniquenessConstraints(this@solve, holeVariables) and
+          (fixpointMatrix matEq decodeMat)
+    }
 
     val solution = solveBoolean(constraint)
 
-    println("Number of variables participating and resolved nonterminals")
-    FreeMatrix(initialMatrix.numRows) { r, c ->
-      val bitVec = initialMatrix[r, c]
-      val decoded = bitVec.map { solution[it] }
-      if (decoded.all { it != null } && c == r + 1)
-        decoded.map { it!! }.let { bv ->
-          cfg.terminal(bv) + "=" + cfg.nonterminals(bv).joinToString(",", "[", "]")
-        }
-      else if (decoded.all { it == null }) {
-        if (bitVec.all { it == Literal(false) }) "0"
-        else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
-          cfg.terminal(bitVec.map { it.toBool()!! }) ?: "UNK"
-        else "MIX"
-      } else if (r == 0 && c == initialMatrix.numCols - 1)
-        decoded.mapIndexedNotNull { i, b ->
-          when (b) {
-            true -> cfg.variables.elementAt(i)
-            null -> cfg.variables.elementAt(i) + "?"
-            else -> null
-          }
-        }.joinToString(",", "[", "]")
-      else decoded.mapIndexedNotNull { i: Int, b: Boolean? ->
-        if (b == true) cfg.variables.elementAt(i) else null
-      }.let { nts -> "[${nts.size}/${decoded.size}]" }
-    }.also { println("$it\n") }
+//    println("Number of participating variables and resolved nonterminals")
+//    FreeMatrix(initialMatrix.numRows) { r, c ->
+//      val bitVec = decodeMat[r, c]
+//      val decoded = bitVec.map { solution[it] }
+//      if (decoded.all { it != null } && c == r + 1)
+//        decoded.map { it!! }.let { bv ->
+//          cfg.terminal(bv) + "=" + cfg.nonterminals(bv).joinToString(",", "[", "]")
+//        }
+//      else if (decoded.all { it == null }) {
+//        if (bitVec.all { it == Literal(false) }) "0"
+//        else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
+//          cfg.terminal(bitVec.map { it.toBool()!! }) ?: "UNK"
+//        else "MIX"
+//      } else //if (r == 0 && c == initialMatrix.numCols - 1)
+//        decoded.mapIndexedNotNull { i, b ->
+//          when (b) {
+//            true -> cfg.variables.elementAt(i)
+//            null -> cfg.variables.elementAt(i) + "?"
+//            else -> null
+//          }
+//        }.joinToString(",", "[", "]")
+//    }.also { println("$it\n") }
 
     val fillers: MutableList<String?> = holeVariables.map { bitVec ->
       cfg.terminal(bitVec.map { solution[it]!! })
@@ -321,24 +323,22 @@ class TestSAT {
     val decodedString = strToSolve.map { it }
       .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
 
+    println("$decodedString generated by SATValiant!")
+
     val isValid = cfg.isValid(decodedString)
-    println("$decodedString is ${if (isValid) "" else "not "}valid according to Valiant!")
-//    assertTrue(isValid)
-  }
+    println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
+
+    assertTrue(isValid)
+}
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testMatrixJoin"
 */
   @Test
   fun testMatrixJoin() = SMTInstance().solve {
-    val grammar = """
-      A -> A C
-      B -> C D
-      B -> E H
-      C -> C A
-    """.parseCFG(false)
-    println(grammar.prettyPrint())
-    val vars = setOf("A", "B", "C", "D", "E", "F", "G", "H", "I")
+    val cfg = xujieGrammar.parseCFG(false)
+    println(cfg.prettyPrint())
+    val vars = cfg.variables
 
     // We only use off-diagonal entries
     val odMat = FreeMatrix(SAT_ALGEBRA, vars.size) { i, j ->
@@ -353,7 +353,7 @@ class TestSAT {
 
     val allSubsetPairs = vars.depletedPS().let { it * it }
     val nonemptyTriples = allSubsetPairs.mapNotNull { (s1, s2) ->
-      val s3 = grammar.join(s1, s2)
+      val s3 = cfg.join(s1, s2)
       if (s3.isEmpty()) null else (s1 to s2 to s3)
     }
 
@@ -365,9 +365,9 @@ class TestSAT {
       val rows = maxOf(s1.size, s2.size)
 
       val (X, Y, designMatrix) =
-      s1.encodeAsMatrix(this, vars, rows) to
-      s2.encodeAsMatrix(this, vars, rows) to
-      s3.encodeAsDMatrix(vars)
+        s1.encodeAsMatrix(this, vars, rows) to
+        s2.encodeAsMatrix(this, vars, rows) to
+        s3.encodeAsDMatrix(vars)
 
 //      println("S1: $s1")
 //      println(X.toString())
@@ -385,13 +385,13 @@ class TestSAT {
       tx eq DC
     }.reduce { acc, formula -> acc and formula }
 
-    println("Solving:${nonemptyTriples.size}")
+//    println("Solving:${nonemptyTriples.size}")
 
     val solution = solveBoolean(constraint)
 
     val G = FreeMatrix(odMat.data.map { solution[it]?.let { if(it) "1" else "0" } ?: "UNK" })
 
-    println("Design matrix: $G")
+//    println("Design matrix: $G")
 
     nonemptyTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
       val rows = maxOf(s1.size, s2.size)
