@@ -125,3 +125,63 @@ fun <T> Set<T>.encodeAsMatrix(
 fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
   if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
   else setOf(setOf(first()))
+
+fun String.synthesizeFrom(cfg: CFG, smtInstance: SMTInstance): String = with(smtInstance) {
+  val strToSolve = this@synthesizeFrom
+  val words = strToSolve.map { "$it" }
+  val (initialMatrix, holeVariables) = cfg.constructSATMatrix(this, words)
+  val decodeMat = FreeMatrix(initialMatrix.algebra, initialMatrix.numRows) { r, c ->
+    List(initialMatrix.data.first().size) { BoolVar("D.$r.$c.$it") }
+  }
+
+//    println("Initial  matrix:\n${initialMatrix}")
+//    val diag = initialMatrix.getElements { r, c -> c == r + 1 }
+//    println("Index    :" + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
+//    diag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
+
+  val fixpointMatrix = words.fold(initialMatrix) { acc, it -> acc + acc * acc }
+
+//    println("Fixpoint matrix:\n${fixpointMatrix.fillStructure()}")
+//    val fpDiag = fixpointMatrix.getElements { r, c -> c == r + 1 }
+//    println("Index   : " + cfg.variables.joinToString(", ", "[", "]") { "'$it'".padEnd(8) })
+//    fpDiag.forEachIndexed { i, it -> println("BV$i${i+1}~`${words[i]}`: ${it.joinToString(", ", "[", "]") { "$it".padEnd(8) }}") }
+
+  val constraint = cfg.run {
+    cfg.isInGrammar(fixpointMatrix) and
+      uniquenessConstraints(this@with, holeVariables) and
+      (fixpointMatrix matEq decodeMat)
+  }
+
+  val solution = solveBoolean(constraint)
+
+//    println("Number of participating variables and resolved nonterminals")
+//    FreeMatrix(initialMatrix.numRows) { r, c ->
+//      val bitVec = decodeMat[r, c]
+//      val decoded = bitVec.map { solution[it] }
+//      if (decoded.all { it != null } && c == r + 1)
+//        decoded.map { it!! }.let { bv ->
+//          cfg.terminal(bv) + "=" + cfg.nonterminals(bv).joinToString(",", "[", "]")
+//        }
+//      else if (decoded.all { it == null }) {
+//        if (bitVec.all { it == Literal(false) }) "0"
+//        else if (bitVec.all { it in setOf(Literal(false), Literal(true)) })
+//          cfg.terminal(bitVec.map { it.toBool()!! }) ?: "UNK"
+//        else "MIX"
+//      } else //if (r == 0 && c == initialMatrix.numCols - 1)
+//        decoded.mapIndexedNotNull { i, b ->
+//          when (b) {
+//            true -> cfg.variables.elementAt(i)
+//            null -> cfg.variables.elementAt(i) + "?"
+//            else -> null
+//          }
+//        }.joinToString(",", "[", "]")
+//    }.also { println("$it\n") }
+
+  val fillers: MutableList<String?> = holeVariables.map { bitVec ->
+    cfg.terminal(bitVec.map { solution[it]!! })
+  }.toMutableList()
+
+  val decodedString = strToSolve.map { it }
+    .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
+  return decodedString
+}
