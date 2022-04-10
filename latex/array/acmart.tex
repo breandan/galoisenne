@@ -114,7 +114,7 @@ GF$(2^n)$ can also be used to search over highly complex state spaces and sample
 
 Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR), this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
 
-Taken together, these fairly simple array primitives may be composed to represent an expressive family of distributions on non-trivial algebraic data types such as bounded-width regular and context free languages.
+Taken together, these fairly simple array primitives may be composed to build an expressive family of distributions over non-trivial kinds of algebraic data types such as bounded-width regular and context free languages.
 
 %Last but not least, we can compute all pairwise interactions between two sets of sets by encoding them as incidence matrices and computing diagonal entries of $AXB^\intercal$ which indicate $A \cap B$. This construction has many applications in database theory~\citep{deep2020fast} and combinatorial matrix theory~\citep{brualdi1991combinatorial}. For example, we can use it to compute $P(A \cap B)$
 
@@ -145,7 +145,7 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
     \end{tabular}
   \end{table}
 
-\noindent looks a lot like a CFG! We use this observation to design a DSL for parsing graphs and visualizing CFGs. In fact, we can often translate between these structures. Depicted below are just a few entries in the transition matrix.
+\noindent looks a lot like a CFG! We use this observation to design a DSL for parsing graphs and visualizing CFGs. In fact, we can often translate between these and related structures. Depicted below are just a few entries in this transition matrix.
 
 \newcommand*{\TLP}{TLP~\citep{pientka2005tabling}}
 \newcommand*{\chomsky}{Chomsky~\citep{chomsky1959algebraic}}
@@ -160,19 +160,19 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
   \captionsetup{font=tiny}
   \scalebox{0.7}{
 \begin{tabular}{l|llllll}
-                    & \textbf{Graphs}    & \textbf{Types}    & \textbf{CFGs}   & \textbf{Arrays} & \textbf{Algebras} \\ \hline
-  \textbf{Graphs}   &                    & \done \ATG        & CFGG            & \done Laplacian & CP                \\
-  \textbf{Types}    & Lattice            &                   & \STM            & \TLP            & \done ADT         \\
-  \textbf{CFGs}     & \done Reachability & HOAS              &                 & \done \valiant   & \chomsky          \\
-  \textbf{Arrays}   & KG                 & \done \naperian   & SQL             &                 & Codd              \\
-  \textbf{Algebras} & Circuits           & \done \TCAH       & \done AE        & Cayley          &                   \\
+                    & \textbf{Graphs}    & \textbf{Types}    & \textbf{CFGs} & \textbf{Arrays} & \textbf{Algebras} \\ \hline
+  \textbf{Graphs}   &                    & \done \ATG        & CFGG          & \done Laplacian & CP                \\
+  \textbf{Types}    & Lattice            &                   & \STM          & \TLP            & \done ADT         \\
+  \textbf{CFGs}     & \done Reachability & HOAS              &               & \done \valiant  & \done GF(2)       \\
+  \textbf{Arrays}   & KG                 & \done \naperian   & SQL           &                 & Codd              \\
+  \textbf{Algebras} & Circuits           & \done \TCAH       & \done AE      & Cayley          &                   \\
 \end{tabular}
 }
   \vspace{10pt}
 \caption{Where are AGR are algebraically typed graphs, CFGG is a context free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been implemented.}
 \end{table}
 
-Although we have only explored a very small subset of this design space, we believe it sheds light on many similarities between programming languages, graphs and linear algebra, perhaps holding important insights for array programming and program synthesis. Among the many applications we have encountered is a direct path to lowering sketch based program synthesis to SAT/SMT theories.
+Although we have only explored a very small subset of this design space, we believe it sheds light on many fascinating similarities between programming languages, graphs and linear algebra, and contains yet-undiscovered applications for array programming and program synthesis. Among the applications we have encountered is a direct path to lowering sketch-based program synthesis to SAT/SMT theories and composing probabilistic programs.
 
 \section{Implementation}
 
@@ -192,11 +192,11 @@ Among the core features our DSL supports include:
 \noindent Our DSL benefits from the following design patterns:
 
 \begin{itemize}
-  \item Type-class based abstract algebra
   \item Abacus-based dependent types simulating GF$(2^n)$
-  \item Type-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
-  \item Type-family for graphs inspired by Greenman ~\citep{greenman2014getting}
-  \item Tensor API inspired by Naperian functors~\citep{gibbons2017aplicative}
+  \item Type-class based algebra inspired by Spitters et al.~\citep{spitters2011type}
+  \item Algebraic graph-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
+  \item Type-family for graphs inspired by Greenman et al.~\citep{greenman2014getting}
+  \item Multidimensional arrays inspired by Gibbons~\citep{gibbons2017aplicative}
   \item Nested datatypes inspired Bird and Meertens~\cite{bird1998nested}
 \end{itemize}
 
@@ -221,15 +221,15 @@ Among the core features our DSL supports include:
 
 \section{Conclusion}
 
-Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. To effectively reason about programs in semantically similar but syntactically diverse settings requires models which incorporate features from the call graph~\cite{liu2019neural} and surrounding typing context~\cite{allamanis2017learning}. Many semantic structures, such as data and control flow~\cite{si2018learning} can be represented as a directed acyclic graph, which admits linear-time solutions to a variety of graph problems, including topological sorting, single-source shortest path and reachability queries. Many useful graph representations have been proposed in the literature, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg} down to boolean and arithmetic circuits~\citep{miller1988efficient}.
+%Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. To effectively reason about programs in semantically similar but syntactically diverse settings requires models which incorporate features from the call graph~\cite{liu2019neural} and surrounding typing context~\cite{allamanis2017learning}. Many semantic structures, such as data and control flow~\cite{si2018learning} can be represented as a directed acyclic graph, which admits linear-time solutions to a variety of graph problems, including topological sorting, single-source shortest path and reachability queries. Many useful graph representations have been proposed in the literature, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg} down to boolean and arithmetic circuits~\citep{miller1988efficient}.
 
 %When developing scientific software of sufficient complexity, one is faced with an inevitable choice: do we cobble together a one-off solution to the problem at hand or write generic code that can be reused for many foreseeable problems? There exists a constant tension between doing just enough to get the job done and anticipating future requirements that may arise during the course of a project. Aim too low, and it becomes necessary to completely rewrite the code whenever a new feature is added. Aim too high, and we run the risk of premature abstraction and unnecessary complexity. Yet experience tells us there are patterns of such universal applicability that abstraction reveals connections to other disciplines which would not be anticipated without first seeking abstraction. Graphs are one such example.
 
-Our DSL recognizes the duality between arrays and programs, supporting programmatic representations of arrays with dynamic generation and array based representations of programming languages via the Valiant correspondence (it is also possible to represent either or both as labeled graphs for easier visualization). Although we have not implemented a self-interpreter -- this would be interesting future work. Primarily we use it to generate variants for testing machine learning algorithms on counterfactual evidence.
+Our DSL recognizes the duality between arrays and programs, supporting programmatic representations of arrays with dynamic generation and array based representations of programming languages via the Valiant correspondence (it is also possible to represent either or both as labeled graphs for easier visualization). Although we have not implemented a self-interpreter -- this would be interesting future work. Primarily we use it to generate variants for testing machine learning models on counterfactual evidence.
 
 Our framework supports various animations which have been developed to facilitate visual pattern matching and debugging on graph dynamical processes. This works by storing the trace graph as a least recently used cache to time-traveling debugging. Users can pause and play a graph program to see the values flowing around.
 
-In this paper, we explored the idea of generic programming on graphs, which are ubiquitous datastructures in computer science. We began by defining a type family for graphs, then show how this type family can be used for inductive graph representation learning. Using this idea, we develop a DSL for graph rewriting with applications to source code transformation. Our DSL has broad applicability to learning on source code and inductive programming. Thank you for considering it for acceptance to your workshop.
+In our proposed ARRAY presentation we will describe some of the applications we have developed using this framework. In this paper, we explored the idea of generic programming with algebras. We began by defining a type family for graphs, then showed how this type family can be used for inductive graph representation learning. Using this idea, we develop a DSL for graph rewriting with applications to source code transformation. Our DSL has broad applicability to learning on source code and inductive programming.
 
 %TODO: semirings on graphs
 
@@ -244,7 +244,7 @@ In this paper, we explored the idea of generic programming on graphs, which are 
 %embedded DSLs
 
 %open source implementation
-Our framework is open source: https://github.com/breandan/galoisenne.
+%Our framework is open source: https://github.com/breandan/galoisenne.
 
 %\section{Type Family}
 %
@@ -508,6 +508,7 @@ Our framework is open source: https://github.com/breandan/galoisenne.
 %
 
 %% Bibliography
+\pagebreak
 \bibliography{acmart}
 \pagebreak\appendix
 
