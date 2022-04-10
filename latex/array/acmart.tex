@@ -43,13 +43,13 @@
 %% Title information
 \title{Probabilistic Array Programming on Galois Fields}
 \begin{abstract}
-We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, parsing context free languages, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching syntax and simple programs via SAT/SMT encoding.
+We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, algebraic parsing, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching syntax in context-free languages via SAT/SMT encoding.
 \end{abstract}
 \maketitle
 
 \section{Introduction}
 
-A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}/n$ where $n$ is prime. We are primarily interested in GF$(2^n)$, taking values on $\{0, 1\}^n$, due to its amenability to SAT/SMT encoding, well-studied theoretical properties, circuit synthesizability and broad applicability to signal processing and computational linguistics. For example, the theory of context free grammars are a special case~\citep{jansson2016certified, bakinova2020formal}. Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
+A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}/n$ where $n$ is prime. We are primarily interested in GF$(2^n)$, taking values on $\{0, 1\}^n$, due to its amenability to SAT/SMT encoding, well-studied theoretical properties, circuit synthesizability and broad applicability to signal processing and computational linguistics. For example, the theory of context-free grammars are a special case~\citep{jansson2016certified, bakinova2020formal}. Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
 
 \vspace{-7pt}
 \[
@@ -114,7 +114,7 @@ GF$(2^n)$ can also be used to search over highly complex state spaces and sample
 
 Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR), this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
 
-Taken together, these fairly simple array primitives may be composed to build an expressive family of distributions over non-trivial kinds of algebraic data types such as bounded-width regular and context free languages.
+Together, these relatively simple array primitives may be composed to build an expressive family of probability distributions over non-trivial kinds of algebraic data types such as bounded-width regular and context-free languages.
 
 %Last but not least, we can compute all pairwise interactions between two sets of sets by encoding them as incidence matrices and computing diagonal entries of $AXB^\intercal$ which indicate $A \cap B$. This construction has many applications in database theory~\citep{deep2020fast} and combinatorial matrix theory~\citep{brualdi1991combinatorial}. For example, we can use it to compute $P(A \cap B)$
 
@@ -134,7 +134,7 @@ Taken together, these fairly simple array primitives may be composed to build an
 
 \section{From array programs to graphs and back}\label{sec:graphs}
 
-Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of representing a wide variety of procedural and relational information. A graph can be represented as a matrix $\{\mathbb{B}, \mathbb{N}, \mathbb{R}\}^{n\times n}$, with entries describing the presence, label, or distance between vertices. Not only can graphs be represented as arrays, CFGs can also represent graphs. Algebra provides a unifying language for studying many graph algorithms and program analysis tasks~\citep{kepner2011graph}. Just like CFGs, graphs can also be defined algebraically, using an algebraic data type~\cite{mokhov2017algebraic}. Borrowing Erwig's~\citep{erwig2001inductive} inductive graph definition, one may notice that,
+Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of representing a variety of procedural and relational information. A graph can be represented as a matrix $\{\mathbb{B}, \Sigma^k, \mathbb{N}/n\}^{|G|\times |G|}$, whose entries describe the presence, label or type signature between two vertices. Not only can graphs be represented as arrays, but also as CFGs. Algebra provides a unifying language for studying many graph algorithms and program analysis tasks~\citep{kepner2011graph}. Just like CFGs, graphs can also be defined algebraically, using an algebraic data type~\cite{mokhov2017algebraic}. Considering Erwig's~\citep{erwig2001inductive} inductive graph definition, we notice that,
 
   \begin{table}[H]
     \begin{tabular}{lcl}
@@ -145,7 +145,7 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
     \end{tabular}
   \end{table}
 
-\noindent looks a lot like a CFG! We use this observation to design a DSL for parsing graphs and visualizing CFGs. In fact, we can often translate between these and related structures. Depicted below are just a few entries in this transition matrix.
+\noindent bears a striking resemblance to a CFG! In fact, we use this correspondence to parse graphs, visualize CFGs and type check array programs. Many paths can be taken to translate between languages, graphs, types, arrays and algebras. Depicted in the transition matrix below are a few possibilities:
 
 \newcommand*{\TLP}{TLP~\citep{pientka2005tabling}}
 \newcommand*{\chomsky}{Chomsky~\citep{chomsky1959algebraic}}
@@ -169,31 +169,32 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \end{tabular}
 }
   \vspace{10pt}
-\caption{Where are AGR are algebraically typed graphs, CFGG is a context free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been implemented.}
+\caption{Where are AGR are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
 \end{table}
-
-Although we have only explored a very small subset of this design space, we believe it sheds light on many fascinating similarities between programming languages, graphs and linear algebra, and contains yet-undiscovered applications for array programming and program synthesis. Among the applications we have encountered is a direct path to lowering sketch-based program synthesis to SAT/SMT theories and composing probabilistic programs.
+\vspace{-10pt}
+Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently found several practical applications for algebraic parsing, developing an algorithm for sketch-based CFL synthesis via lowering onto SAT/SMT solvers. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
 
 \section{Implementation}
 
-Among the core features our DSL supports include:
+Among the core features which our DSL provides include:
 
 \begin{itemize}
-  \item Sparse multidimensional arrays
-  \item Spectral and algebraic graph theory
-  \item Various message passing schemes
-  \item Graph matching and rewriting
-  \item Weighted and unweighted PRNGs
-  \item Lazy sequence generation
-  \item Browser-based visualizations
-  \item Behavioral synthesis to VHDL/netlist
+  \item Type and shape inference for multidimensional arrays
+  \item Compilation of array programs to SAT/SMT solvers
+  \item Array-based graph representation and manipulation
+  \item Tools for spectral and algebraic graph theory
+  \item Backpropagation and other message passing schemes
+  \item Lazily-evaluated sparse multidimensional arrays
+  \item Probabilistic graph matching and rewriting
+  \item Multiplatform compilation: JS/JVM/Native/VHDL
+  \item Notebook- and browser-based visualizations
 \end{itemize}
 
 \noindent Our DSL benefits from the following design patterns:
 
 \begin{itemize}
   \item Abacus-based dependent types simulating GF$(2^n)$
-  \item Type-class based algebra inspired by Spitters et al.~\citep{spitters2011type}
+  \item Typeclass based algebras inspired by Spitters et al.~\citep{spitters2011type}
   \item Algebraic graph-constructors inspired by Mokhov~\citep{mokhov2017algebraic}
   \item Type-family for graphs inspired by Greenman et al.~\citep{greenman2014getting}
   \item Multidimensional arrays inspired by Gibbons~\citep{gibbons2017aplicative}
@@ -203,33 +204,33 @@ Among the core features our DSL supports include:
 \noindent We implemented some of our favorite algorithms in the DSL:
 
 \begin{itemize}
-  \item CFL parsing using Valiant's algorithm
-  \item Embedded DSL for CFG solving with holes
+  \item Valiant's algebraic context-free language recognizer
+  \item Embedded DSL for CFL normalization and sketching
   \item Matrix completion with SAT/SMT solving
   \item Regular language parsing and induction
-  \item Algorithmic differentiation
-  \item Monoidal counting tensors
-  \item Higher order Markov chains
-  \item Multistochastic tensor balancing
+  \item Algebraic and probabilistic circuits
+  \item Algorithmic/automatic differentiation
   \item Graph embedding and dimensionality reduction
-  \item Top-down tree synthesis
-  \item PCFG learning and generation
-  \item Classical and probabilistic circuits
-  \item Multidimensional sampling with LFSRs
-  \item Markov Chain Monte Carlo sampling
+  \item Persistent homology embeddings of source code
+  \item Monoidal counting tensors with mergable summaries
+  \item Weighted and unweighted sampling with LFSRs
+  \item Full-factorial multivariate analysis of variance
+  \item Sparse, dense and higher-order Markov chains
+  \item Preconditioning and multistochastic tensor balancing
+  \item Property-based testing with top-down tree synthesis
 \end{itemize}
 
 \section{Conclusion}
 
-%Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. To effectively reason about programs in semantically similar but syntactically diverse settings requires models which incorporate features from the call graph~\cite{liu2019neural} and surrounding typing context~\cite{allamanis2017learning}. Many semantic structures, such as data and control flow~\cite{si2018learning} can be represented as a directed acyclic graph, which admits linear-time solutions to a variety of graph problems, including topological sorting, single-source shortest path and reachability queries. Many useful graph representations have been proposed in the literature, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg} down to boolean and arithmetic circuits~\citep{miller1988efficient}.
+
 
 %When developing scientific software of sufficient complexity, one is faced with an inevitable choice: do we cobble together a one-off solution to the problem at hand or write generic code that can be reused for many foreseeable problems? There exists a constant tension between doing just enough to get the job done and anticipating future requirements that may arise during the course of a project. Aim too low, and it becomes necessary to completely rewrite the code whenever a new feature is added. Aim too high, and we run the risk of premature abstraction and unnecessary complexity. Yet experience tells us there are patterns of such universal applicability that abstraction reveals connections to other disciplines which would not be anticipated without first seeking abstraction. Graphs are one such example.
 
-Our DSL recognizes the duality between arrays and programs, supporting programmatic representations of arrays with dynamic generation and array based representations of programming languages via the Valiant correspondence (it is also possible to represent either or both as labeled graphs for easier visualization). Although we have not implemented a self-interpreter -- this would be interesting future work. Primarily we use it to generate variants for testing machine learning models on counterfactual evidence.
+Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. Many useful graph representations have been proposed, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg}, down to arithmetic~\citep{miller1988efficient} and probabilistic circuits~\citep{choi2020probabilistic}. Our DSL celebrates the duality between arrays and programs, supporting both programmatically-generated arrays and array-based representations of programs via the Valiant correspondence (it is possible to interpret either or both as labeled graphs for visualization). Although we have not yet implemented a self-interpreter, this would be a promising avenue for future work. Primarily, we use our DSL to generate counterfactuals for evaluating machine learning models on source code.
 
-Our framework supports various animations which have been developed to facilitate visual pattern matching and debugging on graph dynamical processes. This works by storing the trace graph as a least recently used cache to time-traveling debugging. Users can pause and play a graph program to see the values flowing around.
+Our framework provides various animations which have been developed to facilitate visual pattern matching. Users can pause, play and rewind a graph program trace to see message passing in slow-motion. This feature is invaluable for inspecting and debugging graph dynamical processes.
 
-In our proposed ARRAY presentation we will describe some of the applications we have developed using this framework. In this paper, we explored the idea of generic programming with algebras. We began by defining a type family for graphs, then showed how this type family can be used for inductive graph representation learning. Using this idea, we develop a DSL for graph rewriting with applications to source code transformation. Our DSL has broad applicability to learning on source code and inductive programming.
+In our proposed ARRAY presentation, we will describe some of the applications we have developed using this framework. We will explore the idea of generic array programming with abstract algebras, define an algebraic type family for graphs, then show how our DSL can be used to compose and evaluate graphs representing probabilistic programs. We will show a concrete application for sketch-based program synthesis with applications to robust parsing and rewriting. Our DSL has direct applicability to learning and reasoning about source code and inductive programming.
 
 %TODO: semirings on graphs
 
@@ -274,7 +275,7 @@ In our proposed ARRAY presentation we will describe some of the applications we 
 %
 %Artificial languages are also languages, but with a precise set of rules. By design, the rules for composing these languages are much more rigid to enable their mechanical interpretation. A vast number of domain-specific languages, called programming languages, have emerged in recent years.
 %
-%The distinction between natural and artificial languages are not discontinuous, but rather fall along a spectrum of minimum description length. Linguists have developed various taxonomies for languages based on their algorithmic and information complexity. In practice, most examples are at worst, weakly linear context free due to physical constraints.
+%The distinction between natural and artificial languages are not discontinuous, but rather fall along a spectrum of minimum description length. Linguists have developed various taxonomies for languages based on their algorithmic and information complexity. In practice, most examples are at worst, weakly linear context-free due to physical constraints.
 %
 %The question arises, is there a useful superset of computable languages? Various equivalent definitions have been proposed from Peano arithmetic, to Turing machines, to Sch\"onfinkel's combinatory logic, to Church's $\lambda$-calculus. Although complete, these languages are inconsistent (G\"odel). However, Presburger (1929) proposes a slightly weaker language which is both complete and consistent, $P \Coloneqq 0 \mid 1$:
 %
