@@ -41,6 +41,12 @@ infix fun List<SATF>.vecEq(that: List<SATF>): SATF =
 infix fun FreeMatrix<List<SATF>>.matEq(that: FreeMatrix<List<SATF>>): SATF =
   data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
+infix fun FreeMatrix<List<SATF>>.fixedpointMatEq(that: FreeMatrix<List<SATF>>): SATF =
+        List(numRows-2) {
+            i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
+                .reduce{ acc, satf -> acc and satf }
+        }.reduce {acc, satf -> acc and satf}
+
 fun CFG.isInGrammar(mat: FreeMatrix<List<SATF>>): SATF =
   mat[0].last()[variables.indexOf(START_SYMBOL)]
 
@@ -91,6 +97,24 @@ fun CFG.constructSATMatrix(
     } to holeVariables
   }
 
+fun CFG.constructInitFixedpointMatrix(
+        smtInstance: SMTInstance,
+        words: List<String>,
+        holeVariables: MutableList<List<SATF>> = mutableListOf(),
+): Π2<FreeMatrix<List<SATF>>, MutableList<List<SATF>>> =
+        with(smtInstance) {
+            FreeMatrix(makeSATAlgebra(smtInstance), words.size + 1) { r, c ->
+                if (c == r + 1) {
+                    val word = words[c - 1]
+                    if (word == "_") List(variables.size) { k -> BoolVar("B.$r.$c.$k") }
+                            .also { holeVariables.add(it) } // Blank
+                    else bimap[listOf(word)].let { nts -> variables.map { Literal(it in nts) } } // Terminal
+                } else if (c > r + 1) {
+                    List(variables.size) { k -> BoolVar("B.$r.$c.$k")}
+                }
+                else List(variables.size) { Literal(false) }
+            } to holeVariables
+        }
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) variables.elementAt(i) else null }.toSet()
@@ -125,6 +149,26 @@ fun <T> Set<T>.encodeAsMatrix(
 fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
   if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
   else setOf(setOf(first()))
+
+fun String.synthesizeFromFPSolving(cfg: CFG, smtInstance: SMTInstance): String = with(smtInstance) {
+    val strToSolve = this@synthesizeFromFPSolving
+    val words = strToSolve.map { "$it" }
+
+    val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(this, words)
+    val constraint = cfg.run {
+        cfg.isInGrammar(fixpointMatrix) and
+                uniquenessConstraints(this@with, holeVariables) and
+                (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
+    }
+
+    val solution = solveBoolean(constraint)
+    val fillers: MutableList<String?> = holeVariables.map { bitVec ->
+        cfg.terminal(bitVec.map { solution[it]!! })
+    }.toMutableList()
+
+    return strToSolve.map { it }
+            .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
+}
 
 fun String.synthesizeFrom(cfg: CFG, smtInstance: SMTInstance): String = with(smtInstance) {
   val strToSolve = this@synthesizeFrom
