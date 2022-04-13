@@ -7,8 +7,8 @@ plugins {
   signing
   `maven-publish`
   kotlin("multiplatform") version "1.6.20"
-  id("com.google.devtools.ksp") version "1.6.20-1.0.4"
-  kotlin("jupyter.api") version "0.11.0-71"
+  id("com.google.devtools.ksp") version "1.6.20-1.0.5"
+  kotlin("jupyter.api") version "0.11.0-73"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -131,20 +131,29 @@ kotlin {
         implementation("ca.umontreal.iro.simul:ssj:3.3.1")
 
         // MPJ (required for Poon's SPN)
-        implementation(files("$projectDir/libs/mpj-0.44.jar"))
+//        implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         val multik_version = "0.1.1"
 //  val multik_version = "0.1.1" // tests fail
         implementation("org.jetbrains.kotlinx:multik-api:$multik_version")
         implementation("org.jetbrains.kotlinx:multik-jvm:$multik_version")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
+
+        implementation("org.sosy-lab:java-smt:3.12.0")
+
+        val libZ3Version = "4.8.14"
+//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version")
+//        implementation("org.sosy-lab:javasmt-solver-z3:libz3:$libZ3Version:so")
+//        implementation("org.sosy-lab:javasmt-solver-z3:libz3java:$libZ3Version:so")
+        implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
+
       }
     }
 
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.2.2"
+        val kotestVersion = "5.2.3"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
@@ -157,15 +166,6 @@ kotlin {
         val multikVersion = "0.1.1"
         implementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
-
-        // I think we were going to use this to prove termination of graph rewriting
-        implementation("org.sosy-lab:java-smt:3.12.0")
-
-        val libZ3Version = "4.8.14"
-//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version")
-//        implementation("org.sosy-lab:javasmt-solver-z3:libz3:$libZ3Version:so")
-//        implementation("org.sosy-lab:javasmt-solver-z3:libz3java:$libZ3Version:so")
-        implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
@@ -184,7 +184,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.5.2" }
+        val tinkerpopVersion by extra { "3.6.0" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
@@ -224,8 +224,8 @@ kotlin {
           description.set("A purely functional algebraic graph library")
           licenses {
             license {
-              name.set("The Apache Software License, Version 1.0")
-              url.set("http://www.apache.org/licenses/LICENSE-3.0.txt")
+              name.set("The Apache Software License, Version 2.0")
+              url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
               distribution.set("repo")
             }
           }

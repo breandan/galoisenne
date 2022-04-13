@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.collections.filter
 
-
 @JvmName("joinSATF")
 fun CFG.join(left: List<SATF>, right: List<SATF>): List<SATF> =
   List(left.size) { i ->
@@ -110,7 +109,7 @@ fun CFG.constructInitFixedpointMatrix(
                             .also { holeVariables.add(it) } // Blank
                     else bimap[listOf(word)].let { nts -> variables.map { Literal(it in nts) } } // Terminal
                 } else if (c > r + 1) {
-                    List(variables.size) { k -> BoolVar("B.$r.$c.$k")}
+                    List(variables.size) { k -> BoolVar("B.$r.$c.$k") }
                 }
                 else List(variables.size) { Literal(false) }
             } to holeVariables
@@ -150,25 +149,37 @@ fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
   if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
   else setOf(setOf(first()))
 
-fun String.synthesizeFromFPSolving(cfg: CFG, smtInstance: SMTInstance): String = with(smtInstance) {
-    val strToSolve = this@synthesizeFromFPSolving
-    val words = strToSolve.map { "$it" }
+fun String.synthesizeFromFPSolving(cfg: CFG, smtInstance: SMTInstance): Sequence<String> =
+  sequence {
+    with(smtInstance) {
+      val strToSolve = this@synthesizeFromFPSolving
+      val words = strToSolve.map { "$it" }
 
-    val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(this, words)
-    val constraint = cfg.run {
+      val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(
+        this,
+        words
+      )
+      val valiantParses = cfg.run {
         cfg.isInGrammar(fixpointMatrix) and
-                uniquenessConstraints(this@with, holeVariables) and
-                (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
+          uniquenessConstraints(this@with, holeVariables) and
+          (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
+      }
+
+      var isFresh = Literal(true)
+      while (true)
+        try {
+          val solution = solveBoolean(valiantParses and isFresh)
+          isFresh = isFresh and
+            holeVariables.map { bitVec -> bitVec.map { it neq solution[it]!! }.reduce { acc, satf -> acc or satf } }
+              .reduce { acc, satf -> acc or satf }
+          val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
+            .map { cfg.terminal(it) }.toMutableList()
+
+          yield(strToSolve.map { it }
+            .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" })
+        } catch (e: Exception) { e.printStackTrace(); break }
     }
-
-    val solution = solveBoolean(constraint)
-    val fillers: MutableList<String?> = holeVariables.map { bitVec ->
-        cfg.terminal(bitVec.map { solution[it]!! })
-    }.toMutableList()
-
-    return strToSolve.map { it }
-            .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
-}
+  }
 
 fun String.synthesizeFrom(cfg: CFG, smtInstance: SMTInstance): String = with(smtInstance) {
   val strToSolve = this@synthesizeFrom
@@ -225,7 +236,6 @@ fun String.synthesizeFrom(cfg: CFG, smtInstance: SMTInstance): String = with(smt
     cfg.terminal(bitVec.map { solution[it]!! })
   }.toMutableList()
 
-  val decodedString = strToSolve.map { it }
+  return strToSolve.map { it }
     .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" }
-  return decodedString
 }

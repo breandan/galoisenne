@@ -161,16 +161,16 @@ fun LFSR(
     .mapIndexedNotNull { i, c -> if (c == '1') i else null }
 ): Sequence<UInt> = // LFSRM(degree)
   sequence {
-  val vec0 = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt()
-  var vec = vec0
-  var i = 0
-  do {
-    val bit = primitivePolynomial.map { vec shr it }
-      .fold(0u) { a, c -> a xor c } and 1u
-    vec = (vec shr 1) or (bit shl (degree - 1))
-    yield(vec)
-  } while (++i < 2.0.pow(degree).toInt() - 1)
-}
+    val vec0 = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt()
+    var vec = vec0
+    var i = 0
+    do {
+      val bit = primitivePolynomial.map { vec shr it }
+        .fold(0u) { a, c -> a xor c } and 1u
+      vec = (vec shr 1) or (bit shl (degree - 1))
+      yield(vec)
+    } while (++i < 2.0.pow(degree).toInt() - 1)
+  }
 
 val algebra = Ring.of(
   nil = false,
@@ -207,7 +207,7 @@ fun LFSRM(
 }
 
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
-  MDSamplerWithoutReplacement(List(dimension){ set })
+  MDSamplerWithoutReplacement(List(dimension) { set })
 
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
@@ -219,7 +219,8 @@ fun <T> MDSamplerWithoutReplacement(
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
   else if (degree !in generator) throw Exception("Space is too large!")
-  else LFSR(degree).map { it.toBitList(degree) }.hastyPuddingTrick(cardinalities)
+  else LFSR(degree).map { it.toBitList(degree) }
+    .hastyPuddingTrick(cardinalities)
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
 

@@ -105,9 +105,12 @@ class SMTInstance(
       .use { prover ->
         for (f in bs) prover.addConstraint(f)
 
-        if(prover.isUnsat) {
-          println("Unsat core:\n" + prover.unsatCore.joinToString("\n"))
-          throw Exception("Unsat!")
+        if (prover.isUnsat) {
+          val unsat = prover.unsatCore.joinToString("\n")
+          val previewLength = 400
+          val preview = if(unsat.length < previewLength)
+            unsat.take(previewLength) + "..." else unsat
+          throw Exception("Unsat! Core (size=${unsat.length}): $preview")
         }
 
         prover.modelAssignments// This may not assign all free variables?
