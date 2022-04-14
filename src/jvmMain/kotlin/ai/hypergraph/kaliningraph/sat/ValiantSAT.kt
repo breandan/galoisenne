@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.sat
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
+import org.logicng.formulas.Formula
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
@@ -40,10 +41,10 @@ infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Form
   data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 infix fun FreeMatrix<List<Formula>>.fixedpointMatEq(that: FreeMatrix<List<Formula>>): Formula =
-        List(numRows-2) {
-            i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
-                .reduce{ acc, satf -> acc and satf }
-        }.reduce {acc, satf -> acc and satf}
+  List(numRows - 2) {
+    i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
+        .reduce { acc, satf -> acc and satf }
+  }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
   mat[0].last()[variables.indexOf(START_SYMBOL)]

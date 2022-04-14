@@ -2,53 +2,35 @@ package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
-import org.logicng.formulas.FormulaFactory
-import org.logicng.io.parsers.PropositionalParser
+import org.logicng.formulas.*
+import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.solvers.MiniSat
 
-typealias Formula = String
-fun BVar(name: String) = name
-fun BLit(b: Boolean) = if (b) T else F
+val ff = FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
+fun BVar(name: String): Formula = ff.variable(name)
+fun BLit(b: Boolean): Formula = ff.constant(b)
 
-fun Formula.solve(): Map<String, Boolean> =
-  FormulaFactory().let { ff ->
-    val cnf = PropositionalParser(ff).parse(this)
-    val vars = cnf.variables()
-    val model = MiniSat.miniSat(ff).apply { add(cnf); sat() }.model()
-    vars.associate { it.name() to model.evaluateLit(it) }
+fun Formula.solve(): Map<Variable, Boolean> =
+  ff.let { ff ->
+    val vars = variables()
+    val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
+    vars.associateWith { model.evaluateLit(it) }
   }
 
 /** See [org.logicng.io.parsers.PropositionalParser] */
 infix fun Formula.and(that: Formula) =
-  when {
-    this ==  F || that == F -> F
-    this == T -> that
-    that == T -> this
-    else -> "($this) & ($that)"
-  }
+  ff.and(this, that)
 
 infix fun Formula.or(that: Formula) =
-  when {
-    this == T || that == T -> T
-    this == F -> that
-    that == F -> this
-    else -> "($this) | ($that)"
-  }
-
-fun Formula.negate() =
-  when(this) {
-    T -> F
-    F -> T
-    else -> "~($this)"
-  }
+  ff.or(this, that)
 
 infix fun Formula.xor(that: Formula) = eq(that).negate()
 infix fun Formula.neq(that: Formula) = xor(that)
-infix fun Formula.eq(that: Formula) = "($this) <=> ($that)"
-const val T: Formula = "\$true"
-const val F: Formula = "\$false"
+infix fun Formula.eq(that: Formula) = ff.equivalence(this, that)
+val T: Formula = ff.verum()
+val F: Formula = ff.falsum()
 
-fun Formula.toBool() = drop(1).toBooleanStrictOrNull()
+fun Formula.toBool() = "$this".drop(1).toBooleanStrict()
 
 fun <T> makeFormula(
   m1: Matrix<T, *, *>,
