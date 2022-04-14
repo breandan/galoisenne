@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.automata
 
 import kotlin.random.Random
 
-
+// TODO: rewrite in matrix form
 class KRegex(val regex: String) {
   val postfixRegex = PostFix.toPostfix(regex)
   val symbols = mutableListOf<Char>()

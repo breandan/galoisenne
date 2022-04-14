@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList
 import org.sosy_lab.java_smt.SolverContextFactory
 import org.sosy_lab.java_smt.SolverContextFactory.Solvers
 import org.sosy_lab.java_smt.api.*
-import org.sosy_lab.java_smt.api.BasicProverEnvironment.AllSatCallback
 import org.sosy_lab.java_smt.api.Model.ValueAssignment
 import org.sosy_lab.java_smt.api.NumeralFormula.*
 import org.sosy_lab.java_smt.api.SolverContext.ProverOptions.*
@@ -68,16 +67,16 @@ class SMTInstance(
       nil = Literal(false),
       one = Literal(true),
       plus = { a, b ->
-          if (a == one || b == one) one
-          else if (a == nil) b
-          else if (b == nil) a
-          else a or b
+        if (a == one || b == one) one
+        else if (a == nil) b
+        else if (b == nil) a
+        else a or b
       },
       times = { a, b ->
-          if (a == nil || b == nil) nil
-          else if (a == one) b
-          else if (b == one) a
-          else a and b
+        if (a == nil || b == nil) nil
+        else if (a == one) b
+        else if (b == one) a
+        else a and b
       }
     )
 

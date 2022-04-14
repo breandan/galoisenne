@@ -47,10 +47,10 @@ class TestSMT {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.smt.TestSAT.testUTGF2MatFixpoint"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testUTGF2MatFixpoint"
 */
 
-  //  @Test
+//  @Test
   fun testUTGF2MatFixpoint() = SMTInstance().solve {
     val dim = 20
     val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)

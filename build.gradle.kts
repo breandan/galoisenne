@@ -147,6 +147,7 @@ kotlin {
 //        implementation("org.sosy-lab:javasmt-solver-z3:libz3java:$libZ3Version:so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
+        implementation("org.logicng:logicng:2.2.0")
       }
     }
 
