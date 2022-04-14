@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
+import org.logicng.datastructures.Assignment
 import org.logicng.formulas.*
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.solvers.MiniSat
@@ -15,6 +16,15 @@ fun Formula.solve(): Map<Variable, Boolean> =
     val vars = variables()
     val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
     vars.associateWith { model.evaluateLit(it) }
+  }
+
+fun Formula.solveIncremental(
+  miniSat: MiniSat = MiniSat.miniSat(ff)
+): Pair<MiniSat, Map<Variable, Boolean>> =
+  ff.let { ff ->
+    val vars = variables()
+    val model = miniSat.apply { add(this@solveIncremental); sat() }.model()
+    miniSat to vars.associateWith { model.evaluateLit(it) }
   }
 
 /** See [org.logicng.io.parsers.PropositionalParser] */

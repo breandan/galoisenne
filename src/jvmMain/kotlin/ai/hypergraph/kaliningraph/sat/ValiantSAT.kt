@@ -157,18 +157,26 @@ fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
     }
 
+    var (solver, solution) = valiantParses.solveIncremental()
     var isFresh = T
     while (true)
       try {
-        val solution = (valiantParses and isFresh).solve()
-        isFresh = isFresh and
-          holeVariables.map { bitVec -> bitVec.map { it neq BLit(solution[it]!!) }.reduce { acc, satf -> acc or satf } }
-            .reduce { acc, satf -> acc or satf }
         val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
           .map { cfg.terminal(it) }.toMutableList()
 
         yield(strToSolve.map { it }
           .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" })
+
+        isFresh = isFresh and
+          holeVariables.map { bitVec ->
+            bitVec.map { it neq BLit(solution[it]!!) }
+              .reduce { acc, satf -> acc or satf }
+          }.reduce { acc, satf -> acc or satf }
+
+        solver.add(isFresh)
+        solver.sat()
+        val model = solver.model()
+        solution = solution.keys.associateWith { model.evaluateLit(it) }
       } catch (e: Exception) { e.printStackTrace(); break }
   }
 
