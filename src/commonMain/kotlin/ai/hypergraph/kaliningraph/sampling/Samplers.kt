@@ -172,22 +172,15 @@ fun LFSR(
     } while (++i < 2.0.pow(degree).toInt() - 1)
   }
 
-val algebra = Ring.of(
-  nil = false,
-  one = true,
-  plus = { x, y -> x xor y },
-  times = { x, y -> x and y }
-)
-
 private fun RandomVector(
   degree: Int,
   initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
   initialState: List<Boolean> = initialValue.toBitList(degree),
-) = FreeMatrix(algebra, degree, 1) { r, _ -> initialState[r] }
+) = FreeMatrix(XOR_ALGEBRA, degree, 1) { r, _ -> initialState[r] }
 
 // https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Matrix_forms
 private fun TransitionMatrix(degree: Int, polynomial: List<Boolean>) =
-  FreeMatrix(algebra, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
+  FreeMatrix(XOR_ALGEBRA, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
 
 private fun PrimitivePolynomial(length: Int) =
   generator[length]!!.random().toString(2).map { it == '1' }

@@ -28,15 +28,11 @@ fun Formula.solveIncremental(
   }
 
 /** See [org.logicng.io.parsers.PropositionalParser] */
-infix fun Formula.and(that: Formula) =
-  ff.and(this, that)
-
-infix fun Formula.or(that: Formula) =
-  ff.or(this, that)
-
-infix fun Formula.xor(that: Formula) = eq(that).negate()
-infix fun Formula.neq(that: Formula) = xor(that)
-infix fun Formula.eq(that: Formula) = ff.equivalence(this, that)
+infix fun Formula.and(that: Formula): Formula = ff.and(this, that)
+infix fun Formula.or(that: Formula): Formula = ff.or(this, that)
+infix fun Formula.xor(that: Formula): Formula = eq(that).negate()
+infix fun Formula.neq(that: Formula): Formula = xor(that)
+infix fun Formula.eq(that: Formula): Formula = ff.equivalence(this, that)
 val T: Formula = ff.verum()
 val F: Formula = ff.falsum()
 
@@ -47,7 +43,7 @@ fun <T> makeFormula(
   m2: Matrix<T, *, *>,
   filter: (Int, Int) -> Boolean = { _, _ -> true },
   ifmap: (T, T) -> Formula
-) =
+): Formula =
   if (m1.shape() != m2.shape())
     throw Exception("Shape mismatch: ${m1.shape()} != ${m2.shape()}")
   else m1.data.zip(m2.data)

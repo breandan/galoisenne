@@ -185,7 +185,7 @@ class SMTInstance(
     m2: Matrix<T, *, *>,
     filter: (Int, Int) -> Boolean = { _, _ -> true },
     ifmap: (T, T) -> BooleanFormula
-  ) =
+  ): BooleanFormula =
     if (m1.shape() != m2.shape())
       throw Exception("Shape mismatch: ${m1.shape()} != ${m2.shape()}")
     else m1.data.zip(m2.data)

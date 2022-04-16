@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.allPairs
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.Random

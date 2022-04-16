@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
@@ -181,7 +180,7 @@ private fun CFG.addGlobalStartSymbol() = this + variables
 //    .also { println("Orphans: $it") }
     .map { START_SYMBOL to listOf(it) }
 
-// Expands RHS | productions, e.g., (A -> B | C) -> (A -> B, A -> C)
+// Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFG.expandOr(): CFG =
   flatMap { prod ->
     prod.RHS.fold(listOf(listOf<String>())) { acc, s ->
@@ -234,7 +233,7 @@ else filter { it.LHS !in generating && it.RHS.all { it in generating } }
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
  * After expansion: (A -> B, A -> c, A -> d, B -> c, B -> d) ->
- * After elimination: (A -> c, A -> d, B -> c, B -> D)
+ * After elimination: (A -> c, A -> d, B -> c, B -> d)
  */
 private tailrec fun CFG.elimVarUnitProds(
   toVisit: Set<String> = variables,

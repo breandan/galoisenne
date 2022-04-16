@@ -2,7 +2,6 @@
 
 package ai.hypergraph.kaliningraph.types
 
-import ai.hypergraph.kaliningraph.allPairs
 import kotlin.jvm.JvmName
 
 // Multi-typed arrays
@@ -30,6 +29,15 @@ fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
 infix fun <A, B, Z> Π2<A, B>.to(that: Z) = Π(π1, π2, that)
 infix fun <A, B, C, D> Π2<A, B>.to(that: Π2<C, D>): Π2<Π2<A, B>, Π2<C, D>> = Π(this, that)
 infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
+
+fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
+  (0 until numRows) * (0 until numCols)
+
+operator fun <T> Iterable<T>.times(s: Iterable<T>): Set<V2<T>> =
+  flatMap { s.map(it::cc).toSet() }.toSet()
+
+infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
+  flatMap { other.map(it::to) }.toSet()
 
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()

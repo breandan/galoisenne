@@ -178,6 +178,8 @@ fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         val model = solver.model()
         solution = solution.keys.associateWith { model.evaluateLit(it) }
       } catch (e: Exception) { e.printStackTrace(); break }
+
+    ff.clear()
   }
 
 fun String.synthesizeFrom(cfg: CFG): String {

@@ -7,12 +7,6 @@ import kotlin.math.*
 import kotlin.random.*
 import kotlin.reflect.KClass
 
-operator fun IntRange.times(s: IntRange): Set<V2<Int>> =
-  flatMap { s.map(it::cc).toSet() }.toSet()
-
-infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
-  flatMap { other.map(it::to) }
-
 fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
   new(numRows, numCols, data.map { op(it) }, algebra)
 
@@ -39,9 +33,6 @@ fun DoubleMatrix.meanNorm() =
     VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
-fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
-  (0 until numRows) * (0 until numCols)
-
 fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, j -> this[i][j] }
 
 fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
@@ -61,7 +52,6 @@ tailrec fun <T> closure(
     visited = visited + toVisit,
     successors = successors
   )
-
 
 // Maybe we can hack reification using super type tokens?
 infix fun Any.isA(that: Any) = when {

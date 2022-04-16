@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.sampling
 
+import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.pow
 import kotlin.test.*
@@ -14,8 +15,8 @@ class SamplingTest {
   @Test
   fun testExhaustiveSearch() =
     // Checks whether the exhaustive search is truly exhaustive
-    ((2..5).toSet() * (2..5).toSet()).forEach { (s, dim) ->
-      val base = (0 until s).map { it.digitToChar().toString() }.toSet()
+    ((2..5) * (2..5)).forEach { (s, dim) ->
+      val base = (0 until s).map { "${it.digitToChar()}" }.toSet()
       val sfc = findAll(base, dim)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.toList().size)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.distinct().toList().size)
@@ -25,7 +26,8 @@ class SamplingTest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testLFSR"
 */
   @Test
-  fun testLFSR() = (4..10).forEach { i ->
+  fun testLFSR() =
+    (4..10).forEach { i ->
       val list = LFSR(i).toList()
       val distinct = list.distinct()
       println("$i: ${list.size + 1} / ${2.0.pow(i).toInt()}")
@@ -38,8 +40,8 @@ class SamplingTest {
 */
   @Test
   fun testMDSampler() =
-    ((4..6 step 2).toSet() * (4..6).toSet()).forEach { (s, dim) ->
-      val base = (0 until s).map { it.digitToChar().toString() }.toSet()
+    ((4..6 step 2) * (4..6)).forEach { (s, dim) ->
+      val base = (0 until s).map { "${it.digitToChar()}" }.toSet()
       val sfc = MDSamplerWithoutReplacement(base, dim)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.toList().size)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.distinct().toList().size)
