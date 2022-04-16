@@ -112,7 +112,7 @@ GF$(2^n)$ can also be used to search over highly complex state spaces and sample
 \end{pmatrix}
 \]
 
-Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR), this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
+Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR)~\citep{klein2013linear}, this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
 
 Together, these relatively simple array primitives may be composed to build an expressive family of probability distributions over non-trivial kinds of algebraic data types such as bounded-width regular and context-free languages.
 
@@ -154,6 +154,10 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \newcommand*{\ATG}{ATG~\citep{erwig2001inductive, mokhov2017algebraic}}
 \newcommand*{\TCAH}{TCAH~\citep{spitters2011type}}
 \newcommand*{\valiant}{Valiant~\citep{valiant1975general}}
+\newcommand*{\HOAS}{HOAS~\citep{pfenning1988higher}}
+\newcommand*{\CFGG}{CFGG~\citep{pavlidis1972linear}}
+\newcommand*{\knowledge}{Knowledge~\citep{hogan2021knowledge}}
+\newcommand*{\REACH}{Reachability~\citep{reps1998program}}
 \newcommand*{\done}{\cellcolor{gray!25}}
 
 \begin{table}[H]
@@ -161,15 +165,15 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
   \scalebox{0.7}{
 \begin{tabular}{l|llllll}
                     & \textbf{Graphs}    & \textbf{Types}    & \textbf{CFGs} & \textbf{Arrays} & \textbf{Algebras} \\ \hline
-  \textbf{Graphs}   &                    & \done \ATG        & CFGG          & \done Laplacian & CP                \\
+  \textbf{Graphs}   &                    & \done \ATG        & \CFGG         & \done Laplacian & CP                \\
   \textbf{Types}    & Lattice            &                   & \STM          & \TLP            & \done ADT         \\
-  \textbf{CFGs}     & \done Reachability & HOAS              &               & \done \valiant  & \done GF(2)       \\
-  \textbf{Arrays}   & KG                 & \done \naperian   & SQL           &                 & Codd              \\
+  \textbf{CFGs}     & \done \REACH       & \HOAS             &               & \done \valiant  & \done GF(2)       \\
+  \textbf{Arrays}   & \knowledge         & \done \naperian   & SQL           &                 & Codd              \\
   \textbf{Algebras} & Circuits           & \done \TCAH       & \done AE      & Cayley          &                   \\
 \end{tabular}
 }
   \vspace{10pt}
-\caption{Where are AGR are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
+\caption{Where AGR are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
 \end{table}
 \vspace{-10pt}
 Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently found several practical applications for algebraic parsing, developing an algorithm for sketch-based CFL synthesis via lowering onto SAT/SMT solvers. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
@@ -204,16 +208,16 @@ Among the core features which our DSL provides include:
 \noindent We implemented some of our favorite algorithms in the DSL:
 
 \begin{itemize}
-  \item Valiant's algebraic context-free language recognizer
-  \item Embedded DSL for CFL normalization and sketching
+  \item Valiant's algebraic context-free language recognizer~\citep{valiant1975general}
+  \item Embedded DSL for CFL normalization/sketching~\citep{chomsky1959algebraic}
   \item Matrix completion with SAT/SMT solving
   \item Regular language parsing and induction
-  \item Algebraic and probabilistic circuits
-  \item Algorithmic/automatic differentiation
-  \item Graph embedding and dimensionality reduction
+  \item Algebraic and probabilistic circuits~\citep{choi2020probabilistic}
+  \item Algorithmic/automatic differentiation~\citep{considine2019kotlingrad}
+  \item Graph embedding and dimensionality reduction~\citep{hamilton2020graph}
   \item Persistent homology embeddings of source code
   \item Monoidal counting tensors with mergable summaries
-  \item Weighted and unweighted sampling with LFSRs
+  \item Weighted and unweighted sampling with LFSRs~\citep{klein2013linear}
   \item Full-factorial multivariate analysis of variance
   \item Sparse, dense and higher-order Markov chains
   \item Preconditioning and multistochastic tensor balancing
@@ -221,8 +225,6 @@ Among the core features which our DSL provides include:
 \end{itemize}
 
 \section{Conclusion}
-
-
 
 %When developing scientific software of sufficient complexity, one is faced with an inevitable choice: do we cobble together a one-off solution to the problem at hand or write generic code that can be reused for many foreseeable problems? There exists a constant tension between doing just enough to get the job done and anticipating future requirements that may arise during the course of a project. Aim too low, and it becomes necessary to completely rewrite the code whenever a new feature is added. Aim too high, and we run the risk of premature abstraction and unnecessary complexity. Yet experience tells us there are patterns of such universal applicability that abstraction reveals connections to other disciplines which would not be anticipated without first seeking abstraction. Graphs are one such example.
 
