@@ -109,6 +109,7 @@ kotlin {
         implementation(kotlin("stdlib"))
         implementation(kotlin("reflect"))
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
+        // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
         implementation("org.graalvm.js:js:22.0.0.2")
 
