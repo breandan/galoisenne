@@ -43,6 +43,7 @@ fun all(i: List<Int>, l: List<Int> = emptyList()): Sequence<List<Int>> =
   else (0 until i[0]).asSequence().flatMap { all(i.drop(1), l + it) }
 
 // TODO: Compute minimal elements of GF(p^e) dynamically
+// http://www.seanerikoconnor.freeservers.com/Mathematics/AbstractAlgebra/PrimitivePolynomials/theory.html
 // https://math.stackexchange.com/questions/2232179/how-to-find-minimal-polynomial-for-an-element-in-mboxgf2m
 // http://crc.stanford.edu/crc_papers/CRC-TR-04-03.pdf#page=24
 // https://link.springer.com/content/pdf/bbm%3A978-3-642-54649-5%2F1.pdf#page=5
@@ -51,6 +52,7 @@ val generator = mapOf(
   // Degree to binary polynomial coefficients in decimal form
   // https://link.springer.com/content/pdf/bbm%3A978-1-4615-1509-8%2F1.pdf
   // https://sci-hub.se/https://doi.org/10.1023/A:1027422805851
+  // https://github.com/umontreal-simul/ssj/blob/f384e22adf08bd5202ea65bb7cd53fee192cb3ce/src/main/java/umontreal/ssj/hups/SobolSequence.java#L488
   4 to listOf(19, 25),
   5 to listOf(37, 41, 47, 55, 59, 61),
   6 to listOf(67, 91, 97, 103, 109, 115),
