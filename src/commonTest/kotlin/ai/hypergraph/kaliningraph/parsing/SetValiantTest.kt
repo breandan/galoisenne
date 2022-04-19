@@ -6,11 +6,11 @@ import kotlin.collections.*
 import kotlin.test.*
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest"
 */
-class ValiantTest {
+class SetValiantTest {
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testSimpleGrammar"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testSimpleGrammar"
 */
   @Test
   fun testSimpleGrammar() {
@@ -34,7 +34,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testVerySimpleGrammar"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testVerySimpleGrammar"
 */
   @Test
   fun testVerySimpleGrammar() {
@@ -51,7 +51,7 @@ class ValiantTest {
 
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testAABB"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testAABB"
 */
   @Test
   fun testAABB() {
@@ -72,7 +72,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testArithmetic"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testArithmetic"
 */
   @Test
   fun testArithmetic() {
@@ -88,7 +88,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testCFLValidationFails"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testCFLValidationFails"
 */
 //  @Test
 //  fun testCFLValidationFails() {
@@ -96,7 +96,7 @@ class ValiantTest {
 //  }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckLanguage"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyckLanguage"
 */
   @Test
   fun testDyckLanguage() {
@@ -116,7 +116,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyckSolver"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyckSolver"
 */
   @Test
   fun testDyckSolver() {
@@ -131,7 +131,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck2Solver"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyck2Solver"
 */
   @Test
   fun testDyck2Solver() {
@@ -148,7 +148,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.benchmarkNaiveSearch"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.benchmarkNaiveSearch"
 */
   @Test
   fun benchmarkNaiveSearch() {
@@ -171,7 +171,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck2Language"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyck2Language"
 */
   @Test
   fun testDyck2Language() {
@@ -183,7 +183,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck3Language"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyck3Language"
 */
   @Test
   fun testDyck3Language() {
@@ -196,7 +196,7 @@ class ValiantTest {
 
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDyck3Solver"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyck3Solver"
 */
   @Test
   fun testDyck3Solver() {
@@ -210,7 +210,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testNormalization"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testNormalization"
 */
   @Test
   fun testNormalization() {
@@ -226,7 +226,7 @@ class ValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.ValiantTest.testDropUnitProds"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDropUnitProds"
 */
   @Test
   fun testDropUnitProds() {
