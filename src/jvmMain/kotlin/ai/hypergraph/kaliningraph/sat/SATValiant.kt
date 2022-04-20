@@ -161,6 +161,12 @@ fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
     var isFresh = T
     while (true)
       try {
+//        val fpMatrix = FreeMatrix(
+//          fixpointMatrix.data.map { bitVec -> bitVec.map { solution[it] ?: false } }
+//            .map { cfg.terminal(it) ?: "" }
+//        )
+//        println(fpMatrix)
+
         val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
           .map { cfg.terminal(it) }.toMutableList()
 
