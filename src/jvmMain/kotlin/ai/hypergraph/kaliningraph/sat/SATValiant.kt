@@ -134,7 +134,7 @@ fun <T> Set<T>.encodeAsMatrix(
   universe: Set<T>,
   rows: Int,
   cols: Int = universe.size,
-) = 
+) =
   FreeMatrix(SAT_ALGEBRA, rows, cols) { i, j ->
     BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
   }
@@ -144,10 +144,9 @@ fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
   if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
   else setOf(setOf(first()))
 
-fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
+fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
   sequence {
-    val strToSolve = this@synthesizeFromFPSolving
-    val words = strToSolve.map { "$it" }
+    val words = this@synthesizeFromFPSolving
 
     val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(words)
 
@@ -170,8 +169,8 @@ fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
           .map { cfg.terminal(it) }.toMutableList()
 
-        yield(strToSolve.map { it }
-          .joinToString("") { if (it == '_') fillers.removeAt(0)!! else "$it" })
+        yield(words
+          .joinToString("") { if (it == "_") fillers.removeAt(0)!! else "$it" })
 
         isFresh = isFresh and
           holeVariables.map { bitVec ->
@@ -187,6 +186,9 @@ fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
 
     ff.clear()
   }
+
+fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
+  map { "$it" }.synthesizeFromFPSolving(cfg)
 
 fun String.synthesizeFrom(cfg: CFG): String {
   val strToSolve = this@synthesizeFrom
