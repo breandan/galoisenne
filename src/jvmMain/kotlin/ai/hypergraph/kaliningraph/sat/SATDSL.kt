@@ -27,6 +27,10 @@ fun Formula.solveIncremental(
     miniSat to vars.associateWith { model.evaluateLit(it) }
   }
 
+// Ensures that at least one of the formulas in stale are fresh
+fun Map<Variable, Boolean>.areFresh() =
+  entries.map { (v, b) -> v neq BLit(b) }.reduce { acc, satf -> acc or satf }
+
 /** See [org.logicng.io.parsers.PropositionalParser] */
 infix fun Formula.and(that: Formula): Formula = ff.and(this, that)
 infix fun Formula.or(that: Formula): Formula = ff.or(this, that)

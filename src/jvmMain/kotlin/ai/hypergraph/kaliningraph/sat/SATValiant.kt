@@ -139,11 +139,6 @@ fun <T> Set<T>.encodeAsMatrix(
     BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
   }
 
-// Depleted powerset, i.e., contains no empty sets
-fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
-  if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
-  else setOf(setOf(first()))
-
 fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
   sequence {
     val words = this@synthesizeFromFPSolving
@@ -169,18 +164,12 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
           .map { cfg.terminal(it) }.toMutableList()
 
-        yield(words
-          .joinToString("") { if (it == "_") fillers.removeAt(0)!! else "$it" })
+        yield(words.joinToString("") { if (it == "_") fillers.removeAt(0)!! else it })
 
-        isFresh = isFresh and
-          holeVariables.map { bitVec ->
-            bitVec.map { it neq BLit(solution[it]!!) }
-              .reduce { acc, satf -> acc or satf }
-          }.reduce { acc, satf -> acc or satf }
+        val holes = holeVariables.flatten()
+        isFresh = isFresh and solution.filter { it.key in holes }.areFresh()
 
-        solver.add(isFresh)
-        solver.sat()
-        val model = solver.model()
+        val model = solver.run { add(isFresh); sat(); model() }
         solution = solution.keys.associateWith { model.evaluateLit(it) }
       } catch (e: Exception) { e.printStackTrace(); break }
 
