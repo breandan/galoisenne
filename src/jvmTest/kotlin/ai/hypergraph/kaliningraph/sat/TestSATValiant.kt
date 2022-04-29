@@ -36,6 +36,24 @@ class TestSATValiant {
     }
   }
 
+
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testUnaryArithmetic"
+*/
+  @Test
+  fun testUnaryArithmetic() {
+    val cfg = """
+       S2 -> 1 P 1
+       S3 -> S2 P 1
+       S4 -> S3 P 1
+    """.trimIndent().parseCFG()
+
+    assertTrue("1P1".matches(cfg))
+    assertTrue("1P1P1".matches(cfg))
+    assertTrue("1P1P1P1".matches(cfg))
+  }
+
   val xujieGrammar = """
        S -> L1 T1
        S -> L2 T2
