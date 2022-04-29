@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.jvm.JvmName
 
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
@@ -78,15 +77,13 @@ fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
     // x + y = x ∪ y
     plus = { x, y -> x union y },
     // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
-    times = { x, y -> CFG.join(x, y) }
+    times = { x, y -> CFG.treeJoin(x, y) }
   )
 
-@JvmName("treeJoin")
-fun CFG.join(l: Set<Tree>, r: Set<Tree>): Set<Tree> =
+fun CFG.treeJoin(l: Set<Tree>, r: Set<Tree>): Set<Tree> =
   (l * r).flatMap { (l, r) -> bimap[listOf(l.name, r.name)].map { Tree(it, l, r) } }.toSet()
 
-@JvmName("setJoin")
-fun CFG.join(l: Set<String>, r: Set<String>): Set<String> =
+fun CFG.setJoin(l: Set<String>, r: Set<String>): Set<String> =
   (l * r).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }

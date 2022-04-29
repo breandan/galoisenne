@@ -29,8 +29,8 @@ class TestSATValiant {
      */
     pwrsetSquared.forEach { (a, b) ->
       with(cfg) {
-        assertEquals(toBitVec(join(a, b)), join(toBitVec(a), toBitVec(b)))
-        assertEquals(join(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
+        assertEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
+        assertEquals(setJoin(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
       }
     }
   }
@@ -86,15 +86,15 @@ class TestSATValiant {
         println(cfg.prettyPrint())
         println("Set A:$a")
         println("Set B:$b")
-        println("Join A*B:" + join(a, b))
+        println("Join A*B:" + setJoin(a, b))
         println("A:" + toBitVec(a))
         println("B:" + toBitVec(b))
 
         println("BV join:" + join(toBitVec(a), toBitVec(b)))
         println("Set join:" + toNTSet(join(toBitVec(a), toBitVec(b))))
 
-        assertEquals(toBitVec(join(a, b)), join(toBitVec(a), toBitVec(b)))
-        assertEquals(join(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
+        assertEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
+        assertEquals(setJoin(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
       }
     }
   }
@@ -106,12 +106,12 @@ class TestSATValiant {
   fun testSingleStepMultiplication()  {
     xujieGrammar.trimIndent().parseCFG(normalize = false).let { cfg ->
       (setOf("T1", "S", "L2") to setOf("T2", "S", "R1", "R2")).let { (a, b) ->
-        val trueJoin = cfg.join(a, b)
+        val trueJoin = cfg.setJoin(a, b)
         println("True join: $trueJoin")
 
         val litA: List<Formula> = cfg.toBitVec(a).toLitVec()
         val satB: List<Formula> = List(cfg.toBitVec(b).size) { i -> BVar("BV$i") }
-        val litC: List<Formula> = cfg.toBitVec(cfg.join(a, b)).toLitVec()
+        val litC: List<Formula> = cfg.toBitVec(cfg.setJoin(a, b)).toLitVec()
 
         println("\nSolving for B:")
         val solution = (cfg.join(litA, satB) vecEq litC).solve()
