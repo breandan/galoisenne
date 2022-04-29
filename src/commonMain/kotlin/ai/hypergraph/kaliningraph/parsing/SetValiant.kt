@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.jvm.JvmName
 
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
@@ -55,6 +56,8 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.alphabet) =
 
 fun String.matches(cfl: String) = matches(cfl.validate().parseCFG())
 fun String.matches(CFG: CFG) = CFG.isValid(this)
+fun String.parse(cfl: String) = parse(cfl.parseCFG())
+fun String.parse(CFG: CFG) = "Parsing: $this\n" + CFG.parseForest(this)
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -68,7 +71,7 @@ fun String.matches(CFG: CFG) = CFG.isValid(this)
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun makeAlgebra(CFG: CFG): Ring<Set<String>> =
+fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
@@ -78,13 +81,18 @@ fun makeAlgebra(CFG: CFG): Ring<Set<String>> =
     times = { x, y -> CFG.join(x, y) }
   )
 
+@JvmName("treeJoin")
+fun CFG.join(l: Set<Tree>, r: Set<Tree>): Set<Tree> =
+  (l * r).flatMap { (l, r) -> bimap[listOf(l.name, r.name)].map { Tree(it, l, r) } }.toSet()
+
+@JvmName("setJoin")
 fun CFG.join(l: Set<String>, r: Set<String>): Set<String> =
   (l * r).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-private fun CFG.toMatrix(str: List<String>): FreeMatrix<Set<String>> =
+private fun CFG.toMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
-    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])]
+    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].map { Tree(it) }.toSet()
   }
 
 /*
@@ -112,13 +120,23 @@ TODO: Lower this matrix onto SAT. Steps:
 
 fun CFG.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::isValid)
+    .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.name } }
 
-fun CFG.isValid(
+fun CFG.parseForest(str: String): String =
+  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
+    .filter(String::isNotBlank).let(::matrix)[0].last().joinToString("\n") { it.prettyPrint() }
+
+fun CFG.matrix(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<String>> = toMatrix(tokens),
-  finalConfig: FreeMatrix<Set<String>> = matrix.seekFixpoint { it + it * it }
-): Boolean = (START_SYMBOL in finalConfig[0].last())
+  matrix: FreeMatrix<Set<Tree>> = toMatrix(tokens),
+  finalConfig: FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
+) = finalConfig
+
+fun CFG.parse(
+  tokens: List<String>,
+  matrix: FreeMatrix<Set<Tree>> = toMatrix(tokens),
+  finalConfig: FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
+) = finalConfig[0].last()
 //  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =

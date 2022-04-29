@@ -65,7 +65,7 @@ class SetValiantTest {
       A -> a
       B -> b
     """.let { cfl ->
-      assertTrue("aaabbb".matches(cfl))
+      assertTrue("aaabbb".apply { println(parse(cfl)) }.matches(cfl))
       assertTrue("aabb".matches(cfl))
       assertFalse("abab".matches(cfl))
     }
@@ -84,6 +84,7 @@ class SetValiantTest {
       assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
+      println("( 1 + 2 * 3 ) - ( 1 ) / 4".parse(cfl))
     }
   }
 

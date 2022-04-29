@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
@@ -45,11 +44,21 @@ class TestSATValiant {
   fun testUnaryArithmetic() {
     val cfg = """
        S2 -> 1 P 1
+       S3 -> 2 P 1
+       S3 -> 1 P 2
+       S4 -> 3 P 1
        S3 -> S2 P 1
        S4 -> S3 P 1
+       S4 -> 2 P 2
     """.trimIndent().parseCFG()
 
-    assertTrue("1P1".matches(cfg))
+  println(cfg)
+
+    println("3P1".parse(cfg))
+
+    assertTrue("3P1".matches(cfg))
+    assertTrue("2P2".matches(cfg))
+    assertTrue("2P1".matches(cfg))
     assertTrue("1P1P1".matches(cfg))
     assertTrue("1P1P1P1".matches(cfg))
   }
@@ -297,87 +306,87 @@ class TestSATValiant {
 */
   @Test
   fun testMatrixJoin() {
-    val cfg = xujieGrammar.parseCFG(false)
-    println(cfg.prettyPrint())
-    val vars = cfg.variables
-
-    // We only use off-diagonal entries
-    val odMat = FreeMatrix(SAT_ALGEBRA, vars.size) { i, j ->
-      if(i == j) BLit(true) else BVar("OD${i}_$j")
-    }
-
-    fun <T> Set<T>.encodeAsDMatrix(universe: Set<T>) =
-      FreeMatrix(SAT_ALGEBRA, universe.size) { i, j ->
-        if (i == j) BLit(universe.elementAt(i) in this)
-        else odMat[i, j]
-      }
-
-    val allSubsetPairs = vars.depletedPS().let { it * it }
-    val nonemptyTriples = allSubsetPairs.mapNotNull { (s1, s2) ->
-      val s3 = cfg.join(s1, s2)
-      if (s3.isEmpty()) null else (s1 to s2 to s3)
-    }
-
-//    val designMatrix = FreeMatrix(SAT_ALGEBRA, vars.size) { r, c ->
-//      BVar("G${r}_$c")
+//    val cfg = xujieGrammar.parseCFG(false)
+//    println(cfg.prettyPrint())
+//    val vars = cfg.variables
+//
+//    // We only use off-diagonal entries
+//    val odMat = FreeMatrix(SAT_ALGEBRA, vars.size) { i, j ->
+//      if(i == j) BLit(true) else BVar("OD${i}_$j")
 //    }
-
-    val constraint = nonemptyTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
-      val rows = maxOf(s1.size, s2.size)
-
-      val (X, Y, designMatrix) =
-        s1.encodeAsMatrix(vars, rows) to
-          s2.encodeAsMatrix(vars, rows) to
-          s3.encodeAsDMatrix(vars)
-
-//      println("S1: $s1")
-//      println(X.toString())
-//      println("S2: $s2")
-//      println(Y.toString())
-//      println("S3: $s3")
-//      println(designMatrix)
-
-      // https://dl.acm.org/doi/pdf/10.1145/3318464.3380607
-      // http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/gwwz.pdf
-      val tx = X * designMatrix * designMatrix * Y.transpose
-
-      val dontCare = BVar("dc$i")
-      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
-      tx eq DC
-    }.reduce { acc, formula -> acc and formula }
-
-//    println("Solving:${nonemptyTriples.size}")
-
-    val solution = constraint.solve()
-
-    val G = FreeMatrix(odMat.data.map { solution[it]?.let { if (it) "1" else "0" } ?: "UNK" })
-
-//    println("Design matrix: $G")
-
-    nonemptyTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
-      val rows = maxOf(s1.size, s2.size)
-
-      val (X, Y) =
-        s1.encodeAsMatrix(vars, rows) to
-          s2.encodeAsMatrix(vars, rows)
-
-      // Synthesized * operator
-      val D = FreeMatrix(SAT_ALGEBRA, G.numRows) { i, j ->
-        if(i == j) BVar("K$i") else BLit(G[i, j] == "1")
-      }
-
-      val tx = (X * D * D * Y.transpose) // * D * is UNSAT but * D * D * is SAT?
-      val dontCare = BVar("DDC$i")
-      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
-
-      val diag = (tx eq DC).solve()
-
-      val actual = diag.keys
-        .mapNotNull { "$it".drop(1).toIntOrNull() }
-        .toSet().map { vars.elementAt(it) }
-
-//      println("Expected: $s3")
-//      println("Actual  : $actual")
-    }
+//
+//    fun <T> Set<T>.encodeAsDMatrix(universe: Set<T>) =
+//      FreeMatrix(SAT_ALGEBRA, universe.size) { i, j ->
+//        if (i == j) BLit(universe.elementAt(i) in this)
+//        else odMat[i, j]
+//      }
+//
+//    val allSubsetPairs = vars.depletedPS().let { it * it }
+//    val nonemptyTriples = allSubsetPairs.mapNotNull { (s1, s2) ->
+//      val s3 = cfg.join(s1, s2)
+//      if (s3.isEmpty()) null else (s1 to s2 to s3)
+//    }
+//
+////    val designMatrix = FreeMatrix(SAT_ALGEBRA, vars.size) { r, c ->
+////      BVar("G${r}_$c")
+////    }
+//
+//    val constraint = nonemptyTriples.take(180).mapIndexed { i, (s1, s2, s3) ->
+//      val rows = maxOf(s1.size, s2.size)
+//
+//      val (X, Y, designMatrix) =
+//        s1.encodeAsMatrix(vars, rows) to
+//          s2.encodeAsMatrix(vars, rows) to
+//          s3.encodeAsDMatrix(vars)
+//
+////      println("S1: $s1")
+////      println(X.toString())
+////      println("S2: $s2")
+////      println(Y.toString())
+////      println("S3: $s3")
+////      println(designMatrix)
+//
+//      // https://dl.acm.org/doi/pdf/10.1145/3318464.3380607
+//      // http://www.cs.cmu.edu/afs/cs/user/dwoodruf/www/gwwz.pdf
+//      val tx = X * designMatrix * designMatrix * Y.transpose
+//
+//      val dontCare = BVar("dc$i")
+//      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
+//      tx eq DC
+//    }.reduce { acc, formula -> acc and formula }
+//
+////    println("Solving:${nonemptyTriples.size}")
+//
+//    val solution = constraint.solve()
+//
+//    val G = FreeMatrix(odMat.data.map { solution[it]?.let { if (it) "1" else "0" } ?: "UNK" })
+//
+////    println("Design matrix: $G")
+//
+//    nonemptyTriples.take(180).shuffled().forEachIndexed { i, (s1, s2, s3) ->
+//      val rows = maxOf(s1.size, s2.size)
+//
+//      val (X, Y) =
+//        s1.encodeAsMatrix(vars, rows) to
+//          s2.encodeAsMatrix(vars, rows)
+//
+//      // Synthesized * operator
+//      val D = FreeMatrix(SAT_ALGEBRA, G.numRows) { i, j ->
+//        if(i == j) BVar("K$i") else BLit(G[i, j] == "1")
+//      }
+//
+//      val tx = (X * D * D * Y.transpose) // * D * is UNSAT but * D * D * is SAT?
+//      val dontCare = BVar("DDC$i")
+//      val DC = FreeMatrix(SAT_ALGEBRA, rows) { _, _ -> dontCare }
+//
+//      val diag = (tx eq DC).solve()
+//
+//      val actual = diag.keys
+//        .mapNotNull { "$it".drop(1).toIntOrNull() }
+//        .toSet().map { vars.elementAt(it) }
+//
+////      println("Expected: $s3")
+////      println("Actual  : $actual")
+//    }
   }
 }
