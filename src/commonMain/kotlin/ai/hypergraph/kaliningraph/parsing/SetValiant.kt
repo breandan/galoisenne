@@ -81,7 +81,7 @@ fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
   )
 
 fun CFG.treeJoin(l: Set<Tree>, r: Set<Tree>): Set<Tree> =
-  (l * r).flatMap { (l, r) -> bimap[listOf(l.name, r.name)].map { Tree(it, l, r) } }.toSet()
+  (l * r).flatMap { (l, r) -> bimap[listOf(l.root, r.root)].map { Tree(it, l, r) } }.toSet()
 
 fun CFG.setJoin(l: Set<String>, r: Set<String>): Set<String> =
   (l * r).flatMap { bimap[it.toList()] }.toSet()
@@ -117,7 +117,7 @@ TODO: Lower this matrix onto SAT. Steps:
 
 fun CFG.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.name } }
+    .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
 
 fun CFG.parseForest(str: String): String =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
