@@ -52,7 +52,7 @@ class TestSATValiant {
        S4 -> 2 P 2
     """.trimIndent().parseCFG()
 
-  println(cfg)
+    println(cfg)
 
     println("3P1".parse(cfg))
 

@@ -9,16 +9,10 @@ class Tree(val root: String, vararg val children: Tree) {
     buffer: String = "",
     prefix: String = "",
     childrenPrefix: String = "",
-  ): String {
-    var buffer = "$buffer$prefix$root\n"
-    val it = children.iterator()
-    while (it.hasNext()) {
-      val next = it.next()
-      buffer = if (it.hasNext())
-        next.prettyPrint(buffer, "$childrenPrefix├── ", "$childrenPrefix│   ")
-      else next.prettyPrint(buffer, "$childrenPrefix└── ", "$childrenPrefix    ")
+  ): String =
+    children.foldIndexed("$buffer$prefix$root\n") { i, acc, it ->
+      if (i == children.size - 1)
+        it.prettyPrint(acc, "$childrenPrefix└── ", "$childrenPrefix    ")
+      else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
     }
-
-    return buffer
-  }
 }
