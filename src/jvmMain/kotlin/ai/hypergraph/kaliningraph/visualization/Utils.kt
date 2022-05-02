@@ -69,7 +69,7 @@ fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
     graph[CONCENTRATE, Rank.dir(LEFT_TO_RIGHT),
-      TRANSPARENT.background(), GraphAttr.margin(0.0),
+      TRANSPARENT.background(), margin(0.0),
       COMPOUND, Attributes.attr("nslimit", "20")]
     node[color, color.font(), Font.config("Helvetica", 20),
       lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]

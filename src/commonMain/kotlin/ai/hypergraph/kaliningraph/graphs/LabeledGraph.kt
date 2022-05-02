@@ -10,7 +10,7 @@ import kotlin.reflect.KProperty
  * DSL for labeled graphs - just enumerate paths. Duplicates will be merged.
  */
 
-class LGBuilder {
+class LGBuilder internal constructor() {
   var mutGraph = LabeledGraph()
 
   val a by LGVertex(); val b by LGVertex(); val c by LGVertex()
@@ -24,7 +24,7 @@ class LGBuilder {
   val y by LGVertex(); val z by LGVertex()
 
   operator fun LGVertex.minus(v: LGVertex) =
-    LGVertex(v.id) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
+    V(v) { v.outgoing + LabeledEdge(v, this) }.also { mutGraph += it.graph }
   operator fun LGVertex.minus(v: String): LGVertex = this - LGVertex(v)
   operator fun String.minus(v: LGVertex): LGVertex = LGVertex(this) - v
   operator fun String.minus(v: String): LGVertex = LGVertex(this) - LGVertex(v)
@@ -51,7 +51,7 @@ interface LGFamily: IGF<LabeledGraph, LabeledEdge, LGVertex> {
 }
 
 // TODO: convert to/from other graph types
-open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
+open class LabeledGraph constructor(override val vertices: Set<LGVertex> = setOf()):
   Graph<LabeledGraph, LabeledEdge, LGVertex>(vertices), LGFamily {
   constructor(vararg vertices: LGVertex): this(vertices.toSet())
   constructor(builder: LGBuilder.() -> Unit):
@@ -64,7 +64,7 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
   companion object: LabeledGraph() {
     fun P(
       vararg adjList: V2<String>,
-      p2v: (V2<String>) -> LGVertex = { (s, t) -> LGVertex(s, setOf(LGVertex(t))) }
+      p2v: (V2<String>) -> LGVertex = { (s, t) -> LGVertex(label=s, out=setOf(LGVertex(t))) }
     ) = LabeledGraph(adjList.map { p2v(it) }.fold(LabeledGraph()) { acc, v -> acc + v.graph })
   }
 
@@ -89,23 +89,43 @@ open class LabeledGraph(override val vertices: Set<LGVertex> = setOf()):
 // TODO: Move occupancy, propagation and accumulator/description here
 class StatefulGraph: LabeledGraph()
 
-class LGVertex constructor(
-  val label: String = "",
+open class LGVertex internal constructor(
+  open val label: String = "",
+  override val id: String = label,
   override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
-): Vertex<LabeledGraph, LabeledEdge, LGVertex>(label), LGFamily {
+): Vertex<LabeledGraph, LabeledEdge, LGVertex>(id), LGFamily {
   var occupied: Boolean = false
 
-  constructor(out: Set<LGVertex> = setOf()) :
-    this(label = randomString(), edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
-  constructor(label: String, out: Set<LGVertex> = emptySet()) :
-    this(label = label, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+  constructor(
+    label: String = randomString(),
+    id: String = label,
+    out: Set<LGVertex> = emptySet()
+  ) : this(label = label, id = id, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+
   constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) :
-    this(label = lgv.label, edgeMap = edgeMap)
+    this(label = lgv.label, id = lgv.id, edgeMap = edgeMap)
 
   override fun encode() = label.vectorize()
   operator fun getValue(a: Any?, prop: KProperty<*>): LGVertex = LGVertex(prop.name)
 
-//  override fun toString(): String = label
+  override fun toString(): String = label
+}
+
+class FreshLGVertex internal constructor(
+  override val label: String = "",
+  override val id: String = randomString(),
+  override val edgeMap: (LGVertex) -> Set<LabeledEdge>,
+): LGVertex(label, id, edgeMap) {
+  constructor(
+    label: String,
+    out: Set<LGVertex> = emptySet()
+  ): this(
+    label = label,
+    edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() }
+  )
+
+  constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>):
+    this(label = lgv.label, edgeMap = edgeMap)
 }
 
 open class LabeledEdge(

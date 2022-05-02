@@ -33,6 +33,20 @@ fun DoubleMatrix.meanNorm() =
     VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
+fun <T, Y> joinToScalar(
+  m1: Matrix<T, *, *>,
+  m2: Matrix<T, *, *>,
+  filter: (Int, Int) -> Boolean = { _, _ -> true },
+  join: (T, T) -> Y,
+  reduce: (Y, Y) -> Y
+): Y =
+  if (m1.shape() != m2.shape())
+    throw Exception("Shape mismatch: ${m1.shape()} != ${m2.shape()}")
+  else m1.data.zip(m2.data)
+    .filterIndexed { i, _ -> filter(i / m1.numCols, i % m1.numCols) }
+    .map { (a, b) -> join(a, b) }
+    .reduce { a, b -> reduce(a, b) }
+
 fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, j -> this[i][j] }
 
 fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0

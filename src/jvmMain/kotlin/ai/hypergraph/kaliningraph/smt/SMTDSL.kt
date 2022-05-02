@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.smt
 
+import ai.hypergraph.kaliningraph.joinToScalar
 import ai.hypergraph.kaliningraph.sampling.randomString
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -180,27 +181,19 @@ class SMTInstance(
 
   fun Int.pow(i: Int): Int = toInt().toDouble().pow(i).toInt()
 
-  fun <T> makeFormula(
-    m1: Matrix<T, *, *>,
-    m2: Matrix<T, *, *>,
-    filter: (Int, Int) -> Boolean = { _, _ -> true },
-    ifmap: (T, T) -> BooleanFormula
-  ): BooleanFormula =
-    if (m1.shape() != m2.shape())
-      throw Exception("Shape mismatch: ${m1.shape()} != ${m2.shape()}")
-    else m1.data.zip(m2.data)
-      .filterIndexed { i, _ -> filter(i / m1.numCols, i % m1.numCols) }
-      .map { (a, b) -> ifmap(a, b) }
-      .reduce { a, b -> a and b }
-
   // Only compare upper triangular entries of the matrix
   infix fun <T> Matrix<T, *, *>.eqUT(that: Matrix<T, *, *>): SATF =
-    makeFormula(this, that, { r, c -> r < c }) { a, b -> a as Any eq b as Any }
-      .let { SATF(this@SMTInstance, it) }
+    joinToScalar(this, that,
+      filter = { r, c -> r < c },
+      join = { a, b -> a as Any eq b as Any },
+      reduce = { a, b -> a and b }
+    ).let { SATF(this@SMTInstance, it) }
 
   infix fun <T> Matrix<T, *, *>.eq(that: Matrix<T, *, *>): SATF =
-    makeFormula(this, that) { a, b -> a as Any eq b as Any }
-      .let { SATF(this@SMTInstance, it) }
+    joinToScalar(this, that,
+      join = { a, b -> a as Any eq b as Any },
+      reduce = { a, b -> a and b }
+    ).let { SATF(this@SMTInstance, it) }
 
   infix fun <T> Matrix<T, *, *>.neq(that: Matrix<T, *, *>): SATF =
     (this eq that).negate()

@@ -6,13 +6,13 @@ import kotlin.random.Random
 import kotlin.test.assertEquals
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest"
 */
-class TestSAT {
+class SATTest {
   val rand = Random(Random.nextInt().also { println("Using seed: $it") })
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testBMatInv"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testBMatInv"
 */
   @Test
   fun testBMatInv() = repeat(100) { 
@@ -42,7 +42,7 @@ class TestSAT {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testUTXORMatFixpoint"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testUTXORMatFixpoint"
 */
    @Test
    fun testUTXORMatFixpoint()  {
@@ -72,7 +72,7 @@ class TestSAT {
 
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testUTBMatFixpoint"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testUTBMatFixpoint"
 */
   @Test
   fun testUTBMatFixpoint()  {
@@ -102,7 +102,7 @@ class TestSAT {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testSetIntersectionOneHot"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testSetIntersectionOneHot"
 */
   @Test
   fun testSetIntersectionOneHot() = repeat(100) {
@@ -142,7 +142,7 @@ class TestSAT {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSAT.testMatEq"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testMatEq"
 */
   @Test
   fun testMatEq()  {

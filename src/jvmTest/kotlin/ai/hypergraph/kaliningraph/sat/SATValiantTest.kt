@@ -2,16 +2,17 @@ package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.test.*
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest"
 */
-class TestSATValiant {
+class SATValiantTest {
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testVecJoin"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVecJoin"
 */
   @Test
   fun testVecJoin() {
@@ -38,7 +39,7 @@ class TestSATValiant {
 
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testUnaryArithmetic"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testUnaryArithmetic"
 */
   @Test
   fun testUnaryArithmetic() {
@@ -54,7 +55,8 @@ class TestSATValiant {
 
     println(cfg)
 
-    println("3P1".parse(cfg))
+    println(cfg.parse("3P1"))
+    cfg.parse("3P1").toGraph().show()
 
     assertTrue("3P1".matches(cfg))
     assertTrue("2P2".matches(cfg))
@@ -75,7 +77,7 @@ class TestSATValiant {
     """
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testXujieExample"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExample"
 */
   @Test
   fun testXujieExample() {
@@ -100,7 +102,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testSingleStepMultiplication"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testSingleStepMultiplication"
 */
   @Test
   fun testSingleStepMultiplication()  {
@@ -140,7 +142,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testXujieMethod"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieMethod"
 */
   @Test
   fun testXujieMethod()  {
@@ -159,7 +161,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testXujieParsingWithFP"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP"
 */
   @Test
   fun testXujieParsingWithFP()  {
@@ -183,7 +185,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testXujieExWithNT"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExWithNT"
 */
   @Test
   fun testXujieExWithNT()  {
@@ -208,7 +210,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testOCamlHW"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testOCamlHW"
 */
   @Test
   fun testOCamlHW()  {
@@ -230,7 +232,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testXujieParsingWithFP1"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP1"
 */
   @Test
   fun testXujieParsingWithFP1()  {
@@ -253,7 +255,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testMultiSAT"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSAT"
 */
   @Test
   fun testMultiSAT() {
@@ -279,7 +281,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testAlgebraicLanguage"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testAlgebraicLanguage"
 */
   @Test
   fun testAlgebraicLanguage() {
@@ -302,7 +304,7 @@ class TestSATValiant {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.TestSATValiant.testMatrixJoin"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMatrixJoin"
 */
   @Test
   fun testMatrixJoin() {

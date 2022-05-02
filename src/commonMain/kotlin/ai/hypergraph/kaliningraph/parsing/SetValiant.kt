@@ -53,10 +53,10 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.alphabet) =
     }.first
   }
 
-fun String.matches(cfl: String) = matches(cfl.validate().parseCFG())
-fun String.matches(CFG: CFG) = CFG.isValid(this)
-fun String.parse(cfl: String) = parse(cfl.parseCFG())
-fun String.parse(CFG: CFG) = "Parsing: $this\n" + CFG.parseForest(this)
+fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFG())
+fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
+fun String.parse(s: String): Tree = parseCFG().parse(s)
+fun CFG.parse(s: String): Tree = parseForest(s).first()
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -119,9 +119,9 @@ fun CFG.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
     .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: String): String =
+fun CFG.parseForest(str: String): Set<Tree> =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::matrix)[0].last().joinToString("\n") { it.prettyPrint() }
+    .filter(String::isNotBlank).let(::matrix)[0].last()
 
 fun CFG.matrix(
   tokens: List<String>,
