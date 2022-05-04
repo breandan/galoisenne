@@ -13,7 +13,7 @@ fun Array<Array<String>>.toHTML(): String {
       border: 1px solid black;
       border-collapse: collapse;
       table-layout: fixed;
-      width: 400px;
+      width: 600px;
       height: 200px;
     }
     </style>

@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.sat
 
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
@@ -80,8 +81,7 @@ fun CFG.makeSATAlgebra() =
 fun CFG.parseTable(str: String): Array<Array<String>> =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
     .filter(String::isNotBlank).let(::matrix).rows
-    .map { it.map { it.firstOrNull()?.toGraph()?.html() ?: "" } }
-    //.map { it.map { it.toGraph() }.reduce { acc, lg -> acc + lg }.toDot() }
+    .map { it.map { it.mapIndexed { i, t -> t.toGraph("$i") }.fold(LabeledGraph()){ ac, lg -> ac + lg }.html() } }
     .map { it.toTypedArray() }.toTypedArray()
 
 fun CFG.parseHTML(s: String): String = parseTable(s).toHTML()
