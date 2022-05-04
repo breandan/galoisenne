@@ -84,7 +84,8 @@ class SetValiantTest {
       assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
-      println(cfl.parse("( 1 + 2 ) - 1").prettyPrint())
+      println(cfl.parse("( ( 1 + 2 ) * 3 ) / 4").prettyPrint())
+      println(cfl.parseCFG().prettyPrint())
     }
   }
 

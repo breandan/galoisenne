@@ -22,7 +22,7 @@ class SATValiantTest {
     println("Cardinality:" + pwrsetSquared.size)
 
     /*
-     * Checks that bitvector joins faithfully encode set join, i.e.:
+     * Checks that bitvector join faithfully encodes set join, i.e.:
      *
      *      S   ⋈   S' = Z for all subsets S', S' in P(Variables)
      *      ⇵       ⇵    ⇵
@@ -35,8 +35,6 @@ class SATValiantTest {
       }
     }
   }
-
-
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testUnaryArithmetic"

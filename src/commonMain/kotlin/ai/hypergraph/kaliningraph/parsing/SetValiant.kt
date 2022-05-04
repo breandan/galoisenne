@@ -80,11 +80,13 @@ fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
     times = { x, y -> CFG.treeJoin(x, y) }
   )
 
-fun CFG.treeJoin(l: Set<Tree>, r: Set<Tree>): Set<Tree> =
-  (l * r).flatMap { (l, r) -> bimap[listOf(l.root, r.root)].map { Tree(it, l, r) } }.toSet()
+fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
+  (left * right).flatMap { (left, right) ->
+    bimap[listOf(left.root, right.root)].map { Tree(it, left, right) }
+  }.toSet()
 
-fun CFG.setJoin(l: Set<String>, r: Set<String>): Set<String> =
-  (l * r).flatMap { bimap[it.toList()] }.toSet()
+fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
+  (left * right).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 private fun CFG.toMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
