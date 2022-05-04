@@ -77,6 +77,24 @@ class SATValiantTest {
     """
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmetic"
+*/
+  @Test
+  fun testArithmetic() {
+    """
+      S -> S + S | S * S | S - S | S / S | ( S )
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      S -> X | Y | Z
+    """.let { cfl ->
+      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
+      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
+      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
+      println(cfl.parse("( 1 + 2 ) - 1").prettyPrint())
+      cfl.parseCFG().parseHTML("( 1 + 2 * 3 ) / 4").show()
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExample"
 */
   @Test

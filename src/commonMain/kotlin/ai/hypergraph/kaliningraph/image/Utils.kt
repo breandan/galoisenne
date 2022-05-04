@@ -4,6 +4,32 @@ import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import kotlin.math.roundToInt
 
+fun Array<Array<String>>.toHTML(): String {
+  var sb = """
+    <html>
+    <head>
+    <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      table-layout: fixed;
+      width: 400px;
+      height: 200px;
+    }
+    </style>
+    </head>
+    <body>
+  """.trimIndent()
+  sb += "<table>\n"
+  for (row in indices) {
+    sb += "\t<tr>\n"
+    for (col in this[0].indices) sb += """<td>${this[row][col]}</td>"""
+    sb += "\t</tr>\n"
+  }
+  sb += "</table></body></html>"
+  return sb
+}
+
 fun Matrix<*, *, *>.matToBase64Img(
   pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
   arr: Array<IntArray> = when (this) {

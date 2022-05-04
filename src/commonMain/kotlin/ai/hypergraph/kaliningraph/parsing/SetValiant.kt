@@ -119,6 +119,8 @@ fun CFG.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
     .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
 
+
+
 fun CFG.parseForest(str: String): Set<Tree> =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
     .filter(String::isNotBlank).let(::matrix)[0].last()
@@ -126,8 +128,7 @@ fun CFG.parseForest(str: String): Set<Tree> =
 fun CFG.matrix(
   tokens: List<String>,
   matrix: FreeMatrix<Set<Tree>> = toMatrix(tokens),
-  finalConfig: FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
-) = finalConfig
+) = matrix.seekFixpoint { it + it * it }
 
 fun CFG.parse(
   tokens: List<String>,

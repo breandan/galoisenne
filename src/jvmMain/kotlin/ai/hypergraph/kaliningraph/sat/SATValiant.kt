@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.sat
 
+import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.tensor.FreeMatrix
+import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
 
@@ -74,6 +76,15 @@ fun CFG.makeSATAlgebra() =
       plus = { a, b -> a union b },
       times = { a, b -> join(a, b) }
     )
+
+fun CFG.parseTable(str: String): Array<Array<String>> =
+  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
+    .filter(String::isNotBlank).let(::matrix).rows
+    .map { it.map { it.firstOrNull()?.toGraph()?.html() ?: "" } }
+    //.map { it.map { it.toGraph() }.reduce { acc, lg -> acc + lg }.toDot() }
+    .map { it.toTypedArray() }.toTypedArray()
+
+fun CFG.parseHTML(s: String): String = parseTable(s).toHTML()
 
 fun CFG.constructSATMatrix(
   words: List<String>,

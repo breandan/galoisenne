@@ -24,6 +24,8 @@ const val DARKMODE = false
 fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
    toGraphviz().apply { engine(layout) }.render(format)
 
+fun String.show() = File.createTempFile("" + hashCode(), ".html")
+  .apply { writeText(this@show) }.show()
 fun IGraph<*, *, *>.html() = toGraphviz().render(SVG).toString()
 fun IGraph<*, *, *>.show(filename: String = "temp") =
   toGraphviz().render(SVG).run {

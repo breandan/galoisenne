@@ -36,9 +36,9 @@ val canonical: MutableList<LabeledGraph> = mutableListOf(
 )
 var i = 0
 
-fun cfgParser(toParse: String = "aaabbb",
-              mutableList: MutableList<String> = toParse.mapIndexed { i, c -> "$i:$c" }
-                .toMutableList()
+fun cfgParser(
+  toParse: String = "aaabbb",
+  mutableList: MutableList<String> = toParse.mapIndexed { i, c -> "$i:$c" }.toMutableList()
 ) =
   animate(
     initial = LabeledGraph {
