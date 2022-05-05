@@ -76,6 +76,7 @@ fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
     node[color, color.font(), Font.config("Helvetica", 20),
       lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
+    for(vertex in vertices) vertex.render()
     for ((vertex, edge) in edgList)
       edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }

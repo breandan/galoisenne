@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.sat
 
-import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
@@ -78,13 +78,13 @@ fun CFG.makeSATAlgebra() =
       times = { a, b -> join(a, b) }
     )
 
-fun CFG.parseTable(str: String): Array<Array<String>> =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::matrix).rows
-    .map { it.map { it.mapIndexed { i, t -> t.toGraph("$i") }.fold(LabeledGraph()){ ac, lg -> ac + lg }.html() } }
-    .map { it.toTypedArray() }.toTypedArray()
+fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
+  data.map {
+    it.mapIndexed { i, t -> t.toGraph("$i") }
+    .fold(LabeledGraph()) { ac, lg -> ac + lg }.html()
+  }.let { FreeMatrix(it) }
 
-fun CFG.parseHTML(s: String): String = parseTable(s).toHTML()
+fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTML()
 
 fun CFG.constructSATMatrix(
   words: List<String>,
@@ -145,7 +145,7 @@ fun <T> Set<T>.encodeAsMatrix(
   universe: Set<T>,
   rows: Int,
   cols: Int = universe.size,
-) =
+): FreeMatrix<Formula> =
   FreeMatrix(SAT_ALGEBRA, rows, cols) { i, j ->
     BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
   }

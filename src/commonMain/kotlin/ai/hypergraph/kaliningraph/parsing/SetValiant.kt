@@ -89,7 +89,7 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-private fun CFG.toMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
+fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].map { Tree(it) }.toSet()
   }
@@ -113,7 +113,7 @@ TODO: Lower this matrix onto SAT. Steps:
 
 /**
  * Checks whether a given string is valid by computing the transitive closure
- * of the matrix constructed by [toMatrix]. If the upper-right corner entry is
+ * of the matrix constructed by [initialMatrix]. If the upper-right corner entry is
  * empty, the string is invalid. If the entry is S, it parses.
  */
 
@@ -121,22 +121,24 @@ fun CFG.isValid(str: String): Boolean =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
     .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
 
-
-
 fun CFG.parseForest(str: String): Set<Tree> =
   str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::matrix)[0].last()
+    .filter(String::isNotBlank).let(::solveFixedpoint)[0].last()
 
-fun CFG.matrix(
+fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> =
+  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
+    .filter(String::isNotBlank).let(::solveFixedpoint)
+
+fun CFG.solveFixedpoint(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<Tree>> = toMatrix(tokens),
-) = matrix.seekFixpoint { it + it * it }
+  matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
+): FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
 
 fun CFG.parse(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<Tree>> = toMatrix(tokens),
+  matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
   finalConfig: FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
-) = finalConfig[0].last()
+): Set<Tree> = finalConfig[0].last()
 //  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =

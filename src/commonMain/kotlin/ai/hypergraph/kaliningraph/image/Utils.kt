@@ -1,33 +1,35 @@
 package ai.hypergraph.kaliningraph.image
 
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import kotlin.math.roundToInt
 
-fun Array<Array<String>>.toHTML(): String {
-  var sb = """
+fun <T> FreeMatrix<T>.toHTML(): String {
+  var html = """
     <html>
     <head>
     <style>
     table, th, td {
       border: 1px solid black;
       border-collapse: collapse;
-      table-layout: fixed;
-      width: 600px;
+      table-layout: auto;
+      min-width: 300px;
       height: 200px;
+      text-align: center;
     }
     </style>
     </head>
     <body>
   """.trimIndent()
-  sb += "<table>\n"
-  for (row in indices) {
-    sb += "\t<tr>\n"
-    for (col in this[0].indices) sb += """<td>${this[row][col]}</td>"""
-    sb += "\t</tr>\n"
+  html += "<table>\n"
+  for (row in rows) {
+    html += "\t<tr>\n"
+    for (col in this[0].indices) html += """<td>${row[col]}</td>"""
+    html += "\t</tr>\n"
   }
-  sb += "</table></body></html>"
-  return sb
+  html += "</table></body></html>"
+  return html
 }
 
 fun Matrix<*, *, *>.matToBase64Img(

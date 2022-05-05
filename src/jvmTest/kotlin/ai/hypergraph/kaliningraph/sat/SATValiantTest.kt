@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.sat
 
+import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.visualization.show
+import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.test.*
@@ -84,11 +86,13 @@ class SATValiantTest {
       S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       S -> X | Y | Z
     """.let { cfl ->
-      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
-      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
-      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
-      println(cfl.parse("( 1 + 2 ) - 1").prettyPrint())
-      cfl.parseCFG().parseHTML("( 1 + 2 * 3 ) / 4").show()
+      val cfg = cfl.parseCFG()
+      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
+      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
+      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
+      println(cfg.parse("( 1 + 2 ) - 1").prettyPrint())
+      cfg.parseHTML("( ( 1 + 2 ) * 3 ) / 4").show()
+      println(cfg.prettyPrint())
     }
   }
 
