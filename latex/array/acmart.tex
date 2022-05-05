@@ -92,7 +92,7 @@ This decision procedure can be lowered to binary matrices by noting $\bigoplus_{
 
 \noindent Many dynamic programming algorithms, including Bellman-Ford, Floyd-Warshall, Dijkstra's shortest path, as well as belief, constraint, error, expectation and backpropagation can be neatly expressed as semiring algebras. We refer the curious reader to Gondran~\citep{gondran2008graphs} and Baras~\citep{baras2010path} for an extensive survey of the algebraic path problem and its many wonderful applications throughout statistics and computer science.
 
-GF$(2^n)$ can also be used to search over highly complex state spaces and sample without replacement from arbitrarily large sets. Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix defined as $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$ where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\otimes := \underline{\vee}, \oplus := \vee$ lifted to matrices in the usual way:
+GF$(2^n)$ can also be used to search over highly complex state spaces and sample without replacement from arbitrarily large sets. Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix defined as $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\otimes := \underline{\vee}, \oplus := \vee$ lifted to matrices in the usual way:
 
 \vspace{-7}
 \[
@@ -134,7 +134,7 @@ Together, these relatively simple array primitives may be composed to build an e
 
 \section{From array programs to graphs and back}\label{sec:graphs}
 
-Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of representing a variety of procedural and relational information. A graph can be represented as a matrix $\{\mathbb{B}, \Sigma^k, \mathbb{N}/n\}^{|G|\times |G|}$, whose entries describe the presence, label or type signature between two vertices. Not only can graphs be represented as arrays, but also as CFGs. Algebra provides a unifying language for studying many graph algorithms and program analysis tasks~\citep{kepner2011graph}. Just like CFGs, graphs can also be defined algebraically, using an algebraic data type~\cite{mokhov2017algebraic}. Considering Erwig's~\citep{erwig2001inductive} inductive graph definition, we notice that,
+Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of representing many procedural and relational phenomena. A graph can be represented as a matrix $\{\mathbb{B}, \Sigma^k, \mathbb{N}/n\}^{|G|\times |G|}$, whose entries describe the presence, label or type signature of an edge between two vertices. Not only can graphs be represented as arrays, but also as CFGs. Algebra provides a unifying language for studying many graph algorithms and program analysis tasks~\citep{kepner2011graph}. Just like CFGs, graphs can also be defined algebraically, using an algebraic data type~\cite{mokhov2017algebraic}. Considering Erwig's~\citep{erwig2001inductive} inductive graph definition, we notice that,
 
   \begin{table}[H]
     \begin{tabular}{lcl}
@@ -158,6 +158,10 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \newcommand*{\CFGG}{CFGG~\citep{pavlidis1972linear}}
 \newcommand*{\knowledge}{Knowledge~\citep{hogan2021knowledge}}
 \newcommand*{\REACH}{Reachability~\citep{reps1998program}}
+\newcommand*{\codd}{Codd~\citep{codd2002relational}}
+\newcommand*{\circuits}{Circuits~\citep{valiant1979completeness, valiant1992boolean}}
+\newcommand*{\lattice}{Lattice~\citep{dolan2017algebraic}}
+\newcommand*{\gadt}{[G]ADT~\citep{kennedy2005generalized}}
 \newcommand*{\done}{\cellcolor{gray!25}}
 
 \begin{table}[H]
@@ -166,14 +170,14 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \begin{tabular}{l|llllll}
                     & \textbf{Graphs}    & \textbf{Types}    & \textbf{CFGs} & \textbf{Arrays} & \textbf{Algebras} \\ \hline
   \textbf{Graphs}   &                    & \done \ATG        & \CFGG         & \done Laplacian & CP                \\
-  \textbf{Types}    & Lattice            &                   & \STM          & \TLP            & \done ADT         \\
+  \textbf{Types}    & \lattice           &                   & \STM          & \TLP            & \done [G]ADT      \\
   \textbf{CFGs}     & \done \REACH       & \HOAS             &               & \done \valiant  & \done GF(2)       \\
-  \textbf{Arrays}   & \knowledge         & \done \naperian   & SQL           &                 & Codd              \\
-  \textbf{Algebras} & Circuits           & \done \TCAH       & \done AE      & Cayley          &                   \\
+  \textbf{Arrays}   & \knowledge         & \done \naperian   & SQL           &                 & \codd             \\
+  \textbf{Algebras} & \circuits          & \done \TCAH       & \done AE      & Cayley          &                   \\
 \end{tabular}
 }
   \vspace{10pt}
-\caption{Where AGR are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian Functors, SQL is structured query language, and TCAH are type class algebra hierarchy, and AE is algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
+\caption{Where ATG are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, [G]ADTs are [generalized] algebraic data types, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian functors, SQL is Structured Query Language, TCAH is a type class algebra hierarchy, and AE are algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
 \end{table}
 \vspace{-10pt}
 Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently found several practical applications for algebraic parsing, developing an algorithm for sketch-based CFL synthesis via lowering onto SAT/SMT solvers. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
@@ -189,7 +193,6 @@ Among the core features which our DSL provides include:
   \item Tools for spectral and algebraic graph theory
   \item Backpropagation and other message passing schemes
   \item Lazily-evaluated sparse multidimensional arrays
-  \item Probabilistic graph matching and rewriting
   \item Multiplatform compilation: JS/JVM/Native/VHDL
   \item Notebook- and browser-based visualizations
 \end{itemize}
