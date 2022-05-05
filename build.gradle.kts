@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.6.21"
   id("com.google.devtools.ksp") version "1.6.21-1.0.5"
-  kotlin("jupyter.api") version "0.11.0-77"
+  kotlin("jupyter.api") version "0.11.0-82"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -66,7 +66,6 @@ version = "0.2.1"
 
 repositories {
   mavenCentral()
-  maven("https://jitpack.io")
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
@@ -155,7 +154,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.2.3"
+        val kotestVersion = "5.3.0"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
@@ -200,7 +199,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
       }
     }
   }
