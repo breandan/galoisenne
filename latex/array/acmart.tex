@@ -1,6 +1,6 @@
 %% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
-\documentclass[sigplan,10pt,review,anonymous]{acmart}
-\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%\documentclass[sigplan,10pt,review,anonymous]{acmart}
+%\settopmatter{printfolios=false,printccs=false,printacmref=false}
 %% For double-blind review submission, w/ CCS and ACM Reference
 %\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
 %% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
@@ -8,8 +8,7 @@
 %% For single-blind review submission, w/ CCS and ACM Reference
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
-%\documentclass[sigplan]{acmart}\settopmatter{}
-
+\documentclass[sigplan,nonacm]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
@@ -45,6 +44,25 @@
 \begin{abstract}
 We present a framework for probabilistic program synthesis based on Galois theory. This framework is capable of modeling discrete distributions, algebraic parsing, graph representation learning and sketch-based program synthesis, all using sparse matrix multiplication on $GF(p^n)$. This elegant representation allows us to leverage complexity-theoretic lower bounds and easily access various compiler targets, including low level languages like VHDL and netlist as well as higher level IRs such as JVM, LLVM, and JS using the same codebase. We discuss its theory, implementation and a few use cases, which include learning and sketching syntax in context-free languages via SAT/SMT encoding.
 \end{abstract}
+
+\author{Breandan Considine}
+\affiliation{
+  \institution{McGill University}
+}
+\email{bre@ndan.co}
+
+\author{Jin Guo}
+\affiliation{
+  \institution{McGill University}
+}
+\email{jguo@cs.mcgill.ca}
+
+\author{Xujie Si}
+\affiliation{
+  \institution{McGill University}
+}
+\email{xsi@cs.mcgill.ca}
+
 \maketitle
 
 \section{Introduction}
@@ -112,7 +130,7 @@ GF$(2^n)$ can also be used to search over highly complex state spaces and sample
 \end{pmatrix}
 \]
 
-Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity. That is, the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ forms a space-filling curve whose trajectory tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR)~\citep{klein2013linear}, this circuit is one of the fastest known pseudorandom number generators, drawing samples without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
+Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a primitive polynomial~\citep{saxena2004primitive} produces a fixpoint operator generating an ergodic sequence over GF$(2^n)$ with full periodicity: the sequence $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$ tours the full state space in pseudorandom order without repetition. Known as a linear finite state register (LFSR)~\citep{klein2013linear}, this circuit can sample without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time -- useful for weighted search and density estimation via inverse transform sampling.
 
 Together, these relatively simple array primitives may be composed to build an expressive family of probability distributions over non-trivial kinds of algebraic data types such as bounded-width regular and context-free languages.
 
@@ -184,7 +202,7 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \caption{Where ATG are algebraically typed graphs, CFGG are context-free graph grammars, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NF is the Naperian functor, SQL is structured query language, TCAH is type-class algebra hierarchy and CFGL are context-free group languages. Entries highlighted in gray have been concretized by our DSL.}
 \end{table}
 \vspace{-10pt}
-Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently discovered a novel application for algebraic parsing, developed an algorithm for sketch-based CFL synthesis and lowered it onto SAT/SMT solver. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
+Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently discovered a novel application of algebraic parsing based on Valiant~\citep{valiant1975general} and by lowering onto a SAT/SMT solver, can perform sketch-based CFL synthesis. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
 
 \section{Implementation}
 
@@ -239,7 +257,7 @@ Programs are graphical structures with a rich denotational and operational seman
 
 Our framework provides various animations which have been developed to facilitate visual pattern matching. Users can pause, play and rewind a graph program trace to see message passing in slow motion. This feature is invaluable for inspecting and debugging graph dynamical processes.
 
-In our forthcoming ARRAY presentation, we will describe some of the applications we have developed using this framework. We will explore the idea of generic array programming with abstract algebras, define an algebraic type family for graphs, then show how our DSL can be used to compose and evaluate graphs representing probabilistic programs. We will show a concrete application for sketch-based program synthesis with applications to robust parsing and rewriting. Our DSL has direct applicability to learning and reasoning about source code and inductive programming. We provide an open source implementation: http://array22.ndan.co/
+In our forthcoming ARRAY presentation, we will describe some of the applications we have developed using this framework. We will explore the idea of generic array programming with abstract algebras, define an algebraic type family for graphs, then show how our DSL can be used to compose and evaluate graphs representing probabilistic programs. We will show a concrete application for sketch-based program synthesis with applications to robust parsing and rewriting. Our DSL has direct applicability to learning and reasoning about source code and inductive programming. An open source implementation is provided: http://array22.ndan.co/
 
 %TODO: semirings on graphs
 
