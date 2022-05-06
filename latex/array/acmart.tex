@@ -14,7 +14,7 @@
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
 %% use defaults for review submission.
-%\acmConference[ARRAY'22]{ACM SIGPLAN Conference on Programming Languages}{June 13, 2022}{San Diego, CA, USA}
+\acmConference[ARRAY'22]{ACM SIGPLAN Conference on Programming Languages}{June 13, 2022}{San Diego, CA, USA}
 %\acmYear{2018}
 %\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
 %\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
@@ -97,18 +97,18 @@ GF$(2^n)$ can also be used to search over highly complex state spaces and sample
 \vspace{-7}
 \[
 \mathbf{M}^tV = \begin{pmatrix}
-  P_0 & P_1 & P_2 & P_3 & P_4 \\
+  P_1 & P_2 & P_3 & P_4 & P_5 \\
   \top & \circ & \circ & \circ & \circ \\
   \circ & \top & \circ & \circ & \circ \\
   \circ & \circ & \top & \circ & \circ \\
   \circ & \circ & \circ & \top & \circ
 \end{pmatrix}^t
 \begin{pmatrix}
-      V_0 \\
       V_1 \\
       V_2 \\
       V_3 \\
-      V_4
+      V_4 \\
+      V_5
 \end{pmatrix}
 \]
 
@@ -151,7 +151,7 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \newcommand*{\chomsky}{Chomsky~\citep{chomsky1959algebraic}}
 \newcommand*{\STM}{STM~\citep{roth2021study}}
 \newcommand*{\naperian}{NF~\citep{gibbons2017aplicative}}
-\newcommand*{\ATG}{ATG~\citep{erwig2001inductive, mokhov2017algebraic}}
+\newcommand*{\ATG}{ATG~\citep{mokhov2017algebraic}}
 \newcommand*{\TCAH}{TCAH~\citep{spitters2011type}}
 \newcommand*{\valiant}{Valiant~\citep{valiant1975general}}
 \newcommand*{\HOAS}{HOAS~\citep{pfenning1988higher}}
@@ -160,8 +160,12 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
 \newcommand*{\REACH}{Reachability~\citep{reps1998program}}
 \newcommand*{\codd}{Codd~\citep{codd2002relational}}
 \newcommand*{\circuits}{Circuits~\citep{valiant1979completeness, valiant1992boolean}}
-\newcommand*{\lattice}{Lattice~\citep{dolan2017algebraic}}
-\newcommand*{\gadt}{[G]ADT~\citep{kennedy2005generalized}}
+\newcommand*{\lattice}{Lattice~\citep{dolan2016algebraic}}
+\newcommand*{\ADT}{ADT~\citep{malcolm1990algebraic}}
+\newcommand*{\SQL}{SQL~\citep{chamberlin2012early}}
+\newcommand*{\CP}{CP~\citep{schwenk1974computing}}
+\newcommand*{\cayley}{Cayley~\citep{cayley1854groups}}
+\newcommand*{\CFGL}{CFGL~\citep{anisimov1971group}}
 \newcommand*{\done}{\cellcolor{gray!25}}
 
 \begin{table}[H]
@@ -169,18 +173,18 @@ Graphs are algebraic structures~\cite{weisfeiler1968reduction} capable of repres
   \scalebox{0.7}{
 \begin{tabular}{l|llllll}
                     & \textbf{Graphs}    & \textbf{Types}    & \textbf{CFGs} & \textbf{Arrays} & \textbf{Algebras} \\ \hline
-  \textbf{Graphs}   &                    & \done \ATG        & \CFGG         & \done Laplacian & CP                \\
-  \textbf{Types}    & \lattice           &                   & \STM          & \TLP            & \done [G]ADT      \\
-  \textbf{CFGs}     & \done \REACH       & \HOAS             &               & \done \valiant  & \done GF(2)       \\
-  \textbf{Arrays}   & \knowledge         & \done \naperian   & SQL           &                 & \codd             \\
-  \textbf{Algebras} & \circuits          & \done \TCAH       & \done AE      & Cayley          &                   \\
+  \textbf{Graphs}   &                    & \done \ATG        & \CFGG         & \done Laplacian & \CP               \\
+  \textbf{Types}    & \lattice           &                   & \STM          & \TLP            & \done \ADT        \\
+  \textbf{CFGs}     & \done \REACH       & \HOAS             &               & \done \valiant  & \done GF$(2^n)$   \\
+  \textbf{Arrays}   & \knowledge         & \done \naperian   & \SQL          &                 & \codd             \\
+  \textbf{Algebras} & \done \circuits    & \done \TCAH       & \CFGL         & \cayley         &                   \\
 \end{tabular}
 }
   \vspace{10pt}
-\caption{Where ATG are algebraically typed graphs, CFGG is a context-free graph grammar, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, [G]ADTs are [generalized] algebraic data types, HOAS is higher order abstract syntax, KGs are knowledge graphs, NFs are Naperian functors, SQL is Structured Query Language, TCAH is a type class algebra hierarchy, and AE are algebraic expressions. Entries highlighted in gray have been concretized by our DSL.}
+\caption{Where ATG are algebraically typed graphs, CFGG are context-free graph grammars, CP is a characteristic polynomial, STM is the subtyping machine, TLP is tabled logic programming, ADT is an algebraic data type, HOAS is higher order abstract syntax, KGs are knowledge graphs, NF is the Naperian functor, SQL is structured query language, TCAH is type-class algebra hierarchy and CFGL are context-free group languages. Entries highlighted in gray have been concretized by our DSL.}
 \end{table}
 \vspace{-10pt}
-Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently found several practical applications for algebraic parsing, developing an algorithm for sketch-based CFL synthesis via lowering onto SAT/SMT solvers. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
+Although we have only explored a subset of this design space, our experience has already shed light on the rich theoretical connections between programming languages, graphs and linear algebra. We have recently discovered a novel application for algebraic parsing, developed an algorithm for sketch-based CFL synthesis and lowered it onto SAT/SMT solver. We believe further exploration of this space promises to yield yet-undiscovered applications for array programming and program synthesis in general.
 
 \section{Implementation}
 
@@ -216,7 +220,7 @@ Among the core features which our DSL provides include:
   \item Matrix completion with SAT/SMT solving
   \item Regular language parsing and induction
   \item Algebraic and probabilistic circuits~\citep{choi2020probabilistic}
-  \item Algorithmic/automatic differentiation~\citep{considine2019kotlingrad}
+  \item Algorithmic/automatic differentiation~\citep{considine2019programming}
   \item Graph embedding and dimensionality reduction~\citep{hamilton2020graph}
   \item Persistent homology embeddings of source code
   \item Monoidal counting tensors with mergable summaries
@@ -233,9 +237,9 @@ Among the core features which our DSL provides include:
 
 Programs are graphical structures with a rich denotational and operational semantics~\cite{henkel2018code}. Many useful graph representations have been proposed, including call graphs, dataflow graphs, computation graphs~\citep{breuleux2017automatic}, e-Graphs~\citep{willsey2020egg}, down to arithmetic~\citep{miller1988efficient} and probabilistic circuits~\citep{choi2020probabilistic}. Our DSL celebrates the duality between arrays and programs, supporting both programmatically-generated arrays and array-based representations of programs via the Valiant correspondence (it is possible to interpret either or both as labeled graphs for visualization). Although we have not yet implemented a self-interpreter, this would be a promising avenue for future work. Primarily, we use our DSL to generate counterfactuals for evaluating machine learning models on source code.
 
-Our framework provides various animations which have been developed to facilitate visual pattern matching. Users can pause, play and rewind a graph program trace to see message passing in slow-motion. This feature is invaluable for inspecting and debugging graph dynamical processes.
+Our framework provides various animations which have been developed to facilitate visual pattern matching. Users can pause, play and rewind a graph program trace to see message passing in slow motion. This feature is invaluable for inspecting and debugging graph dynamical processes.
 
-In our proposed ARRAY presentation, we will describe some of the applications we have developed using this framework. We will explore the idea of generic array programming with abstract algebras, define an algebraic type family for graphs, then show how our DSL can be used to compose and evaluate graphs representing probabilistic programs. We will show a concrete application for sketch-based program synthesis with applications to robust parsing and rewriting. Our DSL has direct applicability to learning and reasoning about source code and inductive programming.
+In our ARRAY presentation, we will describe some of the applications we have developed using this framework. We will explore the idea of generic array programming with abstract algebras, define an algebraic type family for graphs, then show how our DSL can be used to compose and evaluate graphs representing probabilistic programs. We will show a concrete application for sketch-based program synthesis with applications to robust parsing and rewriting. Our DSL has direct applicability to learning and reasoning about source code and inductive programming.
 
 %TODO: semirings on graphs
 
