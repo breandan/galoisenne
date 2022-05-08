@@ -46,17 +46,21 @@ class SATValiantTest {
     val cfg = """
        S2 -> 1 P 1
        S3 -> 2 P 1
+       S3 -> 3
+       S3 -> 3 P 0
        S3 -> 1 P 2
        S4 -> 3 P 1
        S3 -> S2 P 1
        S4 -> S3 P 1
        S4 -> 2 P 2
-    """.trimIndent().parseCFG()
+    """.parseCFG()
 
-    println(cfg)
+    println(cfg.prettyPrint())
 
     println(cfg.parse("3P1"))
-    cfg.parse("3P1").toGraph().show()
+    cfg.parseHTML("3P1").show()
+    println(cfg.prettyPrint())
+    //cfg.parse("3P1").toGraph().show()
 
     assertTrue("3P1".matches(cfg))
     assertTrue("2P2".matches(cfg))

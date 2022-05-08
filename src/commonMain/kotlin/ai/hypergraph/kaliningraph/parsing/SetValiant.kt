@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.*
 
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
@@ -27,7 +28,13 @@ class BiMap(CFG: CFG) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.prettyPrint() = joinToString("\n") { it.LHS + " -> " + it.RHS.joinToString(" ") }
+fun CFG.prettyPrint(cols: Int = 4): String =
+  sortedWith(compareBy({ -it.RHS.size }, { -it.LHS.length }, { it.LHS }))
+    .map { it.LHS + " -> " + it.RHS.joinToString(" ") }.let { productions ->
+      val (cols, rows) = cols to ceil(productions.size.toDouble() / cols).toInt()
+      val padded = productions + List(cols * rows - productions.size) { "" }
+      FreeMatrix(cols, rows, padded).transpose.toString()
+    }
 
 /*
  * Takes a grammar and a partially complete string where '_' denotes holes, and
