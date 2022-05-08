@@ -62,8 +62,8 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.alphabet) =
 
 fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFG())
 fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
-fun String.parse(s: String): Tree = parseCFG().parse(s)
-fun CFG.parse(s: String): Tree = parseForest(s).first()
+fun String.parse(s: String): Tree? = parseCFG().parse(s)
+fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull()
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *

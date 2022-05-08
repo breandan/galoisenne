@@ -39,34 +39,38 @@ class SATValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testUnaryArithmetic"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
 */
   @Test
-  fun testUnaryArithmetic() {
+  fun testTLArithmetic() {
     val cfg = """
-       S2 -> 1 P 1
-       S3 -> 2 P 1
-       S3 -> 3
-       S3 -> 3 P 0
-       S3 -> 1 P 2
-       S4 -> 3 P 1
-       S3 -> S2 P 1
-       S4 -> S3 P 1
-       S4 -> 2 P 2
+       S1C -> 1
+       S2C -> 2
+       S3C -> 3
+       S4C -> 4
+       S -> S1 | S2 | S3 | S4 
+       S -> S1 = S1C
+       S -> S2 = S2C
+       S -> S3 = S3C
+       S -> S4 = S4C
+       S1 -> S1C
+       S2 -> S2C | S1 + S1
+       S3 -> S3C | S2 + S1 | S1 + S2
+       S4 -> S4C | S3 + S1 | S1 + S3 | S2 + S2
     """.parseCFG()
 
     println(cfg.prettyPrint())
+    //println(cfg.parse("3 + 1 = 4"))
+    //cfg.parseHTML("3 + 1 = 4").show()
+    assertEquals("3+1=4", "3+_=4".synthesizeFromFPSolving(cfg).first())
+    assertEquals("3+1=4", "_+1=4".synthesizeFromFPSolving(cfg).first())
+    assertEquals("3+1=4", "3+1=_".synthesizeFromFPSolving(cfg).first())
 
-    println(cfg.parse("3P1"))
-    cfg.parseHTML("3P1").show()
-    println(cfg.prettyPrint())
-    //cfg.parse("3P1").toGraph().show()
-
-    assertTrue("3P1".matches(cfg))
-    assertTrue("2P2".matches(cfg))
-    assertTrue("2P1".matches(cfg))
-    assertTrue("1P1P1".matches(cfg))
-    assertTrue("1P1P1P1".matches(cfg))
+    assertTrue("3 + 1 = 4".matches(cfg))
+    assertTrue("2 + 2 = 4".matches(cfg))
+    assertTrue("2 + 1 = 3".matches(cfg))
+    assertTrue("1 + 1 + 1 = 3".matches(cfg))
+    assertTrue("1 + 1 + 1 + 1 = 4".matches(cfg))
   }
 
   val xujieGrammar = """
@@ -94,7 +98,7 @@ class SATValiantTest {
       assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
-      println(cfg.parse("( 1 + 2 ) - 1").prettyPrint())
+      println(cfg.parse("( 1 + 2 ) - 1")?.prettyPrint())
       cfg.parseHTML("( ( 1 + 2 ) * 3 ) / 4").show()
       println(cfg.prettyPrint())
     }
