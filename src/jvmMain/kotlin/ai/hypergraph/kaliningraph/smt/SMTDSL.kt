@@ -23,7 +23,7 @@ import kotlin.reflect.KProperty
  */
 // https://mathsat.fbk.eu/smt2examples.html
 class SMTInstance(
-  val solver: Solvers = Solvers.SMTINTERPOL,
+  val solver: Solvers = Solvers.Z3,
   val context: SolverContext = SolverContextFactory.createSolverContext(solver),
   val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
@@ -234,14 +234,14 @@ open class SMTF(
   open val ctx: SMTInstance,
   val formula: IntegerFormula
 ): IntegerFormula by formula, Group<SMTF> {
-  private fun SMTF(f: SMTInstance.() -> Any) = SMTF(ctx, ctx.wrapInt(ctx.f()))
+  private fun newSMTF(f: SMTInstance.() -> Any) = SMTF(ctx, ctx.wrapInt(ctx.f()))
 
-  override val nil: SMTF by lazy { SMTF { 0 } }
-  override val one: SMTF by lazy { SMTF { 1 } }
-  override fun SMTF.plus(t: SMTF): SMTF = SMTF { this@SMTF pls t }
-  override fun SMTF.times(t: SMTF): SMTF = SMTF { this@SMTF mul t }
+  override val nil: SMTF by lazy { newSMTF { 0 } }
+  override val one: SMTF by lazy { newSMTF { 1 } }
+  override fun SMTF.plus(t: SMTF): SMTF = newSMTF { this@SMTF pls t }
+  override fun SMTF.times(t: SMTF): SMTF = newSMTF { this@SMTF mul t }
 
-  infix fun mod(t: Any): SMTF = SMTF { formula mod t }
+  infix fun mod(t: Any): SMTF = newSMTF { formula mod t }
 
   fun toInt() = toString().toIntOrNull()
   override fun toString() = formula.toString()
