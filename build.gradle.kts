@@ -65,7 +65,16 @@ group = "ai.hypergraph"
 version = "0.2.1"
 
 repositories {
-  mavenCentral()
+  mavenCentral {
+    metadataSources {
+      mavenPom()
+    }
+  }
+  mavenCentral {
+    metadataSources {
+      artifact()
+    }
+  }
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
@@ -141,10 +150,10 @@ kotlin {
 
         implementation("org.sosy-lab:java-smt:3.12.0")
 
-        val libZ3Version = "4.8.14"
-//        implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version")
-//        implementation("org.sosy-lab:javasmt-solver-z3:libz3:$libZ3Version:so")
-//        implementation("org.sosy-lab:javasmt-solver-z3:libz3java:$libZ3Version:so")
+        val libZ3Version = "4.8.10"
+        implementation("org/sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
+        implementation("org/sosy-lab:javasmt-solver-z3:$libZ3Version:libz3@so")
+        implementation("org/sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         implementation("org.logicng:logicng:2.2.0")
