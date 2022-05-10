@@ -194,10 +194,8 @@ class SATValiantTest {
   @Test
   fun testXujieParsingWithFP()  {
     val cfg = """
-      S -> A + B | A * B | S + S | S * S | C
-      A -> X | [ A ]
-      B -> Y | ( B )
-      C -> Z | { C }
+      S -> B | [ S ] | ( S ) | S + S | S * S
+      B -> X | Y | Z
     """.parseCFG()
 
     "[X_+___(_)_[___]_____________________+___"

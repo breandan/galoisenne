@@ -153,19 +153,24 @@ private val freshNames: Sequence<String> =
   .let { it + (it * it).map { (a, b) -> a + b } }
     .filter { it != START_SYMBOL }
 
-fun String.parseCFG(normalize: Boolean = true): CFG =
-  lines().filter(String::isNotBlank).map { line ->
+fun String.parseCFG(
+  normalize: Boolean = true,
+  validate: Boolean = true
+): CFG =
+  (if(validate) validate() else this).lines().filter(String::isNotBlank)
+  .map { line ->
     val prod = line.split("->").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
   }.toSet().let { if (normalize) it.normalForm else it }
 
 fun CFLCFL(names: Map<String, String>) = """
+    START -> CFL
     CFL -> PRD | CFL ::NL:: CFL
     PRD -> VAR ::= RHS
     VAR -> ${names.values.joinToString(" | ")}
     RHS -> VAR | RHS RHS | RHS ::OR:: RHS
-  """.parseCFG()
+  """.parseCFG(validate = false)
 
 fun String.validate(
   presets: Map<String, String> = mapOf("|" to "::OR::", "->" to "::="),
@@ -201,11 +206,9 @@ fun String.dyckCheck() =
     stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
   }.isEmpty()
 
-private fun CFG.addGlobalStartSymbol() = this + variables
-//  .also { println("Vars: $it") }
-//    .filter { v -> none { v in it.second } }
-//    .also { println("Orphans: $it") }
-    .map { START_SYMBOL to listOf(it) }
+private fun CFG.addGlobalStartSymbol() = this +
+  if (START_SYMBOL in variables) emptySet()
+  else variables.map { START_SYMBOL to listOf(it) }
 
 // Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFG.expandOr(): CFG =
