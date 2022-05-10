@@ -23,7 +23,7 @@ import kotlin.reflect.KProperty
  */
 // https://mathsat.fbk.eu/smt2examples.html
 class SMTInstance(
-  val solver: Solvers = Solvers.Z3,
+  val solver: Solvers = Solvers.SMTINTERPOL,
   val context: SolverContext = SolverContextFactory.createSolverContext(solver),
   val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
