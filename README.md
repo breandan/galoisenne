@@ -66,7 +66,7 @@ What is a circuit? A circuit is either:
 
 ## Getting started
 
-Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.kt) via `./gradlew HelloKaliningraph` to get started.
+Run [the demo](src/jvmTest/kotlin/ai/hypergraph/kaliningraph/HelloKaliningraph.kt) via `./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.HelloKaliningraph"` to get started.
 
 ## Usage
 
