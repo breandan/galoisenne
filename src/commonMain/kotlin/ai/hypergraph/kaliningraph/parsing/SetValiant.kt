@@ -157,8 +157,8 @@ fun String.parseCFG(
   normalize: Boolean = true,
   validate: Boolean = true
 ): CFG =
-  (if(validate) validate() else this).lines().filter(String::isNotBlank)
-  .map { line ->
+//  (if(validate) validate() else this).
+  lines().filter(String::isNotBlank).map { line ->
     val prod = line.split("->").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
