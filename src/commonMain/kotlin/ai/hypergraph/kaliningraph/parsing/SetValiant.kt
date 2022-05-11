@@ -89,7 +89,7 @@ fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
 
 fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
   (left * right).flatMap { (left, right) ->
-    bimap[listOf(left.root, right.root)].map { Tree(it, left, right) }
+    bimap[listOf(left.root, right.root)].map { Tree(it, null, left, right) }
   }.toSet()
 
 fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
@@ -98,7 +98,7 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
-    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].map { Tree(it) }.toSet()
+    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
   }
 
 /*
@@ -282,7 +282,7 @@ private tailrec fun CFG.elimVarUnitProds(
 // Refactors long productions, e.g., (A -> BCD) -> (A -> BE, E -> CD)
 private tailrec fun CFG.refactorRHS(): CFG {
   val longProd = firstOrNull { it.RHS.size > 2 } ?: return this
-  val freshName = freshNames.firstOrNull { it !in symbols }!!
+  val freshName = longProd.RHS.takeLast(2).joinToString(".")
   val newProd = freshName to longProd.RHS.takeLast(2)
   val shortProd = longProd.LHS to (longProd.RHS.dropLast(2) + freshName)
   val newGrammar = this - longProd + shortProd + newProd
@@ -292,8 +292,8 @@ private tailrec fun CFG.refactorRHS(): CFG {
 // Replaces terminals in non-unit productions, e.g., (A -> bC) -> (A -> BC, B -> b)
 private tailrec fun CFG.terminalsToUnitProds(): CFG {
   val mixProd = nonterminals.firstOrNull { it.RHS.any { it !in variables } } ?: return this
-  val freshName = freshNames.firstOrNull { it !in symbols }!!
   val termIdx = mixProd.RHS.indexOfFirst { it !in variables }
+  val freshName = "F." + mixProd.RHS[termIdx]
   val freshRHS = mixProd.RHS.toMutableList().also { it[termIdx] = freshName }
   val newProd = freshName to listOf(mixProd.RHS[termIdx])
   val newGrammar = this - mixProd + (mixProd.LHS to freshRHS) + newProd

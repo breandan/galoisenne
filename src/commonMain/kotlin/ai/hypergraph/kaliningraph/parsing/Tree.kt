@@ -2,7 +2,11 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.graphs.*
 
-class Tree(val root: String, vararg val children: Tree) {
+class Tree constructor(
+    val root: String,
+    val terminal: String? = null,
+    vararg val children: Tree
+) {
   override fun toString() = root
   override fun hashCode() = root.hashCode()
   override fun equals(other: Any?) = hashCode() == other.hashCode()
@@ -19,7 +23,8 @@ class Tree(val root: String, vararg val children: Tree) {
     prefix: String = "",
     childrenPrefix: String = "",
   ): String =
-    children.foldIndexed("$buffer$prefix$root\n") { i, acc, it ->
+      if (children.isEmpty()) buffer + prefix + terminal!! + "\n"
+      else children.foldIndexed("$buffer$prefix$root\n") { i: Int, acc: String, it: Tree ->
       if (i == children.size - 1)
         it.prettyPrint(acc, "$childrenPrefix└── ", "$childrenPrefix    ")
       else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
