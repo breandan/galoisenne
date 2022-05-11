@@ -23,7 +23,10 @@ val CFG.normalForm: CFG by cache { normalize() }
 // Maps variables to expansions and expansions to variables in a Grammar
 class BiMap(CFG: CFG) {
   val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
-  val R2LHS = CFG.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
+  val R2LHS = CFG.groupBy(
+      { it.RHS.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it } },
+      { it.LHS }
+  ).mapValues { it.value.toSet() }
   operator fun get(p: List<String>): Set<String> = R2LHS[p] ?: emptySet()
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
@@ -89,7 +92,8 @@ fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
 
 fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
   (left * right).flatMap { (left, right) ->
-    bimap[listOf(left.root, right.root)].map { Tree(it, null, left, right) }
+    bimap[listOf(left.root, right.root)]
+        .map { Tree(it, null, left, right) }
   }.toSet()
 
 fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
@@ -98,7 +102,8 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
-    if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
+    if (i + 1 != j) emptySet()
+    else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
   }
 
 /*
@@ -157,12 +162,13 @@ fun String.parseCFG(
   normalize: Boolean = true,
   validate: Boolean = true
 ): CFG =
-//  (if(validate) validate() else this).
   lines().filter(String::isNotBlank).map { line ->
-    val prod = line.split("->").map { it.trim() }
+    val prod = line.split(" -> ").map { it.trim() }
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
     else throw Exception("Invalid production: $line")
   }.toSet().let { if (normalize) it.normalForm else it }
+
+fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
 
 fun CFLCFL(names: Map<String, String>) = """
     START -> CFL

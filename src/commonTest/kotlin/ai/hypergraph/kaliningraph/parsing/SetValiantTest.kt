@@ -228,6 +228,19 @@ fun testCFLValidationFails() {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testEscapeChars"
+*/
+  @Test
+  fun testEscapeChars() {
+      """
+        S -> a `->` b `|` c
+      """.parseCFG().let { cfg ->
+              println(cfg.prettyPrint())
+              assertTrue("a -> b | c".matches(cfg))
+          }
+  }
+
+    /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDropUnitProds"
 */
   @Test
