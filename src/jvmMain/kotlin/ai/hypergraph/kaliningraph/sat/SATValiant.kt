@@ -188,4 +188,5 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
   }
 
 fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
-  map { "$it" }.synthesizeFromFPSolving(cfg)
+    split(" ").let { if (it.size == 1) map { "$it" } else it }
+        .filter(String::isNotBlank).synthesizeFromFPSolving(cfg)
