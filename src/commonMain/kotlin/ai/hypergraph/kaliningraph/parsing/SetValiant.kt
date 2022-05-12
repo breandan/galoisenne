@@ -10,7 +10,8 @@ typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
 
 val Production.LHS: String get() = first
-val Production.RHS: List<String> get() = second
+val Production.RHS: List<String> get() =
+  second.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it }
 val CFG.symbols: Set<String> by cache { variables + alphabet }
 val CFG.alphabet: Set<String> by cache { terminals.flatMap { it.RHS }.toSet() }
 val CFG.variables: Set<String> by cache { map { it.LHS }.toSet() }
@@ -23,10 +24,7 @@ val CFG.normalForm: CFG by cache { normalize() }
 // Maps variables to expansions and expansions to variables in a Grammar
 class BiMap(CFG: CFG) {
   val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
-  val R2LHS = CFG.groupBy(
-      { it.RHS.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it } },
-      { it.LHS }
-  ).mapValues { it.value.toSet() }
+  val R2LHS = CFG.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
   operator fun get(p: List<String>): Set<String> = R2LHS[p] ?: emptySet()
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
