@@ -162,7 +162,13 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
     }
 
-    var (solver, solution) = valiantParses.solveIncremental()
+      var (solver, solution) = valiantParses.let {
+          try {
+              it.solveIncremental()
+          } catch (npe: NullPointerException) {
+              return@sequence
+          }
+      }
     var isFresh = T
     while (true)
       try {
