@@ -27,9 +27,9 @@ class SetValiantTest {
         N -> fish  
         N -> fork  
       Det -> a     
-    """.let { cfl ->
-      assertTrue("she eats a fish with a fork".matches(cfl))
-      assertFalse("she eats fish with".matches(cfl))
+    """.let { cfg ->
+      assertTrue("she eats a fish with a fork".matches(cfg))
+      assertFalse("she eats fish with".matches(cfg))
     }
   }
 
@@ -42,10 +42,10 @@ class SetValiantTest {
       S -> A | B
       A -> a | A A
       B -> b | B B
-    """.let { cfl ->
-      assertTrue("aaaa".matches(cfl))
-      assertTrue("bbbb".matches(cfl))
-      assertFalse("abab".matches(cfl))
+    """.let { cfg ->
+      assertTrue("aaaa".matches(cfg))
+      assertTrue("bbbb".matches(cfg))
+      assertFalse("abab".matches(cfg))
     }
   }
 
@@ -64,10 +64,10 @@ class SetValiantTest {
       Y -> B B
       A -> a
       B -> b
-    """.let { cfl ->
-      assertTrue("aaabbb".also { println(cfl.parse(it)) }.matches(cfl))
-      assertTrue("aabb".matches(cfl))
-      assertFalse("abab".matches(cfl))
+    """.let { cfg ->
+      assertTrue("aaabbb".also { println(cfg.parse(it)) }.matches(cfg))
+      assertTrue("aabb".matches(cfg))
+      assertFalse("abab".matches(cfg))
     }
   }
 
@@ -80,12 +80,12 @@ class SetValiantTest {
       S -> S + S | S * S | S - S | S / S | ( S )
       S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       S -> X | Y | Z
-    """.let { cfl ->
-      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfl))
-      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfl))
-      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfl))
-      println(cfl.parse("( 1 + ( 2 * 3 ) ) / 4")?.prettyPrint())
-      println(cfl.parseCFG().prettyPrint())
+    """.let { cfg ->
+      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
+      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
+      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
+      println(cfg.parse("( 1 + ( 2 * 3 ) ) / 4")?.prettyPrint())
+      println(cfg.parseCFG().prettyPrint())
     }
   }
 
@@ -109,11 +109,11 @@ fun testCFLValidationFails() {
       C -> S B
       A -> (
       B -> )
-    """.let { cfl ->
-      assertTrue("()(()())()".matches(cfl))
-      assertFalse("()(()()()".matches(cfl))
-      assertTrue("()(())".matches(cfl))
-      assertTrue("()()".matches(cfl))
+    """.let { cfg ->
+      assertTrue("()(()())()".matches(cfg))
+      assertFalse("()(()()()".matches(cfg))
+      assertTrue("()(())".matches(cfg))
+      assertTrue("()()".matches(cfg))
     }
   }
 
@@ -122,8 +122,8 @@ fun testCFLValidationFails() {
 */
   @Test
   fun testDyckSolver() {
-    """S -> ( ) | ( S ) | S S""".parseCFG().let { cfl ->
-      val sols = "(____()____)".solve(cfl, fillers = cfl.alphabet + "")
+    """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
+      val sols = "(____()____)".solve(cfg, fillers = cfg.alphabet + "")
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -137,7 +137,7 @@ fun testCFLValidationFails() {
 */
   @Test
   fun testDyck2Solver() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { CFG: CFG ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
       val sols = "__________".solve(CFG)
         .map { println(it); it }.take(5).toList()
@@ -154,7 +154,7 @@ fun testCFLValidationFails() {
 */
   @Test
   fun benchmarkNaiveSearch() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { cfl ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { cfg ->
       println("Total Holes, Instances Checked, Solutions Found")
       for (len in 2..6 step 2) {
         val template = List(len) { "_" }.joinToString("")
@@ -162,9 +162,9 @@ fun testCFLValidationFails() {
         val startTime = now()
         var totalChecked = 0
         val sols = template
-          .genCandidates(cfl, cfl.alphabet)
+          .genCandidates(cfg, cfg.alphabet)
           .map { totalChecked++; it }
-          .filter { it.matches(cfl) }.distinct()
+          .filter { it.matches(cfg) }.distinct()
           .takeWhile { now() - startTime < 20000 }.toList()
 
         println("$len".padEnd(11) + ", $totalChecked".padEnd(19) + ", ${sols.size}")
@@ -177,10 +177,10 @@ fun testCFLValidationFails() {
 */
   @Test
   fun testDyck2Language() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".let { cfl ->
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".let { cfg ->
       println("Grammar: $this")
-      assertTrue("()[()()]()".matches(cfl))
-      assertFalse("([()()]()".matches(cfl))
+      assertTrue("()[()()]()".matches(cfg))
+      assertFalse("([()()]()".matches(cfg))
     }
   }
 
@@ -189,10 +189,10 @@ fun testCFLValidationFails() {
 */
   @Test
   fun testDyck3Language() {
-  """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".let { cfl ->
+  """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".let { cfg ->
       // TODO: Fix under approximation?
-      assertTrue("{()[(){}()]()}".matches(cfl))
-      assertFalse("{()[(){()]()}".matches(cfl))
+      assertTrue("{()[(){}()]()}".matches(cfg))
+      assertFalse("{()[(){()]()}".matches(cfg))
     }
   }
 
@@ -202,8 +202,8 @@ fun testCFLValidationFails() {
 */
   @Test
   fun testDyck3Solver() {
-    """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfl ->
-      val sols = "(____()____)".solve(cfl)
+    """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfg ->
+      val sols = "(____()____)".solve(cfg)
         .map { println(it); it }.take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
@@ -220,10 +220,10 @@ fun testCFLValidationFails() {
       S -> a X b X
       X -> a Y | b Y
       Y -> X | c
-    """.parseCFG().let { cfl ->
-      println(cfl)
-      cfl.forEach { (_, b) -> assertContains(1..2, b.size) }
-      cfl.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfl.variables, it) }
+    """.parseCFG().let { cfg ->
+      println(cfg)
+      cfg.forEach { (_, b) -> assertContains(1..2, b.size) }
+      cfg.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfg.variables, it) }
     }
   }
 
@@ -253,12 +253,12 @@ fun testCFLValidationFails() {
       B -> D
       C -> c
       D -> d
-    """.parseCFG().let { cfl -> assertEquals(normalForm, cfl) }
+    """.parseCFG().let { cfg -> assertEquals(normalForm, cfg) }
 
     """
       S -> C | D
       C -> c
       D -> d
-    """.parseCFG().let { cfl -> assertEquals(normalForm, cfl) }
+    """.parseCFG().let { cfg -> assertEquals(normalForm, cfg) }
   }
 }

@@ -63,7 +63,7 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.alphabet) =
     }.first
   }
 
-fun String.matches(cfl: String): Boolean = matches(cfl.validate().parseCFG())
+fun String.matches(cfg: String): Boolean = matches(cfg.validate().parseCFG())
 fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
 fun String.parse(s: String): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull()
@@ -160,32 +160,33 @@ private val freshNames: Sequence<String> =
 
 fun String.parseCFG(
   normalize: Boolean = true,
-  validate: Boolean = true
+  validate: Boolean = false
 ): CFG =
-  lines().filter(String::isNotBlank).map { line ->
-    val prod = line.split(" -> ").map { it.trim() }
-    if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
-    else throw Exception("Invalid production: $line")
-  }.toSet().let { if (normalize) it.normalForm else it }
+  (if (validate) validate() else this).lines().filter(String::isNotBlank)
+     .map { line ->
+         val prod = line.split(" -> ").map { it.trim() }
+         if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
+         else throw Exception("Invalid production: $line")
+     }.toSet().let { if (normalize) it.normalForm else it }
 
 fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
 
 fun CFLCFL(names: Map<String, String>) = """
     START -> CFL
-    CFL -> PRD | CFL ::NL:: CFL
-    PRD -> VAR ::= RHS
+    CFL -> PRD | CFL \n CFL
+    PRD -> VAR `->` RHS
     VAR -> ${names.values.joinToString(" | ")}
-    RHS -> VAR | RHS RHS | RHS ::OR:: RHS
+    RHS -> VAR | RHS RHS | RHS `|` RHS
   """.parseCFG(validate = false)
 
 fun String.validate(
-  presets: Map<String, String> = mapOf("|" to "::OR::", "->" to "::="),
+  presets: Set<String> = setOf("|", "->"),
   ws: Regex = Regex("\\s+"),
   tokens: List<String> = split(ws).filter { it.isNotBlank() && it !in presets },
   nameDict: Map<String, String> =
     freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
-  names: Map<String, String> = (presets + nameDict)
-): String = lines().filter(String::isNotBlank).joinToString(" ::NL:: ")
+  names: Map<String, String> = nameDict
+): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
   .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
   .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
 
