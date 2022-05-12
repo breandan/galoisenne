@@ -150,7 +150,7 @@ fun <T> Set<T>.encodeAsMatrix(
     BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
   }
 
-fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
+fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
   sequence {
     val words = this@synthesizeFromFPSolving
 
@@ -162,13 +162,9 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
     }
 
-      var (solver, solution) = valiantParses.let {
-          try {
-              it.solveIncremental()
-          } catch (npe: NullPointerException) {
-              return@sequence
-          }
-      }
+    var (solver, solution) = valiantParses.let {
+        try { it.solveIncremental() } catch (npe: NullPointerException) { return@sequence }
+    }
     var isFresh = T
     while (true)
       try {
@@ -181,7 +177,7 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
         val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
           .map { cfg.terminal(it) }.toMutableList()
 
-        yield(words.joinToString("") { if (it == "_") fillers.removeAt(0)!! else it })
+        yield(words.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
 
         val holes = holeVariables.flatten()
         isFresh = isFresh and solution.filter { it.key in holes }.areFresh()
@@ -193,6 +189,6 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
     ff.clear()
   }
 
-fun String.synthesizeFromFPSolving(cfg: CFG): Sequence<String> =
+fun String.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
     split(" ").let { if (it.size == 1) map { "$it" } else it }
-        .filter(String::isNotBlank).synthesizeFromFPSolving(cfg)
+        .filter(String::isNotBlank).synthesizeFromFPSolving(cfg, join)
