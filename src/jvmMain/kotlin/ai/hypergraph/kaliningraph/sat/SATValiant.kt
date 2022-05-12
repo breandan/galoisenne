@@ -108,6 +108,8 @@ fun CFG.constructInitFixedpointMatrix(
         val word = words[c - 1]
         if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
                 .also { holeVariables.add(it) } // Blank
+        else if (word.startsWith("<") && word.endsWith(">"))
+            setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
         else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
       } else if (c > r + 1) {
           List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
@@ -152,7 +154,7 @@ fun <T> Set<T>.encodeAsMatrix(
 
 fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
   sequence {
-    val words = this@synthesizeFromFPSolving
+    val words: List<String> = this@synthesizeFromFPSolving
 
     val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(words)
 
