@@ -197,6 +197,7 @@ private fun CFG.normalize(): CFG =
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
+    .generateStubs()
 
 val START_SYMBOL = "START"
 
@@ -210,6 +211,10 @@ fun String.dyckCheck() =
   filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
   }.isEmpty()
+
+private fun CFG.generateStubs() =
+  this + filter { "`" !in it.LHS && "." !in it.LHS }
+      .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 private fun CFG.addGlobalStartSymbol() = this +
   if (START_SYMBOL in variables) emptySet()
