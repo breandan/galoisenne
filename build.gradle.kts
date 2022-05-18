@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.0-Beta"
   id("com.google.devtools.ksp") version "1.7.0-Beta-1.0.5"
-  kotlin("jupyter.api") version "0.11.0-84"
+  kotlin("jupyter.api") version "0.11.0-93"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -167,7 +167,7 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.8.2")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.0-M1")
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
