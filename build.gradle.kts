@@ -208,7 +208,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
       }
     }
   }
