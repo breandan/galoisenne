@@ -13,7 +13,7 @@ import kotlin.collections.filter
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
   List(left.size) { i ->
     bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> (left[variables.indexOf(B)] and right[variables.indexOf(C)]) }
+      .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
@@ -21,7 +21,7 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
   List(left.size) { i ->
     bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> (left[variables.indexOf(B)] and right[variables.indexOf(C)]) }
+      .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
@@ -114,7 +114,7 @@ fun CFG.constructInitFixedpointMatrix(
       } else if (c > r + 1) {
           List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
       }
-      else List(variables.size) { BLit(false) }
+      else List(variables.size) { BLit(false) } // TODO: only encode upper diagonal entries
     } to holeVariables
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
@@ -161,7 +161,7 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<
     val valiantParses = cfg.run {
       cfg.isInGrammar(fixpointMatrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
+        (fixpointMatrix fixedpointMatEq fixpointMatrix * fixpointMatrix) // TODO: optimize * for UT GEMM (like eqUT)
     }
 
     var (solver, solution) = valiantParses.let {
