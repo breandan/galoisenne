@@ -11,7 +11,8 @@ import kotlin.collections.filter
 
 @JvmName("joinFormula")
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
-  List(left.size) { i ->
+  if (left.isEmpty() || right.isEmpty()) emptyList()
+  else List(left.size) { i ->
     bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
       .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
       .fold(BLit(false)) { acc, satf -> acc or satf }
@@ -26,7 +27,8 @@ fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
   }
 
 infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
-  List(size) { i -> this[i] or that[i] }
+  if (isEmpty()) that else if (that.isEmpty()) this
+  else List(size) { i -> this[i] or that[i] }
 
 fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
 
@@ -37,8 +39,12 @@ fun CFG.toNTSet(nonterminals: List<Boolean>): Set<String> =
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
   mapIndexedNotNull { i, it -> if(it) cfg.variables.elementAt(i) else null }.toSet()
 
+fun List<Formula>.allFalse(): Formula = reduce { acc, satf -> acc or satf }.negate()
+
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
-  zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
+  if (isEmpty() && that.isEmpty()) T
+  else if (isEmpty()) that.allFalse() else if (that.isEmpty()) this.allFalse()
+  else zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
 
 infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Formula =
   data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
@@ -111,10 +117,9 @@ fun CFG.constructInitFixedpointMatrix(
         else if (word.startsWith("<") && word.endsWith(">"))
             setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
         else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      } else if (c > r + 1) {
-          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
       }
-      else List(variables.size) { BLit(false) } // TODO: only encode upper diagonal entries
+      else if (c > r + 1) List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+      else emptyList()
     } to holeVariables
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
@@ -142,15 +147,6 @@ val SAT_ALGEBRA =
     plus = { a, b -> a or b },
     times = { a, b -> a and b }
   )
-
-fun <T> Set<T>.encodeAsMatrix(
-  universe: Set<T>,
-  rows: Int,
-  cols: Int = universe.size,
-): FreeMatrix<Formula> =
-  FreeMatrix(SAT_ALGEBRA, rows, cols) { i, j ->
-    BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
-  }
 
 fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
   sequence {
