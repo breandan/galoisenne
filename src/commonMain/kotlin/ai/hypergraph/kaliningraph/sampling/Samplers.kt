@@ -202,7 +202,7 @@ fun LFSRM(
 }
 
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
-  MDSamplerWithoutReplacement(List(dimension) { set })
+  MDSamplerWithoutReplacement(List(dimension) { set }.also{println(it)})
 
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
@@ -213,7 +213,7 @@ fun <T> MDSamplerWithoutReplacement(
   degree: Int = bitLens.sum().also { println("Sampling with LFSR(GF(2^$it))") }
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
-  else if (degree !in generator) throw Exception("Space is too large!")
+  else if (degree !in generator) throw Exception("Space is too large! ($degree)")
   else LFSR(degree).map { it.toBitList(degree) }
     .hastyPuddingTrick(cardinalities)
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +

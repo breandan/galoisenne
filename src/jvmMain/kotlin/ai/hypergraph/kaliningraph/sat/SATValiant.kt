@@ -148,12 +148,14 @@ val SAT_ALGEBRA =
     times = { a, b -> a and b }
   )
 
-fun String.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
-    cfg.tokenize(this).also { println("Tokenized: ${it.joinToString(", ")}") }.synthesizeFromFPSolving(cfg, join)
+fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
+    cfg.let { if (allowNTs) it.generateStubs() else it }
+        .let { cfg -> cfg.tokenize(this).synthesizeFrom(cfg, join) }
 
-fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
+private fun List<String>.synthesizeFrom(cfg: CFG, join: String = ""): Sequence<String> =
   sequence {
-    val words: List<String> = this@synthesizeFromFPSolving
+      println(cfg.prettyPrint())
+    val words: List<String> = this@synthesizeFrom
 
     val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(words)
 

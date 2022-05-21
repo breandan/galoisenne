@@ -14,7 +14,7 @@ val Production.RHS: List<String> get() =
   second.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it }
 val CFG.symbols: Set<String> by cache { variables + alphabet }
 val CFG.alphabet: Set<String> by cache { terminals.flatMap { it.RHS }.toSet() }
-val CFG.delimiters: Array<String> by cache { (alphabet.sortedBy { it.length } + arrayOf("_", " ")).toTypedArray() }
+val CFG.delimiters: Array<String> by cache { (alphabet.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
 val CFG.variables: Set<String> by cache { map { it.LHS }.toSet() }
 val CFG.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
@@ -184,9 +184,8 @@ fun String.validate(
   presets: Set<String> = setOf("|", "->"),
   ws: Regex = Regex("\\s+"),
   tokens: List<String> = split(ws).filter { it.isNotBlank() && it !in presets },
-  nameDict: Map<String, String> =
+  names: Map<String, String> =
     freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
-  names: Map<String, String> = nameDict
 ): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
   .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
   .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
@@ -200,7 +199,6 @@ private fun CFG.normalize(): CFG =
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
-    .generateStubs()
 
 val START_SYMBOL = "START"
 
@@ -215,7 +213,7 @@ fun String.dyckCheck() =
     stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
   }.isEmpty()
 
-private fun CFG.generateStubs() =
+fun CFG.generateStubs() =
   this + filter { "`" !in it.LHS && "." !in it.LHS }
       .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 

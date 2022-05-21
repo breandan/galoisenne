@@ -139,7 +139,7 @@ fun testCFLValidationFails() {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "__________".solve(CFG)
+      val sols = "________".solve(CFG)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
