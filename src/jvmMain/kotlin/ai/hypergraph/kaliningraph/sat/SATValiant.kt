@@ -77,12 +77,12 @@ fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
     .fold(T) { acc, it -> acc and it }
 
 fun CFG.makeSATAlgebra() =
-    Ring.of(
-      nil = List(variables.size) { F },
-      one = List(variables.size) { T },
-      plus = { a, b -> a union b },
-      times = { a, b -> join(a, b) }
-    )
+  Ring.of(
+    nil = List(variables.size) { F },
+    one = List(variables.size) { T },
+    plus = { a, b -> a union b },
+    times = { a, b -> join(a, b) }
+  )
 
 fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
   data.map {
@@ -96,31 +96,31 @@ fun CFG.constructSATMatrix(
   words: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-    FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-      if (c == r + 1) {
-        val word = words[c - 1]
-        if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-          .also { holeVariables.add(it) } // Blank
-        else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      } else List(variables.size) { F }
-    } to holeVariables
+  FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
+    if (c == r + 1) {
+      val word = words[c - 1]
+      if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+        .also { holeVariables.add(it) } // Blank
+      else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
+    } else List(variables.size) { F }
+  } to holeVariables
 
 fun CFG.constructInitFixedpointMatrix(
-        words: List<String>,
-        holeVariables: MutableList<List<Formula>> = mutableListOf(),
+  words: List<String>,
+  holeVariables: MutableList<List<Formula>> = mutableListOf(),
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-    FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-      if (c == r + 1) {
-        val word = words[c - 1]
-        if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-                .also { holeVariables.add(it) } // Blank
-        else if (word.startsWith("<") && word.endsWith(">"))
-            setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
-        else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      }
-      else if (c > r + 1) List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-      else emptyList()
-    } to holeVariables
+  FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
+    if (c == r + 1) {
+      val word = words[c - 1]
+      if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+              .also { holeVariables.add(it) } // Blank
+      else if (word.startsWith("<") && word.endsWith(">"))
+          setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
+      else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
+    }
+    else if (c > r + 1) List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+    else emptyList()
+  } to holeVariables
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) variables.elementAt(i) else null }.toSet()
@@ -147,6 +147,9 @@ val SAT_ALGEBRA =
     plus = { a, b -> a or b },
     times = { a, b -> a and b }
   )
+
+fun String.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
+    cfg.tokenize(this).also { println("Tokenized: ${it.joinToString(", ")}") }.synthesizeFromFPSolving(cfg, join)
 
 fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
   sequence {
@@ -186,7 +189,3 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<
 
     ff.clear()
   }
-
-fun String.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
-    split(" ").let { if (it.size == 1) map { "$it" } else it }
-        .filter(String::isNotBlank).synthesizeFromFPSolving(cfg, join)

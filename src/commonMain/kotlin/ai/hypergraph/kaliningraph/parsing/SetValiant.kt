@@ -14,6 +14,7 @@ val Production.RHS: List<String> get() =
   second.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it }
 val CFG.symbols: Set<String> by cache { variables + alphabet }
 val CFG.alphabet: Set<String> by cache { terminals.flatMap { it.RHS }.toSet() }
+val CFG.delimiters: Array<String> by cache { (alphabet.sortedBy { it.length } + arrayOf("_", " ")).toTypedArray() }
 val CFG.variables: Set<String> by cache { map { it.LHS }.toSet() }
 val CFG.nonterminals: Set<Production> by cache { filter { it !in terminals } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
@@ -121,23 +122,25 @@ TODO: Lower this matrix onto SAT. Steps:
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
  */
 
+fun String.splitKeeping(str: String): List<String> =
+    split(str).flatMap { listOf(it, str) }.dropLast(1)
+
+fun CFG.tokenize(vararg str: String): List<String> =
+    delimiters.fold(str.toList()) { l, delim ->
+        l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
+    }.filter(String::isNotBlank)
+
 /**
  * Checks whether a given string is valid by computing the transitive closure
  * of the matrix constructed by [initialMatrix]. If the upper-right corner entry is
  * empty, the string is invalid. If the entry is S, it parses.
  */
 
-fun CFG.isValid(str: String): Boolean =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
+fun CFG.isValid(str: String): Boolean = tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: String): Set<Tree> =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::solveFixedpoint)[0].last()
+fun CFG.parseForest(str: String): Set<Tree> = tokenize(str).let(::solveFixedpoint)[0].last()
 
-fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::solveFixedpoint)
+fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> = tokenize(str).let(::solveFixedpoint)
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
