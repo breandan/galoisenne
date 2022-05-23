@@ -6,7 +6,9 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
+import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
+import org.logicng.formulas.Variable
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
@@ -122,9 +124,12 @@ fun CFG.constructInitialMatrix(
         if (tokens[c - 1].isHoleToken()) null
         else toBitVec(setOf(tokens[c - 1]))
       } else emptyList()
-    }.seekFixpoint { it + it * it }
+    }.seekFixpoint {
+      // println("Literal matrix:\n${it.summarize()}")
+      it + it * it
+    }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-  FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
+  (FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
     if (c == r + 1) {
       val word = tokens[c - 1]
       if (word == "_")
@@ -141,7 +146,30 @@ fun CFG.constructInitialMatrix(
       else permanentBitVec.map { if(it) T else F }
     }
     else emptyList()
-  } to holeVariables
+  }
+  //.also { println("SAT matrix[$i]:\n${it.summarize()}") }
+  to holeVariables)
+
+@JvmName("summarizeBooleanMatrix")
+fun FreeMatrix<List<Boolean>?>.summarize() =
+  map {
+    when {
+      it == null -> "?"
+      it.toString().length < 5 -> ""
+      else -> "1"
+    }
+  }
+
+@JvmName("summarizeFormulaMatrix")
+fun FreeMatrix<List<Formula>>.summarize() =
+  map {
+    when {
+      it.isEmpty() -> ""
+      it[0] is Variable -> "V"
+      it[0] is Constant -> "C"
+      else -> "?"
+    }
+  }
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) variables.elementAt(i) else null }.toSet()
