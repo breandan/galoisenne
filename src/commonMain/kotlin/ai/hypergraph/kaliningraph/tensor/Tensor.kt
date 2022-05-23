@@ -319,6 +319,7 @@ operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
 tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
+  //println("Literal matrix[$i]:\n" + map { if(it == null) "?" else if(it.toString().length < 5) "" else "1" })
   val next = op(this)
   return if (this == next) next//.also { println("Converged in $i iterations") }
   else next.seekFixpoint(i + 1, op)

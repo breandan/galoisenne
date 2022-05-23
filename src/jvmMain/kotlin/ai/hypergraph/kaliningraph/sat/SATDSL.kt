@@ -18,14 +18,11 @@ fun Formula.solve(): Map<Variable, Boolean> =
     vars.associateWith { model.evaluateLit(it) }
   }
 
-fun Formula.solveIncremental(
+fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)
 ): Pair<MiniSat, Map<Variable, Boolean>> =
-  ff.let { ff ->
-    val vars = variables()
-    val model = miniSat.apply { add(this@solveIncremental); sat() }.model()
-    miniSat to vars.associateWith { model.evaluateLit(it) }
-  }
+  miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model()
+    .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
 // Ensures that at least one of the formulas in stale are fresh
 fun Map<Variable, Boolean>.areFresh() =

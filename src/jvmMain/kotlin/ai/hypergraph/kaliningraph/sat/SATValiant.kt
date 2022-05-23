@@ -18,14 +18,25 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
-@JvmName("joinBool")
+@JvmName("joinBitVector")
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
-  List(left.size) { i ->
+  if (left.isEmpty() || right.isEmpty()) emptyList()
+  else List(left.size) { i ->
     bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
       .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
+fun CFG.maybeJoin(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) null else join(left, right)
+
+fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) { left ?: right }
+  else if (left.isEmpty() && right.isNotEmpty()) right
+  else if (left.isNotEmpty() && right.isEmpty()) left
+  else left.zip(right) { l, r -> l or r }
+
+@JvmName("satFormulaUnion")
 infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
   if (isEmpty()) that else if (that.isEmpty()) this
   else List(size) { i -> this[i] or that[i] }
@@ -76,6 +87,13 @@ fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 
+fun CFG.makeSATLitAlgebra(): Ring<List<Boolean>?> =
+  Ring.of(
+    nil = List(nonterminals.size) { false },
+    plus = { x, y -> maybeUnion(x, y) },
+    times = { x, y -> maybeJoin(x, y) }
+  )
+
 fun CFG.makeSATAlgebra() =
   Ring.of(
     nil = List(variables.size) { F },
@@ -92,33 +110,36 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
 
 fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTML()
 
-fun CFG.constructSATMatrix(
-  words: List<String>,
-  holeVariables: MutableList<List<Formula>> = mutableListOf(),
-): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-  FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-    if (c == r + 1) {
-      val word = words[c - 1]
-      if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-        .also { holeVariables.add(it) } // Blank
-      else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-    } else List(variables.size) { F }
-  } to holeVariables
+fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
 
-fun CFG.constructInitFixedpointMatrix(
-  words: List<String>,
+fun CFG.constructInitialMatrix(
+  tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
+  // Precompute permanent upper diagonal submatrices
+  literalMatrix: FreeMatrix<List<Boolean>?> =
+    FreeMatrix(makeSATLitAlgebra(), tokens.size + 1) { r, c ->
+      if (c == r + 1) {
+        if (tokens[c - 1].isHoleToken()) null
+        else toBitVec(setOf(tokens[c - 1]))
+      } else emptyList()
+    }.seekFixpoint { it + it * it }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-  FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
+  FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
     if (c == r + 1) {
-      val word = words[c - 1]
-      if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-              .also { holeVariables.add(it) } // Blank
+      val word = tokens[c - 1]
+      if (word == "_")
+        List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+          .also { holeVariables.add(it) } // Blank
       else if (word.startsWith("<") && word.endsWith(">"))
-          setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
+        setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
       else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
     }
-    else if (c > r + 1) List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+    else if (c > r + 1) {
+      val permanentBitVec = literalMatrix[r, c]
+      if (permanentBitVec == null || permanentBitVec.isEmpty())
+        List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+      else permanentBitVec.map { if(it) T else F }
+    }
     else emptyList()
   } to holeVariables
 
@@ -149,38 +170,27 @@ val SAT_ALGEBRA =
   )
 
 fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
-    cfg.let { if (allowNTs) it.generateStubs() else it }
-        .let { cfg -> cfg.tokenize(this).synthesizeFrom(cfg, join) }
+  cfg.let { if (allowNTs) it.generateStubs() else it }
+     .run { synthesize(tokenize(this@synthesizeFrom, join)) }
 
-private fun List<String>.synthesizeFrom(cfg: CFG, join: String = ""): Sequence<String> =
+private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
-      println(cfg.prettyPrint())
-    val words: List<String> = this@synthesizeFrom
+    val (fixpointMatrix, holeVariables) = constructInitialMatrix(tokens)
 
-    val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(words)
-
-    val valiantParses = cfg.run {
-      cfg.isInGrammar(fixpointMatrix) and
+    val valiantParses =
+      isInGrammar(fixpointMatrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix fixedpointMatEq fixpointMatrix * fixpointMatrix) // TODO: optimize * for UT GEMM (like eqUT)
-    }
+        (fixpointMatrix fixedpointMatEq fixpointMatrix * fixpointMatrix)
 
-    var (solver, solution) = valiantParses.let {
-        try { it.solveIncremental() } catch (npe: NullPointerException) { return@sequence }
+    var (solver, solution) = valiantParses.let { f ->
+      try { f.solveIncrementally() } catch (npe: NullPointerException) { return@sequence }
     }
     var isFresh = T
     while (true)
       try {
-//        val fpMatrix = FreeMatrix(
-//          fixpointMatrix.data.map { bitVec -> bitVec.map { solution[it] ?: false } }
-//            .map { cfg.terminal(it) ?: "" }
-//        )
-//        println(fpMatrix)
+        val fillers = holeVariables.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-        val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
-          .map { cfg.terminal(it) }.toMutableList()
-
-        yield(words.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
+        yield(tokens.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
 
         val holes = holeVariables.flatten()
         isFresh = isFresh and solution.filter { it.key in holes }.areFresh()

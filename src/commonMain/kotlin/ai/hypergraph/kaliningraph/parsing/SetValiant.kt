@@ -79,14 +79,14 @@ fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull()
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
+fun CFG.makeAlgebra(): Ring<Set<Tree>> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
     // x + y = x ∪ y
     plus = { x, y -> x union y },
     // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
-    times = { x, y -> CFG.treeJoin(x, y) }
+    times = { x, y -> treeJoin(x, y) }
   )
 
 fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
@@ -100,7 +100,7 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
-  FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
+  FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
     else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
   }
