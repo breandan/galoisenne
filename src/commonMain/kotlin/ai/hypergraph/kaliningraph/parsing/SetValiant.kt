@@ -125,8 +125,8 @@ TODO: Lower this matrix onto SAT. Steps:
 fun String.splitKeeping(str: String): List<String> =
     split(str).flatMap { listOf(it, str) }.dropLast(1)
 
-fun CFG.tokenize(vararg str: String): List<String> =
-    delimiters.fold(str.toList()) { l, delim ->
+fun CFG.tokenize(str: String): List<String> =
+    delimiters.fold(listOf(str)) { l, delim ->
         l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
     }.filter(String::isNotBlank)
 

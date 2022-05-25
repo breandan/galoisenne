@@ -199,7 +199,7 @@ val SAT_ALGEBRA =
 
 fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
   cfg.let { if (allowNTs) it.generateStubs() else it }
-     .run { synthesize(tokenize(this@synthesizeFrom, join)) }
+     .run { synthesize(tokenize(this@synthesizeFrom), join) }
 
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
