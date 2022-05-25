@@ -121,8 +121,9 @@ fun CFG.constructInitialMatrix(
   literalMatrix: FreeMatrix<List<Boolean>?> =
     FreeMatrix(makeSATLitAlgebra(), tokens.size + 1) { r, c ->
       if (c == r + 1) {
+        val word = tokens[c - 1]
         if (tokens[c - 1].isHoleToken()) null
-        else toBitVec(setOf(tokens[c - 1]))
+        else bimap[listOf(word)].let { nts -> variables.map { it in nts } }
       } else emptyList()
     }.seekFixpoint {
       // println("Literal matrix:\n${it.summarize()}")

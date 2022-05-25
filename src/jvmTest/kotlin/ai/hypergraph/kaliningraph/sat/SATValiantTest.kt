@@ -174,6 +174,8 @@ class SATValiantTest {
   fun testXujieMethod()  {
     val cfg = "S -> ( S ) | [ S ] | [ ] | | ( ) | S S".parseCFG()
 
+    println(cfg.prettyPrint())
+
     val decodedString = "[]()[[__]]()()"
       .also { println("$it is being synthesized...") }
       .synthesizeFrom(cfg, allowNTs = false).first()
