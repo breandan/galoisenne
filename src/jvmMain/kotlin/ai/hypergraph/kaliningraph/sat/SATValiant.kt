@@ -65,7 +65,7 @@ infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Form
 infix fun FreeMatrix<List<Formula>>.fixedpointMatEq(that: FreeMatrix<List<Formula>>): Formula =
   List(numRows - 2) {
     i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
-        .reduce { acc, satf -> acc and satf }
+      .reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
@@ -117,39 +117,38 @@ fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
-  // Precompute permanent upper diagonal submatrices
+  // Precompute permanent upper right triangular submatrices
   literalMatrix: FreeMatrix<List<Boolean>?> =
     FreeMatrix(makeSATLitAlgebra(), tokens.size + 1) { r, c ->
-      if (c == r + 1) {
+      if (r + 1 == c) {
         val word = tokens[c - 1]
         if (tokens[c - 1].isHoleToken()) null
         else bimap[listOf(word)].let { nts -> variables.map { it in nts } }
       } else emptyList()
-    }.seekFixpoint {
-      // println("Literal matrix:\n${it.summarize()}")
-      it + it * it
+    }
+      //.also { println("Literal matrix:\n${it.summarize()}") }
+      .seekFixpoint { it + it * it },
+  formulaMatrix: FreeMatrix<List<Formula>> =
+    FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
+      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Off-diagonal
+        val word = tokens[c - 1]
+        if (word == "_")
+          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+            .also { holeVariables.add(it) } // Blank
+        else setOf(word.drop(1).dropLast(1))
+           .let { nts -> variables.map { BLit(it in nts) } } // Terminal
+      } else if (r + 1 <= c) { // Upper right triangular matrix entries
+        val permanentBitVec = literalMatrix[r, c]
+        if (permanentBitVec.isNullOrEmpty())
+          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+        else permanentBitVec.map { if (it) T else F }
+      }
+      else emptyList()
     }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-  (FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
-    if (c == r + 1) {
-      val word = tokens[c - 1]
-      if (word == "_")
-        List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-          .also { holeVariables.add(it) } // Blank
-      else if (word.startsWith("<") && word.endsWith(">"))
-        setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-    }
-    else if (c > r + 1) {
-      val permanentBitVec = literalMatrix[r, c]
-      if (permanentBitVec == null || permanentBitVec.isEmpty())
-        List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-      else permanentBitVec.map { if(it) T else F }
-    }
-    else emptyList()
-  }
+    (formulaMatrix
   //.also { println("SAT matrix[$i]:\n${it.summarize()}") }
-  to holeVariables)
+    to holeVariables)
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize() =
