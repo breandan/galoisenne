@@ -172,9 +172,9 @@ fun String.parseCFG(
 
 fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
 
-fun CFLCFL(names: Map<String, String>) = """
-    START -> CFL
-    CFL -> PRD | CFL \n CFL
+fun CFGCFG(names: Map<String, String>) = """
+    START -> CFG
+    CFG -> PRD | CFG \n CFG
     PRD -> VAR `->` RHS
     VAR -> ${names.values.joinToString(" | ")}
     RHS -> VAR | RHS RHS | RHS `|` RHS
@@ -188,7 +188,7 @@ fun String.validate(
     freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
 ): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
   .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
-  .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
+  .let { if (CFGCFG(names).isValid(it)) this else throw Exception("!CFL: $it") }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
