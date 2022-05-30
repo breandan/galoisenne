@@ -136,11 +136,14 @@ fun CFG.tokenize(str: String): List<String> =
  * empty, the string is invalid. If the entry is S, it parses.
  */
 
-fun CFG.isValid(str: String): Boolean = tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
+fun CFG.isValid(str: String): Boolean =
+  tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: String): Set<Tree> = tokenize(str).let(::solveFixedpoint)[0].last()
+fun CFG.parseForest(str: String): Set<Tree> =
+  tokenize(str).let(::solveFixedpoint)[0].last()
 
-fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> = tokenize(str).let(::solveFixedpoint)
+fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> =
+  tokenize(str).let(::solveFixedpoint)
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
