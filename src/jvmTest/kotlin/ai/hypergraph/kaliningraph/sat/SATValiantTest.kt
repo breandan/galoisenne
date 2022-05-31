@@ -18,7 +18,7 @@ class SATValiantTest {
   fun testVecJoin() {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
 
-    val pwrsetSquared = cfg.variables.take(5).depletedPS().let { it * it }
+    val pwrsetSquared = cfg.nonterminals.take(5).depletedPS().let { it * it }
     println("Cardinality:" + pwrsetSquared.size)
 
     /*

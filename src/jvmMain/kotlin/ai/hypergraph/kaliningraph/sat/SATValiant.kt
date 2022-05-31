@@ -15,8 +15,8 @@ import kotlin.collections.filter
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
   if (left.isEmpty() || right.isEmpty()) emptyList()
   else List(left.size) { i ->
-    bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
+    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
@@ -24,8 +24,8 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
   if (left.isEmpty() || right.isEmpty()) emptyList()
   else List(left.size) { i ->
-    bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[variables.indexOf(B)] and right[variables.indexOf(C)] }
+    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
@@ -45,12 +45,12 @@ infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
 
 fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
 
-fun CFG.toBitVec(nonterminals: Set<String>): List<Boolean> = variables.map { it in nonterminals }
-fun CFG.toNTSet(nonterminals: List<Boolean>): Set<String> =
-  nonterminals.mapIndexedNotNull { i, it -> if(it) variables.elementAt(i) else null }.toSet()
+fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
+fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
+  nts.mapIndexedNotNull { i, it -> if(it) nonterminals.elementAt(i) else null }.toSet()
 
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
-  mapIndexedNotNull { i, it -> if(it) cfg.variables.elementAt(i) else null }.toSet()
+  mapIndexedNotNull { i, it -> if(it) cfg.nonterminals.elementAt(i) else null }.toSet()
 
 fun List<Formula>.allFalse(): Formula = reduce { acc, satf -> acc or satf }.negate()
 
@@ -69,7 +69,7 @@ infix fun FreeMatrix<List<Formula>>.fixedpointMatEq(that: FreeMatrix<List<Formul
   }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
-  mat[0].last()[variables.indexOf(START_SYMBOL)]
+  mat[0].last()[nonterminals.indexOf(START_SYMBOL)]
 
 // Encodes the constraint that a bit-vector representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
@@ -77,10 +77,10 @@ fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
 // it should be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
   // terminal        set of nonterminals it can represent
-  alphabet.map { bimap[listOf(it)] }.map { nts ->
-    val (insiders, outsiders) = variables.partition { it in nts }
-    (insiders.map { nt -> bitvec[variables.indexOf(nt)] } + // All of these
-      outsiders.map { nt -> bitvec[variables.indexOf(nt)].negate() }) // None of these
+  terminals.map { bimap[listOf(it)] }.map { nts ->
+    val (insiders, outsiders) = nonterminals.partition { it in nts }
+    (insiders.map { nt -> bitvec[nonterminals.indexOf(nt)] } + // All of these
+      outsiders.map { nt -> bitvec[nonterminals.indexOf(nt)].negate() }) // None of these
       .reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
 
@@ -98,8 +98,8 @@ fun CFG.makeSATLitAlgebra(): Ring<List<Boolean>?> =
 
 fun CFG.makeSATAlgebra() =
   Ring.of(
-    nil = List(variables.size) { F },
-    one = List(variables.size) { T },
+    nil = List(nonterminals.size) { F },
+    one = List(nonterminals.size) { T },
     plus = { a, b -> a union b },
     times = { a, b -> join(a, b) }
   )
@@ -123,7 +123,7 @@ fun CFG.constructInitialMatrix(
       if (r + 1 == c) {
         val word = tokens[c - 1]
         if (tokens[c - 1].isHoleToken()) null
-        else bimap[listOf(word)].let { nts -> variables.map { it in nts } }
+        else bimap[listOf(word)].let { nts -> nonterminals.map { it in nts } }
       } else emptyList()
     }
       //.also { println("Literal matrix:\n${it.summarize()}") }
@@ -133,14 +133,14 @@ fun CFG.constructInitialMatrix(
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Off-diagonal
         val word = tokens[c - 1]
         if (word == "_")
-          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
             .also { holeVariables.add(it) } // Blank
         else setOf(word.drop(1).dropLast(1))
-           .let { nts -> variables.map { BLit(it in nts) } } // Terminal
+           .let { nts -> nonterminals.map { BLit(it in nts) } } // Terminal
       } else if (r + 1 <= c) { // Upper right triangular matrix entries
         val permanentBitVec = literalMatrix[r, c]
         if (permanentBitVec.isNullOrEmpty())
-          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
+          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
         else permanentBitVec.map { if (it) T else F }
       }
       else emptyList()
@@ -172,12 +172,12 @@ fun FreeMatrix<List<Formula>>.summarize() =
   }
 
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
-  bitvec.mapIndexedNotNull { i, it -> if (it) variables.elementAt(i) else null }.toSet()
+  bitvec.mapIndexedNotNull { i, it -> if (it) nonterminals.elementAt(i) else null }.toSet()
 
 fun CFG.terminal(
   bitvec: List<Boolean>,
   nonterminals: Set<String> = nonterminals(bitvec)
-): String? = alphabet.firstOrNull { word -> bimap[listOf(word)] == nonterminals }
+): String? = terminals.firstOrNull { word -> bimap[listOf(word)] == nonterminals }
 
 // Summarize fill structure of bit vector variables
 fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
