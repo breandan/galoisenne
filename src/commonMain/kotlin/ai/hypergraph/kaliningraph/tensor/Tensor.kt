@@ -215,7 +215,8 @@ open class FreeMatrix<T> constructor(
   override fun toString() =
     "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
       rows.joinToString("\n") {
-        it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString("  |  ")
+        it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }
+          .joinToString("  |  ", "|  ", "  |")
       }
     }
 }

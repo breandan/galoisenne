@@ -105,23 +105,6 @@ fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
     else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
   }
 
-/*
-Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
-It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
-Lee shows that a faster procedure for BMM would automatically give a fast
-procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
-BMM, encoding to SAT becomes straightforward using Tseitin (1968).
-
-TODO: Lower this matrix onto SAT. Steps:
-  1.) Encode CFL as BMM.
-  2.) Symbolically evaluate BMM to get a Boolean formula.
-  3.) Encode symbolic Boolean formula as CNF using Tsetin.
-  4.) Run SAT solver and decode variable assignments.
-
-  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
-  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
- */
-
 fun String.splitKeeping(str: String): List<String> =
     split(str).flatMap { listOf(it, str) }.dropLast(1)
 

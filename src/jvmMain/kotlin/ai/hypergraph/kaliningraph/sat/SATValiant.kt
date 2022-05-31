@@ -9,6 +9,7 @@ import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
+import org.logicng.transformations.qmc.QuineMcCluskeyAlgorithm
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
@@ -52,21 +53,13 @@ fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
   mapIndexedNotNull { i, it -> if(it) cfg.nonterminals.elementAt(i) else null }.toSet()
 
-fun List<Formula>.allFalse(): Formula = reduce { acc, satf -> acc or satf }.negate()
-
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
-  if (isEmpty() && that.isEmpty()) T
-  else if (isEmpty()) that.allFalse() else if (that.isEmpty()) this.allFalse()
+  if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
   else zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
 
 infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Formula =
-  data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
-
-infix fun FreeMatrix<List<Formula>>.fixedpointMatEq(that: FreeMatrix<List<Formula>>): Formula =
-  List(numRows - 2) {
-    i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
-      .reduce { acc, satf -> acc and satf }
-  }.reduce { acc, satf -> acc and satf }
+  data.zip(that.data).filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
   mat[0].last()[nonterminals.indexOf(START_SYMBOL)]
@@ -114,6 +107,23 @@ fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTML()
 
 fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
 
+/*
+Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
+It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
+Lee shows that a faster procedure for BMM would automatically give a fast
+procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
+BMM, encoding to SAT becomes straightforward using Tseitin (1968).
+
+Lower this matrix onto SAT. Steps:
+  1.) Encode CFL as BMM.
+  2.) Symbolically evaluate BMM to get a Boolean formula.
+  3.) Encode symbolic Boolean formula as CNF using Tsetin.
+  4.) Run SAT solver and decode variable assignments.
+
+  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
+  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
+ */
+
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
@@ -141,14 +151,40 @@ fun CFG.constructInitialMatrix(
         val permanentBitVec = literalMatrix[r, c]
         if (permanentBitVec.isNullOrEmpty())
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
+        // else if (literalMatrix.isFullyResolved(r, c)) emptyList()
         else permanentBitVec.map { if (it) T else F }
-      }
-      else emptyList()
+      } else emptyList()
     }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
   //.also { println("SAT matrix[$i]:\n${it.summarize()}") }
     to holeVariables)
+
+// Try "hollowing out" permanent UT submatrices
+//...
+//  V V V V V      V V V V V
+//    C C C V        C C C V
+//      C C V  ->        C V
+//        C V            C V
+//          V              V
+// Returns whether the entries to the left and bottom are fully resolved
+private fun FreeMatrix<List<Boolean>?>.isFullyResolved(r: Int, c: Int) =
+  (
+    if (r + 1 == c && 0 < r && c + 1 < numCols)
+      listOf(this[r, c + 1], this[r - 1, c])
+    else if(r + 1 == c && r == 0)
+      listOf(this[r, c + 1])
+    else if(r + 1 == c && c + 1 == numCols)
+      listOf(this[r - 1, c])
+    else
+    if (numCols <= c + 1 && 0 < r)
+      listOf(this[r, c], this[r - 1, c], this[r, c - 1])
+    else if (0 == r && c + 1 < numCols)
+      listOf(this[r, c], this[r, c + 1], this[1, c])
+    else if (0 < r && c + 1 < numCols)
+      listOf(this[r, c], this[r - 1, c], this[r + 1, c], this[r, c - 1], this[r, c + 1])
+    else listOf(emptyList())
+  ).all { it?.isNotEmpty() ?: false }
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize() =
@@ -156,7 +192,7 @@ fun FreeMatrix<List<Boolean>?>.summarize() =
     when {
       it == null -> "?"
       it.toString().length < 5 -> ""
-      else -> "1"
+      else -> "C"
     }
   }
 
@@ -167,7 +203,7 @@ fun FreeMatrix<List<Formula>>.summarize() =
       it.isEmpty() -> ""
       it[0] is Variable -> "V"
       it[0] is Constant -> "C"
-      else -> "?"
+      else -> "F"
     }
   }
 
@@ -208,10 +244,11 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val valiantParses =
       isInGrammar(fixpointMatrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix fixedpointMatEq fixpointMatrix * fixpointMatrix)
+        (fixpointMatrix matEq fixpointMatrix * fixpointMatrix)
 
     var (solver, solution) = valiantParses.let { f ->
-      try { f.solveIncrementally() } catch (npe: NullPointerException) { return@sequence }
+      try { f.solveIncrementally() }
+      catch (npe: NullPointerException) { return@sequence }
     }
     var isFresh = T
     while (true)
