@@ -32,9 +32,13 @@ Now the good news!
         Three advantages: computational complexity, ease of design and theoretical elegance
 
 
+
 Annotated history of types
         Context free languages can be encoded straightforwardly in Java's type system
 
 Constraint satisfaction can be reduced to rootfinding
+    Opens up a compilation pathway to matrix multiplication
+    GEMMs can be run on GPUs and ASICs very efficiently
+    Parallel type checking!
 
 We can still approximate dependently typed programming!
