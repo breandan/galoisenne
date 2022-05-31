@@ -1,0 +1,40 @@
+Talk notes
+
+
+First, the bad news
+        Two problems: human complexity of type-level programming and computational complexity.
+        Types were never meant to do arbitrary computation.
+            Types are designed to quickly over-approximate admissible programs (and deterministically halt).
+            We know from Church that Turing-equivalent systems are undecidable.
+            We know from Rice that any nontrivial property of a universal PL is undecidable.
+            Even bounded-length Turing machines are physically impossible:
+                There exist length-5 Busy beavers which require galactic computation.
+            Types must terminate, otherwise they are just computation with extra steps
+            Undecidable type systems are just esoteric programming languages
+        Designing type systems is hard, requires highly-specialized knowledge.
+            In the Java programming language, spent 10 years designing generics.
+            Some of the brightest minds in Sun still got it wrong.
+
+
+
+Now the good news!
+        Worst-case complexity appears to be relatively rare in actual programs
+        In practice, we know that typing works, and usually terminates quickly
+        Though broken, Java's unsoundness rarely occurs in practice
+        Turing machines are spherical cows: a fictitious thought experiment
+        All physically-realisable machines are somewhere between regular and context-sensitive
+        This restricts expressiveness, but *not as much as you might think*
+        Grammars allow us to encode a huge amount of information in a finite space
+        Before there were such things as type systems, there were parsers
+        Type systems are "just" parsers repackaged in a fancy notation
+        I would argue the goal of the parser is first and foremost to reject inadmissable programs.
+        In this talk, I am going to make an argument for type checking in the parser.
+        Three advantages: computational complexity, ease of design and theoretical elegance
+
+
+Annotated history of types
+        Context free languages can be encoded straightforwardly in Java's type system
+
+Constraint satisfaction can be reduced to rootfinding
+
+We can still approximate dependently typed programming!
