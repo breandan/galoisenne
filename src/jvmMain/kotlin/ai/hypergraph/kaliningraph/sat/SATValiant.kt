@@ -201,8 +201,9 @@ fun FreeMatrix<List<Formula>>.summarize() =
   map {
     when {
       it.isEmpty() -> ""
-      it[0] is Variable -> "V"
-      it[0] is Constant -> "C"
+      it.all { it is Variable } -> "V"
+      it.all { it is Constant } -> "C"
+      it.any { it is Variable } -> "M"
       else -> "F"
     }
   }
@@ -244,7 +245,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val valiantParses =
       isInGrammar(fixpointMatrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix matEq fixpointMatrix * fixpointMatrix)
+        (fixpointMatrix matEq (fixpointMatrix * fixpointMatrix).also { println(it.summarize()) })
 
     var (solver, solution) = valiantParses.let { f ->
       try { f.solveIncrementally() }
