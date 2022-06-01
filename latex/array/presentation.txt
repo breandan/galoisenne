@@ -28,11 +28,6 @@ Now the good news!
    - In this talk, I am going to make an argument for type checking in the parser.
    - Three advantages: computational complexity, ease of design and theoretical elegance
 
-Annotated history of types
-   - Types can encode simple state machines (give some examples)
-   - Context free languages can be encoded straightforwardly in Java's type system
-   - We can still approximate dependently typed programming! (this work)
-
 Why matrix-based parsing?
    - Sketch-based synthesis can be reduced to algebraic rootfinding
    - Opens up a compilation pathway to linear algebraic techniques
@@ -45,3 +40,30 @@ Why matrix-based parsing?
    - Galois theory has deep connections to cryptography & ProbProg
    - Reversible: we can go "forward", i.e., infer holes in code or "backward", i.e., solve for specification
    - Many interesting possibilities for program synthesis!
+
+Annotated history of parsing
+   - Cocke–Younger–Kasami algorithm (1961) - bottom-up dynamic programming (CNF)
+   - Brzozowski (1964) - Derivatives of regular expressions
+   - Earley parser (1968) - top-down dynamic programming (does not require CNF)
+   - Valiant correspondence (1975) - lowers onto binary matrix multiplication
+   - Lee (1997) - Fast CFG Parsing <=> Fast BMM, formalizes reduction
+   - Melski & Reps (2002) - Interconvertibility between set constraints and CFL reachability
+   - Might et al. (2011) - Parsing with derivatives (extends Brzozowski to CFL)
+   - Okhotin et al. (2010-) - Formal languages over GF(2)
+   - Considine (2022) - Encodes Valiant into incremental SAT solver to fill holes
+
+Annotated history of types
+   - Types can encode simple state machines (give some examples)
+   - Canning et al. (1989) invents F-Bounded Polymorphism
+   - Hinze (2003) - Phantom types (useful for type-safe builders)
+   - Eder (2011) - Encodes relational algebra into jOOQ
+   - Erdos (2017) - Encodes Boolean logic into Java type system
+   - Nakamaru (2017) - Silverchain: fluent API generator
+   - Considine (2019) - Encodes shape-safe matrix multiplication into Kotlin∇
+   - Fling (2019) - Fling-A Fluent API Generator (fluent DSL parser generator)
+   - Roth (2021) - Encodes CFL into Subtyping Machine (Nominal Subtyping with Variance)
+       - Context free languages can be encoded straightforwardly in Java's type system
+   - Considine (2021) - Encodes type-level modular arithmetic into Kotlin using Shipshape
+   - Considine (2022) - Encodes Chinese dependent types into Kotlin using typelevel abacus
+
+Type checking is parsing!
