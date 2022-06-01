@@ -167,7 +167,7 @@ fun CFG.constructInitialMatrix(
     }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
-  .also { println("SAT matrix[$i]:\n${it.summarize()}") }
+//  .also { println("SAT matrix[$i]:\n${it.summarize()}") }
     to holeVariables)
 
 // Try "hollowing out" permanent UT submatrices
@@ -178,7 +178,7 @@ fun CFG.constructInitialMatrix(
 //        C V            C V
 //          V              V
 // Returns whether the entries to the left and bottom are fully resolved
-private fun FreeMatrix<List<Formula>>.isFullyResolved(r: Int, c: Int) =
+private fun FreeMatrix<List<Boolean>?>.isFullyResolved(r: Int, c: Int) =
   (
     // First upper-diagonal entries
     if (r + 1 == c && 0 < r && c + 1 < numCols)
@@ -195,7 +195,7 @@ private fun FreeMatrix<List<Formula>>.isFullyResolved(r: Int, c: Int) =
     else if (0 < r && c + 1 < numCols) // Inner entries
       listOf(this[r, c], this[r - 1, c], this[r + 1, c], this[r, c - 1], this[r, c + 1])
     else listOf(emptyList())
-  ).all { it.all { it is Constant } }
+  ).all { it?.isNotEmpty() ?: false }
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize() =
@@ -256,7 +256,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val valiantParses =
       isInGrammar(fixpointMatrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix matEq (fixpointMatrix * fixpointMatrix).also { println(it.summarize()) })
+        (fixpointMatrix matEq fixpointMatrix * fixpointMatrix)
 
     var (solver, solution) = valiantParses.let { f ->
       try { f.solveIncrementally() }
