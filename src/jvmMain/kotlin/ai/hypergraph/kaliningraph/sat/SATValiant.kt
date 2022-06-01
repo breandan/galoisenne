@@ -55,11 +55,21 @@ fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
-  else zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
+  else zip(that)
+    .partition { (l, r) -> l == r }
+    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
+    .second.map { (a, b) -> a eq b }
+    .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
 infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Formula =
-  data.zip(that.data).filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
-    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
+  if (data.size != that.data.size) throw Exception("Shape mismatch, incomparable!")
+  else data.zip(that.data)
+    // Only compare nonempty bitvectors pairs
+    .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+    // Only compare bitvector pairs which are not trivially identical
+    .partition { (l, r) -> l.zip(r).all { (a, b) -> a == b } }
+    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
+    .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
   mat[0].last()[nonterminals.indexOf(START_SYMBOL)]
@@ -140,24 +150,24 @@ fun CFG.constructInitialMatrix(
       .seekFixpoint { it + it * it },
   formulaMatrix: FreeMatrix<List<Formula>> =
     FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
-      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Off-diagonal
+      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // First upper-diagonal
         val word = tokens[c - 1]
         if (word == "_")
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
             .also { holeVariables.add(it) } // Blank
         else setOf(word.drop(1).dropLast(1))
            .let { nts -> nonterminals.map { BLit(it in nts) } } // Terminal
-      } else if (r + 1 <= c) { // Upper right triangular matrix entries
+      } else if (r + 1 <= c) { // Upper triangular matrix entries
         val permanentBitVec = literalMatrix[r, c]
         if (permanentBitVec.isNullOrEmpty())
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
-        // else if (literalMatrix.isFullyResolved(r, c)) emptyList()
+//         else if (literalMatrix.isFullyResolved(r, c)) emptyList()
         else permanentBitVec.map { if (it) T else F }
       } else emptyList()
     }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
-  //.also { println("SAT matrix[$i]:\n${it.summarize()}") }
+  .also { println("SAT matrix[$i]:\n${it.summarize()}") }
     to holeVariables)
 
 // Try "hollowing out" permanent UT submatrices
@@ -168,23 +178,24 @@ fun CFG.constructInitialMatrix(
 //        C V            C V
 //          V              V
 // Returns whether the entries to the left and bottom are fully resolved
-private fun FreeMatrix<List<Boolean>?>.isFullyResolved(r: Int, c: Int) =
+private fun FreeMatrix<List<Formula>>.isFullyResolved(r: Int, c: Int) =
   (
+    // First upper-diagonal entries
     if (r + 1 == c && 0 < r && c + 1 < numCols)
       listOf(this[r, c + 1], this[r - 1, c])
     else if(r + 1 == c && r == 0)
       listOf(this[r, c + 1])
     else if(r + 1 == c && c + 1 == numCols)
       listOf(this[r - 1, c])
-    else
-    if (numCols <= c + 1 && 0 < r)
+    else // Interior upper-diagonal entries
+    if (numCols <= c + 1 && 0 < r) // Rightmost column
       listOf(this[r, c], this[r - 1, c], this[r, c - 1])
-    else if (0 == r && c + 1 < numCols)
+    else if (0 == r && c + 1 < numCols) // Topmost row
       listOf(this[r, c], this[r, c + 1], this[1, c])
-    else if (0 < r && c + 1 < numCols)
+    else if (0 < r && c + 1 < numCols) // Inner entries
       listOf(this[r, c], this[r - 1, c], this[r + 1, c], this[r, c - 1], this[r, c + 1])
     else listOf(emptyList())
-  ).all { it?.isNotEmpty() ?: false }
+  ).all { it.all { it is Constant } }
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize() =
