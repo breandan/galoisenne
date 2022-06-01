@@ -97,7 +97,7 @@ class SATValiantTest {
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
       println(cfg.parse("( 1 + 2 ) - 1")?.prettyPrint())
-      cfg.parseHTML("( ( 1 + 2 ) * 3 ) / 4").show()
+//      cfg.parseHTML("( ( 1 + 2 ) * 3 ) / 4").show()
       println(cfg.prettyPrint())
     }
   }

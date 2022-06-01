@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.0-Beta"
   id("com.google.devtools.ksp") version "1.7.0-Beta-1.0.5"
-  kotlin("jupyter.api") version "0.11.0-93"
+  kotlin("jupyter.api") version "0.11.0-101"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -122,7 +122,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.1.0")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.2.0")
@@ -208,7 +208,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
       }
     }
   }

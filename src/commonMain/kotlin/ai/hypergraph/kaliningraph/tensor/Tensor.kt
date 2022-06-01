@@ -27,14 +27,16 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   val numCols: Int
 
   operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
-  operator fun times(t: M): M = join(t) { i, j -> this@Matrix[i] dot t.transpose[j] }
+  operator fun times(t: M): M = t.transpose.let { tt -> join(t) { i, j -> this@Matrix[i] dot tt[j] } }
   fun <Y> map(f: (T) -> Y): M = new(numRows, numCols, data.map(f) as List<T>)
 
   fun getElements(filterBy: (Int, Int) -> Boolean) =
     allPairs(numRows, numCols).mapNotNull { (r, c) -> if(filterBy(r, c)) this[r, c] else null }
 
   infix fun List<T>.dot(es: List<T>): T =
-    with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } }
+    require(size == es.size) { "Length mismatch: $size . ${es.size}" }
+      .run { with(algebra) { mapIndexed { i, a -> a * es[i] }.reduce { a, b -> a + b } } }
+//      .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(numRows: Int, numCols: Int, data: List<T>, alg: A = algebra): M
