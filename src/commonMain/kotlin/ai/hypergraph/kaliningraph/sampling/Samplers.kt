@@ -202,7 +202,7 @@ fun LFSRM(
 }
 
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
-  MDSamplerWithoutReplacement(List(dimension) { set }.also{println(it)})
+  MDSamplerWithoutReplacement(List(dimension) { set })
 
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
