@@ -28,19 +28,23 @@ Now the good news!
    - In this talk, I am going to make an argument for type checking in the parser.
    - Three advantages: computational complexity, ease of design and theoretical elegance
 
-What is matrix-based parsing?
+What is algebraic parsing?
    - As PL & CS researchers we hear a lot about TMs and λ-calculus
-   - There is a third model which is often forgotten. A much older model: Arithmetic
+   - There is a third model which is often forgotten. A much older model...
+   - We are the inheritors of an ancient (500+ YO) knowledge base
+   - Revealed at great expense by the finest analytical minds the world has ever produced
    - Arithmetic was the original Turing Complete language
-   - Presburger arithmetic is decidable
-   - Peano arithmetic is Turing complete
+   - Presburger arithmetic is decidable, Peano arithmetic is not
    - The word problem on semigroups
-   - Computation is algebraic
+   - Computation is fundamentally algebraic
+   - If you can express your problem algebraically, miracles await
+   - Parsing is some kind of nested loop? A stack machine? No! Parsing is algebra
+   - Parsing is just for specifying syntax? No! Parsing is constrained computation
+   - The line between parsing and computation is very blurry
 
 Why matrix-based parsing?
    - Sketch-based synthesis can be reduced to algebraic rootfinding
    - Opens up a compilation pathway to linear algebraic techniques
-   - Abstract algebra gives us access to an ancient (500+ YO) knowledge base
    - SPGEMMs can be evaluated on GPUs and ASICs very efficiently
    - Subcubic multiplication algorithm (asymptotic optimality!)
    - Boolean matrices are easily compilable to SAT solving
