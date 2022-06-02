@@ -28,6 +28,15 @@ Now the good news!
    - In this talk, I am going to make an argument for type checking in the parser.
    - Three advantages: computational complexity, ease of design and theoretical elegance
 
+What is matrix-based parsing?
+   - As PL & CS researchers we hear a lot about TMs and λ-calculus
+   - There is a third model which is often forgotten. A much older model: Arithmetic
+   - Arithmetic was the original Turing Complete language
+   - Presburger arithmetic is decidable
+   - Peano arithmetic is Turing complete
+   - The word problem on semigroups
+   - Computation is algebraic
+
 Why matrix-based parsing?
    - Sketch-based synthesis can be reduced to algebraic rootfinding
    - Opens up a compilation pathway to linear algebraic techniques
@@ -67,3 +76,11 @@ Annotated history of types
    - Considine (2022) - Encodes Chinese dependent types into Kotlin using typelevel abacus
 
 Type checking is parsing!
+
+
+Future Directions
+   - Look into Markov chains (detailed balance, stationarity, reversibility)
+   - Can we interpret ∂F, ∇F, ∇×F - what is the connection to differentiability?
+   - Meaning of abstract algebraic eigenvalues
+   - Dynamical systems on strings
+   - Eigenvalues of matrices
