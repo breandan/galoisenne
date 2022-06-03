@@ -9,7 +9,6 @@ import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
-import org.logicng.transformations.qmc.QuineMcCluskeyAlgorithm
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
@@ -79,13 +78,16 @@ fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
 // grammar, the bitvector must not have the configuration [A=1 B=1 C=0 D=1],
 // it should be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
-  // terminal        set of nonterminals it can represent
-  terminals.map { bimap[listOf(it)] }.map { nts ->
-    val (insiders, outsiders) = nonterminals.partition { it in nts }
-    (insiders.map { nt -> bitvec[nonterminals.indexOf(nt)] } + // All of these
-      outsiders.map { nt -> bitvec[nonterminals.indexOf(nt)].negate() }) // None of these
-      .reduce { acc, satf -> acc and satf }
+  // terminal        possible nonterminals it can represent
+  terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
+    val (insiders, outsiders) = bitvec.join(nonterminals).partition { it in possibleNTs }
+    (insiders + outsiders.map { it.negate() }).reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
+
+// Returns list elements matching the intersection between set and on (indexed by on)
+fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
+  if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
+  else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
 // Encodes that each blank can only be one nonterminal
 fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
@@ -161,7 +163,6 @@ fun CFG.constructInitialMatrix(
         val permanentBitVec = literalMatrix[r, c]
         if (permanentBitVec.isNullOrEmpty())
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
-//         else if (literalMatrix.isFullyResolved(r, c)) emptyList()
         else permanentBitVec.map { if (it) T else F }
       } else emptyList()
     }
@@ -169,33 +170,6 @@ fun CFG.constructInitialMatrix(
     (formulaMatrix
 //  .also { println("SAT matrix[$i]:\n${it.summarize()}") }
     to holeVariables)
-
-// Try "hollowing out" permanent UT submatrices
-//...
-//  V V V V V      V V V V V
-//    C C C V        C C C V
-//      C C V  ->        C V
-//        C V            C V
-//          V              V
-// Returns whether the entries to the left and bottom are fully resolved
-private fun FreeMatrix<List<Boolean>?>.isFullyResolved(r: Int, c: Int) =
-  (
-    // First upper-diagonal entries
-    if (r + 1 == c && 0 < r && c + 1 < numCols)
-      listOf(this[r, c + 1], this[r - 1, c])
-    else if(r + 1 == c && r == 0)
-      listOf(this[r, c + 1])
-    else if(r + 1 == c && c + 1 == numCols)
-      listOf(this[r - 1, c])
-    else // Interior upper-diagonal entries
-    if (numCols <= c + 1 && 0 < r) // Rightmost column
-      listOf(this[r, c], this[r - 1, c], this[r, c - 1])
-    else if (0 == r && c + 1 < numCols) // Topmost row
-      listOf(this[r, c], this[r, c + 1], this[1, c])
-    else if (0 < r && c + 1 < numCols) // Inner entries
-      listOf(this[r, c], this[r - 1, c], this[r + 1, c], this[r, c - 1], this[r, c + 1])
-    else listOf(emptyList())
-  ).all { it?.isNotEmpty() ?: false }
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize() =
@@ -212,13 +186,14 @@ fun FreeMatrix<List<Formula>>.summarize() =
   map {
     when {
       it.isEmpty() -> ""
-      it.all { it is Variable } -> "V"
-      it.all { it is Constant } -> "C"
+      it.all { it is Variable } -> "V[${it.size}]"
+      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
       it.any { it is Variable } -> "M"
-      else -> "F"
+      else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"
     }
   }
 
+// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) nonterminals.elementAt(i) else null }.toSet()
 
@@ -251,14 +226,17 @@ fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true)
 
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
-    val (fixpointMatrix, holeVariables) = constructInitialMatrix(tokens)
+    val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
-    val valiantParses =
-      isInGrammar(fixpointMatrix) and
+    val fixpoint = matrix * matrix
+//    println(fixpoint.summarize())
+
+    val parsingConstraints =
+      isInGrammar(matrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix matEq fixpointMatrix * fixpointMatrix)
+        (matrix matEq fixpoint)
 
-    var (solver, solution) = valiantParses.let { f ->
+    var (solver, solution) = parsingConstraints.let { f ->
       try { f.solveIncrementally() }
       catch (npe: NullPointerException) { return@sequence }
     }
