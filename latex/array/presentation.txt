@@ -88,9 +88,9 @@ Type checking is parsing!
         Op -> and | or | + | *
         Exp -> if ( Exp ) Exp else Exp
    - Versus the typed version:
-        BExp -> T | F | BExp or BExp | BExp and BExp
-        BExp -> if ( BExp ) BExp else BExp
-        IExp -> 0 | 1 | ... | IExp + IExp | IExp * IExp
+        Exp<Bool> -> T | F | Exp<Bool> or Exp<Bool> | Exp<Bool> and Exp<Bool>
+        Exp<Bool> -> if ( Exp<Bool> ) Exp<Bool> else Exp<Bool>
+        Exp<Int> -> 0 | 1 | ... | Exp<Int> + Exp<Int> | Exp<Int> * Exp<Int>
     - Versus the polymorphic version:
         Exp<Int> -> 0 | 1 | ...
         Exp<Bool> -> T | F

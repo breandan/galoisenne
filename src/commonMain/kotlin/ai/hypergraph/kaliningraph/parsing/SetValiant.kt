@@ -178,6 +178,8 @@ fun String.validate(
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
+// TODO: Implement denormalization / original parse tree recovery
+// https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
