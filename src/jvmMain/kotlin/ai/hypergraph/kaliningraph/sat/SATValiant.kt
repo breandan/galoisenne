@@ -168,30 +168,32 @@ fun CFG.constructInitialMatrix(
     }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
-//  .also { println("SAT matrix[$i]:\n${it.summarize()}") }
+//  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
     to holeVariables)
 
 @JvmName("summarizeBooleanMatrix")
-fun FreeMatrix<List<Boolean>?>.summarize() =
+fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
   map {
     when {
       it == null -> "?"
       it.toString().length < 5 -> ""
-      else -> "C"
+//      else -> "C"
+      else -> "${cfg.toNTSet(it)}".replace("START", "S")
     }
-  }
+  }.toString()
 
 @JvmName("summarizeFormulaMatrix")
-fun FreeMatrix<List<Formula>>.summarize() =
+fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
   map {
     when {
       it.isEmpty() -> ""
       it.all { it is Variable } -> "V[${it.size}]"
-      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
+      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T })}]"
+//      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
       it.any { it is Variable } -> "M"
       else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"
     }
-  }
+  }.toString()
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
@@ -229,8 +231,10 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
     val fixpoint = matrix * matrix
-//    println(fixpoint.summarize())
+//    println(fixpoint.summarize(this@synthesize))
 
+    // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
+    //       nonterminal in the original string to reduce fixedpoint matrix size.
     val parsingConstraints =
       isInGrammar(matrix) and
         uniquenessConstraints(holeVariables) and
@@ -245,6 +249,8 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       try {
         val fillers = holeVariables.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
+//        val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+//        println(bMat.summarize(this@synthesize))
         yield(tokens.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
 
         val holes = holeVariables.flatten()
