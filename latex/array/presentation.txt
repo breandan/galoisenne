@@ -111,12 +111,27 @@ Probabilistic programming
        - LFSR: Maximal periodicity + ergodicity
    - How do we discover characteristic polynomials? Algebraic number theory!
    - Finite fields have deep connections to signal processing, error correcting codes, cryptography
+   - Idea: factor PPLs into graphical and stochastic components
+
+What is the point of this talk?
+   - Algebraists have developed a powerful language for rootfinding
+       - Tradition starting with Euler through Galois to Kantorovich
+       - We have "closed forms" for computing exponentials of structured matrices
+          - Characteristic polynomials, companion matrices, eigenvalues
+       - These forms are *much faster* than powering the matrix iteratively
+   - Many problems in PL theory and graph theory can be reduced to rootfinding
+       - Context free parsing is just rootfinding on a semiring algebra
+       - Subtyping sans recursive types is just graph reachability
+       - Unification/simplification is lazy hypergraph search
+       - Bounded program synthesis is matrix factorization/completion
+   - By doing so, we can exploit well-known algebraic techniques
 
 Future Directions
    - Look into Markov chains (detailed balance, stationarity, reversibility)
-   - Investigate the connection between dynamical systems and string rewrite systems
+   - Investigate connection between dynamical systems and term rewrite systems
        - Extend this work to context-sensitive grammars
-   - Can we interpret ∂F, ∇F, ∇×F - what is the connection to differentiability?
+   - What is the connection to Leibnizian differentiability?
+       - Can we interpret gradients and derivatives ∂F, ∇F, ∇×F?
    - What is the meaning of abstract algebraic eigenvalues?
    - Look into probabilistic grammars, e.g., PCFGs
        - Diffusion models have a very natural interpretation on graphs

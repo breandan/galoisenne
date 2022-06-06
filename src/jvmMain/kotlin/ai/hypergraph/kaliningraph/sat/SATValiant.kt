@@ -152,14 +152,14 @@ fun CFG.constructInitialMatrix(
       .seekFixpoint { it + it * it },
   formulaMatrix: FreeMatrix<List<Formula>> =
     FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
-      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // First upper-diagonal
+      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
         val word = tokens[c - 1]
         if (word == "_")
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
             .also { holeVariables.add(it) } // Blank
         else setOf(word.drop(1).dropLast(1))
            .let { nts -> nonterminals.map { BLit(it in nts) } } // Terminal
-      } else if (r + 1 <= c) { // Upper triangular matrix entries
+      } else if (r + 1 <= c) { // Strictly upper triangular matrix entries
         val permanentBitVec = literalMatrix[r, c]
         if (permanentBitVec.isNullOrEmpty())
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
