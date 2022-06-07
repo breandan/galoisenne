@@ -1,16 +1,27 @@
 \documentclass{beamer}
+\usetheme{Madrid}
+\beamertemplatenavigationsymbolsempty
 \usepackage{graphicx}
-\usepackage{listings}
+\usepackage{pgf-soroban}
 \usepackage{amsfonts}
 \usepackage{amsmath}
-\usepackage{color}
+\usepackage{xcolor}
 \usepackage{tikz}
+\usetikzlibrary{shapes.geometric,calc,decorations.text}
 \usepackage{stmaryrd}
 \usepackage{mathtools}
-\usepackage{bbm}
-\usetikzlibrary{shapes.geometric,calc,decorations.text}
+\usepackage{dsfont}
+\usepackage{bussproofs}
+\usepackage{hyperref}
+\usepackage{fontspec}
+\setmonofont{JetBrains Mono}[
+    Contextuals = Alternate,
+    Ligatures = TeX,
+]
+\usepackage{listings}
 
 \lstdefinelanguage{Kotlin}{
+    basicstyle = \footnotesize\ttfamily,
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
     emph={delegate, filter, first, firstOrNull, forEach, lazy, map, mapNotNull, println, return@},
@@ -27,10 +38,11 @@
     stringstyle={\color{green}\ttfamily},
     showstringspaces=false,
 }
+\makeatletter
+\renewcommand*\verbatim@nolig@list{}
+\makeatother
 
-\mode<presentation> { \usetheme{Madrid} }
-
-\title[Array Programming on GF(2^n)]{Probabilistic Array Programming on Galois Fields}
+\title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
 \author[Considine, Guo, Si]{Breandan Considine, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
@@ -59,7 +71,7 @@
         %
         For example, consider the grammar $S \rightarrow S S \mid ( S ) \mid ()$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
-        Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $[\![S \rightarrow S S \mid ( S ) \mid ()]\!]\Leftrightarrow^*[\![S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS]\!]$
+        Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\underline{S \rightarrow S S \mid ( S ) \mid ()}\Leftrightarrow^*\underline{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS}$
 
         \begin{center}
         \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
@@ -130,11 +142,10 @@
         \frametitle{Observations}
         \begin{itemize}
             \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
-            \item The $\otimes$ operator is (sadly) \textit{not} associative
-            \item A na\"ive solver has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$
-            \item Recognizer be translated into a parser by storing backpointers
+            \item The $\otimes$ operator is (sadly) \textit{not} associative TODO: give example
+            \item A na\"ive solver has complexity $\mathcal{O}(n^4)$, this can be reduced to $\mathcal{O}(n^\omega)$
+            \item Recognizer be easily translated into a parser by storing backpointers
             \item Built-in error recovery: nonempty submatrices = parsable fragments
-            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Binarized parser can be efficiently compiled to a SAT solver
             \item Supports sketch-based synthesis in the string or grammar
         \end{itemize}
@@ -143,8 +154,10 @@
     \begin{frame}
         \frametitle{Binarization}
         \begin{itemize}
-            \item We simply encode the characteristic function $\mathds{1}_A: V\rightarrow \mathbb{B}^{|V|}$
+            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
+            \item We simply encode the characteristic function $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
             \item $\oplus$ is defined as $\boxplus$ and $\otimes$ is $\boxtimes$, where $\boxplus, \boxtimes: \mathbb{B}^{|V|}\times\mathbb{B}^{|V|} \rightarrow \mathbb{B}^{|V|}$
+            \item For most grammars, only a few nonterminals are active at any time
             \item More sophisticated encodings are known for $\binom{n}{0 \leq k}$ subsets
             \item If density is needed, possible to use the Maculay representation
             \item These operators can be lifted into matrices/tensors in the usual way
@@ -153,27 +166,147 @@
         \end{itemize}
     \end{frame}
 
-    \section{IDE Tool}\label{sec:ide}
+%    \section{IDE Tool}\label{sec:ide}
+%
+%    \section{Tidyparse tool}\label{sec:tidyparse}
 
-    \section{Tidyparse tool}\label{sec:tidyparse}
-
-    \section{Usage}\label{sec:usage}
+    \section{The Abacus}
 
     \begin{frame}
-        \frametitle{Usage}
-            code goes here
+        We can describe the abacus as a kind of reduction system.
+        \ladj{0.25}
+        \frametitle{Abacus}
+        \begin{prooftree}
+            \AxiomC{
+                \begin{tikzpicture}
+                    \tige{1}{0}{0}
+                    \barres{1}
+                \end{tikzpicture}
+            }
+            \AxiomC{$+1$}
+            \BinaryInfC{
+                \begin{tikzpicture}
+                    \tige{1}{1}{0}
+                    \barres{1}
+                \end{tikzpicture}
+            }
+            \DisplayProof
+            \hskip 1.5em
+            \AxiomC{
+                \begin{tikzpicture}
+                    \tige{1}{4}{0}
+                    \barres{1}
+                \end{tikzpicture}
+            }
+            \AxiomC{$+1$}
+            \BinaryInfC{
+                \begin{tikzpicture}
+                    \tige{1}{5}{0}
+                    \barres{1}
+                \end{tikzpicture}
+            }
+            \DisplayProof
+            \hskip 1.5em
+            \AxiomC{
+                \begin{tikzpicture}
+                    \tige{1}{0}{0}
+                    \barres{1}
+                    \tige[2]{1}{9}{0}
+                    \barres[2]{1}
+                \end{tikzpicture}
+            }
+            \AxiomC{$+1$}
+            \BinaryInfC{
+                \begin{tikzpicture}
+                \tige{1}{1}{0}
+                \barres{1}
+                \tige[2]{1}{0}{0}
+                \barres[2]{1}
+                \end{tikzpicture}
+            }
+        \end{prooftree}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Dependent types}
+%        \ladj{0.25}
+%        \begin{tikzpicture}
+%            \tige{1}{0}{0}
+%            \tige{2}{3}{0}
+%            \tige{3}{2}{0}
+%            \tige{4}{1}{0}
+%            \tige{5}{4}{0}
+%            \tige{6}{9}{0}
+%            \cadre{6}
+%        \end{tikzpicture}
+        \begin{lstlisting}[language=Kotlin, gobble=7]
+        sealed class B<X, P : B<X, P>>(open val x: X? = null) {
+          val T: T<P> get() = T(this as P)
+          val F: F<P> get() = F(this as P)
+        }
+
+        class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x) {
+          companion object: T<Ø>(Ø)
+        }
+
+        class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x) {
+          companion object: F<Ø>(Ø)
+        }
+
+        val b0: F<Ø> = F
+        val b1: T<Ø> = T
+        val b2: F<T<Ø>> = T.F
+        val b3: T<T<Ø>> = T.T
+        val b4: F<F<T<Ø>>> = T.F.F
+        \end{lstlisting}
+    \end{frame}
+
+
+    \begin{frame}[fragile]
+        \frametitle{Dependent types}
+%        \ladj{0.25}
+%        \begin{tikzpicture}
+%            \tige{1}{0}{0}
+%            \tige{2}{3}{0}
+%            \tige{3}{2}{0}
+%            \tige{4}{1}{0}
+%            \tige{5}{4}{0}
+%            \tige{6}{9}{0}
+%            \cadre{6}
+%        \end{tikzpicture}
+        \begin{lstlisting}[language=Kotlin, gobble=7]
+        typealias B_0<B> = F<B>             typealias BØ = F<Ø>
+        typealias B_1<B> = T<B>             typealias B1 = T<Ø>
+        typealias B_2<B> = F<T<B>>          typealias B2 = F<T<Ø>>
+        typealias B_3<B> = T<T<B>>          typealias B3 = T<T<Ø>>
+        typealias B_4<B> = F<F<T<B>>>       typealias B4 = F<F<T<Ø>>>
+        typealias B_5<B> = T<F<T<B>>>       typealias B5 = T<F<T<Ø>>>
+        typealias B_6<B> = F<T<T<B>>>       typealias B6 = F<T<T<Ø>>>
+        typealias B_7<B> = T<T<T<B>>>       typealias B7 = T<T<T<Ø>>>
+        typealias B_8<B> = F<F<F<T<B>>>>
+
+        operator fun Ø.plus(t: T<Ø>) = b1
+        operator fun B_0<Ø>.plus(t: T<Ø>) = b1
+        operator fun B_1<Ø>.plus(t: T<Ø>): B_2<Ø> = F(x + b1)
+        operator fun B_3<Ø>.plus(t: T<Ø>): B_4<Ø> = F(x + b1)
+        operator fun B_7<Ø>.plus(t: T<Ø>): B_8<Ø> = F(x + b1)
+
+        operator fun <K: B<*, *>> B_0<K>.plus(t: T<Ø>) = T(x)
+        operator fun <K: B<*, *>> B_1<F<K>>.plus(t: T<Ø>) = F(x + b1)
+        operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + b1)
+        operator fun <K: B<*, *>> B_7<F<K>>.plus(t: T<Ø>) = F(x + b1)
+        \end{lstlisting}
     \end{frame}
 
     \begin{frame}
         \begin{center}
             \Huge{Learn more at: \\~\\
-            \url{http://array22.ndan.co}}
+            \href{http://array22.ndan.co}{\color{blue}{http://array22.ndan.co}}}
         \end{center}
     \end{frame}
 
     \begin{frame}
         \frametitle{Special thanks}
-        \begin{itemize}
             \begin{center}
                 \LARGE{
                     Nghi D. Q. Bui\\
@@ -187,6 +320,5 @@
                 \includegraphics[scale=0.3]{../figures/fpt_logo.png}
                 \includegraphics[scale=0.2]{../figures/mila_logo.png}
             \end{center}
-        \end{itemize}
     \end{frame}
 \end{document}
