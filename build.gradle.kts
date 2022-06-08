@@ -6,9 +6,9 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.0-Beta"
-  id("com.google.devtools.ksp") version "1.7.0-Beta-1.0.5"
-  kotlin("jupyter.api") version "0.11.0-101"
+  kotlin("multiplatform") version "1.7.0"
+  id("com.google.devtools.ksp") version "1.7.0-RC2-1.0.5"
+  kotlin("jupyter.api") version "0.11.0-106"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -132,7 +132,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:3.2.0")
+        implementation("org.apache.datasketches:datasketches-java:3.3.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
