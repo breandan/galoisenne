@@ -19,15 +19,16 @@
     Ligatures = TeX,
 ]
 \usepackage{listings}
+\usepackage{amssymb}
 
 \lstdefinelanguage{Kotlin}{
     basicstyle = \footnotesize\ttfamily,
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, first, firstOrNull, forEach, lazy, map, mapNotNull, println, return@},
+    emph={delegate, filter, lazy, println, return@},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
-    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, val, var, vararg, when, where, while},
+    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
     keywordstyle={\color{blue}\bfseries},
     morecomment=[s]{/*}{*/},
     morestring=[b]",
@@ -69,7 +70,7 @@
         \frametitle{Recap: Context Free Grammars}
         Suppose we have a context free grammar (CFG) $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^+$ are the productions, $S\in V$ is the start symbol and $+$ is the Kleene plus.\newline\\
         %
-        For example, consider the grammar $S \rightarrow S S \mid ( S ) \mid ()$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
+        For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
         Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\underline{S \rightarrow S S \mid ( S ) \mid ()}\Leftrightarrow^*\underline{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS}$
 
@@ -138,6 +139,61 @@
         \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
     \end{frame}
 
+    \begin{frame}[fragile]
+        \frametitle{Kotlin implementation: CFG definition}
+        \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
+        typealias Production = Pair<String, List<String>>
+        typealias CFG = Set<Production>
+        val Production.LHS: String get() = first
+        val Production.RHS: List<String> get() = second
+        val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
+        val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
+        val CFG.terminals: Set<String> by cache { symbols - nonterminals }
+        // Maps variables to expansions and expansions to variables in a CFG
+        val CFG.bimap: BidirectionalMap by cache { BidirectionalMap(this) }
+
+        fun CFG.makeAlgebra(): Ring<Set<String>> =
+          Ring.of(
+            // 0 = ∅
+            nil = setOf(),
+            // x + y = x ∪ y
+            plus = { x, y -> x union y },
+            // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
+            times = { x, y -> join(x, y) }
+          )
+
+        fun CFG.join(ls: Set<String>, rs: Set<String>): Set<String> =
+          (ls * rs).flatMap { (l, r) -> bimap[listOf(l, r)] }.toSet()
+        \end{lstlisting}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Kotlin implementation: Recognizer}
+        \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
+        // Converts tokens to UT matrix: σ_i = { A | (A -> w[i]) ∈ P }
+        fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<String>> =
+          FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
+            if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].toSet()
+          }
+
+        tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(op: (T) -> T): T {
+          val next = op(this)
+          return if (this == next) next else next.seekFixpoint(op)
+        }
+
+        fun CFG.isValid(str: String): Boolean =
+          tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
+
+        fun CFG.parse(
+          tokens: List<String>,
+          initial: Matrix<Set<String>> = initialMatrix(tokens),
+          // Since matrix is strictly UT, this will converge in at most n steps
+          fixpoint: Matrix<Set<String>> = initial.seekFixpoint { it + it * it }
+        ): Set<String> = fixpoint[0].last()
+        \end{lstlisting}
+    \end{frame}
+
+
     \begin{frame}
         \frametitle{Observations}
         \begin{itemize}
@@ -178,6 +234,19 @@
         \frametitle{Abacus}
         \begin{prooftree}
             \AxiomC{
+                \tikz \fill [white] (0,0) rectangle (1,2);
+            }
+            \UnaryInfC{
+                \begin{tikzpicture}
+                    \tige{1}{0}{0}
+                    \tige{2}{0}{0}
+                    \tige{3}{0}{0}
+                    \cadre{3}
+                \end{tikzpicture}
+            }
+            \DisplayProof
+            \hskip 1em
+            \AxiomC{
                 \begin{tikzpicture}
                     \tige{1}{0}{0}
                     \barres{1}
@@ -191,7 +260,7 @@
                 \end{tikzpicture}
             }
             \DisplayProof
-            \hskip 1.5em
+            \hskip 1em
             \AxiomC{
                 \begin{tikzpicture}
                     \tige{1}{4}{0}
@@ -206,7 +275,7 @@
                 \end{tikzpicture}
             }
             \DisplayProof
-            \hskip 1.5em
+            \hskip 1em
             \AxiomC{
                 \begin{tikzpicture}
                     \tige{1}{0}{0}
@@ -229,29 +298,21 @@
 
     \begin{frame}[fragile]
         \frametitle{Dependent types}
-%        \ladj{0.25}
-%        \begin{tikzpicture}
-%            \tige{1}{0}{0}
-%            \tige{2}{3}{0}
-%            \tige{3}{2}{0}
-%            \tige{4}{1}{0}
-%            \tige{5}{4}{0}
-%            \tige{6}{9}{0}
-%            \cadre{6}
-%        \end{tikzpicture}
         \begin{lstlisting}[language=Kotlin, gobble=7]
         sealed class B<X, P : B<X, P>>(open val x: X? = null) {
           val T: T<P> get() = T(this as P)
           val F: F<P> get() = F(this as P)
         }
 
-        class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x) {
-          companion object: T<Ø>(Ø)
-        }
+        class U(val i: Int) : B<Any, U>() // Checked at runtime
 
-        class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x) {
-          companion object: F<Ø>(Ø)
-        }
+        object Ø: B<Ø, Ø>(null)           // Nothing
+
+        class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x)
+          { companion object: T<Ø>(Ø) }
+
+        class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x)
+          { companion object: F<Ø>(Ø) }
 
         val b0: F<Ø> = F
         val b1: T<Ø> = T
@@ -261,28 +322,15 @@
         \end{lstlisting}
     \end{frame}
 
-
     \begin{frame}[fragile]
         \frametitle{Dependent types}
-%        \ladj{0.25}
-%        \begin{tikzpicture}
-%            \tige{1}{0}{0}
-%            \tige{2}{3}{0}
-%            \tige{3}{2}{0}
-%            \tige{4}{1}{0}
-%            \tige{5}{4}{0}
-%            \tige{6}{9}{0}
-%            \cadre{6}
-%        \end{tikzpicture}
         \begin{lstlisting}[language=Kotlin, gobble=7]
-        typealias B_0<B> = F<B>             typealias BØ = F<Ø>
-        typealias B_1<B> = T<B>             typealias B1 = T<Ø>
-        typealias B_2<B> = F<T<B>>          typealias B2 = F<T<Ø>>
-        typealias B_3<B> = T<T<B>>          typealias B3 = T<T<Ø>>
-        typealias B_4<B> = F<F<T<B>>>       typealias B4 = F<F<T<Ø>>>
-        typealias B_5<B> = T<F<T<B>>>       typealias B5 = T<F<T<Ø>>>
-        typealias B_6<B> = F<T<T<B>>>       typealias B6 = F<T<T<Ø>>>
-        typealias B_7<B> = T<T<T<B>>>       typealias B7 = T<T<T<Ø>>>
+        typealias B_0<B> = F<B>
+        typealias B_1<B> = T<B>
+        typealias B_2<B> = F<T<B>>
+        typealias B_3<B> = T<T<B>>
+        typealias B_4<B> = F<F<T<B>>>
+        typealias B_7<B> = T<T<T<B>>>
         typealias B_8<B> = F<F<F<T<B>>>>
 
         operator fun Ø.plus(t: T<Ø>) = b1
@@ -296,6 +344,36 @@
         operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + b1)
         operator fun <K: B<*, *>> B_7<F<K>>.plus(t: T<Ø>) = F(x + b1)
         \end{lstlisting}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Dependent types}
+        \begin{tiny}
+        \begin{verbatim}
+            i │  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
+           ───┼───────────────────┼────────────────────┼───────────────────┐ ┐
+            0 │                   │                    │                __/  │
+            1 │                   │                    │             __/XXX  │
+            … │       i ± i       │        k ± i       │          __/XXXXXX  ├ ┐
+          k-1 │                   │                    │      ___/XXXXXXXXX  │ │
+            k │                   │                    │  ___╱XXXXXXXXXXXXX  │ │
+          ────┼───────────────────┼────────────────────┴─┘XXXXXXXXXXXXXXXXX  ┘ │
+          k+1 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+          k+2 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+            … │       i ± k       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+            … │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+          k+c │                   │XXXXXXXXXXXX                XXXXXXXXXXXX    │
+         ─────┼───────────────────┤XXXXXXXXXXXX    Run-time    XXXXXXXXXXXX    │
+        k+c+1 │               ___/XXXXXXXXXXXXX  type checked  XXXXXXXXXXXX    │
+            … │           ___/XXXXXXXXXXXXXXXXX                XXXXXXXXXXXX    │
+            … │       ___/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+            … │   ___/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+        k+c+k │__/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+
+              └─────────┬─────────┘                               Compile-time
+                        └─────────────────────────────────────    type checked
+        \end{verbatim}
+        \end{tiny}
     \end{frame}
 
     \begin{frame}

@@ -13,8 +13,8 @@ val Production.LHS: String get() = first
 val Production.RHS: List<String> get() =
   second.let { if(it.size == 1) it.map(String::stripEscapeChars) else it }
 val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
-val CFG.symbols: Set<String> by cache { map { it.LHS }.toSet() + flatMap { flatMap { it.RHS } } }
 val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
+val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<String> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
