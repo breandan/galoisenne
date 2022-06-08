@@ -19,13 +19,21 @@
     Ligatures = TeX,
 ]
 \usepackage{listings}
+\lstset{
+    basicstyle = \ttfamily,
+    columns = flexible,
+}
+\makeatletter
+\renewcommand*\verbatim@nolig@list{}
+\makeatother
 \usepackage{amssymb}
+\usepackage{pmboxdraw}
 
 \lstdefinelanguage{Kotlin}{
     basicstyle = \footnotesize\ttfamily,
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, lazy, println, return@},
+    emph={delegate, filter, lazy, println, return@, K, E},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
     keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
@@ -33,15 +41,13 @@
     morecomment=[s]{/*}{*/},
     morestring=[b]",
     morestring=[s]{"""*}{*"""},
-    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
-    ndkeywordstyle={\color{Orange}\bfseries},
+    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, Bool},
+    ndkeywordstyle={\color{orange}\bfseries},
     sensitive=true,
     stringstyle={\color{green}\ttfamily},
     showstringspaces=false,
+    escapechar=@
 }
-\makeatletter
-\renewcommand*\verbatim@nolig@list{}
-\makeatother
 
 \title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
 \author[Considine, Guo, Si]{Breandan Considine, Jin Guo, Xujie Si}
@@ -115,7 +121,7 @@
 
 
     \begin{frame}
-        \frametitle{Algebraic Parsing}
+        \frametitle{Algebraic parsing, distilled}
         Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
 
         \vspace{-7pt}
@@ -147,18 +153,18 @@
         val Production.LHS: String get() = first
         val Production.RHS: List<String> get() = second
         val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
-        val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
-        val CFG.terminals: Set<String> by cache { symbols - nonterminals }
-        // Maps variables to expansions and expansions to variables in a CFG
+        val CFG.words: Set<String> by cache { nonterminals + flatMap { it.RHS } }
+        val CFG.terminals: Set<String> by cache { words - nonterminals }
+        // Many-to-many mapping of nonterminals to RHS expansions
         val CFG.bimap: BidirectionalMap by cache { BidirectionalMap(this) }
 
         fun CFG.makeAlgebra(): Ring<Set<String>> =
           Ring.of(
             // 0 = ∅
             nil = setOf(),
-            // x + y = x ∪ y
+            // x + y = x @\texttt{∪}@ y
             plus = { x, y -> x union y },
-            // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
+            // x · y = { A0 | A1 @\texttt{∈}@ x, A2 @\texttt{∈}@ y, (A0 -> A1 A2) @\texttt{∈}@ P }
             times = { x, y -> join(x, y) }
           )
 
@@ -168,15 +174,15 @@
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Kotlin implementation: Recognizer}
+        \frametitle{Kotlin implementation: the recognizer}
         \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
-        // Converts tokens to UT matrix: σ_i = { A | (A -> w[i]) ∈ P }
-        fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<String>> =
-          FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
+        // Adds singleton NTs to superdiagonal: σ_i = { A | (A -> w[i]) ∈ P }
+        fun CFG.initialMatrix(str: List<String>): Matrix<Set<String>> =
+          Matrix(makeAlgebra(), str.size + 1) { i, j ->
             if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].toSet()
           }
 
-        tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(op: (T) -> T): T {
+        tailrec fun <T: Matrix<S>, S> T.seekFixpoint(op: (T) -> T): T {
           val next = op(this)
           return if (this == next) next else next.seekFixpoint(op)
         }
@@ -184,41 +190,55 @@
         fun CFG.isValid(str: String): Boolean =
           tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
-        fun CFG.parse(
-          tokens: List<String>,
-          initial: Matrix<Set<String>> = initialMatrix(tokens),
-          // Since matrix is strictly UT, this will converge in at most n steps
-          fixpoint: Matrix<Set<String>> = initial.seekFixpoint { it + it * it }
-        ): Set<String> = fixpoint[0].last()
+        // Since matrix is strictly UT, must converge in < |tokens| steps
+        fun CFG.parse(tokens: List<String>): Set<String> =
+            initialMatrix(tokens).seekFixpoint { it + it * it }.first()[0]
         \end{lstlisting}
     \end{frame}
 
 
     \begin{frame}
-        \frametitle{Observations}
+        \frametitle{A few observations on algebraic parsing}
         \begin{itemize}
             \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
             \item The $\otimes$ operator is (sadly) \textit{not} associative TODO: give example
-            \item A na\"ive solver has complexity $\mathcal{O}(n^4)$, this can be reduced to $\mathcal{O}(n^\omega)$
-            \item Recognizer be easily translated into a parser by storing backpointers
+            \item Recognizer easily translated into a parser by storing backpointers
             \item Built-in error recovery: nonempty submatrices = parsable fragments
-            \item Binarized parser can be efficiently compiled to a SAT solver
-            \item Supports sketch-based synthesis in the string or grammar
+            \item \texttt{seekFixpoint \{ it + it * it \}} is sufficient but unnecessary
+            \item What if there were some way to solve for $\mathbf{M = M + M}^2$ directly?
+            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
+            \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$ (Lee, 1997)
         \end{itemize}
     \end{frame}
 
     \begin{frame}
-        \frametitle{Binarization}
+        \frametitle{Satisfiability + holes (our contribution!)}
         \begin{itemize}
-            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
-            \item We simply encode the characteristic function $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
+            \item Binarized CYK parser can be efficiently compiled to a SAT solver
+            \item Supports sketch-based synthesis in the string or grammar
+            \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
             \item $\oplus$ is defined as $\boxplus$ and $\otimes$ is $\boxtimes$, where $\boxplus, \boxtimes: \mathbb{B}^{|V|}\times\mathbb{B}^{|V|} \rightarrow \mathbb{B}^{|V|}$
-            \item For most grammars, only a few nonterminals are active at any time
-            \item More sophisticated encodings are known for $\binom{n}{0 \leq k}$ subsets
-            \item If density is needed, possible to use the Maculay representation
             \item These operators can be lifted into matrices/tensors in the usual way
+            \item In most cases, only a few nonterminals are active at any given time
+            \item More sophisticated encodings are known for $\binom{n}{0 \leq k}$ subsets
+            \item If density is desired, possible to use the Maculay representation
             \item Set joins are an active topic of research in SQL query optimization
             \item If you know of a more efficient encoding, I want to talk to you!
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Abbreviated history of algebraic parsing}
+        \begin{itemize}
+            \item Cocke–Younger–Kasami (1961) - bottom-up dynamic programming
+            \item Brzozowski (1964) - Derivatives of regular expressions
+            \item Earley (1968) - top-down dynamic programming (no CNF needed)
+            \item Valiant (1975) - realizes Boolean matrix multiplication correspondence
+            \item Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction
+            \item Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)
+            \item Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)
+            \item Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda
+            \item \textbf{Considine (2022) - Encodes Valiant (1975) into SAT + holes}
         \end{itemize}
     \end{frame}
 
@@ -226,12 +246,17 @@
 %
 %    \section{Tidyparse tool}\label{sec:tidyparse}
 
-    \section{The Abacus}
+    \section{Typelevel Abacus}
 
     \begin{frame}
-        We can describe the abacus as a kind of reduction system.
+        \frametitle{Abacus arithmetic}
+        \begin{itemize}
+        \item Computational complexity of arithmetic is notation-dependent(!)
+        \item For example, $\pm$ in unary arithmetic is concatenation and decatenation
+        \item Multiplication and division by natural powers of the radix is $\mathcal{O}(1)$.
+        \item We can describe the abacus as a kind of abstract rewriting system.
+        \end{itemize}
         \ladj{0.25}
-        \frametitle{Abacus}
         \begin{prooftree}
             \AxiomC{
                 \tikz \fill [white] (0,0) rectangle (1,2);
@@ -250,14 +275,13 @@
                 \begin{tikzpicture}
                     \tige{1}{0}{0}
                     \barres{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n+10^n$
             }
-            \AxiomC{$+1$}
-            \BinaryInfC{
+            \UnaryInfC{
                 \begin{tikzpicture}
                     \tige{1}{1}{0}
                     \barres{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n\phantom{n+0^n}$
             }
             \DisplayProof
             \hskip 1em
@@ -265,14 +289,13 @@
                 \begin{tikzpicture}
                     \tige{1}{4}{0}
                     \barres{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n+10^n$
             }
-            \AxiomC{$+1$}
-            \BinaryInfC{
+            \UnaryInfC{
                 \begin{tikzpicture}
                     \tige{1}{5}{0}
                     \barres{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n\phantom{n+0^n}$
             }
             \DisplayProof
             \hskip 1em
@@ -282,22 +305,21 @@
                     \barres{1}
                     \tige[2]{1}{9}{0}
                     \barres[2]{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n+10^n$
             }
-            \AxiomC{$+1$}
-            \BinaryInfC{
+            \UnaryInfC{
                 \begin{tikzpicture}
                 \tige{1}{1}{0}
                 \barres{1}
                 \tige[2]{1}{0}{0}
                 \barres[2]{1}
-                \end{tikzpicture}
+                \end{tikzpicture}$_n\phantom{n+0^n}$
             }
         \end{prooftree}
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Dependent types}
+        \frametitle{Abacus dependent types}
         \begin{lstlisting}[language=Kotlin, gobble=7]
         sealed class B<X, P : B<X, P>>(open val x: X? = null) {
           val T: T<P> get() = T(this as P)
@@ -323,15 +345,15 @@
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Dependent types}
+        \frametitle{Abacus dependent types up to $2^n-1$ where $n=4$}
         \begin{lstlisting}[language=Kotlin, gobble=7]
-        typealias B_0<B> = F<B>
-        typealias B_1<B> = T<B>
-        typealias B_2<B> = F<T<B>>
-        typealias B_3<B> = T<T<B>>
-        typealias B_4<B> = F<F<T<B>>>
-        typealias B_7<B> = T<T<T<B>>>
-        typealias B_8<B> = F<F<F<T<B>>>>
+        typealias B_0<K> = F<K>
+        typealias B_1<K> = T<K>
+        typealias B_2<K> = F<T<K>>
+        typealias B_3<K> = T<T<K>>
+        typealias B_4<K> = F<F<T<K>>>
+        typealias B_7<K> = T<T<T<K>>>
+        typealias B_8<K> = F<F<F<T<K>>>>
 
         operator fun Ø.plus(t: T<Ø>) = b1
         operator fun B_0<Ø>.plus(t: T<Ø>) = b1
@@ -347,7 +369,7 @@
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Dependent types}
+        \frametitle{Abacus dependent types: birds eye view}
         \begin{tiny}
         \begin{verbatim}
             i │  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
@@ -374,6 +396,52 @@
                         └─────────────────────────────────────    type checked
         \end{verbatim}
         \end{tiny}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Annotated history of typed EDSLs}
+        \begin{itemize}
+            \item Canning et al. (1989) invents F-Bounded Polymorphism
+            \item Hinze (2003) - Discovers Phantom types (useful for type-safe builders)
+            \item Eder (2011) - Encodes relational algebra into j[ava]OOQ
+            \item Grigore (2016) - Java Generics shown to be Turing Complete
+            \item Erdős (2017) - Encodes Boolean logic into Java type system
+            \item Nakamaru (2017) - Silverchain: fluent API generator
+            \item \textbf{Considine (2019) - Shape-safe matrix multiplication in Kotlin$\nabla$}
+            \item Fling (2019) - Fling, A Fluent API parser generator
+            \item Roth (2021) - Encodes CFL into Nominal Subtyping with Variance
+            \item \textbf{Considine (2021) - Arithmetic in Kotlin via typelevel abacus}
+            \item We know how to lower parsing onto types, what about vis versa?
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Can we lower type checking onto parsing?}
+        First, let us consider the untyped version:
+        \begin{lstlisting}[language=Kotlin, gobble=5]
+        Exp -> 0 | 1 | ... | T | F
+        Exp -> Exp Op Exp | if ( Exp ) Exp else Exp
+        Op -> and | or | + | *
+        \end{lstlisting}
+        Now, let us consider the GADT/HOAS version:
+        \begin{lstlisting}[language=Kotlin, gobble=5]
+        Exp<Bool> -> T | F
+        Op<Bool> -> and | or
+        Exp<Int> -> 0 | 1 | ... | 9
+        Op<Int> -> + | *
+        Exp<E> -> Exp<E> Op<E> Exp<E> // Es must match exactly!
+        Exp<E> -> if ( Exp<Bool> ) Exp<E> else Exp<E>
+        \end{lstlisting}
+        We can eliminate context sensitivity by concretizing \lstinline[language=Kotlin]{E -> Bool | Int}:
+        \begin{lstlisting}[language=Kotlin, gobble=5]
+        Exp<Bool> -> T | F
+        Exp<Bool> -> Exp<Bool> or Exp<Bool> | Exp<Bool> and Exp<Bool>
+        Exp<Bool> -> if ( Exp<Bool> ) Exp<Bool> else Exp<Bool>
+        Exp<Int> -> 0 | 1 | ... | 9
+        Exp<Int> -> Exp<Int> + Exp<Int> | Exp<Int> * Exp<Int>
+        Exp<Int> -> if ( Exp<Bool> ) Exp<Int> else Exp<Int>
+        \end{lstlisting}
+
     \end{frame}
 
     \begin{frame}
