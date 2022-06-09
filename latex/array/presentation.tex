@@ -34,7 +34,7 @@
     basicstyle = \footnotesize\ttfamily,
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, lazy, println, return@, K, E},
+    emph={delegate, filter, lazy, println, return@, K, E, X, P},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
     keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
@@ -42,7 +42,7 @@
     morecomment=[s]{/*}{*/},
     morestring=[b]",
     morestring=[s]{"""*}{*"""},
-    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, Bool},
+    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, Bool, Boolean},
     ndkeywordstyle={\color{orange}\bfseries},
     sensitive=true,
     stringstyle={\color{green}\ttfamily},
@@ -130,7 +130,7 @@
             a \otimes b \coloneqq \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
         \]
 
-        \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
+        \noindent We initialize $\mathbf{M}^0_{i,j}(\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
 
         \vspace{-5}
         \[
@@ -161,11 +161,11 @@
 
         fun CFG.makeAlgebra(): Ring<Set<String>> =
           Ring.of(
-            // 0 = ∅
+            // 0 = @\color{gray}\texttt{∅}@
             nil = setOf(),
-            // x + y = x @\texttt{∪}@ y
+            // x + y = x @\color{gray}\texttt{∪}@ y
             plus = { x, y -> x union y },
-            // x · y = { A0 | A1 @\texttt{∈}@ x, A2 @\texttt{∈}@ y, (A0 -> A1 A2) @\texttt{∈}@ P }
+            // x · y = { A0 | A1 @\color{gray}\texttt{∈}@ x, A2 @\color{gray}\texttt{∈}@ y, (A0 -> A1 A2) @\color{gray}\texttt{∈}@ P }
             times = { x, y -> join(x, y) }
           )
 
@@ -177,23 +177,25 @@
     \begin{frame}[fragile]
         \frametitle{Kotlin implementation: the recognizer}
         \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
-        // Adds singleton NTs to superdiagonal: σ_i = { A | (A -> w[i]) ∈ P }
+        // Constructs initial matrix according to: M@\color{gray}\textsubscript{i+1=j}@ = { A | (A -> @\color{gray}\texttt{σ}\textsubscript{i}@) @\color{gray}\texttt{∈}@ P }
         fun CFG.initialMatrix(str: List<String>): Matrix<Set<String>> =
           Matrix(makeAlgebra(), str.size + 1) { i, j ->
+            // Aligns nonterminals matching each terminal along superdiagonal
             if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].toSet()
           }
 
+        // Computes the fixpoint of an abstract matrix function
         tailrec fun <T: Matrix<S>, S> T.seekFixpoint(op: (T) -> T): T {
           val next = op(this)
           return if (this == next) next else next.seekFixpoint(op)
         }
 
-        fun CFG.isValid(str: String): Boolean =
-          tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
+        // Checks whether start symbol is contained in the northeasternmost entry
+        fun CFG.check(s: String): Boolean = START in parse(tokenize(s))[0].last()
 
-        // Since matrix is strictly UT, must converge in < |tokens| steps
-        fun CFG.parse(tokens: List<String>): Set<String> =
-            initialMatrix(tokens).seekFixpoint { it + it * it }.first()[0]
+        // Since matrix is strictly UT, this converges in at most |tokens| steps
+        fun CFG.parse(tokens: List<String>): Matrix<Set<String>> =
+            initialMatrix(tokens).seekFixpoint { it + it * it }
         \end{lstlisting}
     \end{frame}
 
@@ -218,7 +220,7 @@
             \item Binarized CYK parser can be efficiently compiled to a SAT solver
             \item Supports sketch-based synthesis in the string or grammar
             \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
-            \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, where the following diagram commutes:
+            \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
             \[\begin{tikzcd}
                   V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
                   & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
@@ -230,7 +232,7 @@
             \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
             \item If density is desired, possible to use the Maculay representation
             \item Set joins are an active topic of research in SQL query optimization
-            \item If you know of a more efficient encoding, I want to talk to you!
+            \item If you know of a more efficient encoding, please let us know!
         \end{itemize}
 
     \end{frame}
@@ -239,14 +241,14 @@
         \frametitle{Abbreviated history of algebraic parsing}
         \begin{itemize}
             \item Cocke–Younger–Kasami (1961) - bottom-up dynamic programming
-            \item Brzozowski (1964) - Derivatives of regular expressions
-            \item Earley (1968) - top-down dynamic programming (no CNF needed)
-            \item Valiant (1975) - realizes Boolean matrix multiplication correspondence
-            \item Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction
-            \item Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)
-            \item Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)
-            \item Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda
-            \item \textbf{Considine (2022) - Encodes Valiant (1975) into SAT + holes}
+            \item \href{https://dl.acm.org/doi/10.1145/321239.321249}{Brzozowski (1964) - Derivatives of regular expressions}
+            \item \href{https://dl.acm.org/doi/10.1145/362007.362035}{Earley (1968) - top-down dynamic programming (no CNF needed)}
+            \item \href{http://theory.stanford.edu/~virgi/cs367/papers/valiantcfg.pdf}{Valiant (1975) - realizes Boolean matrix multiplication correspondence}
+            \item \href{https://www.cs.cornell.edu/home/llee/papers/bmmcfl-jacm.pdf}{Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction}
+            \item \href{https://matt.might.net/papers/might2011derivatives.pdf}{Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)}
+            \item \href{https://users.math-cs.spbu.ru/~okhotin/papers/formal_languages_gf2.pdf}{Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)}
+            \item \href{https://arxiv.org/pdf/1601.07724.pdf}{Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda}
+            \item \textbf{Considine et al. (2022) - SAT + Valiant (1975) + holes}
         \end{itemize}
     \end{frame}
 
@@ -261,8 +263,8 @@
         \begin{itemize}
         \item Computational complexity of arithmetic is notation-dependent(!)
         \item For example, $\pm$ in unary arithmetic is concatenation and decatenation
-        \item Multiplication and division by natural powers of the radix is $\mathcal{O}(1)$.
-        \item We can describe the abacus as a kind of abstract rewriting system.
+        \item Multiplication and division by natural powers of the radix is $\mathcal{O}(1)$
+        \item We can describe the abacus as a kind of abstract rewriting system
         \end{itemize}
         \ladj{0.25}
         \begin{prooftree}
@@ -336,7 +338,7 @@
 
         class U(val i: Int) : B<Any, U>() // Checked at runtime
 
-        object Ø: B<Ø, Ø>(null)           // Nothing
+        object Ø: B<Ø, Ø>(null) // Denotes the end of a bitlist
 
         class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x)
           { companion object: T<Ø>(Ø) }
@@ -346,16 +348,15 @@
 
         val b0: F<Ø> = F
         val b1: T<Ø> = T
-        val b2: F<T<Ø>> = T.F
-        val b3: T<T<Ø>> = T.T
+        val b2: F<T<Ø>> = T.F // Note the raw type is reversed
         val b4: F<F<T<Ø>>> = T.F.F
         \end{lstlisting}
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Abacus dependent types up to $2^n-1$ where $n=4$}
+        \frametitle{Abacus dependent types}
         \begin{lstlisting}[language=Kotlin, gobble=7]
-        typealias B_0<K> = F<K>
+        typealias B_0<K> = F<K> // Type synonyms for legibility
         typealias B_1<K> = T<K>
         typealias B_2<K> = F<T<K>>
         typealias B_3<K> = T<T<K>>
@@ -363,12 +364,14 @@
         typealias B_7<K> = T<T<T<K>>>
         typealias B_8<K> = F<F<F<T<K>>>>
 
+        // Calculates k + 1 for all k == 2@\color{gray}\textsuperscript{n}@ - 1, 0 <= n < 4
         operator fun Ø.plus(t: T<Ø>) = b1
         operator fun B_0<Ø>.plus(t: T<Ø>) = b1
         operator fun B_1<Ø>.plus(t: T<Ø>): B_2<Ø> = F(x + b1)
         operator fun B_3<Ø>.plus(t: T<Ø>): B_4<Ø> = F(x + b1)
         operator fun B_7<Ø>.plus(t: T<Ø>): B_8<Ø> = F(x + b1)
 
+        // Calculates k + 1 for all k @≡@ 2@\color{gray}\textsuperscript{n}@ - 1 (mod 2@\color{gray}\textsuperscript{n+1}@), 1 <= n < 4
         operator fun <K: B<*, *>> B_0<K>.plus(t: T<Ø>) = T(x)
         operator fun <K: B<*, *>> B_1<F<K>>.plus(t: T<Ø>) = F(x + b1)
         operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + b1)
@@ -409,16 +412,16 @@
     \begin{frame}
         \frametitle{Annotated history of typed EDSLs}
         \begin{itemize}
-            \item Canning et al. (1989) invents F-Bounded Polymorphism
-            \item Hinze (2003) - Discovers Phantom types (useful for type-safe builders)
-            \item Eder (2011) - Encodes relational algebra into j[ava]OOQ
-            \item Grigore (2016) - Java Generics shown to be Turing Complete
-            \item Erdős (2017) - Encodes Boolean logic into Java type system
-            \item Nakamaru (2017) - Silverchain: fluent API generator
-            \item \textbf{Considine (2019) - Shape-safe matrix multiplication in Kotlin$\nabla$}
-            \item Fling (2019) - Fling, A Fluent API parser generator
-            \item Roth (2021) - Encodes CFL into Nominal Subtyping with Variance
-            \item \textbf{Considine (2021) - Arithmetic in Kotlin via typelevel abacus}
+            \item \href{https://www.cs.utexas.edu/~wcook/papers/FBound89/CookFBound89.pdf}{Canning et al. (1989) - F-Bounded Polymorphism is first invented}
+            \item \href{https://ecommons.cornell.edu/bitstream/handle/1813/5614/TR2003-1901.pdf}{Cheney \& Hinze (2003) - Phantom types (good for type-safe builders)}
+            \item \href{https://jooq.org}{Eder (2011) - Encodes relational algebra into j[ava]OOQ}
+            \item \href{https://arxiv.org/pdf/1605.05274.pdf}{Grigore (2016) - Java Generics shown to be Turing Complete}
+            \item \href{https://github.com/erdos/java-logic}{Erdős (2017) - Encodes Boolean logic into Java type system}
+            \item \href{https://dl.acm.org/doi/10.1145/3136040.3136041}{Nakamaru et al. (2017) - Silverchain: a fluent API generator}
+            \item \href{http://breandan.net/public/masters_thesis.pdf#2}{\textbf{Considine (2019) - Shape-safe matrix multiplication in Kotlin$\nabla$}}
+            \item \href{https://drops.dagstuhl.de/opus/volltexte/2019/10805/pdf/LIPIcs-ECOOP-2019-13.pdf}{Gil \& Roth (2019) - Fling, a fluent API parser generator}
+            \item \href{https://arxiv.org/pdf/2109.03950.pdf}{Roth (2021) - Encodes CFL into Nominal Subtyping with Variance}
+            \item \href{https://github.com/breandan/galoisenne}{\textbf{Considine (2021) - Arithmetic in Kotlin via typelevel abacus}}
             \item We know how to lower parsing onto types, what about vis versa?
         \end{itemize}
     \end{frame}
@@ -437,7 +440,7 @@
         Op<Bool> -> and | or
         Exp<Int> -> 0 | 1 | ... | 9
         Op<Int> -> + | *
-        Exp<E> -> Exp<E> Op<E> Exp<E> // Es must match exactly!
+        Exp<E> -> Exp<E> Op<E> Exp<E> // Es must be exactly the same!
         Exp<E> -> if ( Exp<Bool> ) Exp<E> else Exp<E>
         \end{lstlisting}
         We can eliminate contextuality by concretizing over \lstinline[language=Kotlin]{E -> Bool | Int}:
@@ -468,11 +471,12 @@
                     Jaylene Zhang\\
                     David Yu-Tung Hui\\
                     Fabian Muehlboeck\\
-                    Ben Greenman
+                    Ben Greenman\\
+                    \phantom{}\\
                 }
-
-                \includegraphics[scale=0.3]{../figures/fpt_logo.png}
-                \includegraphics[scale=0.2]{../figures/mila_logo.png}
+                \href{https://cs.mcgill.ca}{\includegraphics[scale=0.08]{../figures/mcgill_logo.png}}
+                \href{https://www.fpt-software.com}{\includegraphics[scale=0.19]{../figures/fpt_logo.png}}
+                \href{https://mila.quebec}{\includegraphics[scale=0.13]{../figures/mila_logo.png}}
             \end{center}
     \end{frame}
 \end{document}
