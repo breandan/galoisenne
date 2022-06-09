@@ -28,6 +28,7 @@
 \makeatother
 \usepackage{amssymb}
 \usepackage{pmboxdraw}
+\usetikzlibrary{cd}
 
 \lstdefinelanguage{Kotlin}{
     basicstyle = \footnotesize\ttfamily,
@@ -209,22 +210,29 @@
             \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$ (Lee, 1997)
         \end{itemize}
-    \end{frame}
+    \end{frame\textbf{}}
 
-    \begin{frame}
+    \begin{frame}[fragile]
         \frametitle{Satisfiability + holes (our contribution!)}
         \begin{itemize}
             \item Binarized CYK parser can be efficiently compiled to a SAT solver
             \item Supports sketch-based synthesis in the string or grammar
             \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
-            \item $\oplus$ is defined as $\boxplus$ and $\otimes$ is $\boxtimes$, where $\boxplus, \boxtimes: \mathbb{B}^{|V|}\times\mathbb{B}^{|V|} \rightarrow \mathbb{B}^{|V|}$
+            \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, where the following diagram commutes:
+            \[\begin{tikzcd}
+                  V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+                  & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+                  \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+                  & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+            \end{tikzcd}\]
             \item These operators can be lifted into matrices/tensors in the usual way
             \item In most cases, only a few nonterminals are active at any given time
-            \item More sophisticated encodings are known for $\binom{n}{0 \leq k}$ subsets
+            \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
             \item If density is desired, possible to use the Maculay representation
             \item Set joins are an active topic of research in SQL query optimization
             \item If you know of a more efficient encoding, I want to talk to you!
         \end{itemize}
+
     \end{frame}
 
     \begin{frame}
@@ -432,7 +440,7 @@
         Exp<E> -> Exp<E> Op<E> Exp<E> // Es must match exactly!
         Exp<E> -> if ( Exp<Bool> ) Exp<E> else Exp<E>
         \end{lstlisting}
-        We can eliminate context sensitivity by concretizing \lstinline[language=Kotlin]{E -> Bool | Int}:
+        We can eliminate contextuality by concretizing over \lstinline[language=Kotlin]{E -> Bool | Int}:
         \begin{lstlisting}[language=Kotlin, gobble=5]
         Exp<Bool> -> T | F
         Exp<Bool> -> Exp<Bool> or Exp<Bool> | Exp<Bool> and Exp<Bool>
