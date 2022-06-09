@@ -380,18 +380,18 @@
         \frametitle{Abacus dependent types: birds eye view}
         \begin{tiny}
         \begin{verbatim}
-            i │  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
+           i\j│  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
            ───┼───────────────────┼────────────────────┼───────────────────┐ ┐
             0 │                   │                    │                __/  │
             1 │                   │                    │             __/XXX  │
-            … │       i ± i       │        k ± i       │          __/XXXXXX  ├ ┐
-          k-1 │                   │                    │      ___/XXXXXXXXX  │ │
+            … │       i ± j       │        i + j       │          __/XXXXXX  ├ ┐
+          k-1 │       j ± i       │        j ± i       │      ___/XXXXXXXXX  │ │
             k │                   │                    │  ___╱XXXXXXXXXXXXX  │ │
           ────┼───────────────────┼────────────────────┴─┘XXXXXXXXXXXXXXXXX  ┘ │
           k+1 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
           k+2 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-            … │       i ± k       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-            … │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+            … │       i ± j       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
+            … │       j + i       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
           k+c │                   │XXXXXXXXXXXX                XXXXXXXXXXXX    │
          ─────┼───────────────────┤XXXXXXXXXXXX    Run-time    XXXXXXXXXXXX    │
         k+c+1 │               ___/XXXXXXXXXXXXX  type checked  XXXXXXXXXXXX    │
