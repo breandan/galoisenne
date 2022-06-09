@@ -68,7 +68,7 @@ Annotated history of parsing
 
 Annotated history of types
    - Types can encode simple state machines (give some examples)
-   - Canning et al. (1989) invents F-Bounded Polymorphism
+   - Canning et al. (1989) - discovers F-Bounded Polymorphism
    - Hinze (2003) - Phantom types (useful for type-safe builders)
    - Eder (2011) - Encodes relational algebra into jOOQ
    - Erdős (2017) - Encodes Boolean logic into Java type system

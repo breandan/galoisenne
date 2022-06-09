@@ -210,7 +210,7 @@
             \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$ (Lee, 1997)
         \end{itemize}
-    \end{frame\textbf{}}
+    \end{frame}
 
     \begin{frame}[fragile]
         \frametitle{Satisfiability + holes (our contribution!)}
@@ -380,28 +380,28 @@
         \frametitle{Abacus dependent types: birds eye view}
         \begin{tiny}
         \begin{verbatim}
-           i\j│  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+k
-           ───┼───────────────────┼────────────────────┼───────────────────┐ ┐
-            0 │                   │                    │                __/  │
-            1 │                   │                    │             __/XXX  │
-            … │       i ± j       │        i + j       │          __/XXXXXX  ├ ┐
-          k-1 │       j ± i       │        j ± i       │      ___/XXXXXXXXX  │ │
-            k │                   │                    │  ___╱XXXXXXXXXXXXX  │ │
-          ────┼───────────────────┼────────────────────┴─┘XXXXXXXXXXXXXXXXX  ┘ │
-          k+1 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-          k+2 │                   │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-            … │       i ± j       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-            … │       j + i       │XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-          k+c │                   │XXXXXXXXXXXX                XXXXXXXXXXXX    │
-         ─────┼───────────────────┤XXXXXXXXXXXX    Run-time    XXXXXXXXXXXX    │
-        k+c+1 │               ___/XXXXXXXXXXXXX  type checked  XXXXXXXXXXXX    │
-            … │           ___/XXXXXXXXXXXXXXXXX                XXXXXXXXXXXX    │
-            … │       ___/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-            … │   ___/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-        k+c+k │__/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    │
-
-              └─────────┬─────────┘                               Compile-time
-                        └─────────────────────────────────────    type checked
+             i\j│  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+d-1
+             ───┼───────────────────┼────────────────────┼────────────────────┐
+              0 │                   │                    │                  __|
+              1 │                   │                    │               __/░░
+              … │       i ± j       │        i + j       │            __/░░░░░
+              … │       j ± i       │        j ± i       │         __/░░░░░░░░
+            k-1 │                   │                    │      __/░░░░░░░░░░░
+              k │                   │                    │   __╱░░░░░░░░░░░░░░
+            ────┼───────────────────┼────────────────────┴──┘░░░░░░░░░░░░░░░░░
+            k+1 │                   │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+            k+2 │                   │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+              … │       i ± j       │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+              … │       j + i       │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+          k+c-1 │                   │░░░░░░░░░░░░                ░░░░░░░░░░░░░
+            k+c │                   │░░░░░░░░░░░░    Run-time    ░░░░░░░░░░░░░
+           ─────┼───────────────────┤░░░░░░░░░░░░                ░░░░░░░░░░░░░
+          k+c+1 │                __/░░░░░░░░░░░░░  type checked  ░░░░░░░░░░░░░
+          k+c+2 │             __/░░░░░░░░░░░░░░░░                ░░░░░░░░░░░░░
+              … │          __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+              … │       __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+        k+c+d-2 │    __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+        k+c+d-1 │___/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
         \end{verbatim}
         \end{tiny}
     \end{frame}
