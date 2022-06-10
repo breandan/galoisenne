@@ -2,17 +2,23 @@ package ai.hypergraph.kaliningraph.theory
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.randomMatrix
+import ai.hypergraph.kaliningraph.sampling.sample
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 
 // https://en.wikipedia.org/wiki/Barab%C3%A1si%E2%80%93Albert_model#Algorithm
 tailrec fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>> IGraph<G, E, V>.prefAttach(
   graph: G = this as G,
-  vertices: Int = 1,
+  numVertices: Int = 1,
   degree: Int = 3,
-  attach: G.(Int) -> G
-): G = if (vertices <= 0) graph
-else prefAttach(graph.attach(degree), vertices - 1, degree, attach)
+  attach: G.(Int) -> G = { degree ->
+    this + V(
+      if (vertices.isEmpty()) emptySet()
+      else degMap.sample().take(degree.coerceAtMost(size)).toSet()
+    ).graph
+  }
+): G = if (numVertices <= 0) graph
+else prefAttach(graph.attach(degree), numVertices - 1, degree, attach)
 
 /* (A')ⁿ[a, b] counts the number of walks between vertices a, b of
  * length n. Let i be the smallest natural number such that (A')ⁱ

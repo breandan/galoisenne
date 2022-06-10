@@ -29,13 +29,7 @@ fun prefAttach() =
         }
       }
       "k" in it.key -> if (graphs.size > 1) graphs.removeLastOrNull()
-      "j" in it.key -> graphs.add(graphs.last().prefAttach { degree ->
-        this + LGVertex(
-          label = size.toString(),
-          out = if (vertices.isEmpty()) emptySet()
-          else degMap.sample().take(degree.coerceAtMost(size)).toSet()
-        ).graph
-      })
+      "j" in it.key -> graphs.add(graphs.last().prefAttach())
     }
   }.also {
     document.body?.append?.p { +"Use k/j to grow graph, and l/h keys to evolve the graph..." }

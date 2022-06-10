@@ -20,6 +20,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   @JsName("G0") val G: (vertices: Set<V>) -> G // Graph constructor
   @JsName("E0") val E: (s: V, t: V) -> E // Edge constructor
   @JsName("V0") val V: (old: V, edgeMap: (V) -> Set<E>) -> V // Vertex constructor
+  fun V(out: Set<V>): V = TODO("Must override me if you want a fresh vertex")
 
   val deepHashCode: Int
   fun G() = G(setOf())

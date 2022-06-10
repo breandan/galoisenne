@@ -1,7 +1,13 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.types.cc
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.theory.prefAttach
+import ai.hypergraph.kaliningraph.types.*
 import kotlin.test.*
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TensorTest"
+*/
 
 class TensorTest {
   @Test
@@ -43,6 +49,19 @@ class TensorTest {
     val c = BooleanMatrix.random(3)
 
     assertEquals(a * (b + c), a * b + a * c)
+  }
+
+  @Test
+  fun testBooleanMatrixEigenvalues() {
+    val randomGraph = LabeledGraph { a }.prefAttach(numVertices = 9)
+    val adjMat = randomGraph.A.let { it + BooleanMatrix.one(it.numRows) }
+    println(adjMat)
+    val adjMatFP = adjMat.seekFixpoint { it * it }
+    println(adjMatFP)
+    for (i in 0..100) {
+      val randVec = BooleanMatrix.random(adjMat.numRows, 1)
+      assertEquals(adjMatFP * randVec, adjMatFP * adjMat * randVec)
+    }
   }
 
   @Test

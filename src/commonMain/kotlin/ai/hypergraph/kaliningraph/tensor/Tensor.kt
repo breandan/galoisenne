@@ -276,12 +276,11 @@ open class BooleanMatrix constructor(
     fun ones(size: Int) = BooleanMatrix(size) { _, _ -> true }
     fun zeroes(size: Int) = BooleanMatrix(size) { _, _ -> false }
     fun one(size: Int) = BooleanMatrix(size) { i, j -> i == j }
-    fun random(size: Int) = BooleanMatrix(size) { _, _ -> Random.nextBoolean() }
+    fun random(rows: Int, cols: Int = rows) = BooleanMatrix(rows, cols) { _, _ -> Random.nextBoolean() }
   }
 
-  override fun toString() = "\n" + data.foldIndexed("") { i, a, b ->
-    a + (if (b) 1 else 0) + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
-  }
+  override fun toString() =
+    data.chunked(numCols).joinToString("\n", "\n") { it.joinToString(" ") { if (it) "1" else "0" } }
 
   override fun new(numRows: Int, numCols: Int, data: List<Boolean>, alg: Ring<Boolean>) =
      BooleanMatrix(numRows, numCols, data, alg)
@@ -321,7 +320,7 @@ operator fun Double.times(value: DoubleMatrix): DoubleMatrix = value * this
 operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
-tailrec fun <T: FreeMatrix<S>, S> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
+tailrec fun <T: Matrix<S, A, M>, S, A, M> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
   val next = op(this)
   return if (this == next) next//.also { println("Converged in $i iterations") }
   else next.seekFixpoint(i + 1, op)

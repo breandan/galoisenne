@@ -30,7 +30,7 @@ interface AGFamily: IGF<Automaton, Transition, State> {
   override val G: (vertices: Set<State>) -> Automaton
     get() = { vertices -> Automaton(vertices) }
   override val E: (s: State, t: State) -> Transition
-    get() = {s, t -> Transition(s, t) }
+    get() = { s, t -> Transition(s, t) }
   override val V: (old: State, edgeMap: (State) -> Set<Transition>) -> State
     get() = { old, edgeMap -> State(old, edgeMap)}
 }
