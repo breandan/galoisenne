@@ -60,8 +60,8 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Formula =
-  if (data.size != that.data.size) throw Exception("Shape mismatch, incomparable!")
+infix fun FreeMatrix<List<Formula>>.valiantMatEq(that: FreeMatrix<List<Formula>>): Formula =
+  if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
   else data.zip(that.data)
     // Only compare nonempty bitvectors pairs
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
@@ -238,7 +238,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val parsingConstraints =
       isInGrammar(matrix) and
         uniquenessConstraints(holeVariables) and
-        (matrix matEq fixpoint)
+        (matrix valiantMatEq fixpoint)
 
     var (solver, solution) = parsingConstraints.let { f ->
       try { f.solveIncrementally() }

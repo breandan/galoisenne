@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.joinToScalar
+import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
 import org.logicng.formulas.*
@@ -9,6 +10,8 @@ import org.logicng.solvers.MiniSat
 
 val ff = FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
 fun BVar(name: String): Formula = ff.variable(name)
+fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
+  FreeMatrix(XOR_SAT_ALGEBRA, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)
 
 fun Formula.solve(): Map<Variable, Boolean> =
@@ -40,16 +43,17 @@ val F: Formula = ff.falsum()
 fun Formula.toBool() = "$this".drop(1).toBooleanStrict()
 
 // Only compare upper triangular entries of the matrix
-infix fun Matrix<Formula, *, *>.eqUT(that: Matrix<Formula, *, *>) =
+infix fun Matrix<Formula, *, *>.eqUT(that: Matrix<Formula, *, *>): Formula =
   joinToScalar(this, that, filter = { r, c -> r < c }, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
 infix fun Matrix<Formula, *, *>.eq(that: Matrix<Formula, *, *>) =
-  joinToScalar(this, that, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
+  if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
+  else joinToScalar(this, that, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
 infix fun Matrix<Formula, *, *>.neq(that: Matrix<Formula, *, *>) =
   (this eq that).negate()
 
-val XOR_SAT_ALGEBRA =
+val XOR_SAT_ALGEBRA=
   Ring.of(
     nil = F,
     one = T,

@@ -117,8 +117,8 @@ val GF2_ALGEBRA: Ring<Int> =
   Ring.of(
     nil = 0,
     one = 1,
-    plus = { a, b -> a + b % 2 },
-    times = { a, b -> a * b % 2 }
+    plus = { a, b -> (a + b) % 2 },
+    times = { a, b -> (a * b) % 2 }
   )
 
 private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
@@ -320,10 +320,20 @@ operator fun Double.times(value: DoubleMatrix): DoubleMatrix = value * this
 operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
-tailrec fun <T: Matrix<S, A, M>, S, A, M> T.seekFixpoint(i: Int = 0, op: (T) -> T): T {
+tailrec fun <T: Matrix<S, A, M>, S, A, M> T.seekFixpoint(
+  i: Int = 0,
+  hashCodes: List<Int> = listOf(hashCode()),
+  checkHistory: Boolean = false,
+  op: (T) -> T
+): T {
   val next = op(this)
-  return if (this == next) next//.also { println("Converged in $i iterations") }
-  else next.seekFixpoint(i + 1, op)
+  return if (this == next) next.also { println("Converged in $i iterations") }
+  else if(checkHistory) {
+    val hash = next.hashCode()
+    if (hash in hashCodes)
+      throw Exception("Cycle of length ${hashCodes.size - hashCodes.indexOf(hash)} detected!")
+    else next.seekFixpoint(i + 1, hashCodes + hash, true, op)
+  } else next.seekFixpoint(i + 1, op = op)
 }
 
 fun DoubleMatrix.toBMat(

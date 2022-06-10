@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.tensor.*
 import org.junit.jupiter.api.Test
+import org.logicng.formulas.Formula
 import kotlin.random.Random
 import kotlin.test.assertEquals
 
@@ -24,7 +25,7 @@ class SATTest {
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BLit(j == p[i]) }
     val P = BooleanMatrix(A.data.map { it.toBool() })
 //    println("Permutation matrix:$P")
-    val B = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BVar("B${i}_$j") }
+    val B = BMatVar("B", SAT_ALGEBRA, dim)
 
     val isInverse = (A * B * A) eq A
     val solution = isInverse.solve()
@@ -42,13 +43,27 @@ class SATTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testGF2Fixpoint"
+*/
+  @Test
+  fun testGF2Fixpoint() {
+    val dim = 5
+    val A: FreeMatrix<Formula> = BMatVar("a", XOR_SAT_ALGEBRA, dim)
+
+    val solution = ((A * A) eq A).solve()
+
+    val B = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]!! }).also { println(it) }
+    assertEquals(B, B * B)
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testUTXORMatFixpoint"
 */
    @Test
-   fun testUTXORMatFixpoint()  {
+   fun testUTXORMatFixpoint() {
      val dim = 20
      val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
-     val A = FreeMatrix(XOR_SAT_ALGEBRA, dim) { i, j ->
+     val A: FreeMatrix<Formula> = FreeMatrix(XOR_SAT_ALGEBRA, dim) { i, j ->
        if (i to j in setVars) BLit(true)
        else if (j >= i + 1) BVar("V${i}_$j")
        else BLit(false)
@@ -67,7 +82,6 @@ class SATTest {
      println("Decoding:\n$D")
 
      assertEquals(D, D + D * D)
-     println("Passed.")
   }
 
 
@@ -98,7 +112,6 @@ class SATTest {
     println("Decoding:\n${D.toString().replace("0", " ")}")
 
     assertEquals(D, D + D * D)
-    println("Passed.")
   }
 
 /*
@@ -142,13 +155,13 @@ class SATTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testMatEq"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testValiantMatEq"
 */
   @Test
-  fun testMatEq()  {
+  fun testValiantMatEq()  {
     val mvars = FreeMatrix(3) { r, c -> List(3) { BVar("R${r}_${c}_$it") } }
     val lits = FreeMatrix(3) { r, c -> List(3) { BLit(Random.nextBoolean()) } }
-    val testveq = mvars matEq lits
+    val testveq = mvars valiantMatEq lits
 
     val ts = testveq.solve()
     val solution = FreeMatrix(mvars.data.map { it.map { BLit(ts[it]!!) } })

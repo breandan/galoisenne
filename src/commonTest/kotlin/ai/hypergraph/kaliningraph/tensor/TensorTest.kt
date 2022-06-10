@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.graphs.LabeledGraph
-import ai.hypergraph.kaliningraph.theory.prefAttach
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.test.*
+import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TensorTest"
@@ -43,33 +43,22 @@ class TensorTest {
   }
 
   @Test
-  fun testBooleanMatrixDistributivity() {
-    val a = BooleanMatrix.random(3)
-    val b = BooleanMatrix.random(3)
-    val c = BooleanMatrix.random(3)
-
-    assertEquals(a * (b + c), a * b + a * c)
-  }
-
-  @Test
-  fun testBooleanMatrixEigenvalues() {
-    val randomGraph = LabeledGraph { a }.prefAttach(numVertices = 9)
-    val adjMat = randomGraph.A.let { it + BooleanMatrix.one(it.numRows) }
-    println(adjMat)
-    val adjMatFP = adjMat.seekFixpoint { it * it }
-    println(adjMatFP)
-    for (i in 0..100) {
-      val randVec = BooleanMatrix.random(adjMat.numRows, 1)
-      assertEquals(adjMatFP * randVec, adjMatFP * adjMat * randVec)
-    }
-  }
-
-  @Test
   fun testFreeMatrixMultiplicationAssociativity() {
     val a = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
     val b = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
     val c = FreeMatrix(algebra = INTEGER_FIELD, numRows = 2, data = listOf(0, 1, 2, 3))
 
     assertEquals(a * (b * c), (a * b) * c)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TensorTest.testGF2MatrixEigenvalues"
+*/
+
+  @Test
+  fun testGF2MatrixEigenvalues() {
+    val a = FreeMatrix(algebra = GF2_ALGEBRA, numRows = 10, data = List(100) { Random.nextInt(0, 5) % 2 })
+    println(a)
+    println(a.seekFixpoint(checkHistory = true) { it + it * it })
   }
 }
