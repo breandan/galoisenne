@@ -40,7 +40,7 @@ class TestBooleanMatrix {
   }
 
   @Test
-  fun testBooleanMatrixEigenvalues() {
+  fun testBooleanMatrixFixpoint() {
     val randomGraph = LabeledGraph { a }.prefAttach(numVertices = 9)
     val adjMat = randomGraph.A.let { it + BooleanMatrix.one(it.numRows) }
     println(adjMat)

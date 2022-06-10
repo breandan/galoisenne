@@ -1,6 +1,11 @@
 package ai.hypergraph.kaliningraph.sat
 
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.theory.prefAttach
+import ai.hypergraph.kaliningraph.times
+import ai.hypergraph.kaliningraph.types.A
+import ai.hypergraph.kaliningraph.types.A_AUG
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.random.Random
@@ -57,6 +62,50 @@ class SATTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testGF2Eigenvector"
+*/
+  @Test
+  fun testGF2Eigenvector() {
+    val dim = 10
+    val A: FreeMatrix<Formula> = FreeMatrix(XOR_SAT_ALGEBRA, List(dim * dim) { BLit(Random.nextBoolean()) })
+    val x: FreeMatrix<Formula> = BMatVar("a", XOR_SAT_ALGEBRA, dim, 1)
+
+    // Solves x != 0 in Ax = x
+    val solution = ((A * x) eq (x) and (x.data).reduce { acc, f -> f or acc }).solve()
+
+    val s = BooleanMatrix(dim, 1, x.data.map { solution[it]!! }, XOR_ALGEBRA).also { println(it) }
+    val a = BooleanMatrix(XOR_ALGEBRA, A.data.map { it == T })
+
+    assertEquals(a * s, s)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testBooleanEigenvector"
+*/
+  @Test
+  fun testBooleanEigenvector() {
+    val dim = 10
+    val A = BMatVar("a", SAT_ALGEBRA, dim, dim)
+    val x: FreeMatrix<Formula> = BMatVar("x", SAT_ALGEBRA, dim, 1)
+
+    // Solves x != 0 in Ax = x
+    val solution = (
+        (A * x) eq (x)
+        // Eliminates trivial symmetries
+        and (A neq A * A)
+        and (A neq A * A * A)
+        // Eliminates trivial eigenvectors
+        and x.data.reduce { acc, f -> acc or f }
+        and x.data.reduce { a, f -> a and f }.negate()
+    ).solve()
+
+    val a = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it]!! }).also { println(it * it * it) }
+    val s = BooleanMatrix(dim, 1, x.data.map { solution[it]!! }, BOOLEAN_ALGEBRA).also { println(it) }
+
+    assertEquals(a * s, s)
+  }
+
+  /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testUTXORMatFixpoint"
 */
    @Test

@@ -4,14 +4,17 @@ import ai.hypergraph.kaliningraph.joinToScalar
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
-import org.logicng.formulas.*
+import org.logicng.formulas.Formula
+import org.logicng.formulas.FormulaFactory
+import org.logicng.formulas.FormulaFactoryConfig
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
+import org.logicng.formulas.Variable
 import org.logicng.solvers.MiniSat
 
 val ff = FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
 fun BVar(name: String): Formula = ff.variable(name)
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
-  FreeMatrix(XOR_SAT_ALGEBRA, rows, cols) { i, j -> BVar("$name$i$j") }
+  FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)
 
 fun Formula.solve(): Map<Variable, Boolean> =
@@ -58,5 +61,13 @@ val XOR_SAT_ALGEBRA=
     nil = F,
     one = T,
     plus = { a, b -> a xor b },
+    times = { a, b -> a and b }
+  )
+
+val SAT_ALGEBRA =
+  Ring.of(
+    nil = BLit(false),
+    one = BLit(true),
+    plus = { a, b -> a or b },
     times = { a, b -> a and b }
   )

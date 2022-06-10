@@ -214,14 +214,6 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-val SAT_ALGEBRA =
-  Ring.of(
-    nil = BLit(false),
-    one = BLit(true),
-    plus = { a, b -> a or b },
-    times = { a, b -> a and b }
-  )
-
 fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
   cfg.let { if (allowNTs) it.generateStubs() else it }
      .run { synthesize(tokenize(this@synthesizeFrom), join) }
