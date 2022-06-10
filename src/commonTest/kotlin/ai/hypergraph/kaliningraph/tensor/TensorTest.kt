@@ -50,15 +50,4 @@ class TensorTest {
 
     assertEquals(a * (b * c), (a * b) * c)
   }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TensorTest.testGF2MatrixEigenvalues"
-*/
-
-  @Test
-  fun testGF2MatrixEigenvalues() {
-    val a = FreeMatrix(algebra = GF2_ALGEBRA, numRows = 10, data = List(100) { Random.nextInt(0, 5) % 2 })
-    println(a)
-    println(a.seekFixpoint(checkHistory = true) { it + it * it })
-  }
 }
