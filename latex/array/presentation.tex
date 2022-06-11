@@ -14,6 +14,7 @@
 \usepackage{bussproofs}
 \usepackage{hyperref}
 \usepackage{fontspec}
+\usepackage{array}
 \setmonofont{JetBrains Mono}[
     Contextuals = Alternate,
     Ligatures = TeX,
@@ -50,8 +51,8 @@
     escapechar=@
 }
 
-\title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
-\author[Considine, Guo, Si]{Breandan Considine, Jin Guo, Xujie Si}
+\title[Array Programming on $GF(2^n)$]{(Probabilistic) Array Programming on Galois Fields}
+\author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
     \medskip
@@ -130,7 +131,7 @@
             a \otimes b \coloneqq \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
         \]
 
-        \noindent We initialize $\mathbf{M}^0_{i,j}(\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
+        \noindent We initialize $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
 
         \vspace{-5}
         \[
@@ -204,19 +205,26 @@
         \frametitle{A few observations on algebraic parsing}
         \begin{itemize}
             \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
-            \item The $\otimes$ operator is (sadly) \textit{not} associative TODO: give example
-            \item Recognizer easily translated into a parser by storing backpointers
+            \item Recognizer can be translated into a parser by storing backpointers\\\\
+        \end{itemize}\vspace{0.2cm}
+        \begin{tabular}{ c c c }
+            \small{$\mathbf{M}_1 = \mathbf{M}_0 + \mathbf{M}_0^2$} & \small{$\mathbf{M}_2 = \mathbf{M}_1 + \mathbf{M}_1^2$} & \small{$\mathbf{M}_3 = \mathbf{M}_2 + \mathbf{M}_2^2 = \mathbf{M}_4$} \\
+            \includegraphics[trim=420 288 0 0,clip, width=3.6cm]{../figures/parse2.png} &
+            \includegraphics[trim=420 285 0 0,clip, width=3.6cm]{../figures/parse3.png} &
+            \includegraphics[trim=420 287 0 0,clip, width=3.63cm]{../figures/parse4.png}
+        \end{tabular}
+        \begin{itemize}
+            \item The $\otimes$ operator is \textit{not} associative: $S \otimes (S \otimes S) \neq (S \otimes S) \otimes S$
             \item Built-in error recovery: nonempty submatrices = parsable fragments
             \item \texttt{seekFixpoint \{ it + it * it \}} is sufficient but unnecessary
-            \item What if there were some way to solve for $\mathbf{M = M + M}^2$ directly?
-            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
-            \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$ (Lee, 1997)
+            \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary, could solve for $\mathbf{M = M}^2$ above superdiagonal
         \end{itemize}
     \end{frame}
 
     \begin{frame}[fragile]
         \frametitle{Satisfiability + holes (our contribution)}
         \begin{itemize}
+            \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Binarized CYK parser can be efficiently compiled to a SAT solver
             \item Supports sketch-based synthesis in the string or grammar
             \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
@@ -231,7 +239,7 @@
             \item In most cases, only a few nonterminals are active at any given time
             \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
             \item If density is desired, possible to use the Maculay representation
-            \item Set joins are an active topic of research in SQL query optimization
+%            \item Set joins are an active topic of research in SQL query optimization
             \item If you know of a more efficient encoding, please let us know!
         \end{itemize}
 
@@ -244,7 +252,10 @@
             \item Cocke–Younger–Kasami (1961) - Bottom-up matrix-based parsing
             \item \href{https://dl.acm.org/doi/10.1145/321239.321249}{Brzozowski (1964) - Derivatives of regular expressions}
             \item \href{https://dl.acm.org/doi/10.1145/362007.362035}{Earley (1968) - top-down dynamic programming (no CNF needed)}
-            \item \href{http://theory.stanford.edu/~virgi/cs367/papers/valiantcfg.pdf}{Valiant (1975) - realizes Boolean matrix multiplication correspondence}
+            \item \href{http://theory.stanford.edu/~virgi/cs367/papers/valiantcfg.pdf}{Valiant (1975) - first realizes the Boolean matrix correspondence}
+            \begin{itemize}
+                \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$, $\omega < 2.763$
+            \end{itemize}
             \item \href{https://www.cs.cornell.edu/home/llee/papers/bmmcfl-jacm.pdf}{Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction}
             \item \href{https://matt.might.net/papers/might2011derivatives.pdf}{Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)}
             \item \href{https://users.math-cs.spbu.ru/~okhotin/papers/formal_languages_gf2.pdf}{Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)}

@@ -1,6 +1,8 @@
 package ai.hypergraph.kaliningraph.sat
 
+import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
@@ -326,5 +328,23 @@ class SATValiantTest {
     println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
 
     assertTrue(isValid)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testAssociativity"
+*/
+  @Test
+  fun testAssociativity() {
+    val cfg = """
+      S -> S + S | S * S | S - S | S / S | ( S ) | S = S
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      S -> X | Y | Z
+    """.parseCFG().map { (l, r) ->
+      l.replace(START_SYMBOL, "S", ) to
+      r.map { it.replace(START_SYMBOL, "S") }
+    }.toSet()
+
+    val t = cfg.initialMatrix(cfg.tokenize("3 + 1 = 4"))
+    assertNotEquals(t * (t * t), (t * t) * t)
   }
 }
