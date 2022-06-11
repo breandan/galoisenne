@@ -26,8 +26,12 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   val numRows: Int
   val numCols: Int
 
-  operator fun plus(t: M): M = join(t) { i, j -> this@Matrix[i, j] + t[i, j] }
-  operator fun times(t: M): M = t.transpose.let { tt -> join(t) { i, j -> this@Matrix[i] dot tt[j] } }
+  operator fun plus(t: M): M =
+    safeJoin(t, criteria = shape() == t.shape()) { i, j -> this@Matrix[i, j] + t[i, j] }
+
+  operator fun times(t: M): M =
+    t.transpose.let { tt -> safeJoin(t, criteria = numCols == t.numRows) { i, j -> this@Matrix[i] dot tt[j] } }
+
   fun <Y> map(f: (T) -> Y): M = new(numRows, numCols, data.map(f) as List<T>)
 
   fun getElements(filterBy: (Int, Int) -> Boolean) =
@@ -39,16 +43,16 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 //      .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
 
   // Constructs a new instance with the same concrete matrix type
-  fun new(numRows: Int, numCols: Int, data: List<T>, alg: A = algebra): M
+  fun new(rows: Int = numRows, cols: Int = numCols, data: List<T>, alg: A = algebra): M
 // TODO = this::class.primaryConstructor!!.call(algebra, numRows, numCols, data) as M
 
-  fun join(
+  fun safeJoin(
     that: M,
     ids: Set<V2<Int>> = allPairs(numRows, that.numCols),
+    criteria: Boolean,
     op: A.(Int, Int) -> T
-  ): M = require(numCols == that.numRows) {
-    "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}"
-  }.let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
+  ): M = require(criteria) { "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}" }
+      .let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
 
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
@@ -144,9 +148,9 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
   }
 
   override fun toString() =
-    data.maxOf { it.toString().length + 2 }.let { pad ->
-      data.foldIndexed("") { i, a, b ->
-        a + "$b".padEnd(pad, ' ') + " " + if (i > 0 && (i + 1) % numCols == 0) "\n" else ""
+    "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
+      rows.joinToString("\n") {
+        it.mapIndexed { i, c -> "$c".padEnd(colWidth[i]) }.joinToString("  ",)
       }
     }
 
@@ -211,8 +215,7 @@ open class FreeMatrix<T> constructor(
     data = List(numRows * numCols) { f(it / numCols, it % numCols) }
   )
 
-  override fun new(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>) =
-    FreeMatrix(numRows, numCols, data, algebra)
+  override fun new(rows: Int, cols: Int, data: List<T>, alg: Ring<T>) = FreeMatrix(rows, cols, data, algebra)
 
   override fun toString() =
     "\n" + cols.map { it.maxOf { "$it".length } }.let { colWidth ->
@@ -273,8 +276,8 @@ open class BooleanMatrix constructor(
 
   companion object {
     fun grayCode(size: Int): BooleanMatrix = TODO()
-    fun ones(size: Int) = BooleanMatrix(size) { _, _ -> true }
     fun zeroes(size: Int) = BooleanMatrix(size) { _, _ -> false }
+    fun ones(size: Int) = BooleanMatrix(size) { _, _ -> true }
     fun one(size: Int) = BooleanMatrix(size) { i, j -> i == j }
     fun random(rows: Int, cols: Int = rows) = BooleanMatrix(rows, cols) { _, _ -> Random.nextBoolean() }
   }
@@ -282,8 +285,7 @@ open class BooleanMatrix constructor(
   override fun toString() =
     data.chunked(numCols).joinToString("\n", "\n") { it.joinToString(" ") { if (it) "1" else "0" } }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Boolean>, alg: Ring<Boolean>) =
-     BooleanMatrix(numRows, numCols, data, alg)
+  override fun new(rows: Int, cols: Int, data: List<Boolean>, alg: Ring<Boolean>) = BooleanMatrix(rows, cols, data, alg)
 }
 
 open class DoubleMatrix constructor(
@@ -305,15 +307,17 @@ open class DoubleMatrix constructor(
 
   constructor(vararg rows: Double) : this(rows.toList())
 
-  operator fun minus(that: DoubleMatrix): DoubleMatrix =
-    join(that) { i, j -> algebra.minus(this@DoubleMatrix[i, j], that[i][j]) }
+  operator fun minus(that: DoubleMatrix): DoubleMatrix = this + -1.0 * that
 
   companion object {
     fun random(size: Int) = DoubleMatrix(size) { _, _ -> Random.nextDouble() }
+    fun one(size: Int) = DoubleMatrix(size) { i, j -> if (i == j) 1.0 else 0.0 }
+    fun ones(size: Int) = DoubleMatrix(size) { _, _ -> 1.0 }
+    fun zeroes(size: Int) = DoubleMatrix(size) { _, _ -> 0.0 }
+    fun vector(vararg data: Double) = DoubleMatrix(1, data.size, data.toList(), DOUBLE_FIELD)
   }
 
-  override fun new(numRows: Int, numCols: Int, data: List<Double>, alg: Field<Double>) =
-    DoubleMatrix(numRows, numCols, data, alg)
+  override fun new(rows: Int, cols: Int, data: List<Double>, alg: Field<Double>) = DoubleMatrix(rows, cols, data, alg)
 }
 
 operator fun Double.times(value: DoubleMatrix): DoubleMatrix = value * this
@@ -324,16 +328,17 @@ tailrec fun <T: Matrix<S, A, M>, S, A, M> T.seekFixpoint(
   i: Int = 0,
   hashCodes: List<Int> = listOf(hashCode()),
   checkHistory: Boolean = false,
-  op: (T) -> T
+  stop: (Int, T, T) -> Boolean = { i, t, tt -> t == tt },
+  succ: (T) -> T
 ): T {
-  val next = op(this)
-  return if (this == next) next.also { println("Converged in $i iterations") }
+  val next = succ(this)
+  return if (stop(i, this, next)) next.also { println("Converged in $i iterations") }
   else if(checkHistory) {
     val hash = next.hashCode()
     if (hash in hashCodes)
       throw Exception("Cycle of length ${hashCodes.size - hashCodes.indexOf(hash)} detected!")
-    else next.seekFixpoint(i + 1, hashCodes + hash, true, op)
-  } else next.seekFixpoint(i + 1, op = op)
+    else next.seekFixpoint(i + 1, hashCodes + hash, true, stop, succ)
+  } else next.seekFixpoint(i + 1, stop = stop, succ = succ)
 }
 
 fun DoubleMatrix.toBMat(

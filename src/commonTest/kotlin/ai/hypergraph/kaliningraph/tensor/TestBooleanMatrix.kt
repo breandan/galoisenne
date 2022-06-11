@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TestBooleanMatrixMul"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TestBooleanMatrix"
 */
 class TestBooleanMatrix {
   @Test
