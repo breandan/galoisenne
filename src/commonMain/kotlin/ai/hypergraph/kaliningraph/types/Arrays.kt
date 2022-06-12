@@ -157,7 +157,7 @@ fun <E, Z : Q5<P>, P> VT<E, Z>.drop4(): VT<E, S<P>> = VT.of(len - S4, fetch(S4..
 @JvmName("sv221") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q1<Y>> VT<E, Z>.get(r: Pair<X, Y>): VT<E, L2> = VT.of(S2, fetch(r))
 @JvmName("sv222") operator fun <E, P, X: Q2<P>, Y: Q2<X>, Z : Q2<Y>> VT<E, Z>.get(r: Pair<X, Y>): VT<E, L2> = VT.of(S2, fetch(r))
 
-operator fun <A, B> S<A>.rangeTo(that: S<B>) = this to that
+operator fun <A, B> S<A>.rangeTo(that: S<B>): Pair<S<A>, S<B>> = this to that
 
 // ============================= Naperian Functors ==============================
 

@@ -123,7 +123,7 @@ fun testCFLValidationFails() {
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
-      val sols = "(____()____)".solve(cfg, fillers = cfg.alphabet + "")
+      val sols = "(____()____)".solve(cfg, fillers = cfg.terminals + "")
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -139,7 +139,7 @@ fun testCFLValidationFails() {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "__________".solve(CFG)
+      val sols = "________".solve(CFG)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
@@ -162,7 +162,7 @@ fun testCFLValidationFails() {
         val startTime = now()
         var totalChecked = 0
         val sols = template
-          .genCandidates(cfg, cfg.alphabet)
+          .genCandidates(cfg, cfg.terminals)
           .map { totalChecked++; it }
           .filter { it.matches(cfg) }.distinct()
           .takeWhile { now() - startTime < 20000 }.toList()
@@ -223,7 +223,7 @@ fun testCFLValidationFails() {
     """.parseCFG().let { cfg ->
       println(cfg)
       cfg.forEach { (_, b) -> assertContains(1..2, b.size) }
-      cfg.nonterminals.flatMap { it.π2 }.forEach { assertContains(cfg.variables, it) }
+      cfg.nonterminalProductions.flatMap { it.π2 }.forEach { assertContains(cfg.nonterminals, it) }
     }
   }
 

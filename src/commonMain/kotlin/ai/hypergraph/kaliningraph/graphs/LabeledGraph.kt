@@ -48,6 +48,8 @@ interface LGFamily: IGF<LabeledGraph, LabeledEdge, LGVertex> {
     get() = { vertices: Set<LGVertex> -> LabeledGraph(vertices) }
   override val V: (old: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) -> LGVertex
     get() = { old: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge> -> LGVertex(old, edgeMap ) }
+
+  override fun V(out: Set<LGVertex>) = LGVertex(label = randomString(), out = out)
 }
 
 // TODO: convert to/from other graph types

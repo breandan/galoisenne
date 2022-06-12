@@ -1,14 +1,20 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.joinToScalar
+import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
-import org.logicng.formulas.*
+import org.logicng.formulas.Formula
+import org.logicng.formulas.FormulaFactory
+import org.logicng.formulas.FormulaFactoryConfig
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
+import org.logicng.formulas.Variable
 import org.logicng.solvers.MiniSat
 
 val ff = FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
 fun BVar(name: String): Formula = ff.variable(name)
+fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
+  FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)
 
 fun Formula.solve(): Map<Variable, Boolean> =
@@ -18,14 +24,11 @@ fun Formula.solve(): Map<Variable, Boolean> =
     vars.associateWith { model.evaluateLit(it) }
   }
 
-fun Formula.solveIncremental(
+fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)
 ): Pair<MiniSat, Map<Variable, Boolean>> =
-  ff.let { ff ->
-    val vars = variables()
-    val model = miniSat.apply { add(this@solveIncremental); sat() }.model()
-    miniSat to vars.associateWith { model.evaluateLit(it) }
-  }
+  miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model()
+    .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
 // Ensures that at least one of the formulas in stale are fresh
 fun Map<Variable, Boolean>.areFresh() =
@@ -43,19 +46,28 @@ val F: Formula = ff.falsum()
 fun Formula.toBool() = "$this".drop(1).toBooleanStrict()
 
 // Only compare upper triangular entries of the matrix
-infix fun Matrix<Formula, *, *>.eqUT(that: Matrix<Formula, *, *>) =
+infix fun Matrix<Formula, *, *>.eqUT(that: Matrix<Formula, *, *>): Formula =
   joinToScalar(this, that, filter = { r, c -> r < c }, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
 infix fun Matrix<Formula, *, *>.eq(that: Matrix<Formula, *, *>) =
-  joinToScalar(this, that, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
+  if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
+  else joinToScalar(this, that, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
 infix fun Matrix<Formula, *, *>.neq(that: Matrix<Formula, *, *>) =
   (this eq that).negate()
 
-val XOR_SAT_ALGEBRA =
+val XOR_SAT_ALGEBRA=
   Ring.of(
     nil = F,
     one = T,
     plus = { a, b -> a xor b },
+    times = { a, b -> a and b }
+  )
+
+val SAT_ALGEBRA =
+  Ring.of(
+    nil = BLit(false),
+    one = BLit(true),
+    plus = { a, b -> a or b },
     times = { a, b -> a and b }
   )

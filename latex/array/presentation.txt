@@ -1,0 +1,138 @@
+Talk notes
+
+
+First, the bad news
+   - Two problems: human complexity of type-level programming and computational complexity.
+   - Types were never supposed to perform arbitrary computation
+      - Types are designed to quickly over-approximate admissible programs (and deterministically halt).
+      - We know from Gödel and Cantor that self-reference and unbounded recursion leads to madness
+      - We know from Church that Turing-equivalent systems (e.g., λ-calculus) are undecidable
+      - We know from Rice that any nontrivial property of a universal PL is undecidable
+      - Even bounded-length Turing machines are physically impossible:
+          - There exist length-5 Busy beavers which require galactic computation to decide
+      - Types ought to terminate, otherwise they are just computation with extra steps
+      - Undecidable type systems are just esoteric programming languages
+   - Designing type systems is hard, requires highly-specialized knowledge
+      - Java language designers spent 10 years designing generics
+      - Some of the brightest minds in Sun -- and they still got it wrong!
+
+Now the good news!
+   - Worst-case complexity appears to be relatively scarce in actual programs
+   - In practice, we know that typing works, and usually terminates quickly
+   - Turing Machines are spherical cows: a fictitious thought experiment
+   - All physically-realizable machines are somewhere between regular and context-sensitive
+   - This restricts expressiveness, but *not as much as you might think*
+   - Grammars allow us to encode a huge amount of information in a finite space
+   - Before there were such things as type systems, there were parsers
+   - Type systems are "just" parsers repackaged in a fancy notation
+   - I would argue the goal of the parser is first and foremost to reject inadmissible programs.
+   - In this talk, I am going to make an argument for type checking in the parser.
+   - Three advantages: computational complexity, ease of design and theoretical elegance
+
+What is algebraic parsing?
+   - As PL & CS researchers we hear a lot about TMs and λ-calculus
+   - There is a third model which is often forgotten. A much older model...
+   - We are the beneficiaries of an ancient (500+ YO) knowledge base
+   - Revealed at great expense by the finest analytical minds the world has ever produced
+   - Arithmetic was the original Turing Complete language
+   - Presburger arithmetic is decidable, Peano arithmetic is not
+   - The word problem on semigroups <=> the algebraic path problem on semirings
+   - Physically realizable computers are fundamentally algebraic
+   - If you can express your problem algebraically, miracles await
+   - Parsing is some kind of nested loop? A stack machine? No! Parsing is algebra
+   - Parsing is just for specifying syntax? No! Parsing is constrained computation
+   - The line between parsing and computation is very blurry
+
+Why matrix-based parsing?
+   - Sketch-based synthesis can be reduced to algebraic rootfinding
+   - Opens up a compilation pathway to linear algebraic techniques
+   - SPGEMMs can be evaluated on GPUs and ASICs very efficiently
+   - Subcubic multiplication algorithm (asymptotic optimality!)
+   - Boolean matrices are easily compilable to SAT solving
+   - Parallel type checking: we can compile types directly to circuits
+   - Lots of interesting research about discrete derivatives (PwD)
+   - Galois theory has deep connections to cryptography & ProbProg
+   - Reversible: we can go "forward", i.e., infer holes in code or "backward", i.e., solve for specification
+   - Many interesting possibilities for program synthesis!
+
+Annotated history of parsing
+   - Cocke–Younger–Kasami algorithm (1961) - bottom-up dynamic programming (CNF)
+   - Brzozowski (1964) - Derivatives of regular expressions
+   - Earley parser (1968) - top-down dynamic programming (does not require CNF)
+   - Valiant correspondence (1975) - lowers onto binary matrix multiplication
+   - Lee (1997) - Fast CFG Parsing <=> Fast BMM, formalizes reduction
+   - Melski & Reps (2002) - Interconvertibility between set constraints and CFL reachability
+   - Might et al. (2011) - Parsing with derivatives (extends Brzozowski to CFL)
+   - Okhotin et al. (2010-) - Formal languages over GF(2)
+   - Considine (2022) - Encodes Valiant into incremental SAT solver to fill holes
+
+Annotated history of types
+   - Types can encode simple state machines (give some examples)
+   - Canning et al. (1989) - discovers F-Bounded Polymorphism
+   - Hinze (2003) - Phantom types (useful for type-safe builders)
+   - Eder (2011) - Encodes relational algebra into jOOQ
+   - Erdős (2017) - Encodes Boolean logic into Java type system
+   - Nakamaru (2017) - Silverchain: fluent API generator
+   - Considine (2019) - Encodes shape-safe matrix multiplication into Kotlin∇
+   - Fling (2019) - Fling-A Fluent API Generator (fluent DSL parser generator)
+   - Roth (2021) - Encodes CFL into Subtyping Machine (Nominal Subtyping with Variance)
+       - Context free languages can be encoded straightforwardly in Java's type system
+   - Considine (2021) - Encodes type-level modular arithmetic into Kotlin using Shipshape
+   - Considine (2022) - Encodes Chinese dependent types into Kotlin using typelevel abacus
+   - Around that time, the following insight dawned upon the author...
+
+Type checking is parsing!
+   - Consider the following example:
+        Exp -> 0 | 1 | ... | T | F
+        Exp -> Exp Op Exp
+        Op -> and | or | + | *
+        Exp -> if ( Exp ) Exp else Exp
+   - Versus the typed version:
+        Exp<Bool> -> T | F | Exp<Bool> or Exp<Bool> | Exp<Bool> and Exp<Bool>
+        Exp<Bool> -> if ( Exp<Bool> ) Exp<Bool> else Exp<Bool>
+        Exp<Int> -> 0 | 1 | ... | Exp<Int> + Exp<Int> | Exp<Int> * Exp<Int>
+    - Versus the polymorphic version:
+        Exp<Int> -> 0 | 1 | ...
+        Exp<Bool> -> T | F
+        Exp<T> -> Exp<T> Op<T> Exp<T> // Ts must match!
+        Op<Boolean> -> and | or
+        Op<Int> -> + | *
+        Exp<T> -> if ( Exp<Bool> ) Exp<T> else Exp<T>
+
+Probabilistic programming
+   - W/PCFGs are the probabilistic analog
+   - DAGs => give us Bayesian networks
+   - PPLs are based on PRNGs but mention them only passingly...?!
+        - An Introduction to Probabilistic Programming van de Meent et al. (2018): 3 mentions
+        - Foundations of Probabilistic Programming Barthe et al. (2020): 1 mention
+   - If you care about reproducibility, you must understand PRNGs
+   - PRNGs are based on Galois theory
+   - Characteristic polynomial is called "primitive", this ensures:
+       - LFSR: Maximal periodicity + ergodicity
+   - How do we discover characteristic polynomials? Algebraic number theory!
+   - Finite fields have deep connections to signal processing, error correcting codes, cryptography
+   - Idea: factor PPLs into graphical and stochastic components
+
+What is the point of this talk?
+   - Algebraists have developed a powerful language for rootfinding
+       - Tradition starting with Euler through Galois to Kantorovich
+       - We have "closed forms" for computing exponentials of structured matrices
+          - Characteristic polynomials, companion matrices, eigenvalues
+       - These forms are *much faster* than powering the matrix iteratively
+   - Many problems in PL theory and graph theory can be reduced to rootfinding
+       - Context free parsing is just rootfinding on a semiring algebra
+       - Subtyping sans recursive types is just graph reachability
+       - Unification/simplification is lazy hypergraph search
+       - Bounded program synthesis is matrix factorization/completion
+   - By doing so, we can exploit well-known algebraic techniques
+
+Future Directions
+   - Look into Markov chains (detailed balance, stationarity, reversibility)
+   - Investigate connection between dynamical systems and term rewrite systems
+       - Extend this work to context-sensitive grammars
+   - What is the connection to Leibnizian differentiability?
+       - Can we interpret gradients and derivatives ∂F, ∇F, ∇×F?
+   - What is the meaning of abstract algebraic eigenvalues?
+   - Look into probabilistic grammars, e.g., PCFGs
+       - Diffusion models have a very natural interpretation on graphs
+   - Look into optimization (e.g., LP/MILP/QP) to rank feasible set

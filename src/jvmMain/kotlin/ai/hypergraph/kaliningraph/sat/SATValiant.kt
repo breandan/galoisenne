@@ -6,77 +6,108 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
+import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
+import org.logicng.formulas.Variable
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
-  List(left.size) { i ->
-    bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> (left[variables.indexOf(B)] and right[variables.indexOf(C)]) }
+  if (left.isEmpty() || right.isEmpty()) emptyList()
+  else List(left.size) { i ->
+    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
-@JvmName("joinBool")
+@JvmName("joinBitVector")
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
-  List(left.size) { i ->
-    bimap[variables.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> (left[variables.indexOf(B)] and right[variables.indexOf(C)]) }
+  if (left.isEmpty() || right.isEmpty()) emptyList()
+  else List(left.size) { i ->
+    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
+fun CFG.maybeJoin(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) null else join(left, right)
+
+fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) { left ?: right }
+  else if (left.isEmpty() && right.isNotEmpty()) right
+  else if (left.isNotEmpty() && right.isEmpty()) left
+  else left.zip(right) { l, r -> l or r }
+
+@JvmName("satFormulaUnion")
 infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
-  List(size) { i -> this[i] or that[i] }
+  if (isEmpty()) that else if (that.isEmpty()) this
+  else List(size) { i -> this[i] or that[i] }
 
 fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
 
-fun CFG.toBitVec(nonterminals: Set<String>): List<Boolean> = variables.map { it in nonterminals }
-fun CFG.toNTSet(nonterminals: List<Boolean>): Set<String> =
-  nonterminals.mapIndexedNotNull { i, it -> if(it) variables.elementAt(i) else null }.toSet()
+fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
+fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
+  nts.mapIndexedNotNull { i, it -> if(it) nonterminals.elementAt(i) else null }.toSet()
 
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
-  mapIndexedNotNull { i, it -> if(it) cfg.variables.elementAt(i) else null }.toSet()
+  mapIndexedNotNull { i, it -> if(it) cfg.nonterminals.elementAt(i) else null }.toSet()
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
-  zip(that).map { (a, b) -> a eq b }.reduce { acc, satf -> acc and satf }
+  if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
+  else zip(that)
+    .partition { (l, r) -> l == r }
+    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
+    .second.map { (a, b) -> a eq b }
+    .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun FreeMatrix<List<Formula>>.matEq(that: FreeMatrix<List<Formula>>): Formula =
-  data.zip(that.data).map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
-
-infix fun FreeMatrix<List<Formula>>.fixedpointMatEq(that: FreeMatrix<List<Formula>>): Formula =
-  List(numRows - 2) {
-    i -> List(numCols - i - 2) { j -> this[i, i + j + 2] vecEq that[i, i + j + 2] }
-        .reduce { acc, satf -> acc and satf }
-  }.reduce { acc, satf -> acc and satf }
+infix fun FreeMatrix<List<Formula>>.valiantMatEq(that: FreeMatrix<List<Formula>>): Formula =
+  if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
+  else data.zip(that.data)
+    // Only compare nonempty bitvectors pairs
+    .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+    // Only compare bitvector pairs which are not trivially identical
+    .partition { (l, r) -> l.zip(r).all { (a, b) -> a == b } }
+    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
+    .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
-  mat[0].last()[variables.indexOf(START_SYMBOL)]
+  mat[0].last()[nonterminals.indexOf(START_SYMBOL)]
 
 // Encodes the constraint that a bit-vector representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
 // grammar, the bitvector must not have the configuration [A=1 B=1 C=0 D=1],
 // it should be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
-  // terminal        set of nonterminals it can represent
-  alphabet.map { bimap[listOf(it)] }.map { nts ->
-    val (insiders, outsiders) = variables.partition { it in nts }
-    (insiders.map { nt -> bitvec[variables.indexOf(nt)] } + // All of these
-      outsiders.map { nt -> bitvec[variables.indexOf(nt)].negate() }) // None of these
-      .reduce { acc, satf -> acc and satf }
+  // terminal        possible nonterminals it can represent
+  terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
+    val (insiders, outsiders) = bitvec.join(nonterminals).partition { it in possibleNTs }
+    (insiders + outsiders.map { it.negate() }).reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
+
+// Returns list elements matching the intersection between set and on (indexed by on)
+fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
+  if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
+  else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
 // Encodes that each blank can only be one nonterminal
 fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 
+fun CFG.makeSATLitAlgebra(): Ring<List<Boolean>?> =
+  Ring.of(
+    nil = List(nonterminals.size) { false },
+    plus = { x, y -> maybeUnion(x, y) },
+    times = { x, y -> maybeJoin(x, y) }
+  )
+
 fun CFG.makeSATAlgebra() =
-    Ring.of(
-      nil = List(variables.size) { F },
-      one = List(variables.size) { T },
-      plus = { a, b -> a union b },
-      times = { a, b -> join(a, b) }
-    )
+  Ring.of(
+    nil = List(nonterminals.size) { F },
+    one = List(nonterminals.size) { T },
+    plus = { a, b -> a union b },
+    times = { a, b -> join(a, b) }
+  )
 
 fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
   data.map {
@@ -86,44 +117,92 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
 
 fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTML()
 
-fun CFG.constructSATMatrix(
-  words: List<String>,
+fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
+
+/*
+Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
+It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
+Lee shows that a faster procedure for BMM would automatically give a fast
+procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
+BMM, encoding to SAT becomes straightforward using Tseitin (1968).
+
+Lower this matrix onto SAT. Steps:
+  1.) Encode CFL as BMM.
+  2.) Symbolically evaluate BMM to get a Boolean formula.
+  3.) Encode symbolic Boolean formula as CNF using Tsetin.
+  4.) Run SAT solver and decode variable assignments.
+
+  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
+  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
+ */
+
+fun CFG.constructInitialMatrix(
+  tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
+  // Precompute permanent upper right triangular submatrices
+  literalMatrix: FreeMatrix<List<Boolean>?> =
+    FreeMatrix(makeSATLitAlgebra(), tokens.size + 1) { r, c ->
+      if (r + 1 == c) {
+        val word = tokens[c - 1]
+        if (tokens[c - 1].isHoleToken()) null
+        else bimap[listOf(word)].let { nts -> nonterminals.map { it in nts } }
+      } else emptyList()
+    }
+      //.also { println("Literal matrix:\n${it.summarize()}") }
+      .seekFixpoint { it + it * it },
+  formulaMatrix: FreeMatrix<List<Formula>> =
+    FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
+      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
+        val word = tokens[c - 1]
+        if (word == "_")
+          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
+            .also { holeVariables.add(it) } // Blank
+        else setOf(word.drop(1).dropLast(1))
+           .let { nts -> nonterminals.map { BLit(it in nts) } } // Terminal
+      } else if (r + 1 <= c) { // Strictly upper triangular matrix entries
+        val permanentBitVec = literalMatrix[r, c]
+        if (permanentBitVec.isNullOrEmpty())
+          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
+        else permanentBitVec.map { if (it) T else F }
+      } else emptyList()
+    }
 ): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-    FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-      if (c == r + 1) {
-        val word = words[c - 1]
-        if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-          .also { holeVariables.add(it) } // Blank
-        else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      } else List(variables.size) { F }
-    } to holeVariables
+    (formulaMatrix
+//  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
+    to holeVariables)
 
-fun CFG.constructInitFixedpointMatrix(
-        words: List<String>,
-        holeVariables: MutableList<List<Formula>> = mutableListOf(),
-): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
-    FreeMatrix(makeSATAlgebra(), words.size + 1) { r, c ->
-      if (c == r + 1) {
-        val word = words[c - 1]
-        if (word == "_") List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-                .also { holeVariables.add(it) } // Blank
-        else if (word.startsWith("<") && word.endsWith(">"))
-            setOf(word.drop(1).dropLast(1)).let { nts -> variables.map { BLit(it in nts) } } // Terminal
-        else bimap[listOf(word)].let { nts -> variables.map { BLit(it in nts) } } // Terminal
-      } else if (c > r + 1) {
-          List(variables.size) { k -> BVar("B_${r}_${c}_$k") }
-      }
-      else List(variables.size) { BLit(false) }
-    } to holeVariables
+@JvmName("summarizeBooleanMatrix")
+fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
+  map {
+    when {
+      it == null -> "?"
+      it.toString().length < 5 -> ""
+//      else -> "C"
+      else -> "${cfg.toNTSet(it)}".replace("START", "S")
+    }
+  }.toString()
 
+@JvmName("summarizeFormulaMatrix")
+fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
+  map {
+    when {
+      it.isEmpty() -> ""
+      it.all { it is Variable } -> "V[${it.size}]"
+      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T })}]"
+//      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
+      it.any { it is Variable } -> "M"
+      else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"
+    }
+  }.toString()
+
+// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
-  bitvec.mapIndexedNotNull { i, it -> if (it) variables.elementAt(i) else null }.toSet()
+  bitvec.mapIndexedNotNull { i, it -> if (it) nonterminals.elementAt(i) else null }.toSet()
 
 fun CFG.terminal(
   bitvec: List<Boolean>,
   nonterminals: Set<String> = nonterminals(bitvec)
-): String? = alphabet.firstOrNull { word -> bimap[listOf(word)] == nonterminals }
+): String? = terminals.firstOrNull { word -> bimap[listOf(word)] == nonterminals }
 
 // Summarize fill structure of bit vector variables
 fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
@@ -135,51 +214,36 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-val SAT_ALGEBRA =
-  Ring.of(
-    nil = BLit(false),
-    one = BLit(true),
-    plus = { a, b -> a or b },
-    times = { a, b -> a and b }
-  )
+fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
+  cfg.let { if (allowNTs) it.generateStubs() else it }
+     .run { synthesize(tokenize(this@synthesizeFrom), join) }
 
-fun <T> Set<T>.encodeAsMatrix(
-  universe: Set<T>,
-  rows: Int,
-  cols: Int = universe.size,
-): FreeMatrix<Formula> =
-  FreeMatrix(SAT_ALGEBRA, rows, cols) { i, j ->
-    BLit(if (size <= i) false else elementAt(i) == universe.elementAt(j))
-  }
-
-fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
+private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
-    val words: List<String> = this@synthesizeFromFPSolving
+    val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
-    val (fixpointMatrix, holeVariables) = cfg.constructInitFixedpointMatrix(words)
+    val fixpoint = matrix * matrix
+//    println(fixpoint.summarize(this@synthesize))
 
-    val valiantParses = cfg.run {
-      cfg.isInGrammar(fixpointMatrix) and
+    // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
+    //       nonterminal in the original string to reduce fixedpoint matrix size.
+    val parsingConstraints =
+      isInGrammar(matrix) and
         uniquenessConstraints(holeVariables) and
-        (fixpointMatrix fixedpointMatEq (fixpointMatrix * fixpointMatrix))
-    }
+        (matrix valiantMatEq fixpoint)
 
-    var (solver, solution) = valiantParses.let {
-        try { it.solveIncremental() } catch (npe: NullPointerException) { return@sequence }
+    var (solver, solution) = parsingConstraints.let { f ->
+      try { f.solveIncrementally() }
+      catch (npe: NullPointerException) { return@sequence }
     }
     var isFresh = T
     while (true)
       try {
-//        val fpMatrix = FreeMatrix(
-//          fixpointMatrix.data.map { bitVec -> bitVec.map { solution[it] ?: false } }
-//            .map { cfg.terminal(it) ?: "" }
-//        )
-//        println(fpMatrix)
+        val fillers = holeVariables.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-        val fillers = holeVariables.map { bitVec -> bitVec.map { solution[it]!! } }
-          .map { cfg.terminal(it) }.toMutableList()
-
-        yield(words.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
+//        val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+//        println(bMat.summarize(this@synthesize))
+        yield(tokens.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
 
         val holes = holeVariables.flatten()
         isFresh = isFresh and solution.filter { it.key in holes }.areFresh()
@@ -190,7 +254,3 @@ fun List<String>.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<
 
     ff.clear()
   }
-
-fun String.synthesizeFromFPSolving(cfg: CFG, join: String = ""): Sequence<String> =
-    split(" ").let { if (it.size == 1) map { "$it" } else it }
-        .filter(String::isNotBlank).synthesizeFromFPSolving(cfg, join)

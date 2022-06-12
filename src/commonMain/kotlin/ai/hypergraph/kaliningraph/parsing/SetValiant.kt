@@ -11,14 +11,15 @@ typealias CFG = Set<Production>
 
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() =
-  second.let { if(it.size == 1) it.map { it.stripEscapeChars() } else it }
-val CFG.symbols: Set<String> by cache { variables + alphabet }
-val CFG.alphabet: Set<String> by cache { terminals.flatMap { it.RHS }.toSet() }
-val CFG.variables: Set<String> by cache { map { it.LHS }.toSet() }
-val CFG.nonterminals: Set<Production> by cache { filter { it !in terminals } }
+  second.let { if(it.size == 1) it.map(String::stripEscapeChars) else it }
+val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
+val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
+val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
+val CFG.terminals: Set<String> by cache { symbols - nonterminals }
+val CFG.terminalUnitProductions: Set<Production>
+    by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
+val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
-val CFG.terminals: Set<Production>
-  by cache { filter { it.RHS.size == 1 && it.RHS[0] !in variables }.toSet() }
 val CFG.normalForm: CFG by cache { normalize() }
 
 // Maps variables to expansions and expansions to variables in a Grammar
@@ -43,7 +44,7 @@ fun CFG.prettyPrint(cols: Int = 4): String =
  * over all holes takes O(|Σ|^n) where n is the number of holes.
  */
 
-fun String.solve(CFG: CFG, fillers: Set<String> = CFG.alphabet): Sequence<String> =
+fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
   genCandidates(CFG, fillers).filter {
     (it.matches(CFG) to it.dyckCheck()).also { (valiant, stack) ->
       // Should never see either of these statements if we did our job correctly
@@ -54,7 +55,7 @@ fun String.solve(CFG: CFG, fillers: Set<String> = CFG.alphabet): Sequence<String
 
 val HOLE_MARKER = '_'
 
-fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.alphabet) =
+fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
       if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
@@ -78,14 +79,14 @@ fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull()
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun makeAlgebra(CFG: CFG): Ring<Set<Tree>> =
+fun CFG.makeAlgebra(): Ring<Set<Tree>> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
     // x + y = x ∪ y
     plus = { x, y -> x union y },
     // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
-    times = { x, y -> CFG.treeJoin(x, y) }
+    times = { x, y -> treeJoin(x, y) }
   )
 
 fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
@@ -99,27 +100,18 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
-  FreeMatrix(makeAlgebra(this), str.size + 1) { i, j ->
+  FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
     else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
   }
 
-/*
-Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
-It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
-Lee shows that a faster procedure for BMM would automatically give a fast
-procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
-BMM, encoding to SAT becomes straightforward using Tseitin (1968).
+fun String.splitKeeping(str: String): List<String> =
+    split(str).flatMap { listOf(it, str) }.dropLast(1)
 
-TODO: Lower this matrix onto SAT. Steps:
-  1.) Encode CFL as BMM.
-  2.) Symbolically evaluate BMM to get a Boolean formula.
-  3.) Encode symbolic Boolean formula as CNF using Tsetin.
-  4.) Run SAT solver and decode variable assignments.
-
-  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
-  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
- */
+fun CFG.tokenize(str: String): List<String> =
+    delimiters.fold(listOf(str)) { l, delim ->
+        l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
+    }.filter(String::isNotBlank)
 
 /**
  * Checks whether a given string is valid by computing the transitive closure
@@ -128,16 +120,13 @@ TODO: Lower this matrix onto SAT. Steps:
  */
 
 fun CFG.isValid(str: String): Boolean =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let { START_SYMBOL in parse(it).map { it.root } }
+  tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
 fun CFG.parseForest(str: String): Set<Tree> =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::solveFixedpoint)[0].last()
+  tokenize(str).let(::solveFixedpoint)[0].last()
 
 fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> =
-  str.split(" ").let { if (it.size == 1) str.map { "$it" } else it }
-    .filter(String::isNotBlank).let(::solveFixedpoint)
+  tokenize(str).let(::solveFixedpoint)
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
@@ -169,9 +158,9 @@ fun String.parseCFG(
 
 fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
 
-fun CFLCFL(names: Map<String, String>) = """
-    START -> CFL
-    CFL -> PRD | CFL \n CFL
+fun CFGCFG(names: Map<String, String>) = """
+    START -> CFG
+    CFG -> PRD | CFG \n CFG
     PRD -> VAR `->` RHS
     VAR -> ${names.values.joinToString(" | ")}
     RHS -> VAR | RHS RHS | RHS `|` RHS
@@ -181,15 +170,16 @@ fun String.validate(
   presets: Set<String> = setOf("|", "->"),
   ws: Regex = Regex("\\s+"),
   tokens: List<String> = split(ws).filter { it.isNotBlank() && it !in presets },
-  nameDict: Map<String, String> =
+  names: Map<String, String> =
     freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
-  names: Map<String, String> = nameDict
 ): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
   .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
-  .let { if (CFLCFL(names).isValid(it)) this else throw Exception("!CFL: $it") }
+  .let { if (CFGCFG(names).isValid(it)) this else throw Exception("!CFL: $it") }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
+// TODO: Implement denormalization / original parse tree recovery
+// https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
@@ -197,7 +187,6 @@ private fun CFG.normalize(): CFG =
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
-    .generateStubs()
 
 val START_SYMBOL = "START"
 
@@ -212,13 +201,13 @@ fun String.dyckCheck() =
     stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
   }.isEmpty()
 
-private fun CFG.generateStubs() =
+fun CFG.generateStubs() =
   this + filter { "`" !in it.LHS && "." !in it.LHS }
       .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 private fun CFG.addGlobalStartSymbol() = this +
-  if (START_SYMBOL in variables) emptySet()
-  else variables.map { START_SYMBOL to listOf(it) }
+  if (START_SYMBOL in nonterminals) emptySet()
+  else nonterminals.map { START_SYMBOL to listOf(it) }
 
 // Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFG.expandOr(): CFG =
@@ -260,15 +249,16 @@ private fun CFG.reachableSymbols(
   src: List<String> = listOf(START_SYMBOL),
   reachables: Set<String> = src.toSet()
 ): Set<String> = if (src.isEmpty()) reachables else filter { it.LHS in src }
-  .flatMap { (_, rhs) -> rhs.filter { it in variables && it !in reachables } }
+  .flatMap { (_, rhs) -> rhs.filter { it in nonterminals && it !in reachables } }
   .let { reachableSymbols(it, reachables + it) }
 
 private fun CFG.generatingSymbols(
-  from: List<String> = terminals.flatMap { it.RHS },
+  from: List<String> = terminalUnitProductions.flatMap { it.RHS },
   generating: Set<String> = from.toSet()
-): Set<String> = if (from.isEmpty()) generating
-else filter { it.LHS !in generating && it.RHS.all { it in generating } }
-  .map { it.LHS }.let { generatingSymbols(it, generating + it) }
+): Set<String> =
+  if (from.isEmpty()) generating
+  else filter { it.LHS !in generating && it.RHS.all { it in generating } }
+    .map { it.LHS }.let { generatingSymbols(it, generating + it) }
 
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
@@ -276,8 +266,8 @@ else filter { it.LHS !in generating && it.RHS.all { it in generating } }
  * After elimination: (A -> c, A -> d, B -> c, B -> d)
  */
 private tailrec fun CFG.elimVarUnitProds(
-  toVisit: Set<String> = variables,
-  vars: Set<String> = variables,
+  toVisit: Set<String> = nonterminals,
+  vars: Set<String> = nonterminals,
   toElim: String? = toVisit.firstOrNull()
 ): CFG {
   fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
@@ -301,8 +291,8 @@ private tailrec fun CFG.refactorRHS(): CFG {
 
 // Replaces terminals in non-unit productions, e.g., (A -> bC) -> (A -> BC, B -> b)
 private tailrec fun CFG.terminalsToUnitProds(): CFG {
-  val mixProd = nonterminals.firstOrNull { it.RHS.any { it !in variables } } ?: return this
-  val termIdx = mixProd.RHS.indexOfFirst { it !in variables }
+  val mixProd = nonterminalProductions.firstOrNull { it.RHS.any { it !in nonterminals } } ?: return this
+  val termIdx = mixProd.RHS.indexOfFirst { it !in nonterminals }
   val freshName = "F." + mixProd.RHS[termIdx]
   val freshRHS = mixProd.RHS.toMutableList().also { it[termIdx] = freshName }
   val newProd = freshName to listOf(mixProd.RHS[termIdx])

@@ -1,7 +1,13 @@
 package ai.hypergraph.kaliningraph.tensor
 
-import ai.hypergraph.kaliningraph.types.cc
-import kotlin.test.*
+import ai.hypergraph.kaliningraph.types.*
+import kotlin.random.Random
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TensorTest"
+*/
 
 class TensorTest {
   @Test
@@ -34,15 +40,6 @@ class TensorTest {
     println("Query: $condProb")
 
     println(spt.toString())
-  }
-
-  @Test
-  fun testBooleanMatrixDistributivity() {
-    val a = BooleanMatrix.random(3)
-    val b = BooleanMatrix.random(3)
-    val c = BooleanMatrix.random(3)
-
-    assertEquals(a * (b + c), a * b + a * c)
   }
 
   @Test

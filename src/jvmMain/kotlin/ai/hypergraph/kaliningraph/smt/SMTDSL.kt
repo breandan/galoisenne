@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.smt
 
 import ai.hypergraph.kaliningraph.joinToScalar
 import ai.hypergraph.kaliningraph.sampling.randomString
+import ai.hypergraph.kaliningraph.sat.BLit
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import com.google.common.collect.ImmutableList
@@ -34,14 +35,6 @@ class SMTInstance(
       one = Literal(1),
       plus = { a, b -> a + b },
       times = { a, b -> a * b }
-    )
-
-  val XOR_SAT_ALGEBRA =
-    Ring.of(
-      nil = Literal(false),
-      one = Literal(true),
-      plus = { a, b -> a xor b },
-      times = { a, b -> a and b }
     )
 
   val GF2_SMT_ALGEBRA =
