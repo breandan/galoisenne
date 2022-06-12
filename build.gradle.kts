@@ -96,8 +96,8 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-          implementation(kotlin("stdlib-common"))
-          implementation(kotlin("reflect"))
+        implementation(kotlin("stdlib-common"))
+        implementation(kotlin("reflect"))
       }
     }
 
@@ -122,7 +122,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.1.0")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.2.0")
@@ -132,7 +132,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:3.2.0")
+        implementation("org.apache.datasketches:datasketches-java:3.3.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -150,10 +150,10 @@ kotlin {
 
         implementation("org.sosy-lab:java-smt:3.12.0")
 
-        //val libZ3Version = "4.8.10"
-        //implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
-        //implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3@so")
-        //implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
+        // val libZ3Version = "4.8.15"
+        // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
+        // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3@so")
+        // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         implementation("org.logicng:logicng:2.2.0")
@@ -208,7 +208,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
       }
     }
   }
