@@ -15,6 +15,8 @@
 \usepackage{hyperref}
 \usepackage{fontspec}
 \usepackage{array}
+\usepackage{bm}
+\usepackage{emoji}
 \setmonofont{JetBrains Mono}[
     Contextuals = Alternate,
     Ligatures = TeX,
@@ -58,7 +60,7 @@
     escapechar=@
 }
 
-\title[Array Programming on $GF(2^n)$]{(Probabilistic) Array Programming on Galois Fields}
+\title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
@@ -276,7 +278,7 @@
         \end{itemize}
     \end{frame}
 
-    \section{Typelevel Abacus}
+    \section{Typelevel Arithmetic}
 
     \begin{frame}
         \frametitle{Abacus arithmetic}
@@ -498,32 +500,36 @@
             \end{pmatrix}
         \]\\
 
-        Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a \textit{primitive polynomial} generates an ergodic sequence over GF$(2^n)$ with full periodicity: $\mathbf{V} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}$.
+        Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} generates an ergodic sequence over GF$(2^n)$ with full periodicity:\\
+
+        \[
+        \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
+        \]
     \end{frame}
 
     \begin{frame}[fragile]
         \frametitle{Linear finite state registers}
         \begin{verbatim}
-P = 21 = 1  0  1  0  1          a  b  c  d  e     s0
-         ∥  ∥  ∥  ∥  ∥          1  0  0  0  0     s1
-         a  b  c  d  e          0  1  0  0  0  *  s2
-   ╭──── ⊕ ─── ⊕ ────╮          0  0  1  0  0     s3
-   │     │     │     │          0  0  0  1  0     s4
-   1 ──► 0  1  0  1  1 ──►
- "taps" ─┴─────┴─────╯                M        *  S
-
-                                S₄ = M … S₂ = M * S₁
+          1  +  x³ +  x⁵        a  b  c  d  e     V₁
+ P = 18 = 0  0  1  0  1         1  0  0  0  0     V₂
+          ∥  ∥  ∥  ∥  ∥         0  1  0  0  0  *  V₃
+          a  b  c  d  e         0  0  1  0  0     V₄
+    ╭────────── ⊗ ────╮         0  0  0  1  0     V₅
+    │           │     │
+    0 ──► 1  0  1  1  1 ──►           M        *  V
+                ╰──┬──╯
+                "taps"          S₄ = M … S₁ = M * V
                                 ∥        ∥        ∥
-    S₀ = 0  1  0  1  1          0        0        1
-    S₁ = 1  0  1  0  1          0        1        0
-    S₂ = 0  1  0  1  0          0        0        1
-    S₃ = 0  0  1  0  1          1        1        0
-    S₄ = 0  0  0  1  0          0        0        1
+    S₀ = 1  0  1  1  1          0        0        1
+    S₁ = 0  1  0  1  1          0        1        0
+    S₂ = 1  0  1  0  1          1        0        1
+    S₃ = 0  1  0  1  0          0        1        1
+    S₄ = 0  0  1  0  1          1        0        1
         \end{verbatim}
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Multidimensional sampling}
+        \frametitle{Multidimensional sampling: the hasty pudding trick}
         \definecolor{R}{RGB}{202,65,55}
         \definecolor{G}{RGB}{151,216,56}
         \definecolor{B}{RGB}{0,0,0}
@@ -566,7 +572,8 @@ P = 21 = 1  0  1  0  1          a  b  c  d  e     s0
 
         \bgroup
 
-        \begin{tabular}{ c l{0.4\textwidth}}
+        \begin{figure}
+        \hspace{-0.5cm}\begin{minipage}[l]{5cm}
         \begin{tikzpicture}
         \clip (-3,-2.5) rectangle (3,2.5);
         \begin{scope}[tdplot_main_coords]
@@ -603,61 +610,49 @@ P = 21 = 1  0  1  0  1          a  b  c  d  e     s0
             \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
             (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $|\Sigma|$};
         \end{scope}
-            \end{tikzpicture} & \begin{itemize}
-                                             \item Suppose we wanted to sample n-grams.\\
-                                             \item LFSRs sample without replacement from indexed families $S_V$ in $\mathcal{O}(\log |S|)$ space and $\mathcal{O}(1)$ time.\\
-                                             \item Suppose we had a rank-n tensor. We could keep track of the visited entries manually (expensive). Or, we can form a bijection with GF(2^n)\\
-        \end{itemize}\\
-        \end{tabular}
+        \end{tikzpicture}
+        \end{minipage}\hspace{1cm}
+        \begin{minipage}[c]{5.5cm}
+        To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$.
+        \end{minipage}
+        \end{figure}
+        \begin{small}
+            \begin{verbatim}
+                   e.g., Σ² = {A, B, C}², x⁴ + x³ + 1
+
+   S₀     S₁     S₂     S₃     S₄     S₅     S₆     S₇
+   ||     ||     ||     ||     ||     ||     ||     ||
+ [1000] [0100] [0010] [1001] [1100] [0110] [1011] [0101]
+  C A    B A    A C    C B           B C           B B
+            \end{verbatim}
+        \end{small}
     \egroup
     \end{frame}
 
     \begin{frame}[fragile]
-        \frametitle{Sampler}
+        \frametitle{Multidimensional No-Replacement Sampler}
 
         \begin{lstlisting}[language=Kotlin, gobble=8]
-        fun List<Int>.toBitLens(): List<Int> =
-          map { ceil(log2(it.toDouble())).toInt() }
+        fun List<Int>.bitLens() = map { ceil(log2(it.toDouble())).toInt() }
 
-        // Takes a list of bits and chunk lengths and returns a list of Ints, e.g.,
-        // (1010101100, [3, 2, 3, 2]) -> [101, 01, 011, 00] -> [4, 1, 3, 0]
+        // Splits a bitvector into designated chunks and returns indices
+        // (10101011, [3, 2, 3]) -> [101, 01, 011] -> [4, 1, 3]
         fun List<Boolean>.toIndexes(bitLens: List<Int>): List<Int> =
           bitLens.fold(listOf<List<Boolean>>() to this) { (a, b), i ->
             (a + listOf(b.take(i))) to b.drop(i)
           }.first.map { it.toInt() }
 
-        // Σ' = { A, B, C, D, E, F, G, H, I, J, K, L, M, N, O }
-        // C1     C2     C3     C4
-        // ||     ||     ||     ||
-        // [1110] [1011] [1010] [0010]
-        // N      K      J      B
-        \end{lstlisting}
-    \end{frame}
-
-    \begin{frame}[fragile]
-        \frametitle{Sampler}
-
-        \begin{lstlisting}[language=Kotlin, gobble=8]
-        // Discards samples exceeding set cardinality in any dimension
         fun Sequence<List<Boolean>>.hastyPudding(lengths: List<Int>) =
-          map { it.toIndexes(lengths.toBitLens()) }
+          map { it.toIndexes(lengths.bitLens()) }
            .filter { it.zip(lengths).all { (a, b) -> a < b } }
 
-        // If the dimensions all share the same coordinate set
-        fun <T> MDSamplerNoReplacement(set: Set<T>, dim: Int = 1) =
-          MDSamplerWithoutReplacement(List(dim){ set })
-
-        fun <T> MDSamplerNoReplacement(
-          dimensions: List<Set<T>>, // If the dimensions are different
-          lengths: List<Int> = dimensions.map { it.size },
-          // Shuffle coordinates to increase entropy of sampling
-          shuffDims: List<List<T>> = dimensions.map { it.shuffled() },
-          bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens(),
+        fun <T> List<Set<T>>.sampleWithoutReplacement(
+          lengths: List<Int> = map { it.size },
+          bitLens: List<Int> = map(Set<T>::size).bitLens(),
           degree: Int = bitLens.sum().also { println("LFSR(GF(2^$it))") }
         ): Sequence<List<T>> =
-          LFSR(degree).map { it.toBitList(degree) }.hastyPudding(lenghts)
-            .map { shuffDims.zip(it).map { (dims, idx) -> dims[idx] } } +
-            sequenceOf(shuffDims.map { it[0] })
+          LFSR(degree).hastyPudding(lengths)
+            .map { zip(it).map { (dims, idx) -> dims[idx] } }
         \end{lstlisting}
     \end{frame}
 
@@ -667,13 +662,13 @@ P = 21 = 1  0  1  0  1          a  b  c  d  e     s0
         \frametitle{What's the point?}
         \begin{itemize}
             \item Algebraists have developed a powerful language for rootfinding
-            \item Tradition starting with Euler through Galois to Kantorovich
+            \item Tradition handed down from Euler, Galois, Borel, Kleene, Chomsky
             \item We know closed forms for exponentials of structured matrices
 %            \item Characteristic polynomials, companion matrices, eigenvalues
             \item Solving these forms can be much faster than power iteration
-            \item Many problems in PL and graph theory reducible to rootfinding
+            \item Unifies many problems in PL, probability and graph theory
             \item Context free parsing is just rootfinding on a semiring algebra
-            \item Subtyping sans recursive types is just graph reachability
+            \item Type checking sans recursive types is just graph reachability
             \item Unification/simplification is lazy hypergraph search
             \item Bounded program synthesis is matrix factorization/completion
             \item By doing so, we can leverage well-known algebraic techniques
@@ -691,14 +686,11 @@ P = 21 = 1  0  1  0  1          a  b  c  d  e     s0
             \item What is the connection to Leibnizian differentiability?
 %            \item What is the meaning of abstract algebraic eigenvalues?
         \end{itemize}
-        Types
-        \begin{itemize}
-            \item Implement a typelevel PRNG
-        \end{itemize}
+        \phantom{space}\\
         Probability
         \begin{itemize}
             \item Look into Markov chains (detailed balance, stationarity, reversibility)
-        \item Look into probabilistic grammars, e.g., PCFGs
+        \item Fuse Valiant parser and probabilistic context free grammar
         \item Message passing and graph diffusion processes
         \item Look into constrained optimization (e.g., L/QP) to rank feasible set
         \end{itemize}
