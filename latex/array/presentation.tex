@@ -15,6 +15,8 @@
 \usepackage{hyperref}
 \usepackage{fontspec}
 \usepackage{array}
+\usepackage{bm}
+\usepackage{emoji}
 \setmonofont{JetBrains Mono}[
     Contextuals = Alternate,
     Ligatures = TeX,
@@ -30,6 +32,13 @@
 \usepackage{amssymb}
 \usepackage{pmboxdraw}
 \usetikzlibrary{cd}
+\usepackage{adjustbox}
+
+\usepackage{tikz-3dplot}
+\usetikzlibrary{3d}
+\usetikzlibrary{calligraphy}
+\newif\ifshowcellnumber
+\showcellnumbertrue
 
 \lstdefinelanguage{Kotlin}{
     basicstyle = \footnotesize\ttfamily,
@@ -51,7 +60,7 @@
     escapechar=@
 }
 
-\title[Array Programming on $GF(2^n)$]{(Probabilistic) Array Programming on Galois Fields}
+\title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
@@ -226,7 +235,7 @@
         \begin{itemize}
             \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Binarized CYK parser can be efficiently compiled to a SAT solver
-            \item Supports sketch-based synthesis in the string or grammar
+            \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables!
             \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
             \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
             \[\begin{tikzcd}
@@ -242,7 +251,11 @@
 %            \item Set joins are an active topic of research in SQL query optimization
             \item If you know of a more efficient encoding, please let us know!
         \end{itemize}
+    \end{frame}
 
+    \begin{frame}[fragile]
+        \frametitle{Tidyparse IDE plugin}
+        \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
     \end{frame}
 
     \begin{frame}
@@ -260,15 +273,12 @@
             \item \href{https://matt.might.net/papers/might2011derivatives.pdf}{Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)}
             \item \href{https://users.math-cs.spbu.ru/~okhotin/papers/formal_languages_gf2.pdf}{Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)}
             \item \href{https://arxiv.org/pdf/1601.07724.pdf}{Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda}
-            \item \textbf{Considine et al. (2022) - SAT + Valiant (1975) + holes}
+            \item \href{https://arxiv.org/pdf/1504.08342.pdf}{Cohen \& Gildea (2016) - Generalizes Valiant (1975) to parse and recognize mildly context sensitive languages, e.g. LCFRS, TAG, CCG}
+            \item \textbf{Considine, Guo \& Si (2022) - SAT + Valiant (1975) + holes}
         \end{itemize}
     \end{frame}
 
-%    \section{IDE Tool}\label{sec:ide}
-%
-%    \section{Tidyparse tool}\label{sec:tidyparse}
-
-    \section{Typelevel Abacus}
+    \section{Typelevel Arithmetic}
 
     \begin{frame}
         \frametitle{Abacus arithmetic}
@@ -426,7 +436,8 @@
         \begin{itemize}
             \item \href{https://www.cs.utexas.edu/~wcook/papers/FBound89/CookFBound89.pdf}{Canning et al. (1989) - F-Bounded Polymorphism is first invented}
             \item \href{https://ecommons.cornell.edu/bitstream/handle/1813/5614/TR2003-1901.pdf}{Cheney \& Hinze (2003) - Phantom types (good for type-safe builders)}
-            \item \href{https://jooq.org}{Eder (2011) - Encodes relational algebra into j[ava]OOQ}
+            \item \href{https://dl.acm.org/doi/pdf/10.1145/1142473.1142552}{Meijer et al. (2006) - Language integrated querying (LINQ)}
+            \item \href{https://jooq.org}{Eder (2011) - Commercial reimplementation LINQ in Java/jOOQ}
             \item \href{https://arxiv.org/pdf/1605.05274.pdf}{Grigore (2016) - Java Generics shown to be Turing Complete}
             \item \href{https://github.com/erdos/java-logic}{Erdős (2017) - Encodes Boolean logic into Java type system}
             \item \href{https://dl.acm.org/doi/10.1145/3136040.3136041}{Nakamaru et al. (2017) - Silverchain: a fluent API generator}
@@ -464,8 +475,227 @@
         Exp<Int> -> Exp<Int> + Exp<Int> | Exp<Int> * Exp<Int>
         Exp<Int> -> if ( Exp<Bool> ) Exp<Int> else Exp<Int>
         \end{lstlisting}
-
     \end{frame}
+
+    \section{Random Numbers}
+
+    \begin{frame}
+        \frametitle{Linear Finite State Registers}
+        Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\otimes := \underline{\vee}, \oplus := \vee$:\\
+
+        \[
+            \mathbf{M}^tV = \begin{pmatrix}
+                                P_1 & P_2 & P_3 & P_4 & P_5 \\
+                                \top & \circ & \circ & \circ & \circ \\
+                                \circ & \top & \circ & \circ & \circ \\
+                                \circ & \circ & \top & \circ & \circ \\
+                                \circ & \circ & \circ & \top & \circ
+            \end{pmatrix}^t
+            \begin{pmatrix}
+                V_1 \\
+                V_2 \\
+                V_3 \\
+                V_4 \\
+                V_5
+            \end{pmatrix}
+        \]\\
+
+        Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} generates an ergodic sequence over GF$(2^n)$ with full periodicity:\\
+
+        \[
+        \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
+        \]
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Linear finite state registers}
+        \begin{verbatim}
+          1  +  x³ +  x⁵        a  b  c  d  e     V₁
+ P = 18 = 0  0  1  0  1         1  0  0  0  0     V₂
+          ∥  ∥  ∥  ∥  ∥         0  1  0  0  0  *  V₃
+          a  b  c  d  e         0  0  1  0  0     V₄
+    ╭────────── ⊗ ────╮         0  0  0  1  0     V₅
+    │           │     │
+    0 ──► 1  0  1  1  1 ──►           M        *  V
+                ╰──┬──╯
+                "taps"          S₄ = M … S₁ = M * V
+                                ∥        ∥        ∥
+    S₀ = 1  0  1  1  1          0        0        1
+    S₁ = 0  1  0  1  1          0        1        0
+    S₂ = 1  0  1  0  1          1        0        1
+    S₃ = 0  1  0  1  0          0        1        1
+    S₄ = 0  0  1  0  1          1        0        1
+        \end{verbatim}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Multidimensional sampling: the hasty pudding trick}
+        \definecolor{R}{RGB}{202,65,55}
+        \definecolor{G}{RGB}{151,216,56}
+        \definecolor{B}{RGB}{0,0,0}
+        \definecolor{W}{RGB}{255,255,255}
+        \definecolor{X}{RGB}{65,65,65}
+
+        \newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+        \newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+        \newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+        \newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
+        {\ifnum\Y=1%
+        \xdef\myarray{"\X"}%
+        \else%
+        \xdef\myarray{\myarray,"\X"}%
+        \fi}%
+        \foreach \X in \myarrayR%
+        {\xdef\myarray{\myarray,"\X"}}%
+        \foreach \X in \myarrayT%
+        {\xdef\myarray{\myarray,"\X"}}%
+        \xdef\myarray{{\myarray}}%
+        }
+        \TikZRubikFaceLeft
+        {X}{W}{W}
+        {W}{X}{X}
+        {X}{W}{W}
+        \TikZRubikFaceRight
+        {W}{X}{W}
+        {X}{W}{X}
+        {W}{X}{W}
+        \TikZRubikFaceTop
+        {X}{W}{X}
+        {W}{W}{X}
+        {W}{X}{W}
+        \BuildArray
+        \pgfmathsetmacro\radius{0.1}
+        \tdplotsetmaincoords{55}{135}
+
+        \showcellnumberfalse
+
+
+        \bgroup
+
+        \begin{figure}
+        \hspace{-0.5cm}\begin{minipage}[l]{5cm}
+        \begin{tikzpicture}
+        \clip (-3,-2.5) rectangle (3,2.5);
+        \begin{scope}[tdplot_main_coords]
+            \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
+            \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
+            \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
+            \fi
+            \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
+            \fi
+            \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
+            \fi
+            }
+            }
+
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
+            (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $|\Sigma|$};
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+            (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $|\Sigma|$};
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+            (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $|\Sigma|$};
+        \end{scope}
+        \end{tikzpicture}
+        \end{minipage}\hspace{1cm}
+        \begin{minipage}[c]{5.5cm}
+        To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$.
+        \end{minipage}
+        \end{figure}
+        \begin{small}
+            \begin{verbatim}
+                   e.g., Σ² = {A, B, C}², x⁴ + x³ + 1
+
+   S₀     S₁     S₂     S₃     S₄     S₅     S₆     S₇
+   ||     ||     ||     ||     ||     ||     ||     ||
+ [1000] [0100] [0010] [1001] [1100] [0110] [1011] [0101]
+  C A    B A    A C    C B           B C           B B
+            \end{verbatim}
+        \end{small}
+    \egroup
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Multidimensional No-Replacement Sampler}
+
+        \begin{lstlisting}[language=Kotlin, gobble=8]
+        fun List<Int>.bitLens() = map { ceil(log2(it.toDouble())).toInt() }
+
+        // Splits a bitvector into designated chunks and returns indices
+        // (10101011, [3, 2, 3]) -> [101, 01, 011] -> [4, 1, 3]
+        fun List<Boolean>.toIndexes(bitLens: List<Int>): List<Int> =
+          bitLens.fold(listOf<List<Boolean>>() to this) { (a, b), i ->
+            (a + listOf(b.take(i))) to b.drop(i)
+          }.first.map { it.toInt() }
+
+        fun Sequence<List<Boolean>>.hastyPudding(lengths: List<Int>) =
+          map { it.toIndexes(lengths.bitLens()) }
+           .filter { it.zip(lengths).all { (a, b) -> a < b } }
+
+        fun <T> List<Set<T>>.sampleWithoutReplacement(
+          lengths: List<Int> = map { it.size },
+          bitLens: List<Int> = map(Set<T>::size).bitLens(),
+          degree: Int = bitLens.sum().also { println("LFSR(GF(2^$it))") }
+        ): Sequence<List<T>> =
+          LFSR(degree).hastyPudding(lengths)
+            .map { zip(it).map { (dims, idx) -> dims[idx] } }
+        \end{lstlisting}
+    \end{frame}
+
+    \section{Future Work}
+
+    \begin{frame}
+        \frametitle{What's the point?}
+        \begin{itemize}
+            \item Algebraists have developed a powerful language for rootfinding
+            \item Tradition handed down from Euler, Galois, Borel, Kleene, Chomsky
+            \item We know closed forms for exponentials of structured matrices
+%            \item Characteristic polynomials, companion matrices, eigenvalues
+            \item Solving these forms can be much faster than power iteration
+            \item Unifies many problems in PL, probability and graph theory
+            \item Context free parsing is just rootfinding on a semiring algebra
+            \item Type checking sans recursive types is just graph reachability
+            \item Unification/simplification is lazy hypergraph search
+            \item Bounded program synthesis is matrix factorization/completion
+            \item By doing so, we can leverage well-known algebraic techniques
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Future Work}
+        Parsing
+        \begin{itemize}
+            \item The line between parsing and computation is blurry
+            \item Investigate connection between dynamical and term rewrite systems
+            \item Extend Valiant's parser to tensors/context-sensitive languages
+            \item Recover the original parse tree or eliminate Chomsky Normal Form
+            \item What is the connection to Leibnizian differentiability?
+%            \item What is the meaning of abstract algebraic eigenvalues?
+        \end{itemize}
+        \phantom{space}\\
+        Probability
+        \begin{itemize}
+            \item Look into Markov chains (detailed balance, stationarity, reversibility)
+        \item Fuse Valiant parser and probabilistic context free grammar
+        \item Message passing and graph diffusion processes
+        \item Look into constrained optimization (e.g., L/QP) to rank feasible set
+        \end{itemize}
+    \end{frame}
+
 
     \begin{frame}
         \begin{center}
