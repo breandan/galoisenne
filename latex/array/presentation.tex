@@ -9,6 +9,8 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,calc,decorations.text}
 \usepackage{stmaryrd}
+\usepackage{circledsteps}
+\usepackage{epigraph}
 \usepackage{mathtools}
 \usepackage{dsfont}
 \usepackage{bussproofs}
@@ -79,6 +81,40 @@
         \tableofcontents
     \end{frame}
 
+    \section{Finite Fields}\label{sec:finite-fields}
+
+
+    \begin{frame}
+        \frametitle{Facts about finite fields}
+        \begin{itemize}
+        \item Finite fields are fields which contain a finite number of elements.
+        \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$ or $\mathbb{F}_p^n$.
+        \item The following instruction sets have identical expressivity:
+        \begin{itemize}
+        \item Pairs: $\{\vee, \neg\}, \{\wedge, \neg\}, \{\to, \neg\}, \{\to, \bot\}, \{\to, \veebar\}, \ldots$
+        \item Triples: $\{\lor, =, \veebar\}, \{\lor, \veebar, \top\}, \{\land, =, \bot\}, \{\land, =, \veebar\}, \underline{\{\land, \veebar, \top\}}, \ldots$
+        \end{itemize}
+        \item In other words, we can compute any function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing the above operator sets in an orderly fashion.
+        \item GF(2) corresponds to $\oplus := \veebar, \otimes := \land$.
+        \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2^m$ has $2^{m^{2^{n}}}$ inhabitants.
+        \item The night before Evariste Galois was fatally shot in a pistol duel, he spent writing about algebra.
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Preface to “Two Memoirs on Pure Analysis”}
+        \setlength{\epigraphwidth}{\textwidth}
+        \epigraph{Long algebraic calculations were at first hardly necessary for progress in mathematics... It is only since Euler this concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and difficult... the algorithms so complicated that progress has become impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a single glance grasp a large number of operations.\\
+
+        [...]
+
+        It is clear that elegance, so admired and so justly named, has no other purpose.\\
+
+        [...]
+
+        Jump with both feet into the calculations! Group the operations, classify them according to their difficulties and not according to their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}{Evariste Galois, 1811-1832}
+    \end{frame}
+    
     \section{Algebraic Parsing}\label{sec:algebraic-parsing}
 
     %------------------------------------------------------------------------------------------------
@@ -131,16 +167,19 @@
     \end{frame}
 
 
-    \begin{frame}
+    \begin{frame}[fragile]
         \frametitle{Algebraic parsing, distilled}
-        Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
+        Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
 
         \vspace{-7pt}
         \[
-            a \otimes b \coloneqq \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
+            s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
+            \text{E.g.},
+                \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
         \]
+        \vspace{16pt}
 
-        \noindent We initialize $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
+        \noindent By initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, this will produce a matrix $\mathbf{M}^*$:
 
         \vspace{-5}
         \[
@@ -153,7 +192,7 @@
             \end{pmatrix}
         \]
 
-        \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $R \coloneqq \mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+        \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
     \end{frame}
 
     \begin{frame}[fragile]
@@ -481,7 +520,7 @@
 
     \begin{frame}
         \frametitle{Linear Finite State Registers}
-        Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\otimes := \underline{\vee}, \oplus := \vee$:\\
+        Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
 
         \[
             \mathbf{M}^tV = \begin{pmatrix}
@@ -513,7 +552,7 @@
         \frametitle{Linear finite state registers}
         \begin{verbatim}
           1  +  x³ +  x⁵        a  b  c  d  e     V₁
- P = 18 = 0  0  1  0  1         1  0  0  0  0     V₂
+ P = 20 = 0  0  1  0  1         1  0  0  0  0     V₂
           ∥  ∥  ∥  ∥  ∥         0  1  0  0  0  *  V₃
           a  b  c  d  e         0  0  1  0  0     V₄
     ╭────────── ⊗ ────╮         0  0  0  1  0     V₅
