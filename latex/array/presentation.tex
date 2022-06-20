@@ -62,7 +62,7 @@
     escapechar=@
 }
 
-\title[Array Programming on $GF(2^n)$]{Probabilistic Array Programming on Galois Fields}
+\title[Probabilistic Array Programming on $\mathbb{F}_2^n$]{Probabilistic Array Programming on Galois Fields}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
@@ -87,32 +87,41 @@
     \begin{frame}
         \frametitle{Facts about finite fields}
         \begin{itemize}
-        \item Finite fields are fields which contain a finite number of elements.
-        \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$ or $\mathbb{F}_p^n$.
+        \item Galois fields are fields which contain a finite number of elements.
+        \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$, $\mathbb{Z}/p^n$ or $\mathbb{F}_p^n$.
         \item The following instruction sets have identical expressivity:
         \begin{itemize}
         \item Pairs: $\{\vee, \neg\}, \{\wedge, \neg\}, \{\to, \neg\}, \{\to, \bot\}, \{\to, \veebar\}, \ldots$
         \item Triples: $\{\lor, =, \veebar\}, \{\lor, \veebar, \top\}, \{\land, =, \bot\}, \{\land, =, \veebar\}, \underline{\{\land, \veebar, \top\}}, \ldots$
         \end{itemize}
-        \item In other words, we can compute any function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing the above operator sets in an orderly fashion.
-        \item GF(2) corresponds to $\oplus := \veebar, \otimes := \land$.
-        \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2^m$ has $2^{m^{2^{n}}}$ inhabitants.
-        \item The night before Evariste Galois was fatally shot in a pistol duel, he spent writing about algebra.
+        \item In other words, we can compute any Boolean function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing any one of the above operator sets in an orderly fashion.
+        \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
+        \item There are (at least) two schools of thought about Boolean functions:
+        \begin{itemize}
+        \item Logical: Conjunctive normal form. Not necessarily unique.
+        \item Algebra: Algebraic normal form. It is unique.
+        \end{itemize}
+        \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2^m$ possesses $2^{m^{2^{n}}}$ inhabitants.
+        \item The night before Evariste Galois was shot in a finite field, he spent writing about algebra.
         \end{itemize}
     \end{frame}
 
     \begin{frame}
         \frametitle{Preface to “Two Memoirs on Pure Analysis”}
-        \setlength{\epigraphwidth}{\textwidth}
-        \epigraph{Long algebraic calculations were at first hardly necessary for progress in mathematics... It is only since Euler this concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and difficult... the algorithms so complicated that progress has become impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a single glance grasp a large number of operations.\\
+        \setlength{\epigraphwidth}{0.97\textwidth}
+        \epigraph{``\textit{Long algebraic calculations were at first hardly necessary for mathematical progress... It was only since Euler that concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and... the algorithms so complicated that progress would be nearly impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a glance grasp a large number of operations.}\\
 
-        [...]
+        \vspace{5pt}
+        \ldots\\
+        \vspace{5pt}
 
-        It is clear that elegance, so admired and so justly named, has no other purpose.\\
+        \textit{It is clear that elegance, so admirably and aptly named, has no other purpose.}\\
 
-        [...]
+        \vspace{5pt}
+        \ldots\\
+        \vspace{5pt}
 
-        Jump with both feet into the calculations! Group the operations, classify them according to their difficulties and not according to their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}{Evariste Galois, 1811-1832}
+        \textit{Jump headlong into the calculations! Group the operations, classify them by their difficulties and not their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}''}{Evariste Galois, 1811-1832}
     \end{frame}
     
     \section{Algebraic Parsing}\label{sec:algebraic-parsing}
@@ -125,7 +134,7 @@
         %
         For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
-        Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\underline{S \rightarrow S S \mid ( S ) \mid ()}\Leftrightarrow^*\underline{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS}$
+        Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\{S \rightarrow S S \mid ( S ) \mid ()\}\Leftrightarrow^*\{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS\}$
 
         \begin{center}
         \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
@@ -471,7 +480,7 @@
     \end{frame}
 
     \begin{frame}
-        \frametitle{Annotated history of typed EDSLs}
+        \frametitle{Annotated history of typed eDSLs}
         \begin{itemize}
             \item \href{https://www.cs.utexas.edu/~wcook/papers/FBound89/CookFBound89.pdf}{Canning et al. (1989) - F-Bounded Polymorphism is first invented}
             \item \href{https://ecommons.cornell.edu/bitstream/handle/1813/5614/TR2003-1901.pdf}{Cheney \& Hinze (2003) - Phantom types (good for type-safe builders)}
