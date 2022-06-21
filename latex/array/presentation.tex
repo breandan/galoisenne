@@ -46,10 +46,10 @@
     basicstyle = \footnotesize\ttfamily,
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, lazy, println, return@, K, E, X, P},
+    emph={delegate, filter, lazy, println, return@, K, E, X, P, G, E, V},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
-    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
+    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
     keywordstyle={\color{blue}\bfseries},
     morecomment=[s]{/*}{*/},
     morestring=[b]",
@@ -469,6 +469,79 @@
         \end{lstlisting}
     \end{frame}
 
+    \begin{frame}[fragile]{A type family for graphs}
+        \begin{align*}
+           \textsc{Vertex} &\rightarrow \textsc{Int}\\
+           \textsc{Neighbors} &\rightarrow \textsc{Vertex} \mid \textsc{Vertex} \phantom{\vee} \textsc{Neighbors} \\
+           \textsc{Context} &\rightarrow ([\textsc{Neighbors}], \phantom{\vee} \textsc{Vertex}, \phantom{\vee} [\textsc{Neighbors}]) \\
+           \textsc{Graph} &\rightarrow \textsc{Empty} \mid \textsc{Context} \phantom{\vee} \textsc{Graph}
+        \end{align*}
+
+        Concatenation of two graphs $G_1, G_2: V\times E \times V$ we define as:
+
+        \begin{enumerate}
+          \item $G_1 \oplus G_2 ::= (V_1\cup V_2)\times (E_1\cup E_2) $
+        \end{enumerate}
+
+\begin{figure}[H]
+ \centering
+\begin{tikzpicture}[scale=0.8]
+  \node[shape=circle,draw=black] (A) at (0,2.5)  {$s_1$};
+  \node[shape=circle,draw=black] (B) at (2.5,4)  {$s_2$};
+  \node[shape=circle,draw=black] (C) at (2.5,1)  {$s_3$};
+
+  \node[shape=circle,draw=black] (D) at (6.5,2.5){$s_4$};
+  \node[shape=circle,draw=black] (E) at (4,4)    {$s_2$};
+  \node[shape=circle,draw=black] (F) at (4,1)    {$s_3$};
+
+  \path [->] (A) edge node[left] {} (B);
+  \path [->](A) edge node[left] {} (C);
+  \path [->](C) edge node[top] {\hspace{3.3em}$\oplus$} (B);
+
+  \path [->] (D) edge node[left] {} (E);
+  \path [->](D) edge node[left] {} (F);
+  \path [->](F) edge node[top] {\hspace{15em}$=$} (E);
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.8]
+  \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+  \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+  \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+  \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+  \path [->] (A) edge node[left] {} (B);
+  \path [->](A) edge node[left] {} (C);
+  \path [->](C) edge node[top] {} (B);
+
+  \path [->] (D) edge node[left] {} (B);
+  \path [->](D) edge node[left] {} (C);
+\end{tikzpicture}
+\end{figure}
+    \end{frame}
+    \begin{frame}[fragile]{A type family for graphs}
+        \begin{lstlisting}[language=Kotlin, gobble=8]
+        interface IGF<G, E, V> where
+          G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
+            val G: (vertices: Set<V>) -> G
+            val E: (s: V, t: V) -> E
+            val V: (old: V, edgeMap: (V) -> Set<E>) -> V
+            fun G(vararg graphs: G): G = G(graphs.toList())
+            fun G(vararg vertices: V): G = G(vertices.map { it.graph })
+            fun G(l: List<Any>): G = when {
+              l allAre G() -> l.fold(G()) { it, acc -> it + acc as G }
+              l allAre l.first() -> list.map { it as V }.toSet()
+            }.let { G(it) }
+          }
+
+        interface IGraph<G, E, V>: IGF<G, E, V> /* ... */ {
+            operator fun plus(that: G): G =
+              G((this - that) + (this join that) + (that - this))
+            operator fun minus(graph: G): G = G(vertices - graph.vertices)
+            infix fun join(that: G): Set<V> = TODO("Exercise for readers")
+        }
+        \end{lstlisting}
+    \end{frame}
+
     \section{Random Numbers}
 
     \begin{frame}{Linear Finite State Registers}
@@ -720,9 +793,9 @@
                     \textbf{Conjunctive Normal Form}
                     \phantom{()}\\
                     \begin{align*}
-                        \textsc{CONJ} &\rightarrow (\textsc{DISJ}) \mid \textsc{CONJ} \land (\textsc{DISJ})\\
-                        \textsc{UNIT} &\rightarrow \textsc{VAR} \mid \neg \textsc{VAR} \mid \bot \mid \top \\
-                        \textsc{DISJ} &\rightarrow \textsc{UNIT} \mid \textsc{DISJ} \vee \textsc{DISJ}
+                        \textsc{Conj} &\rightarrow (\textsc{Disj}) \mid \textsc{Conj} \land (\textsc{Disj})\\
+                        \textsc{Unit} &\rightarrow \textsc{VAR} \mid \neg \textsc{Var} \mid \bot \mid \top \\
+                        \textsc{Disj} &\rightarrow \textsc{Unit} \mid \textsc{Disj} \vee \textsc{Disj}
                     \end{align*}
                     \begin{prooftree}
                         \AxiomC{$\neg (p\vee \neg q)\vee \neg \neg r$}
