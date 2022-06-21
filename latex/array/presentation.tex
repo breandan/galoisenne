@@ -76,164 +76,16 @@
         \titlepage
     \end{frame}
 
-    \begin{frame}
-        \frametitle{Overview}
+    \begin{frame}{Overview}
         \tableofcontents
     \end{frame}
 
-    \section{Finite Fields}\label{sec:finite-fields}
-
-    \begin{frame}
-        \frametitle{Recap: Classical Logic}
-        \begin{prooftree}
-            \bottomAlignProof
-            \AxiomC{$a \veebar b$}
-            \RightLabel{XOR}
-            \UnaryInfC{$(p \vee q)\land \neg (p\land q)\phantom{()}$}
-            \DisplayProof
-            \hskip 1.5em
-            \bottomAlignProof
-            \AxiomC{$a \to b$}
-            \RightLabel{Impl}
-            \UnaryInfC{$\neg a \vee b$}
-            \DisplayProof
-            \hskip 1.5em
-            \bottomAlignProof
-            \AxiomC{$a \leftrightarrow b$}
-            \RightLabel{Iff}
-            \UnaryInfC{$(\neg a \vee b)\land (\neg b\vee a)$}
-            \DisplayProof
-            \vskip 2.5em
-
-            \bottomAlignProof
-            \AxiomC{$\neg\neg a\phantom{()}$}
-            \RightLabel{DNeg}
-            \UnaryInfC{$a\phantom{()}$}
-            \DisplayProof
-            \hskip 2.5em
-            \bottomAlignProof
-            \AxiomC{$a • (b • c)$}
-            \RightLabel{Assoc$_{\land\vee}$}
-            \UnaryInfC{$(a • b) • c$}
-            \DisplayProof
-            \hskip 2.5em
-            \bottomAlignProof
-            \AxiomC{$a • b$}
-            \RightLabel{Comm$_{\land\vee}$}
-            \UnaryInfC{$b • a$}
-            \DisplayProof
-            \vskip 2.5em
-
-            \bottomAlignProof
-            \AxiomC{$a \land (b \vee c)$}
-            \RightLabel{Dist$_\land$}
-            \UnaryInfC{$(a \land b) \vee (a \land c)$}
-            \DisplayProof
-            \hskip 2.5em
-            \bottomAlignProof
-            \AxiomC{$a \vee (b \land c)$}
-            \RightLabel{Dist$_\vee$}
-            \UnaryInfC{$(a \vee b) \land (a \vee c)$}
-            \DisplayProof
-            \vskip 2.5em
-
-            \bottomAlignProof
-            \AxiomC{$\neg (a \vee b)$}
-            \RightLabel{DeMorgan$_\land$}
-            \UnaryInfC{$\neg a \land \neg b$}
-            \DisplayProof
-            \hskip 2.5em
-            \bottomAlignProof
-            \AxiomC{$\neg (a \land b)$}
-            \RightLabel{DeMorgan$_\vee$}
-            \UnaryInfC{$\neg a \vee \neg b$}
-        \end{prooftree}
-    \end{frame}
-
-    \begin{frame}[fragile]
-        \frametitle{Normal Forms}
-        \begin{columns}
-            \begin{column}{0.5\textwidth}
-            \begin{center}
-                Conjunctive Normal Form
-                \begin{prooftree}
-                    \AxiomC{$\neg (p\vee \neg q)\vee \neg \neg r$}
-                    \RightLabel{DNeg}
-                    \UnaryInfC{$\neg (p\vee \neg q)\vee r$}
-                    \RightLabel{DeMorgan}
-                    \UnaryInfC{$(\neg p\land  \neg \neg q)\vee r$}
-                    \RightLabel{DNeg}
-                    \UnaryInfC{$(\neg p\land  q)\vee r$}
-                    \RightLabel{Dist}
-                    \UnaryInfC{$(\neg p\vee r)\land  (q\vee r)$}
-                \end{prooftree}
-            \end{center}
-        \end{column}
-            \begin{column}{0.5\textwidth}  %%<--- here
-                \begin{center}
-                Zhegalkin Normal Form
-                \begin{prooftree}
-                    \AxiomC{$x + (y \land \neg z)$}
-                    \RightLabel{}
-                    \UnaryInfC{$x + (y(1 \veebar z))$}
-                    \RightLabel{}
-                    \UnaryInfC{$x + (y \veebar yz)$}
-                    \RightLabel{}
-                    \UnaryInfC{$x \veebar (y \veebar yz) \veebar x(y \veebar yz)$}
-                    \RightLabel{}
-                    \UnaryInfC{$x \veebar y \veebar xy \veebar yz \veebar xyz$}
-                \end{prooftree}
-                \end{center}
-            \end{column}
-        \end{columns}
-    \end{frame}
-
-    \begin{frame}
-        \frametitle{Facts about finite fields}
-        \begin{itemize}
-        \item Galois fields are fields which contain a finite number of elements.
-        \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$, $\mathbb{Z}/p^n$ or $\mathbb{F}_p^n$.
-        \item The following instruction sets have identical expressivity:
-        \begin{itemize}
-        \item Pairs: $\{\vee, \neg\}, \{\wedge, \neg\}, \{\to, \neg\}, \{\to, \bot\}, \{\to, \veebar\}, \ldots$
-        \item Triples: $\{\lor, =, \veebar\}, \{\lor, \veebar, \top\}, \{\land, =, \bot\}, \{\land, =, \veebar\}, \underline{\{\land, \veebar, \top\}}, \ldots$
-        \end{itemize}
-        \item In other words, we can compute any Boolean function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing any one of the above operator sets in an orderly fashion.
-        \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
-        \item There are (at least) two schools of thought about Boolean functions:
-        \begin{itemize}
-        \item Logical: Conjunctive Normal Form (CNF). Not necessarily unique.
-        \item Algebra: Zhegalkin Normal Form (ZNF). It is unique.
-        \end{itemize}
-        \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2^m$ possesses $2^{m^{2^{n}}}$ inhabitants.
-        \item The night before Evariste Galois was shot in a finite field, he spent writing about algebra.
-        \end{itemize}
-    \end{frame}
-
-    \begin{frame}
-        \frametitle{Preface to “Two Memoirs on Pure Analysis”}
-        \setlength{\epigraphwidth}{0.97\textwidth}
-        \epigraph{``\textit{Long algebraic calculations were at first hardly necessary for mathematical progress... It was only since Euler that concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and... the algorithms so complicated that progress would be nearly impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a glance grasp a large number of operations.}\\
-
-        \vspace{5pt}
-        \ldots\\
-        \vspace{5pt}
-
-        \textit{It is clear that elegance, so admirably and aptly named, has no other purpose.}\\
-
-        \vspace{5pt}
-        \ldots\\
-        \vspace{5pt}
-
-        \textit{Jump headlong into the calculations! Group the operations, classify them by their difficulties and not their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}''}{Evariste Galois, 1811-1832}
-    \end{frame}
     
     \section{Algebraic Parsing}\label{sec:algebraic-parsing}
 
     %------------------------------------------------------------------------------------------------
 
-    \begin{frame}
-        \frametitle{Recap: Context Free Grammars}
+    \begin{frame}{Recap: Context free grammars}
         Suppose we have a context free grammar (CFG) $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^+$ are the productions, $S\in V$ is the start symbol and $+$ is the Kleene plus.\newline\\
         %
         For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
@@ -280,8 +132,7 @@
     \end{frame}
 
 
-    \begin{frame}[fragile]
-        \frametitle{Algebraic parsing, distilled}
+    \begin{frame}[fragile]{Algebraic parsing, distilled}
         Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
 
         \vspace{-7pt}
@@ -308,8 +159,7 @@
         \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Kotlin implementation: CFG definition}
+    \begin{frame}[fragile]{Kotlin implementation: CFG definition}
         \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
         typealias Production = Pair<String, List<String>>
         typealias CFG = Set<Production>
@@ -336,8 +186,7 @@
         \end{lstlisting}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Kotlin implementation: the recognizer}
+    \begin{frame}[fragile]{Kotlin implementation: the recognizer}
         \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
         // Constructs initial matrix according to: M@\color{gray}\textsubscript{i+1=j}@ = { A | (A -> @\color{gray}\texttt{σ}\textsubscript{i}@) @\color{gray}\texttt{∈}@ P }
         fun CFG.initialMatrix(str: List<String>): Matrix<Set<String>> =
@@ -362,8 +211,7 @@
     \end{frame}
 
 
-    \begin{frame}
-        \frametitle{A few observations on algebraic parsing}
+    \begin{frame}{A few observations on algebraic parsing}
         \begin{itemize}
             \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
             \item Recognizer can be translated into a parser by storing backpointers\\\\
@@ -382,8 +230,7 @@
         \end{itemize}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Satisfiability + holes (our contribution)}
+    \begin{frame}[fragile]{Satisfiability + holes (our contribution)}
         \begin{itemize}
             \item Can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
             \item Binarized CYK parser can be efficiently compiled to a SAT solver
@@ -405,13 +252,11 @@
         \end{itemize}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Tidyparse IDE plugin}
+    \begin{frame}[fragile]{Tidyparse IDE plugin}
         \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
     \end{frame}
 
-    \begin{frame}
-        \frametitle{Abbreviated history of algebraic parsing}
+    \begin{frame}{Abbreviated history of algebraic parsing}
         \begin{itemize}
             \item \href{http://www-igm.univ-mlv.fr/~berstel/Mps/Travaux/A/1963-7ChomskyAlgebraic.pdf}{Chomsky \& Sch\"utzenberger (1959) - The algebraic theory of CFLs}
             \item Cocke–Younger–Kasami (1961) - Bottom-up matrix-based parsing
@@ -432,8 +277,7 @@
 
     \section{Typelevel Arithmetic}
 
-    \begin{frame}
-        \frametitle{Abacus arithmetic}
+    \begin{frame}{Abacus arithmetic}
         \begin{itemize}
         \item Computational complexity of arithmetic is notation-dependent(!)
         \item For example, $\pm$ in unary arithmetic is concatenation and decatenation
@@ -502,8 +346,7 @@
         \end{prooftree}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Abacus dependent types}
+    \begin{frame}[fragile]{Abacus dependent types}
         \begin{lstlisting}[language=Kotlin, gobble=7]
         sealed class B<X, P : B<X, P>>(open val x: X? = null) {
           val T: T<P> get() = T(this as P)
@@ -527,8 +370,7 @@
         \end{lstlisting}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Abacus dependent types}
+    \begin{frame}[fragile]{Abacus dependent types}
         \begin{lstlisting}[language=Kotlin, gobble=7]
         typealias B_0<K> = F<K> // Type synonyms for legibility
         typealias B_1<K> = T<K>
@@ -553,8 +395,7 @@
         \end{lstlisting}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Abacus dependent types: birds eye view}
+    \begin{frame}[fragile]{Abacus dependent types: birds eye view}
         \begin{tiny}
         \begin{verbatim}
              i\j│  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+d-1
@@ -583,8 +424,7 @@
         \end{tiny}
     \end{frame}
 
-    \begin{frame}
-        \frametitle{Annotated history of typed eDSLs}
+    \begin{frame}{Annotated history of typed eDSLs}
         \begin{itemize}
             \item \href{https://www.cs.utexas.edu/~wcook/papers/FBound89/CookFBound89.pdf}{Canning et al. (1989) - F-Bounded Polymorphism is first invented}
             \item \href{https://ecommons.cornell.edu/bitstream/handle/1813/5614/TR2003-1901.pdf}{Cheney \& Hinze (2003) - Phantom types (good for type-safe builders)}
@@ -595,14 +435,14 @@
             \item \href{https://dl.acm.org/doi/10.1145/3136040.3136041}{Nakamaru et al. (2017) - Silverchain: a fluent API generator}
             \item \href{http://breandan.net/public/masters_thesis.pdf#2}{\textbf{Considine (2019) - Shape-safe matrix multiplication in Kotlin$\nabla$}}
             \item \href{https://drops.dagstuhl.de/opus/volltexte/2019/10805/pdf/LIPIcs-ECOOP-2019-13.pdf}{Gil \& Roth (2019) - Fling, a fluent API parser generator}
+            \item \href{https://github.com/tribbloid/shapesafe}{Cheng (2020) - Automatic theorem proving in the Scala type system}
             \item \href{https://arxiv.org/pdf/2109.03950.pdf}{Roth (2021) - Encodes CFL into Nominal Subtyping with Variance}
             \item \href{https://github.com/breandan/galoisenne}{\textbf{Considine (2021) - Arithmetic in Kotlin via typelevel abacus}}
             \item We know how to lower parsing onto types, what about vis versa?
         \end{itemize}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Can we lower type checking onto parsing?}
+    \begin{frame}[fragile]{Can we lower type checking onto parsing?}
         First, let us consider the untyped version:
         \begin{lstlisting}[language=Kotlin, gobble=5]
         Exp -> 0 | 1 | ... | T | F
@@ -631,8 +471,7 @@
 
     \section{Random Numbers}
 
-    \begin{frame}
-        \frametitle{Linear Finite State Registers}
+    \begin{frame}{Linear Finite State Registers}
         Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
 
         \[
@@ -661,8 +500,7 @@
         This sequence has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Linear finite state registers}
+    \begin{frame}[fragile]{Linear finite state registers}
         \begin{verbatim}
           1  +  x³ +  x⁵        a  b  c  d  e     V₁
  P = 20 = 0  0  1  0  1         1  0  0  0  0     V₂
@@ -682,8 +520,7 @@
         \end{verbatim}
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Multidimensional sampling: the hasty pudding trick}
+    \begin{frame}[fragile]{Multidimensional sampling: the hasty pudding trick}
         \definecolor{R}{RGB}{202,65,55}
         \definecolor{G}{RGB}{151,216,56}
         \definecolor{B}{RGB}{0,0,0}
@@ -783,9 +620,7 @@
     \egroup
     \end{frame}
 
-    \begin{frame}[fragile]
-        \frametitle{Multidimensional No-Replacement Sampler}
-
+    \begin{frame}[fragile]{Multidimensional No-Replacement Sampler}
         \begin{lstlisting}[language=Kotlin, gobble=8]
         fun List<Int>.bitLens() = map { ceil(log2(it.toDouble())).toInt() }
 
@@ -810,10 +645,191 @@
         \end{lstlisting}
     \end{frame}
 
-    \section{Future Work}
+    \section{Finite Fields}\label{sec:finite-fields}
 
-    \begin{frame}
-        \frametitle{What's the point?}
+    \begin{frame}{Recap: classical logic in a nutshell}
+        \begin{prooftree}
+            \bottomAlignProof
+            \AxiomC{$a \veebar b$}
+            \RightLabel{XOR}
+            \UnaryInfC{$(p \vee q)\land \neg (p\land q)\phantom{()}$}
+            \DisplayProof
+            \hskip 1.5em
+            \bottomAlignProof
+            \AxiomC{$a \to b$}
+            \RightLabel{Impl}
+            \UnaryInfC{$\neg a \vee b$}
+            \DisplayProof
+            \hskip 1.5em
+            \bottomAlignProof
+            \AxiomC{$a \leftrightarrow b$}
+            \RightLabel{Iff}
+            \UnaryInfC{$(\neg a \vee b)\land (\neg b\vee a)$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$\neg\neg a\phantom{()}$}
+            \RightLabel{2Neg}
+            \UnaryInfC{$a\phantom{()}$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a • (b • c)$}
+            \RightLabel{Assoc$_{\land\vee}$}
+            \UnaryInfC{$(a • b) • c$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a • b$}
+            \RightLabel{Comm$_{\land\vee}$}
+            \UnaryInfC{$b • a$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$a \land (b \vee c)$}
+            \RightLabel{Dist$_\land$}
+            \UnaryInfC{$(a \land b) \vee (a \land c)$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a \vee (b \land c)$}
+            \RightLabel{Dist$_\vee$}
+            \UnaryInfC{$(a \vee b) \land (a \vee c)$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$\neg (a \vee b)$}
+            \RightLabel{DeMorgan$_\vee$}
+            \UnaryInfC{$\neg a \land \neg b$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$\neg (a \land b)$}
+            \RightLabel{DeMorgan$_\land$}
+            \UnaryInfC{$\neg a \vee \neg b$}
+        \end{prooftree}
+    \end{frame}
+
+    \begin{frame}{Normalization in classical logic}
+        \begin{columns}[t]
+            \begin{column}{0.55\textwidth}
+                \begin{center}
+                    \textbf{Conjunctive Normal Form}
+                    \phantom{()}\\
+                    \begin{align*}
+                        \textsc{CONJ} &\rightarrow (\textsc{DISJ}) \mid \textsc{CONJ} \land (\textsc{DISJ})\\
+                        \textsc{UNIT} &\rightarrow \textsc{VAR} \mid \neg \textsc{VAR} \mid \bot \mid \top \\
+                        \textsc{DISJ} &\rightarrow \textsc{UNIT} \mid \textsc{DISJ} \vee \textsc{DISJ}
+                    \end{align*}
+                    \begin{prooftree}
+                        \AxiomC{$\neg (p\vee \neg q)\vee \neg \neg r$}
+                        \RightLabel{2Neg}
+                        \UnaryInfC{$\neg (p\vee \neg q)\vee r$}
+                        \RightLabel{DeMorgan}
+                        \UnaryInfC{$(\neg p\land  \neg \neg q)\vee r$}
+                        \RightLabel{2Neg}
+                        \UnaryInfC{$(\neg p\land  q)\vee r$}
+                        \RightLabel{Dist}
+                        \UnaryInfC{$(\neg p\vee r)\land  (q\vee r)$}
+                    \end{prooftree}\\
+                    \phantom{()}\\
+                    \phantom{Solved with SAT (e.g., DPLL/CDCL/Survey Prop).}\\
+                \end{center}
+            \end{column}
+            \begin{column}{0.45\textwidth}
+                \begin{center}
+                    \textbf{Zhegalkin Normal Form}
+                    \phantom{()}\\
+                    \[
+                        f(x_1, \ldots x_n) = \bigoplus_{i\subseteq\{1,\ldots, n\}}a_i x^i
+                    \]
+                    i.e., $a_i$'s filter the powerset.
+                    \phantom{()}\\
+                    \begin{prooftree}
+                        \AxiomC{$x + (y \land \neg z)$}
+                        \RightLabel{}
+                        \UnaryInfC{$x + y(1 \oplus z)$}
+                        \RightLabel{}
+                        \UnaryInfC{$x + (y \oplus yz)$}
+                        \RightLabel{}
+                        \UnaryInfC{$x \oplus (y \oplus yz) \oplus x(y \oplus yz)$}
+                        \RightLabel{}
+                        \UnaryInfC{$x \oplus y \oplus xy \oplus yz \oplus xyz$}
+                    \end{prooftree}
+                \end{center}\\
+                \phantom{()}\\
+                \phantom{Solved with rootfinding (e.g., power iteration, Gr\"obner basis).}\\
+                \phantom{()}\\
+            \end{column}
+        \end{columns}
+    \end{frame}
+
+    \begin{frame}{Some common algebraic and logical forms}
+    \begin{tabular}{c|c|c|c|c|c|c}
+    a_1 & a_2 & a_3 & a_4 & ZNF    & Logical                      & CNF                                    \\
+    \hline
+    0 & 0 & 0 & 0 & 0              & $\bot                      $ & $x \land \neg x                       $\\
+    1 & 0 & 0 & 0 & 1              & $\top                      $ & $x \vee \neg x                        $\\
+    0 & 1 & 0 & 0 & x              & $x                         $ & $x                                    $\\
+    1 & 1 & 0 & 0 & 1 + x          & $\negx                     $ & $\neg x                               $\\
+    0 & 0 & 1 & 0 & y              & $y                         $ & $y                                    $\\
+    1 & 0 & 1 & 0 & 1 + y          & $\negy                     $ & $\neg y                               $\\
+    0 & 1 & 1 & 0 & x + y          & $x \oplus y                $ & $(x \vee y) \land (\neg x \vee \neg y)$\\
+    1 & 1 & 1 & 0 & 1 + x + y      & $ x \Longleftrightarrow y  $ & $(x \vee \neg y) \land (\neg x \vee y)$\\
+    0 & 0 & 0 & 1 & xy             & $x \land y                 $ & $x \land y                            $\\
+    1 & 0 & 0 & 1 & 1 + xy         & $\neg(x \land y)           $ & $(\neg x) \vee (\neg y)               $\\
+    0 & 1 & 0 & 1 & x + xy         & $x \land (\negy)           $ & $x \land (\neg y)                     $\\
+    1 & 1 & 0 & 1 & 1 + x + xy     & $x \Longrightarrow y       $ & $(\neg x) \vee y                      $\\
+    0 & 0 & 1 & 1 & y + xy         & $(\negx) \land y           $ & $(\neg x) \land y                     $\\
+    1 & 0 & 1 & 1 & 1 + y + xy     & $x \Longleftarrow y        $ & $x \vee (\neg y)                      $\\
+    0 & 1 & 1 & 1 & x + y + xy     & $x \vee y                  $ & $x \vee y                             $\\
+    1 & 1 & 1 & 1 & 1 + x + y + xy & $\neg(x \vee y)            $ & $(\neg x) \land (\neg y)              $\\
+    \end{tabular}
+    \end{frame}
+
+    \begin{frame}{Facts about finite fields}
+        \begin{itemize}
+            \item Galois fields are fields which contain a finite number of elements.
+            \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$, $\mathbb{Z}/p^n$ or $\mathbb{F}_p^n$.
+            \item The following instruction sets have identical expressivity:
+            \begin{itemize}
+                \item Pairs: $\{\vee, \neg\}, \{\wedge, \neg\}, \{\to, \neg\}, \{\to, \bot\}, \{\to, \veebar\}, \{\land, \veebar\}, \ldots$
+                \item Triples: $\{\lor, =, \veebar\}, \{\lor, \veebar, \top\}, \{\land, =, \bot\}, \{\land, =, \veebar\}, \{\land, \veebar, \top\}, \ldots$
+            \end{itemize}
+            \item In other words, we can compute any Boolean function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing any one of the above operator sets in an orderly fashion.
+            \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
+            \item There are (at least) two schools of thought about Boolean circuits:
+            \begin{itemize}
+                \item Logical: Conjunctive Normal Form (CNF). Not necessarily unique.
+                \item Algebra: Zhegalkin Normal Form (ZNF). It is necessarily unique.
+            \end{itemize}
+            \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2$ possesses $2^{2^{n}}$ inhabitants.
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Preface to “Two Memoirs on Pure Analysis”}
+        \setlength{\epigraphwidth}{0.97\textwidth}
+        \epigraph{``\textit{Long algebraic calculations were at first hardly necessary for mathematical progress... It was only since Euler that concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and... the algorithms so complicated that progress would be nearly impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a glance grasp a large number of operations.}\\
+
+        \vspace{5pt}
+        \ldots\\
+        \vspace{5pt}
+
+        \textit{It is clear that elegance, so admirably and aptly named, has no other purpose.}\\
+
+        \vspace{5pt}
+        \ldots\\
+        \vspace{5pt}
+
+        \textit{Jump headlong into the calculations! Group the operations, classify them by their difficulties and not their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}''}{\'Evariste Galois, 1811-1832}
+    \end{frame}
+
+    \section{Future work}
+
+    \begin{frame}{What's the point?}
         \begin{itemize}
             \item Algebraists have developed a powerful language for rootfinding
             \item Tradition handed down from Euler, Galois, Borel, Kleene, Chomsky
@@ -829,8 +845,7 @@
         \end{itemize}
     \end{frame}
 
-    \begin{frame}
-        \frametitle{Future Work}
+    \begin{frame}{Future work}
         Parsing
         \begin{itemize}
             \item The line between parsing and computation is blurry
@@ -850,16 +865,7 @@
         \end{itemize}
     \end{frame}
 
-
-    \begin{frame}
-        \begin{center}
-            \Huge{Learn more at: \\~\\
-            \href{http://array22.ndan.co}{\color{blue}{http://array22.ndan.co}}}
-        \end{center}
-    \end{frame}
-
-    \begin{frame}
-        \frametitle{Special thanks}
+    \begin{frame}{Special thanks}
             \begin{center}
                 \LARGE{
                     Nghi D. Q. Bui\\
@@ -874,5 +880,12 @@
                 \href{https://www.fpt-software.com}{\includegraphics[scale=0.19]{../figures/fpt_logo.png}}
                 \href{https://mila.quebec}{\includegraphics[scale=0.13]{../figures/mila_logo.png}}
             \end{center}
+    \end{frame}
+
+    \begin{frame}
+        \begin{center}
+            \Huge{Learn more at: \\~\\
+            \href{http://array22.ndan.co}{\color{blue}{http://array22.ndan.co}}}
+        \end{center}
     \end{frame}
 \end{document}
