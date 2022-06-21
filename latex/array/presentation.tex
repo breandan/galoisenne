@@ -775,7 +775,7 @@ Can be specialized to join ADTs, e.g.: $G_1 \oplus G_2 = (V_1 \cup V_2) \times (
 
     \section{Finite Fields}\label{sec:finite-fields}
 
-    \begin{frame}{Recap: classical logic in a nutshell}
+    \begin{frame}{Recap: Classical logic in a nutshell}
         \begin{prooftree}
             \bottomAlignProof
             \AxiomC{$a \veebar b$}
@@ -849,7 +849,7 @@ Can be specialized to join ADTs, e.g.: $G_1 \oplus G_2 = (V_1 \cup V_2) \times (
                     \phantom{()}\\
                     \begin{align*}
                         \textsc{Conj} &\rightarrow (\textsc{Disj}) \mid \textsc{Conj} \land (\textsc{Disj})\\
-                        \textsc{Unit} &\rightarrow \textsc{VAR} \mid \neg \textsc{Var} \mid \bot \mid \top \\
+                        \textsc{Unit} &\rightarrow \textsc{Var} \mid \neg \textsc{Var} \mid \bot \mid \top \\
                         \textsc{Disj} &\rightarrow \textsc{Unit} \mid \textsc{Disj} \vee \textsc{Disj}
                     \end{align*}
                     \begin{prooftree}
@@ -902,16 +902,16 @@ Can be specialized to join ADTs, e.g.: $G_1 \oplus G_2 = (V_1 \cup V_2) \times (
     0 & 0 & 0 & 0 & 0              & $\bot                      $ & $x \land \neg x                       $\\
     1 & 0 & 0 & 0 & 1              & $\top                      $ & $x \vee \neg x                        $\\
     0 & 1 & 0 & 0 & x              & $x                         $ & $x                                    $\\
-    1 & 1 & 0 & 0 & 1 + x          & $\negx                     $ & $\neg x                               $\\
+    1 & 1 & 0 & 0 & 1 + x          & $\neg x                    $ & $\neg x                               $\\
     0 & 0 & 1 & 0 & y              & $y                         $ & $y                                    $\\
-    1 & 0 & 1 & 0 & 1 + y          & $\negy                     $ & $\neg y                               $\\
+    1 & 0 & 1 & 0 & 1 + y          & $\neg y                    $ & $\neg y                               $\\
     0 & 1 & 1 & 0 & x + y          & $x \oplus y                $ & $(x \vee y) \land (\neg x \vee \neg y)$\\
     1 & 1 & 1 & 0 & 1 + x + y      & $ x \Longleftrightarrow y  $ & $(x \vee \neg y) \land (\neg x \vee y)$\\
     0 & 0 & 0 & 1 & xy             & $x \land y                 $ & $x \land y                            $\\
     1 & 0 & 0 & 1 & 1 + xy         & $\neg(x \land y)           $ & $(\neg x) \vee (\neg y)               $\\
-    0 & 1 & 0 & 1 & x + xy         & $x \land (\negy)           $ & $x \land (\neg y)                     $\\
+    0 & 1 & 0 & 1 & x + xy         & $x \land (\neg y)          $ & $x \land (\neg y)                     $\\
     1 & 1 & 0 & 1 & 1 + x + xy     & $x \Longrightarrow y       $ & $(\neg x) \vee y                      $\\
-    0 & 0 & 1 & 1 & y + xy         & $(\negx) \land y           $ & $(\neg x) \land y                     $\\
+    0 & 0 & 1 & 1 & y + xy         & $(\neg x) \land y          $ & $(\neg x) \land y                     $\\
     1 & 0 & 1 & 1 & 1 + y + xy     & $x \Longleftarrow y        $ & $x \vee (\neg y)                      $\\
     0 & 1 & 1 & 1 & x + y + xy     & $x \vee y                  $ & $x \vee y                             $\\
     1 & 1 & 1 & 1 & 1 + x + y + xy & $\neg(x \vee y)            $ & $(\neg x) \land (\neg y)              $\\
