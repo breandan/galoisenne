@@ -275,7 +275,7 @@
         \end{itemize}
     \end{frame}
 
-    \section{Typelevel Arithmetic}
+    \section{Typelevel Programming}
 
     \begin{frame}{Abacus arithmetic}
         \begin{itemize}
@@ -469,23 +469,33 @@
         \end{lstlisting}
     \end{frame}
 
-    \begin{frame}[fragile]{A type family for graphs}
+    \begin{frame}[fragile]{Inductive and algberaic graph representations}
+        We can define a graph inductively, using a CFG/ADT:
         \begin{align*}
-           \textsc{Vertex} &\rightarrow \textsc{Int}\\
-           \textsc{Neighbors} &\rightarrow \textsc{Vertex} \mid \textsc{Vertex} \phantom{\vee} \textsc{Neighbors} \\
-           \textsc{Context} &\rightarrow ([\textsc{Neighbors}], \phantom{\vee} \textsc{Vertex}, \phantom{\vee} [\textsc{Neighbors}]) \\
-           \textsc{Graph} &\rightarrow \textsc{Empty} \mid \textsc{Context} \phantom{\vee} \textsc{Graph}
+           \textsc{Vertex} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Int}\\
+           \textsc{Neighbors} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Vertex}\phantom{\vee} \mid \phantom{\vee}\textsc{Vertex} \phantom{\vee} \textsc{Neighbors} \\
+           \textsc{Context} &\phantom{\vee}\rightarrow\phantom{\vee} ([\textsc{Neighbors}], \textsc{Vertex}, [\textsc{Neighbors}]) \\
+           \textsc{Graph} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Empty}\phantom{\vee} \mid\phantom{\vee} \textsc{Context} \phantom{\vee} \textsc{Graph}
         \end{align*}
 
-        Concatenation of two graphs $G_1, G_2: V\times E \times V$ we define as:
+        We can also represent graphs algebraically using the graph Laplacian:
+        \[
+            \mathcal{L}_{i,j} := \begin{cases}
+                             \deg(v_i) & \mbox{if}\ i = j \\
+                             -1 & \mbox{if}\ i \neq j\ \mbox{and}\ (v_i \rightarrow v_j) \in E \\
+                             0 & \mbox{otherwise},
+        \end{cases}\]
 
-        \begin{enumerate}
-          \item $G_1 \oplus G_2 ::= (V_1\cup V_2)\times (E_1\cup E_2) $
-        \end{enumerate}
+        The latter form is preferred for representation learning [\href{https://www.cs.mcgill.ca/~wlh/grl_book/}{Hamilton (2020)}].
+    \end{frame}
+
+    \begin{frame}[fragile]{Graph combinator}
+    To merge two unlabeled graphs, apply $G_1 \oplus G_2 = (V_1\cup V_2) \times (E_1\cup E_2)$:
 
 \begin{figure}[H]
- \centering
-\begin{tikzpicture}[scale=0.8]
+    \begin{center}
+ \scalebox{0.8}{
+ \begin{tikzpicture}[scale=0.8]
   \node[shape=circle,draw=black] (A) at (0,2.5)  {$s_1$};
   \node[shape=circle,draw=black] (B) at (2.5,4)  {$s_2$};
   \node[shape=circle,draw=black] (C) at (2.5,1)  {$s_3$};
@@ -516,8 +526,52 @@
   \path [->] (D) edge node[left] {} (B);
   \path [->](D) edge node[left] {} (C);
 \end{tikzpicture}
+ }
+    \end{center}
+\end{figure}
+
+Can be specialized to join ADTs, e.g.: $G_1 \oplus G_2 = (V_1 \cup V_2) \times (E_1 \Join E_2)$:
+
+    \begin{figure}[H]
+        \begin{center}
+  \scalebox{0.8}{
+  \begin{tikzpicture}[scale=0.8]
+    \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+
+    \path [->](C) edge [bend left] node[top] {\colorbox{white}{\texttt{ab}}} (B);
+    \path [->](C) edge [bend right] node[top] {\colorbox{white}{\texttt{bc}}} (B);
+
+    \path [->] (D) edge node[left] {} (B);
+    \path [->](D) edge node[left] {} (C);
+  \end{tikzpicture}
+  \hspace{5em}
+  \begin{tikzpicture}[scale=0.8]
+    \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
+    \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
+    \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
+
+    \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
+
+    \path [->] (A) edge node[left] {} (B);
+    \path [->](A) edge node[left] {} (C);
+
+    \path [->](C) edge node[top] {\colorbox{white}{\texttt{ab, bc}}} (B);
+
+    \path [->] (D) edge node[left] {} (B);
+    \path [->](D) edge node[left] {} (C);
+  \end{tikzpicture}
+ }
+  \end{center}
 \end{figure}
     \end{frame}
+
     \begin{frame}[fragile]{A type family for graphs}
         \begin{lstlisting}[language=Kotlin, gobble=8]
         interface IGF<G, E, V> where
@@ -525,19 +579,20 @@
             val G: (vertices: Set<V>) -> G
             val E: (s: V, t: V) -> E
             val V: (old: V, edgeMap: (V) -> Set<E>) -> V
+
             fun G(vararg graphs: G): G = G(graphs.toList())
             fun G(vararg vertices: V): G = G(vertices.map { it.graph })
             fun G(l: List<Any>): G = when {
-              l allAre G() -> l.fold(G()) { it, acc -> it + acc as G }
-              l allAre l.first() -> list.map { it as V }.toSet()
+              l allAre G -> l.fold(G()) { it, acc -> it + acc as G }
+              l allAre V -> list.map { it as V }.toSet()
             }.let { G(it) }
-          }
 
-        interface IGraph<G, E, V>: IGF<G, E, V> /* ... */ {
-            operator fun plus(that: G): G =
+            operator fun G.plus(that: G): G =
               G((this - that) + (this join that) + (that - this))
-            operator fun minus(graph: G): G = G(vertices - graph.vertices)
-            infix fun join(that: G): Set<V> = TODO("Exercise for readers")
+
+            operator fun G.minus(that: G): G = G(vertices - that.vertices)
+
+            infix fun G.join(that: G): Set<V> = TODO("Override me!")
         }
         \end{lstlisting}
     \end{frame}
@@ -865,7 +920,6 @@
 
     \begin{frame}{Facts about finite fields}
         \begin{itemize}
-            \item Galois fields are fields which contain a finite number of elements.
             \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$, $\mathbb{Z}/p^n$ or $\mathbb{F}_p^n$.
             \item The following instruction sets have identical expressivity:
             \begin{itemize}
@@ -900,7 +954,7 @@
         \textit{Jump headlong into the calculations! Group the operations, classify them by their difficulties and not their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}''}{\'Evariste Galois, 1811-1832}
     \end{frame}
 
-    \section{Future work}
+    \section{Future Work}
 
     \begin{frame}{What's the point?}
         \begin{itemize}
