@@ -83,6 +83,110 @@
 
     \section{Finite Fields}\label{sec:finite-fields}
 
+    \begin{frame}
+        \frametitle{Recap: Classical Logic}
+        \begin{prooftree}
+            \bottomAlignProof
+            \AxiomC{$a \veebar b$}
+            \RightLabel{XOR}
+            \UnaryInfC{$(p \vee q)\land \neg (p\land q)\phantom{()}$}
+            \DisplayProof
+            \hskip 1.5em
+            \bottomAlignProof
+            \AxiomC{$a \to b$}
+            \RightLabel{Impl}
+            \UnaryInfC{$\neg a \vee b$}
+            \DisplayProof
+            \hskip 1.5em
+            \bottomAlignProof
+            \AxiomC{$a \leftrightarrow b$}
+            \RightLabel{Iff}
+            \UnaryInfC{$(\neg a \vee b)\land (\neg b\vee a)$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$\neg\neg a\phantom{()}$}
+            \RightLabel{DNeg}
+            \UnaryInfC{$a\phantom{()}$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a • (b • c)$}
+            \RightLabel{Assoc$_{\land\vee}$}
+            \UnaryInfC{$(a • b) • c$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a • b$}
+            \RightLabel{Comm$_{\land\vee}$}
+            \UnaryInfC{$b • a$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$a \land (b \vee c)$}
+            \RightLabel{Dist$_\land$}
+            \UnaryInfC{$(a \land b) \vee (a \land c)$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$a \vee (b \land c)$}
+            \RightLabel{Dist$_\vee$}
+            \UnaryInfC{$(a \vee b) \land (a \vee c)$}
+            \DisplayProof
+            \vskip 2.5em
+
+            \bottomAlignProof
+            \AxiomC{$\neg (a \vee b)$}
+            \RightLabel{DeMorgan$_\land$}
+            \UnaryInfC{$\neg a \land \neg b$}
+            \DisplayProof
+            \hskip 2.5em
+            \bottomAlignProof
+            \AxiomC{$\neg (a \land b)$}
+            \RightLabel{DeMorgan$_\vee$}
+            \UnaryInfC{$\neg a \vee \neg b$}
+        \end{prooftree}
+    \end{frame}
+
+    \begin{frame}[fragile]
+        \frametitle{Normal Forms}
+        \begin{columns}
+            \begin{column}{0.5\textwidth}
+            \begin{center}
+                Conjunctive Normal Form
+                \begin{prooftree}
+                    \AxiomC{$\neg (p\vee \neg q)\vee \neg \neg r$}
+                    \RightLabel{DNeg}
+                    \UnaryInfC{$\neg (p\vee \neg q)\vee r$}
+                    \RightLabel{DeMorgan}
+                    \UnaryInfC{$(\neg p\land  \neg \neg q)\vee r$}
+                    \RightLabel{DNeg}
+                    \UnaryInfC{$(\neg p\land  q)\vee r$}
+                    \RightLabel{Dist}
+                    \UnaryInfC{$(\neg p\vee r)\land  (q\vee r)$}
+                \end{prooftree}
+            \end{center}
+        \end{column}
+            \begin{column}{0.5\textwidth}  %%<--- here
+                \begin{center}
+                Zhegalkin Normal Form
+                \begin{prooftree}
+                    \AxiomC{$x + (y \land \neg z)$}
+                    \RightLabel{}
+                    \UnaryInfC{$x + (y(1 \veebar z))$}
+                    \RightLabel{}
+                    \UnaryInfC{$x + (y \veebar yz)$}
+                    \RightLabel{}
+                    \UnaryInfC{$x \veebar (y \veebar yz) \veebar x(y \veebar yz)$}
+                    \RightLabel{}
+                    \UnaryInfC{$x \veebar y \veebar xy \veebar yz \veebar xyz$}
+                \end{prooftree}
+                \end{center}
+            \end{column}
+        \end{columns}
+    \end{frame}
 
     \begin{frame}
         \frametitle{Facts about finite fields}
@@ -98,8 +202,8 @@
         \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
         \item There are (at least) two schools of thought about Boolean functions:
         \begin{itemize}
-        \item Logical: Conjunctive normal form. Not necessarily unique.
-        \item Algebra: Algebraic normal form. It is unique.
+        \item Logical: Conjunctive Normal Form (CNF). Not necessarily unique.
+        \item Algebra: Zhegalkin Normal Form (ZNF). It is unique.
         \end{itemize}
         \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2^m$ possesses $2^{m^{2^{n}}}$ inhabitants.
         \item The night before Evariste Galois was shot in a finite field, he spent writing about algebra.
