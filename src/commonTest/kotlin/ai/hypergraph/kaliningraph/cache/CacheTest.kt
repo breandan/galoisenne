@@ -6,9 +6,9 @@ class CacheTest {
   fun compute() = "hello".also { println(it) }
   interface A { /*...*/ }
   val A.prop by lazy { compute() }
-  /*
- ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.cache.testPattern"
- */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.cache.CacheTest.testPattern"
+*/
   @Test
   fun testPattern() {
     val a = object: A { }
