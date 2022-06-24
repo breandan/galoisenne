@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.0"
   id("com.google.devtools.ksp") version "1.7.0-1.0.6"
-  kotlin("jupyter.api") version "0.11.0-106"
+  kotlin("jupyter.api") version "0.11.0-117"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -122,7 +122,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.1.0")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.2.0")
@@ -156,7 +156,7 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
-        implementation("org.logicng:logicng:2.2.0")
+        implementation("org.logicng:logicng:2.2.1")
       }
     }
 
