@@ -52,13 +52,11 @@ fun algebra() =
       else null
     },
     plus = { a: Context<Boolean?>?, b: Context<Boolean?>? ->
-//      (a to b).also { println(it) }
-      (if (a == null && b != null) Context(b.π2, null, null)
+      if (a == null && b != null) Context(b.π2, null, null)
       else if (a != null && b != null)
-//        if (a.π1 == null) Context(b.π2, null, null)
         if (a.π2 == null) Context(a.π1, b.π2, null)
         else Context(a.π1, a.π2, b.π2)
       else if (a != null && b == null) a
-      else null)//.also { println("$a + $b = $it") }
+      else null
     }
   )
