@@ -13,9 +13,8 @@ val <A> Context<A>.r get() = π3
 val ecaAlgebra = algebra()
 fun makeVec(len: Int) =
   FreeMatrix(ecaAlgebra, len, 1) { r, c ->
-    if (r % 2 == 0) Context(null, true, null)
+    if (len - 1 == r) Context(null, true, null)
     else Context(null, false, null)
-//    else null
   }
 
 // Create a tridiagonal matrix
@@ -24,16 +23,22 @@ fun FreeMatrix<Context<Boolean?>?>.genMat(): FreeMatrix<Context<Boolean?>?> =
     if ((r - c).absoluteValue < 2) Context(null, null, null) else null
   }
 
-fun FreeMatrix<Context<Boolean?>?>.print() =
-//  println(transpose.map { if(it?.q == true) "1" else " "}.toString())
-  println(transpose.map { it?.toList()?.joinToString("") { if (it == null) "?" else if (it) "1" else "0" } ?: "[???]" }.toString())
+tailrec fun FreeMatrix<Context<Boolean?>?>.evolve(
+  rule: FreeMatrix<Context<Boolean?>?> = genMat(),
+  steps: Int = 100,
+  hashes: Set<Int> = emptySet(),
+  hashCode: Int = str().hashCode()
+): FreeMatrix<Context<Boolean?>?> =
+  if (steps == 0 || hashCode in hashes) this.also { it.print() }
+  else (rule * this.also { it.print() }).nonlinearity().evolve(rule, steps - 1,hashes + hashCode)
 
+fun FreeMatrix<Context<Boolean?>?>.str() = transpose.map { if(it?.q == true) "1" else " " }.toString()
+fun FreeMatrix<Context<Boolean?>?>.print() = println(str())
 
 fun Context<Boolean?>.applyRule(
   // https://www.wolframalpha.com/input?i=rule+110
   rule: (Boolean, Boolean, Boolean) -> Boolean = { p, q, r -> (q && !p) || (q xor r) }
-): Context<Boolean?> =
-  Context(null, rule(p ?: false, q!!, r ?: false), null)
+): Context<Boolean?> = Context(null, rule(p ?: false, q!!, r ?: false), null)
 
 fun FreeMatrix<Context<Boolean?>?>.nonlinearity() =
   FreeMatrix(numRows, 1) { r, c -> this[r, c]?.applyRule() }
