@@ -60,3 +60,80 @@ fun algebra() =
       else null
     }
   )
+
+// Rule 110 Encoding
+fun r(a: T, b: T, c: T) = F
+fun r(a: T, b: T, c: F) = T
+fun r(a: T, b: F, c: T) = T
+fun r(a: T, b: F, c: F) = F
+fun r(a: F, b: T, c: T) = T
+fun r(a: F, b: T, c: F) = T
+fun r(a: F, b: F, c: T) = T
+fun r(a: F, b: F, c: F) = F
+
+// Typelevel implementation of Rule 110
+val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+
+fun <
+  B0: Bool<B0, *, *, *, *, *>,
+  B1: Bool<B1, *, *, *, *, *>,
+  B2: Bool<B2, *, *, *, *, *>,
+  B3: Bool<B3, *, *, *, *, *>,
+  B4: Bool<B4, *, *, *, *, *>,
+  B5: Bool<B5, *, *, *, *, *>,
+  B6: Bool<B6, *, *, *, *, *>,
+  B7: Bool<B7, *, *, *, *, *>,
+  B8: Bool<B8, *, *, *, *, *>,
+  B9: Bool<B9, *, *, *, *, *>,
+  Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9,
+> BVec10<B0, B1, B2, B3, B4, B5, B6, B7, B8, B9>.eca(
+  op0: (B9, B0, B1) -> Y0,
+  op1: (B0, B1, B2) -> Y1,
+  op2: (B1, B2, B3) -> Y2,
+  op3: (B2, B3, B4) -> Y3,
+  op4: (B3, B4, B5) -> Y4,
+  op5: (B4, B5, B6) -> Y5,
+  op6: (B5, B6, B7) -> Y6,
+  op7: (B6, B7, B8) -> Y7,
+  op8: (B7, B8, B9) -> Y8,
+  op9: (B8, B9, B0) -> Y9,
+) =
+  BVec10(
+    op0(b9, b0, b1),
+    op1(b0, b1, b2),
+    op2(b1, b2, b3),
+    op3(b2, b3, b4),
+    op4(b3, b4, b5),
+    op5(b4, b5, b6),
+    op6(b5, b6, b7),
+    op7(b6, b7, b8),
+    op8(b7, b8, b9),
+    op9(b8, b9, b0),
+  )
