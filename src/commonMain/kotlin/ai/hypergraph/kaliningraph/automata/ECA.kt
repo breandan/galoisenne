@@ -62,14 +62,14 @@ fun algebra() =
   )
 
 // Rule 110 Encoding
-fun r(p: T, q: T, r: T) = F
-fun r(p: T, q: T, r: F) = T
-fun r(p: T, q: F, r: T) = T
-fun r(p: T, q: F, r: F) = F
-fun r(p: F, q: T, r: T) = T
-fun r(p: F, q: T, r: F) = T
-fun r(p: F, q: F, r: T) = T
-fun r(p: F, q: F, r: F) = F
+fun r(p: T, q: T, r: T) = F //(q and p.flip()) or (q xor r)
+fun r(p: T, q: T, r: F) = T //(q and p.flip()) or (q xor r)
+fun r(p: T, q: F, r: T) = T //(q and p.flip()) or (q xor r)
+fun r(p: T, q: F, r: F) = F //(q and p.flip()) or (q xor r)
+fun r(p: F, q: T, r: T) = T //(q and p.flip()) or (q xor r)
+fun r(p: F, q: T, r: F) = T //(q and p.flip()) or (q xor r)
+fun r(p: F, q: F, r: T) = T //(q and p.flip()) or (q xor r)
+fun r(p: F, q: F, r: F) = F //(q and p.flip()) or (q xor r)
 
 // Typelevel implementation of Rule 110
 val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
@@ -102,16 +102,7 @@ val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
 
 fun <
-  B0: Bool<B0, *, *, *, *, *>,
-  B1: Bool<B1, *, *, *, *, *>,
-  B2: Bool<B2, *, *, *, *, *>,
-  B3: Bool<B3, *, *, *, *, *>,
-  B4: Bool<B4, *, *, *, *, *>,
-  B5: Bool<B5, *, *, *, *, *>,
-  B6: Bool<B6, *, *, *, *, *>,
-  B7: Bool<B7, *, *, *, *, *>,
-  B8: Bool<B8, *, *, *, *, *>,
-  B9: Bool<B9, *, *, *, *, *>,
+  B0, B1, B2, B3, B4, B5, B6, B7, B8, B9,
   Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9,
 > BVec10<B0, B1, B2, B3, B4, B5, B6, B7, B8, B9>.eca(
   op0: (B9, B0, B1) -> Y0,
