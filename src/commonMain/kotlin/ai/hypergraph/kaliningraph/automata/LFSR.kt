@@ -69,38 +69,66 @@ fun <
 > BVec5<A, B, C, D, E>.lfsr(op: (C, E) -> Y) =
   BVec5(op(c, e), a, b, c, d)
 
+fun <
+  A: Bool<A, *, *, *, *, *>,
+  B: Bool<B, *, *, *, *, *>,
+  C: Bool<C, *, *, *, *, *>,
+  D: Bool<D, *, *, *, *, *>
+> BVec4<A, B, C, D>.lfsr(): BVec4<龖, A, B, C> = BVec4(T, a, b, c)
+
+fun <
+  A: Bool<A, *, *, *, *, *>,
+  B: Bool<B, *, *, *, *, *>,
+  C: Bool<C, *, *, *, *, *>
+> BVec4<A, B, C, C>.lfsr(): BVec4<口, A, B, C> = BVec4(F, a, b, c)
+
+fun <
+  A: Bool<A, *, *, *, *, *>,
+  B: Bool<B, *, *, *, *, *>,
+  C: Bool<C, *, *, *, *, *>,
+  D: Bool<D, *, *, *, *, *>,
+  E: Bool<E, *, *, *, *, *>
+> BVec5<A, B, C, D, E>.lfsr(): BVec5<龖, A, B, C, D> = BVec5(T, a, b, c, d)
+
+fun <
+  A: Bool<A, *, *, *, *, *>,
+  B: Bool<B, *, *, *, *, *>,
+  C: Bool<C, *, *, *, *, *>,
+  D: Bool<D, *, *, *, *, *>,
+> BVec5<A, B, C, D, C>.lfsr(): BVec5<口, A, B, C, D> = BVec5(F, a, b, c, d)
+
 fun rule(a: T, b: F) = a xor b
 fun rule(a: T, b: T) = a xor b
 fun rule(a: F, b: T) = a xor b
 fun rule(a: F, b: F) = a xor b
 
 val lfsr4 = BVec(T, F, F, T)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
 
 val lfsr5 = BVec(T, F, F, T, T)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
-  .lfsr(::rule)
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()
+  .lfsr()

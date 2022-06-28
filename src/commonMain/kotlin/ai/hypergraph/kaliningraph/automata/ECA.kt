@@ -62,14 +62,14 @@ fun algebra() =
   )
 
 // Rule 110 Encoding
-fun r(a: T, b: T, c: T) = F
-fun r(a: T, b: T, c: F) = T
-fun r(a: T, b: F, c: T) = T
-fun r(a: T, b: F, c: F) = F
-fun r(a: F, b: T, c: T) = T
-fun r(a: F, b: T, c: F) = T
-fun r(a: F, b: F, c: T) = T
-fun r(a: F, b: F, c: F) = F
+fun r(p: T, q: T, r: T) = F
+fun r(p: T, q: T, r: F) = T
+fun r(p: T, q: F, r: T) = T
+fun r(p: T, q: F, r: F) = F
+fun r(p: F, q: T, r: T) = T
+fun r(p: F, q: T, r: F) = T
+fun r(p: F, q: F, r: T) = T
+fun r(p: F, q: F, r: F) = F
 
 // Typelevel implementation of Rule 110
 val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
