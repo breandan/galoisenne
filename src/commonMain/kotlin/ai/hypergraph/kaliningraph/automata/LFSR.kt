@@ -1,6 +1,8 @@
 @file:Suppress("NonAsciiCharacters")
 package ai.hypergraph.kaliningraph.automata
 
+import kotlin.jvm.JvmName
+
 sealed class Bool<B, nB, aT, oF, xoT, xoF>
   (val t: B, val nb: nB, val at: aT, val of: oF, val xot: xoT, val xof: xoF)
 object 龖: Bool<龖, 口, 龖, 龖, 口, 龖>(龖, 口, 龖, 龖, 口, 龖)
@@ -52,7 +54,7 @@ fun <
 > BVec4<A, B, C, D>.flip() =
   BVec4(a.flip(), b.flip(), c.flip(), d.flip())
 
-fun <
+@JvmName("LFSRP") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>,
@@ -60,7 +62,7 @@ fun <
 > BVec4<A, B, C, D>.lfsr(op: (C, D) -> Y) =
   BVec4(op(c, d), a, b, c)
 
-fun <
+@JvmName("LFSRP") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>,
@@ -69,20 +71,20 @@ fun <
 > BVec5<A, B, C, D, E>.lfsr(op: (C, E) -> Y) =
   BVec5(op(c, e), a, b, c, d)
 
-fun <
+@JvmName("LFSRT") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>,
   D: Bool<D, *, *, *, *, *>
 > BVec4<A, B, C, D>.lfsr(): BVec4<龖, A, B, C> = BVec4(T, a, b, c)
 
-fun <
+@JvmName("LFSRF") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>
 > BVec4<A, B, C, C>.lfsr(): BVec4<口, A, B, C> = BVec4(F, a, b, c)
 
-fun <
+@JvmName("LFSRT") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>,
@@ -90,7 +92,7 @@ fun <
   E: Bool<E, *, *, *, *, *>
 > BVec5<A, B, C, D, E>.lfsr(): BVec5<龖, A, B, C, D> = BVec5(T, a, b, c, d)
 
-fun <
+@JvmName("LFSRF") fun <
   A: Bool<A, *, *, *, *, *>,
   B: Bool<B, *, *, *, *, *>,
   C: Bool<C, *, *, *, *, *>,
