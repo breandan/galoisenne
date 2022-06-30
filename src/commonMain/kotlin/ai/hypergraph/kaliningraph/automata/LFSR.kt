@@ -30,8 +30,9 @@ fun <A, B> BVec(a: A, b: B) = BVec2(a, b)
 fun <A, B, C> BVec(a: A, b: B, c: C) = BVec3(a, b, c)
 fun <A, B, C, D> BVec(a: A, b: B, c: C, d: D) = BVec4(a, b, c, d)
 fun <A, B, C, D, E> BVec(a: A, b: B, c: C, d: D, e: E) = BVec5(a, b, c, d, e)
-fun < B0, B1, B2, B3, B4, B5, B6, B7, B8, B9>
-    BVec(b0: B0, b1: B1, b2: B2, b3: B3, b4: B4, b5: B5, b6: B6, b7: B7, b8: B8, b9: B9) =
+fun <B0, B1, B2, B3, B4, B5, B6, B7, B8, B9>
+    BVec(b0: B0, b1: B1, b2: B2, b3: B3, b4: B4,
+         b5: B5, b6: B6, b7: B7, b8: B8, b9: B9) =
   BVec10(b0, b1, b2, b3, b4, b5, b6, b7, b8, b9)
 
 fun <A, B> BVec2<A, B>.rot1() = BVec2(b, a)

@@ -128,3 +128,51 @@ fun <
     op8(b7, b8, b9),
     op9(b8, b9, b0),
   )
+
+// Try to eliminate use-site dispatching via subtype constraint solving
+// https://kotlinlang.org/spec/kotlin-type-constraints.html#type-constraint-solving
+
+sealed interface XBool<B, nB> {
+  val b: B
+  val nb: nB
+}
+
+interface X: XBool<X, O>
+//  XXO<X, X, O>,
+//  XOX<X, O, X>,
+//  OXX<O, X, X>,
+//  OXO<O, X, O>,
+//  OOX<O, O, X>
+{
+  override val b: X
+  override val nb: O
+}
+interface O: XBool<O, X>
+//  XXX,
+//  XOO,
+//  OOO
+{
+  override val b: O
+  override val nb: X
+}
+
+interface OOO : Tr<O,O,O>
+interface OOX : Tr<O,O,X>
+interface OXO : Tr<O,X,O>
+interface OXX : Tr<O,X,X>
+interface XOO : Tr<X,O,O>
+interface XOX : Tr<X,O,X>
+interface XXO : Tr<X,X,O>
+interface XXX : Tr<X,X,X>
+
+interface Tr<A, B, C>
+
+@Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+inline fun <
+  reified B0, reified B1, reified B2,
+  Y0, Y1, Y2
+> BVec3<B0, B1, B2>.ecac(): BVec3<Y0, Y1, Y2> where
+  Y0 : B2, Y0: B0, Y0: B1,
+  Y1 : B0, Y1: B1, Y1: B2,
+  Y2 : B1, Y2: B2, Y2: B0
+= BVec3(null, null, null) as BVec3<Y0, Y1, Y2>
