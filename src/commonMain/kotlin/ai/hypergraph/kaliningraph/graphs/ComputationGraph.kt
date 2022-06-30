@@ -56,7 +56,16 @@ interface Polyad: Op
 interface TrigFun: Monad
 @Suppress("ClassName")
 object Ops {
-  abstract class TopOp { override fun toString() = this::class.simpleName!! }
+  abstract class TopOp {
+    override fun toString() = " " + when(this) {
+      is sum -> "+"
+      is sub -> "-"
+      is prod -> "*"
+      is ratio -> "/"
+      is odot -> "⊙"
+      else -> this::class.simpleName!!
+    } + " "
+  }
   object sum : TopOp(), Monad, Dyad
   object sub : TopOp(), Monad, Dyad
   object sin : TopOp(), TrigFun
