@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.10"
   id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-  kotlin("jupyter.api") version "0.11.0-117"
+  kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -119,13 +119,13 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.1.0")
+        implementation("org.graalvm.js:js:22.1.0.1")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.2.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.3.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -163,11 +163,11 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.3.1"
+        val kotestVersion = "5.3.2"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.9.0-M1")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.0-RC1")
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
@@ -198,8 +198,8 @@ kotlin {
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
-        implementation("org.eclipse.collections:eclipse-collections-api:11.0.0")
-        implementation("org.eclipse.collections:eclipse-collections:11.0.0")
+        implementation("org.eclipse.collections:eclipse-collections-api:11.1.0")
+        implementation("org.eclipse.collections:eclipse-collections:11.1.0")
       }
     }
 
