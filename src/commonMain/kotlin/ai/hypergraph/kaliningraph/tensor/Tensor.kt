@@ -333,7 +333,7 @@ tailrec fun <T: Matrix<S, A, M>, S, A, M> T.seekFixpoint(
 ): T {
   val next = succ(this)
   return if (stop(i, this, next)) next.also { println("Converged in $i iterations") }
-  else if(checkHistory) {
+  else if (checkHistory) {
     val hash = next.hashCode()
     if (hash in hashCodes)
       throw Exception("Cycle of length ${hashCodes.size - hashCodes.indexOf(hash)} detected!")
@@ -349,7 +349,9 @@ fun DoubleMatrix.toBMat(
 operator fun BooleanMatrix.times(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() * mat
 operator fun BooleanMatrix.plus(mat: DoubleMatrix): DoubleMatrix = toDoubleMatrix() + mat
 operator fun DoubleMatrix.minus(mat: BooleanMatrix): DoubleMatrix = this - mat.toDoubleMatrix()
-fun BooleanMatrix.toDoubleMatrix() = DoubleMatrix(numRows, numCols) { i, j -> if (get(i, j)) 1.0 else 0.0 }
+
+fun BooleanMatrix.toDoubleMatrix(): DoubleMatrix =
+  DoubleMatrix(numRows, numCols) { i, j -> if (get(i, j)) 1.0 else 0.0 }
 
 /**cf. [P]*/
 // Alternatively: a length-2ⁿ array which can be "parsed" into a certain shape?

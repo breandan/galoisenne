@@ -167,6 +167,8 @@ interface XXX : Tr<X,X,X>
 
 interface Tr<A, B, C>
 
+// https://discuss.kotlinlang.org/t/bug-in-where/25011
+// https://discuss.kotlinlang.org/t/current-intersection-type-options-in-kotlin/20903
 @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
 inline fun <
   reified B0, reified B1, reified B2,
