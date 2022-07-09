@@ -5,7 +5,6 @@ import kotlin.test.*
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.image.ImageTest"
 */
-
 class ImageTest {
   fun Array<IntArray>.to2DList() = map { it.toList() }
 

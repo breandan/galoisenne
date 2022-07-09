@@ -102,7 +102,7 @@ open class MarkovChain<T>(
 
   // TODO: mergeable cache?
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
-  val dists: LRUCache<List<Int>, Dist> = LRUCache(10_000)
+  val dists: LRUCache<List<Int>, Dist> = LRUCache()
 
   operator fun get(vararg variables: T?): Double =
     get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
