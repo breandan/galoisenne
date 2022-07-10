@@ -1,0 +1,29 @@
+digraph bayesLR {
+    margin=0
+    compound=true
+    rankdir=LR
+    node [shape=Mrecord,fontname="JetBrains Mono"]
+    edge [fontsize=8,fontcolor=indigo]
+    bgcolor=transparent
+    nslimit=20
+
+    g0 [label="{{μ|σ}|Normal|{<Out0>g0}}"]
+    g1 [label="{{μ|σ}|Normal|{<Out0>g1}}"]
+    g2 [label="{{μ|σ}|Normal|{<Out0>g2}}"]
+    g3 [label="{{μ|σ}|Normal|{<Out0>g3}}"]
+
+    f4 [label="{{<In0>g0|<In1>g1|<In2>g2}|Σ|{<Out0>f4}}"]
+    f5 [label="{{<In0>f4|<In1>g3}|Π|{<Out0>f5}}"]
+
+    g0:Out0 -> f4:In0
+    g1:Out0 -> f4:In1
+    g2:Out0 -> f4:In2
+    g3:Out0 -> f5:In1
+    f4:Out0 -> f5:In0
+
+
+    out1 [style=invis,shape=point]
+    out2 [style=invis,shape=point]
+
+    f5 -> out1
+}
