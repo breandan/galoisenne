@@ -210,7 +210,6 @@
         \end{lstlisting}
     \end{frame}
 
-
     \begin{frame}{A few observations on algebraic parsing}
         \begin{itemize}
             \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
@@ -483,9 +482,9 @@
         We can also represent graphs algebraically using the graph Laplacian:
         \[
             \mathcal{L}_{i,j} := \begin{cases}
-                             \deg(v_i) & \mbox{if}\ i = j \\
-                             -1 & \mbox{if}\ i \neq j\ \mbox{and}\ (v_i \rightarrow v_j) \in E \\
-                             0 & \mbox{otherwise},
+               \deg(v_i) & \mbox{if}\ i = j \\
+               -1 & \mbox{if}\ i \neq j\ \mbox{and}\ (v_i \rightarrow v_j) \in E \\
+               0 & \mbox{otherwise},
         \end{cases}\]
 
         The latter form is preferred for representation learning [\href{https://www.cs.mcgill.ca/~wlh/grl_book/}{Hamilton (2020)}].
