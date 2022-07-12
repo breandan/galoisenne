@@ -8,6 +8,8 @@
 \setlength{\paperwidth}{36in} % A0 width: 46.8in
 \setlength{\paperheight}{48in} % A0 width: 46.8in
 
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
 \usepackage{qrcode}
 \usepackage{multicol}
 \usepackage{enumitem}
@@ -22,6 +24,8 @@
 \usepackage{multirow}
 %\usepackage{hyperref}
 \usepackage{tikz}
+\usepackage{pgf-soroban}
+\usepackage{bussproofs}
 \usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc}
 \tikzstyle{mybox} = [draw=white, rectangle]
 %\definecolor{darkblue}{rgb}{0,0.08,0.45}
@@ -149,9 +153,9 @@
       \vspace*{-1cm}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
       \begin{itemize}
-        \item Boolean matrices are very useful for simulating automata
-        \item XOR, AND are functionally complete logical connectives
-        \item We implement sketch-based context-free program synthesis
+        \item Boolean matrices are useful structures for simulating finite state machines
+        \item The operators $\{\text{XOR}, \land, \top$\} are \textit{functionally complete} logical connectives
+        \item We implement sketch-based probabilistic context-free program synthesis
       \end{itemize}
       \end{minipage}
 
@@ -159,7 +163,7 @@
 
       \mysection{Algebraic Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:\\
+          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\\
       \end{minipage}
 
       \[
@@ -167,7 +171,7 @@
       \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, will produce a matrix $\mathbf{M}^*$:\\
+          Initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, will produce a fixedpoint $\mathbf{M}^*$:\\
       \end{minipage}
 
       \[
@@ -189,8 +193,8 @@
       \mysection{Parsing Dynamics}
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
-        \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
-        \item Recognizer can be translated into a parser by storing backpointers\\\\
+        \item The matrix $\mathbf M_0$ is strictly upper triangular, i.e., nilpotent of degree $n$
+        \item The recognizer can be translated into a parser by storing \textit{backpointers}\\\\
       \end{itemize}\vspace{-3cm}
       \begin{tabular}{ c c c }
         \small{$\mathbf{M}_1 = \mathbf{M}_0 + \mathbf{M}_0^2$} & \small{$\mathbf{M}_2 = \mathbf{M}_1 + \mathbf{M}_1^2$} & \small{$\mathbf{M}_3 = \mathbf{M}_2 + \mathbf{M}_2^2 = \mathbf{M}_4$} \\
@@ -199,12 +203,12 @@
         \includegraphics[trim=420 287 0 0,clip, width=12.34cm]{../figures/parse4.png}
       \end{tabular}
       \begin{itemize}
-        \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary, could solve for $\mathbf{M = M}^2$ above superdiagonal\ldots
+        \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary and we could solve for $\mathbf{M = M}^2$ above the superdiagonal\ldots
       \end{itemize}
       \end{minipage}
       \jointspacing
 
-      \mysection{Context Free Sketching}
+      \mysection{Binarized CFL Sketching}
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
         \item CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
@@ -218,18 +222,20 @@
             \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
             & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
         \end{tikzcd}\]
-        \item These operators can be lifted into matrices/tensors in the usual way
-        \item In most cases, only a few nonterminals are active at any given time
+        \item These operators can be lifted into matrices and tensors in the usual way
+        \item In most cases, only a few nonterminals will be active at any given time
         \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
+%        \item If density is desired, possible to use the Maculay representation
+%        \item If you know of a more eﬀicient encoding, please let us know!
       \end{itemize}
       \end{minipage}
 
       \jointspacing
 
-      \mysection{Linear Finite State Registers}
+      \mysection{Feedback Shift Registers}
 
-      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial with coefficients $P_{1\ldots n}$ and $\oplus := \veebar, \otimes := \land$:\\
       \end{minipage}
 
       \[
@@ -249,29 +255,105 @@
         \end{pmatrix}
       \]\\
 
-      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial}, then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:
       \end{minipage}
 
       \[
         \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
       \]
 
-      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
       This sequence has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
       \end{minipage}
 
       \jointspacing
 
-      \mysection{Typelevel LFSR}
+      \mysection{Typelevel Modular Arithmetic}
+
+      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      \begin{prooftree}
+        \AxiomC{
+          \phantom{\begin{tikzpicture}
+                     \tige{1}{0}{0}
+                     \barres{1}
+          \end{tikzpicture}$_n+10^n$}
+        }
+        \UnaryInfC{
+          \begin{tikzpicture}
+            \tige{1}{0}{0}
+            \tige{2}{0}{0}
+            \tige{3}{0}{0}
+            \cadre{3}
+          \end{tikzpicture}
+        }
+        \DisplayProof
+        \hskip 1em
+        \AxiomC{
+          \begin{tikzpicture}
+            \tige{1}{0}{0}
+            \barres{1}
+          \end{tikzpicture}$_n+10^n$
+        }
+        \UnaryInfC{
+          \begin{tikzpicture}
+            \tige{1}{1}{0}
+            \barres{1}
+          \end{tikzpicture}$_n\phantom{n+0^n}$
+        }
+        \DisplayProof
+        \hskip 1em
+        \AxiomC{
+          \begin{tikzpicture}
+            \tige{1}{4}{0}
+            \barres{1}
+          \end{tikzpicture}$_n+10^n$
+        }
+        \UnaryInfC{
+          \begin{tikzpicture}
+            \tige{1}{5}{0}
+            \barres{1}
+          \end{tikzpicture}$_n\phantom{n+0^n}$
+        }
+        \DisplayProof
+        \hskip 1em
+        \AxiomC{
+          \begin{tikzpicture}
+            \tige{1}{0}{0}
+            \barres{1}
+            \tige[2]{1}{9}{0}
+            \barres[2]{1}
+          \end{tikzpicture}$_n+10^n$
+        }
+        \UnaryInfC{
+          \begin{tikzpicture}
+            \tige{1}{1}{0}
+            \barres{1}
+            \tige[2]{1}{0}{0}
+            \barres[2]{1}
+          \end{tikzpicture}$_n\phantom{n+0^n}$
+        }
+      \end{prooftree}
+      \end{minipage}
 
 %      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}Kotlin$\nabla$ is capable of computing arbitrarily high order derivatives.\end{minipage}\\
-      \null\hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      \null\hspace*{2.1cm}\begin{minipage}[c]{0.90\columnwidth}
 \begin{kotlinlisting}
+// Typelevel Church encoding of dependently typed binary arithmetic
+val t: T<T<T<T<F<T<O>>>>>> = T.F.T * T.F.F.T + T.F.T - T.T.F / T.F
+
+// Typelevel implementation of Fibonacci linear finite state register
 val lfsr5 = BVec(T, F, F, T, T)
-  .lfsr().lfsr().lfsr() // BVec5<⬜, ⬛, ⬛, ⬛, ⬛, ⬜>
-  .lfsr().lfsr().lfsr() // BVec5<口, 口, 龖, 龖, 龖>
-  .lfsr().lfsr().lfsr() //...
+   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<_, _, T, T, T>
+   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<T, T, _, T, T>
+   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<_, T, _, T, _>
+
+// Typelevel implementation of Rule 110 elementary cellular automaton
+val eca10 = BVec(T, T, F, F, F, T, F, F, F, F)
+   .eca(::r110, ::r110, ...)  // BVec10<T, T, _, _, T, T, _, _, _, T>
+   .eca(::r110, ::r110, ...)  // BVec10<T, T, _, T, T, T, _, _, T, T>
+   .eca(::r110, ::r110, ...)  // BVec10<T, T, T, T, _, T, _, T, T, T>
+   .eca(::r110, ::r110, ...)  // BVec10<_, _, _, T, T, T, T, T, _, _>
 \end{kotlinlisting}
       \end{minipage}
 
@@ -279,7 +361,7 @@ val lfsr5 = BVec(T, F, F, T, T)
 
       \mysection{Tidyparse IDE Plugin}
 
-      \begin{minipage}[c]{0.90\columnwidth}
+      \null\hspace*{1.8cm}\begin{minipage}[c]{0.90\columnwidth}
           \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
       \end{minipage}
 
