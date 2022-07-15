@@ -342,7 +342,7 @@
 // Typelevel Church encoding of dependently typed binary arithmetic
 val t: T<T<T<T<F<T<O>>>>>> = T.F.T * T.F.F.T + T.F.T - T.T.F / T.F
 
-// Typelevel implementation of Fibonacci linear finite state register
+// Typelevel Fibonacci configuration linear feedback shift register
 val lfsr5 = BVec(T, F, F, T, T)
    .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<_, _, T, T, T>
    .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<T, T, _, T, T>
