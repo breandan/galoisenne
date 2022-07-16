@@ -142,10 +142,9 @@ kotlin {
         // MPJ (required for Poon's SPN)
 //        implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
-        val multik_version = "0.1.1"
-//  val multik_version = "0.1.1" // tests fail
-        implementation("org.jetbrains.kotlinx:multik-api:$multik_version")
-        implementation("org.jetbrains.kotlinx:multik-jvm:$multik_version")
+        val multik_version = "0.2.0-dev-2"
+        implementation("org.jetbrains.kotlinx:multik-core:$multik_version")
+        implementation("org.jetbrains.kotlinx:multik-core-jvm:$multik_version")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
 
         implementation("org.sosy-lab:java-smt:3.12.0")
