@@ -6,6 +6,10 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.toList
 import org.junit.jupiter.api.*
 import kotlin.random.Random
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.markovian.mcmc.MarkovChainTest"
+*/
+
 class MarkovChainTest {
   @Test
   fun testCategorical() {
