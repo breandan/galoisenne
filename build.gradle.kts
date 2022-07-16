@@ -142,9 +142,10 @@ kotlin {
         // MPJ (required for Poon's SPN)
 //        implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
-        val multik_version = "0.2.0-dev-2"
-        implementation("org.jetbrains.kotlinx:multik-core:$multik_version")
-        implementation("org.jetbrains.kotlinx:multik-core-jvm:$multik_version")
+        val multikVersion = "0.2.0-dev-2"
+        implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-core-jvm:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
 
         implementation("org.sosy-lab:java-smt:3.12.0")
@@ -172,8 +173,9 @@ kotlin {
         compileOnly("org.jetbrains:annotations:23.0.0")
         implementation("org.slf4j:slf4j-simple:1.7.32")
 
-        val multikVersion = "0.1.1"
-        implementation("org.jetbrains.kotlinx:multik-api:$multikVersion")
+        val multikVersion = "0.2.0-dev-2"
+        implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-core-jvm:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
