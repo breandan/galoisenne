@@ -144,8 +144,12 @@ kotlin {
 
         val multikVersion = "0.2.0-dev-2"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
+//        implementation("org.jetbrains.kotlinx:multik-core-linuxx64:$multikVersion")
+//        implementation("org.jetbrains.kotlinx:multik-kotlin-linuxx64:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-core-jvm:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-openblas-jvm:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-openblas:$multikVersion")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
 
         implementation("org.sosy-lab:java-smt:3.12.0")
