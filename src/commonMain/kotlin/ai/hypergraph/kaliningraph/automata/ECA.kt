@@ -73,7 +73,7 @@ fun r(p: F, q: F, r: F) = F //(q and p.flip()) or (q xor r)
 
 // Typelevel implementation of Rule 110
 val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
-  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r) // BVec10<F, F, F, F, F, F, F, F, F, T>
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
