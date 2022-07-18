@@ -224,12 +224,16 @@ fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true)
   cfg.let { if (allowNTs) it.generateStubs() else it }
      .run { synthesize(tokenize(this@synthesizeFrom), join) }
 
-fun Formula.toPython() = """
-def y_constr(${variables().joinToString(", ") { it.name() }}):
-    return ${toString().replace("~", "neg/").replace("|", "|V|").replace("<=>", "|eq|").replace("&", "|Λ|")}
+fun Formula.toPython(
+  params: String = variables().joinToString(", ") { it.name() },
+  bodyY: String = toString().replace("~", "neg/").replace("|", "|V|").replace("&", "|Λ|"),
+  bodyX: String = toString().replace("~", "not ").replace("|", "or").replace("&", "and")
+) = """
+def y_constr($params):
+    return $bodyY
     
-def x_constr(${variables().joinToString(", ") { it.name() }}):
-    return ${toString().replace("~", "not ").replace("|", "or").replace("<=>", "==").replace("&", "and")}
+def x_constr($params):
+    return $bodyX
 """.trimIndent()
 
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
@@ -246,11 +250,11 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         uniquenessConstraints(holeVariables) and
         (matrix valiantMatEq fixpoint)
 
-//    println(parsingConstraints.toPython())
 //    Sometimes simplification can take longer or even switch SAT->UNSAT?
-//    println("Original: ${originalConstraints.numberOfNodes()}")
-//    val parsingConstraints = BackboneSimplifier().apply(originalConstraints, false)
+//    println("Original: ${parsingConstraints.numberOfNodes()}")
+//    parsingConstraints = BackboneSimplifier().apply(parsingConstraints, false)
 //    println("Reduction: ${parsingConstraints.numberOfNodes()}")
+//    println(parsingConstraints.cnf().toPython())
 
     var (solver, solution) = parsingConstraints.let { f ->
       try { f.solveIncrementally() }
