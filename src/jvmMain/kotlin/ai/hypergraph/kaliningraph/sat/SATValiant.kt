@@ -236,6 +236,10 @@ def x_constr($params):
     return $bodyX
 """.trimIndent()
 
+fun Map<Variable, Boolean>.toPython() =
+  "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
+          v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
+
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
@@ -263,10 +267,11 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     var isFresh = T
     while (true)
       try {
+//      println(solution.toPython())
         val fillers = holeVariables.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-//        val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
-//        println(bMat.summarize(this@synthesize))
+//      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+//      println(bMat.summarize(this@synthesize))
         yield(tokens.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
 
         val holes = holeVariables.flatten()
