@@ -224,6 +224,14 @@ fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true)
   cfg.let { if (allowNTs) it.generateStubs() else it }
      .run { synthesize(tokenize(this@synthesizeFrom), join) }
 
+fun Formula.toPython() = """
+def y_constr(${variables().joinToString(", ") { it.name() }}):
+    return ${toString().replace("~", "neg/").replace("|", "|V|").replace("<=>", "|eq|").replace("&", "|Λ|")}
+    
+def x_constr(${variables().joinToString(", ") { it.name() }}):
+    return ${toString().replace("~", "not ").replace("|", "or").replace("<=>", "==").replace("&", "and")}
+""".trimIndent()
+
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
@@ -238,6 +246,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         uniquenessConstraints(holeVariables) and
         (matrix valiantMatEq fixpoint)
 
+//    println(parsingConstraints.toPython())
 //    Sometimes simplification can take longer or even switch SAT->UNSAT?
 //    println("Original: ${originalConstraints.numberOfNodes()}")
 //    val parsingConstraints = BackboneSimplifier().apply(originalConstraints, false)
