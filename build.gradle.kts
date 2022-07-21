@@ -152,7 +152,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:multik-openblas:$multikVersion")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
 
-        implementation("org.sosy-lab:java-smt:3.13.1")
+        implementation("org.sosy-lab:java-smt:3.12.0")
 
         // val libZ3Version = "4.8.15"
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
