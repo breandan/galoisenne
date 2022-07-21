@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.10"
   id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-  kotlin("jupyter.api") version "0.11.0-125"
+  kotlin("jupyter.api") version "0.11.0-133"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -107,7 +107,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.5")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
       }
     }
 
@@ -122,7 +122,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.1.0.1")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.3.0")
@@ -152,7 +152,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:multik-openblas:$multikVersion")
 //  implementation("org.jetbrains.kotlinx:multik-native:$multik_version")
 
-        implementation("org.sosy-lab:java-smt:3.12.0")
+        implementation("org.sosy-lab:java-smt:3.13.1")
 
         // val libZ3Version = "4.8.15"
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
@@ -160,7 +160,7 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
-        implementation("org.logicng:logicng:2.2.1")
+        implementation("org.logicng:logicng:2.3.0")
       }
     }
 
@@ -177,7 +177,7 @@ kotlin {
         compileOnly("org.jetbrains:annotations:23.0.0")
         implementation("org.slf4j:slf4j-simple:1.7.32")
 
-        val multikVersion = "0.2.0-dev-2"
+        val multikVersion = "0.2.0-dev-5"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-core-jvm:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
@@ -213,7 +213,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.3.3")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
       }
     }
   }
