@@ -1,0 +1,9 @@
+# Presentation of a group of 504 elements
+#
+# Expected run time: < 4 min
+
+p^7=1
+(p^2q)^3=1
+(p^3q)^2=1
+(pq^5)^2=1
+

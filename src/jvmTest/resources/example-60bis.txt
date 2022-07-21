@@ -1,0 +1,11 @@
+# Same group as example-60bis.txt but with
+# slightly different rules
+
+r^3=1
+s^3=1
+t^3=1
+
+rs=s^2r^2
+st=t^2s^2
+rt=t^2r^2
+

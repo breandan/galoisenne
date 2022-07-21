@@ -174,11 +174,11 @@ class SATValiantTest {
 */
   @Test
   fun testXujieMethod()  {
-    val cfg = "S -> ( S ) | [ S ] | [ ] | | ( ) | S S".parseCFG()
+    val cfg = "S -> [ S ] | [ ] | S S".parseCFG()
 
     println(cfg.prettyPrint())
 
-    val decodedString = "[]()[[__]]()()"
+    val decodedString = "____"
       .also { println("$it is being synthesized...") }
       .synthesizeFrom(cfg, allowNTs = false).first()
 

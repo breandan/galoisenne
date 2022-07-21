@@ -1,0 +1,7 @@
+# Presentation of a group of 8 elements
+# Althans volgens wikipedia volgens Chloë
+ii=jj
+jj=kk
+kk=ijk
+ijk=p
+pp=1

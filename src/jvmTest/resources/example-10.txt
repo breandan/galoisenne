@@ -1,0 +1,8 @@
+# Presentation of a group of 10 elements.
+# (Example taken from course notes)
+#
+SS=1
+R^5=1
+
+SR=R^4S
+

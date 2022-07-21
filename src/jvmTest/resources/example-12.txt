@@ -1,0 +1,6 @@
+# Presentation of a group of 12 elements.
+# (Example taken from course notes)
+#
+R^3=1
+S^3=1
+(RS)^2=1

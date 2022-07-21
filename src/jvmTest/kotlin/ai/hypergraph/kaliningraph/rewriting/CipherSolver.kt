@@ -11,7 +11,7 @@ import java.io.File
  */
 
 fun main() {
-  val lines = File("src/test/resources/google-10000-english.txt").readLines()
+  val lines = File("src/jvmTest/resources/google-10000-english.txt").readLines()
 
   val patterns = FastListMultimap.newMultimap<String, String>()
   lines.forEach { patterns.put(convertWordToPattern(it), it) }

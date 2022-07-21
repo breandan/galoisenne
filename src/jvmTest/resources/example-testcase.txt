@@ -1,0 +1,8 @@
+# What is the size of the group given by the following presentation?
+#
+# Expected run time: < 2 sec
+S^7=1
+T^2=1
+
+(S^4T)^4=1
+(ST)^3=1
