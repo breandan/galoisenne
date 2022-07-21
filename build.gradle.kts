@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.10"
   id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-  kotlin("jupyter.api") version "0.11.0-133"
+  kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -140,12 +140,12 @@ kotlin {
         implementation("ca.umontreal.iro.simul:ssj:3.3.1")
 
         // MPJ (required for Poon's SPN)
-//        implementation(files("$projectDir/libs/mpj-0.44.jar"))
+//  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         val multikVersion = "0.2.0-dev-5"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
-//        implementation("org.jetbrains.kotlinx:multik-core-linuxx64:$multikVersion")
-//        implementation("org.jetbrains.kotlinx:multik-kotlin-linuxx64:$multikVersion")
+//  implementation("org.jetbrains.kotlinx:multik-core-linuxx64:$multikVersion")
+//  implementation("org.jetbrains.kotlinx:multik-kotlin-linuxx64:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-core-jvm:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-openblas-jvm:$multikVersion")
