@@ -10,26 +10,22 @@ import java.util.stream.Collectors
  * A rewrite systemn that can complete itself
  * @param <T> The type of the "characters" in the text
 </T> */
-class RewriteSystem<T>(rules: Map<List<T>, List<T>>, comparator: Comparator<Collection<T>>) {
-  private val rules: Set<Rule<T>>
-  private var completeRules: MutableSet<Rule<T>>? = null
-  private val comparator: Comparator<Collection<T>>
 
   /**
    * Make a rewrite system with the given comparator and ruleset
    * @param rules      A map of completeRules
    * @param comparator A comparator indicating the sort order
    */
-  init {
-    //Convert Rules to actual Rule's, big to small
-    //Note that ordering does not belong in Rule, because a rule does not need to
-    //know the ordering.
-    this.rules = rules.keys.map { e: List<T> ->
+
+class RewriteSystem<T>(rules: Map<List<T>, List<T>>, val comparator: Comparator<Collection<T>>) {
+  //Convert Rules to actual Rule's, big to small
+  //Note that ordering does not belong in Rule, because a rule does not need to
+  //know the ordering.
+  private val rules: Set<Rule<T>> = rules.keys.map { e: List<T> ->
       val t2 = rules[e]!!
       if (comparator.compare(e, t2) > 0) Rule(e, t2) else Rule(t2, e)
     }.toSet()
-    this.comparator = comparator
-  }
+  private var completeRules: MutableSet<Rule<T>>? = null
 
   /**
    * Apply completeRules until a normal form is reached using the rules that set up the system

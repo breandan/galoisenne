@@ -153,7 +153,7 @@ class Rule<T>(from: List<T>, to: List<T>) {
       } else {
         if (curPos != 0) {
           //Knuth-Moris-Pratt
-          curPos = curPos - lut[curPos]
+          curPos -= lut[curPos]
           iter.previous() //next .next() is same
         }
       }
@@ -196,6 +196,7 @@ class Rule<T>(from: List<T>, to: List<T>) {
 
 class CriticalPair<T>(val to1: LinkedList<T>, val to2: LinkedList<T>) {
   override fun hashCode(): Int = to1.hashCode() + to2.hashCode()
-
   override fun toString(): String = "CriticalPair{to1=$to1, to2=$to2}"
+  override fun equals(other: Any?) =
+    (other as? CriticalPair<*>)?.let { it.to1 == to1 && it.to2 == to2 } ?: false
 }

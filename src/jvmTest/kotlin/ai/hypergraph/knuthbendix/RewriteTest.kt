@@ -4,10 +4,8 @@ import ai.hypergraph.knuthbendix.kbs.RewriteSystem
 import ai.hypergraph.knuthbendix.parser.Parser
 import ai.hypergraph.knuthbendix.parser.Parser.Companion.toString
 import org.junit.jupiter.api.*
-import java.io.BufferedReader
 import java.io.File
-import java.io.FileInputStream
-import java.io.InputStreamReader
+import java.lang.IllegalArgumentException
 import java.text.ParseException
 import kotlin.test.assertEquals
 
@@ -23,18 +21,15 @@ class RewriteTest {
     parser = Parser()
   }
 
-  @Throws(ParseException::class)
   private fun translateLHS(str: String) = toString(parser.parse(str).left)
 
   @Test
-  @Throws(ParseException::class)
   fun testElement() {
     Assertions.assertEquals("S", translateLHS("S"))
     Assertions.assertEquals("S'", translateLHS("S'"))
   }
 
   @Test
-  @Throws(ParseException::class)
   fun power() {
     Assertions.assertEquals("aaa", translateLHS("a^3"))
     Assertions.assertEquals("a'a'", translateLHS("a^-2"))
@@ -42,20 +37,12 @@ class RewriteTest {
   }
 
   @Test
-  @Throws(ParseException::class)
   fun reduction() {
     Assertions.assertEquals("", translateLHS("SS'"))
     Assertions.assertEquals("PT", translateLHS("PQ'RR'QT"))
   }
 
-//  @Test(expected = IllegalArgumentException::class)
-//  @Throws(ParseException::class)
-//  fun invalidPower() {
-//    translateLHS("b^0")
-//  }
-
   @Test
-  @Throws(ParseException::class)
   fun product() {
     Assertions.assertEquals("abc", translateLHS("abc"))
     Assertions.assertEquals("ppqqrr", translateLHS("p^2q^2r^2"))
@@ -63,7 +50,6 @@ class RewriteTest {
   }
 
   @Test
-  @Throws(ParseException::class)
   fun parentheses() {
     Assertions.assertEquals("a", translateLHS("(a)"))
     Assertions.assertEquals("abbbba'", translateLHS("(aba')^4"))
@@ -72,7 +58,6 @@ class RewriteTest {
   }
 
   @Test
-  @Throws(ParseException::class)
   fun rhs() {
     var r: Parser.Result = parser.parse("ST=R")
     assertEquals("ST", toString(r.left))
@@ -89,10 +74,8 @@ class RewriteTest {
   }
 
   @Test
-  @Throws(Exception::class)
-  fun test10() {
-    System.setIn(FileInputStream(File("src/jvmTest/resources/example-10.txt")))
-    main(arrayOf("example-1 0.txt"))
+  fun testParseFile() {
+    parseFile("src/jvmTest/resources/example-10.txt")
   }
 
   private val SHORTLEX = object : Comparator<Collection<Char>> {
@@ -127,44 +110,41 @@ class RewriteTest {
     return baseForms.size
   }
 
-  fun main(args: Array<String>) {
-    InputStreamReader(System.`in`).use { isr ->
-      BufferedReader(isr).use { reader ->
-        val currentTime = System.currentTimeMillis()
-        val parser = Parser()
-
-        // cannot use Java 8 streams because parse throws exception
-        var line = reader.readLine()
-        val parsed: MutableList<Parser.Result> = ArrayList<Parser.Result>()
-        while (line != null) {
-          if (line.isNotEmpty() && !line.startsWith("#"))
-            parsed.add(parser.parse(line))
-          line = reader.readLine()
-        }
-        val size = sizeOfGroup(parsed)
-        val time = System.currentTimeMillis() - currentTime
-        System.out.printf("%9d %6d.%03d s\n", size, time / 1000, time % 1000)
-      }
+  fun parseFile(args: String) {
+    val parser = Parser()
+    val currentTime = System.currentTimeMillis()
+    val parsed: MutableList<Parser.Result> = ArrayList()
+    File(args).readLines().forEach { line ->
+      if (line.isNotEmpty() && !line.startsWith("#"))
+        parsed.add(parser.parse(line))
     }
+    val size = sizeOfGroup(parsed)
+    val time = System.currentTimeMillis() - currentTime
+    System.out.printf("%9d %6d.%03d s\n", size, time / 1000, time % 1000)
   }
-//  @Test(expected = ParseException::class)
-//  @Throws(ParseException::class)
-//  fun parseError1() {
-//    translateLHS("p^q")
-//  }
-//
-//  @Test(expected = ParseException::class)
-//  @Throws(ParseException::class)
-//  fun parseError2() {
-//    translateLHS("((ab)=1")
-//  }
-//
-//  @Test(expected = ParseException::class)
-//  @Throws(ParseException::class)
-//  fun parseError3() {
-//    translateLHS("ST = 1")
-//  }
-//
-//  @Test
-//  fun parseError4() = translateLHS("= ST")
+
+  @Test
+  fun invalidPower() {
+    assertThrows<IllegalArgumentException> { translateLHS("b^0") }
+  }
+
+  @Test
+  fun parseError1() {
+    assertThrows<ParseException> { translateLHS("p^q") }
+  }
+
+  @Test
+  fun parseError2() {
+    assertThrows<ParseException> { translateLHS("((ab)=1") }
+  }
+
+  @Test
+  fun parseError3() {
+    assertThrows<ParseException> { translateLHS("ST = 1") }
+  }
+
+  @Test
+  fun parseError4() {
+    assertThrows<ParseException> { translateLHS("= ST") }
+  }
 }
