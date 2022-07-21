@@ -119,12 +119,12 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.1.0.1")
+        implementation("org.graalvm.js:js:22.2.0")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.5") // TODO: why?
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:3.3.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
@@ -142,7 +142,7 @@ kotlin {
         // MPJ (required for Poon's SPN)
 //        implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
-        val multikVersion = "0.2.0-dev-3"
+        val multikVersion = "0.2.0-dev-5"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
 //        implementation("org.jetbrains.kotlinx:multik-core-linuxx64:$multikVersion")
 //        implementation("org.jetbrains.kotlinx:multik-kotlin-linuxx64:$multikVersion")
