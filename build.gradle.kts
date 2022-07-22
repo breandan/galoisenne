@@ -194,6 +194,8 @@ kotlin {
         implementation("info.debatty:java-string-similarity:2.0.0")
         implementation("org.eclipse.collections:eclipse-collections-api:11.1.0")
         implementation("org.eclipse.collections:eclipse-collections:11.1.0")
+
+        implementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9")
       }
     }
 

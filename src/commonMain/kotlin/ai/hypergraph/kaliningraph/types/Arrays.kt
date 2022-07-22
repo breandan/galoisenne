@@ -33,7 +33,7 @@ infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
 fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
   (0 until numRows) * (0 until numCols)
 
-operator fun <T> Iterable<T>.times(s: Iterable<T>): Set<V2<T>> =
+operator fun IntProgression.times(s: IntProgression): Set<V2<Int>> =
   flatMap { s.map(it::cc).toSet() }.toSet()
 
 infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
