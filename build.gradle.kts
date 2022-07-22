@@ -85,7 +85,7 @@ rootProject.plugins.withType<NodeJsRootPlugin> {
 
 kotlin {
   jvm()
-  js {
+  js(IR) {
     browser {
       testTask {
         enabled = false
