@@ -125,9 +125,9 @@ val lfsr4 = BVec(T, F, F, T)
   .lfsr()
 
 val lfsr5 = BVec(T, F, F, T, T)
-  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<F, F, T, T, T>
-  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<T, T, F, T, T>
-  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr() // BVec5<F, T, F, T, F>
+  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+  .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
   .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()

@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.compiler
 
+import ai.hypergraph.kaliningraph.automata.T
 import com.tschuchort.compiletesting.*
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.*
@@ -62,13 +63,105 @@ class CompileTest {
     assertEquals(OK, result.exitCode)
   }
 
+  @Test
+  fun testLinearFiniteStateRegister() {
+    testCompile(
+      """
+      val t: BVec5<T, F, T, T, F> =
+        BVec(T, F, F, T, T)
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+      """.trimIndent(), OK
+    )
+
+    testCompile(
+      """
+      val t: BVec5<T, T, F, T, F> =
+        BVec(T, F, F, T, T)
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+          .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
+      """.trimIndent(), COMPILATION_ERROR
+    )
+  }
+
+  @Test
+  fun testElementaryCellularAutomaton() {
+    testCompile(
+      """
+      val t: BVec10<T, T, F, F, F, T, F, F, F, F> = 
+        BVec(F, F, F, F, F, F, F, F, F, T)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+      """.trimIndent(), OK
+    )
+
+    testCompile(
+      """
+      val t: BVec10<T, T, T, F, F, T, F, F, F, F> = 
+        BVec(F, F, F, F, F, F, F, F, F, T)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+          .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+      """.trimIndent(), COMPILATION_ERROR
+    )
+  }
+
   fun testCompile(@Language("kotlin") contents: String, exitCode: ExitCode) {
-    val kotlinSource = SourceFile.kotlin("KClass.kt", """
-        import ai.hypergraph.kaliningraph.graphs.*
-        import ai.hypergraph.kaliningraph.types.*
-        
-        $contents
-    """.trimIndent())
+    val kotlinSource = SourceFile.kotlin("KClass.kt",
+      """
+      import ai.hypergraph.kaliningraph.graphs.*
+      import ai.hypergraph.kaliningraph.types.*
+      import ai.hypergraph.kaliningraph.automata.*
+      import ai.hypergraph.kaliningraph.automata.T
+      import ai.hypergraph.kaliningraph.automata.F
+      
+      $contents
+      """.trimIndent())
 
     val result = KotlinCompilation().apply {
       sources = listOf(kotlinSource)
