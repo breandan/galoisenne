@@ -8,7 +8,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.7.10"
   id("com.google.devtools.ksp") version "1.7.10-1.0.6"
-  kotlin("jupyter.api") version "0.11.0-136-1"
+  kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -195,7 +195,7 @@ kotlin {
         implementation("org.eclipse.collections:eclipse-collections-api:11.1.0")
         implementation("org.eclipse.collections:eclipse-collections:11.1.0")
 
-//        implementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9")
+        implementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9")
       }
     }
 
