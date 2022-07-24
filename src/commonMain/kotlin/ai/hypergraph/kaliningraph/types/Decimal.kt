@@ -4,6 +4,7 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
+@Suppress("UNCHECKED_CAST")
 sealed class D<X, T: D<X, T>>(open val x: X? = null) {
   val _0_ get() = _0_(this as T)
   val _1_ get() = _1_(this as T)
