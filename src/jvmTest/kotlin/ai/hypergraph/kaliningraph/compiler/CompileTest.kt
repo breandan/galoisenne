@@ -67,6 +67,10 @@ class CompileTest {
   fun testLinearFiniteStateRegister() {
     testCompile(
       """
+      import ai.hypergraph.kaliningraph.automata.*
+      import ai.hypergraph.kaliningraph.automata.T
+      import ai.hypergraph.kaliningraph.automata.F
+
       val t: BVec5<T, F, T, T, F> =
         BVec(T, F, F, T, T)
           .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
@@ -81,6 +85,10 @@ class CompileTest {
 
     testCompile(
       """
+      import ai.hypergraph.kaliningraph.automata.*
+      import ai.hypergraph.kaliningraph.automata.T
+      import ai.hypergraph.kaliningraph.automata.F
+
       val t: BVec5<T, T, F, T, F> =
         BVec(T, F, F, T, T)
           .lfsr().lfsr().lfsr().lfsr().lfsr().lfsr()
@@ -98,6 +106,10 @@ class CompileTest {
   fun testElementaryCellularAutomaton() {
     testCompile(
       """
+      import ai.hypergraph.kaliningraph.automata.*
+      import ai.hypergraph.kaliningraph.automata.T
+      import ai.hypergraph.kaliningraph.automata.F
+
       val t: BVec10<T, T, F, F, F, T, F, F, F, F> = 
         BVec(F, F, F, F, F, F, F, F, F, T)
           .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
@@ -125,6 +137,10 @@ class CompileTest {
 
     testCompile(
       """
+      import ai.hypergraph.kaliningraph.automata.*
+      import ai.hypergraph.kaliningraph.automata.T
+      import ai.hypergraph.kaliningraph.automata.F
+
       val t: BVec10<T, T, T, F, F, T, F, F, F, F> = 
         BVec(F, F, F, F, F, F, F, F, F, T)
           .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
@@ -156,10 +172,6 @@ class CompileTest {
       """
       import ai.hypergraph.kaliningraph.graphs.*
       import ai.hypergraph.kaliningraph.types.*
-      import ai.hypergraph.kaliningraph.automata.*
-      import ai.hypergraph.kaliningraph.automata.T
-      import ai.hypergraph.kaliningraph.automata.F
-      
       $contents
       """.trimIndent())
 

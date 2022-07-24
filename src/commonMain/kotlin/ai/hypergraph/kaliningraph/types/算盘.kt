@@ -4,6 +4,7 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
+@Suppress("UNCHECKED_CAST")
 sealed class 数<丁, 己: 数<丁, 己>>(open val 中: 丁? = null, open val 码: String = "") {
   val 零 get() = 零(this as 己)
   val 一 get() = 一(this as 己)

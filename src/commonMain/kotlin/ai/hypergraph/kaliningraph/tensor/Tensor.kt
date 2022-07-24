@@ -128,8 +128,8 @@ val GF2_ALGEBRA: Ring<Int> =
 private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
   Ring.of(
     nil = t,
-    plus = { a, b -> TODO() },
-    times = { a, b -> TODO() }
+    plus = { _, _ -> TODO() },
+    times = { _, _ -> TODO() }
   )
 
 abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constructor(
