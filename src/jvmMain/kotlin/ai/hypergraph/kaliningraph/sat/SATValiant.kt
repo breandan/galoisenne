@@ -254,11 +254,12 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         uniquenessConstraints(holeVariables) and
         (matrix valiantMatEq fixpoint)
 
-//    Sometimes simplification can take longer or even switch SAT->UNSAT?
-//    println("Original: ${parsingConstraints.numberOfNodes()}")
-//    parsingConstraints = BackboneSimplifier().apply(parsingConstraints, false)
-//    println("Reduction: ${parsingConstraints.numberOfNodes()}")
-//    println(parsingConstraints.cnf().toPython())
+//  Sometimes simplification can take longer or even switch SAT->UNSAT?
+//  println("Original: ${parsingConstraints.numberOfNodes()}")
+//  parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
+//  parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
+//  println("Reduction: ${parsingConstraints.numberOfNodes()}")
+//  println(parsingConstraints.cnf().toPython())
 
     var (solver, solution) = parsingConstraints.let { f ->
       try { f.solveIncrementally() }

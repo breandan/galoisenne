@@ -1,8 +1,8 @@
 package ai.hypergraph.markovian.experiments
 
 import ai.hypergraph.kaliningraph.types.*
-import jetbrains.letsPlot.*
-import jetbrains.letsPlot.geom.*
+import org.jetbrains.letsPlot.*
+import org.jetbrains.letsPlot.geom.*
 import umontreal.ssj.probdist.NormalDist
 import umontreal.ssj.randvar.*
 import umontreal.ssj.rng.F2NL607

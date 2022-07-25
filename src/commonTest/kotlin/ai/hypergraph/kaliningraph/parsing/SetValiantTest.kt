@@ -103,17 +103,30 @@ fun testCFLValidationFails() {
   @Test
   fun testDyckLanguage() {
     """
-      S -> A B
-      S -> A C
-      S -> S S
-      C -> S B
-      A -> (
-      B -> )
-    """.let { cfg ->
+        START -> T
+        T -> A B
+        T -> A C
+        T -> T T
+        C -> T B
+        A -> (
+        B -> )
+      """.parseCFG().let { cfg ->
+      println(cfg.prettyPrint())
       assertTrue("()(()())()".matches(cfg))
       assertFalse("()(()()()".matches(cfg))
       assertTrue("()(())".matches(cfg))
       assertTrue("()()".matches(cfg))
+      assertFalse("())".matches(cfg))
+      assertFalse(")".matches(cfg))
+    }
+
+    """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
+      assertTrue("()(()())()".matches(cfg))
+      assertFalse("()(()()()".matches(cfg))
+      assertTrue("()(())".matches(cfg))
+      assertTrue("()()".matches(cfg))
+      assertFalse("())".matches(cfg))
+      assertFalse(")".matches(cfg))
     }
   }
 
@@ -235,9 +248,9 @@ fun testCFLValidationFails() {
       """
         S -> a `->` b `|` c
       """.parseCFG().let { cfg ->
-              println(cfg.prettyPrint())
-              assertTrue("a -> b | c".matches(cfg))
-          }
+        println(cfg.prettyPrint())
+        assertTrue("a -> b | c".matches(cfg))
+      }
   }
 
 /*
@@ -260,5 +273,21 @@ fun testCFLValidationFails() {
       C -> c
       D -> d
     """.parseCFG().let { cfg -> assertEquals(normalForm, cfg) }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testNotCopy"
+*/
+  @Test
+  fun testNotCopy()  {
+//    https://cs.stackexchange.com/a/19155/74308
+    """
+      START -> A | B | A B | B A
+      A -> a | a A a | a A b | b A b | b A a
+      B -> b | a B a | a B b | b B b | b B a
+    """.parseCFG().let { cfg ->
+      assertTrue("aaaaaabb".matches(cfg))
+      assertFalse("aaaaaa".matches(cfg))
+    }
   }
 }

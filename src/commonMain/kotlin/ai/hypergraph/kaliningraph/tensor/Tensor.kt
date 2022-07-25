@@ -40,7 +40,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   infix fun List<T>.dot(es: List<T>): T =
     require(size == es.size) { "Length mismatch: $size . ${es.size}" }
       .run { with(algebra) { mapIndexed { i, a -> a * es[i] }.reduce { a, b -> a + b } } }
-//      .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
+//    .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(rows: Int = numRows, cols: Int = numCols, data: List<T>, alg: A = algebra): M

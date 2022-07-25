@@ -4,11 +4,11 @@ import ai.hypergraph.kaliningraph.visualization.browserCmd
 import ai.hypergraph.markovian.pmap
 import jetbrains.datalore.base.geometry.DoubleVector
 import jetbrains.datalore.plot.PlotSvgExportPortable
-import jetbrains.letsPlot.geom.geomDensity
-import jetbrains.letsPlot.ggsize
-import jetbrains.letsPlot.intern.Plot
-import jetbrains.letsPlot.intern.toSpec
-import jetbrains.letsPlot.letsPlot
+import org.jetbrains.letsPlot.geom.geomDensity
+import org.jetbrains.letsPlot.ggsize
+import org.jetbrains.letsPlot.intern.Plot
+import org.jetbrains.letsPlot.intern.toSpec
+import org.jetbrains.letsPlot.letsPlot
 import java.io.File
 import kotlin.random.Random
 
