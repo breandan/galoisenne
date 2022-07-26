@@ -294,7 +294,7 @@ class SATValiantTest {
 
     val distinct = mutableSetOf<String>()
     "[X_+(_)_(__________".also { println("$it is being synthesized...") }
-      .synthesizeFrom(cfg, allowNTs = false).take(10)
+      .synthesizeFrom(cfg, allowNTs = false).take(100)
       .forEach { decodedString ->
         assertTrue(decodedString !in distinct)
         distinct += decodedString
@@ -304,6 +304,33 @@ class SATValiantTest {
         println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
 
         assertTrue(isValid)
+      }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithRandomSubstitution"
+*/
+  @Test
+  fun testMultiSATWithSubstitution() {
+    val cfg = """
+      S -> A | B | A + B | A * B | S + S | S * S | [ S ] | ( S )
+      A -> X | Y
+      B -> X | Z
+    """.parseCFG()
+
+    val distinct = mutableSetOf<String>()
+    "___________________".also { println("$it is being synthesized...") }
+      .synthesizeFrom(cfg, allowNTs = false).take(100)
+      .forEach { decodedString ->
+        val another = decodedString
+          .toCharArray().joinToString("") { if(Math.random() < 0.7) "_" else it.toString() }
+          .drop(1).dropLast(1).let { "_${it}_" }
+          .synthesizeFrom(cfg, allowNTs = false)
+          .first()
+
+        println("Decoded: $decodedString")
+        println("Another: $another")
+        assertTrue(cfg.isValid(another))
       }
   }
 

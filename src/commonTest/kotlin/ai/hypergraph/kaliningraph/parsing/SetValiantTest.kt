@@ -92,10 +92,10 @@ class SetValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testCFLValidationFails"
 */
-@Test
-fun testCFLValidationFails() {
-  assertFails { """( S ) -> S""".validate() }
-}
+  @Test
+  fun testCFLValidationFails() {
+    assertFails { """( S ) -> S""".validate() }
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyckLanguage"
