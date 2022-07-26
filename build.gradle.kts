@@ -6,8 +6,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.10"
-  id("com.google.devtools.ksp") version "1.7.10-1.0.6"
+  kotlin("multiplatform") version "1.7.20-Beta"
   kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -99,7 +98,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        val multikVersion = "0.2.0-dev-5"
+        val multikVersion = "0.2.0"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
@@ -165,7 +164,7 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.9.0-RC1")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.0")
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
@@ -188,7 +187,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.6.0" }
+        val tinkerpopVersion by extra { "3.6.1" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
