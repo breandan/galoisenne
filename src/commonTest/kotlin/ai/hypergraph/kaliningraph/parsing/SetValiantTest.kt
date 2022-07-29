@@ -49,7 +49,6 @@ class SetValiantTest {
     }
   }
 
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testAABB"
 */
@@ -209,7 +208,6 @@ class SetValiantTest {
     }
   }
 
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyck3Solver"
 */
@@ -279,8 +277,8 @@ class SetValiantTest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testNotCopy"
 */
   @Test
-  fun testNotCopy()  {
-//    https://cs.stackexchange.com/a/19155/74308
+  fun testNotCopy() {
+// https://cs.stackexchange.com/a/19155/74308
     """
       START -> A | B | A B | B A
       A -> a | a A a | a A b | b A b | b A a
@@ -289,5 +287,21 @@ class SetValiantTest {
       assertTrue("aaaaaabb".matches(cfg))
       assertFalse("aaaaaa".matches(cfg))
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testEpsilonElimination"
+*/
+  @Test
+  fun testEpsilonElimination() {
+    """
+     START -> A B C
+     A -> a A | ε
+     B -> b B | ε
+     C -> ε 
+    """.parseCFG().let { println(it.prettyPrint()) }
+
+    """S -> ( ) | [ ] | ( S ) | [ S ] | S S"""
+      .parseCFG().let { println(it.prettyPrint()) }
   }
 }

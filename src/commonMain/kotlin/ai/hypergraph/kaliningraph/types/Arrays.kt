@@ -43,8 +43,8 @@ operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
 // Depleted powerset, i.e., contains no empty sets
-fun <T> Collection<T>.depletedPS(): Set<Set<T>> =
-  if (1 < size) drop(1).depletedPS().let { it + it.map { it + first() } }
+fun <T> Collection<T>.depletedPowerset(): Set<Set<T>> =
+  if (1 < size) drop(1).depletedPowerset().let { it + it.map { it + first() } }
   else setOf(setOf(first()))
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =

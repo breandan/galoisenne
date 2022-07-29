@@ -181,8 +181,8 @@ fun String.validate(
 // TODO: Implement denormalization / original parse tree recovery
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
-  addGlobalStartSymbol()
-    .expandOr()
+  addGlobalStartSymbol().expandOr()
+    //.elimEpsilonProds()
     .elimVarUnitProds()
     .refactorRHS()
     .terminalsToUnitProds()
@@ -205,6 +205,7 @@ fun CFG.generateStubs() =
   this + filter { "`" !in it.LHS && "." !in it.LHS }
       .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
+// Add start symbol if none are present (e.g., in case the user forgets)
 private fun CFG.addGlobalStartSymbol() = this +
   if (START_SYMBOL in nonterminals) emptySet()
   else nonterminals.map { START_SYMBOL to listOf(it) }
@@ -218,16 +219,40 @@ private fun CFG.expandOr(): CFG =
     }.map { prod.LHS to it }
   }.toSet()
 
+// http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
+tailrec fun CFG.nullableNonterminals(
+  nbls: Set<String> = setOf("ε"),
+  nnlbls: Set<String> = filter { nbls.containsAll(it.RHS) }.map { it.LHS }.toSet()
+): Set<String> =
+  if (nnlbls == (nbls - "ε")) nnlbls else nullableNonterminals(nnlbls + nbls)
+
+fun List<String>.drop(nullables: Set<String>, indicesToDrop: Set<Int>): List<String> =
+  mapIndexedNotNull { i, s ->
+    if (s in nullables && i in indicesToDrop) s
+    else if (s in nullables && i !in indicesToDrop) null
+    else s
+  }
+
+// http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.2
+fun Production.allSubSeq(
+  nullables: Set<String>,
+  indices: Set<Set<Int>> = RHS.indices.filter { RHS[it] in nullables }.depletedPowerset()
+): Set<Production> = indices.map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
+
 /**
- * TODO: Eliminate ε productions
+ * Eliminates ε productions
  *  - Determine nullable variables, i.e., those which contain ε on the RHS
  *  - For each production omit every possible subset of nullable variables,
  *      e.g., (P -> AxB, A -> ε, B -> ε) -> (P -> xB, P -> Ax, P -> x)
- *  - Delete all productions with an empty RHS
+ *  - Remove all productions with an empty RHS
  */
 
+fun CFG.elimEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
+  flatMap { p -> if (p.RHS.any { it in nlbls }) p.allSubSeq(nlbls) else listOf(p) }
+    .toSet()
+
 /**
- * Eliminate all non-genereating and unreachable symbols.
+ * Eliminate all non-generating and unreachable symbols.
  *
  * All terminal-producing symbols are generating.
  * If A -> [..] and all symbols in [..] are generating, then A is generating
@@ -257,7 +282,7 @@ private fun CFG.generatingSymbols(
   generating: Set<String> = from.toSet()
 ): Set<String> =
   if (from.isEmpty()) generating
-  else filter { it.LHS !in generating && it.RHS.all { it in generating } }
+  else filter { it.LHS !in generating && generating.containsAll(it.RHS) }
     .map { it.LHS }.let { generatingSymbols(it, generating + it) }
 
 /* Drops variable unit productions, for example:

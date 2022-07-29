@@ -1,10 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
-import ai.hypergraph.kaliningraph.image.toHTML
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.test.*
@@ -20,7 +17,8 @@ class SATValiantTest {
   fun testVecJoin() {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
 
-    val pwrsetSquared = cfg.nonterminals.take(5).depletedPS().let { it * it }
+    val pwrsetSquared =
+      cfg.nonterminals.take(5).depletedPowerset().let { it * it }
     println("Cardinality:" + pwrsetSquared.size)
 
     /*
