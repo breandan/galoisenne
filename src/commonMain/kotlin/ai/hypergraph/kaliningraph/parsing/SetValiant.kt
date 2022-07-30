@@ -150,11 +150,11 @@ fun String.parseCFG(
   validate: Boolean = false
 ): CFG =
   (if (validate) validate() else this).lines().filter(String::isNotBlank)
-     .map { line ->
-         val prod = line.split(" -> ").map { it.trim() }
-         if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
-         else throw Exception("Invalid production: $line")
-     }.toSet().let { if (normalize) it.normalForm else it }
+    .map { line ->
+      val prod = line.split(" -> ").map { it.trim() }
+      if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
+      else throw Exception("Invalid production ${prod.size}: $line")
+    }.toSet().let { if (normalize) it.normalForm else it }
 
 fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
 
@@ -182,7 +182,7 @@ fun String.validate(
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol().expandOr()
-    //.elimEpsilonProds()
+    .refactorEpsilonProds()
     .elimVarUnitProds()
     .refactorRHS()
     .terminalsToUnitProds()
@@ -226,30 +226,33 @@ tailrec fun CFG.nullableNonterminals(
 ): Set<String> =
   if (nnlbls == (nbls - "ε")) nnlbls else nullableNonterminals(nnlbls + nbls)
 
-fun List<String>.drop(nullables: Set<String>, indicesToDrop: Set<Int>): List<String> =
+fun List<String>.drop(nullables: Set<String>, keep: Set<Int>): List<String> =
   mapIndexedNotNull { i, s ->
-    if (s in nullables && i in indicesToDrop) s
-    else if (s in nullables && i !in indicesToDrop) null
+    if (s in nullables && i !in keep) null
+    else if (s in nullables && i in keep) s
     else s
   }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.2
 fun Production.allSubSeq(
   nullables: Set<String>,
-  indices: Set<Set<Int>> = RHS.indices.filter { RHS[it] in nullables }.depletedPowerset()
+  indices: Set<Set<Int>> = RHS.indices.filter { RHS[it] in nullables }.powerset(true)
 ): Set<Production> = indices.map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
 
 /**
- * Eliminates ε productions
+ * Makes ε-productions optional. N.B. We do not use CNF, but almost-CNF!
+ * ε-productions are allowed, because want to be able to synthesize them
+ * as special characters, then simply omit them during printing.
+ *
  *  - Determine nullable variables, i.e., those which contain ε on the RHS
  *  - For each production omit every possible subset of nullable variables,
  *      e.g., (P -> AxB, A -> ε, B -> ε) -> (P -> xB, P -> Ax, P -> x)
  *  - Remove all productions with an empty RHS
  */
 
-fun CFG.elimEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
+fun CFG.refactorEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
   flatMap { p -> if (p.RHS.any { it in nlbls }) p.allSubSeq(nlbls) else listOf(p) }
-    .toSet()
+    .filter { it.RHS.isNotEmpty() }.toSet()
 
 /**
  * Eliminate all non-generating and unreachable symbols.

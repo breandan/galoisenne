@@ -42,10 +42,13 @@ infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
-// Depleted powerset, i.e., contains no empty sets
-fun <T> Collection<T>.depletedPowerset(): Set<Set<T>> =
-  if (1 < size) drop(1).depletedPowerset().let { it + it.map { it + first() } }
-  else setOf(setOf(first()))
+
+fun <T> Collection<T>.powerset(
+  includeEmptySet: Boolean = false,
+  acc: Set<Set<T>> = setOf(setOf())
+): Set<Set<T>> =
+  if (isNotEmpty()) drop(1).powerset(includeEmptySet, acc + acc.map { it + first() })
+  else acc + (if (includeEmptySet) setOf(emptySet()) else setOf())
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()

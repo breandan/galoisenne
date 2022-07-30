@@ -273,14 +273,19 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
-        yield(tokens.joinToString(join) { if (it == "_") fillers.removeAt(0)!! else it })
+        val completion = tokens.joinToString(join) {
+          if (it == "_") fillers.removeAt(0)!!.let { if (it == "ε") "" else it }
+          else it
+        }
+
+        yield(completion)
 
         val holes = holeVariables.flatten()
         isFresh = isFresh and solution.filter { it.key in holes }.areFresh()
 
         val model = solver.run { add(isFresh); sat(); model() }
         solution = solution.keys.associateWith { model.evaluateLit(it) }
-      } catch (e: Exception) { e.printStackTrace(); break }
+      } catch (e: Exception) { break }
 
     ff.clear()
   }

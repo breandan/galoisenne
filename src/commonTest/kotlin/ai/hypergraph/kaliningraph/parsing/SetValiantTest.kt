@@ -288,20 +288,4 @@ class SetValiantTest {
       assertFalse("aaaaaa".matches(cfg))
     }
   }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testEpsilonElimination"
-*/
-  @Test
-  fun testEpsilonElimination() {
-    """
-     START -> A B C
-     A -> a A | ε
-     B -> b B | ε
-     C -> ε 
-    """.parseCFG().let { println(it.prettyPrint()) }
-
-    """S -> ( ) | [ ] | ( S ) | [ S ] | S S"""
-      .parseCFG().let { println(it.prettyPrint()) }
-  }
 }

@@ -18,7 +18,7 @@ class SATValiantTest {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
 
     val pwrsetSquared =
-      cfg.nonterminals.take(5).depletedPowerset().let { it * it }
+      cfg.nonterminals.take(5).powerset().let { it * it }
     println("Cardinality:" + pwrsetSquared.size)
 
     /*
@@ -371,5 +371,28 @@ class SATValiantTest {
 
     val t = cfg.initialMatrix(cfg.tokenize("3 + 1 = 4"))
     assertNotEquals(t * (t * t), (t * t) * t)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVariableLengthDecoding"
+*/
+  @Test
+  fun testVariableLengthDecoding() {
+    val cfg = """
+       START -> A B C
+       A -> a A | ε
+       B -> b B | ε
+       C -> ε
+    """.parseCFG()
+
+    println("Grammar:\n" + cfg.prettyPrint())
+    "_________".synthesizeFrom(cfg, allowNTs = false)
+      .distinct().take(100)
+      .forEach { decodedString ->
+        val isValid = cfg.isValid(decodedString)
+        println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
+
+        assertTrue(isValid)
+      }
   }
 }

@@ -153,14 +153,14 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
-        implementation("org.logicng:logicng:2.3.0")
+        implementation("org.logicng:logicng:2.3.1")
       }
     }
 
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.4.0"
+        val kotestVersion = "5.4.1"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
