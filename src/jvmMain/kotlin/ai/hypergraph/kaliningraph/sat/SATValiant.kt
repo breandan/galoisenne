@@ -278,7 +278,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
           else it
         }
 
-        yield(completion)
+        if (completion.trim().isNotBlank()) yield(completion)
 
         val holes = holeVariables.flatten()
         isFresh = isFresh and solution.filter { it.key in holes }.areFresh()

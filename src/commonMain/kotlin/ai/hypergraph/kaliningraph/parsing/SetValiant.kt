@@ -251,7 +251,8 @@ fun Production.allSubSeq(
  */
 
 fun CFG.refactorEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
-  flatMap { p -> if (p.RHS.any { it in nlbls }) p.allSubSeq(nlbls) else listOf(p) }
+  (this + setOf(START_SYMBOL to listOf(START_SYMBOL, "ε")))
+    .flatMap { p -> if (p.RHS.any { it in nlbls }) p.allSubSeq(nlbls) else listOf(p) }
     .filter { it.RHS.isNotEmpty() }.toSet()
 
 /**

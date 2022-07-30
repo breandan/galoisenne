@@ -394,5 +394,33 @@ class SATValiantTest {
 
         assertTrue(isValid)
       }
+
+    val dyckPadded = "S -> [ S ] | [ ] | S S".parseCFG()
+
+    println("Grammar:\n" + dyckPadded.prettyPrint())
+    "_________".synthesizeFrom(dyckPadded, allowNTs = false)
+      .distinct().take(100)
+      .forEach { decodedString ->
+        val isValid = dyckPadded.isValid(decodedString)
+        println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
+
+        assertTrue(isValid)
+      }
+
+    val arithPadded= """
+        S -> S + S | S * S | S - S | S / S | ( S )
+        S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+        S -> X | Y | Z
+      """.parseCFG()
+
+    println("Grammar:\n" + arithPadded.prettyPrint())
+    "_________".synthesizeFrom(arithPadded, allowNTs = false)
+      .distinct().take(100)
+      .forEach { decodedString ->
+        val isValid = arithPadded.isValid(decodedString)
+        println("$decodedString is${if (isValid) " " else " not "}valid according to SetValiant!")
+
+        assertTrue(isValid)
+      }
   }
 }
