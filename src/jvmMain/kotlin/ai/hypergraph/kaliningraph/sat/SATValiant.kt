@@ -9,20 +9,14 @@ import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
-import org.logicng.transformations.simplification.AdvancedSimplifier
-import org.logicng.transformations.simplification.BackboneSimplifier
-import org.logicng.transformations.simplification.DefaultRatingFunction
-import org.logicng.transformations.simplification.DistributiveSimplifier
-import org.logicng.transformations.simplification.FactorOutSimplifier
-import org.logicng.transformations.simplification.NegationSimplifier
 import kotlin.collections.filter
 
 @JvmName("joinFormula")
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
   if (left.isEmpty() || right.isEmpty()) emptyList()
   else List(left.size) { i ->
-    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
+    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
@@ -30,8 +24,8 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
   if (left.isEmpty() || right.isEmpty()) emptyList()
   else List(left.size) { i ->
-    bimap[nonterminals.elementAt(i)].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[nonterminals.indexOf(B)] and right[nonterminals.indexOf(C)] }
+    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
@@ -53,10 +47,10 @@ fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
 
 fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
 fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
-  nts.mapIndexedNotNull { i, it -> if(it) nonterminals.elementAt(i) else null }.toSet()
+  nts.mapIndexedNotNull { i, it -> if(it) bindex[i] else null }.toSet()
 
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
-  mapIndexedNotNull { i, it -> if(it) cfg.nonterminals.elementAt(i) else null }.toSet()
+  mapIndexedNotNull { i, it -> if(it) cfg.bindex[i] else null }.toSet()
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
@@ -77,7 +71,7 @@ infix fun FreeMatrix<List<Formula>>.valiantMatEq(that: FreeMatrix<List<Formula>>
     .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
-  mat[0].last()[nonterminals.indexOf(START_SYMBOL)]
+  mat[0].last()[bindex[START_SYMBOL]]
 
 // Encodes the constraint that a bit-vector representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
@@ -100,20 +94,22 @@ fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 
-fun CFG.makeSATLitAlgebra(): Ring<List<Boolean>?> =
+val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
   Ring.of(
     nil = List(nonterminals.size) { false },
     plus = { x, y -> maybeUnion(x, y) },
     times = { x, y -> maybeJoin(x, y) }
   )
+}
 
-fun CFG.makeSATAlgebra() =
+val CFG.satAlgebra by cache {
   Ring.of(
     nil = List(nonterminals.size) { F },
     one = List(nonterminals.size) { T },
     plus = { a, b -> a union b },
     times = { a, b -> join(a, b) }
   )
+}
 
 fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
   data.map {
@@ -147,7 +143,7 @@ fun CFG.constructInitialMatrix(
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
   literalMatrix: FreeMatrix<List<Boolean>?> =
-    FreeMatrix(makeSATLitAlgebra(), tokens.size + 1) { r, c ->
+    FreeMatrix(satLitAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c) {
         val word = tokens[c - 1]
         if (tokens[c - 1].isHoleToken()) null
@@ -157,7 +153,7 @@ fun CFG.constructInitialMatrix(
       //.also { println("Literal matrix:\n${it.summarize()}") }
       .seekFixpoint { it + it * it },
   formulaMatrix: FreeMatrix<List<Formula>> =
-    FreeMatrix(makeSATAlgebra(), tokens.size + 1) { r, c ->
+    FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
         val word = tokens[c - 1]
         if (word == "_")
@@ -203,7 +199,7 @@ fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
-  bitvec.mapIndexedNotNull { i, it -> if (it) nonterminals.elementAt(i) else null }.toSet()
+  bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
 fun CFG.terminal(
   bitvec: List<Boolean>,

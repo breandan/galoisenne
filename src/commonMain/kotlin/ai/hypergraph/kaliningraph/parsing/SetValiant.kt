@@ -20,8 +20,16 @@ val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
+val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 
+// Maps indices to nonterminals and nonterminals to indices
+class Bindex(CFG: CFG) {
+  val indexedNTs: Array<String> by cache { CFG.nonterminals.toTypedArray() }
+  val ntIndices: Map<String, Int> by cache { indexedNTs.zip(indexedNTs.indices).toMap() }
+  operator fun get(i: Int) = indexedNTs[i]
+  operator fun get(s: String) = ntIndices[s]!!
+}
 // Maps variables to expansions and expansions to variables in a Grammar
 class BiMap(CFG: CFG) {
   val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
