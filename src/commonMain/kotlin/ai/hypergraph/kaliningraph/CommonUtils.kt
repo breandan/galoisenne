@@ -59,6 +59,7 @@ fun DoubleMatrix.meanNorm() =
     VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
+fun Int.choose(k: Int) = fact(this) / (fact(k) * fact(this-k))
 tailrec fun fact(n: Int, t: Int = 1): Int = if (n == 1) t else fact(n - 1, t * n)
 
 fun DoubleMatrix.exp(max: Int = 10): DoubleMatrix =

@@ -255,3 +255,10 @@ fun CDF.sample(random: Random = Random.Default,
                target: Double = random.nextDouble()) =
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
+
+// TODO: implement https://www.farside.org.uk/201311/encoding_n_choose_k
+fun <T> Set<T>.choose(i: IntRange) =
+  i.asSequence().flatMap { findAll(this, it).map { it.toSet() } }.distinct()
+
+fun <T> Set<T>.choose(k: Int) =
+  findAll(this, k).map { it.toSet() }.filter { it.size == k }.distinct()

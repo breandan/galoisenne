@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.sampling
 
+import ai.hypergraph.kaliningraph.choose
+import ai.hypergraph.kaliningraph.fact
 import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.pow
@@ -46,4 +48,15 @@ class SamplingTest {
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.toList().size)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.distinct().toList().size)
     }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testCombos"
+*/
+  @Test
+  fun testCombos() {
+    val (n, k) = 5 to 3
+    val combos = (1 .. n).toSet().choose(k).toList()
+    println(combos)
+    assertEquals(n.choose(k), combos.size)
+  }
 }

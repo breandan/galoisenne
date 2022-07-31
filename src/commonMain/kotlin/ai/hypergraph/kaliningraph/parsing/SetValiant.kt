@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.jvm.JvmName
 import kotlin.math.*
 
 typealias Production = Π2<String, List<String>>
@@ -21,8 +22,30 @@ val CFG.terminalUnitProductions: Set<Production>
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.bindex: Bindex by cache { Bindex(this) }
+val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 
+class JoinMap(val CFG: CFG) {
+  val precomputedJoins: MutableMap<Pair<Set<String>, Set<String>>, Set<Triple<String, String, String>>> =
+    CFG.nonterminals.choose(1..3).let { it * it }
+      .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
+      .also { println("Precomputed join map has ${it.size} entries.") }
+      .toMutableMap()
+
+  fun join(l: Set<String>, r: Set<String>, tryCache: Boolean = false): Set<Triple<String, String, String>> =
+    if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
+    else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
+
+  @JvmName("setJoin")
+  operator fun get(l: Set<String>, r: Set<String>): Set<String> = join(l, r, false).map { it.first }.toSet()
+
+  @JvmName("treeJoin")
+  operator fun get(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
+    join(left.map { it.root }.toSet(), right.map { it.root }.toSet(), false)
+      .map { (rt, l, r) ->
+        Tree(rt, null, left.first { it.root == l }, right.first { it.root == r })
+      }.toSet()
+}
 // Maps indices to nonterminals and nonterminals to indices
 class Bindex(CFG: CFG) {
   val indexedNTs: Array<String> by cache { CFG.nonterminals.toTypedArray() }
@@ -67,7 +90,7 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
       if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
-    }.first
+    }.first.replace("ε", "")
   }
 
 fun String.matches(cfg: String): Boolean = matches(cfg.validate().parseCFG())
@@ -97,12 +120,14 @@ fun CFG.makeAlgebra(): Ring<Set<Tree>> =
     times = { x, y -> treeJoin(x, y) }
   )
 
+//fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> = joinMap[left, right]
 fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
   (left * right).flatMap { (left, right) ->
     bimap[listOf(left.root, right.root)]
         .map { Tree(it, null, left, right) }
   }.toSet()
 
+//fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> = joinMap[left, right]
 fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
