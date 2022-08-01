@@ -26,6 +26,7 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 
 class JoinMap(val CFG: CFG) {
+  // TODO: Doesn't appear to confer any significant speedup? :/
   val precomputedJoins: MutableMap<Pair<Set<String>, Set<String>>, Set<Triple<String, String, String>>> =
     CFG.nonterminals.choose(1..3).let { it * it }
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
