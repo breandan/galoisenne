@@ -288,4 +288,18 @@ class SetValiantTest {
       assertFalse("aaaaaa".matches(cfg))
     }
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testEpsilonProd"
+*/
+  @Test
+  fun testEpsilonProd() {
+    """
+      P -> W 1 1
+      W -> ε | w
+    """.parseCFG().let { cfg ->
+      assertTrue("w 1 1".matches(cfg))
+      assertTrue("1 1".matches(cfg))
+    }
+  }
 }
