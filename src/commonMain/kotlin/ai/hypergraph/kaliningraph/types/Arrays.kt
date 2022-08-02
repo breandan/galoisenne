@@ -42,13 +42,17 @@ infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
-
-fun <T> Collection<T>.powerset(
-  includeEmptySet: Boolean = false,
-  acc: Set<Set<T>> = setOf(setOf())
-): Set<Set<T>> =
-  if (isNotEmpty()) drop(1).powerset(includeEmptySet, acc + acc.map { it + first() })
-  else acc + (if (includeEmptySet) setOf(emptySet()) else setOf())
+fun <T> Collection<T>.powerset(): Sequence<Set<T>> = sequence {
+  when (size) {
+    0 -> yield(emptySet())
+    else -> {
+      val head = first()
+      val tail = this@powerset - head
+      yieldAll(tail.powerset())
+      tail.powerset().forEach { yield(setOf(head) + it) }
+    }
+  }
+}
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()

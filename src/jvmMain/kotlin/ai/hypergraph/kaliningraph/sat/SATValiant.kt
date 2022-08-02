@@ -56,7 +56,7 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
   else zip(that)
     .partition { (l, r) -> l == r }
-    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
+//    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
     .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
@@ -216,9 +216,25 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> =
-  cfg.let { if (allowNTs) it.generateStubs() else it }
-     .run { synthesize(tokenize(this@synthesizeFrom), join) }
+// Do not call with multiple contiguous holes, only single-hole configs
+private fun String.everyConfig(): Sequence<String> {
+  val toks = toList().map { it.toString() }
+  val indices = toks.indices.filter { toks[it] == "_" }.powerset()
+  return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString("") }
+}
+
+fun String.synthesizeFrom(cfg: CFG, allowNTs: Boolean = true): Sequence<String> {
+  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
+  val chunks = split(Regex("((?<=[^_])|(?=[^_]))"))
+
+  val variations =
+    // Try every single-hole config in order of least-to-greatest # of holes
+    replace(Regex("(_( )*)+"), "_").everyConfig() +
+    (2..chunks.maxOf { it.length }).asSequence()
+    .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
+
+  return variations.flatMap { cfg_.run { println(it); synthesize(tokenize(it)) } }
+}
 
 fun Formula.toPython(
   params: String = variables().joinToString(", ") { it.name() },
@@ -236,7 +252,7 @@ fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
           v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
-private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
+private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
   sequence {
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
@@ -246,9 +262,11 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
     //       nonterminal in the original string to reduce fixedpoint matrix size.
     val parsingConstraints =
-      isInGrammar(matrix) and
-        uniquenessConstraints(holeVariables) and
-        (matrix valiantMatEq fixpoint)
+      try {
+        isInGrammar(matrix) and
+          uniquenessConstraints(holeVariables) and
+          (matrix valiantMatEq fixpoint)
+      } catch (e: Exception) { return@sequence }
 
 //  Sometimes simplification can take longer or even switch SAT->UNSAT?
 //  println("Original: ${parsingConstraints.numberOfNodes()}")
@@ -269,7 +287,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
-        val completion = tokens.joinToString(join) {
+        val completion = tokens.joinToString("") {
           if (it == "_") fillers.removeAt(0)!!.let { if (it == "ε") "" else it }
           else it
         }
