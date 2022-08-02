@@ -216,24 +216,24 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-// Do not call with multiple contiguous holes, only single-hole configs
-private fun String.everyConfig(): Sequence<String> {
-  val toks = toList().map { it.toString() }
+private fun String.everySingleHoleConfig(): Sequence<String> {
+  val new = replace(Regex("(_( )*)+"), "_")
+  val toks = new.toList().map { it.toString() }
   val indices = toks.indices.filter { toks[it] == "_" }.powerset()
   return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString("") }
 }
 
-fun String.synthesizeFrom(cfg: CFG, allowNTs: Boolean = true): Sequence<String> {
-  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
-  val chunks = split(Regex("((?<=[^_])|(?=[^_]))"))
-
-  val variations =
-    // Try every single-hole config in order of least-to-greatest # of holes
-    replace(Regex("(_( )*)+"), "_").everyConfig() +
-    (2..chunks.maxOf { it.length }).asSequence()
+private fun String.increasingLengthChunks(): Sequence<String> {
+  val merged = replace("_ _", "__").replace("_ _", "__")
+  val chunks = merged.split(Regex("((?<=[^_])|(?=[^_]))"))
+  return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
+}
 
-  return variations.flatMap { cfg_.run { println(it); synthesize(tokenize(it)) } }
+fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> {
+  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
+  val variations = everySingleHoleConfig() + increasingLengthChunks() + this
+  return variations.flatMap { cfg_.run { println(it); synthesize(tokenize(it), join) } }
 }
 
 fun Formula.toPython(
@@ -252,7 +252,7 @@ fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
           v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
-private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
+private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
   sequence {
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
@@ -287,7 +287,7 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
-        val completion = tokens.joinToString("") {
+        val completion = tokens.joinToString(join) {
           if (it == "_") fillers.removeAt(0)!!.let { if (it == "ε") "" else it }
           else it
         }
