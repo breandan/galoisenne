@@ -233,7 +233,7 @@ private fun String.increasingLengthChunks(): Sequence<String> {
 fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
   val variations = everySingleHoleConfig() + increasingLengthChunks() + this
-  return variations.flatMap { cfg_.run { println(it); synthesize(tokenize(it), join) } }
+  return variations.flatMap { cfg_.run { synthesize(tokenize(it), join) } }
 }
 
 fun Formula.toPython(
