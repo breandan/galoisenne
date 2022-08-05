@@ -420,4 +420,86 @@ class SATValiantTest {
         assertTrue(isValid)
       }
   }
+
+  val arith =
+    """
+        S -> S + S | S * S | S - S | S / S | ( S )
+        S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      """.parseCFG()
+
+  fun Tree.eval(): Int =
+    when {
+      root.contains("*") -> children[0].eval() * children[1].eval()
+      root.contains("+") -> children[0].eval() + children[1].eval()
+      terminal?.toIntOrNull() != null -> terminal!!.toInt()
+      else -> children.first().eval()
+    }
+
+  fun Tree.refactor(): Tree =
+    when {
+      children.any { it.root.contains(".") } ->
+        Tree(children.first { it.root.contains(".") }.root.split(".")[0], terminal = terminal, *children.flatMap {
+          if(it.root.contains(".")) it.children.map { it.refactor() }.filter { it.terminal == null || it.terminal!!.toIntOrNull() != null } else listOf(it.refactor()) }.toTypedArray())
+      else -> Tree(root, terminal = terminal, *children.map { it.refactor() }.toTypedArray())
+    }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmeticEval"
+*/
+  @Test
+  fun testArithmeticEval() {
+//    println(arith.parse("(1 + 2) * (3 * 4)")!!.prettyPrint())
+//    println(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().prettyPrint())
+    assertEquals(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().eval(), 36)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
+*/
+  @Test
+  fun testCheckedArithmetic() {
+    val cfg = """
+       S -> S1 | S2 | S3 | S4 | S5 | S6 | S7
+       S -> S1 = S1
+       S -> S2 = S2
+       S -> S3 = S3
+       S -> S4 = S4
+       S -> S5 = S5
+       S -> S6 = S6
+       S -> S7 = S7
+       S -> S8 = S8
+       S -> S9 = S9
+       
+       S1 -> P1
+       S2 -> P2 | ( S2 ) | P1 + P1
+       S3 -> P3 | ( S3 ) | P2 + P1 | P1 + P2
+       S4 -> P4 | ( S4 ) | P3 + P1 | P1 + P3 | P2 + P2
+       S5 -> P5 | ( S5 ) | P1 + P4 | P4 + P1 | P2 + P3 | P2 + P3
+       S6 -> P6 | ( S6 ) | P1 + P5 | P5 + P1 | P3 + P3 | P2 + P4 | P4 + P2
+       S7 -> P7 | ( S7 ) | P1 + P6 | P6 + P1 | P5 + P2 | P2 + P5 | P4 + P3 | P3 + P4
+       S8 -> P8 | ( S8 ) | P1 + P7 | P7 + P1 | P6 + P2 | P2 + P6 | P3 + P5 | P5 + P3 | P4 + P4
+       S9 -> P9 | ( S9 ) | P1 + P8 | P8 + P1 | P7 + P2 | P2 + P7 | P3 + P6 | P6 + P3 | P4 + P5 | P5 + P4
+       
+       P1 -> 1 | ( S1 ) | P1 * P1
+       P2 -> 2 | ( S2 ) | P2 * P1 | P1 * P2
+       P3 -> 3 | ( S3 ) | P3 * P1 | P1 * P3
+       P4 -> 4 | ( S4 ) | P2 * P2 | P4 * P1 | P1 * P4
+       P5 -> 5 | ( S5 ) | P5 * P1 | P1 * P5
+       P6 -> 6 | ( S6 ) | P6 * P1 | P1 * P6 | P3 * P2 | P2 * P3
+       P7 -> 7 | ( S7 ) | P7 * P1 | P1 * P7
+       P8 -> 8 | ( S8 ) | P4 * P2 | P2 * P4 | P8 * P1 | P1 * P8
+       P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
+    """.parseCFG()
+
+    "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )".synthesizeFrom(cfg, allowNTs = false)
+      .map {
+        println(it)
+        val (left, right) = it.split("=")
+        val (ltree, rtree) = arith.parse(left)!! to arith.parse(right)!!
+        val (leval, reval) = ltree.refactor().eval() to rtree.refactor().eval()
+        println("$leval = $reval")
+        assertEquals(leval, reval)
+        leval
+      }.distinct().take(4).toList()
+  }
 }

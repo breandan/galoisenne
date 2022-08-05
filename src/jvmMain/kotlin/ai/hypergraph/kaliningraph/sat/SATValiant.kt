@@ -225,7 +225,7 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
  *           ww_ww  _www_w _w_www_
  *           ...    ...    ...
  */
-private fun String.everySingleHoleConfig(): Sequence<String> {
+fun String.everySingleHoleConfig(): Sequence<String> {
   val new = replace(Regex("(_( )*)+"), "_")
   val toks = new.toList().map { it.toString() }
   val indices = toks.indices.filter { toks[it] == "_" }.powerset()
@@ -240,17 +240,22 @@ private fun String.everySingleHoleConfig(): Sequence<String> {
  *           __w__w_w__w__
  *           ___w__w_w__w___
  */
-private fun String.increasingLengthChunks(): Sequence<String> {
+fun String.increasingLengthChunks(): Sequence<String> {
   val merged = replace(Regex("(?<=_)\\s+(?=_)"), "")
   val chunks = merged.split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
 }
 
-fun String.synthesizeFrom(cfg: CFG, join: String = "", allowNTs: Boolean = true): Sequence<String> {
+fun String.synthesizeFrom(
+  cfg: CFG,
+  join: String = "",
+  allowNTs: Boolean = true,
+  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) }
+): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
-  val variations = everySingleHoleConfig() + increasingLengthChunks() + this
-  return variations.flatMap { cfg_.run { synthesize(tokenize(it), join) } }
+  val allVariants = variations.fold(sequenceOf(this)) { a , b -> a + b() }
+  return allVariants.flatMap { cfg_.run { synthesize(tokenize(it), join) } }
 }
 
 fun Formula.toPython(
