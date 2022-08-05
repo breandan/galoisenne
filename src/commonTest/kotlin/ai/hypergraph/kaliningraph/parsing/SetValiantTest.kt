@@ -302,4 +302,18 @@ class SetValiantTest {
       assertTrue("1 1".matches(cfg))
     }
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testLocalCanonicity"
+*/
+  @Test
+  fun testLocalCanonicity() {
+    val cfg1 = """P -> ( P ) | P P | ε""".parseCFG().also { println(it.prettyPrint()) }
+    val cfg2 = """P -> ( P ) | ( P ) | P P | ε""".parseCFG().also { println(it.prettyPrint()) }
+    assertEquals(cfg1, cfg2)
+
+    val cfg3 = """P -> ( ) | P P | ( P )""".parseCFG().also { println(it.prettyPrint()) }
+    val cfg4 = """P -> P P | ( P ) | ( )""".parseCFG().also { println(it.prettyPrint()) }
+    assertEquals(cfg3, cfg4)
+  }
 }
