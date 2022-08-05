@@ -216,6 +216,15 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
+/*
+ * Treats contiguous underscores as a single hole and lazily enumerates every
+ * hole configuration in the powerset of all holes within a snippet.
+ * Original: ___w__w_w__w___
+ * Variants: _wwww  _w_www _w_w_ww ... _w_w_w_w_
+ *           w_www  _ww_ww _w_ww_w
+ *           ww_ww  _www_w _w_www_
+ *           ...    ...    ...
+ */
 private fun String.everySingleHoleConfig(): Sequence<String> {
   val new = replace(Regex("(_( )*)+"), "_")
   val toks = new.toList().map { it.toString() }
@@ -223,8 +232,16 @@ private fun String.everySingleHoleConfig(): Sequence<String> {
   return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString("") }
 }
 
+/*
+ * Lazily enumerates all underscores chunkings in order of increasing length up
+ * to the lesser of (1) its original size or (2) the longest underscore chunk.
+ * Original: ___w__w_w__w___
+ * Variants: _w_w_w_w_
+ *           __w__w_w__w__
+ *           ___w__w_w__w___
+ */
 private fun String.increasingLengthChunks(): Sequence<String> {
-  val merged = replace("_ _", "__").replace("_ _", "__")
+  val merged = replace(Regex("(?<=_)\\s+(?=_)"), "")
   val chunks = merged.split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
