@@ -5,7 +5,9 @@ import ai.hypergraph.kaliningraph.graphs.*
 class Tree constructor(
   val root: String,
   val terminal: String? = null,
-  vararg val children: Tree
+  vararg val children: Tree,
+  val span: IntRange = children.fold(Int.MAX_VALUE to Int.MIN_VALUE) { (a, b), t ->
+    minOf(a, t.span.first) to maxOf(b, t.span.last)}.let { it.first..it.second }
 ) {
   override fun toString() = root
   override fun hashCode() = root.hashCode()
@@ -27,9 +29,9 @@ class Tree constructor(
     childrenPrefix: String = "",
   ): String =
     if (children.isEmpty()) buffer + prefix + terminal!! + "\n"
-    else children.foldIndexed("$buffer$prefix$root\n") { i: Int, acc: String, it: Tree ->
+    else children.foldIndexed("$buffer$prefix$root [$span]\n") { i: Int, acc: String, it: Tree ->
       if (i == children.size - 1)
-        it.prettyPrint(acc, "$childrenPrefix└── ", "$childrenPrefix    ")
+        it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
       else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
     }
 }

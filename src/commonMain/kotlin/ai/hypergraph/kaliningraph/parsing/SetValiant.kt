@@ -136,7 +136,9 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
 fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
-    else bimap[listOf(str[j - 1])].map { Tree(it, str[j - 1]) }.toSet()
+    else bimap[listOf(str[j - 1])].map {
+      Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
+    }.toSet()
   }
 
 fun String.splitKeeping(str: String): List<String> =
@@ -215,7 +217,8 @@ fun String.validate(
 // TODO: Implement denormalization / original parse tree recovery
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
-  addGlobalStartSymbol().expandOr()
+  addGlobalStartSymbol()
+    .expandOr()
     .refactorEpsilonProds()
     .elimVarUnitProds()
     .refactorRHS()
@@ -258,7 +261,8 @@ tailrec fun CFG.nullableNonterminals(
   nbls: Set<String> = setOf("ε"),
   nnlbls: Set<String> = filter { nbls.containsAll(it.RHS) }.map { it.LHS }.toSet()
 ): Set<String> =
-  if (nnlbls == (nbls - "ε")) nnlbls else nullableNonterminals(nnlbls + nbls)
+  if (nnlbls == (nbls - "ε")) nnlbls
+  else nullableNonterminals(nnlbls + nbls)
 
 fun List<String>.drop(nullables: Set<String>, keep: Set<Int>): List<String> =
   mapIndexedNotNull { i, s ->

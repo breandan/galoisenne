@@ -435,12 +435,21 @@ class SATValiantTest {
       else -> children.first().eval()
     }
 
+  // TODO: implement fully generic refactor over all grammars
   fun Tree.refactor(): Tree =
     when {
       children.any { it.root.contains(".") } ->
-        Tree(children.first { it.root.contains(".") }.root.split(".")[0], terminal = terminal, *children.flatMap {
-          if(it.root.contains(".")) it.children.map { it.refactor() }.filter { it.terminal == null || it.terminal!!.toIntOrNull() != null } else listOf(it.refactor()) }.toTypedArray())
-      else -> Tree(root, terminal = terminal, *children.map { it.refactor() }.toTypedArray())
+        Tree(
+          root = children.first { it.root.contains(".") }.root.split(".")[0],
+          terminal = terminal,
+          children = children.flatMap {
+            if (it.root.contains("."))
+              it.children.map { it.refactor() }
+                .filter { it.terminal == null || it.terminal!!.toIntOrNull() != null }
+            else listOf(it.refactor()) }.toTypedArray(),
+          span = span
+        )
+      else -> Tree(root, terminal, *children.map { it.refactor() }.toTypedArray())
     }
 
 /*
@@ -451,6 +460,8 @@ class SATValiantTest {
 //    println(arith.parse("(1 + 2) * (3 * 4)")!!.prettyPrint())
 //    println(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().prettyPrint())
     assertEquals(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().eval(), 36)
+
+      println(arith.parse("((1 + 2) * (3 * 4) + (1 + 2) * (3 * 4))")!!.refactor().prettyPrint())
   }
 
 /*
