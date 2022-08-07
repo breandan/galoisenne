@@ -1,9 +1,13 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.tensor.MatrixDiagonal
+import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
 import kotlin.collections.*
 import kotlin.test.*
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest"
@@ -315,5 +319,24 @@ class SetValiantTest {
     val cfg3 = """P -> ( ) | P P | ( P )""".parseCFG().also { println(it.prettyPrint()) }
     val cfg4 = """P -> P P | ( P ) | ( )""".parseCFG().also { println(it.prettyPrint()) }
     assertEquals(cfg3, cfg4)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUTMRepresentationEquivalence"
+*/
+  @ExperimentalTime
+  @Test
+  fun testUTMRepresentationEquivalence() {
+    with("""P -> ( P ) | P P | ε""".parseCFG()) {
+      val str = tokenize("(()())()((())())((()))()()()")
+      val slowTransitionFP =  measureTimedValue {
+        initialMatrix(str).seekFixpoint(succ={it + it * it})
+      }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value
+      val fastTransitionFP = measureTimedValue {
+        initialMatrixDiagonal(str).seekFixpoint(succ=MatrixDiagonal<Forest>::next).toMatrix()
+      }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
+
+      assertEquals(slowTransitionFP, fastTransitionFP)
+    }
   }
 }

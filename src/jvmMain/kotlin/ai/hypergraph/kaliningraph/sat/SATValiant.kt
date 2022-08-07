@@ -151,6 +151,7 @@ fun CFG.constructInitialMatrix(
       } else emptyList()
     }
       //.also { println("Literal matrix:\n${it.summarize()}") }
+      /** TODO: refactor to use the [MatrixDiagonal] fixpoint like [] */
       .seekFixpoint { it + it * it },
   formulaMatrix: FreeMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->

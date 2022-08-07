@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.math.*
 
+typealias TreeMatrix = FreeMatrix<Forest>
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
 
@@ -41,7 +42,7 @@ class JoinMap(val CFG: CFG) {
   operator fun get(l: Set<String>, r: Set<String>): Set<String> = join(l, r, false).map { it.first }.toSet()
 
   @JvmName("treeJoin")
-  operator fun get(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
+  operator fun get(left: Forest, right: Forest): Forest =
     join(left.map { it.root }.toSet(), right.map { it.root }.toSet(), false)
       .map { (rt, l, r) ->
         Tree(rt, null, left.first { it.root == l }, right.first { it.root == r })
@@ -111,7 +112,7 @@ fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull { it.root == START_
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun CFG.makeAlgebra(): Ring<Set<Tree>> =
+fun CFG.makeAlgebra(): Ring<Forest> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
@@ -121,11 +122,10 @@ fun CFG.makeAlgebra(): Ring<Set<Tree>> =
     times = { x, y -> treeJoin(x, y) }
   )
 
-//fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> = joinMap[left, right]
-fun CFG.treeJoin(left: Set<Tree>, right: Set<Tree>): Set<Tree> =
-  (left * right).flatMap { (left, right) ->
-    bimap[listOf(left.root, right.root)]
-        .map { Tree(it, null, left, right) }
+//fun CFG.treeJoin(left: Forest, right: Forest): Forest = joinMap[left, right]
+fun CFG.treeJoin(left: Forest, right: Forest): Forest =
+  (left * right).flatMap { (lt, rt) ->
+    bimap[listOf(lt.root, rt.root)].map { Tree(it, null, lt, rt) }
   }.toSet()
 
 //fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> = joinMap[left, right]
@@ -133,7 +133,7 @@ fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
+fun CFG.initialMatrix(str: List<String>): TreeMatrix =
   FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
     else bimap[listOf(str[j - 1])].map {
@@ -142,12 +142,12 @@ fun CFG.initialMatrix(str: List<String>): FreeMatrix<Set<Tree>> =
   }
 
 fun String.splitKeeping(str: String): List<String> =
-    split(str).flatMap { listOf(it, str) }.dropLast(1)
+  split(str).flatMap { listOf(it, str) }.dropLast(1)
 
 fun CFG.tokenize(str: String): List<String> =
-    delimiters.fold(listOf(str)) { l, delim ->
-        l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
-    }.filter(String::isNotBlank)
+  delimiters.fold(listOf(str)) { l, delim ->
+    l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
+  }.filter(String::isNotBlank)
 
 /**
  * Checks whether a given string is valid by computing the transitive closure
@@ -158,22 +158,37 @@ fun CFG.tokenize(str: String): List<String> =
 fun CFG.isValid(str: String): Boolean =
   tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: String): Set<Tree> =
+fun CFG.parseForest(str: String): Forest =
   tokenize(str).let(::solveFixedpoint)[0].last()
 
-fun CFG.parseTable(str: String): FreeMatrix<Set<Tree>> =
+fun CFG.parseTable(str: String): TreeMatrix =
   tokenize(str).let(::solveFixedpoint)
+
+fun CFG.initialMatrixDiagonal(tokens: List<String>): MatrixDiagonal<Forest> =
+  MatrixDiagonal(
+    ts = tokens.mapIndexed { i, it ->
+      bimap[listOf(it)]
+        .map { Tree(root = it, terminal = it, span = (i - 1) until i) }.toSet()
+    },
+    plus = { l, r -> l union r },
+    times = ::treeJoin,
+    zero = setOf()
+  )
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
-): FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
+  //matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
+  //transition: (TreeMatrix) -> TreeMatrix = { it + it * it }
+  matrixDiagonal: MatrixDiagonal<Forest> = initialMatrixDiagonal(tokens),
+): TreeMatrix = matrixDiagonal.seekFixpoint(succ = MatrixDiagonal<Forest>::next).toMatrix()
 
 fun CFG.parse(
   tokens: List<String>,
-  matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
-  finalConfig: FreeMatrix<Set<Tree>> = matrix.seekFixpoint { it + it * it }
-): Set<Tree> = finalConfig[0].last()
+  //matrix: TreeMatrix = initialMatrix(tokens),
+  //transition: (TreeMatrix) -> TreeMatrix = { it + it * it },
+  //finalConfig: TreeMatrix = matrix.seekFixpoint(succ = transition)
+  matrixDiagonal: MatrixDiagonal<Forest> = initialMatrixDiagonal(tokens),
+): Forest = matrixDiagonal.seekFixpoint(succ = MatrixDiagonal<Forest>::next).lds.last().firstOrNull() ?: emptySet()
 //  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =

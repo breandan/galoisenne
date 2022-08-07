@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.graphs.LGVertex
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 
+typealias Forest = Set<Tree>
 class Tree constructor(
   val root: String,
   val terminal: String? = null,
