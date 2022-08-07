@@ -255,7 +255,7 @@ kotlin {
 tasks {
   withType<Test> {
     minHeapSize = "1g"
-    maxHeapSize = "2g"
+    maxHeapSize = "3g"
     useJUnitPlatform()
     testLogging {
       events = setOf(

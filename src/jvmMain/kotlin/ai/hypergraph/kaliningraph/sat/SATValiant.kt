@@ -142,25 +142,15 @@ fun CFG.constructInitialMatrix(
   tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
     // Precompute permanent upper right triangular submatrices
-  //literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
-  //  ts = tokens.map { it ->
-  //    if (it.isHoleToken()) null
-  //    else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
-  //  },
-  //  algebra = satLitAlgebra
-  //).seekFixpoint(succ = UTMatrix<List<Boolean>?>::next),
-  /** TODO: refactor to use the [UTMatrix] fixpoint  */
-  literalMatrix: FreeMatrix<List<Boolean>?> =
-    FreeMatrix(satLitAlgebra, tokens.size + 1) { r, c ->
-      if (r + 1 == c) {
-        val word = tokens[c - 1]
-        if (tokens[c - 1].isHoleToken()) null
-        else bimap[listOf(word)].let { nts -> nonterminals.map { it in nts } }
-      } else emptyList()
-    }
-      //.also { println("Literal matrix:\n${it.summarize()}") }
-      .seekFixpoint { it + it * it },
-  //literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix(),
+  literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
+    ts = tokens.map { it ->
+      if (it.isHoleToken()) null
+      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
+    },
+    algebra = satLitAlgebra
+  ).seekFixpoint(succ = UTMatrix<List<Boolean>?>::next),
+  literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
+    .map { if(it == null || toNTSet(it).isEmpty()) emptyList() else it },
   formulaMatrix: FreeMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
@@ -189,6 +179,7 @@ fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
       it == null -> "?"
       it.toString().length < 5 -> ""
 //      else -> "C"
+      cfg.toNTSet(it).isEmpty() -> it.distinct()
       else -> "${cfg.toNTSet(it)}".replace("START", "S")
     }
   }.toString()
