@@ -141,7 +141,15 @@ Lower this matrix onto SAT. Steps:
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
   holeVariables: MutableList<List<Formula>> = mutableListOf(),
-  // Precompute permanent upper right triangular submatrices
+    // Precompute permanent upper right triangular submatrices
+  //literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
+  //  ts = tokens.map { it ->
+  //    if (it.isHoleToken()) null
+  //    else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
+  //  },
+  //  algebra = satLitAlgebra
+  //).seekFixpoint(succ = UTMatrix<List<Boolean>?>::next),
+  /** TODO: refactor to use the [UTMatrix] fixpoint  */
   literalMatrix: FreeMatrix<List<Boolean>?> =
     FreeMatrix(satLitAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c) {
@@ -151,8 +159,8 @@ fun CFG.constructInitialMatrix(
       } else emptyList()
     }
       //.also { println("Literal matrix:\n${it.summarize()}") }
-      /** TODO: refactor to use the [MatrixDiagonal] fixpoint like [] */
       .seekFixpoint { it + it * it },
+  //literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix(),
   formulaMatrix: FreeMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal

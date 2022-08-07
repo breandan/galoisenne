@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.tensor.MatrixDiagonal
+import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
@@ -333,7 +333,7 @@ class SetValiantTest {
         initialMatrix(str).seekFixpoint(succ={it + it * it})
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value
       val fastTransitionFP = measureTimedValue {
-        initialMatrixDiagonal(str).seekFixpoint(succ=MatrixDiagonal<Forest>::next).toMatrix()
+        initialUTMatrix(str).seekFixpoint(succ=UTMatrix<Forest>::next).toFullMatrix()
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
       assertEquals(slowTransitionFP, fastTransitionFP)

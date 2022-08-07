@@ -164,31 +164,29 @@ fun CFG.parseForest(str: String): Forest =
 fun CFG.parseTable(str: String): TreeMatrix =
   tokenize(str).let(::solveFixedpoint)
 
-fun CFG.initialMatrixDiagonal(tokens: List<String>): MatrixDiagonal<Forest> =
-  MatrixDiagonal(
-    ts = tokens.mapIndexed { i, it ->
-      bimap[listOf(it)]
-        .map { Tree(root = it, terminal = it, span = (i - 1) until i) }.toSet()
+fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
+  UTMatrix(
+    ts = tokens.mapIndexed { i, terminal ->
+      bimap[listOf(terminal)]
+        .map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     },
-    plus = { l, r -> l union r },
-    times = ::treeJoin,
-    zero = setOf()
+    algebra = makeAlgebra()
   )
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
   //matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
   //transition: (TreeMatrix) -> TreeMatrix = { it + it * it }
-  matrixDiagonal: MatrixDiagonal<Forest> = initialMatrixDiagonal(tokens),
-): TreeMatrix = matrixDiagonal.seekFixpoint(succ = MatrixDiagonal<Forest>::next).toMatrix()
+  utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
+): TreeMatrix = utMatrix.seekFixpoint(succ = UTMatrix<Forest>::next).toFullMatrix()
 
 fun CFG.parse(
   tokens: List<String>,
   //matrix: TreeMatrix = initialMatrix(tokens),
   //transition: (TreeMatrix) -> TreeMatrix = { it + it * it },
   //finalConfig: TreeMatrix = matrix.seekFixpoint(succ = transition)
-  matrixDiagonal: MatrixDiagonal<Forest> = initialMatrixDiagonal(tokens),
-): Forest = matrixDiagonal.seekFixpoint(succ = MatrixDiagonal<Forest>::next).lds.last().firstOrNull() ?: emptySet()
+  utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
+): Forest = utMatrix.seekFixpoint(succ = UTMatrix<Forest>::next).lds.last().firstOrNull() ?: emptySet()
 //  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =

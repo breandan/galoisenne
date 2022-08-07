@@ -325,47 +325,38 @@ operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
 // Diagonals of a strictly-UT matrix for DAG-based dynamic programming
-class MatrixDiagonal<T>(
+class UTMatrix<T>(
   val lds: List<List<T>>, // All lower diagonals
-  val zero: T, // Zero entry
   // Carries a triple of:
   //    (1) the element itself,
   //    (2) row to the element's left
   //    (3) column to the element's bottom
   val carry: List<Triple<T, List<T>, List<T>>> =
     lds.last().map { it to listOf(it) to listOf(it) },
-  val plus: (T, T) -> T,
-  val times: (T, T) -> T
+  val algebra: Ring<T>,
 ) {
-  constructor(
-    ts: List<T>,
-    zero: T,
-    plus: (T, T) -> T,
-    times: (T, T) -> T
-  ): this(lds = listOf(ts), zero = zero, plus = plus, times = times)
+  constructor(ts: List<T>, algebra: Ring<T>) : this(lds = listOf(ts), algebra = algebra)
 
   fun next() =
     if (lds.last().size <= 1) this
     else carry.windowed(2, 1).map { window ->
         window[0].second.zip(window[1].third)
-          .map { (l, r) -> times(l, r) }.reduceRight { t, acc -> plus(acc, t) }
-            // Append to left
+          .map { (l, r) -> with(algebra) { l * r } }
+          .fold(algebra.nil) { t, acc -> with(algebra) { acc + t } }
           .let { it to (window[0].second + it) to (listOf(it) + window[1].third) }
       }.let { next ->
-        MatrixDiagonal(
+        UTMatrix(
           lds = lds + listOf(next.map { it.first }),
-          plus = plus,
-          times = times,
           carry = next,
-          zero = zero
+          algebra = algebra
         )
       }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
-  fun toMatrix() =
+  fun toFullMatrix() =
     if (lds.last().size != 1) throw IndexOutOfBoundsException("OOB")
     else FreeMatrix(lds.size + 1, lds.size + 1) { r, c ->
-      if (c <= r) zero else lds[c - r - 1][r]
+      if (c <= r) algebra.nil else lds[c - r - 1][r]
     }
 }
 
