@@ -255,7 +255,7 @@ fun String.synthesizeFrom(
 ): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
   val allVariants = variations.fold(sequenceOf(this)) { a , b -> a + b() }
-  return allVariants.flatMap { cfg_.run { synthesize(tokenize(it), join) } }
+  return allVariants.distinct().flatMap { cfg_.run { synthesize(tokenize(it), join) } }
 }
 
 fun Formula.toPython(
