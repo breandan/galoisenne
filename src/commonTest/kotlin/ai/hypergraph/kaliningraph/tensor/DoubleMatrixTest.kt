@@ -1,14 +1,13 @@
 package ai.hypergraph.kaliningraph.tensor
 
 import ai.hypergraph.kaliningraph.*
-import kotlin.math.ln
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TestDoubleMatrix"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.DoubleMatrixTest"
 */
-class TestDoubleMatrix {
+class DoubleMatrixTest {
   val M = DoubleMatrix.vector(1.0, -6.0, 11.0, -6.0, -2.0).companionMatrix()
 
   @Test

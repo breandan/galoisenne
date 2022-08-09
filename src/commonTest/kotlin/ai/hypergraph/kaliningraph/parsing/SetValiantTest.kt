@@ -333,7 +333,7 @@ class SetValiantTest {
         initialMatrix(str).seekFixpoint(succ={it + it * it})
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value
       val fastTransitionFP = measureTimedValue {
-        initialUTMatrix(str).seekFixpoint(succ=UTMatrix<Forest>::next).toFullMatrix()
+        initialUTMatrix(str).seekFixpoint().toFullMatrix()
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
       assertEquals(slowTransitionFP, fastTransitionFP)

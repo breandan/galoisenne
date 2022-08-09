@@ -60,9 +60,9 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun FreeMatrix<List<Formula>>.valiantMatEq(that: FreeMatrix<List<Formula>>): Formula =
+infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
-  else data.zip(that.data)
+  else diagonals.flatten().zip(that.diagonals.flatten())
     // Only compare nonempty bitvectors pairs
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     // Only compare bitvector pairs which are not trivially identical
@@ -70,8 +70,8 @@ infix fun FreeMatrix<List<Formula>>.valiantMatEq(that: FreeMatrix<List<Formula>>
     .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
     .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
-fun CFG.isInGrammar(mat: FreeMatrix<List<Formula>>): Formula =
-  mat[0].last()[bindex[START_SYMBOL]]
+fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
+  mat.diagonals.last().first()[bindex[START_SYMBOL]]
 
 // Encodes the constraint that a bit-vector representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
@@ -104,7 +104,7 @@ val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
 
 val CFG.satAlgebra by cache {
   Ring.of(
-    nil = List(nonterminals.size) { F },
+    nil = emptyList(),
     one = List(nonterminals.size) { T },
     plus = { a, b -> a union b },
     times = { a, b -> join(a, b) }
@@ -146,12 +146,12 @@ fun CFG.constructInitialMatrix(
     ts = tokens.map { it ->
       if (it.isHoleToken()) null
       else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
-    },
+    }.toTypedArray(),
     algebra = satLitAlgebra
-  ).seekFixpoint(succ = UTMatrix<List<Boolean>?>::next),
+  ).seekFixpoint(),
   literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
     .map { if(it == null || toNTSet(it).isEmpty()) emptyList() else it },
-  formulaMatrix: FreeMatrix<List<Formula>> =
+  formulaMatrix: UTMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
         val word = tokens[c - 1]
@@ -166,8 +166,8 @@ fun CFG.constructInitialMatrix(
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
         else permanentBitVec.map { if (it) T else F }
       } else emptyList()
-    }
-): Π2<FreeMatrix<List<Formula>>, MutableList<List<Formula>>> =
+    }.toUTMatrix()
+): Pair<UTMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
 //  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
     to holeVariables)

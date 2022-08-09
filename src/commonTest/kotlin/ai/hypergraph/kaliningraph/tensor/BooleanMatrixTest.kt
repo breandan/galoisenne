@@ -7,9 +7,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.TestBooleanMatrix"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.tensor.BooleanMatrixTest"
 */
-class TestBooleanMatrix {
+class BooleanMatrixTest {
   @Test
   fun testMatMul() {
     val a = BooleanMatrix(0, 0, 0, 1, 0, 1, 0, 0, 1)

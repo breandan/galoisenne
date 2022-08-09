@@ -169,7 +169,7 @@ fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
     ts = tokens.mapIndexed { i, terminal ->
       bimap[listOf(terminal)]
         .map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
-    },
+    }.toTypedArray(),
     algebra = makeAlgebra()
   )
 
@@ -178,7 +178,7 @@ fun CFG.solveFixedpoint(
   //matrix: FreeMatrix<Set<Tree>> = initialMatrix(tokens),
   //transition: (TreeMatrix) -> TreeMatrix = { it + it * it }
   utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
-): TreeMatrix = utMatrix.seekFixpoint(succ = UTMatrix<Forest>::next).toFullMatrix()
+): TreeMatrix = utMatrix.seekFixpoint().toFullMatrix()
 
 fun CFG.parse(
   tokens: List<String>,
@@ -186,7 +186,7 @@ fun CFG.parse(
   //transition: (TreeMatrix) -> TreeMatrix = { it + it * it },
   //finalConfig: TreeMatrix = matrix.seekFixpoint(succ = transition)
   utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
-): Forest = utMatrix.seekFixpoint(succ = UTMatrix<Forest>::next).diagonals.last().firstOrNull() ?: emptySet()
+): Forest = utMatrix.seekFixpoint().diagonals.last().firstOrNull() ?: emptySet()
 //  .also { if(it) println("Sol:\n$finalConfig") }
 
 private val freshNames: Sequence<String> =

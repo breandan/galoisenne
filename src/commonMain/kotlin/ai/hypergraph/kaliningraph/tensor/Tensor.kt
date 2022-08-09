@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.tensor
 
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.jvm.JvmName
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -52,7 +53,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
     criteria: Boolean,
     op: A.(Int, Int) -> T
   ): M = require(criteria) { "Dimension mismatch: $numRows,$numCols . ${that.numRows},${that.numCols}" }
-      .let { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
+    .run { new(numRows, that.numCols, ids.map { (i, j) -> algebra.op(i, j) }) }
 
   operator fun get(r: Int, c: Int): T = data[r * numCols + c]
   operator fun get(r: Int): List<T> = data.toList().subList(r * numCols, r * numCols + numCols)
@@ -135,8 +136,7 @@ private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
 abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constructor(
   override val algebra: A,
   override val numRows: Int,
-  override val numCols: Int = numRows,
-  override val data: List<T>,
+  override val numCols: Int = numRows
 ): Matrix<T, A, M> {
   val values by lazy { data.toSet() }
   override val map: MutableMap<Π3<Int, Int, T>, Int> by lazy {
@@ -184,8 +184,8 @@ open class FreeMatrix<T> constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-  override val algebra: Ring<T> = TODO_ALGEBRA(data.first()),
-): AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(algebra, numRows, numCols, data) {
+  override val algebra: Ring<T> = TODO_ALGEBRA(data.first())
+): AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(algebra, numRows, numCols) {
   constructor(elements: List<T>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -232,7 +232,7 @@ open class BooleanMatrix constructor(
   override val numCols: Int = numRows,
   override val data: List<Boolean>,
   override val algebra: Ring<Boolean> = BOOLEAN_ALGEBRA,
-): AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(algebra, numRows, numCols, data) {
+): AbstractMatrix<Boolean, Ring<Boolean>, BooleanMatrix>(algebra, numRows, numCols) {
   constructor(elements: List<Boolean>): this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -293,7 +293,7 @@ open class DoubleMatrix constructor(
   override val numCols: Int = numRows,
   override val data: List<Double>,
   override val algebra: Field<Double> = DOUBLE_FIELD,
-): AbstractMatrix<Double, Field<Double>, DoubleMatrix>(algebra, numRows, numCols, data) {
+): AbstractMatrix<Double, Field<Double>, DoubleMatrix>(algebra, numRows, numCols) {
   constructor(elements: List<Double>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
     data = elements
@@ -325,19 +325,52 @@ operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
 // Diagonals of a strictly-UT matrix for DAG-based dynamic programming
-class UTMatrix<T>(
-  val diagonals: List<List<T>>, // All diagonals
-  // Carries a triple of:
-  //    (1) the element itself,
-  //    (2) row to the element's left
-  //    (3) column to the element's bottom
-  val carry: List<Triple<T, List<T>, List<T>>> =
-    diagonals.last().map { it to listOf(it) to listOf(it) },
-  val algebra: Ring<T>,
-) {
-  constructor(ts: List<T>, algebra: Ring<T>) : this(diagonals = listOf(ts), algebra = algebra)
+class UTMatrix<T> constructor(val diagonals: List<List<T>>, override val algebra: Ring<T>):
+  AbstractMatrix<T, Ring<T>, UTMatrix<T>>(algebra, diagonals.first().size + 1) {
+  constructor(ts: Array<T>, algebra: Ring<T>) : this(diagonals = listOf(ts.toList()), algebra = algebra)
+  constructor(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>): this(
+    diagonals = when (data.size) {
+      numRows * numCols -> // Just take the upper diagonal entries of a rectangular matrix
+        (0 until numRows).map { r ->
+          (r + 1 until numCols).mapNotNull { c -> data[r * numCols + c] }
+        }.flip().dropLast(1)
+      ((numRows * numCols) - numRows) / 2 -> // Take rows of a UTMatrix and flip them into diagonals
+        (numCols - 1 downTo 1).fold(listOf<List<T>>() to 0) { acc, i ->
+          acc.first + listOf(data.subList(acc.second, acc.second + i)) to acc.second + i
+        }.first.flip()
+      else -> throw Exception("Invalid UTMatrix shape: $numRows.$numCols != ${data.size}")
+    },
+    algebra = alg
+  )
 
-  fun next() =
+  override val data: List<T> by lazy {
+    (diagonals + listOf(emptyList())).flip()
+      .map { List(diagonals.size + 1 - it.size) { algebra.nil } + it }.flatten()
+  }
+
+  private companion object {
+    private fun <T> List<List<T>>.flip() =
+      List(size) { i -> mapNotNull { it.elementAtOrNull(i) } }
+  }
+
+  override fun plus(t: UTMatrix<T>): UTMatrix<T> =
+    UTMatrix(diagonals = diagonals.zip(t.diagonals).map { (ld, rd) ->
+      ld.zip(rd).map { (l, r) -> with(algebra) { l + r } }
+    }, algebra = algebra)
+
+  // TODO: Implement sparse matrix multiplication properly
+  override fun times(t: UTMatrix<T>): UTMatrix<T> =
+    (toFullMatrix() * t.toFullMatrix()).toUTMatrix()
+    // diagonals.zip(diagonals.flip()).map { (l, r) -> l dot r }
+
+  fun seekFixpoint(
+    // Carries a triple of:
+    //    (1) the element itself,
+    //    (2) row to an element's left (inclusive)
+    //    (3) column beneath an element (inclusive)
+    carry: List<Triple<T, List<T>, List<T>>> =
+      diagonals.last().map { it to listOf(it) to listOf(it) },
+  ): UTMatrix<T> =
     if (diagonals.last().size <= 1) this
     else carry.windowed(2, 1).map { window ->
         window[0].second.zip(window[1].third)
@@ -347,18 +380,22 @@ class UTMatrix<T>(
       }.let { next ->
         UTMatrix(
           diagonals = diagonals + listOf(next.map { it.first }),
-          carry = next,
           algebra = algebra
-        )
+        ).seekFixpoint(next)
       }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =
     if (diagonals.last().size != 1) throw IndexOutOfBoundsException("OOB")
-    else FreeMatrix(diagonals.size + 1, diagonals.size + 1) { r, c ->
+    else FreeMatrix(algebra, diagonals.size + 1, diagonals.size + 1) { r, c ->
       if (c <= r) algebra.nil else diagonals[c - r - 1][r]
     }
+
+  override fun new(rows: Int, cols: Int, data: List<T>, alg: Ring<T>): UTMatrix<T> =
+    UTMatrix(rows, cols, data, alg)
 }
+
+fun <T, A : Ring<T>> Matrix<T, A, *>.toUTMatrix() = UTMatrix(numRows, numCols, data, algebra)
 
 tailrec fun <T> T.seekFixpoint(
   i: Int = 0,
