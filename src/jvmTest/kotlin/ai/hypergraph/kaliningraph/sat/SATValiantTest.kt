@@ -421,35 +421,20 @@ class SATValiantTest {
       }
   }
 
-  val arith =
-    """
-        S -> S + S | S * S | S - S | S / S | ( S )
-        S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-      """.parseCFG()
+  val arith = """
+      O -> + | * | - | /
+      S -> S O S | ( S )
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+    """.parseCFG()
 
+  fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
   fun Tree.eval(): Int =
     when {
-      root.contains("*") -> children[0].eval() * children[1].eval()
-      root.contains("+") -> children[0].eval() + children[1].eval()
+      middle() == "*" -> children.first().eval() * children.last().eval()
+      middle() == "+" -> children.first().eval() + children.last().eval()
       terminal?.toIntOrNull() != null -> terminal!!.toInt()
-      else -> children.first().eval()
-    }
-
-  // TODO: implement fully generic refactor over all grammars
-  fun Tree.refactor(): Tree =
-    when {
-      children.any { it.root.contains(".") } ->
-        Tree(
-          root = children.first { it.root.contains(".") }.root.split(".")[0],
-          terminal = terminal,
-          children = children.flatMap {
-            if (it.root.contains("."))
-              it.children.map { it.refactor() }
-                .filter { it.terminal == null || it.terminal!!.toIntOrNull() != null }
-            else listOf(it.refactor()) }.toTypedArray(),
-          span = span
-        )
-      else -> Tree(root, terminal, *children.map { it.refactor() }.toTypedArray())
+      terminal in listOf("(", ")") -> -1
+      else -> children.asSequence().map { it.eval() }.first { 0 < it }
     }
 
 /*
@@ -457,11 +442,7 @@ class SATValiantTest {
 */
   @Test
   fun testArithmeticEval() {
-//    println(arith.parse("(1 + 2) * (3 * 4)")!!.prettyPrint())
-//    println(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().prettyPrint())
-    assertEquals(arith.parse("(1 + 2) * (3 * 4)")!!.refactor().eval(), 36)
-
-      println(arith.parse("((1 + 2) * (3 * 4) + (1 + 2) * (3 * 4))")!!.refactor().prettyPrint())
+    assertEquals(arith.parse("(1 + 2) * (3 * 4)")!!.eval(), 36)
   }
 
 /*
@@ -507,7 +488,7 @@ class SATValiantTest {
         println(it)
         val (left, right) = it.split("=")
         val (ltree, rtree) = arith.parse(left)!! to arith.parse(right)!!
-        val (leval, reval) = ltree.refactor().eval() to rtree.refactor().eval()
+        val (leval, reval) = ltree.eval() to rtree.eval()
         println("$leval = $reval")
         assertEquals(leval, reval)
         leval
