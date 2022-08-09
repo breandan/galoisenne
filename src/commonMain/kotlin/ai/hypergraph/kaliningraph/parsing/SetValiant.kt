@@ -98,7 +98,8 @@ fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
 fun String.matches(cfg: String): Boolean = matches(cfg.validate().parseCFG())
 fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
 fun String.parse(s: String): Tree? = parseCFG().parse(s)
-fun CFG.parse(s: String): Tree? = parseForest(s).firstOrNull { it.root == START_SYMBOL }
+fun CFG.parse(s: String): Tree? =
+  parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize()
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -237,6 +238,19 @@ private fun CFG.normalize(): CFG =
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
+
+// Xujie's algorithm - it works! :-D
+fun Tree.denormalize(): Tree {
+  fun Tree.removeSynthetic(
+    refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
+    isSynthetic: (Tree) -> Boolean = { "." in root }
+  ): List<Tree> =
+    if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
+    else if (isSynthetic(this)) refactoredChildren
+    else listOf(Tree(root, children = refactoredChildren.toTypedArray(), span = span))
+
+  return removeSynthetic().first()
+}
 
 val START_SYMBOL = "START"
 
