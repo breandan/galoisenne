@@ -62,7 +62,7 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
 
 infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
-  else diagonals.flatten().zip(that.diagonals.flatten())
+  else data.zip(that.data)
     // Only compare nonempty bitvectors pairs
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     // Only compare bitvector pairs which are not trivially identical
