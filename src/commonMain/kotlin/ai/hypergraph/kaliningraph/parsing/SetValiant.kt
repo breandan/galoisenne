@@ -39,7 +39,8 @@ class JoinMap(val CFG: CFG) {
     else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
 
   @JvmName("setJoin")
-  operator fun get(l: Set<String>, r: Set<String>): Set<String> = join(l, r, false).map { it.first }.toSet()
+  operator fun get(l: Set<String>, r: Set<String>): Set<String> =
+    join(l, r, false).map { it.first }.toSet()
 
   @JvmName("treeJoin")
   operator fun get(left: Forest, right: Forest): Forest =
@@ -63,37 +64,15 @@ class BiMap(CFG: CFG) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.prettyPrint(cols: Int = 4): String =
+fun CFG.formatAsGrid(cols: Int) =
   sortedWith(compareBy({ -it.RHS.size }, { -it.LHS.length }, { it.LHS }))
     .map { it.LHS + " -> " + it.RHS.joinToString(" ") }.let { productions ->
       val (cols, rows) = cols to ceil(productions.size.toDouble() / cols).toInt()
       val padded = productions + List(cols * rows - productions.size) { "" }
-      FreeMatrix(cols, rows, padded).transpose.toString()
+      FreeMatrix(cols, rows, padded).transpose
     }
 
-/*
- * Takes a grammar and a partially complete string where '_' denotes holes, and
- * returns a set of completed strings consistent with that grammar. Naive search
- * over all holes takes O(|Σ|^n) where n is the number of holes.
- */
-
-fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
-  genCandidates(CFG, fillers).filter {
-    (it.matches(CFG) to it.dyckCheck()).also { (valiant, stack) ->
-      // Should never see either of these statements if we did our job correctly
-      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
-      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
-    }.first
-  }
-
-val HOLE_MARKER = '_'
-
-fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
-  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
-    fold("" to it) { (a, b), c ->
-      if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
-    }.first.replace("ε", "")
-  }
+fun CFG.prettyPrint(cols: Int = 4): String = formatAsGrid(cols).toString()
 
 fun String.matches(cfg: String): Boolean = matches(cfg.validate().parseCFG())
 fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
@@ -260,11 +239,6 @@ infix fun Char.matches(that: Char) =
   else if (this == '}' && that == '{') true
   else this == '>' && that == '<'
 
-fun String.dyckCheck() =
-  filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
-    stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
-  }.isEmpty()
-
 fun CFG.generateStubs() =
   this + filter { "`" !in it.LHS && "." !in it.LHS }
       .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
@@ -305,7 +279,7 @@ fun Production.allSubSeq(
 ): Set<Production> = indices.map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
 
 /**
- * Makes ε-productions optional. N.B. We do not use CNF, but almost-CNF!
+ * Makes ε-productions optional. n.b. We do not use CNF, but almost-CNF!
  * ε-productions are allowed, because want to be able to synthesize them
  * as special characters, then simply omit them during printing.
  *

@@ -1,5 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.automata.Stack
+import ai.hypergraph.kaliningraph.automata.peek
+import ai.hypergraph.kaliningraph.automata.pop
+import ai.hypergraph.kaliningraph.automata.push
+import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
@@ -132,6 +137,35 @@ class SetValiantTest {
       assertFalse(")".matches(cfg))
     }
   }
+
+  /*
+   * Takes a grammar and a partially complete string where '_' denotes holes, and
+   * returns a set of completed strings consistent with that grammar. Naive search
+   * over all holes takes O(|Σ|^n) where n is the number of holes.
+   */
+
+  fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
+    genCandidates(CFG, fillers).filter {
+      (it.matches(CFG) to it.dyckCheck()).also { (valiant, stack) ->
+        // Should never see either of these statements if we did our job correctly
+        if (!valiant && stack) println("Valiant under-approximated Stack: $it")
+        else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
+      }.first
+    }
+
+  val HOLE_MARKER = '_'
+
+  fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
+    MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
+      fold("" to it) { (a, b), c ->
+        if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
+      }.first.replace("ε", "")
+    }
+
+  fun String.dyckCheck() =
+    filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
+      stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
+    }.isEmpty()
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyckSolver"

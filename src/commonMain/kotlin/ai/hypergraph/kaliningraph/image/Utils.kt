@@ -1,12 +1,22 @@
 package ai.hypergraph.kaliningraph.image
 
-import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import kotlin.math.roundToInt
 
-fun <T> FreeMatrix<T>.toHTML(): String {
-  var html = """
+fun <T> FreeMatrix<T>.toHtmlTable(): String {
+  var html = "<table>\n"
+  for (row in rows) {
+    html += "\t<tr>\n"
+    for (col in this[0].indices) html += """<td><code>${row[col]}</code></td>"""
+    html += "\t</tr>\n"
+  }
+  html += "</table>"
+  return html
+}
+
+fun <T> FreeMatrix<T>.toHTMLPage(): String {
+  val html = """
     <html>
     <head>
     <style>
@@ -20,15 +30,9 @@ fun <T> FreeMatrix<T>.toHTML(): String {
     }
     </style>
     </head>
-    <body>
+    <body>${toHtmlTable()}</body>
+    </html>
   """.trimIndent()
-  html += "<table>\n"
-  for (row in rows) {
-    html += "\t<tr>\n"
-    for (col in this[0].indices) html += """<td>${row[col]}</td>"""
-    html += "\t</tr>\n"
-  }
-  html += "</table></body></html>"
   return html
 }
 

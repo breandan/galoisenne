@@ -428,14 +428,13 @@ class SATValiantTest {
     """.parseCFG()
 
   fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
-  fun Tree.eval(): Int =
-    when {
-      middle() == "*" -> children.first().eval() * children.last().eval()
-      middle() == "+" -> children.first().eval() + children.last().eval()
-      terminal?.toIntOrNull() != null -> terminal!!.toInt()
-      terminal in listOf("(", ")") -> -1
-      else -> children.asSequence().map { it.eval() }.first { 0 < it }
-    }
+  fun Tree.eval(): Int = when {
+    middle() == "*" -> children.first().eval() * children.last().eval()
+    middle() == "+" -> children.first().eval() + children.last().eval()
+    terminal?.toIntOrNull() != null -> terminal!!.toInt()
+    terminal in listOf("(", ")") -> -1
+    else -> children.asSequence().map { it.eval() }.first { 0 <= it }
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmeticEval"

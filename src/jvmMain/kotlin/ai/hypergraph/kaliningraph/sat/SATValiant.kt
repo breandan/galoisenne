@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.image.toHTML
+import ai.hypergraph.kaliningraph.image.toHTMLPage
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -54,8 +54,7 @@ fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
-  else zip(that)
-    .partition { (l, r) -> l == r }
+  else zip(that).partition { (l, r) -> l == r }
 //    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
     .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
@@ -67,7 +66,8 @@ infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): F
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     // Only compare bitvector pairs which are not trivially identical
     .partition { (l, r) -> l.zip(r).all { (a, b) -> a == b } }
-    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
+    .also { (a, b) ->
+      if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
     .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
@@ -117,7 +117,7 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
     .fold(LabeledGraph()) { ac, lg -> ac + lg }.html()
   }.let { FreeMatrix(it) }
 
-fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTML()
+fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTMLPage()
 
 fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
 
@@ -225,6 +225,7 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
  *           ww_ww  _www_w _w_www_
  *           ...    ...    ...
  */
+
 fun String.everySingleHoleConfig(): Sequence<String> {
   val new = replace(Regex("(_( )*)+"), "_")
   val toks = new.toList().map { it.toString() }

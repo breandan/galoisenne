@@ -14,7 +14,7 @@ constructor(override val vertices: Set<TypedVertex<T>> = setOf()):
 
 interface TGFamily<T: Any>: IGF<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>> {
   override val G: (vertices: Set<TypedVertex<T>>) -> TypedGraph<T>
-    get() = {vertices -> TypedGraph(vertices) }
+    get() = { vertices -> TypedGraph(vertices) }
   override val E: (s: TypedVertex<T>, t: TypedVertex<T>) -> TypedEdge<T>
     get() = { s, t -> TypedEdge(s, t) }
   override val V: (old: TypedVertex<T>, edgeMap: (TypedVertex<T>) -> Set<TypedEdge<T>>) -> TypedVertex<T>
@@ -38,6 +38,8 @@ class TypedVertex<T: Any> constructor(
   override fun encode() = (t?.toString() ?: "").vectorize()
 }
 
-open class TypedEdge<T: Any>(override val source: TypedVertex<T>, override val target: TypedVertex<T>, val v: String? = null) :
-  Edge<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(source, target), TGFamily<T> {
-}
+open class TypedEdge<T: Any>(
+  override val source: TypedVertex<T>,
+  override val target: TypedVertex<T>,
+  val v: String? = null
+) : Edge<TypedGraph<T>, TypedEdge<T>, TypedVertex<T>>(source, target), TGFamily<T>

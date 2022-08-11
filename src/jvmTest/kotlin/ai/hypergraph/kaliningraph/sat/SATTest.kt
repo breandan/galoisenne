@@ -135,7 +135,6 @@ class SATTest {
      assertEquals(D, D + D * D)
   }
 
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testUTBMatFixpoint"
 */
