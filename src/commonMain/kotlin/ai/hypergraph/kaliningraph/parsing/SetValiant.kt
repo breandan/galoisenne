@@ -14,6 +14,8 @@ typealias CFG = Set<Production>
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() =
   second.let { if(it.size == 1) it.map(String::stripEscapeChars) else it }
+fun Production.pretty() = LHS + " -> " + RHS.joinToString(" ")
+
 val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
 val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
 val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
@@ -25,6 +27,8 @@ val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
+val CFG.groups by cache { groupBy { it.LHS } }
+val CFG.pretty by cache { formatAsGrid() }
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
@@ -64,12 +68,26 @@ class BiMap(CFG: CFG) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.formatAsGrid(cols: Int) =
-  sortedWith(compareBy({ -it.RHS.size }, { -it.LHS.length }, { it.LHS }))
-    .map { it.LHS + " -> " + it.RHS.joinToString(" ") }.let { productions ->
+fun CFG.formatAsGrid(cols: Int = -1): FreeMatrix<String> =
+  if (cols == -1) // Minimize whitespace over all grids with a predefined number of columns
+    (4..20).map { formatAsGrid(it) }.minBy { it.toString().length }
+  else sortedWith(compareBy(
+    { groups[it.LHS]!!.maxOf { it.pretty().length } }, // Shortest longest pretty-printed production comes first
+    { -groups[it.LHS]!!.size }, // Take small groups first
+    { it.LHS }, // Must never split up two LHS productions
+    { it.RHS.joinToString("").length }
+  )).map { it.pretty() }.let { productions ->
       val (cols, rows) = cols to ceil(productions.size.toDouble() / cols).toInt()
       val padded = productions + List(cols * rows - productions.size) { "" }
       FreeMatrix(cols, rows, padded).transpose
+    }.let { up ->
+      FreeMatrix(up.numRows, up.numCols) { r, c ->
+        if (up[r, c].isEmpty()) return@FreeMatrix ""
+        val (lhs, rhs) = up[r, c].split(" -> ").let { it[0] to it[1] }
+        val lp = lhs.padStart(up.transpose[c].maxOf { it.substringBefore(" -> ").length })
+        val rp = rhs.padEnd(up.transpose[c].maxOf { it.substringAfter(" -> ").length })
+        "$lp → $rp"
+      }
     }
 
 fun CFG.prettyPrint(cols: Int = 4): String = formatAsGrid(cols).toString()

@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.image.toHTMLPage
+import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -117,7 +117,7 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
     .fold(LabeledGraph()) { ac, lg -> ac + lg }.html()
   }.let { FreeMatrix(it) }
 
-fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHTMLPage()
+fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHtmlPage()
 
 fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
 

@@ -8,15 +8,15 @@ fun <T> FreeMatrix<T>.toHtmlTable(): String {
   var html = "<table>\n"
   for (row in rows) {
     html += "\t<tr>\n"
-    for (col in this[0].indices) html += """<td><code>${row[col]}</code></td>"""
+    for (col in this[0].indices) html += """<td><pre><code>${row[col]}</code></pre></td><td></td>"""
     html += "\t</tr>\n"
   }
   html += "</table>"
   return html
 }
 
-fun <T> FreeMatrix<T>.toHTMLPage(): String {
-  val html = """
+fun <T> FreeMatrix<T>.toHtmlPage(): String =
+  """
     <html>
     <head>
     <style>
@@ -33,8 +33,6 @@ fun <T> FreeMatrix<T>.toHTMLPage(): String {
     <body>${toHtmlTable()}</body>
     </html>
   """.trimIndent()
-  return html
-}
 
 fun Matrix<*, *, *>.matToBase64Img(
   pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
