@@ -103,7 +103,7 @@ fun CFG.parse(s: String): Tree? =
 fun CFG.parseWithStubs(s: String) =
   tokenize(s).let(::solveFixedpoint).toUTMatrix().diagonals.asReversed()
     .let {
-      it.first()[0].firstOrNull { it.root == START_SYMBOL } to
+      it.first()[0].firstOrNull { it.root == START_SYMBOL }?.denormalize() to
       it.asSequence().flatten().flatten().map { it.denormalize() }
     }
 
@@ -259,12 +259,6 @@ fun Tree.denormalize(): Tree {
 }
 
 val START_SYMBOL = "START"
-
-infix fun Char.matches(that: Char) =
-  if (this == ')' && that == '(') true
-  else if (this == ']' && that == '[') true
-  else if (this == '}' && that == '{') true
-  else this == '>' && that == '<'
 
 fun CFG.generateStubs() =
   this + filter { "`" !in it.LHS && "." !in it.LHS }
