@@ -325,8 +325,10 @@ operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
 // Diagonals of a strictly-UT matrix for DAG-based dynamic programming
-class UTMatrix<T> constructor(val diagonals: List<List<T>>, override val algebra: Ring<T>):
-  AbstractMatrix<T, Ring<T>, UTMatrix<T>>(algebra, diagonals.first().size + 1) {
+class UTMatrix<T> constructor(
+  val diagonals: List<List<T>>, // List of strictly-UT diagonals from longest to shortest
+  override val algebra: Ring<T>
+): AbstractMatrix<T, Ring<T>, UTMatrix<T>>(algebra, diagonals.first().size + 1) {
   constructor(ts: Array<T>, algebra: Ring<T>) : this(diagonals = listOf(ts.toList()), algebra = algebra)
   constructor(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>): this(
     diagonals = when (data.size) {

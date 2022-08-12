@@ -4,11 +4,24 @@ import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import kotlin.math.roundToInt
 
+fun String.escapeHTML() =
+  map { ch ->
+    when (ch) {
+      '\'' -> "&apos;"
+      '\"' -> "&quot"
+      '&' -> "&amp;"
+      '<' -> "&lt;"
+      '>' -> "&gt;"
+      else -> ch
+    }
+  }.joinToString("")
+
 fun <T> FreeMatrix<T>.toHtmlTable(): String {
   var html = "<table>\n"
   for (row in rows) {
-    html += "\t<tr>\n"
-    for (col in this[0].indices) html += """<td><pre><code>${row[col]}</code></pre></td><td></td>"""
+    html += "\t<tr >\n"
+    for (col in this[0].indices) html +=
+      """<td style="vertical-align:top"><pre><code>${row[col]}</code></pre></td><td></td>"""
     html += "\t</tr>\n"
   }
   html += "</table>"

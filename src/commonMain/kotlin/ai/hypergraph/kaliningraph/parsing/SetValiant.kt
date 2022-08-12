@@ -28,7 +28,7 @@ val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.groups by cache { groupBy { it.LHS } }
-val CFG.pretty by cache { formatAsGrid() }
+val CFG.pretty by cache { formatAsGrid(4) }
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
@@ -70,12 +70,12 @@ class BiMap(CFG: CFG) {
 
 fun CFG.formatAsGrid(cols: Int = -1): FreeMatrix<String> =
   if (cols == -1) // Minimize whitespace over all grids with a predefined number of columns
-    (4..20).map { formatAsGrid(it) }.minBy { it.toString().length }
+    (3..5).map { formatAsGrid(it) }.minBy { it.toString().length }
   else sortedWith(compareBy(
     { groups[it.LHS]!!.maxOf { it.pretty().length } }, // Shortest longest pretty-printed production comes first
     { -groups[it.LHS]!!.size }, // Take small groups first
     { it.LHS }, // Must never split up two LHS productions
-    { it.RHS.joinToString("").length }
+    { it.pretty().length }
   )).map { it.pretty() }.let { productions ->
       val (cols, rows) = cols to ceil(productions.size.toDouble() / cols).toInt()
       val padded = productions + List(cols * rows - productions.size) { "" }
@@ -97,6 +97,15 @@ fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
 fun String.parse(s: String): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: String): Tree? =
   parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize()
+
+// Returns first valid whole-parse tree if the string is syntactically valid, and if not,
+// a sequence of partial trees ordered by the length of the substring that can be parsed.
+fun CFG.parseWithStubs(s: String) =
+  tokenize(s).let(::solveFixedpoint).toUTMatrix().diagonals.asReversed()
+    .let {
+      it.first()[0].firstOrNull { it.root == START_SYMBOL } to
+      it.asSequence().flatten().flatten().map { it.denormalize() }
+    }
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -240,7 +249,7 @@ private fun CFG.normalize(): CFG =
 fun Tree.denormalize(): Tree {
   fun Tree.removeSynthetic(
     refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
-    isSynthetic: (Tree) -> Boolean = { "." in root }
+    isSynthetic: (Tree) -> Boolean = { 2 <= root.split('.').size }
   ): List<Tree> =
     if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
     else if (isSynthetic(this)) refactoredChildren

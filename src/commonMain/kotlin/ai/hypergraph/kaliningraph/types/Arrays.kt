@@ -54,6 +54,8 @@ fun <T> Collection<T>.powerset(): Sequence<Set<T>> = sequence {
   }
 }
 
+infix fun IntRange.isSubsetOf(ir: IntRange) = ir.first <= first && last <= ir.last
+
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
