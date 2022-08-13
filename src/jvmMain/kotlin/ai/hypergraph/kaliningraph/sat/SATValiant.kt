@@ -316,7 +316,6 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         try { f.solveIncrementally() }
         catch (npe: NullPointerException) { return@sequence }
       }
-    var isFresh = T
     while (true)
       try {
 //      println(solution.toPython())
@@ -329,7 +328,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
         if (completion.trim().isNotBlank()) yield(completion)
 
-        isFresh = isFresh and solution.filter { (k, v) -> k in holeVars && v }.areFresh()
+        val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
 
         val model = solver.run { add(isFresh); sat(); model() }
         solution = solution.keys.associateWith { model.evaluateLit(it) }
