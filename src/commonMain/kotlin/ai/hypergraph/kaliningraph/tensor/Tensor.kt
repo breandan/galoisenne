@@ -126,7 +126,7 @@ val GF2_ALGEBRA: Ring<Int> =
     times = { a, b -> (a * b) % 2 }
   )
 
-private fun <T> TODO_ALGEBRA(t: T): Ring<T> =
+private fun <T> TODO_ALGEBRA(t: T?): Ring<T?> =
   Ring.of(
     nil = t,
     plus = { _, _ -> TODO() },
@@ -184,7 +184,7 @@ open class FreeMatrix<T> constructor(
   override val numRows: Int,
   override val numCols: Int = numRows,
   override val data: List<T>,
-  override val algebra: Ring<T> = TODO_ALGEBRA(data.first())
+  override val algebra: Ring<T> = TODO_ALGEBRA(data.firstOrNull()) as Ring<T>
 ): AbstractMatrix<T, Ring<T>, FreeMatrix<T>>(algebra, numRows, numCols) {
   constructor(elements: List<T>) : this(
     numRows = sqrt(elements.size.toDouble()).toInt(),
@@ -388,7 +388,8 @@ class UTMatrix<T> constructor(
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =
-    if (diagonals.last().size != 1) throw IndexOutOfBoundsException("OOB")
+    if (diagonals.last().size != 1)
+      throw IndexOutOfBoundsException("OOB: [${diagonals.first().size}, ${diagonals.last().size}]")
     else FreeMatrix(algebra, diagonals.size + 1, diagonals.size + 1) { r, c ->
       if (c <= r) algebra.nil else diagonals[c - r - 1][r]
     }

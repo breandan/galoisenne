@@ -275,8 +275,17 @@ fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
           v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
+private fun CFG.handleSingleton(s: String): Sequence<String> =
+  if (s == "_") terminals.asSequence()
+  else if (s.matches(Regex("<.+>")))
+    bimap[s.substring(1, s.length - 1)]
+      .mapNotNull { if(it.size == 1) it[0] else null }.asSequence()
+  else emptySequence()
+
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
-  sequence {
+  if (tokens.none { it == "_" }) emptySequence()
+  else if (tokens.size == 1) handleSingleton(tokens[0])
+  else sequence {
     val (matrix, holeVariables) = constructInitialMatrix(tokens)
 
     val fixpoint = matrix * matrix
@@ -310,10 +319,8 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
-        val completion = tokens.joinToString(join) {
-          if (it == "_") fillers.removeAt(0)!!.let { if (it == "ε") "" else it }
-          else it
-        }
+        val completion = tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
+          .filterNot { it == "ε" }.joinToString(join)
 
         if (completion.trim().isNotBlank()) yield(completion)
 

@@ -234,7 +234,6 @@ fun String.validate(
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
-// TODO: Implement denormalization / original parse tree recovery
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
@@ -261,7 +260,7 @@ fun Tree.denormalize(): Tree {
 val START_SYMBOL = "START"
 
 fun CFG.generateStubs() =
-  this + filter { "`" !in it.LHS && "." !in it.LHS }
+  this + filter { it.LHS.split(".").size == 1 }
       .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
