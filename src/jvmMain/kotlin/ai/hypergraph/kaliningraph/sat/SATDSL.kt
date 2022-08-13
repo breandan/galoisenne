@@ -10,8 +10,17 @@ import org.logicng.formulas.FormulaFactoryConfig
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.formulas.Variable
 import org.logicng.solvers.MiniSat
+import java.util.concurrent.ConcurrentHashMap
 
-val ff = FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
+val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
+
+val ff: FormulaFactory get() =
+  ffCache.getOrPut(Thread.currentThread().id) {
+    FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
+  }
+
+fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
+
 fun BVar(name: String): Formula = ff.variable(name)
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
   FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
@@ -32,7 +41,10 @@ fun Formula.solveIncrementally(
 
 // Ensures that at least one of the formulas in stale are fresh
 fun Map<Variable, Boolean>.areFresh() =
-  entries.map { (v, b) -> v neq BLit(b) }.reduce { acc, satf -> acc or satf }
+  entries.map { (v, _) -> v.negate() as Formula }
+//    .shuffled().let { it.take(it.size / 2) }
+//    .also { println("${it.size} new constraints added!") }
+    .reduce { acc, satf -> acc or satf }
 
 /** See [org.logicng.io.parsers.PropositionalParser] */
 infix fun Formula.and(that: Formula): Formula = ff.and(this, that)
@@ -40,8 +52,8 @@ infix fun Formula.or(that: Formula): Formula = ff.or(this, that)
 infix fun Formula.xor(that: Formula): Formula = eq(that).negate()
 infix fun Formula.neq(that: Formula): Formula = xor(that)
 infix fun Formula.eq(that: Formula): Formula = ff.equivalence(this, that)
-val T: Formula = ff.verum()
-val F: Formula = ff.falsum()
+val T: Formula get() = ff.verum()
+val F: Formula get() = ff.falsum()
 
 fun Formula.toBool() = "$this".drop(1).toBooleanStrict()
 
@@ -56,7 +68,7 @@ infix fun Matrix<Formula, *, *>.eq(that: Matrix<Formula, *, *>) =
 infix fun Matrix<Formula, *, *>.neq(that: Matrix<Formula, *, *>) =
   (this eq that).negate()
 
-val XOR_SAT_ALGEBRA=
+val XOR_SAT_ALGEBRA get() =
   Ring.of(
     nil = F,
     one = T,
@@ -64,7 +76,7 @@ val XOR_SAT_ALGEBRA=
     times = { a, b -> a and b }
   )
 
-val SAT_ALGEBRA =
+val SAT_ALGEBRA get() =
   Ring.of(
     nil = BLit(false),
     one = BLit(true),

@@ -153,15 +153,14 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
-        implementation("org.logicng:logicng:2.3.1")
-
+        implementation("org.logicng:logicng:2.3.2")
       }
     }
 
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.4.1"
+        val kotestVersion = "5.4.2"
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
@@ -169,7 +168,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:1.7.32")
+        implementation("org.slf4j:slf4j-simple:2.0.0-beta1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))

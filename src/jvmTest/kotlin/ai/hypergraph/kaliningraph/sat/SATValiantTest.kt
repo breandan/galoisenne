@@ -493,4 +493,13 @@ class SATValiantTest {
         leval
       }.distinct().take(4).toList()
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testParallelStream"
+*/
+  @Test
+  fun testParallelStream() {
+    (0..1).toList().parallelStream().map { testCheckedArithmetic(); "Done" }
+      .forEach { println(it) }
+  }
 }

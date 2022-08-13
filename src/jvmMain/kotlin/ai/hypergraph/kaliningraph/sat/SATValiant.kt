@@ -286,7 +286,10 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   if (tokens.none { it == "_" }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
-    val (matrix, holeVariables) = constructInitialMatrix(tokens)
+    ff.clear()
+    println("Synthesizing: " + tokens.joinToString(" "))
+    val (matrix, holeVecVars) = constructInitialMatrix(tokens)
+    val holeVars = holeVecVars.flatten().toSet()
 
     val fixpoint = matrix * matrix
 //    println(fixpoint.summarize(this@synthesize))
@@ -296,7 +299,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     val parsingConstraints =
       try {
         isInGrammar(matrix) and
-          uniquenessConstraints(holeVariables) and
+          uniquenessConstraints(holeVecVars) and
           (matrix valiantMatEq fixpoint)
       } catch (e: Exception) { return@sequence }
 
@@ -307,15 +310,17 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 //  println("Reduction: ${parsingConstraints.numberOfNodes()}")
 //  println(parsingConstraints.cnf().toPython())
 
-    var (solver, solution) = parsingConstraints.let { f ->
-      try { f.solveIncrementally() }
-      catch (npe: NullPointerException) { return@sequence }
-    }
+
+    var (solver, solution) =
+      parsingConstraints.let { f ->
+        try { f.solveIncrementally() }
+        catch (npe: NullPointerException) { return@sequence }
+      }
     var isFresh = T
     while (true)
       try {
 //      println(solution.toPython())
-        val fillers = holeVariables.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
+        val fillers = holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
@@ -324,12 +329,12 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
         if (completion.trim().isNotBlank()) yield(completion)
 
-        val holes = holeVariables.flatten()
-        isFresh = isFresh and solution.filter { it.key in holes }.areFresh()
+        isFresh = isFresh and solution.filter { (k, v) -> k in holeVars && v }.areFresh()
 
         val model = solver.run { add(isFresh); sat(); model() }
         solution = solution.keys.associateWith { model.evaluateLit(it) }
       } catch (e: Exception) { break }
 
     ff.clear()
+    elimFormulaFactory()
   }
