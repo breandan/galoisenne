@@ -151,8 +151,12 @@ fun CFG.initialMatrix(str: List<String>): TreeMatrix =
 fun String.splitKeeping(str: String): List<String> =
   split(str).flatMap { listOf(it, str) }.dropLast(1)
 
+fun String.mergeHoles() =
+  replace(Regex("\\s+"), " ")
+    .replace(Regex("(?<=_)\\s(?=_)"), "")
+
 fun CFG.tokenize(str: String): List<String> =
-  delimiters.fold(listOf(str)) { l, delim ->
+  delimiters.fold(listOf(str.mergeHoles())) { l, delim ->
     l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
   }.filter(String::isNotBlank)
 

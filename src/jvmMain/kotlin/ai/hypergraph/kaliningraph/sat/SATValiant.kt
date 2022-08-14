@@ -6,6 +6,8 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
+import jetbrains.datalore.plot.config.asMutable
+import kotlinx.coroutines.yield
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
@@ -219,6 +221,20 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
   }
 
 /*
+ * Generates all single character replacements and insertions.
+ * Original: www
+ * Variants: _www w_ww ww_w www_
+ *           _ww w_w ww_
+ */
+
+fun String.singleCharSubstitutionsAndInsertions(): Sequence<String> =
+  (split(" ").filter { it.isNotBlank() } + "").let { str ->
+    str.indices.map { i -> str.toMutableList().apply { if (this[i] != "_") this[i] = "_ ${this[i]}" }.joinToString(" ").trim() }
+  }.asSequence() + split(" ").filter { it.isNotBlank() }.let { str ->
+    str.indices.map { i -> str.toMutableList().apply { if (this[i] != "_") this[i] = "_" }.joinToString(" ").trim() }
+  }
+
+/*
  * Treats contiguous underscores as a single hole and lazily enumerates every
  * hole configuration in the powerset of all holes within a snippet.
  * Original: ___w__w_w__w___ -> _w_w_w_w_
@@ -248,8 +264,6 @@ fun String.increasingLengthChunks(): Sequence<String> {
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
 }
-
-fun String.mergeHoles() = replace(Regex("(?<=_)\\s+(?=_)"), "")
 
 fun String.synthesizeFrom(
   cfg: CFG,
