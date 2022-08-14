@@ -145,7 +145,8 @@ kotlin {
         // MPJ (required for Poon's SPN)
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
-        implementation("org.sosy-lab:java-smt:3.12.0")
+        implementation("org.sosy-lab:common:0.3000-502-gb581f5d")
+        implementation("org.sosy-lab:java-smt:3.13.3")
 
         // val libZ3Version = "4.8.15"
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
