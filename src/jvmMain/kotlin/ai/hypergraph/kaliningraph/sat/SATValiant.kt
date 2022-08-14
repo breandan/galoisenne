@@ -221,7 +221,7 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
  * hole configuration in the powerset of all holes within a snippet.
- * Original: ___w__w_w__w___
+ * Original: ___w__w_w__w___ -> _w_w_w_w_
  * Variants: _wwww  _w_www _w_w_ww ... _w_w_w_w_
  *           w_www  _ww_ww _w_ww_w
  *           ww_ww  _www_w _w_www_
@@ -244,11 +244,12 @@ fun String.everySingleHoleConfig(): Sequence<String> {
  *           ___w__w_w__w___
  */
 fun String.increasingLengthChunks(): Sequence<String> {
-  val merged = replace(Regex("(?<=_)\\s+(?=_)"), "")
-  val chunks = merged.split(Regex("((?<=[^_])|(?=[^_]))"))
+  val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
 }
+
+fun String.mergeHoles() = replace(Regex("(?<=_)\\s+(?=_)"), "")
 
 fun String.synthesizeFrom(
   cfg: CFG,
@@ -257,8 +258,8 @@ fun String.synthesizeFrom(
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) }
 ): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
-  val allVariants = variations.fold(sequenceOf(this)) { a , b -> a + b() }
-  return allVariants.distinct().flatMap { cfg_.run { synthesize(tokenize(it), join) } }
+  val allVariants = variations.fold(sequenceOf(this)) { a, b -> a + b() }.map { it.mergeHoles() }.distinct()
+  return allVariants.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
 }
 
 fun Formula.toPython(
