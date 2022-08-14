@@ -56,6 +56,7 @@ fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
+  else if (this == that) T
   else zip(that).partition { (l, r) -> l == r }
 //    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
@@ -63,15 +64,8 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
 
 infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
-  else data.zip(that.data)
-    // Only compare nonempty bitvectors pairs
-    .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
-    // Only compare bitvector pairs which are not trivially identical
-    .partition { (l, r) -> l.zip(r).all { (a, b) -> a == b } }
-    .also { (a, b) ->
-      if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
-    .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
-//    .also { println("Grammar constraints: ${it.numberOfAtoms()}") }
+  else data.zip(that.data).filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
   mat.diagonals.last().first()[bindex[START_SYMBOL]]
@@ -234,6 +228,16 @@ fun String.singleCharSubstitutionsAndInsertions(): Sequence<String> =
     str.indices.map { i -> str.toMutableList().apply { if (this[i] != "_") this[i] = "_" }.joinToString(" ").trim() }
   }
 
+fun String.multiCharSubstitutionsAndInsertions(): Sequence<String> =
+  singleCharSubstitutionsAndInsertions() +
+  (split(" ").filter { it.isNotBlank() } + "").let { toks ->
+    val indices = toks.indices.toList().powerset().filter { it.size > toks.size - 3 }
+    indices.map { idxs -> toks.mapIndexed { i, it -> if (i in idxs) it else "_ $it" }.joinToString(" ") }
+  } + (split(" ").filter { it.isNotBlank() }).let { toks ->
+    val indices = toks.indices.toList().powerset().filter { it.size > toks.size - 3 }
+    indices.map { idxs -> toks.mapIndexed { i, it -> if (i in idxs) it else "_" }.joinToString(" ") }
+  }
+
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
  * hole configuration in the powerset of all holes within a snippet.
@@ -259,6 +263,7 @@ fun String.everySingleHoleConfig(): Sequence<String> {
  *           __w__w_w__w__
  *           ___w__w_w__w___
  */
+
 fun String.increasingLengthChunks(): Sequence<String> {
   val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
