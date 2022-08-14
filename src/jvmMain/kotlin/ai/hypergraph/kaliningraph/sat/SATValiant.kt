@@ -69,14 +69,15 @@ infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): F
     .also { (a, b) ->
       if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical bitvectors") }
     .second.map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
+//    .also { println("Grammar constraints: ${it.numberOfAtoms()}") }
 
 fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
   mat.diagonals.last().first()[bindex[START_SYMBOL]]
 
-// Encodes the constraint that a bit-vector representing a unary production
+// Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
-// grammar, the bitvector must not have the configuration [A=1 B=1 C=0 D=1],
-// it should be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
+// the bitvector cannot have the configuration [A=1 B=1 C=0 D=1], it must
+// be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
   // terminal        possible nonterminals it can represent
   terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
@@ -93,6 +94,7 @@ fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
 fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
+//    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
 val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
   Ring.of(
@@ -316,6 +318,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         try { f.solveIncrementally() }
         catch (npe: NullPointerException) { return@sequence }
       }
+//    var freshnessConstraints = 0L
     while (true)
       try {
 //      println(solution.toPython())
@@ -329,6 +332,8 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         if (completion.trim().isNotBlank()) yield(completion)
 
         val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
+//        freshnessConstraints += isFresh.numberOfAtoms()
+//        println("Freshness constraints: $freshnessConstraints")
 
         val model = solver.run { add(isFresh); sat(); model() }
         solution = solution.keys.associateWith { model.evaluateLit(it) }
