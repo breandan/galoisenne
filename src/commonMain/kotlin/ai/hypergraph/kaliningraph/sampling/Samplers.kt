@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.sampling
 
+import ai.hypergraph.kaliningraph.choose
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.toDoubleMatrix
 import ai.hypergraph.kaliningraph.types.*
@@ -174,6 +175,11 @@ fun LFSR(
     } while (++i < 2.0.pow(degree).toInt() - 1)
   }
 
+fun randomSequenceWithoutRepetition(range: IntRange) =
+  LFSR(ceil(log2((range.last - range.first + 1).toDouble())).toInt())
+    .filter { it.toInt() <= range.last - range.first }
+    .map { range.first + it.toInt() - 1 }
+
 private fun RandomVector(
   degree: Int,
   initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
@@ -256,9 +262,34 @@ fun CDF.sample(random: Random = Random.Default,
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
 
-// TODO: implement https://www.farside.org.uk/201311/encoding_n_choose_k
 fun <T> Set<T>.choose(i: IntRange) =
   i.asSequence().flatMap { findAll(this, it).map { it.toSet() } }.distinct()
 
-fun <T> Set<T>.choose(k: Int) =
-  findAll(this, k).map { it.toSet() }.filter { it.size == k }.distinct()
+inline fun <reified T> Set<T>.choose(
+  k: Int,
+  numEl: Int = size choose k,
+  order: Sequence<Int> = randomSequenceWithoutRepetition(0 .. numEl),
+  asArray: Array<T> = toTypedArray()
+) = order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
+
+// https://www.farside.org.uk/201311/encoding_n_choose_k
+//fun encode(choices: Set<Int>): Int {
+//  var k = choices.size
+//  return choices.sorted().sumOf { it choose k-- }
+//}
+
+fun Int.decodeCombo(k: Int): Set<Int> {
+  var choice: Int = k - 1
+  while (choice choose k < this) choice++
+
+  var N = this
+  var k = k
+  val result = mutableSetOf<Int>()
+  (choice downTo 0).forEach { choice ->
+    if (choice choose k <= N) {
+      N -= choice choose k--
+      result.add(choice)
+    }
+  }
+  return result
+}

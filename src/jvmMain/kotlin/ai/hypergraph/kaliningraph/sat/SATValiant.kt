@@ -6,8 +6,6 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
-import jetbrains.datalore.plot.config.asMutable
-import kotlinx.coroutines.yield
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
@@ -22,37 +20,12 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
       .fold(BLit(false)) { acc, satf -> acc or satf }
   }
 
-@JvmName("joinBitVector")
-fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
-  if (left.isEmpty() || right.isEmpty()) emptyList()
-  else List(left.size) { i ->
-    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-      .fold(false) { acc, satf -> acc or satf }
-  }
-
-fun CFG.maybeJoin(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
-  if (left == null || right == null) null else join(left, right)
-
-fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
-  if (left == null || right == null) { left ?: right }
-  else if (left.isEmpty() && right.isNotEmpty()) right
-  else if (left.isNotEmpty() && right.isEmpty()) left
-  else left.zip(right) { l, r -> l or r }
-
 @JvmName("satFormulaUnion")
 infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
   if (isEmpty()) that else if (that.isEmpty()) this
   else List(size) { i -> this[i] or that[i] }
 
 fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
-
-fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
-fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
-  nts.mapIndexedNotNull { i, it -> if(it) bindex[i] else null }.toSet()
-
-fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
-  mapIndexedNotNull { i, it -> if(it) cfg.bindex[i] else null }.toSet()
 
 infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
@@ -91,14 +64,6 @@ fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
-
-val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
-  Ring.of(
-    nil = List(nonterminals.size) { false },
-    plus = { x, y -> maybeUnion(x, y) },
-    times = { x, y -> maybeJoin(x, y) }
-  )
-}
 
 val CFG.satAlgebra by cache {
   Ring.of(
@@ -214,62 +179,6 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-/*
- * Generates all single character replacements and insertions.
- * Original: www
- * Variants: _www w_ww ww_w www_
- *           _ww w_w ww_
- */
-
-fun String.singleCharSubstitutionsAndInsertions(): Sequence<String> =
-  (split(" ").filter { it.isNotBlank() } + "").let { str ->
-    str.indices.map { i -> str.toMutableList().apply { if (this[i] != "_") this[i] = "_ ${this[i]}" }.joinToString(" ").trim() }
-  }.asSequence() + split(" ").filter { it.isNotBlank() }.let { str ->
-    str.indices.map { i -> str.toMutableList().apply { if (this[i] != "_") this[i] = "_" }.joinToString(" ").trim() }
-  }
-
-fun String.multiCharSubstitutionsAndInsertions(): Sequence<String> =
-  singleCharSubstitutionsAndInsertions() +
-  (split(" ").filter { it.isNotBlank() } + "").let { toks ->
-    val indices = toks.indices.toList().powerset().filter { it.size > toks.size - 3 }
-    indices.map { idxs -> toks.mapIndexed { i, it -> if (i in idxs) it else "_ $it" }.joinToString(" ") }
-  } + (split(" ").filter { it.isNotBlank() }).let { toks ->
-    val indices = toks.indices.toList().powerset().filter { it.size > toks.size - 3 }
-    indices.map { idxs -> toks.mapIndexed { i, it -> if (i in idxs) it else "_" }.joinToString(" ") }
-  }
-
-/*
- * Treats contiguous underscores as a single hole and lazily enumerates every
- * hole configuration in the powerset of all holes within a snippet.
- * Original: ___w__w_w__w___ -> _w_w_w_w_
- * Variants: _wwww  _w_www _w_w_ww ... _w_w_w_w_
- *           w_www  _ww_ww _w_ww_w
- *           ww_ww  _www_w _w_www_
- *           ...    ...    ...
- */
-
-fun String.everySingleHoleConfig(): Sequence<String> {
-  val new = replace(Regex("(_( )*)+"), "_")
-  val toks = new.toList().map { it.toString() }
-  val indices = toks.indices.filter { toks[it] == "_" }.powerset()
-  return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString("") }
-}
-
-/*
- * Lazily enumerates all underscores chunkings in order of increasing length up
- * to the lesser of (1) its original size or (2) the longest underscore chunk.
- * Original: ___w__w_w__w___
- * Variants: _w_w_w_w_
- *           __w__w_w__w__
- *           ___w__w_w__w___
- */
-
-fun String.increasingLengthChunks(): Sequence<String> {
-  val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))
-  return (2..chunks.maxOf { it.length }).asSequence()
-    .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
-}
-
 fun String.synthesizeFrom(
   cfg: CFG,
   join: String = "",
@@ -309,7 +218,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
     ff.clear()
-    println("Synthesizing: " + tokens.joinToString(" "))
+    println(tokens.joinToString(" "))
     val (matrix, holeVecVars) = constructInitialMatrix(tokens)
     val holeVars = holeVecVars.flatten().toSet()
 
@@ -331,7 +240,6 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 //  parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
 //  println("Reduction: ${parsingConstraints.numberOfNodes()}")
 //  println(parsingConstraints.cnf().toPython())
-
 
     var (solver, solution) =
       parsingConstraints.let { f ->

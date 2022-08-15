@@ -101,11 +101,10 @@ fun CFG.parse(s: String): Tree? =
 // Returns first valid whole-parse tree if the string is syntactically valid, and if not,
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
 fun CFG.parseWithStubs(s: String) =
-  tokenize(s).let(::solveFixedpoint).toUTMatrix().diagonals.asReversed()
-    .let {
-      it.first()[0].firstOrNull { it.root == START_SYMBOL }?.denormalize() to
-      it.asSequence().flatten().flatten().map { it.denormalize() }
-    }
+  tokenize(s).let(::solveFixedpoint).toUTMatrix().diagonals.asReversed().let {
+    it.first()[0].firstOrNull { it.root == START_SYMBOL }?.denormalize() to
+        it.asSequence().flatten().flatten().map { it.denormalize() }
+  }
 
 /* See: http://www.cse.chalmers.se/~patrikj/talks/IFIP2.1ZeegseJansson_ParParseAlgebra.org
  *
@@ -138,6 +137,40 @@ fun CFG.treeJoin(left: Forest, right: Forest): Forest =
 //fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> = joinMap[left, right]
 fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
+
+fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
+
+@JvmName("joinBitVector")
+fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
+  if (left.isEmpty() || right.isEmpty()) emptyList()
+  else List(left.size) { i ->
+    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+      .fold(false) { acc, satf -> acc or satf }
+  }
+
+fun CFG.maybeJoin(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) null else join(left, right)
+
+fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+  if (left == null || right == null) { left ?: right }
+  else if (left.isEmpty() && right.isNotEmpty()) right
+  else if (left.isNotEmpty() && right.isEmpty()) left
+  else left.zip(right) { l, r -> l or r }
+
+fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
+  nts.mapIndexedNotNull { i, it -> if(it) bindex[i] else null }.toSet()
+
+fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
+  mapIndexedNotNull { i, it -> if(it) cfg.bindex[i] else null }.toSet()
+
+val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
+  Ring.of(
+    nil = List(nonterminals.size) { false },
+    plus = { x, y -> maybeUnion(x, y) },
+    times = { x, y -> maybeJoin(x, y) }
+  )
+}
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): TreeMatrix =

@@ -1,8 +1,6 @@
 package ai.hypergraph.kaliningraph.sampling
 
 import ai.hypergraph.kaliningraph.choose
-import ai.hypergraph.kaliningraph.fact
-import ai.hypergraph.kaliningraph.times
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.pow
 import kotlin.test.*
@@ -55,8 +53,8 @@ class SamplingTest {
   @Test
   fun testCombos() {
     val (n, k) = 5 to 3
-    val combos = (1 .. n).toSet().choose(k).toList()
+    val combos = (1 .. n).map { "$it" }.toSet().choose(k).toList()
     println(combos)
-    assertEquals(n.choose(k), combos.size)
+    assertEquals(n choose k, combos.size)
   }
 }

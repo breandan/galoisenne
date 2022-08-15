@@ -30,7 +30,7 @@ class Tree constructor(
     prefix: String = "",
     childrenPrefix: String = "",
   ): String =
-    if (children.isEmpty()) buffer + prefix + terminal!! + "\n"
+    if (children.isEmpty()) buffer + prefix + terminal!! + "[${span.first}]\n"
     else children.foldIndexed("$buffer$prefix$root [$span]\n") { i: Int, acc: String, it: Tree ->
       if (i == children.size - 1)
         it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
