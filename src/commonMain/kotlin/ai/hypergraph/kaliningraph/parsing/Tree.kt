@@ -2,8 +2,11 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 
+typealias TreeMatrix = FreeMatrix<Forest>
 typealias Forest = Set<Tree>
+
 class Tree constructor(
   val root: String,
   val terminal: String? = null,

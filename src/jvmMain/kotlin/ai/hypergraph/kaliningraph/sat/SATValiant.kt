@@ -179,14 +179,16 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
     }
   }
 
-fun String.synthesizeFrom(
+// Generates a lazy sequence of solutions to sketch-based synthesis problems
+fun String.synthesizeIncrementally(
   cfg: CFG,
   join: String = "",
   allowNTs: Boolean = true,
+  cfgFilter: Production.() -> Boolean = { true },
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
   progress: (String) -> Unit = {}
 ): Sequence<String> {
-  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
+  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }.filter(cfgFilter).toSet()
   val allVariants = variations.fold(sequenceOf(this)) { a, b -> a + b() }.map { it.mergeHoles() }.distinct()
   return allVariants.map { progress(it); it }.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
 }
