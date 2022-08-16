@@ -275,11 +275,16 @@ fun String.validate(
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
+    .addEpsilonToUnitProds()
     .refactorEpsilonProds()
     .elimVarUnitProds()
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
+
+private fun CFG.addEpsilonToUnitProds(): CFG =
+  terminalUnitProductions.map { it.LHS }.toSet()
+    .fold(this) { acc, it -> acc + (it to listOf(it, "ε")) + (it to listOf("ε", it)) }
 
 // Xujie's algorithm - it works! :-D
 fun Tree.denormalize(): Tree {

@@ -17,10 +17,12 @@ fun String.multiTokenSubstitutionsAndInsertions(
   tokens: List<String> = allTokensExceptHoles(),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf()
-): Sequence<String> =
-  (1..numberOfEdits).asSequence().flatMap {
-    (tokens + "").allSubstitutions(it, exclusions) { "_ $it" } +
-      tokens.allSubstitutions(it, exclusions) { "_" }
+): Sequence<String> = this.run {
+    println("Exclusions: ${allTokensExceptHoles().mapIndexed { i, it -> if(i in exclusions) "_" else it }.joinToString(" ")}")
+    (1..numberOfEdits).asSequence().flatMap {
+      (tokens + "").allSubstitutions(it, exclusions) { "_ $it" } +
+          tokens.allSubstitutions(it, exclusions) { "_" }
+    }
   }
 
 private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String): Sequence<String> =
