@@ -20,8 +20,7 @@ fun String.multiTokenSubstitutionsAndInsertions(
 ): Sequence<String> = this.run {
     println("Exclusions: ${allTokensExceptHoles().mapIndexed { i, it -> if(i in exclusions) "_" else it }.joinToString(" ")}")
     (1..numberOfEdits).asSequence().flatMap {
-      (tokens + "").allSubstitutions(it, exclusions) { "_ $it" } +
-          tokens.allSubstitutions(it, exclusions) { "_" }
+      (tokens + "").allSubstitutions(it, exclusions) { "_ $it" }
     }
   }
 
