@@ -276,11 +276,20 @@ inline fun <reified T> Set<T>.choose(
   if (size <= k) sequenceOf(this)
   else order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
-// https://www.farside.org.uk/201311/encoding_n_choose_k
-//fun encode(choices: Set<Int>): Int {
-//  var k = choices.size
-//  return choices.sorted().sumOf { it choose k-- }
-//}
+// https://en.wikipedia.org/wiki/Combinatorial_number_system
+fun Set<Int>.encode(): Int {
+  var (k, i, total) = size to 0 to 0
+  val asArray = toIntArray()
+
+  while (i < size) {
+    val result = asArray[i] choose k
+    total += result
+    k -= 1
+    i += 1
+  }
+
+  return total
+}
 
 fun Int.decodeCombo(k: Int): Set<Int> {
   var choice: Int = k - 1

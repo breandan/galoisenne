@@ -57,4 +57,17 @@ class SamplingTest {
     println(combos)
     assertEquals(n choose k, combos.size)
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testMaculayRepresentation"
+*/
+  @Test
+  fun testMaculayRepresentation() {
+    (0..100).forEach { i ->
+      assertEquals(
+        i.decodeCombo(3).also { print("\n$i => $it") },
+        i.decodeCombo(3).encode().also { print(" => $it") }.decodeCombo(3).also { print(" => $it") }
+      )
+    }
+  }
 }

@@ -218,6 +218,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   if (tokens.none { it == "_" }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
+    println("Synthesizing: ${tokens.joinToString (" ")}")
     ff.clear()
     val (matrix, holeVecVars) = constructInitialMatrix(tokens)
     val holeVars = holeVecVars.flatten().toSet()
