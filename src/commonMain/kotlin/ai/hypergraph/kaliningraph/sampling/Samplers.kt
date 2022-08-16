@@ -54,6 +54,7 @@ val generator = mapOf(
   // https://link.springer.com/content/pdf/bbm%3A978-1-4615-1509-8%2F1.pdf
   // https://sci-hub.se/https://doi.org/10.1023/A:1027422805851
   // https://github.com/umontreal-simul/ssj/blob/f384e22adf08bd5202ea65bb7cd53fee192cb3ce/src/main/java/umontreal/ssj/hups/SobolSequence.java#L488
+  1 to listOf(1),
   2 to listOf(7),
   3 to listOf(11),
   4 to listOf(19, 25),
