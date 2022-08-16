@@ -54,6 +54,8 @@ val generator = mapOf(
   // https://link.springer.com/content/pdf/bbm%3A978-1-4615-1509-8%2F1.pdf
   // https://sci-hub.se/https://doi.org/10.1023/A:1027422805851
   // https://github.com/umontreal-simul/ssj/blob/f384e22adf08bd5202ea65bb7cd53fee192cb3ce/src/main/java/umontreal/ssj/hups/SobolSequence.java#L488
+  2 to listOf(7),
+  3 to listOf(11),
   4 to listOf(19, 25),
   5 to listOf(37, 41, 47, 55, 59, 61),
   6 to listOf(67, 91, 97, 103, 109, 115),
@@ -270,7 +272,9 @@ inline fun <reified T> Set<T>.choose(
   numEl: Int = size choose k,
   order: Sequence<Int> = randomSequenceWithoutRepetition(0 .. numEl),
   asArray: Array<T> = toTypedArray()
-) = order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
+): Sequence<Set<T>> =
+  if (size <= k) sequenceOf(this)
+  else order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
 // https://www.farside.org.uk/201311/encoding_n_choose_k
 //fun encode(choices: Set<Int>): Int {

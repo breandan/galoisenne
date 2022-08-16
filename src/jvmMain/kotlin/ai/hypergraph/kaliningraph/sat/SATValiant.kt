@@ -183,11 +183,12 @@ fun String.synthesizeFrom(
   cfg: CFG,
   join: String = "",
   allowNTs: Boolean = true,
-  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) }
+  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
+  progress: (String) -> Unit = {}
 ): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }
   val allVariants = variations.fold(sequenceOf(this)) { a, b -> a + b() }.map { it.mergeHoles() }.distinct()
-  return allVariants.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
+  return allVariants.map { progress(it); it }.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
 }
 
 fun Formula.toPython(
@@ -218,7 +219,6 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
     ff.clear()
-    println(tokens.joinToString(" "))
     val (matrix, holeVecVars) = constructInitialMatrix(tokens)
     val holeVars = holeVecVars.flatten().toSet()
 

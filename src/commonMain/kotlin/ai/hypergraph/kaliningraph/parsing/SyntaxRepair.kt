@@ -1,8 +1,5 @@
-package ai.hypergraph.kaliningraph.sat
+package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.parsing.CFG
-import ai.hypergraph.kaliningraph.parsing.drop
-import ai.hypergraph.kaliningraph.parsing.mergeHoles
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 
@@ -13,23 +10,28 @@ import ai.hypergraph.kaliningraph.types.powerset
  *           _ww w_w ww_
  */
 
-fun String.singleCharSubstitutionsAndInsertions(): Sequence<String> =
-  multiCharSubstitutionsAndInsertions(numberOfEdits = 1)
+fun String.singleTokenSubtitutionsAndInsertions(): Sequence<String> =
+  multiTokenSubstitutionsAndInsertions(numberOfEdits = 1)
 
-fun String.multiCharSubstitutionsAndInsertions(
+fun String.multiTokenSubstitutionsAndInsertions(
   tokens: List<String> = allTokensExceptHoles(),
-  numberOfEdits: Int = minOf(2, tokens.size)
+  numberOfEdits: Int = minOf(2, tokens.size),
+  exclusions: Set<Int> = setOf()
 ): Sequence<String> =
-    (tokens + "").allSubstitutions(numberOfEdits) { "_ $it" } +
-    tokens.allSubstitutions(numberOfEdits) { "_" }
-
-fun List<String>.allSubstitutions(numEdits: Int, sub: (String) -> String) =
-  (1..numEdits).asSequence().flatMap {
-    indices.toSet().choose(numEdits)
-      .map { idxs -> mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ") }
+  (1..numberOfEdits).asSequence().flatMap {
+    (tokens + "").allSubstitutions(it, exclusions) { "_ $it" } +
+      tokens.allSubstitutions(it, exclusions) { "_" }
   }
 
-fun String.allTokensExceptHoles() = split(" ").filter { it.isNotBlank() }
+private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String): Sequence<String> =
+  (1..numEdits).asSequence().flatMap {
+    (indices.toSet() - exclusions).choose(numEdits).map { idxs -> substitute(idxs, sub) }
+  }
+
+private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
+  mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
+
+private fun String.allTokensExceptHoles() = split(" ").filter { it.isNotBlank() }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every

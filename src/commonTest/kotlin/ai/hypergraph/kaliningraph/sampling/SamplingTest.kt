@@ -27,7 +27,7 @@ class SamplingTest {
 */
   @Test
   fun testLFSR() =
-    (4..10).forEach { i ->
+    (2..10).forEach { i ->
       val list = LFSR(i).toList()
       val distinct = list.distinct()
       println("$i: ${list.size + 1} / ${2.0.pow(i).toInt()}")
