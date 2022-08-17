@@ -1,12 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.formatAsGrid
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
-import ai.hypergraph.kaliningraph.tensor.FreeMatrix
-import ai.hypergraph.kaliningraph.tensor.transpose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
-import kotlin.math.ceil
 
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
@@ -27,8 +25,8 @@ val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.groups by cache { groupBy { it.LHS } }
-val CFG.pretty by cache { formatAsGrid(4) }
+val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(4) }
+val CFG.graph by cache { toGraph() }
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
@@ -68,33 +66,10 @@ class BiMap(CFG: CFG) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.formatAsGrid(cols: Int = -1): FreeMatrix<String> =
-  if (cols == -1) // Minimize whitespace over all grids with a predefined number of columns
-    (3..5).map { formatAsGrid(it) }.minBy { it.toString().length }
-  else sortedWith(compareBy(
-    { groups[it.LHS]!!.maxOf { it.pretty().length } }, // Shortest longest pretty-printed production comes first
-    { -groups[it.LHS]!!.size }, // Take small groups first
-    { it.LHS }, // Must never split up two LHS productions
-    { it.pretty().length }
-  )).map { it.pretty() }.let { productions ->
-    val (cols, rows) = cols to ceil(productions.size.toDouble() / cols).toInt()
-    val padded = productions + List(cols * rows - productions.size) { "" }
-    FreeMatrix(cols, rows, padded).transpose
-  }.let { up ->
-    FreeMatrix(up.numRows, up.numCols) { r, c ->
-      if (up[r, c].isEmpty()) return@FreeMatrix ""
-      val (lhs, rhs) = up[r, c].split(" -> ").let { it[0] to it[1] }
-      val lp = lhs.padStart(up.transpose[c].maxOf { it.substringBefore(" -> ").length })
-      val rp = rhs.padEnd(up.transpose[c].maxOf { it.substringAfter(" -> ").length })
-      "$lp → $rp"
-    }
-  }
+fun CFG.prettyPrint(cols: Int = 4): String = pretty.toString()
 
-fun CFG.prettyPrint(cols: Int = 4): String = formatAsGrid(cols).toString()
-
-//fun CFG.reachabilityPreimage(image: Set<String>) =
-
-fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.first - rhs } } }
+fun CFG.toGraph() =
+  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
 
 //=====================================================================================
 // CFG Normalization
@@ -204,20 +179,16 @@ private fun CFG.removeUselessSymbols(
   reachable: Set<String> = reachableSymbols(),
 ): CFG = filter { (s, _) -> s in generating && s in reachable }
 
-private fun CFG.reachableSymbols(
-  src: List<String> = listOf(START_SYMBOL),
-  reachables: Set<String> = src.toSet()
-): Set<String> = if (src.isEmpty()) reachables else filter { it.LHS in src }
-  .flatMap { (_, rhs) -> rhs.filter { it in nonterminals && it !in reachables } }
-  .let { reachableSymbols(it, reachables + it) }
+private fun CFG.reachableSymbols(): Set<String> =
+  graph.transitiveClosure(setOf(graph.first { it.label == START_SYMBOL }))
+    .map { it.label }.filter { it in nonterminals }.toSet()
 
 private fun CFG.generatingSymbols(
-  from: List<String> = terminalUnitProductions.flatMap { it.RHS },
-  generating: Set<String> = from.toSet()
+  from: Set<String> = terminalUnitProductions.map { it.LHS }.toSet(),
+  revGraph: LabeledGraph = graph.reversed()
 ): Set<String> =
-  if (from.isEmpty()) generating
-  else filter { it.LHS !in generating && generating.containsAll(it.RHS) }
-    .map { it.LHS }.let { generatingSymbols(it, generating + it) }
+  revGraph.transitiveClosure(revGraph.filter { it.label in from }.toSet())
+    .map { it.label }.filter { it in nonterminals }.toSet()
 
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
