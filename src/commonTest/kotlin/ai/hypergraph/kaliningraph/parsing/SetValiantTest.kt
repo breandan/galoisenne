@@ -308,13 +308,16 @@ class SetValiantTest {
       B -> D
       C -> c
       D -> d
-    """.parseCFG().let { cfg -> assertEquals(normalForm, cfg) }
+    """.parseCFG().let { cfg ->
+      assertTrue("B" !in cfg.nonterminals)
+      assertTrue("A" !in cfg.nonterminals)
+    }
 
     """
       S -> C | D
       C -> c
       D -> d
-    """.parseCFG().let { cfg -> assertEquals(normalForm, cfg) }
+    """.parseCFG()
   }
 
 /*
