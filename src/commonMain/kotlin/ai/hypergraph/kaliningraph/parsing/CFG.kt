@@ -148,7 +148,7 @@ private fun CFG.expandOr(): CFG =
 // so that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonToUnitProds(): CFG =
   terminalUnitProductions.map { it.LHS }.toSet()
-    .fold(this) { acc, it -> acc + (it to listOf(it, "ε")) + (it to listOf("ε", it)) }
+    .fold(this) { acc, it -> acc + (it to listOf(it, "ε")) }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
 tailrec fun CFG.nullableNonterminals(
