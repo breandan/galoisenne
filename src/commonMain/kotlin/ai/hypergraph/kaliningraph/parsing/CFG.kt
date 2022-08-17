@@ -188,7 +188,7 @@ private fun CFG.generatingSymbols(
   revGraph: LabeledGraph = graph.reversed()
 ): Set<String> =
   revGraph.transitiveClosure(revGraph.filter { it.label in from }.toSet())
-    .map { it.label }.filter { it in nonterminals }.toSet()
+    .map { it.label }.toSet()
 
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
