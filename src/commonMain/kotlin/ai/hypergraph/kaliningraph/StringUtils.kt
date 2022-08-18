@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
+import kotlin.math.min
 
 fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   fun String.tok() = split(" -> ")
@@ -32,4 +33,22 @@ fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   }
 
   return rec()
+}
+
+fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
+  var prev = IntArray(o2.size + 1)
+  for (j in 0 until o2.size + 1) prev[j] = j
+  for (i in 1 until o1.size + 1) {
+    val curr = IntArray(o2.size + 1)
+    curr[0] = i
+    for (j in 1 until o2.size + 1) {
+      val d1 = prev[j] + 1
+      val d2 = curr[j - 1] + 1
+      val d3 = prev[j - 1] + if (o1[i - 1] == o2[j - 1]) 0 else 1
+      curr[j] = min(min(d1, d2), d3)
+    }
+
+    prev = curr
+  }
+  return prev[o2.size]
 }

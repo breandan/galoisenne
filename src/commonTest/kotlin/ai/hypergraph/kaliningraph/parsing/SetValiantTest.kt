@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.automata.peek
 import ai.hypergraph.kaliningraph.automata.pop
 import ai.hypergraph.kaliningraph.automata.push
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
-import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock

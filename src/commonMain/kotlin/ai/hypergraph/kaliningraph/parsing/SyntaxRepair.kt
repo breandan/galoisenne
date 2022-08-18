@@ -14,13 +14,12 @@ fun String.singleTokenSubtitutionsAndInsertions(): Sequence<String> =
   multiTokenSubstitutionsAndInsertions(numberOfEdits = 1)
 
 fun String.multiTokenSubstitutionsAndInsertions(
-  tokens: List<String> = allTokensExceptHoles(),
+  tokens: List<String> = tokenizeByWhitespace(),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf()
-): Sequence<String> = this.run {
-    println("Exclusions: ${allTokensExceptHoles().mapIndexed { i, it -> if(i in exclusions) "_" else it }.joinToString(" ")}")
-    (1..numberOfEdits).asSequence().flatMap { (tokens + "").allSubstitutions(it, exclusions) { "_ _" } }
-  }
+): Sequence<String> =
+  (listOf("") + tokens + "").allSubstitutions(numberOfEdits, exclusions) { "_ _" }
+    .also { println("Exclusions: ${tokens.mapIndexed { i, it -> if(i in exclusions) "_" else it }.joinToString(" ")}") }
 
 private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String): Sequence<String> =
   (1..numEdits).asSequence().flatMap {
@@ -30,7 +29,7 @@ private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, s
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
 
-fun String.allTokensExceptHoles() = split(" ").filter { it.isNotBlank() }
+fun String.tokenizeByWhitespace() = split(" ").filter { it.isNotBlank() }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
