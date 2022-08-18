@@ -1,0 +1,81 @@
+%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,10pt,review,anonymous]{acmart}
+%\settopmatter{printfolios=false,printccs=false,printacmref=false}
+%% For double-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For single-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission, w/ required CCS and ACM Reference
+\documentclass[sigplan,nonacm]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+\acmConference[ARRAY'22]{ACM SIGPLAN Conference on Programming Languages}{June 13, 2022}{San Diego, CA, USA}
+%\acmYear{2018}
+%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2018}           %% If different from \acmYear
+
+\usepackage{dsfont}
+\usepackage{stmaryrd}
+\usepackage{colortbl}
+
+%% Bibliography style
+\bibliographystyle{acmart}
+
+\input{preamble.tex}
+\begin{document}
+
+%% Title information
+\title{Tidyparse: An Error Correcting IDE Plugin}
+\begin{abstract}
+    We fix errors in your code!
+\end{abstract}
+
+\author{Breandan Considine}
+\affiliation{
+  \institution{McGill University}
+}
+\email{bre@ndan.co}
+
+\author{Jin Guo}
+\affiliation{
+  \institution{McGill University}
+}
+\email{jguo@cs.mcgill.ca}
+
+\author{Xujie Si}
+\affiliation{
+  \institution{McGill University}
+}
+\email{xsi@cs.mcgill.ca}
+
+\maketitle
+
+\section{Introduction}
+    We want to correct syntax errors.
+\section{Background}
+Error correcting code goes way back to the early days.
+Coding theory - e.g., BCH, Shannon, Huffman Reed–Solomon, codes.
+String constraints
+Word equations
+
+\section{Implementation}
+    Here is how we implemented it (and so can you)~\cite{valiant1975general}.
+\section{Examples}
+    There are examples too.
+\bibliography{../bib/acmart}
+\end{document}
