@@ -353,6 +353,14 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 - [Code Search on Bytecode for Mobile App Development](https://dl.acm.org/doi/pdf/10.1145/3299815.3314471), Nguyen et al. (2019)
   - Uses a HMM to model transitions between method calls
 
+### Word problems
+
+- [The problem of solvability of equations in a free semigroup](http://www.mathnet.ru/php/archive.phtml?wshow=paper&jrnid=sm&paperid=2805&option_lang=eng), Makanin (1977)
+- [Word equations with length constraints: what’s decidable?](http://www.frontiersinai.com/turingfiles/November/ganesh.pdf), Ganesh et al. (2012)
+- [On Solving Word Equations Using SAT](https://arxiv.org/pdf/1906.11718.pdf), Day et al. (2019)
+- [TRAU: SMT solver for string constraints](https://www.cs.utexas.edu/users/hunt/FMCAD/FMCAD18/papers/paper27.pdf), Abdulla et al. (2018)
+- [A Survey on String Constraint Solving](https://arxiv.org/pdf/2002.02376.pdf), Amadini (2021)
+
 ### Software
 
 #### Graphs
