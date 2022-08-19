@@ -19,9 +19,7 @@ class ResettableLazyManager {
   }
 }
 
-interface Resettable {
-  fun reset()
-}
+interface Resettable { fun reset() }
 
 class ResettableLazy<P>(
   val manager: ResettableLazyManager,
