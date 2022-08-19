@@ -95,12 +95,12 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common"))
-        implementation(kotlin("reflect"))
+        compileOnly(kotlin("stdlib-common"))
+        compileOnly(kotlin("reflect"))
 
         val multikVersion = "0.2.0"
-        implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
-        implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
+        compileOnly("org.jetbrains.kotlinx:multik-core:$multikVersion")
+        compileOnly("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
     }
 
@@ -116,43 +116,43 @@ kotlin {
 
     val jvmMain by getting {
       dependencies {
-        implementation(project.dependencies.platform(kotlin("bom")))
-        implementation(kotlin("stdlib"))
-        implementation(kotlin("reflect"))
+        compileOnly(project.dependencies.platform(kotlin("bom")))
+        compileOnly(kotlin("stdlib"))
+        compileOnly(kotlin("reflect"))
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
-        implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.2.0")
+        compileOnly("guru.nidi:graphviz-kotlin:0.18.1")
+        compileOnly("org.graalvm.js:js:22.2.0")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+        compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.0.0")
+        compileOnly("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
+        compileOnly("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.0.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:3.3.0")
+        compileOnly("org.apache.datasketches:datasketches-java:3.3.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
 //  implementation("com.github.TUK-CPS:jAADD:-SNAPSHOT")
-        implementation("ca.umontreal.iro.simul:ssj:3.3.1")
+        compileOnly("ca.umontreal.iro.simul:ssj:3.3.1")
 
         // MPJ (required for Poon's SPN)
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
-        implementation("org.sosy-lab:common:0.3000-502-gb581f5d")
-        implementation("org.sosy-lab:java-smt:3.13.3")
+        compileOnly("org.sosy-lab:common:0.3000-529-g6152d88")
+        compileOnly("org.sosy-lab:java-smt:3.13.3")
 
         // val libZ3Version = "4.8.15"
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3@so")
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
-        implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
+        compileOnly("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         implementation("org.logicng:logicng:2.3.2")
       }
