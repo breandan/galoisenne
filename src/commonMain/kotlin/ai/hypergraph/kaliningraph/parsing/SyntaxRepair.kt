@@ -29,7 +29,7 @@ private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, s
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
 
-fun String.tokenizeByWhitespace() = split(" ").filter { it.isNotBlank() }
+fun String.tokenizeByWhitespace(): List<String> = split(" ").filter { it.isNotBlank() }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
