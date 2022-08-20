@@ -263,7 +263,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 //    println(bMat.summarize(this@synthesize))
       val completion =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
-        .filterNot { it == "ε" }.joinToString(join)
+        .filterNot { "ε" in it }.joinToString(join)
 
       if (completion.trim().isNotBlank()) yield(completion)
 

@@ -102,7 +102,7 @@ fun Tree.denormalize(): Tree {
 val START_SYMBOL = "START"
 
 fun CFG.generateStubs() =
-  this + filter { it.LHS.split(".").size == 1 }
+  this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS }
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
@@ -122,7 +122,9 @@ private fun CFG.expandOr(): CFG =
 // Adds V -> εV | Vε to every production [V -> v] in CFG so
 // that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonProduction(): CFG =
-  map { it.LHS }.toSet().fold(this) { acc, it -> acc + (it to listOf(it, "ε")) }
+  map { it.LHS }.toSet()
+    .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) } +
+    "ε+".let { (it to listOf(it, it)) } + ("ε+" to listOf("ε"))
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
 tailrec fun CFG.nullableNonterminals(
