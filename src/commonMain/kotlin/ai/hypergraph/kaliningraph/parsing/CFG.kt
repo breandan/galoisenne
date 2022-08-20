@@ -80,7 +80,7 @@ fun CFG.toGraph() =
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
-    .addEpsilonToUnitProds()
+    .addEpsilonProduction()
     .refactorEpsilonProds()
     .elimVarUnitProds()
     .refactorRHS()
@@ -103,7 +103,7 @@ val START_SYMBOL = "START"
 
 fun CFG.generateStubs() =
   this + filter { it.LHS.split(".").size == 1 }
-      .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
+    .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
 private fun CFG.addGlobalStartSymbol() = this +
@@ -119,11 +119,10 @@ private fun CFG.expandOr(): CFG =
     }.map { prod.LHS to it }
   }.toSet()
 
-// Adds V -> εV | Vε to every unit production [V -> v] in CFG
-// so that holes can be [optionally] elided by the SAT solver.
-private fun CFG.addEpsilonToUnitProds(): CFG =
-  terminalUnitProductions.map { it.LHS }.toSet()
-    .fold(this) { acc, it -> acc + (it to listOf(it, "ε")) }
+// Adds V -> εV | Vε to every production [V -> v] in CFG so
+// that holes can be [optionally] elided by the SAT solver.
+private fun CFG.addEpsilonProduction(): CFG =
+  map { it.LHS }.toSet().fold(this) { acc, it -> acc + (it to listOf(it, "ε")) }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
 tailrec fun CFG.nullableNonterminals(
