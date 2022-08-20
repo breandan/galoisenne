@@ -9,6 +9,7 @@ import org.logicng.formulas.FormulaFactory
 import org.logicng.formulas.FormulaFactoryConfig
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.formulas.Variable
+import org.logicng.solvers.MaxSATSolver
 import org.logicng.solvers.MiniSat
 import java.util.concurrent.ConcurrentHashMap
 
@@ -32,6 +33,17 @@ fun Formula.solve(): Map<Variable, Boolean> =
     val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
     vars.associateWith { model.evaluateLit(it) }
   }
+
+fun Formula.solveMaxSat(
+  softConstaints: List<Formula>,
+  maxiSat: MaxSATSolver = MaxSATSolver.incWBO(ff)
+): Pair<MaxSATSolver, Map<Variable, Boolean>> =
+    maxiSat to maxiSat.apply {
+      addHardFormula(this@solveMaxSat)
+      softConstaints.forEach { addSoftFormula(it, 1) }
+      solve()
+    }.model()
+      .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
 fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)

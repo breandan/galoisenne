@@ -237,6 +237,9 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
           (matrix valiantMatEq fixpoint)
       } catch (e: Exception) { return@sequence }
 
+// Tries to put ε in as many holes as possible to prioritize simple repairs
+// val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
+
 //  Sometimes simplification can take longer or even switch SAT->UNSAT?
 //  println("Original: ${parsingConstraints.numberOfNodes()}")
 //  parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
@@ -247,28 +250,31 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     var (solver, solution) =
       parsingConstraints.let { f ->
         try { f.solveIncrementally() }
+//      try { f.solveMaxSat(softConstraints) }
         catch (npe: NullPointerException) { return@sequence }
       }
-//    var freshnessConstraints = 0L
-    while (true)
-      try {
-//      println(solution.toPython())
-        val fillers = holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
+//  var freshnessConstraints = 0L
+    while (true) try {
+//    println(solution.toPython())
+      val fillers =
+        holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-//      val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
-//      println(bMat.summarize(this@synthesize))
-        val completion = tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
-          .filterNot { it == "ε" }.joinToString(join)
+//    val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+//    println(bMat.summarize(this@synthesize))
+      val completion =
+        tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
+        .filterNot { it == "ε" }.joinToString(join)
 
-        if (completion.trim().isNotBlank()) yield(completion)
+      if (completion.trim().isNotBlank()) yield(completion)
 
-        val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
-//        freshnessConstraints += isFresh.numberOfAtoms()
-//        println("Freshness constraints: $freshnessConstraints")
+      val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
+//    freshnessConstraints += isFresh.numberOfAtoms()
+//    println("Freshness constraints: $freshnessConstraints")
 
-        val model = solver.run { add(isFresh); sat(); model() }
-        solution = solution.keys.associateWith { model.evaluateLit(it) }
-      } catch (e: Exception) { break }
+      val model = solver.run { add(isFresh); sat(); model() }
+//    val model = solver.run { addHardFormula(isFresh); solve(); model() }
+      solution = solution.keys.associateWith { model.evaluateLit(it) }
+    } catch (e: Exception) { break }
 
     ff.clear()
     elimFormulaFactory()
