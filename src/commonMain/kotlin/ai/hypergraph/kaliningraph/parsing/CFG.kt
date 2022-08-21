@@ -11,7 +11,7 @@ typealias CFG = Set<Production>
 
 val Production.LHS: String get() = first
 val Production.RHS: List<String> get() =
-  second.let { if(it.size == 1) it.map(String::stripEscapeChars) else it }
+  second.let { if (it.size == 1) it.map(String::stripEscapeChars) else it }
 fun Production.pretty() = LHS + " -> " + RHS.joinToString(" ")
 
 val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }

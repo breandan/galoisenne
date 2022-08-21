@@ -36,7 +36,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   fun <Y> map(f: (T) -> Y): M = new(numRows, numCols, data.map(f) as List<T>)
 
   fun getElements(filterBy: (Int, Int) -> Boolean) =
-    allPairs(numRows, numCols).mapNotNull { (r, c) -> if(filterBy(r, c)) this[r, c] else null }
+    allPairs(numRows, numCols).mapNotNull { (r, c) -> if (filterBy(r, c)) this[r, c] else null }
 
   infix fun List<T>.dot(es: List<T>): T =
     require(size == es.size) { "Length mismatch: $size . ${es.size}" }
@@ -448,5 +448,5 @@ interface SparseTensor<T/*Should be a named tuple or dataclass of some kind*/> {
   operator fun set(index: T, i: Int) { map[index] = i }
 
   fun count(selector: (T) -> Boolean) =
-    map.entries.sumOf { if(selector(it.key)) it.value else 0 }
+    map.entries.sumOf { if (selector(it.key)) it.value else 0 }
 }

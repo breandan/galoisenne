@@ -92,7 +92,7 @@ fun <T, Y> joinToScalar(
 
 fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, j -> this[i][j] }
 
-fun kroneckerDelta(i: Int, j: Int) = if(i == j) 1.0 else 0.0
+fun kroneckerDelta(i: Int, j: Int) = if (i == j) 1.0 else 0.0
 
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =

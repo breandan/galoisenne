@@ -31,7 +31,7 @@ fun CFG.parse(
   tokens: List<String>,
   utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
 ): Forest = utMatrix.seekFixpoint().diagonals.last().firstOrNull() ?: emptySet()
-//  .also { if(it) println("Sol:\n$finalConfig") }
+//  .also { if (it) println("Sol:\n$finalConfig") }
 
 fun CFG.solveFixedpoint(
   tokens: List<String>,
@@ -102,10 +102,10 @@ fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
   else left.zip(right) { l, r -> l or r }
 
 fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
-  nts.mapIndexedNotNull { i, it -> if(it) bindex[i] else null }.toSet()
+  nts.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
 fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
-  mapIndexedNotNull { i, it -> if(it) cfg.bindex[i] else null }.toSet()
+  mapIndexedNotNull { i, it -> if (it) cfg.bindex[i] else null }.toSet()
 
 val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
   Ring.of(

@@ -4,7 +4,7 @@ package ai.hypergraph.kaliningraph.types
 import kotlin.jvm.JvmName
 
 open class S<X>(val x: X?) {
-  override fun equals(other: Any?) = if(other is S<*>) if(x == null && other.x == null) true else x == other.x else false
+  override fun equals(other: Any?) = if (other is S<*>) if (x == null && other.x == null) true else x == other.x else false
   override fun hashCode() = x.hashCode().hashCode()
 }
 object O: S<O>(null)

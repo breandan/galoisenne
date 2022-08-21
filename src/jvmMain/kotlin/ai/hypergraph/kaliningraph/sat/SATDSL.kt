@@ -38,12 +38,12 @@ fun Formula.solveMaxSat(
   softConstaints: List<Formula>,
   maxiSat: MaxSATSolver = MaxSATSolver.incWBO(ff)
 ): Pair<MaxSATSolver, Map<Variable, Boolean>> =
-    maxiSat to maxiSat.apply {
-      addHardFormula(this@solveMaxSat)
-      softConstaints.forEach { addSoftFormula(it, 1) }
-      solve()
-    }.model()
-      .let { model -> variables().associateWith { model.evaluateLit(it) } }
+  maxiSat to maxiSat.apply {
+    addHardFormula(this@solveMaxSat)
+    softConstaints.forEach { addSoftFormula(it, 1) }
+    solve()
+  }.model()
+    .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
 fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)

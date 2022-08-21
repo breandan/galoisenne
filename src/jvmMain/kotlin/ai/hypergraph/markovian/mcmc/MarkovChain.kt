@@ -127,7 +127,7 @@ open class MarkovChain<T>(
     next: (T) -> T = { t: T ->
       val pmf = tt.view(dictionary[t]).asDNArray().sumOnto().toList()
       // P(Tₙ | Tₙ₋₁ = t) := P([t, *, *, ...])
-      // val conditional = List(memory) { if(it == 0) t else null }
+      // val conditional = List(memory) { if (it == 0) t else null }
       // Precompute normalization constant Σ(Tₙ | Tₙ₋₁) in norm sketch
       // val nrmConst = counter.nrmCounts.getEstimate(conditional).toDouble()
       dictionary[Dist(pmf/*, normConst = TODO()*/).sample()]

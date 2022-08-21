@@ -215,7 +215,7 @@ fun main() {
 //  val t: Boolean = true
 //  val  = 1
 //
-//  if(g1 <- g2) {
+//  if (g1 <- g2) {
 //    println("test")
 //  }
 //}

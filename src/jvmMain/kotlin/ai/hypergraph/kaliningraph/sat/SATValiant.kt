@@ -32,9 +32,9 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
   else if (this == that) T
   else zip(that).partition { (l, r) -> l == r }
-//    .also { (a, b) -> if(a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
+//    .also { (a, b) -> if (a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
-    .let { if(it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
+    .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
 infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
@@ -114,7 +114,7 @@ fun CFG.constructInitialMatrix(
     algebra = satLitAlgebra
   ).seekFixpoint(),
   literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
-    .map { if(it == null || toNTSet(it).isEmpty()) emptyList() else it },
+    .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it },
   formulaMatrix: UTMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
@@ -214,7 +214,7 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
   if (s == "_") terminals.asSequence()
   else if (s.matches(Regex("<.+>")))
     bimap[s.substring(1, s.length - 1)]
-      .mapNotNull { if(it.size == 1) it[0] else null }.asSequence()
+      .mapNotNull { if (it.size == 1) it[0] else null }.asSequence()
   else emptySequence()
 
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
@@ -260,7 +260,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val fillers =
         holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-      //    val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+      //    val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
       //    println(bMat.summarize(this@synthesize))
       val completion =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
@@ -276,7 +276,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val model = solver.run { add(isFresh); sat(); model() }
       //    val model = solver.run { addHardFormula(isFresh); solve(); model() }
       solution = solution.keys.associateWith { model.evaluateLit(it) }
-    } catch (e: Exception) { if(e is InterruptedException) throw e else break }
+    } catch (e: Exception) { if (e is InterruptedException) throw e else break }
 
     ff.clear()
     elimFormulaFactory()

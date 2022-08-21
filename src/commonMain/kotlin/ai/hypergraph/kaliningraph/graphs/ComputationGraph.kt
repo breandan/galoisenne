@@ -108,7 +108,7 @@ open class Gate(
     fun wrapAll(vararg values: Any): Array<Gate> = values.map { wrap(it) }.toTypedArray()
   }
 
-  override fun toString() = if(op == Ops.id) id else op.toString()
+  override fun toString() = if (op == Ops.id) id else op.toString()
 
   operator fun plus(that: Any) = Gate(Ops.sum, this, wrap(that))
   operator fun minus(that: Any) = Gate(Ops.sub, this, wrap(that))

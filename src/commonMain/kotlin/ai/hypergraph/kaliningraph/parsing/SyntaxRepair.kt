@@ -19,7 +19,7 @@ fun String.multiTokenSubstitutionsAndInsertions(
   exclusions: Set<Int> = setOf()
 ): Sequence<String> =
   (listOf("") + tokens + "").allSubstitutions(numberOfEdits, exclusions) { "_ _" }
-    .also { println("Exclusions: ${tokens.mapIndexed { i, it -> if(i in exclusions) "_" else it }.joinToString(" ")}") }
+    .also { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
 
 private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String): Sequence<String> =
   (1..numEdits).asSequence().flatMap {

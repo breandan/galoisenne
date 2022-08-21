@@ -123,7 +123,7 @@ class SATTest {
      val fpOp = A + A * A
 
      println("A:\n$A")
-     println("Solving for UT form:\n" + fpOp.map { if(it != F) 1 else "" })
+     println("Solving for UT form:\n" + fpOp.map { if (it != F) 1 else "" })
 
      val isFixpoint = fpOp eqUT A
 
@@ -151,7 +151,7 @@ class SATTest {
     val fpOp = A + A * A
 
     println("A:\n$A")
-    println("Solving for UT form:\n" + fpOp.map { if(it != F) 1 else "" } )
+    println("Solving for UT form:\n" + fpOp.map { if (it != F) 1 else "" } )
 
     val isFixpoint = fpOp eqUT A
 

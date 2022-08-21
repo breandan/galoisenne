@@ -32,7 +32,7 @@ tailrec fun FreeMatrix<Context<Boolean?>?>.evolve(
   if (steps == 0 || hashCode in hashes) this.also { it.print() }
   else (rule * this.also { it.print() }).nonlinearity().evolve(rule, steps - 1,hashes + hashCode)
 
-fun FreeMatrix<Context<Boolean?>?>.str() = transpose.map { if(it?.q == true) "1" else " " }.toString()
+fun FreeMatrix<Context<Boolean?>?>.str() = transpose.map { if (it?.q == true) "1" else " " }.toString()
 fun FreeMatrix<Context<Boolean?>?>.print() = println(str())
 
 fun Context<Boolean?>.applyRule(

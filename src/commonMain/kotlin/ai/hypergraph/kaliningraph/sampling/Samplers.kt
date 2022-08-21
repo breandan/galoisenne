@@ -7,7 +7,6 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.*
 
-
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
 
@@ -230,8 +229,8 @@ fun <T> MDSamplerWithoutReplacement(
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
 
 private fun List<Int>.toBitLens(): List<Int> = map { ceil(log2(it.toDouble())).toInt() }
-private fun List<Boolean>.toInt() = joinToString("") { if(it) "1" else "0" }.toInt(2)
-private fun List<Boolean>.toUInt() = joinToString("") { if(it) "1" else "0" }.toUInt(2)
+private fun List<Boolean>.toInt() = joinToString("") { if (it) "1" else "0" }.toInt(2)
+private fun List<Boolean>.toUInt() = joinToString("") { if (it) "1" else "0" }.toUInt(2)
 private fun UInt.toBitList(len: Int): List<Boolean> =
   toString(2).padStart(len, '0').map { it == '1' }
 

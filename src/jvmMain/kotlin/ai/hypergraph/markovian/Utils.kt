@@ -32,6 +32,6 @@ fun <T> List<T>.allMasks(): List<List<T?>> =
   indices.map { it.toString(2) }.map { bitMask ->
     mapIndexed { i, t ->
       // null represents unknown/unconditioned values
-      if(bitMask.length <= i || bitMask[i] == '1') null else t
+      if (bitMask.length <= i || bitMask[i] == '1') null else t
     }
   }

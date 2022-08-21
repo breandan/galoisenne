@@ -145,7 +145,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
     """.trimIndent()
 }
 
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by cache { DoubleMatrix(size) { i, j -> if(i == j) this[i].neighbors.size.toDouble() else 0.0 } }
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by cache { DoubleMatrix(size) { i, j -> if (i == j) this[i].neighbors.size.toDouble() else 0.0 } }
 
 // Adjacency matrix
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.A: BooleanMatrix        by cache { BooleanMatrix(size) { i, j -> this[j] in this[i].neighbors } }

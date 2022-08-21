@@ -63,7 +63,7 @@ class TestSMT {
     val fpOp = A + A * A
 
     println("A:\n$A")
-    println("Solving for UT form:\n" + fpOp.map { if("$it" != "false") 1 else "" } )
+    println("Solving for UT form:\n" + fpOp.map { if ("$it" != "false") 1 else "" } )
 
     val isFixpoint = fpOp eqUT A
 

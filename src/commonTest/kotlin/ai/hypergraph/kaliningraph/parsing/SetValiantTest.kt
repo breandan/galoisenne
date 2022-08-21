@@ -169,7 +169,7 @@ class SetValiantTest {
 
   fun String.dyckCheck() =
     filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
-      stack.apply { if(isNotEmpty() && c.matches(peek())) pop() else push(c) }
+      stack.apply { if (isNotEmpty() && c.matches(peek())) pop() else push(c) }
     }.isEmpty()
 
 /*

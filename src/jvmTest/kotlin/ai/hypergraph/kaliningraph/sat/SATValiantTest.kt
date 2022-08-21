@@ -321,7 +321,7 @@ class SATValiantTest {
       .synthesizeIncrementally(cfg, allowNTs = false).take(100)
       .forEach { decodedString ->
         val another = decodedString
-          .toCharArray().joinToString("") { if(Math.random() < 0.7) "_" else it.toString() }
+          .toCharArray().joinToString("") { if (Math.random() < 0.7) "_" else it.toString() }
           .drop(1).dropLast(1).let { "_${it}_" }
           .synthesizeIncrementally(cfg, allowNTs = false)
           .firstOrNull() ?: return@forEach

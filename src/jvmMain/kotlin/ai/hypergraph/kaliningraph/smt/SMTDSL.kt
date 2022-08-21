@@ -101,7 +101,7 @@ class SMTInstance(
         if (prover.isUnsat) {
           val unsat = prover.unsatCore.joinToString("\n")
           val previewLength = 400
-          val preview = if(unsat.length < previewLength)
+          val preview = if (unsat.length < previewLength)
             unsat.take(previewLength) + "..." else unsat
           throw Exception("Unsat! Core (size=${unsat.length}): $preview")
         }

@@ -60,7 +60,7 @@ fun String.conv(R: Set<List<Int>>): Set<String> =
       val cc = t.joinToString("")//.also { println(it) }
       found += cc
       i++
-//      if(i % t.size == 0){ q++; i+= Random.nextInt(40) }
+//      if (i % t.size == 0){ q++; i+= Random.nextInt(40) }
     } while (cc != this@conv)
     found
   }.maxByOrNull { it.size }!!
