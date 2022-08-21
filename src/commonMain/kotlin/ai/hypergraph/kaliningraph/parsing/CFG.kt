@@ -25,7 +25,7 @@ val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(4) }
+val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
 
 class JoinMap(val CFG: CFG) {

@@ -186,11 +186,11 @@ fun String.synthesizeIncrementally(
   allowNTs: Boolean = true,
   cfgFilter: Production.() -> Boolean = { true },
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
-  progress: (String) -> Unit = {}
+  updateProgress: (String) -> Unit = {}
 ): Sequence<String> {
   val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }.filter(cfgFilter).toSet()
   val allVariants = variations.fold(sequenceOf(this)) { a, b -> a + b() }.map { it.mergeHoles() }.distinct()
-  return allVariants.map { progress(it); it }.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
+  return allVariants.map { updateProgress(it); it }.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
 }
 
 fun Formula.toPython(
