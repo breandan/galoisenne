@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
+import kotlinx.coroutines.withContext
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
@@ -220,7 +221,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   if (tokens.none { it == "_" }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
-    println("Synthesizing: ${tokens.joinToString (" ")}")
+    println("Synthesizing: ${tokens.joinToString(" ")}")
     ff.clear()
     val (matrix, holeVecVars) = constructInitialMatrix(tokens)
     val holeVars = holeVecVars.flatten().toSet()
@@ -259,22 +260,23 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val fillers =
         holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-//    val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
-//    println(bMat.summarize(this@synthesize))
+      //    val bMat = FreeMatrix(matrix.data.map { it.map { if(it is Variable) solution[it]!! else if(it is Constant) it == T else false } as List<Boolean>? })
+      //    println(bMat.summarize(this@synthesize))
       val completion =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
-        .filterNot { "ε" in it }.joinToString(join)
+          .filterNot { "ε" in it }.joinToString(join)
 
+      if (Thread.currentThread().isInterrupted) throw InterruptedException()
       if (completion.trim().isNotBlank()) yield(completion)
 
       val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
-//    freshnessConstraints += isFresh.numberOfAtoms()
-//    println("Freshness constraints: $freshnessConstraints")
+      //    freshnessConstraints += isFresh.numberOfAtoms()
+      //    println("Freshness constraints: $freshnessConstraints")
 
       val model = solver.run { add(isFresh); sat(); model() }
-//    val model = solver.run { addHardFormula(isFresh); solve(); model() }
+      //    val model = solver.run { addHardFormula(isFresh); solve(); model() }
       solution = solution.keys.associateWith { model.evaluateLit(it) }
-    } catch (e: Exception) { break }
+    } catch (e: Exception) { if(e is InterruptedException) throw e else break }
 
     ff.clear()
     elimFormulaFactory()
