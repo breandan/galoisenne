@@ -99,6 +99,7 @@ fun Tree.denormalize(): Tree {
 
   return removeSynthetic().first()
 }
+
 val START_SYMBOL = "START"
 
 fun CFG.generateStubs() =
@@ -106,8 +107,8 @@ fun CFG.generateStubs() =
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
-private fun CFG.addGlobalStartSymbol() = this +
-  if (START_SYMBOL in nonterminals) emptySet()
+private fun CFG.addGlobalStartSymbol() =
+  this + if (START_SYMBOL in nonterminals) emptySet()
   else nonterminals.map { START_SYMBOL to listOf(it) }
 
 // Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)

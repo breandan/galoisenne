@@ -169,7 +169,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:2.0.0-beta1")
+        implementation("org.slf4j:slf4j-simple:2.0.0")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
