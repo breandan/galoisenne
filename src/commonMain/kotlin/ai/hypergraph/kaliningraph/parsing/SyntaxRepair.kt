@@ -18,10 +18,11 @@ fun String.multiTokenSubstitutionsAndInsertions(
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf()
 ): Sequence<String> =
-  (listOf("") + tokens + "").allSubstitutions(numberOfEdits, exclusions) { "_ _" }
+  listOf("", *tokens.toTypedArray(), "").allSubstitutions(numberOfEdits, exclusions) { "_ _" }
     .also { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
 
-private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String): Sequence<String> =
+private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String) =
+  sequenceOf(substitute(((size - numEdits)until size).toSet(), sub)) + // Always try trailing holes first
   (1..numEdits).asSequence().flatMap {
     (indices.toSet() - exclusions).choose(numEdits).map { idxs -> substitute(idxs, sub) }
   }
@@ -62,3 +63,6 @@ fun String.increasingLengthChunks(): Sequence<String> {
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
 }
+
+fun String.splitWithHoles() =
+  split(Regex("((?<=[^_])|(?=[^_]))"))

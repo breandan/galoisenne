@@ -178,7 +178,7 @@ fun LFSR(
     } while (++i < 2.0.pow(degree).toInt() - 1)
   }
 
-fun randomSequenceWithoutRepetition(range: IntRange) =
+fun randomSequenceWithoutRepetition(range: IntRange): Sequence<Int> =
   LFSR(ceil(log2((range.last - range.first + 1).toDouble())).toInt())
     .filter { it.toInt() <= range.last - range.first }
     .map { range.first + it.toInt() - 1 }
@@ -193,7 +193,7 @@ private fun RandomVector(
 private fun TransitionMatrix(degree: Int, polynomial: List<Boolean>) =
   FreeMatrix(XOR_ALGEBRA, degree) { r, c -> if (r == 0) polynomial[c] else c == r - 1 }
 
-private fun PrimitivePolynomial(length: Int) =
+private fun PrimitivePolynomial(length: Int): List<Boolean> =
   generator[length]!!.random().toString(2).map { it == '1' }
 
 fun LFSRM(
@@ -210,7 +210,7 @@ fun LFSRM(
   } while (++i < 2.0.pow(degree).toInt() - 1)
 }
 
-fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1) =
+fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1): Sequence<List<T>> =
   MDSamplerWithoutReplacement(List(dimension) { set })
 
 fun <T> MDSamplerWithoutReplacement(
@@ -247,7 +247,7 @@ private fun Sequence<List<Boolean>>.hastyPuddingTrick(cardinalities: List<Int>):
     .filter { it.zip(cardinalities).all { (a, b) -> a < b } }
 
 // Samples from unnormalized counts with normalized frequency
-fun <T> Map<T, Number>.sample(random: Random = Random.Default) =
+fun <T> Map<T, Number>.sample(random: Random = Random.Default): Sequence<T> =
   entries.map { (k, v) -> k to v }.unzip()
     .let { (keys, values) -> generateSequence { keys[values.cdf().sample(random)] } }
 
@@ -261,11 +261,11 @@ class CDF(val cdf: List<Double>): List<Double> by cdf
 
 // Draws a single sample using KS-transform w/binary search
 fun CDF.sample(random: Random = Random.Default,
-               target: Double = random.nextDouble()) =
+               target: Double = random.nextDouble()): Int =
   cdf.binarySearch { it.compareTo(target) }
     .let { if (it < 0) abs(it) - 1 else it }
 
-fun <T> Set<T>.choose(i: IntRange) =
+fun <T> Set<T>.choose(i: IntRange): Sequence<Set<T>> =
   i.asSequence().flatMap { findAll(this, it).map { it.toSet() } }.distinct()
 
 inline fun <reified T> Set<T>.choose(

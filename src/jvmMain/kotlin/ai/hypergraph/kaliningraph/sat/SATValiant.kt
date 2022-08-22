@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
-import kotlinx.coroutines.withContext
 import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
 import org.logicng.formulas.Variable
@@ -45,7 +44,7 @@ fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
   mat.diagonals.last().first()[bindex[START_SYMBOL]]
 
 // Encodes the constraint that bit-vectors representing a unary production
-// should not contain mixed nonterminals e.g. given A->(, B->(, C->), D->)
+// should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
 // the bitvector cannot have the configuration [A=1 B=1 C=0 D=1], it must
 // be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
@@ -60,7 +59,7 @@ fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
   if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
-// Encodes that each blank can only be one nonterminal
+// Encodes that each blank can only be one terminal
 fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
@@ -221,6 +220,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
   if (tokens.none { it == "_" }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
+    val timeToFormConstraints = System.currentTimeMillis()
     println("Synthesizing: ${tokens.joinToString(" ")}")
     ff.clear()
     val (matrix, holeVecVars) = constructInitialMatrix(tokens)
@@ -231,12 +231,14 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 
     // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
     //       nonterminal in the original string to reduce fixedpoint matrix size.
-    val parsingConstraints =
-      try {
-        isInGrammar(matrix) and
-          uniquenessConstraints(holeVecVars) and
-          (matrix valiantMatEq fixpoint)
-      } catch (e: Exception) { return@sequence }
+    val parsingConstraints = try {
+      isInGrammar(matrix) and
+      uniquenessConstraints(holeVecVars) and
+      (matrix valiantMatEq fixpoint)
+    } catch (e: Exception) { return@sequence }
+      .also { println("Total constraints: ${it.numberOfNodes()}") }
+
+    println("Forming constraints took: ${System.currentTimeMillis() - timeToFormConstraints}ms")
 
 // Tries to put ε in as many holes as possible to prioritize simple repairs
 // val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
@@ -260,8 +262,8 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val fillers =
         holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
 
-      //    val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
-      //    println(bMat.summarize(this@synthesize))
+//      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
+//      println(bMat.summarize(this@synthesize))
       val completion =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
           .filterNot { "ε" in it }.joinToString(join)
@@ -270,14 +272,17 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       if (completion.trim().isNotBlank()) yield(completion)
 
       val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
-      //    freshnessConstraints += isFresh.numberOfAtoms()
-      //    println("Freshness constraints: $freshnessConstraints")
+//      freshnessConstraints += isFresh.numberOfAtoms()
+//      println("Freshness constraints: $freshnessConstraints")
 
       val model = solver.run { add(isFresh); sat(); model() }
-      //    val model = solver.run { addHardFormula(isFresh); solve(); model() }
+//      val model = solver.run { addHardFormula(isFresh); solve(); model() }
       solution = solution.keys.associateWith { model.evaluateLit(it) }
-    } catch (e: Exception) { if (e is InterruptedException) throw e else break }
-
-    ff.clear()
-    elimFormulaFactory()
+    } catch (e: Exception) {
+      if (e is InterruptedException) throw e else break
+    } finally {
+      println("Finished solving in: ${System.currentTimeMillis() - timeToFormConstraints}ms")
+      ff.clear()
+      elimFormulaFactory()
+    }
   }
