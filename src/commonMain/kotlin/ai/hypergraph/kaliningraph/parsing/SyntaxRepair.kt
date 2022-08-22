@@ -15,11 +15,13 @@ fun String.singleTokenSubtitutionsAndInsertions(): Sequence<String> =
 
 fun String.multiTokenSubstitutionsAndInsertions(
   tokens: List<String> = tokenizeByWhitespace(),
+  padded: List<String> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf()
 ): Sequence<String> =
-  listOf("", *tokens.toTypedArray(), "").allSubstitutions(numberOfEdits, exclusions) { "_ _" }
-    .also { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
+  padded.allSubstitutions(1, exclusions) { "_ _" } +
+  padded.allSubstitutions(numberOfEdits, exclusions) { "_ _" }
+    .apply { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
 
 private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String) =
   sequenceOf(substitute(((size - numEdits)until size).toSet(), sub)) + // Always try trailing holes first

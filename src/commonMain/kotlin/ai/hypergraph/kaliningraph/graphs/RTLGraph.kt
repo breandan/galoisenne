@@ -34,21 +34,21 @@ class RTLBuilder {
 }
 
 interface RTLFamily: IGF<RTLGraph, RTLEdge, RTLGate> {
-    override val E: (s: RTLGate, t: RTLGate) -> RTLEdge
-        get() = { s: RTLGate, t: RTLGate -> RTLEdge(s, t) }
-    override val V: (old: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) -> RTLGate
-        get() = { old: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge> -> RTLGate(old, edgeMap) }
-    override val G: (vertices: Set<RTLGate>) -> RTLGraph
-        get() = { vertices: Set<RTLGate> -> RTLGraph(vertices) }
+  override val E: (s: RTLGate, t: RTLGate) -> RTLEdge
+    get() = { s: RTLGate, t: RTLGate -> RTLEdge(s, t) }
+  override val V: (old: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) -> RTLGate
+    get() = { old: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge> -> RTLGate(old, edgeMap) }
+  override val G: (vertices: Set<RTLGate>) -> RTLGraph
+    get() = { vertices: Set<RTLGate> -> RTLGraph(vertices) }
 }
 
 open class RTLGraph(override val vertices: Set<RTLGate> = setOf(), val root: RTLGate? = vertices.firstOrNull()) :
-    Graph<RTLGraph, RTLEdge, RTLGate>(vertices), RTLFamily {
+  Graph<RTLGraph, RTLEdge, RTLGate>(vertices), RTLFamily {
 
-    constructor(vertices: Set<RTLGate> = setOf()) : this(vertices, vertices.firstOrNull())
-    constructor(build: RTLBuilder.() -> Unit) : this(RTLBuilder().also { it.build() }.graph.reversed())
+  constructor(vertices: Set<RTLGate> = setOf()) : this(vertices, vertices.firstOrNull())
+  constructor(build: RTLBuilder.() -> Unit) : this(RTLBuilder().also { it.build() }.graph.reversed())
 
-    fun vhdl(): String = last().bldr().vhdl
+  fun vhdl(): String = last().bldr().vhdl
 }
 
 @Suppress("ClassName")
@@ -69,12 +69,12 @@ open class RTLGate(
   open val builder: RTLBuilder? = null,
   override val edgeMap: (RTLGate) -> Set<RTLEdge>
 ) : Vertex<RTLGraph, RTLEdge, RTLGate>(id), RTLFamily {
-    constructor(op: Op = RTLOps.id, builder: RTLBuilder? = null, vararg gates: RTLGate) : this(randomString(), op, builder, *gates)
-    constructor(id: String, builder: RTLBuilder? = null, vararg gates: RTLGate) : this(id, RTLOps.id, builder, *gates)
-    constructor(id: String, op: Op = RTLOps.id, builder: RTLBuilder? = null, vararg gates: RTLGate) :
-            this(id, op, builder, { s -> gates.toSet().map { t -> RTLEdge(s, t) }.toSet() })
-    constructor(id: String, builder: RTLBuilder? = null, edgeMap: (RTLGate) -> Set<RTLEdge>): this(id, RTLOps.id, builder, edgeMap)
-    constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, gate.op, null, edgeMap)
+  constructor(op: Op = RTLOps.id, builder: RTLBuilder? = null, vararg gates: RTLGate) : this(randomString(), op, builder, *gates)
+  constructor(id: String, builder: RTLBuilder? = null, vararg gates: RTLGate) : this(id, RTLOps.id, builder, *gates)
+  constructor(id: String, op: Op = RTLOps.id, builder: RTLBuilder? = null, vararg gates: RTLGate) :
+          this(id, op, builder, { s -> gates.toSet().map { t -> RTLEdge(s, t) }.toSet() })
+  constructor(id: String, builder: RTLBuilder? = null, edgeMap: (RTLGate) -> Set<RTLEdge>): this(id, RTLOps.id, builder, edgeMap)
+  constructor(gate: RTLGate, edgeMap: (RTLGate) -> Set<RTLEdge>) : this(gate.id, gate.op, null, edgeMap)
 
   companion object {
     fun wrap(value: Any, builder: RTLBuilder? = null): RTLGate =

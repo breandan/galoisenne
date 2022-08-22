@@ -299,7 +299,7 @@ class SetValiantTest {
 */
   @Test
   fun testDropUnitProds() {
-    val normalForm = "S -> c | d".parseCFG()
+    "S -> c | d".parseCFG()
     """
       S -> A
       A -> B
@@ -308,6 +308,7 @@ class SetValiantTest {
       C -> c
       D -> d
     """.parseCFG().let { cfg ->
+      println(cfg.prettyPrint())
       assertTrue("B" !in cfg.nonterminals)
       assertTrue("A" !in cfg.nonterminals)
     }

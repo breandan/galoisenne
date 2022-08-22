@@ -120,10 +120,10 @@ private fun CFG.expandOr(): CFG =
     }.map { prod.LHS to it }
   }.toSet()
 
-// Adds V -> εV | Vε to every production [V -> v] in CFG so
-// that holes can be [optionally] elided by the SAT solver.
+// Adds V -> εV | Vε to every unit production [V -> v] in CFG
+// so that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonProduction(): CFG =
-  map { it.LHS }.toSet()
+  terminalUnitProductions.map { it.LHS }.toSet()
     .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) } +
     "ε+".let { (it to listOf(it, it)) } + ("ε+" to listOf("ε"))
 
