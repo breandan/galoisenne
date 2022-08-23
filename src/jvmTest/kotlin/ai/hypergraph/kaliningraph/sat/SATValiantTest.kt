@@ -333,6 +333,31 @@ class SATValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithSubstitution"
+*/
+  @Test
+  fun testMultiSATWithRandomSubstitution() {
+    val cfg = """
+      S -> S + S | S * S | S - S | S / S | ( S ) | S = S
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      S -> X | Y | Z
+    """.parseCFG()
+
+    val distinct = mutableSetOf<String>()
+    "___________________".also { println("$it is being synthesized...") }
+      .synthesizeIncrementally(cfg, allowNTs = false).take(100)
+      .forEach { decodedString ->
+        val another = decodedString
+          .multiTokenSubstitutionsAndInsertions()
+          .take(10)
+          .forEach { println(it) }
+
+        println("Decoded: $decodedString")
+        println("Another: $another")
+      }
+  }
+
+  /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testAlgebraicLanguage"
 */
   @Test
@@ -497,12 +522,12 @@ class SATValiantTest {
       }.distinct().take(4).toList()
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testParallelStream"
-*/
-  @Test
-  fun testParallelStream() {
-    (0..1).toList().parallelStream().map { testCheckedArithmetic(); "Done" }
-      .forEach { println(it) }
-  }
+///*
+//./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testParallelStream"
+//*/
+//  @Test
+//  fun testParallelStream() {
+//    (0..1).toList().parallelStream().map { testCheckedArithmetic(); "Done" }
+//      .forEach { println(it) }
+//  }
 }

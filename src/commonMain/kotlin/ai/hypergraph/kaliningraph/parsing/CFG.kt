@@ -102,12 +102,13 @@ fun Tree.denormalize(): Tree {
 
 val START_SYMBOL = "START"
 
-fun CFG.generateStubs() =
+fun CFG.generateStubs(): CFG =
   this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS }
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
+    .addEpsilonProduction()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
-private fun CFG.addGlobalStartSymbol() =
+private fun CFG.addGlobalStartSymbol(): CFG =
   this + if (START_SYMBOL in nonterminals) emptySet()
   else nonterminals.map { START_SYMBOL to listOf(it) }
 
@@ -123,7 +124,7 @@ private fun CFG.expandOr(): CFG =
 // Adds V -> εV | Vε to every unit production [V -> v] in CFG
 // so that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonProduction(): CFG =
-  terminalUnitProductions.map { it.LHS }.toSet()
+  terminalUnitProductions.filterNot { "ε" in it.pretty() }.map { it.LHS }.toSet()
     .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) } +
     "ε+".let { (it to listOf(it, it)) } + ("ε+" to listOf("ε"))
 

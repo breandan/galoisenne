@@ -37,7 +37,8 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
 
 infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
-  else data.zip(that.data).filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+  else diagonals.flatten().zip(that.diagonals.flatten())
+    .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
@@ -283,6 +284,6 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     } finally {
       println("Finished solving in: ${System.currentTimeMillis() - timeToFormConstraints}ms")
       ff.clear()
-      elimFormulaFactory()
+//      elimFormulaFactory()
     }
   }

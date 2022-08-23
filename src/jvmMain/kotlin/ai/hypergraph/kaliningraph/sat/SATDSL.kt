@@ -13,14 +13,14 @@ import org.logicng.solvers.MaxSATSolver
 import org.logicng.solvers.MiniSat
 import java.util.concurrent.ConcurrentHashMap
 
-val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
+//val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
 
-val ff: FormulaFactory get() =
-  ffCache.getOrPut(Thread.currentThread().id) {
+val ff: FormulaFactory = //get() =
+//  ffCache.getOrPut(Thread.currentThread().id) {
     FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
-  }
+//  }
 
-fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
+//fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
 
 fun BVar(name: String): Formula = ff.variable(name)
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
