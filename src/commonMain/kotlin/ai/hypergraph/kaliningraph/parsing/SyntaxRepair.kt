@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
+import kotlin.math.abs
 
 /*
  * Generates all single character replacements and insertions.
@@ -17,17 +18,22 @@ fun String.multiTokenSubstitutionsAndInsertions(
   tokens: List<String> = tokenizeByWhitespace(),
   padded: List<String> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
-  exclusions: Set<Int> = setOf()
+  exclusions: Set<Int> = setOf(),
+  caretPos: Int = length
 ): Sequence<String> =
-  padded.allSubstitutions(1, exclusions) { "_ _" } +
-  padded.allSubstitutions(numberOfEdits, exclusions) { "_ _" }
+  padded.allSubstitutions(numberOfEdits, exclusions, caretPos) { "_ _" }
     .apply { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
 
-private fun List<String>.allSubstitutions(numEdits: Int, exclusions: Set<Int>, sub: (String) -> String) =
-  sequenceOf(substitute(((size - numEdits)until size).toSet(), sub)) + // Always try trailing holes first
-  (1..numEdits).asSequence().flatMap {
-    (indices.toSet() - exclusions).choose(numEdits).map { idxs -> substitute(idxs, sub) }
-  }
+private fun List<String>.allSubstitutions(
+  numEdits: Int,
+  exclusions: Set<Int>,
+  caretPos: Int,
+  sub: (String) -> String
+) =
+  (1..numEdits).asSequence()
+    .flatMap { (indices.toSet() - exclusions).choose(numEdits) }
+    .sortedBy { it.maxOf { abs(it - caretPos) } } // Sort by distance to caret position
+    .map { idxs -> substitute(idxs, sub) }
 
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")

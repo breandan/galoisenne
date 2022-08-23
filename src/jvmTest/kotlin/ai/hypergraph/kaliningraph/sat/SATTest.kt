@@ -209,12 +209,12 @@ class SATTest {
 */
   @Test
   fun testValiantMatEq()  {
-    val mvars = FreeMatrix(3) { r, c -> List(3) { BVar("R${r}_${c}_$it") } }.toUTMatrix()
-    val lits = FreeMatrix(3) { r, c -> List(3) { BLit(Random.nextBoolean()) } }.toUTMatrix()
-    val testveq = mvars valiantMatEq lits
+    val mvars = FreeMatrix(3) { r, c -> List(3) { BVar("R${r}_${c}_$it") } }
+    val lits = FreeMatrix(3) { _, _ -> List(3) { BLit(Random.nextBoolean()) } }
+    val testveq = mvars.toUTMatrix() valiantMatEq lits.toUTMatrix()
 
     val ts = testveq.solve()
-    val solution = FreeMatrix(mvars.data.map { it.map { BLit(ts[it]!!) } }).toUTMatrix()
+    val solution = FreeMatrix(mvars.data.map { it.map { BLit(ts[it]?: false ) } })
 
     assertEquals(lits, solution)
   }

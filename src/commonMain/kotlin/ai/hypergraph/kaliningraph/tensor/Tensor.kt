@@ -324,6 +324,7 @@ operator fun Double.times(value: DoubleMatrix): DoubleMatrix = value * this
 operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
+// TODO: Rewrite this from scratch using T: List<UTMatrix<T>> recursive type with overlapping trees
 // Diagonals of a strictly-UT matrix for DAG-based dynamic programming
 class UTMatrix<T> constructor(
   val diagonals: List<List<T>>, // List of strictly-UT diagonals from longest to shortest
