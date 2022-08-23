@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.abs
+import ai.hypergraph.kaliningraph.types.*
 
 /*
  * Generates all single character replacements and insertions.
@@ -19,20 +20,22 @@ fun String.multiTokenSubstitutionsAndInsertions(
   padded: List<String> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf(),
-  caretPos: Int = length
+  // Sorted list of locations believed to be erroneous
+  fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<String> =
-  padded.allSubstitutions(numberOfEdits, exclusions, caretPos) { "_ _" }
+  padded.allSubstitutions(numberOfEdits, exclusions, fishyLocations) { "_ _" }
     .apply { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
 
 private fun List<String>.allSubstitutions(
   numEdits: Int,
   exclusions: Set<Int>,
-  caretPos: Int,
+  fishyLocations: List<Int> = listOf(size),
   sub: (String) -> String
 ) =
   (1..numEdits).asSequence()
     .flatMap { (indices.toSet() - exclusions).choose(numEdits) }
-    .sortedBy { it.maxOf { abs(it - caretPos) } } // Sort by distance to caret position
+     // Sort by maximum distance between substitution and the nearest fishy location
+    .sortedBy { (fishyLocations.asSequence() * it.asSequence()).maxOf { (a, b) -> abs(a - b) } }
     .map { idxs -> substitute(idxs, sub) }
 
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
