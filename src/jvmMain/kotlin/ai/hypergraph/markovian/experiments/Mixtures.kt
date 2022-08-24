@@ -59,14 +59,14 @@ class Gaussian(
     }
 
   override fun times(that: Dist<*>): Dist<*> =
-    when(that) {
+    when (that) {
       is Gaussian -> that * this
       is Mixture<*> -> that * this
       else -> TODO()
     }
 
   override fun plus(that: Dist<*>): Dist<*> =
-    when(that) {
+    when (that) {
       is Gaussian -> Mixture<Gaussian>(this) + that
       is Mixture<*> -> that + this
       else -> TODO()
@@ -159,14 +159,14 @@ open class Mixture<T: Dist<T>>(
     Mixture(components = components.map { it })
 
   override fun times(that: Dist<*>): Dist<*> =
-    when(that) {
+    when (that) {
       is Gaussian -> this * that as T
       is Mixture<*> -> this * that
       else -> TODO()
     }
 
   override fun plus(that: Dist<*>): Dist<*> =
-    when(that) {
+    when (that) {
       is Gaussian -> this + that as T
       is Mixture<*> -> this + that
       else -> TODO()
