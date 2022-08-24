@@ -236,10 +236,11 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       isInGrammar(matrix) and
       uniquenessConstraints(holeVecVars) and
       (matrix valiantMatEq fixpoint)
-    } catch (e: Exception) { return@sequence }
-      .also { println("Total constraints: ${it.numberOfNodes()}") }
+    } catch (e: Exception) { return@sequence }.also {
+      val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+      println("Solver formed ${it.numberOfNodes()} constraints in ${timeElapsed}ms")
+    }
 
-    println("Forming constraints took: ${System.currentTimeMillis() - timeToFormConstraints}ms")
 
 // Tries to put ε in as many holes as possible to prioritize simple repairs
 // val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
@@ -258,6 +259,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
         catch (npe: NullPointerException) { return@sequence }
       }
 //  var freshnessConstraints = 0L
+    var totalSolutions = 0
     while (true) try {
 //    println(solution.toPython())
       val fillers =
@@ -270,6 +272,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
           .filterNot { "ε" in it }.joinToString(join)
 
       if (Thread.currentThread().isInterrupted) throw InterruptedException()
+      totalSolutions++
       if (completion.trim().isNotBlank()) yield(completion)
 
       val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
@@ -280,10 +283,15 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
       solution = solution.keys.associateWith { model.evaluateLit(it) }
     } catch (e: Exception) {
-      if (e is InterruptedException) throw e else break
-    } finally {
-      println("Finished solving in: ${System.currentTimeMillis() - timeToFormConstraints}ms")
-      ff.clear()
-//      elimFormulaFactory()
+      if (e is InterruptedException) { cleanup(timeToFormConstraints, totalSolutions); throw e } else break
     }
+
+    cleanup(timeToFormConstraints, totalSolutions)
+  }
+
+fun cleanup(timeToFormConstraints: Long, totalSolutions: Int) {
+    val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+    println("Solver decoded $totalSolutions total solutions in ${timeElapsed}ms")
+    ff.clear()
+//      elimFormulaFactory()
   }

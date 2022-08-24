@@ -57,7 +57,7 @@ interface TrigFun: Monad
 @Suppress("ClassName")
 object Ops {
   abstract class TopOp {
-    override fun toString() = " " + when(this) {
+    override fun toString() = " " + when (this) {
       is sum -> "+"
       is sub -> "-"
       is prod -> "*"

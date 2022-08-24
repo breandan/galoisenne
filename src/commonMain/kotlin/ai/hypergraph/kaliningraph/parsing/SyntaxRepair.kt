@@ -29,14 +29,17 @@ fun String.multiTokenSubstitutionsAndInsertions(
       println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
     }
 
-fun allSubstitutions(indices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
-  (1..numEdits).asSequence().flatMap { indices.choose(it) }.sortedWith(
-    compareBy<Set<Int>> { it.size }
-      // How close is the farthest index away from its nearest fishy neighbor?
-      .thenBy { it.maxOf { a -> fishyLocations.minOf { b -> abs(a - b) } } }
-//  .thenBy { it.sumOf { a -> fishyLocations.indices.minBy { abs(a - fishyLocations[it]) } } } // Sort by precedence?
-//  .thenBy { it.fold(0 to 0) { (a, b), it -> a + (it - b) to it }.first } // Sort by dispersion?
-  )
+fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
+  setOf(1, numEdits).asSequence().flatMap { eligibleIndices.choose(it) }.map { it.sorted().toSet() }
+    .sortedWith(
+      compareBy<Set<Int>> { it.size }
+        // Out of all chosen indices, how far apart from its nearest fishy neighbor
+        // is the chosen index whose nearest fishy neighbor is the farthest apart?
+        .thenBy { it.maxOf { a -> fishyLocations.minOf { b -> abs(a - b) } } }
+  //  .thenBy { it.sumOf { a -> fishyLocations.indices.minBy { abs(a - fishyLocations[it]) } } } // Sort by precedence?
+        .thenBy { it.fold(0 to it.first()) { (a, b), it -> a + abs(it - b) to it }.first } // Sort by dispersion?
+        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
+    ).map { it.toSet() }
 
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
