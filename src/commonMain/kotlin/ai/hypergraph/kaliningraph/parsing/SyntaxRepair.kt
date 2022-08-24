@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.abs
-import ai.hypergraph.kaliningraph.types.*
 
 /*
  * Generates all single character replacements and insertions.
@@ -23,20 +22,21 @@ fun String.multiTokenSubstitutionsAndInsertions(
   // Sorted list of locations believed to be erroneous
   fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<String> =
-  padded.allSubstitutions(numberOfEdits, exclusions, fishyLocations) { "_ _" }
-    .apply { println("Exclusions: ${tokens.mapIndexed { i, it -> if (i in exclusions) "_" else it }.joinToString(" ")}") }
+  allSubstitutions((padded.indices.toSet() - exclusions), numberOfEdits, fishyLocations)
+    .map { idxs -> padded.substitute(idxs) { "_ _" } }
+    .apply {
+      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
+      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
+    }
 
-private fun List<String>.allSubstitutions(
-  numEdits: Int,
-  exclusions: Set<Int>,
-  fishyLocations: List<Int> = listOf(size),
-  sub: (String) -> String
-) =
-  (1..numEdits).asSequence()
-    .flatMap { (indices.toSet() - exclusions).choose(numEdits) }
-     // Sort by maximum distance between substitution and the nearest fishy location
-    .sortedBy { (fishyLocations.asSequence() * it.asSequence()).maxOf { (a, b) -> abs(a - b) } }
-    .map { idxs -> substitute(idxs, sub) }
+fun allSubstitutions(indices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
+  (1..numEdits).asSequence().flatMap { indices.choose(it) }.sortedWith(
+    compareBy<Set<Int>> { it.size }
+      // How close is the farthest index away from its nearest fishy neighbor?
+      .thenBy { it.maxOf { a -> fishyLocations.minOf { b -> abs(a - b) } } }
+//  .thenBy { it.sumOf { a -> fishyLocations.indices.minBy { abs(a - fishyLocations[it]) } } } // Sort by precedence?
+//  .thenBy { it.fold(0 to 0) { (a, b), it -> a + (it - b) to it }.first } // Sort by dispersion?
+  )
 
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")

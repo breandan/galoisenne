@@ -40,9 +40,9 @@ fun CFG.solveFixedpoint(
 
 // Returns first valid whole-parse tree if the string is syntactically valid, and if not,
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
-fun CFG.parseWithStubs(s: String): Pair<Tree?, Sequence<Tree>> =
+fun CFG.parseWithStubs(s: String): Pair<Forest, Sequence<Tree>> =
   solveFixedpoint(tokenize(s)).toUTMatrix().diagonals.asReversed().let {
-    it.first()[0].firstOrNull { it.root == START_SYMBOL }?.denormalize() to
+    it.first()[0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
       it.asSequence().flatten().flatten().map { it.denormalize() }
   }
 
