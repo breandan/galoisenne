@@ -282,16 +282,17 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val model = solver.run { add(isFresh); sat(); model() }
 //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
       solution = solution.keys.associateWith { model.evaluateLit(it) }
+    } catch(ie: InterruptedException) {
+      cleanup(timeToFormConstraints, totalSolutions)
+      throw ie
     } catch (e: Exception) {
-      if (e is InterruptedException) { cleanup(timeToFormConstraints, totalSolutions); throw e } else break
+      cleanup(timeToFormConstraints, totalSolutions)
+      break
     }
-
-    cleanup(timeToFormConstraints, totalSolutions)
   }
 
 fun cleanup(timeToFormConstraints: Long, totalSolutions: Int) {
-    val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-    println("Solver decoded $totalSolutions total solutions in ${timeElapsed}ms")
-    ff.clear()
-//      elimFormulaFactory()
-  }
+  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+  println("Solver decoded $totalSolutions total solutions in ${timeElapsed}ms")
+  ff.clear()
+}

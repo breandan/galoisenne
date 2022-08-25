@@ -35,6 +35,21 @@ fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   return rec()
 }
 
+private fun <T> List<List<T>>.col(i: Int) = map { it[i] }
+
+// https://en.wikipedia.org/wiki/Seam_carving
+fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
+  replace("  |  ", "    ")
+    .lines().filter { it.isNotBlank() }.map { it.split("→") }.let { toMerge ->
+    val minCols = toMerge.minOf { it.size }
+    val takeAway = (0 until minCols).map { toMerge.col(it).minOf { toRemove.find(it)!!.value.length } }
+    val subs = takeAway.map { List(it) { " " }.joinToString("") }
+    toMerge.joinToString("\n", "\n") {
+      it.mapIndexed { i, it -> if (i < minCols) it.replaceFirst(subs[i], "   ") else it }.joinToString("→")
+        .drop(4).dropLast(3)
+    }
+  }
+
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)
   for (j in 0 until o2.size + 1) prev[j] = j
