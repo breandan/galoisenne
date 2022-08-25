@@ -22,6 +22,7 @@ val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
+val CFG.tmap by cache { terminals.associateBy { word -> bimap[listOf(word)] } }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
@@ -86,6 +87,7 @@ private fun CFG.normalize(): CFG =
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
+    .generateStubs()
 
 // Xujie's algorithm - it works! :-D
 fun Tree.denormalize(): Tree {

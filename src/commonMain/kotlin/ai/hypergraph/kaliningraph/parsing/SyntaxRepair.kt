@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.containsHole
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.abs
@@ -75,7 +76,7 @@ fun String.everySingleHoleConfig(): Sequence<String> {
 fun String.increasingLengthChunks(): Sequence<String> {
   val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
-    .map { l -> chunks.joinToString("") { if ("_" in it) it.take(l) else it } }
+    .map { l -> chunks.joinToString("") { if (it.containsHole()) it.take(l) else it } }
 }
 
 fun String.splitWithHoles() =

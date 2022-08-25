@@ -119,7 +119,7 @@ fun CFG.constructInitialMatrix(
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
         val word = tokens[c - 1]
-        if (word == "_")
+        if (word.isHoleToken())
           List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
             .also { holeVariables.add(it) } // Blank
         else setOf(word.drop(1).dropLast(1))
@@ -165,11 +165,6 @@ fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
-fun CFG.terminal(
-  bitvec: List<Boolean>,
-  nonterminals: Set<String> = nonterminals(bitvec)
-): String? = terminals.firstOrNull { word -> bimap[listOf(word)] == nonterminals }
-
 // Summarize fill structure of bit vector variables
 fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
   FreeMatrix(numRows, numCols) { r, c ->
@@ -189,9 +184,11 @@ fun String.synthesizeIncrementally(
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
   updateProgress: (String) -> Unit = {}
 ): Sequence<String> {
-  val cfg_ = cfg.let { if (allowNTs) it.generateStubs() else it }.filter(cfgFilter).toSet()
-  val allVariants = variations.fold(sequenceOf(this)) { a, b -> a + b() }.map { it.mergeHoles() }.distinct()
-  return allVariants.map { updateProgress(it); it }.flatMap { cfg_.run { synthesize(tokenize(it), join) } }.distinct()
+  val allVariants =
+    variations.fold(sequenceOf(this)) { a, b -> a + b() }
+    .map { it.mergeHoles() }.distinct()
+  return allVariants.map { updateProgress(it); it }
+    .flatMap { cfg.run { synthesize(tokenize(it), join) } }.distinct()
 }
 
 fun Formula.toPython(
@@ -218,7 +215,7 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
   else emptySequence()
 
 private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
-  if (tokens.none { it == "_" }) emptySequence()
+  if (tokens.none { it.isHoleToken() }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
     val timeToFormConstraints = System.currentTimeMillis()
@@ -241,7 +238,6 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       println("Solver formed ${it.numberOfNodes()} constraints in ${timeElapsed}ms")
     }
 
-
 // Tries to put ε in as many holes as possible to prioritize simple repairs
 // val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
 
@@ -262,12 +258,12 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
     var totalSolutions = 0
     while (true) try {
 //    println(solution.toPython())
-      val fillers =
-        holeVecVars.map { bits -> terminal(bits.map { solution[it]!! }) }.toMutableList()
+      val fillers: MutableList<String?> =
+        holeVecVars.map { bits -> tmap[nonterminals(bits.map { solution[it]!! })] }.toMutableList()
 
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
-      val completion =
+      val completion: String =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
           .filterNot { "ε" in it }.joinToString(join)
 
