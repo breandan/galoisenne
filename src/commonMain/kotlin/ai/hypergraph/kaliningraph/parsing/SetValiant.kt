@@ -133,10 +133,10 @@ fun String.mergeHoles() =
   replace(Regex("\\s+"), " ")
     .replace(Regex("(?<=_)\\s(?=_)"), "")
 
-fun CFG.tokenize(str: String): List<String> =
-  delimiters.fold(listOf(str.mergeHoles())) { l, delim ->
-    l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
-  }.filter(String::isNotBlank)
+fun tokenize(str: String): List<String> = str.tokenizeByWhitespace()
+//  delimiters.fold(listOf(str.mergeHoles())) { l, delim ->
+//    l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
+//  }.filter(String::isNotBlank)
 
 fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
   UTMatrix(

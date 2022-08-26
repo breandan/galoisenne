@@ -178,17 +178,18 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
 // Generates a lazy sequence of solutions to sketch-based synthesis problems
 fun String.synthesizeIncrementally(
   cfg: CFG,
-  join: String = "",
   allowNTs: Boolean = true,
-  cfgFilter: Production.() -> Boolean = { true },
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
   updateProgress: (String) -> Unit = {}
 ): Sequence<String> {
+  val cfg_ = if (!allowNTs)
+    cfg.filter { it.RHS.none { it.startsWith('<') && it.endsWith('>') } }.toSet()
+  else cfg
+
   val allVariants =
-    variations.fold(sequenceOf(this)) { a, b -> a + b() }
-    .map { it.mergeHoles() }.distinct()
+    variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
   return allVariants.map { updateProgress(it); it }
-    .flatMap { cfg.run { synthesize(tokenize(it), join) } }.distinct()
+    .flatMap { cfg_.run { synthesize(tokenize(it)) } }.distinct()
 }
 
 fun Formula.toPython(
@@ -214,7 +215,7 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
       .mapNotNull { if (it.size == 1) it[0] else null }.asSequence()
   else emptySequence()
 
-private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<String> =
+private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
   if (tokens.none { it.isHoleToken() }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
@@ -274,7 +275,7 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
 //      println(bMat.summarize(this@synthesize))
       val completion: String =
         tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
-          .filterNot { "ε" in it }.joinToString(join)
+          .filterNot { "ε" in it }.joinToString(" ")
 
       if (Thread.currentThread().isInterrupted) throw InterruptedException()
       totalSolutions++

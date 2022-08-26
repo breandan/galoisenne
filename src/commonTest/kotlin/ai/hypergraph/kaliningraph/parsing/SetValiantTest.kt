@@ -50,9 +50,9 @@ class SetValiantTest {
       A -> a | A A
       B -> b | B B
     """.let { cfg ->
-      assertTrue("aaaa".matches(cfg))
-      assertTrue("bbbb".matches(cfg))
-      assertFalse("abab".matches(cfg))
+      assertTrue("a a a a ".matches(cfg))
+      assertTrue("b b b b ".matches(cfg))
+      assertFalse("a b a b ".matches(cfg))
     }
   }
 
@@ -71,9 +71,9 @@ class SetValiantTest {
       A -> a
       B -> b
     """.let { cfg ->
-      assertTrue("aaabbb".also { println(cfg.parse(it)) }.matches(cfg))
-      assertTrue("aabb".matches(cfg))
-      assertFalse("abab".matches(cfg))
+      assertTrue("a a a b b b ".also { println(cfg.parse(it)) }.matches(cfg))
+      assertTrue("a a b b ".matches(cfg))
+      assertFalse("a b a b ".matches(cfg))
     }
   }
 
@@ -118,20 +118,20 @@ class SetValiantTest {
         B -> )
       """.parseCFG().let { cfg ->
       println(cfg.prettyPrint())
-      assertTrue("()(()())()".matches(cfg))
-      assertFalse("()(()()()".matches(cfg))
-      assertTrue("()(())".matches(cfg))
-      assertTrue("()()".matches(cfg))
-      assertFalse("())".matches(cfg))
+      assertTrue("( ) ( ( ) ( ) ) ( ) ".matches(cfg))
+      assertFalse("( ) ( ( ) ( ) ( ) ".matches(cfg))
+      assertTrue("( ) ( ( ) ) ".matches(cfg))
+      assertTrue("( ) ( ) ".matches(cfg))
+      assertFalse("( ) ) ".matches(cfg))
       assertFalse(")".matches(cfg))
     }
 
     """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
-      assertTrue("()(()())()".matches(cfg))
-      assertFalse("()(()()()".matches(cfg))
-      assertTrue("()(())".matches(cfg))
-      assertTrue("()()".matches(cfg))
-      assertFalse("())".matches(cfg))
+      assertTrue("( ) ( ( ) ( ) ) ( ) ".matches(cfg))
+      assertFalse("( ) ( ( ) ( ) ( ) ".matches(cfg))
+      assertTrue("( ) ( ( ) ) ".matches(cfg))
+      assertTrue("( ) ( ) ".matches(cfg))
+      assertFalse("( ) ) ".matches(cfg))
       assertFalse(")".matches(cfg))
     }
   }
@@ -178,7 +178,7 @@ class SetValiantTest {
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
-      val sols = "(____()____)".solve(cfg, fillers = cfg.terminals + "")
+      val sols = "( _ _ _ _ ( ) _ _ _ _ ) ".solve(cfg, fillers = cfg.terminals + "")
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -194,7 +194,7 @@ class SetValiantTest {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "________".solve(CFG)
+      val sols = "_ _ _ _ _ _ _ _ ".solve(CFG)
         .map { println(it); it }.take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
@@ -234,8 +234,8 @@ class SetValiantTest {
   fun testDyck2Language() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".let { cfg ->
       println("Grammar: $this")
-      assertTrue("()[()()]()".matches(cfg))
-      assertFalse("([()()]()".matches(cfg))
+      assertTrue("( ) [ ( ) ( ) ] ( ) ".matches(cfg))
+      assertFalse("( [ ( ) ( ) ] ( ) ".matches(cfg))
     }
   }
 
@@ -246,8 +246,8 @@ class SetValiantTest {
   fun testDyck3Language() {
   """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".let { cfg ->
       // TODO: Fix under approximation?
-      assertTrue("{()[(){}()]()}".matches(cfg))
-      assertFalse("{()[(){()]()}".matches(cfg))
+      assertTrue("{ ( ) [ ( ) { } ( ) ] ( ) } ".matches(cfg))
+      assertFalse("{ ( ) [ ( ) { ( ) ] ( ) } ".matches(cfg))
     }
   }
 
@@ -257,7 +257,7 @@ class SetValiantTest {
   @Test
   fun testDyck3Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfg ->
-      val sols = "(____()____)".solve(cfg)
+      val sols = "( _ _ _ _ ( ) _ _ _ _ )".solve(cfg)
         .map { println(it); it }.take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
@@ -331,8 +331,8 @@ class SetValiantTest {
       A -> a | a A a | a A b | b A b | b A a
       B -> b | a B a | a B b | b B b | b B a
     """.parseCFG().let { cfg ->
-      assertTrue("aaaaaabb".matches(cfg))
-      assertFalse("aaaaaa".matches(cfg))
+      assertTrue("a a a a a a b b ".matches(cfg))
+      assertFalse("a a a a a a ".matches(cfg))
     }
   }
 
@@ -371,7 +371,7 @@ class SetValiantTest {
   @Test
   fun testUTMRepresentationEquivalence() {
     with("""P -> ( P ) | P P | ε""".parseCFG()) {
-      val str = tokenize("(()())()((())())((()))()()()")
+      val str = tokenize("( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( )")
       val slowTransitionFP =  measureTimedValue {
         initialMatrix(str).seekFixpoint(succ={it + it * it})
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value
