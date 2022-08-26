@@ -261,6 +261,15 @@ private fun CFG.synthesize(tokens: List<String>, join: String = ""): Sequence<St
       val fillers: MutableList<String?> =
         holeVecVars.map { bits -> tmap[nonterminals(bits.map { solution[it]!! })] }.toMutableList()
 
+      // Try to remove unit nonterminals
+//      fillers = fillers.map { str ->
+//        if (str!= null && str.matches(Regex("<[^\\s>]*>"))) {
+//          bimap[str.drop(1).dropLast(1)].filter { ls ->
+//            ls.joinToString().let { "." !in it && "ε" !in it && it != ls[0] }
+//          }.let { if (it.size == 1) it[0].joinToString(" ") else str }
+//        } else str
+//      }.toMutableList()
+
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
       val completion: String =

@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.formatAsGrid
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
@@ -28,6 +29,7 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
+val CFG.original by cache { originalMap.get(this)!! }
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
@@ -78,16 +80,21 @@ fun CFG.toGraph() =
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 
+val originalMap = LRUCache<CFG, CFG>()
+
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
-    .addEpsilonProduction()
-    .refactorEpsilonProds()
-    .elimVarUnitProds()
-    .refactorRHS()
-    .terminalsToUnitProds()
-    .removeUselessSymbols()
-    .generateStubs()
+    .let { original ->
+      original.addEpsilonProduction()
+      .refactorEpsilonProds()
+      .elimVarUnitProds()
+      .refactorRHS()
+      .terminalsToUnitProds()
+      .removeUselessSymbols()
+      .generateStubs()
+      .also { originalMap.put(it, original) }
+    }
 
 // Xujie's algorithm - it works! :-D
 fun Tree.denormalize(): Tree {
