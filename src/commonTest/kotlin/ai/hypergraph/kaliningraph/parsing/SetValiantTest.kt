@@ -8,10 +8,8 @@ import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
-import kotlin.collections.*
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 /*
@@ -159,7 +157,8 @@ class SetValiantTest {
     MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
       fold("" to it) { (a, b), c ->
         if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
-      }.first.replace("ε", "")
+      }.first.replace("ε", "").also { println(it) }
+
     }
 
   infix fun Char.matches(that: Char) =

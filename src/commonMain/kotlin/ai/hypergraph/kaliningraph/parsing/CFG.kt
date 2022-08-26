@@ -112,7 +112,7 @@ fun Tree.denormalize(): Tree {
 val START_SYMBOL = "START"
 
 fun CFG.generateStubs(): CFG =
-  this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS }
+  this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
     .addEpsilonProduction()
 
