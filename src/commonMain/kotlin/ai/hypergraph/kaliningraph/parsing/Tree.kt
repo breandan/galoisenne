@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.containsNonterminal
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
+import ai.hypergraph.kaliningraph.image.escapeHTML
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 
 typealias TreeMatrix = FreeMatrix<Forest>
@@ -33,10 +35,15 @@ class Tree constructor(
     prefix: String = "",
     childrenPrefix: String = "",
   ): String =
-    if (children.isEmpty()) buffer + prefix + "$terminal [${span.first}]\n"
-    else children.foldIndexed("$buffer$prefix$root [$span]\n") { i: Int, acc: String, it: Tree ->
+    if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()} [${span.first}]\n")
+    else children.foldIndexed("$buffer$prefix" +
+      root.htmlify() +
+      " [$span]\n") { i: Int, acc: String, it: Tree ->
       if (i == children.size - 1)
         it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
       else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
     }
+
+  private fun String.htmlify() =
+    replace('<', '⟨').replace('>', '⟩')
 }
