@@ -43,9 +43,9 @@
 \title{Tidyparse: Real-Time Context Free Error Correction}
 \begin{abstract}
 Tidyparse is a program synthesizer that performs real-time error correction for context free languages.
-Given an arbitrary context free grammar (CFG) and candidate string to parse, the tool will lazily generate admissible repairs while the author is typing, ranked in order of Levenshtein edit distance.
- Repairs are guaranteed to be sound and complete, syntactically valid and minimal.
- Tidyparse is the first system of its kind which offers these guarantees in a real-time editor. To accelerate code completion, we implement a novel incremental parsing algorithm that lowers CFGs onto a dynamical system over finite field arithmetic, which enables us to suggest syntax repairs in-between keystrokes. We have released an IDE plugin implementing the system described.\footnote{https://plugins.jetbrains.com/plugin/19570-tidyparse}
+Given both an arbitrary context free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs while the author is typing, ranked by Levenshtein edit distance.
+ Repairs are guaranteed to be sound, complete, syntactically valid and minimal.
+ Tidyparse is the first system of its kind offering these guarantees in a real-time editor. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes. We have released an IDE plugin demonsrating the system described.\footnote{https://plugins.jetbrains.com/plugin/19570-tidyparse}
 \end{abstract}
 
 \author{Breandan Mark Considine}
@@ -70,20 +70,66 @@ Given an arbitrary context free grammar (CFG) and candidate string to parse, the
 
 \section{Introduction}
 
-Modern research on error correction can be traced back to the early days of coding theory, when researchers designed \textit{error-correcting codes} to denoise transmission errors induced by external interference, for instance, collision with a high-energy proton, manipulation by a cryptographic adversary, typographical error, or mistranslation from a natural to a formal language, such as English and code. In this context, \textit{code} is simply a logical representation for communicating information between two parties, e.g., a human and a computer. An \textit{error-correcting code} (ECC) is a mapping from a $k$-dimensional vector space to a $n$-dimensional vector space which promises that, even if $t$ or fewer coordinates of the output space are corrupted, the original message can be recovered by solving a linear system of at most $t$ equations. % The largest possible value of $k/n$ is called the \textit{rate} of the code. For example, the Hamming code, discovered by Richard Hamming in the 1950s, has a rate of $1/2$ and can correct up to one error. Others, such as BCH, Shannon, Huffman, Turbo and Reed–Solomon have improved upon $k/n$ and $t$.
+Modern research on error correction can be traced back to the early days of coding theory, when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, whether due to collision with a high-energy proton, manipulation by an adversary or some typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed code which ensures that even if some portion of the message should be corrupted through accidental or intentional means, one can still recover the original message by solving a linear system of equations. In particular, we frame our work inside the context of errors arising from human factors in computer programming.
 
-In programming, most errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant obstacle for novice programmers. We can refine the concept of error correction by introducing a language $\mathcal{L} \subset \Sigma^*$ and considering the minimal number of tokenwise edits that transform an arbitrary string $\Sigma^*$ into a string in $\mathcal{L}$. Known as \textit{language edit distance} (LED), this problem was recently proven to be subcubic~\cite{bringmann2019truly}, strongly indicating its tractability: by considering not only distance, but the specific repair, we obtain an \textit{error-correcting parser} (ECP), which historically were big in early parsing literature but fell out of favor for many years. Alfred Aho~\cite{aho1972minimum} looked into it. Leslie Valiant~\cite{valiant1975general} looked into it. Prior results were primarily of a theorietical nature, but now, thanks to our contributions, we finally have a practical prototype.
+In programming, most such errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant challenge for novice programmers. The ECC problem may be refined by introducing a language, $\mathcal{L} \subset \Sigma^*$ and considering admissible edits transforming an arbitrary string, $s \in \Sigma^*$ into a string, $s'\in\mathcal{L}$. Known as \textit{error-correcting parsing} (ECP), this problem was well-studied in the early parsing literature, cf. Aho and Peterson~\cite{aho1972minimum}, but fell out of favor for many years, perhaps due to its perceived complexity. By considering only minimal-length edits, ECP can be reduced to the so-called \textit{language edit distance} (LED) problem, recently shown to be subcubic~\cite{bringmann2019truly}, suggesting its possible tractability. Previous results on ECP and LED were primarily of a theorietical nature, but now, thanks to our contributions, we have finally realized a practical prototype.
 
 %String constraints
 %
 %Word equations
 
-
 \section{Theory}
 
-Tidyparse is a plugin that takes a CFG and a string to parse and returns a set of candidate strings. We compile the parser into a matrix using a modified version of Valiant's construction and solve the matrix completion problem using an incremental SAT solver.
+It is a well-known fact that every CFG can be reduced into Chomsky Normal Form (CNF). Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
+
+\vspace{-7pt}
+\[
+a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
+\]
+
+\noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
+
+\vspace{-5}
+\[
+\mathbf{M}^* = \begin{pmatrix}
+            \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
+            \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
+            \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
+            \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
+            \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
+\end{pmatrix}
+\]
+
+\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
+
+Although theoretically elegant, this decision procedure can be optimized by lowering onto binary matrices. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+\[\begin{tikzcd}
+      V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+      & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+      \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+      & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+\end{tikzcd}\]
+
+Full details of this bisimilarity can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who proves its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound. By assuming sparsity, this technique can typically be reduced to linearithmic time, and is currently the best known asymptotic bound for context free language recognition to date.
+
+By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. Specifically, the repairs occur along holes in the superdiagonal $(r+1 = c)$, and the upper-triangular entries $(r + 1 < c)$ represent the corresponding parse tree. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in the following example:
+
+\section{Toy Example}
+
+Suppose we are given the following string:
+
+\begin{kotlinlisting}
+   four score and seven
+\end{kotlinlisting}
+
+There are lots of ways to complete the string.
+
+We compile the string to the following matrix:
 
 \section{Implementation}
+
+Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver.
+
     Here is how we implemented it (and so can you)~\cite{valiant1975general}.
 \section{Examples}
     There are examples too.

@@ -84,26 +84,81 @@
 \def\verbatim@nolig@list{}
 \makeatother
 
+
+\usepackage[skins,breakable,listings]{tcolorbox}
+
+\usepackage[dvipsnames]{xcolor}
+\usepackage[table]{xcolor}
 \lstdefinelanguage{kotlin}{
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
-  numberstyle=\noncopyable,
-  emphstyle={\color{OrangeRed}},
-  identifierstyle=\color{black},
-  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
-  keywordstyle={\color{NavyBlue}\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
-  ndkeywordstyle={\color{BurntOrange}\bfseries},
-  sensitive=true,
-  stringstyle={\color{ForestGreen}\ttfamily},
-  literate={`}{{\char0}}1,
-  escapeinside={(*@}{@*)}
+    comment=[l]{//},
+    commentstyle={\color{gray}\ttfamily},
+    emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, @Repeat, return@},
+    emphstyle={\color{red}},
+    identifierstyle=\color{black},
+    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, val, var, vararg, when, where, while, tailrec, reified},
+    keywordstyle={\color{blue}\bfseries},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    morestring=[s]{"""*}{*"""},
+    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
+    ndkeywordstyle={\color{orange}\bfseries},
+    sensitive=true,
+    stringstyle={\color{green}\ttfamily},
+    literate={`}{{\char0}}1
 }
 
-\lstset{basicstyle=\ttfamily\lst@ifdisplaystyle\small\fi, language=kotlin}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Color boxes
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tcbset{
+    enhanced jigsaw,
+    breakable,
+    listing only,
+    boxsep=-1pt,
+    top=-1pt,
+    bottom=-0.5pt,
+    right=-0.5pt,
+    overlay first={
+        \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+        \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+    },
+    overlay middle={
+        \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+        \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+        \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+        \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+    },
+    overlay last={
+        \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+        \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+    },
+    before={\par\vspace{10pt}},
+    after={\par\vspace{\parskip}\noindent}
+}
+
+\newtcblisting{kotlinlisting}[1][]{%
+    width=6cm,
+    height=1.1cm,
+    left=20pt,
+    top=5pt,
+    listing options={
+        language=kotlin,
+        basicstyle=\ttfamily\normalsize,
+%numberstyle=\footnotesize,
+        showstringspaces=false,
+        tabsize=2,
+        breaklines=true,
+        numbers=none,
+        inputencoding=utf8,
+        escapeinside={(*}{*)},
+        #1
+    },
+    underlay unbroken and first={%
+        \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=6mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-10mm]interior.north west);
+    }
+}
 
 \usepackage{url}
