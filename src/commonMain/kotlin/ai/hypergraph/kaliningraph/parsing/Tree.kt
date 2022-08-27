@@ -37,8 +37,7 @@ class Tree constructor(
   ): String =
     if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()} [${span.first}]\n")
     else children.foldIndexed("$buffer$prefix" +
-      root.htmlify() +
-      " [$span]\n") { i: Int, acc: String, it: Tree ->
+      root.htmlify() + (if(-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: String, it: Tree ->
       if (i == children.size - 1)
         it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
       else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
