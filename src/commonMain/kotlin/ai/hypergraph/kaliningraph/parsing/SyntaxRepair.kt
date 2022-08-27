@@ -79,5 +79,4 @@ fun String.increasingLengthChunks(): Sequence<String> {
     .map { l -> chunks.joinToString("") { if (it.containsHole()) it.take(l) else it } }
 }
 
-fun String.splitWithHoles() =
-  split(Regex("((?<=[^_])|(?=[^_]))"))
+fun String.splitWithHoles() = split(Regex("((?<=[^_])|(?=[^_]))"))

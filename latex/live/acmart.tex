@@ -70,21 +70,18 @@ Given an arbitrary context free grammar (CFG) and candidate string to parse, the
 
 \section{Introduction}
 
-Modern research on error correction can be traced back to the early days of coding theory, when researchers designed \textit{error-correcting codes} to denoise transmission errors induced by external interference, for instance, collision with a high-energy proton, adversarial manipulation, typographical mistakes, or mistranslation across natural and formal languages, such as English and code. In general, \textit{code} is simply a representation of symbolic information shared between two or more communicating agents, e.g., humans and computers. Most programming errors initially manifest as syntax errors, the correction of which has the potential to lift a significant barrier to programmer productivity.
+Modern research on error correction can be traced back to the early days of coding theory, when researchers designed \textit{error-correcting codes} to denoise transmission errors induced by external interference, for instance, collision with a high-energy proton, manipulation by a cryptographic adversary, typographical error, or mistranslation from a natural to a formal language, such as English and code. In this context, \textit{code} is simply a logical representation for communicating information between two parties, e.g., a human and a computer. An \textit{error-correcting code} (ECC) is a mapping from a $k$-dimensional vector space to a $n$-dimensional vector space which promises that, even if $t$ or fewer coordinates of the output space are corrupted, the original message can be recovered by solving a linear system of at most $t$ equations. % The largest possible value of $k/n$ is called the \textit{rate} of the code. For example, the Hamming code, discovered by Richard Hamming in the 1950s, has a rate of $1/2$ and can correct up to one error. Others, such as BCH, Shannon, Huffman, Turbo and Reed–Solomon have improved upon $k/n$ and $t$.
 
-Coding theory -
+In programming, most errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant obstacle for novice programmers. We can refine the concept of error correction by introducing a language $\mathcal{L} \subset \Sigma^*$ and considering the minimal number of tokenwise edits that transform an arbitrary string $\Sigma^*$ into a string in $\mathcal{L}$. Known as \textit{language edit distance} (LED), this problem was recently proven to be subcubic~\cite{bringmann2019truly}, strongly indicating its tractability: by considering not only distance, but the specific repair, we obtain an \textit{error-correcting parser} (ECP), which historically were big in early parsing literature but fell out of favor for many years. Alfred Aho~\cite{aho1972minimum} looked into it. Leslie Valiant~\cite{valiant1975general} looked into it. Prior results were primarily of a theorietical nature, but now, thanks to our contributions, we finally have a practical prototype.
 
-e.g., BCH, Shannon, Huffman, Reed–Solomon
+%String constraints
+%
+%Word equations
 
-String constraints
-
-Word equations
-
-Historically error correcting parsers were big in the early days of parsing theory but somehow fell out of favor. Aho looked into it. Valiant looked into it. And finally, thanks to our contributions, we now have a working prototype.
 
 \section{Theory}
 
-Tidyparse is a plugin that takes a CFG and a string to parse and returns a set of candidate strings. We compile the grammar into a matrix.
+Tidyparse is a plugin that takes a CFG and a string to parse and returns a set of candidate strings. We compile the parser into a matrix using a modified version of Valiant's construction and solve the matrix completion problem using an incremental SAT solver.
 
 \section{Implementation}
     Here is how we implemented it (and so can you)~\cite{valiant1975general}.
