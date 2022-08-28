@@ -15,14 +15,24 @@ import guru.nidi.graphviz.engine.*
 import guru.nidi.graphviz.engine.Engine.DOT
 import guru.nidi.graphviz.engine.Format.SVG
 import guru.nidi.graphviz.model.*
+import java.awt.Toolkit
+import java.awt.datatransfer.Clipboard
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.URL
+
 
 const val THICKNESS = 4.0
 const val DARKMODE = false
 
 fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
    toGraphviz().apply { engine(layout) }.render(format)
+
+fun String.alsoCopy() = also {
+  StringSelection(this).let {
+    Toolkit.getDefaultToolkit().systemClipboard.setContents(it, it)
+  }
+}
 
 fun String.show() = File.createTempFile("" + hashCode(), ".html")
   .apply { writeText(this@show) }.show()
@@ -73,7 +83,7 @@ fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
     graph[CONCENTRATE, Rank.dir(LEFT_TO_RIGHT),
       TRANSPARENT.background(), margin(0.0),
       COMPOUND, Attributes.attr("nslimit", "20")]
-    node[color, color.font(), Font.config("Helvetica", 20),
+    node[color, color.font(), Font.config("JetBrains Mono", 15),
       lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
     for(vertex in vertices) vertex.render()

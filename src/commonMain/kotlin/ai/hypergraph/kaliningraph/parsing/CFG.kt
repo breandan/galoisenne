@@ -96,19 +96,6 @@ private fun CFG.normalize(): CFG =
       .also { originalMap.put(it, original) }
     }
 
-// Xujie's algorithm - it works! :-D
-fun Tree.denormalize(): Tree {
-  fun Tree.removeSynthetic(
-    refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
-    isSynthetic: (Tree) -> Boolean = { 2 <= root.split('.').size }
-  ): List<Tree> =
-    if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
-    else if (isSynthetic(this)) refactoredChildren
-    else listOf(Tree(root, children = refactoredChildren.toTypedArray(), span = span))
-
-  return removeSynthetic().first()
-}
-
 val START_SYMBOL = "START"
 
 fun CFG.generateStubs(): CFG =

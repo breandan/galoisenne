@@ -78,9 +78,67 @@ In programming, most such errors initially manifest as syntax errors, and though
 %
 %Word equations
 
+\section{Toy Example}
+
+Suppose we are given the following context free grammar:
+
+\begin{tidyinput}
+S -> S and S | S or S | ( S ) | true | false | ! S
+\end{tidyinput}
+
+\noindent This gets rewritten into the following CNF grammar:
+
+\begin{verbatim}
+ F.! → !  ε+ → ε      S → false    F.and → and
+ F.( → (  ε+ → ε+ ε+  S → F.! S      S.) → S F.)
+ F.) → )   S → <S>    S → S or.S    or.S → F.or S
+ F.ε → ε   S → true   S → S and.S  and.S → F.and S
+F.or → or  S → S ε+   S → F.( S.)
+\end{verbatim}
+
+\noindent We can visualize the CFG as either a graph or a matrix:
+
+\begin{figure}[H]
+    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_graph.png}
+    \hspace{20pt}
+    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
+\end{figure}
+
+\noindent This CFG corresponds to the Dyck-3 language of balanced parentheses. Suppose we have the following string:
+
+\begin{tidyinput}
+true and ( false or and true false
+\end{tidyinput}
+
+\noindent Our tool produces the following suggestions, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
+
+\begin{tidyoutput}
+1.) true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*)
+2.) true and ( false or (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
+3.) true and ( false or (*@\hlorange{(}@*) true (*@\hlorange{)}@*) (*@\hlgreen{)}@*)
+4.) true and ( false or (*@\hlorange{!}@*) (*@\hlorange{!}@*) false (*@\hlgreen{)}@*)
+5.) true and ( false or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) false (*@\hlgreen{)}@*)
+6.) true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
+7.) true and ( false or (*@\hlorange{!}@*) (*@\hlorange{(}@*) false (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
+8.) true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*) (*@\hlgreen{or}@*) (*@\hlgreen{<S>}@*)
+9.) true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
+\end{tidyoutput}
+
+\noindent Selecting the third entry will produce a single parse tree:
+
+% TODO: https://muug.ca/mirror/ctan/macros/latex/contrib/qtree/qtreenotes.pdf
+\begin{figure}[H]
+\resizebox{.25\textwidth}{!}{
+    \Tree [.\texttt{S} \texttt{true} \texttt{and} [.\texttt{S} !\qsetw{-3cm} \texttt{(} [.\texttt{S} !\qsetw{-3cm} [.\texttt{S} !\qsetw{-3cm} \texttt{false} \texttt{or} \texttt{<S>} ] \texttt{and} \texttt{true} ] \texttt{)} ] ]
+}
+\end{figure}
+
+\noindent All the above visualizations were generated automatically.
+
+
 \section{Theory}
 
-It is a well-known fact that every CFG can be reduced into Chomsky Normal Form (CNF). Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
+It is a well-known fact that every CFG can be reduced into Chomsky Normal Form (CNF). Given a CFG, $\mathcal{G} : \langle V, \Sigma, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
 
 \vspace{-7pt}
 \[
@@ -102,7 +160,7 @@ a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \i
 
 \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
-Although theoretically elegant, this decision procedure can be optimized by lowering onto binary matrices. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
 \[\begin{tikzcd}
       V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
       & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
@@ -112,19 +170,14 @@ Although theoretically elegant, this decision procedure can be optimized by lowe
 
 Full details of this bisimilarity can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who proves its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound. By assuming sparsity, this technique can typically be reduced to linearithmic time, and is currently the best known asymptotic bound for context free language recognition to date.
 
-By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. Specifically, the repairs occur along holes in the superdiagonal $(r+1 = c)$, and the upper-triangular entries $(r + 1 < c)$ represent the corresponding parse tree. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in the following example:
+By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. Specifically, the repairs occur along holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$ represent the corresponding parse tree. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in the following example:
 
-\section{Toy Example}
-
-Suppose we are given the following string:
-
-\begin{kotlinlisting}
-   four score and seven
-\end{kotlinlisting}
-
-There are lots of ways to complete the string.
-
-We compile the string to the following matrix:
+\begin{figure}[H]
+    \includegraphics[width=2cm]{../figures/parse1.png}
+    \includegraphics[width=2cm]{../figures/parse2.png}
+    \includegraphics[width=2cm]{../figures/parse3.png}
+    \includegraphics[width=2cm]{../figures/parse4.png}
+\end{figure}
 
 \section{Implementation}
 

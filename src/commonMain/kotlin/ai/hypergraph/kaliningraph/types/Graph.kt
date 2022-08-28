@@ -130,19 +130,22 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun asString() =
     edgList.map { "${it.first} -> ${it.second.target}" }.formatAsGrid().toString()
 
-  fun toDot() =
-    """
+  fun toDot(): String {
+    fun String.htmlify() =
+      replace("<", "&lt;").replace(">", "&gt;")
+    return """
       strict digraph {
           graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
           ${
       vertices.joinToString("\n") {
-        """"${it.id}" ["color"="black","fontcolor"="black","fontname"="Helvetica","fontsize"="20","penwidth"="4.0","shape"="Mrecord", "label"="$it"]""" }
+        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="3.0","shape"="Mrecord"]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
-        """"${v.id}" -> "${e.target.id}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="4.0","label"=""]""" }
+        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="4.0","label"=""]""" }
           }
       }
     """.trimIndent()
+  }
 }
 
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.D: DoubleMatrix         by cache { DoubleMatrix(size) { i, j -> if (i == j) this[i].neighbors.size.toDouble() else 0.0 } }

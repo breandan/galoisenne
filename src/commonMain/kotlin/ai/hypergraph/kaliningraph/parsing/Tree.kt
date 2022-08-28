@@ -1,9 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.containsNonterminal
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
-import ai.hypergraph.kaliningraph.image.escapeHTML
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 
 typealias TreeMatrix = FreeMatrix<Forest>
@@ -43,6 +41,25 @@ class Tree constructor(
       else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
     }
 
+  fun latexify(): String = "\\Tree ${qtreeify()}"
+
+  private fun qtreeify(): String =
+   if (children.isEmpty()) "\\texttt{$terminal}"
+   else "[.\\texttt{$root} " + children.joinToString(" ", "", " ]") { it.qtreeify() }
+
   private fun String.htmlify() =
     replace('<', '⟨').replace('>', '⟩')
+
+  // Xujie's algorithm - it works! :-D
+  fun denormalize(): Tree {
+    fun Tree.removeSynthetic(
+      refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
+      isSynthetic: (Tree) -> Boolean = { 2 <= root.split('.').size }
+    ): List<Tree> =
+      if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
+      else if (isSynthetic(this)) refactoredChildren
+      else listOf(Tree(root, children = refactoredChildren.toTypedArray(), span = span))
+
+    return removeSynthetic().first()
+  }
 }
