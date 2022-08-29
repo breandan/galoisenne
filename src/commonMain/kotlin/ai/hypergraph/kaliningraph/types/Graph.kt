@@ -1,6 +1,3 @@
-// How are we supposed to resolve this warning? https://youtrack.jetbrains.com/issue/KT-24643
-@file:Suppress("DELEGATE_USES_EXTENSION_PROPERTY_TYPE_PARAMETER_WARNING")
-
 package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
@@ -138,10 +135,10 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
           graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
           ${
       vertices.joinToString("\n") {
-        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="3.0","shape"="Mrecord"]""" }
+        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
-        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="4.0","label"=""]""" }
+        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"=""]""" }
           }
       }
     """.trimIndent()

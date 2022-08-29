@@ -96,13 +96,13 @@ S -> S and S | S or S | ( S ) | true | false | ! S
 F.or → or  S → S ε+   S → F.( S.)
 \end{verbatim}
 
-\noindent We can visualize the CFG as either a graph or a matrix:
-
-\begin{figure}[H]
-    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_graph.png}
-    \hspace{20pt}
-    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
-\end{figure}
+%\noindent We can visualize the CFG as either a graph or a matrix:
+%
+%\begin{figure}[H]
+%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_graph.png}
+%    \hspace{20pt}
+%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
+%\end{figure}
 
 \noindent This CFG corresponds to the Dyck-3 language of balanced parentheses. Suppose we have the following string:
 
@@ -128,49 +128,98 @@ true and ( false or and true false
 
 % TODO: https://muug.ca/mirror/ctan/macros/latex/contrib/qtree/qtreenotes.pdf
 \begin{figure}[H]
-\resizebox{.25\textwidth}{!}{
-    \Tree [.\texttt{S} \texttt{true} \texttt{and} [.\texttt{S} !\qsetw{-3cm} \texttt{(} [.\texttt{S} !\qsetw{-3cm} [.\texttt{S} !\qsetw{-3cm} \texttt{false} \texttt{or} \texttt{<S>} ] \texttt{and} \texttt{true} ] \texttt{)} ] ]
+\resizebox{.45\textwidth}{!}{
+  \Tree [.\texttt{S} \texttt{true} \texttt{and} [.\texttt{S} !\qsetw{-3cm} \texttt{(} [.\texttt{S} [.\texttt{S} \texttt{false} \texttt{or} \texttt{<S>} ] \texttt{and} \texttt{true} ] \texttt{)} ] ]
 }
 \end{figure}
 
 \noindent All the above visualizations were generated automatically.
 
+\section{Matrix Theory}
 
-\section{Theory}
+We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and a start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P^*: V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:
 
-It is a well-known fact that every CFG can be reduced into Chomsky Normal Form (CNF). Given a CFG, $\mathcal{G} : \langle V, \Sigma, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
-
-\vspace{-7pt}
 \[
-a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
+\{S\rightarrow XR \mid SS \mid LR,\; L \rightarrow (,\; R \rightarrow ),\; X\rightarrow LS\}
 \]
+
+Given a CFG, $\mathcal{G} : \Sigma, \langle V, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
+
+\begin{align}
+a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
+\end{align}
 
 \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
 
-\vspace{-5}
-\[
+\begin{align}
 \mathbf{M}^* = \begin{pmatrix}
-            \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
-            \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
-            \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
-            \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
-            \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
+  \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
+  \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
+  \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
+  \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
+  \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
 \end{pmatrix}
-\]
+\end{align}
 
-\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
+\noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
 While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+
 \[\begin{tikzcd}
-      V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
-      & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
-      \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
-      & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+  V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+  & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+  \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+  & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
 \end{tikzcd}\]
 
-Full details of this bisimilarity can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who proves its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound. By assuming sparsity, this technique can typically be reduced to linearithmic time, and is currently the best known asymptotic bound for context free language recognition to date.
+We choose a convenient encoding, however it can be improved using a combinatorial number system.
 
-By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. Specifically, the repairs occur along holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$ represent the corresponding parse tree. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in the following example:
+Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound, and Lee~\cite{lee2002fast}, showing that speedups to Boolean matrix multiplication may be translated back into CFG parsing. By assuming sparsity, this technique can typically be reduced to linearithmic time, and is currently the best known asymptotic bound for CFL recognition to date.
+
+By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. This is described in further detail in \S\ref{sec:sat}.
+
+\noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
+
+\begin{align}
+    \mathbf{M}^tV = \begin{pmatrix}
+                        P_1 & P_2 & P_3 & P_4 & P_5 \\
+                        \top & \circ & \circ & \circ & \circ \\
+                        \circ & \top & \circ & \circ & \circ \\
+                        \circ & \circ & \top & \circ & \circ \\
+                        \circ & \circ & \circ & \top & \circ
+    \end{pmatrix}^t
+    \begin{pmatrix}
+        V_1 \\
+        V_2 \\
+        V_3 \\
+        V_4 \\
+        V_5
+    \end{pmatrix}
+\end{align}
+
+Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
+
+\begin{align}
+    \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
+\end{align}
+
+\noindent This sequence has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
+
+
+To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples and do rejection sampling, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$.
+
+For example if we wanted to sample $\Sigma^2 = \{A, B, C\}^2$, we can use the primitive polynomial $x^4 + x^3 +1$
+
+\begin{verbatim}
+   S₀    S₁    S₂    S₃    S₄    S₅    S₆    S₇
+  1000  0100  0010  1001  1100  0110  1011  0101
+  C A   B A   A C   C B         B C         B B
+\end{verbatim}
+
+\pagebreak
+\section{SAT Encoding}\label{sec:sat}
+
+Specifically, the repairs occur along holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$ represent the corresponding parse tree. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in the following example:
 
 \begin{figure}[H]
     \includegraphics[width=2cm]{../figures/parse1.png}
@@ -179,12 +228,72 @@ By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\ma
     \includegraphics[width=2cm]{../figures/parse4.png}
 \end{figure}
 
+We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. TODO: describe procedure.
+
+\section{Error Recovery}
+
+Unlike classical parsers which totally fail on an error or need special support for error-recovery, if the tree cannot parse, we can do error recovery with partial subtrees. The model can explain which trees parse and which do not.
+
+\begin{tidyinput}
+if ( true and false ) then if true then 3
+\end{tidyinput}
+
+\begin{verbatim}
+ Parseable subtrees (4 leaves / 2 branches):
+\end{verbatim}
+\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\begin{verbatim}
+    └── if [0]                └── then [6]
+\end{verbatim}
+\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\begin{verbatim}
+    └── else [13]             └── false [14]
+\end{verbatim}
+\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\begin{verbatim}
+    └── B [1..5]              └── I [7..12]
+        ├── ( [1]                 ├── if [7]
+        ├── B [2..4]              ├── true [8]
+        │   ├── true [2]          ├── then [9]
+        │   ├── and [3]           ├── 3 [10]
+        │   └── false [4]         ├── else [11]
+        └── ) [5]                 └── 2 [12]
+\end{verbatim}
+
+These correspond to peaks on the UT matrix ridge. We traverse the peaks according to their orthogonal elevation from the diagonal, from highest to lowest.
+
+\section{Hollowing Procedure}
+
+So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$. But where do we put the holes? For a given number of holes, k, there are roughly ${n \choose k}$ possible repairs. In practice the cardinality of this space can be very large. In order to sample without replacement from this space, we generate the repairs in the following order.
+
+\begin{enumerate}
+  \item We remove parsable substrings from hollowing.
+  \item Lazily enumerate all possible hole configurations of   increasing length.
+  \item For each size, sample uniformly without replacement using a   Galois field.
+  \item Hole configurations are prioritized by distance to caret   location.
+  \item Hole configurations are prioritized by distance to fishy   locations.
+  \item We feed the hole configurations to the incremental SAT solver.
+  \item The first dozen results are decoded and displayed to the user in order of increasing Levenshtein distance.
+\end{enumerate}
+
+The entire procedure is lazy and intermediate results are cached to avoid recomputation. Incoming keystrokes interrupt the solver.
+
 \section{Implementation}
 
 Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver.
 
     Here is how we implemented it (and so can you)~\cite{valiant1975general}.
 \section{Examples}
-    There are examples too.
+There are some more examples too.
+
+The line between parsing and computation is blurry.
+
+\section{Conclusion}
+
+Our approach to parsing has many advantages...
+
+\section{Acknowledgements}
+The first author would like to thank his co-advisor Xujie Si for providing many helpful suggestions during the development of this project, including the optimized fixpoint, test cases, and tree denomalization procedure, and collaborator Nghi Bui for early feedback.
+
 \bibliography{../bib/acmart}
 \end{document}
