@@ -152,20 +152,20 @@ a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \i
 \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,
 
 \begin{align}
-\mathbf{M}^* = \begin{pmatrix}
-  \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
-  \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
-  \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
-  \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
-  \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
-\end{pmatrix}
+\mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+   \varnothing & \{V\}_{\sigma_1} & \Cdots                  &                            & \mathcal{T} \\
+   \Vdots      & \Ddots           & \Ddots[shorten=-0.1cm]  & \phantom{\{V\}_{\sigma_2}} & \Vdots \\
+               &                  &                         &                            & \\
+               &                  &                         &                            & \{V\}_{\sigma_n} \\
+   \varnothing & \Cdots           &                         &                            & \varnothing
+\end{pNiceMatrix}
 \end{align}
 
 \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
 While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
 
-\[\begin{tikzcd}
+\[\begin{tikzcd}[row sep=huge, column sep=huge]
   V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
   & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
   \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
@@ -181,29 +181,31 @@ By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\ma
 \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
 
 \begin{align}
-    \mathbf{M}^tV = \begin{pmatrix}
-                        P_1 & P_2 & P_3 & P_4 & P_5 \\
-                        \top & \circ & \circ & \circ & \circ \\
-                        \circ & \top & \circ & \circ & \circ \\
-                        \circ & \circ & \top & \circ & \circ \\
-                        \circ & \circ & \circ & \top & \circ
-    \end{pmatrix}^t
-    \begin{pmatrix}
+    \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+        P_1    & \Cdots &        &       &        & P_n \\
+        \top   & \circ  & \Cdots &       &        & \circ \\
+        \circ  & \Ddots & \Ddots &       &        & \Vdots \\
+        \Vdots & \Ddots &        &       &        & \\
+               &        &        &       &        & \\
+        \circ  & \Cdots &        & \circ & \top   & \circ
+    \end{pNiceMatrix}^t
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
         V_1 \\
-        V_2 \\
-        V_3 \\
-        V_4 \\
-        V_5
-    \end{pmatrix}
+        \Vdots \\
+        \\
+        \\
+        \\
+       V_n
+    \end{pNiceMatrix}
 \end{align}
 
-Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
+Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
 
 \begin{align}
     \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
 \end{align}
 
-\noindent This sequence has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
+\noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
 
 
 To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples and do rejection sampling, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$.
@@ -262,7 +264,45 @@ if ( true and false ) then if true then 3
 
 These correspond to peaks on the UT matrix ridge. We traverse the peaks according to their orthogonal elevation from the diagonal, from highest to lowest.
 
-\section{Hollowing Procedure}
+\newcommand\ddd{\Ddots}
+\newcommand\vdd{\Vdots}
+\newcommand\cdd{\Cdots}
+\newcommand\lds{\ldots}
+\newcommand\vno{\varnothing}
+\newcommand{\ts}[1]{\textsuperscript{#1}}
+\newcommand\non{1\ts{st}}
+\newcommand\ntw{2\ts{nd}}
+\newcommand\nth{3\ts{rd}}
+\newcommand\nfo{4\ts{th}}
+\newcommand\nfi{5\ts{th}}
+\newcommand\nsi{6\ts{th}}
+\newcommand\nse{7\ts{th}}
+\newcommand\pcd{\cdot}
+\newcommand\ppp{\phantom{\nse}}
+
+\begin{figure}
+\[
+  \setcounter{MaxMatrixCols}{30}
+  \begin{NiceMatrix}
+                 & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \ppp & \ppp \\
+                 &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+\{V\}_{\sigma_1} & \cdd &      & A    &      &      &      &      &      & \ppp \\
+                 & \ddd &      & \vdd &      &      &      &      &      & \ppp \\
+                 &      &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                 &      &      &      &      &      & \vdd &      &      & \ppp \\
+                 &      &      &      &      &      & \pcd & \cdd &      & C    \\
+                 &      &      &      &      &      &      &      &      & \vdd \\
+                 &      &      &      &      &      &      &      &      & \\
+                 &      &      &      &      &      &      &      &      & \\
+                 &      &      &      &      &      &      &      &      & \\
+                 &      &      &      &      &      &      &      &      &                \\
+                 &      &      &      &      &      &      &      &      & \{V\}_{\sigma_n}
+  \end{NiceMatrix}
+\]
+    \caption{Mountains in the ridge structure correspond to parseable substrings. We order them by height, and discard any subtree which falls totally inside another. This example would return three branches, rooted at nonterminals $C, B, A$.}
+\end{figure}
+
+\pagebreak\section{Hollowing Procedure}
 
 So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$. But where do we put the holes? For a given number of holes, k, there are roughly ${n \choose k}$ possible repairs. In practice the cardinality of this space can be very large. In order to sample without replacement from this space, we generate the repairs in the following order.
 
