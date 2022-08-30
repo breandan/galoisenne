@@ -178,6 +178,8 @@ Full details of the bisimilarity between parsing and matrix multiplication can b
 
 By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse trees. This is described in further detail in \S\ref{sec:sat}.
 
+\subsection{Sampling k-combinations without replacement}
+
 \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
 
 \begin{align}
@@ -243,15 +245,15 @@ if ( true and false ) then if true then 3
 \begin{verbatim}
  Parseable subtrees (4 leaves / 2 branches):
 \end{verbatim}
-\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\hspace{0.63cm}\emoji{herb}\hspace{4.02cm}\emoji{herb}\vspace{-17pt}
 \begin{verbatim}
     └── if [0]                └── then [6]
 \end{verbatim}
-\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\hspace{0.63cm}\emoji{herb}\hspace{4.02cm}\emoji{herb}\vspace{-17pt}
 \begin{verbatim}
     └── else [13]             └── false [14]
 \end{verbatim}
-\hspace{0.6cm}\emoji{herb}\hspace{4cm}\emoji{herb}
+\hspace{0.63cm}\emoji{herb}\hspace{4.02cm}\emoji{herb}\vspace{-17pt}
 \begin{verbatim}
     └── B [1..5]              └── I [7..12]
         ├── ( [1]                 ├── if [7]
@@ -287,19 +289,19 @@ These correspond to peaks on the UT matrix ridge. We traverse the peaks accordin
                  & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \ppp & \ppp \\
                  &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
 \{V\}_{\sigma_1} & \cdd &      & A    &      &      &      &      &      & \ppp \\
-                 & \ddd &      & \vdd &      &      &      &      &      & \ppp \\
-                 &      &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-                 &      &      &      &      &      & \vdd &      &      & \ppp \\
+\varnothing      & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+\vdd             & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                 &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
                  &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                 &      &      &      &      &      &      &      &      & \vdd \\
+                 &      &      &      &      &      &      &      & T_C & \vdd \\
+                 &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
                  &      &      &      &      &      &      &      &      & \\
                  &      &      &      &      &      &      &      &      & \\
-                 &      &      &      &      &      &      &      &      & \\
-                 &      &      &      &      &      &      &      &      &                \\
-                 &      &      &      &      &      &      &      &      & \{V\}_{\sigma_n}
+                 &      &      &      &      &      &      &      & \ppp & \{V\}_{\sigma_n} \\
+\varnothing      & \cdd &      &      &      &      &      &      & \varnothing &
   \end{NiceMatrix}
 \]
-    \caption{Mountains in the ridge structure correspond to parseable substrings. We order them by height, and discard any subtree which falls totally inside another. This example would return three branches, rooted at nonterminals $C, B, A$.}
+    \caption{Mountains in the ridge structure correspond to parseable substrings. We iterate over upper diagonals in decreasing altitude and discard any subtree that falls totally within the shadow of another. The example shown above has three branches, rooted at nonterminals $C, B, A$.}
 \end{figure}
 
 \pagebreak\section{Hollowing Procedure}
