@@ -104,7 +104,7 @@ F.or → or  S → S ε+   S → F.( S.)
 %    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
 %\end{figure}
 
-\noindent If provided with a string containing a number of holes, our tool will return a dozen completions in a few milliseconds:
+\noindent Given a string containing holes such as the one below, Tidyparse will return several completions in a few milliseconds:
 
 \begin{tidyinput}
 true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _
@@ -116,13 +116,7 @@ true or ! ( false and ( <S> ) or ! <S> ) or <S>
 true or ! ( false and ( <S> ) and ! <S> ) or <S>
 true or ! ( false and ( <S> ) and ! <S> ) and <S>
 true and ( false and ( <S> ) and ! ! <S> ) and <S>
-true or ! ( false or ( ! <S> ) or ! <S> ) or <S>
-true or ! ( false or ( <S> ) or ! ! <S> ) and <S>
-true or ! ( false and ( <S> ) or ! ! <S> ) and <S>
-true or ! ( false and ( ! <S> ) and ! <S> ) and <S>
-true and ! ( false and ( <S> ) and ! ! <S> ) and <S>
-true or ! ( false or ( ! <S> and ! ! <S> ) or <S> )
-true or ( ( false and ( <S> ) and ! ! <S> ) or <S> )
+...
 \end{tidyoutput}
 
 \noindent Similarly, if provided with a string containing various errors, Tidyparse will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
@@ -135,11 +129,7 @@ true and ( false or and true false
 1.) true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*)
 2.) true and ( false or (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
 3.) true and ( false or (*@\hlorange{(}@*) true (*@\hlorange{)}@*) (*@\hlgreen{)}@*)
-4.) true and ( false or (*@\hlorange{!}@*) (*@\hlorange{!}@*) false (*@\hlgreen{)}@*)
-5.) true and ( false or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) false (*@\hlgreen{)}@*)
-6.) true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
-7.) true and ( false or (*@\hlorange{!}@*) (*@\hlorange{(}@*) false (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
-8.) true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*) (*@\hlgreen{or}@*) (*@\hlgreen{<S>}@*)
+...
 9.) true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
 \end{tidyoutput}
 
@@ -177,12 +167,13 @@ a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \i
                &                  &                         &                            & \\
                &                  &                         &                            & \{V\}_{\sigma_n} \\
    \varnothing & \Cdots           &                         &                            & \varnothing
-\end{pNiceMatrix}
+\end{pNiceMatrix}\label{eq:fpm}
 \end{align}
 
 \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
-While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor. We do so simply by noting that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+%While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor.
+Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
 
 \[\begin{tikzcd}[row sep=huge, column sep=huge]
   V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
@@ -191,13 +182,13 @@ While theoretically elegant, this decision procedure can be optimized by lowerin
   & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
 \end{tikzcd}\]
 
-\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT. By allowing the matrix $\mathbf{M}^0_{r, c}$ to contain bitvector variables $\mathcal{B}^{|V|}$ representing holes in the string and associated nonterminals, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. This is described further in \S\ref{sec:sat}.
+%\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound, and Lee~\cite{lee2002fast}, showing that speedups to Boolean matrix multiplication may be translated back into CFG parsing. By assuming sparsity, this technique can typically be reduced to linearithmic time, and is believed to be the most efficient procedure for CFL recognition to date.
+\noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound, and Lee~\cite{lee2002fast}, showing that speedups to Boolean matrix multiplication are realizable by CFL parsers. %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
 
 \subsection{Sampling k-combinations without replacement}
 
-\noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix with the structure $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
+\noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose struture is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.\vspace{-10pt}
 
 \begin{align}
     \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -215,43 +206,37 @@ Full details of the bisimilarity between parsing and matrix multiplication can b
         \\
         \\
        V_n
-    \end{pNiceMatrix}
+    \end{pNiceMatrix}\label{eq:lfsr}\\
+    \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}\label{eq:ergo}
 \end{align}
 
-Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
+\noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
 
-\begin{align}
-    \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
-\end{align}
-
-\noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
+For example, in order to sample from $\Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:\vspace{-10pt}
 
 
-To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples and do rejection sampling, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
+\[\begin{array}{ccccccccc}{
+  \mathbf{S}_0  &  \mathbf{S}_1  &  \mathbf{S}_2 &  \mathbf{S}_3  &  \mathbf{S}_4  &  \mathbf{S}_5  &  \mathbf{S}_6  &  \mathbf{S}_7  \\
+  1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
+  $C\:A$  & $B\:A$  & $A\:C$  & $C\:B$  &      & $B\:C$  &      & $B\:B$\\
+}\]
 
-For example, if we wanted to sample $\Sigma^2 = \{A, B, C\}^2$, we can use the primitive polynomial $x^4 + x^3 +1$
+\noindent We will use this technique to lazily sample from the space of hole configurations without replacement as described in \S\ref{sec:holes}.
 
-\begin{verbatim}
-   S₀    S₁    S₂    S₃    S₄    S₅    S₆    S₇
-  1000  0100  0010  1001  1100  0110  1011  0101
-  C A   B A   A C   C B         B C         B B
-\end{verbatim}
+\subsection{SAT Encoding}\label{sec:sat}
 
-We will use this technique to lazily sample k-combinations without replacement as described in \S\ref{sec:error}.
+By allowing the matrix $\mathbf{M}$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, whose parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$.
 
-\pagebreak
-\section{SAT Encoding}\label{sec:sat}
+%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 
-Specifically, the repairs occur along holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$ represent the corresponding parse forests. If no solution exists, then the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of the parsable subtree. We illustrate this fact in \S\ref{sec:error}:
-
-\begin{figure}[H]
-    \includegraphics[width=2cm]{../figures/parse1.png}
-    \includegraphics[width=2cm]{../figures/parse2.png}
-    \includegraphics[width=2cm]{../figures/parse3.png}
-    \includegraphics[width=2cm]{../figures/parse4.png}
-\end{figure}
-
-We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shadow regions are bitvector literals and light regions correspond to bitvector variables.
+%We illustrate this fact in \S\ref{sec:error}:
+%
+%\begin{figure}[H]
+%    \includegraphics[width=2cm]{../figures/parse1.png}
+%    \includegraphics[width=2cm]{../figures/parse2.png}
+%    \includegraphics[width=2cm]{../figures/parse3.png}
+%    \includegraphics[width=2cm]{../figures/parse4.png}
+%\end{figure}
 
 \newcommand\ddd{\Ddots}
 \newcommand\vdd{\Vdots}
@@ -285,27 +270,55 @@ We precompute the shadow of fully-resolved substrings before feeding it to the S
     \vno & \cdd        &                    &                   &                        &      & \vno
   \end{pNiceArray}
 \]
-
-\caption{SAT tensor representing the string \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ in which shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.}
 \end{figure}
 
+\noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-\pagebreak\section{Error Recovery}\label{sec:error}
+\subsection{Deletion, Substitution, and Insertion}\label{sec:dsi}
 
-Unlike classical parsers which totally fail on an error or need special support for error-recovery, if the tree cannot parse, we can do error recovery with partial subtrees. These subtrees provide a natural debugging environment to aid the repair process.
+Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:\vspace{5pt}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
+    \RightLabel{$\varepsilon\textsc{-dup}$}
+    \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\Gamma \vdash (A \rightarrow B) \in P$}
+    \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
+
+\vspace{5pt}
+\noindent To generate the sketch templates, we substitute two holes at each index to be replaced, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, and invoke the SAT solver. Five outcomes are then possible:
+
+\begin{align}
+&\sigma_{1}\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_{1, 2} = \varepsilon\label{eq:del}\\
+&\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 \neq \sigma_i, \gamma_2 = \varepsilon\label{eq:sub1}\\
+&\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 = \varepsilon, \gamma_2 \neq \sigma_i\label{eq:sub2}\\
+&\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlorange{$\gamma_1$}\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 = \sigma_i, \gamma_2 \neq \varepsilon\label{eq:ins1}\\
+&\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlgreen{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 \notin \{\varepsilon, \sigma_i\}, \gamma_2 = \sigma_i\label{eq:ins2}
+\end{align}
+
+Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
+
+\section{Error Recovery}\label{sec:error}
+
+Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
 
 \begin{tidyinput}
 true and true ! and false or true ! true and false
 \end{tidyinput}
 
 \begin{verbatim}
- Parseable subtrees (3 leaves / 2 branches)
+ Parseable subtrees (3 leaves / 2 branches):
 \end{verbatim}
-\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-14pt}
+\noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
     └── ! [3]   └── and [4]   └── or [6]
 \end{verbatim}
-\hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-14pt}
+\hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
     └── S [0..2]          └── S [8..11]
         ├── true [0]          ├── S [8..9]
@@ -315,7 +328,7 @@ true and true ! and false or true ! true and false
                               └── false [11]
 \end{verbatim}
 
-\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. We traverse the peaks by elevation from highest to lowest to collect the partial AST branches.
+\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
 
 \begin{figure}[H]
 \[
@@ -328,69 +341,66 @@ true and true ! and false or true ! true and false
 \vdd             & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
                  &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
                  &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                 &      &      &      &      &      &      &      & T_C & \vdd \\
+                 &      &      &      &      &      &      &      & T_C  & \vdd \\
                  &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
                  &      &      &      &      &      &      &      &      & \\
                  &      &      &      &      &      &      &      &      & \\
                  &      &      &      &      &      &      &      & \ppp & \{V\}_{\sigma_n} \\
 \varnothing      & \cdd &      &      &      &      &      &      & \varnothing &
   \end{NiceMatrix}
-\]
-    \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial AST branches. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}
+\]\caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
 \end{figure}
 
-\pagebreak\section{Realtime Error Correction}
+\pagebreak\section{Realtime Error Correction}\label{sec:holes}
 
-So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$. But where do we put the holes? For a given number of holes, k, there are roughly ${n \choose k}$ possible repairs. In practice the cardinality of this space can be very large. In order to provide suggestions in realtime, we generate the repairs according to the following procedure:
+So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$. But where do we put the holes? For a given number of holes, k, there are roughly ${n \choose k}$ possible repairs. In practice the cardinality of this space can be very large. To provide real-time suggestions, we generate the repairs according to a nine-step procedure:
 
 \begin{enumerate}
-  \item Fetch the most recent grammar and string from the editor.
-  \item We exclude parsable substrings from hollowing.
-  \item Lazily enumerate all possible hole configurations of increasing length.
-  \item For each size, sample uniformly without replacement using a Galois field.
-  \item Hole configurations are prioritized by distance to caret location.
-  \item Hole configurations are prioritized by distance to fishy locations.
-  \item Hole configurations are translated to sketch templates using the procedure described in~\S\ref{sec:dsi}.
-  \item We feed the sketch templates to the incremental SAT solver.
-  \item The first dozen results are decoded and displayed to the user in order of increasing Levenshtein distance.
+  \item Fetch the most recent CFG and string from the editor.
+  \item Exclude parsable substrings from hollowing.
+  \item Enumerate hole configurations of increasing length.
+  \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
+  \item Prioritize HCs by distance to caret location.
+  \item Prioritize HCs by distance to suspicious locations.
+  \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
+  \item Feed sketch templates to incremental SAT solver.
+  \item Decode and rerank models by Levenshtein distance.
 \end{enumerate}
 
-The entire procedure is lazy and intermediate results are cached to avoid recomputation. Incoming keystrokes interrupt the solver and reset the process back to step 1.
+The entire procedure is lazy and intermediate results are cached to avoid recomputation. As soon as a new repair is discovered, it is rendered to the screen. Incoming keystrokes interrupt the sequence and reset the process back to Step 1.
 
-\subsection{Deletion, Substitution, Insertion}\label{sec:dsi}
-
-Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:
-
-\begin{prooftree}
-    \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
-    \RightLabel{$\varepsilon\textsc{-dup}$}
-    \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
-\end{prooftree}
-\begin{prooftree}
-    \AxiomC{$\Gamma \vdash (A \rightarrow B) \in P$}
-    \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-\end{prooftree}
-
-To generate the sketch templates, we substitute two holes at each index to be replaced, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, letting $\sigma' \leftarrow H(\sigma, i)$ and invoke $P(\mathcal{G}, H(\sigma, i))$. Five outcomes are then possible:
-
-\begin{align}
-&\sigma_{1}\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_{1, 2} = \varepsilon\label{eq:del}\\
-&\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 \neq \sigma_i, \gamma_2 = \varepsilon\label{eq:sub1}\\
-&\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 = \varepsilon, \gamma_2 \neq \sigma_i\label{eq:sub2}\\
-&\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlorange{$\gamma_1$}\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 = \sigma_i, \gamma_2 \neq \varepsilon\label{eq:ins1}\\
-&\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlgreen{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 \notin \{\varepsilon, \sigma_i\}, \gamma_2 = \sigma_i\label{eq:ins2}
-\end{align}
-
-Eq.~(\ref{eq:del}) corresponds to deletion, eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. The procedure is repeated for all indices in the replacement set. The solutions returned by the solver will be strictly equivalent to handling each edit operation separately.
-
-\pagebreak
 \section{Implementation}
 
 Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver.
 
     Here is how we implemented it (and so can you)~\cite{valiant1975general}.
 \section{Examples}
+
+Suppose we have the slightly more complicated grammar:
+
+\begin{tidyinput}
+S -> X
+X -> A | V | ( X , X ) | X X | ( X )
+A -> FUN | F | LI | M | L
+FUN -> fun V (*@`@*)->(*@`@*) X
+F -> if X then X else X
+M -> match V with Branch
+Branch -> (*@`@*)|(*@`@*) X -> X (*@`@*)|(*@`@*) Branch Branch
+L -> let V = X | let rec V = X
+LI -> L in X
+
+V -> Vexp | ( Vexp ) | List | Vexp Vexp
+Vexp -> VarName | FunName | Vexp VO Vexp | B
+Vexp -> ( VarName , VarName ) | Vexp Vexp | I
+List -> [] | V :: V
+VarName -> a | b | c | d | e | ... | z
+FunName -> foldright | map | filter
+VO ->  + | - | * | / | >
+VO -> = | < | (*@`@*)||(*@`@*) | &&
+I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+B ->  true | false
+\end{tidyinput}
+
 There are some more examples too.
 
 The line between parsing and computation is blurry.

@@ -90,10 +90,12 @@
 \lstdefinelanguage{kotlin}{
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, @Repeat, return@},
+    emph={|, ->},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
-    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, val, var, vararg, when, where, while, tailrec, reified},
+    keywords={\|, ->},
+    otherkeywords={|,->},
+    morekeywords={|,->},
     keywordstyle={\color{blue}\bfseries},
     morecomment=[s]{/*}{*/},
     morestring=[b]",
@@ -197,9 +199,6 @@
         inputencoding=utf8,
         escapeinside={(*@}{@*)},
         #1
-    },
-    underlay unbroken and first={%
-        \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
     }
 }
 
@@ -222,3 +221,4 @@
 \usepackage{nicematrix}
 \usepackage{graphicx}
 \usepackage{ulem}
+\usepackage{upquote}
