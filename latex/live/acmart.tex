@@ -360,8 +360,7 @@ So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$
   \item Exclude parsable substrings from hollowing.
   \item Enumerate hole configurations of increasing length.
   \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
-  \item Prioritize HCs by distance to caret location.
-  \item Prioritize HCs by distance to suspicious locations.
+  \item Prioritize HCs first by distance to caret location, then by Earthmover's distance to set of suspicious indices.
   \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
   \item Feed sketch templates to incremental SAT solver.
   \item Decode and rerank models by Levenshtein distance.
@@ -369,25 +368,42 @@ So we have a procedure $P: \mathcal{G} \times \Sigma^d \rightarrow \{\Sigma^d\}$
 
 The entire procedure is lazy and intermediate results are cached to avoid recomputation. As soon as a new repair is discovered, it is rendered to the screen. Incoming keystrokes interrupt the sequence and reset the process back to Step 1.
 
-\section{Implementation}
+\section{Tree Denormalization Procedure}
 
-Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver.
+%fun denormalize(): Tree {
+%    fun Tree.removeSynthetic(
+%    refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
+%    isSynthetic: (Tree) -> Boolean = { 2 <= root.split('.').size }
+%    ): List<Tree> =
+%    if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
+%    else if (isSynthetic(this)) refactoredChildren
+%    else listOf(Tree(root, children = refactoredChildren.toTypedArray(), span = span))
+%
+%    return removeSynthetic().first()
+%}
+% https://www.ling.upenn.edu/advice/latex/qtree/qtreenotes.pdf
+% https://cpb-us-w2.wpmucdn.com/campuspress.yale.edu/dist/0/119/files/2014/12/sec-10.17-drawing-arrows-2ek9r2b.pdf
 
-    Here is how we implemented it (and so can you)~\cite{valiant1975general}.
-\section{Examples}
+The matrix parser produces a binary tree corresponding to the normalized grammar. To recover the original parse tree, we recursively remove synthetic nodes.
+
+\begin{figure}[H]
+\resizebox{.45\textwidth}{!}{
+  \Tree [.\texttt{S} \texttt{true} \texttt{and} [.\texttt{S} !\qsetw{-3cm} \texttt{(} [.\texttt{S} [.\texttt{S} \texttt{false} \texttt{or} \texttt{<S>} ] \texttt{and} \texttt{true} ] \texttt{)} ] ]
+}
+\end{figure}
+
+\pagebreak
+\section{Example Workflow}
 
 Suppose we have the slightly more complicated grammar:
 
 \begin{tidyinput}
 S -> X
 X -> A | V | ( X , X ) | X X | ( X )
-A -> FUN | F | LI | M | L
+A -> FUN | F | L | L in X
 FUN -> fun V (*@`@*)->(*@`@*) X
 F -> if X then X else X
-M -> match V with Branch
-Branch -> (*@`@*)|(*@`@*) X -> X (*@`@*)|(*@`@*) Branch Branch
 L -> let V = X | let rec V = X
-LI -> L in X
 
 V -> Vexp | ( Vexp ) | List | Vexp Vexp
 Vexp -> VarName | FunName | Vexp VO Vexp | B
@@ -401,13 +417,37 @@ I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 B ->  true | false
 \end{tidyinput}
 
+\subsection{Interactive Nonterminal Expansion}
+
+Tidyparse can be used to interactively build up an expression by targeting a nonterminal to expand and asking for a completion.
+
+\begin{tidyinput}
+if <Vexp> X then <Vexp> else <Vexp>
+\end{tidyinput}
+Press Ctrl+Space and the tool will output the following suggestions, from which the users can expand:
+
+\begin{tidyoutput}
+if map X then <Vexp> else <Vexp>
+if true X then <Vexp> else <Vexp>
+if false X then <Vexp> else <Vexp>
+if filter X then <Vexp> else <Vexp>
+if uncurry X then <Vexp> else <Vexp>
+if foldright X then <Vexp> else <Vexp>
+if <Vexp> X then <Vexp> else <Vexp>
+if <Vexp> <B> X then <Vexp> else <Vexp>
+\end{tidyoutput}
+
 There are some more examples too.
 
 The line between parsing and computation is blurry.
 
+\section{Shortcomings}
+
+The synthesis results are not very natural. This could be improved with a neural guided search procedure.
+
 \section{Conclusion}
 
-Our approach to parsing has many advantages.
+Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver. Our approach to parsing has many advantages.
 
 \begin{itemize}
 \item Error correction.
@@ -421,7 +461,6 @@ Our approach to parsing has many advantages.
 \end{itemize}
 
 \section{Acknowledgements}
-The first author would like to thank his co-advisor Xujie Si for providing many helpful suggestions during the development of this project, including the optimized fixpoint, test cases, and tree denomalization procedure, and collaborator Nghi Bui for early feedback on the plugin.
-
+The first author would like to thank his co-advisor Xujie Si for providing many helpful suggestions during the development of this project, including the optimized fixpoint, test cases, and tree denomalization procedure, Zhixin Xiong for contributing the OCaml CFG and collaborator Nghi Bui for early feedback on the plugin.
 \bibliography{../bib/acmart}
 \end{document}
