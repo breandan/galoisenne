@@ -12,6 +12,7 @@
 
 \DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
 \usepackage{cancel}
+\newcommand\ccancel[2][red]{\renewcommand\CancelColor{\color{#1}}\cancel{#2}}
 \newcommand{\nDownarrow}{\ensuremath{\text{ }\cancel{\Downarrow}\text{ }}}
 \usepackage{centernot}
 
@@ -40,6 +41,7 @@
 \newif\ifshowcellnumber
 \showcellnumbertrue
 
+\usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{algorithmicx}
 \usepackage{sourcecodepro}
@@ -222,3 +224,4 @@
 \usepackage{graphicx}
 \usepackage{ulem}
 \usepackage{upquote}
+\tikzstyle{every picture}+=[remember picture]
