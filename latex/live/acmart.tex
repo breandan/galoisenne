@@ -138,19 +138,19 @@ true and ( false or and true false
 
 \section{Matrix Theory}
 
-We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P^*: V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:\vspace{-10pt}
+We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P': V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:\vspace{-10pt}
 
 \[
 \{S\rightarrow XR \mid SS \mid LR,\; L \rightarrow (,\; R \rightarrow ),\; X\rightarrow LS\}
 \]
 
-\noindent Given a CFG, $\mathcal{G} : \Sigma, \langle V, P, S\rangle$ in CNF, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+\noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R_{\mathcal{G}'}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
 \begin{align}
 a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
 \end{align}
 
-\noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}, \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,\vspace{-10pt}
+\noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,\vspace{-10pt}
 
 \begin{align}
 \mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -176,11 +176,11 @@ Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has card
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-\noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound, and Lee~\cite{lee2002fast}, showing that speedups to Boolean matrix multiplication are realizable by CFL parsers. %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
+\noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
 
 \subsection{Sampling k-combinations without replacement}
 
-\noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose struture is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.\vspace{-10pt}
+\noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.\vspace{-10pt}
 
 \begin{align}
     \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -217,7 +217,7 @@ Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has card
 
 \subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
-By allowing the matrix $\mathbf{M}^*$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, whose parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$.
+By allowing the matrix $\mathbf{M}^*$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$.
 
 %We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 
@@ -283,7 +283,7 @@ Deletion, substitution and insertion can be simulated by first adding a left- an
 \end{prooftree}
 
 \vspace{5pt}
-\noindent To generate the sketch templates, we substitute two holes at each index to be replaced, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, and invoke the SAT solver. Five outcomes are then possible:
+\noindent To generate the sketch templates, we substitute two holes at an index-to-be-repaired, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, then invoke the SAT solver. Five outcomes are then possible:
 
 \begin{align}
 &\sigma_{1}\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_{1, 2} = \varepsilon\label{eq:del}\\
@@ -385,11 +385,11 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
 \end{figure}\vspace{-10pt}
 \begin{algorithm}
-    \caption{Tree denormalization procedure.}\label{alg:cap}
+    \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
     \begin{algorithmic}
         \Procedure{Denormalize}{\texttt{t: Tree}}
             \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-            \If{$\texttt{t.root} \text{ is a synthetic } V$}
+            \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
                 \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
             \Else\Comment{Graft the denormalized children on root.}
                 \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
@@ -398,16 +398,16 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
     \end{algorithmic}
 \end{algorithm}
 
-\noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent using Algorithm~\ref{alg:cap}, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
+\noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
 \section{Realtime Error Correction}\label{sec:holes}
 
-Now that we have a method, $\mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given a string, $\Sigma^n$, where do we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible HCs, each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively. To provide real-time assistance, we generate repairs lazily, according to an eight-step procedure:
+Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given an input string, $\Sigma^n$, where should we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
 
 \begin{enumerate}
   \item Fetch the most recent CFG and string from the editor.
   \item Exclude parsable substrings from hollowing.
-  \item Enumerate hole configurations of increasing length.
+  \item Lazily enumerate all HCs of increasing length.
   \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
   \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
   \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
@@ -415,12 +415,11 @@ Now that we have a method, $\mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt
   \item Decode and rerank models by Levenshtein distance.
 \end{enumerate}
 
-\noindent $^*$ E.g., supplied by edit history or a neural language model. As soon as a new repair is discovered by the SAT solver, it is immediately rendered to the screen. Incoming keystrokes interrupt the sequence and reset the process back to Step 1.
+\noindent $^*$ These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.
 
-\pagebreak
 \section{Example Workflow}
 
-Suppose we have the slightly more complicated grammar:
+Tidyparse requires a grammar -- this can be either provided by the user or ingested from a BNF-like specification. Suppose we have the following slightly more complicated grammar, which begins to resemble a more realistic scenario:
 
 \begin{tidyinput}
 S -> X
@@ -444,12 +443,13 @@ B ->  true | false
 
 \subsection{Interactive Nonterminal Expansion}
 
-Tidyparse can be used to interactively build up an expression by targeting a nonterminal to expand and asking for a completion.
+Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand,
 
 \begin{tidyinput}
-if <Vexp> X then <Vexp> else <Vexp>
+if <(*@\caret{V}@*)exp> X then <Vexp> else <Vexp>
 \end{tidyinput}
-Press Ctrl+Space and the tool will output the following suggestions, from which the users can expand:
+
+\noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
 
 \begin{tidyoutput}
 if map X then <Vexp> else <Vexp>
@@ -458,7 +458,6 @@ if false X then <Vexp> else <Vexp>
 if filter X then <Vexp> else <Vexp>
 if uncurry X then <Vexp> else <Vexp>
 if foldright X then <Vexp> else <Vexp>
-if <Vexp> X then <Vexp> else <Vexp>
 if <Vexp> <B> X then <Vexp> else <Vexp>
 \end{tidyoutput}
 
@@ -466,13 +465,17 @@ There are some more examples too.
 
 The line between parsing and computation is blurry.
 
-\section{Shortcomings}
+\section{Latency Benchmark}
 
-The synthesis results are not very natural. This could be improved with a neural guided search procedure.
+Time to synthesize a dozen of strings of various lengths.
+
+\section{Known Shortcomings}
+
+Tidyparse in its current form has a number of shortcomings. The order in which the synthesis results are returned are not very natural. This could be improved with a neural guided search procedure.
 
 \section{Conclusion}
 
-Tidyparse accepts a CFG and a string to parse and returns a set of candidate strings, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for the fixpoint matrix using an incremental SAT solver. Our approach to parsing has many advantages.
+Tidyparse accepts a CFG and a string to parse. If the string is valid, it returns the parse forest, otherwise, it returns a set of repairs, ordered by their Levenshtein edit distance to the original string. Our method lowers the CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for its fixedpoints using an incremental SAT solver. This approach to parsing has many advantages. Foremost among them, it allows the string to contain holes, containing either concrete tokens or nonterminals, which can be expanded by the user or a neural-guided search procedure.
 
 \begin{itemize}
 \item Error correction.
