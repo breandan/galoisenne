@@ -16,7 +16,8 @@
 \newcommand{\nDownarrow}{\ensuremath{\text{ }\cancel{\Downarrow}\text{ }}}
 \usepackage{centernot}
 
-\usepackage{pgfplots}
+\usepackage{pgfplots, pgfplotstable}
+\pgfplotsset{compat=1.7}
 \usepgfplotslibrary{fillbetween}
 \usetikzlibrary{patterns}
 \pgfmathdeclarefunction{gauss}{2}{\pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}}
@@ -92,10 +93,10 @@
 \lstdefinelanguage{kotlin}{
     comment=[l]{//},
     commentstyle={\color{gray}\ttfamily},
-    emph={|, ->},
+    emph={|, ->, ---},
     emphstyle={\color{red}},
     identifierstyle=\color{black},
-    keywords={\|, ->},
+    keywords={\|, ->, ---},
     otherkeywords={|,->},
     morekeywords={|,->},
     keywordstyle={\color{blue}\bfseries},
@@ -228,3 +229,5 @@
 \usepackage{upquote}
 \tikzstyle{every picture}+=[remember picture]
 \usepackage{menukeys}
+\pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
+\pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings

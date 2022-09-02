@@ -5,6 +5,10 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.abs
 
+fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
+  map { it.span }.filter { 3 < it.last - it.first }
+    .flatMap { (it.first + 1) until it.last }.toSet()
+
 /*
  * Generates all single character replacements and insertions.
  * Original: www
