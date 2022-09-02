@@ -32,6 +32,7 @@
 \usepackage{dsfont}
 \usepackage{stmaryrd}
 \usepackage{colortbl}
+\usepackage{hyperref}
 
 %% Bibliography style
 \bibliographystyle{acmart}
@@ -44,7 +45,7 @@
 \begin{abstract}
 Tidyparse is a program synthesizer that performs real-time error correction for context free languages.
 Given both an arbitrary context free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs while the author is typing, ranked by Levenshtein edit distance.
- Repairs are guaranteed to be sound, complete, syntactically valid and minimal.
+ Repairs are guaranteed to be complete, grammatically consistent and minimal.
  Tidyparse is the first system of its kind offering these guarantees in a real-time editor. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes. We have released an IDE plugin demonsrating the system described.\footnote{https://plugins.jetbrains.com/plugin/19570-tidyparse}
 \end{abstract}
 
@@ -135,15 +136,6 @@ true and ( false or and true false
 
 \noindent In the following paper, we will describe how we built it.
 
-% TODO: https://muug.ca/mirror/ctan/macros/latex/contrib/qtree/qtreenotes.pdf
-%\begin{figure}[H]
-%\resizebox{.45\textwidth}{!}{
-%  \Tree [.\texttt{S} \texttt{true} \texttt{and} [.\texttt{S} !\qsetw{-3cm} \texttt{(} [.\texttt{S} [.\texttt{S} \texttt{false} \texttt{or} \texttt{<S>} ] \texttt{and} \texttt{true} ] \texttt{)} ] ]
-%}
-%\end{figure}
-
-%\noindent All the above visualizations were generated automatically.
-
 \section{Matrix Theory}
 
 We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P^*: V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:\vspace{-10pt}
@@ -212,18 +204,18 @@ Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has card
 
 \noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
 
-For example, in order to sample from $\Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:\vspace{-10pt}
+\noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:\vspace{-10pt}
 
 
-\[\begin{array}{ccccccccc}{
-  \mathbf{S}_0  &  \mathbf{S}_1  &  \mathbf{S}_2 &  \mathbf{S}_3  &  \mathbf{S}_4  &  \mathbf{S}_5  &  \mathbf{S}_6  &  \mathbf{S}_7  \\
-  1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
-  $C\:A$  & $B\:A$  & $A\:C$  & $C\:B$  &      & $B\:C$  &      & $B\:B$\\
+\[\begin{array}{rccccccccc}{
+  i & 0  &  1  &  2 &  3  &  4  &  5  &  6  &  7 \\
+  \mathbf{S}_i & 1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
+  \mathbf\sigma & $C\:A$  & $B\:A$  & $A\:C$  & $C\:B$  &      & $B\:C$  &      & $B\:B$\\
 }\]
 
 \noindent We will use this technique to lazily sample from the space of hole configurations without replacement as described in \S\ref{sec:holes}.
 
-\subsection{SAT Encoding}\label{sec:sat}
+\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
 By allowing the matrix $\mathbf{M}^*$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, whose parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$.
 
@@ -301,7 +293,7 @@ Deletion, substitution and insertion can be simulated by first adding a left- an
 &\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlgreen{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 \notin \{\varepsilon, \sigma_i\}, \gamma_2 = \sigma_i\label{eq:ins2}
 \end{align}
 
-Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
+\noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
 
 \section{Error Recovery}\label{sec:error}
 
@@ -391,10 +383,9 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 \end{tikzpicture}
 }
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
-\end{figure}
-
+\end{figure}\vspace{-10pt}
 \begin{algorithm}
-    \caption{Tree denormalization procedure}\label{alg:cap}
+    \caption{Tree denormalization procedure.}\label{alg:cap}
     \begin{algorithmic}
         \Procedure{Denormalize}{\texttt{t: Tree}}
             \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
@@ -407,24 +398,24 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
     \end{algorithmic}
 \end{algorithm}
 
-To recover the original parse tree, we prune all synthetic nodes and graft their stems onto the grandparent using a simple recursive algorithm. The same procedure can be used to denormalize both complete and partial ASTs.
+\noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent using Algorithm~\ref{alg:cap}, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
 \section{Realtime Error Correction}\label{sec:holes}
 
-So we have a procedure $P: \mathcal{G} \times (\Sigma\cup\texttt{\_})^d \rightarrow \{\Sigma^d\}$. But where do we put the holes? For a given number of holes, k, there are roughly ${n \choose k}$ possible repairs. In practice the cardinality of this space can be very large. To provide real-time suggestions, we generate repairs according to an eight-step procedure:
+Now that we have a method, $\mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given a string, $\Sigma^n$, where do we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible HCs, each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively. To provide real-time assistance, we generate repairs lazily, according to an eight-step procedure:
 
 \begin{enumerate}
   \item Fetch the most recent CFG and string from the editor.
   \item Exclude parsable substrings from hollowing.
   \item Enumerate hole configurations of increasing length.
   \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
-  \item Prioritize HCs first by distance to caret location, then by Earthmover's distance to set of suspicious indices.
+  \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
   \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
-  \item Feed sketch templates to incremental SAT solver.
+  \item Feed sketch templates to an incremental SAT solver.
   \item Decode and rerank models by Levenshtein distance.
 \end{enumerate}
 
-The entire procedure is lazy and intermediate results are cached to avoid recomputation. As soon as a new repair is discovered, it is rendered to the screen. Incoming keystrokes interrupt the sequence and reset the process back to Step 1.
+\noindent $^*$ E.g., supplied by edit history or a neural language model. As soon as a new repair is discovered by the SAT solver, it is immediately rendered to the screen. Incoming keystrokes interrupt the sequence and reset the process back to Step 1.
 
 \pagebreak
 \section{Example Workflow}
