@@ -140,7 +140,7 @@ kotlin {
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
 //  implementation("com.github.TUK-CPS:jAADD:-SNAPSHOT")
-        implementation("ca.umontreal.iro.simul:ssj:3.3.1")
+        implementation("ca.umontreal.iro.simul:ssj:3.3.2")
 
         // MPJ (required for Poon's SPN)
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
