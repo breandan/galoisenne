@@ -62,10 +62,10 @@ fun String.tokenizeByWhitespace(): List<String> = split(" ").filter { it.isNotBl
  */
 
 fun String.everySingleHoleConfig(): Sequence<String> {
-  val new = replace(Regex("(_( )*)+"), "_")
-  val toks = new.toList().map { it.toString() }
+  val new = replace(Regex("(_( )*)+"), "_ ")
+  val toks = new.tokenizeByWhitespace()
   val indices = toks.indices.filter { toks[it] == "_" }.powerset()
-  return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString("") }
+  return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString(" ") }
 }
 
 /*
@@ -82,5 +82,3 @@ fun String.increasingLengthChunks(): Sequence<String> {
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if (it.containsHole()) it.take(l) else it } }
 }
-
-fun String.splitWithHoles() = split(Regex("((?<=[^_])|(?=[^_]))"))
