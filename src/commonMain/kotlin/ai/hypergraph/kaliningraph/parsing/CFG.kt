@@ -30,7 +30,9 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
-val CFG.original by cache { originalMap.get(this)!! }
+val CFG.originalForm by cache { rewriteHistory.get(this)!![0] }
+val CFG.nonparametricForm by cache { rewriteHistory.get(this)!![1] }
+//val CFG.original by cache { originalMap.get(this)!! }
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
@@ -81,23 +83,27 @@ fun CFG.toGraph() =
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 
-val originalMap = LRUCache<CFG, CFG>()
+val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
 private fun CFG.normalize(): CFG =
-  addGlobalStartSymbol()
-    .expandOr()
-    .let { original -> original
+  mutableListOf<CFG>().let { rewrites ->
+    addGlobalStartSymbol()
+      .expandOr()
+      .also { rewrites.add(it) }
       .eliminateParametricityFromLHS()
-      .also { println("Parametricity-free grammar:\n${it.prettyPrint()}") }
-      .addEpsilonProduction()
-      .refactorEpsilonProds()
-      .elimVarUnitProds()
-      .refactorRHS()
-      .terminalsToUnitProds()
-      .removeUselessSymbols()
+      .also { rewrites.add(it) }
+      .transformIntoCNF()
       .generateStubs()
-      .also { cnf -> originalMap.put(cnf, original) }
-    }
+      .also { cnf -> rewriteHistory.put(cnf, rewrites) }
+  }
+
+fun CFG.transformIntoCNF(): CFG =
+  addEpsilonProduction()
+    .refactorEpsilonProds()
+    .elimVarUnitProds()
+    .refactorRHS()
+    .terminalsToUnitProds()
+    .removeUselessSymbols()
 
 val START_SYMBOL = "START"
 
