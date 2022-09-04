@@ -21,6 +21,7 @@ val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<String> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
+val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.tmap by cache { terminals.associateBy { word -> bimap[listOf(word)] } }
@@ -69,7 +70,7 @@ class BiMap(CFG: CFG) {
   operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.prettyPrint(cols: Int = 4): String = pretty.toString()
+fun CFG.prettyPrint(): String = pretty.toString()
 
 fun CFG.toGraph() =
   LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
@@ -85,18 +86,58 @@ val originalMap = LRUCache<CFG, CFG>()
 private fun CFG.normalize(): CFG =
   addGlobalStartSymbol()
     .expandOr()
-    .let { original ->
-      original.addEpsilonProduction()
+    .let { original -> original
+      .eliminateParametricityFromLHS()
+      .also { println("Parametricity-free grammar:\n${it.prettyPrint()}") }
+      .addEpsilonProduction()
       .refactorEpsilonProds()
       .elimVarUnitProds()
       .refactorRHS()
       .terminalsToUnitProds()
       .removeUselessSymbols()
       .generateStubs()
-      .also { originalMap.put(it, original) }
+      .also { cnf -> originalMap.put(cnf, original) }
     }
 
 val START_SYMBOL = "START"
+
+fun String.getParametersIn(cfg: CFG) =
+  cfg.unitProductions.map { it.LHS }.filter { "<$it>" in this }
+
+fun CFG.eliminateParametricityFromRHS(
+  ntReplaced: String,
+  ntReplacements: Set<String>
+): CFG =
+  if (ntReplacements.isEmpty()) this
+  else flatMap { prod ->
+    if (prod.RHS.none { ntReplaced in it }) listOf(prod)
+    else ntReplacements.map { ntr ->
+      (prod.LHS to prod.RHS.map { if (it == ntReplaced) ntr else it })
+    }
+  }.toSet()
+
+fun CFG.eliminateParametricityFromLHS(
+  parameters: Set<String> =
+    nonterminals.flatMap { it.getParametersIn(this) }.toSet()
+): CFG =
+  if (parameters.isEmpty()) this else {
+    var i = false
+    var (ntReplaced, ntReplacements) = "" to setOf<String>()
+    flatMap { prod ->
+      val params = prod.LHS.getParametersIn(this)
+      if (params.isEmpty() || i) return@flatMap listOf(prod)
+      i = true
+      ntReplaced = prod.LHS
+      val map = params.associateWith { bimap[it].map { it[0] }.toSet() }
+      val (s, r) = map.entries.maxByOrNull { it.value.size }!!
+      r.map { rc ->
+        prod.LHS.replace("<$s>", "<$rc>").also { ntReplacements += it } to
+          prod.RHS.map { it.replace("<$s>", "<$rc>") }
+      }
+    }.toSet()
+      .eliminateParametricityFromRHS(ntReplaced, ntReplacements)
+      .eliminateParametricityFromLHS()
+  }
 
 fun CFG.generateStubs(): CFG =
   this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
