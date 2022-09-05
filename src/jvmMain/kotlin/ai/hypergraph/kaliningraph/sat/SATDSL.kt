@@ -47,6 +47,7 @@ fun Formula.solveMaxSat(
 
 fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)
+//    miniSat: MiniSat = MiniSat.glucose(ff)
 ): Pair<MiniSat, Map<Variable, Boolean>> =
   miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model()
     .let { model -> variables().associateWith { model.evaluateLit(it) } }
