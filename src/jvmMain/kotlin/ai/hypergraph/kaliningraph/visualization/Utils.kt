@@ -21,7 +21,6 @@ import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.URL
 
-
 const val THICKNESS = 4.0
 const val DARKMODE = false
 
@@ -48,20 +47,22 @@ fun Matrix<*, *, *>.show(filename: String = "temp") = matToBase64Img().let { dat
   }
 }.show()
 
-fun TypedVertex<*>.render() = (this as IVertex<*, *, *>).render().also {
-  if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK)}
-fun TypedEdge<*>.render() = (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
-
-fun IGraph<*, *, *>.render() = toGraphviz()
-fun IVertex<*, *, *>.render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
-fun IEdge<*, *, *>.render(): Link = (source.render() - target.render()).add(Label.of(""))
-fun LGVertex.render() = (this as IVertex<*, *, *>).render().also { if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK) }
-fun UnlabeledEdge.render(): Link = (target.render() - source.render()).add(Label.of(""))
-  .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
-fun LabeledEdge.render() =
+fun TypedVertex<*>.render(): MutableNode = (this as IVertex<*, *, *>).render()
+  .also { if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK) }
+fun TypedEdge<*>.render(): Link =
   (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
 
-val browserCmd = System.getProperty("os.name").lowercase().let { os ->
+fun IGraph<*, *, *>.render(): MutableGraph = toGraphviz()
+fun IVertex<*, *, *>.render(): MutableNode = Factory.mutNode(id).add(Label.of(toString()))
+fun IEdge<*, *, *>.render(): Link = (source.render() - target.render()).add(Label.of(""))
+fun LGVertex.render(): MutableNode =
+  (this as IVertex<*, *, *>).render().also { if (occupied) it.add(Style.FILLED, RED.fill()) else it.add(BLACK) }
+fun UnlabeledEdge.render(): Link = (target.render() - source.render()).add(Label.of(""))
+  .add(if (source.neighbors.size == 1) BLACK else if (source.outgoing.indexOf(this) % 2 == 0) BLUE else RED)
+fun LabeledEdge.render(): Link =
+  (this as IEdge<*, *, *>).render().also { it.add(if (source.occupied) RED else BLACK) }
+
+val browserCmd: String = System.getProperty("os.name").lowercase().let { os ->
   when {
     "win" in os -> "rundll32 url.dll,FileProtocolHandler"
     "mac" in os -> "open"
@@ -76,7 +77,7 @@ fun URL.show() = ProcessBuilder(browserCmd, toString()).start()
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
 fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
-  IGraph<G, E, V>.toGraphviz() =
+  IGraph<G, E, V>.toGraphviz(): MutableGraph =
   graph(directed = true, strict = true) {
     val color = if (DARKMODE) WHITE else BLACK
     edge[color, NORMAL, lineWidth(THICKNESS)]
@@ -86,7 +87,7 @@ fun <G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V>>
     node[color, color.font(), Font.config("JetBrains Mono", 15),
       lineWidth(THICKNESS), Attributes.attr("shape", "Mrecord")]
 
-    for(vertex in vertices) vertex.render()
+    for (vertex in vertices) vertex.render()
     for ((vertex, edge) in edgList)
       edge.render().also { if (vertex is LGVertex && vertex.occupied) it.add(RED) }
   }

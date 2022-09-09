@@ -74,11 +74,11 @@ fun Formula.toBool() = "$this".drop(1).toBooleanStrict()
 infix fun Matrix<Formula, *, *>.eqUT(that: Matrix<Formula, *, *>): Formula =
   joinToScalar(this, that, filter = { r, c -> r < c }, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
-infix fun Matrix<Formula, *, *>.eq(that: Matrix<Formula, *, *>) =
+infix fun Matrix<Formula, *, *>.eq(that: Matrix<Formula, *, *>): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
   else joinToScalar(this, that, join = { a, b -> a eq b }, reduce = { a, b -> a and b })
 
-infix fun Matrix<Formula, *, *>.neq(that: Matrix<Formula, *, *>) =
+infix fun Matrix<Formula, *, *>.neq(that: Matrix<Formula, *, *>): Formula =
   (this eq that).negate()
 
 val XOR_SAT_ALGEBRA get() =

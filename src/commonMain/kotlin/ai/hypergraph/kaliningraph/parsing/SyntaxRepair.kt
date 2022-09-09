@@ -5,6 +5,14 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.abs
 
+// TODO: Generate minimal strings which cannot be repaired by left or right insertion,
+//       these will become our initial set. Whenever we encounter one of these substrings
+//       in the candidate string, we know that without repairing that part of the string
+//       candidate, its full string can never be in the language defined by the given CFG.
+//
+//       { S | |S| < k & !∃ S' ∈ L(CFG) s.t. S is a substring of S' }
+//       This will help us refine where the repairs must happen.
+
 fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
   map { it.span }.filter { 3 < it.last - it.first }
     .flatMap { (it.first + 1) until it.last }.toSet()

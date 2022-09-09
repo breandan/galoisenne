@@ -39,8 +39,7 @@ class JoinMap(val CFG: CFG) {
   val precomputedJoins: MutableMap<Pair<Set<String>, Set<String>>, Set<Triple<String, String, String>>> =
     CFG.nonterminals.choose(1..3).let { it * it }
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
-      .also { println("Precomputed join map has ${it.size} entries.") }
-      .toMutableMap()
+      .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
 
   fun join(l: Set<String>, r: Set<String>, tryCache: Boolean = false): Set<Triple<String, String, String>> =
     if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }

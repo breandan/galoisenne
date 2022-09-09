@@ -163,7 +163,7 @@ fun String.parseCFG(
       else throw Exception("Invalid production ${prod.size}: $line")
     }.toSet().let { if (normalize) it.normalForm else it }
 
-fun String.stripEscapeChars(escapeSeq: String = "`") = replace(escapeSeq, "")
+fun String.stripEscapeChars(escapeSeq: String = "`"): String = replace(escapeSeq, "")
 
 fun CFGCFG(names: Collection<String>): CFG = """
     START -> CFG

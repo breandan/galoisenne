@@ -34,12 +34,12 @@ class Tree constructor(
     childrenPrefix: String = "",
   ): String =
     if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()} [${span.first}]\n")
-    else children.foldIndexed("$buffer$prefix" +
-      root.htmlify() + (if(-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: String, it: Tree ->
-      if (i == children.size - 1)
-        it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
-      else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
-    }
+    else children.foldIndexed("$buffer$prefix" + root.htmlify() +
+      (if (-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: String, it: Tree ->
+        if (i == children.size - 1)
+          it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
+        else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
+      }
 
   fun latexify(): String = "\\Tree ${qtreeify()}"
 

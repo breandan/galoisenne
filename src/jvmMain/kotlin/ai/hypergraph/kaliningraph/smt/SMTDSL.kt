@@ -84,12 +84,12 @@ class SMTInstance(
   fun Literal(i: Int) = SMTF(this, makeNumber(i.toLong()))
 
   class IntVrb(val smtInstance: SMTInstance) {
-    operator fun getValue(nothing: Nothing?, property: KProperty<*>) =
+    operator fun getValue(nothing: Nothing?, property: KProperty<*>): SMTF =
       smtInstance.let { SMTF(it, it.makeVariable(property.name)) }
   }
 
   class BoolVrb(val smtInstance: SMTInstance) {
-    operator fun getValue(nothing: Nothing?, property: KProperty<*>) =
+    operator fun getValue(nothing: Nothing?, property: KProperty<*>): SATF =
       smtInstance.let { SATF(it, it.bfm.makeVariable(property.name)) }
   }
 
@@ -99,9 +99,9 @@ class SMTInstance(
         for (f in bs) prover.addConstraint(f)
 
         if (prover.isUnsat) {
-          val unsat = prover.unsatCore.joinToString("\n")
-          val previewLength = 400
-          val preview = if (unsat.length < previewLength)
+          val unsat: String = prover.unsatCore.joinToString("\n")
+          val previewLength: Int = 400
+          val preview: String = if (unsat.length < previewLength)
             unsat.take(previewLength) + "..." else unsat
           throw Exception("Unsat! Core (size=${unsat.length}): $preview")
         }
@@ -111,8 +111,8 @@ class SMTInstance(
       }
 
   class Solution<T>(dict: Map<*, T>) {
-    val dict = dict.map { (k, v) -> k.toString() to v }.toMap()
-    val keys = dict.keys
+    val dict: Map<String, T> = dict.map { (k, v) -> k.toString() to v }.toMap()
+    val keys: Set<Any?> = dict.keys
     operator fun get(any: Any): T? = dict[any.toString()]
     override fun toString() = dict.toString()
   }
@@ -129,7 +129,7 @@ class SMTInstance(
       .associate { it.key as BooleanFormula to it.value as Boolean }
       .let { Solution(it) }
 
-  fun prove(goal: BooleanFormula) =
+  fun prove(goal: BooleanFormula): Boolean =
     context.newProverEnvironment().use { prover ->
       prover.push(goal)
       !prover.isUnsat
@@ -196,7 +196,7 @@ open class SATF(
   open val ctx: SMTInstance,
   val formula: BooleanFormula
 ) : Group<SATF> {
-  private fun SATF(f: SMTInstance.() -> Any) = SATF(ctx, ctx.wrapBool(ctx.f()))
+  private fun SATF(f: SMTInstance.() -> Any): SATF = SATF(ctx, ctx.wrapBool(ctx.f()))
 
   override val nil: SATF by lazy { SATF { false } }
   override val one: SATF by lazy { SATF { true } }

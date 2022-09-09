@@ -186,7 +186,7 @@ fun String.synthesizeIncrementally(
     cfg.filter { it.RHS.none { it.startsWith('<') && it.endsWith('>') } }.toSet()
   else cfg
 
-  val allVariants =
+  val allVariants: Sequence<String> =
     variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
   return allVariants.map { updateProgress(it); it }
     .flatMap { cfg_.run { synthesize(tokenize(it)) } }.distinct()
