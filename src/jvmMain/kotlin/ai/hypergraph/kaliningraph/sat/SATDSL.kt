@@ -11,7 +11,6 @@ import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.formulas.Variable
 import org.logicng.solvers.MaxSATSolver
 import org.logicng.solvers.MiniSat
-import java.util.concurrent.ConcurrentHashMap
 
 //val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
 
@@ -28,7 +27,7 @@ fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
 fun BLit(b: Boolean): Formula = ff.constant(b)
 
 fun Formula.solve(): Map<Variable, Boolean> =
-  ff.let { ff ->
+  ff.let { ff: FormulaFactory ->
     val vars = variables()
     val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
     vars.associateWith { model.evaluateLit(it) }
