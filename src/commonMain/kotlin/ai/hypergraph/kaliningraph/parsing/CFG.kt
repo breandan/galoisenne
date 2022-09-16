@@ -73,8 +73,7 @@ class BiMap(CFG: CFG) {
 
 fun CFG.prettyPrint(): String = pretty.toString()
 
-fun CFG.toGraph() =
-  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
+fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
 
 //=====================================================================================
 // CFG Normalization

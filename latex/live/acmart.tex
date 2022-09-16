@@ -345,17 +345,6 @@ true and true ! and false or true ! true and false
 
 \section{Tree Denormalization}
 
-%fun denormalize(): Tree {
-%    fun Tree.removeSynthetic(
-%    refactoredChildren: List<Tree> = children.map { it.removeSynthetic() }.flatten(),
-%    isSynthetic: (Tree) -> Boolean = { 2 <= root.split('.').size }
-%    ): List<Tree> =
-%    if (children.isEmpty()) listOf(Tree(root, terminal, span = span))
-%    else if (isSynthetic(this)) refactoredChildren
-%    else listOf(Tree(root, children = refactoredChildren.toTypedArray(), span = span))
-%
-%    return removeSynthetic().first()
-%}
 % https://www.ling.upenn.edu/advice/latex/qtree/qtreenotes.pdf
 % https://cpb-us-w2.wpmucdn.com/campuspress.yale.edu/dist/0/119/files/2014/12/sec-10.17-drawing-arrows-2ek9r2b.pdf
 
@@ -372,7 +361,6 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 %    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
     \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
 \end{tabular}
-
 \begin{tikzpicture}[overlay]
 %    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
     \draw [red,dashed,-stealth] (v3) to[bend left] (v4);
