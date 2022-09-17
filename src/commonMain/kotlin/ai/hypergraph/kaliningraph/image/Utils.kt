@@ -53,8 +53,8 @@ fun Matrix<*, *, *>.matToBase64Img(
     is BooleanMatrix -> data.map { if (it) 255 else 0 }
     is DoubleMatrix -> minMaxNorm().data.map { (it * 255).roundToInt() }
     else -> TODO("Renderer is undefined")
-  }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry)
-): String = "data:image/bmp;base64," + BMP().saveBMP(arr)
+  }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry),
+): String = "data:image/bmp;base64," + BMP().saveBMP(arr).encodeBase64ToString()
 
 fun Array<IntArray>.enlarge(factor: Int = 2): Array<IntArray> =
   map { row -> row.flatMap { col -> (0 until factor).map { col } }
@@ -62,13 +62,13 @@ fun Array<IntArray>.enlarge(factor: Int = 2): Array<IntArray> =
 
 class BMP {
   lateinit var bytes: ByteArray
-  fun saveBMP(rgbValues: Array<IntArray>): String {
+  fun saveBMP(rgbValues: Array<IntArray>): ByteArray {
     bytes = ByteArray(54 + 3 * rgbValues.size * rgbValues[0].size +
       getPadding(rgbValues[0].size) * rgbValues.size)
     saveFileHeader()
     saveInfoHeader(rgbValues.size, rgbValues[0].size)
     saveBitmapData(rgbValues)
-    return bytes.encodeBase64ToString()
+    return bytes
   }
 
   private fun saveFileHeader() {

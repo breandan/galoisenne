@@ -7,5 +7,5 @@ class ECATest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
 */
   @Test
-  fun testSimpleECA() = makeVec(20).evolve()
+  fun testSimpleECA() { makeVec(20).evolve() }
 }

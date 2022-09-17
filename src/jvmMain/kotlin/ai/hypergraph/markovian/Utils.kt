@@ -35,3 +35,6 @@ fun <T> List<T>.allMasks(): List<List<T?>> =
       if (bitMask.length <= i || bitMask[i] == '1') null else t
     }
   }
+
+fun String.execute() =
+  ProcessBuilder(also { println("Executing: $it") }.split(" ")).start().waitFor()
