@@ -42,19 +42,21 @@ fun <A, B, C, D> BVec4<A, B, C, D>.rot1() = BVec4(d, a, b, c)
 fun <
   A: Bool<A, nA>, B: Bool<B, nB>,
   nA: Bool<nA, A>, nB: Bool<nB, B>
-> BVec2<A, B>.flip() =
+> BVec2<A, B>.flip(): BVec2<nA, nB> =
   BVec2(a.flip(), b.flip())
+
+val t = BVec(T, F).flip()
 
 fun <
   A: Bool<A, nA>, B: Bool<B, nB>, C: Bool<C, nC>,
   nA: Bool<nA, A>, nB: Bool<nB, B>, nC: Bool<nC, C>
-> BVec3<A, B, C>.flip() =
+> BVec3<A, B, C>.flip(): BVec3<nA, nB, nC> =
   BVec3(a.flip(), b.flip(), c.flip())
 
 fun <
   A: Bool<A, nA>, B: Bool<B, nB>, C: Bool<C, nC>, D: Bool<D, nD>,
   nA: Bool<nA, A>, nB: Bool<nB, B>, nC: Bool<nC, C>, nD: Bool<nD, D>
-> BVec4<A, B, C, D>.flip() =
+> BVec4<A, B, C, D>.flip(): BVec4<nA, nB, nC, nD> =
   BVec4(a.flip(), b.flip(), c.flip(), d.flip())
 
 @JvmName("LFSRP") fun <
@@ -62,7 +64,7 @@ fun <
   B: Bool<B, *>,
   C: Bool<C, *>,
   D: Bool<D, *>, Y
-> BVec4<A, B, C, D>.lfsr(op: (C, D) -> Y) =
+> BVec4<A, B, C, D>.lfsr(op: (C, D) -> Y): BVec4<Y, A, B, C> =
   BVec4(op(c, d), a, b, c)
 
 @JvmName("LFSRP") fun <
@@ -71,7 +73,7 @@ fun <
   C: Bool<C, *>,
   D: Bool<D, *>,
   E: Bool<E, *>, Y
-> BVec5<A, B, C, D, E>.lfsr(op: (C, E) -> Y) =
+> BVec5<A, B, C, D, E>.lfsr(op: (C, E) -> Y): BVec5<Y, A, B, C, D> =
   BVec5(op(c, e), a, b, c, d)
 
 // For a length-4 primitive polynomial, we only need to pattern match on

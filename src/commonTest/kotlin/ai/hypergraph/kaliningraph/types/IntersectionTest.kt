@@ -8,7 +8,7 @@ import kotlin.test.*
 class IntersectionTest {
   @Test
   fun testIntersection() {
-    val bar: Any = Both()
+    val bar = Both()
 
     bar.asIntersection3(Interface1::class, Interface2::class, Interface3::class)?.let { baz ->
       baz // Check the type here in Intellij with `ctrl+shift+p`
