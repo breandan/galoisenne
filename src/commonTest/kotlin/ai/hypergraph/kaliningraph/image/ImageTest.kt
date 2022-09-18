@@ -18,7 +18,14 @@ class ImageTest {
   @Test
   fun testCol() {
     val m3x1 = arrayOf(intArrayOf(1), intArrayOf(2), intArrayOf(3))
-    val m6x2 = arrayOf(intArrayOf(1, 1), intArrayOf(1, 1), intArrayOf(2, 2), intArrayOf(2, 2), intArrayOf(3, 3), intArrayOf(3, 3))
+    val m6x2 = arrayOf(
+      intArrayOf(1, 1),
+      intArrayOf(1, 1),
+      intArrayOf(2, 2),
+      intArrayOf(2, 2),
+      intArrayOf(3, 3),
+      intArrayOf(3, 3)
+    )
     assertEquals(m3x1.enlarge(2).to2DList(), m6x2.to2DList())
   }
 }

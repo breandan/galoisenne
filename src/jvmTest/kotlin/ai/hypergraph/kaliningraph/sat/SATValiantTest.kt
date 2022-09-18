@@ -44,19 +44,19 @@ class SATValiantTest {
   @Test
   fun testTLArithmetic() {
     val cfg = """
-       S1C -> 1
-       S2C -> 2
-       S3C -> 3
-       S4C -> 4
-       S -> S1 | S2 | S3 | S4 
-       S -> S1 = S1C
-       S -> S2 = S2C
-       S -> S3 = S3C
-       S -> S4 = S4C
-       S1 -> S1C
-       S2 -> S2C | S1 + S1
-       S3 -> S3C | S2 + S1 | S1 + S2
-       S4 -> S4C | S3 + S1 | S1 + S3 | S2 + S2
+      S1C -> 1
+      S2C -> 2
+      S3C -> 3
+      S4C -> 4
+      S -> S1 | S2 | S3 | S4 
+      S -> S1 = S1C
+      S -> S2 = S2C
+      S -> S3 = S3C
+      S -> S4 = S4C
+      S1 -> S1C
+      S2 -> S2C | S1 + S1
+      S3 -> S3C | S2 + S1 | S1 + S2
+      S4 -> S4C | S3 + S1 | S1 + S3 | S2 + S2
     """.parseCFG()
 
     println(cfg.prettyPrint())
@@ -406,10 +406,10 @@ class SATValiantTest {
   @Test
   fun testVariableLengthDecoding() {
     val cfg = """
-       START -> A B C
-       A -> a A | ε
-       B -> b B | ε
-       C -> ε
+      START -> A B C
+      A -> a A | ε
+      B -> b B | ε
+      C -> ε
     """.parseCFG()
 
     println("Grammar:\n" + cfg.prettyPrint())
@@ -433,10 +433,10 @@ class SATValiantTest {
       }
 
     val arithPadded= """
-        S -> S + S | S * S | S - S | S / S | ( S )
-        S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-        S -> X | Y | Z
-      """.parseCFG()
+      S -> S + S | S * S | S - S | S / S | ( S )
+      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      S -> X | Y | Z
+    """.parseCFG()
 
     println("Grammar:\n" + arithPadded.prettyPrint())
     "_ _ _ _ _ _ _ _ _ ".synthesizeIncrementally(arithPadded, allowNTs = false)
@@ -449,12 +449,12 @@ class SATValiantTest {
   }
 
   val arith = """
-      O -> + | * | - | /
-      S -> S O S | ( S )
-      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-    """.parseCFG()
+    O -> + | * | - | /
+    S -> S O S | ( S )
+    S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+  """.parseCFG()
 
-  fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
+  private fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
   fun Tree.eval(): Int = when {
     middle() == "*" -> children.first().eval() * children.last().eval()
     middle() == "+" -> children.first().eval() + children.last().eval()
@@ -472,39 +472,37 @@ class SATValiantTest {
   }
 
   val checkedArithCFG = """
+    S -> S1 | S2 | S3 | S4 | S5 | S6 | S7
+    S -> S1 = S1
+    S -> S2 = S2
+    S -> S3 = S3
+    S -> S4 = S4
+    S -> S5 = S5
+    S -> S6 = S6
+    S -> S7 = S7
+    S -> S8 = S8
+    S -> S9 = S9
     
-       S -> S1 | S2 | S3 | S4 | S5 | S6 | S7
-       S -> S1 = S1
-       S -> S2 = S2
-       S -> S3 = S3
-       S -> S4 = S4
-       S -> S5 = S5
-       S -> S6 = S6
-       S -> S7 = S7
-       S -> S8 = S8
-       S -> S9 = S9
-       
-       S1 -> P1
-       S2 -> P2 | ( S2 ) | P1 + P1
-       S3 -> P3 | ( S3 ) | P2 + P1 | P1 + P2
-       S4 -> P4 | ( S4 ) | P3 + P1 | P1 + P3 | P2 + P2
-       S5 -> P5 | ( S5 ) | P1 + P4 | P4 + P1 | P2 + P3 | P2 + P3
-       S6 -> P6 | ( S6 ) | P1 + P5 | P5 + P1 | P3 + P3 | P2 + P4 | P4 + P2
-       S7 -> P7 | ( S7 ) | P1 + P6 | P6 + P1 | P5 + P2 | P2 + P5 | P4 + P3 | P3 + P4
-       S8 -> P8 | ( S8 ) | P1 + P7 | P7 + P1 | P6 + P2 | P2 + P6 | P3 + P5 | P5 + P3 | P4 + P4
-       S9 -> P9 | ( S9 ) | P1 + P8 | P8 + P1 | P7 + P2 | P2 + P7 | P3 + P6 | P6 + P3 | P4 + P5 | P5 + P4
-       
-       P1 -> 1 | ( S1 ) | P1 * P1
-       P2 -> 2 | ( S2 ) | P2 * P1 | P1 * P2
-       P3 -> 3 | ( S3 ) | P3 * P1 | P1 * P3
-       P4 -> 4 | ( S4 ) | P2 * P2 | P4 * P1 | P1 * P4
-       P5 -> 5 | ( S5 ) | P5 * P1 | P1 * P5
-       P6 -> 6 | ( S6 ) | P6 * P1 | P1 * P6 | P3 * P2 | P2 * P3
-       P7 -> 7 | ( S7 ) | P7 * P1 | P1 * P7
-       P8 -> 8 | ( S8 ) | P4 * P2 | P2 * P4 | P8 * P1 | P1 * P8
-       P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
-       
-    """.parseCFG()
+    S1 -> P1
+    S2 -> P2 | ( S2 ) | P1 + P1
+    S3 -> P3 | ( S3 ) | P2 + P1 | P1 + P2
+    S4 -> P4 | ( S4 ) | P3 + P1 | P1 + P3 | P2 + P2
+    S5 -> P5 | ( S5 ) | P1 + P4 | P4 + P1 | P2 + P3 | P2 + P3
+    S6 -> P6 | ( S6 ) | P1 + P5 | P5 + P1 | P3 + P3 | P2 + P4 | P4 + P2
+    S7 -> P7 | ( S7 ) | P1 + P6 | P6 + P1 | P5 + P2 | P2 + P5 | P4 + P3 | P3 + P4
+    S8 -> P8 | ( S8 ) | P1 + P7 | P7 + P1 | P6 + P2 | P2 + P6 | P3 + P5 | P5 + P3 | P4 + P4
+    S9 -> P9 | ( S9 ) | P1 + P8 | P8 + P1 | P7 + P2 | P2 + P7 | P3 + P6 | P6 + P3 | P4 + P5 | P5 + P4
+    
+    P1 -> 1 | ( S1 ) | P1 * P1
+    P2 -> 2 | ( S2 ) | P2 * P1 | P1 * P2
+    P3 -> 3 | ( S3 ) | P3 * P1 | P1 * P3
+    P4 -> 4 | ( S4 ) | P2 * P2 | P4 * P1 | P1 * P4
+    P5 -> 5 | ( S5 ) | P5 * P1 | P1 * P5
+    P6 -> 6 | ( S6 ) | P6 * P1 | P1 * P6 | P3 * P2 | P2 * P3
+    P7 -> 7 | ( S7 ) | P7 * P1 | P1 * P7
+    P8 -> 8 | ( S8 ) | P4 * P2 | P2 * P4 | P8 * P1 | P1 * P8
+    P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
+  """.parseCFG()
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
@@ -557,7 +555,7 @@ class SATValiantTest {
     println(data)
   }
 
-  /*
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testDyckRepairBenchmark"
 */
   @Test
@@ -567,14 +565,15 @@ class SATValiantTest {
     val dyck3 = """S -> ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S""".parseCFG()
     val dyck4 = """S -> ( ) | [ ] | { } | < > | < S > | ( S ) | [ S ] | { S } | S S""".parseCFG()
 
-    fun List<Double>.stddev() = average().let { μ -> map { (it - μ).pow(2) } }.average().pow(0.5)
+    fun List<Double>.stddev(): Double =
+      average().let { μ -> map { (it - μ).pow(2) } }.average().pow(0.5)
 
-    fun String.makeError(i: Int = 4, idxs: Set<Int> = indices.shuffled().take(i).toSet()) =
+    fun String.makeError(i: Int = 4, idxs: Set<Int> = indices.shuffled().take(i).toSet()): String =
       split(" ").mapIndexed { i, it -> if (i in idxs) "" else it }.joinToString(" ")
 
     val numSamples = 10
     var data = "errors, d1, d1err, d2, d2err, d3, d3err, d4, d4err"
-    for(errors in setOf(1, 2, 3)) {
+    for (errors in setOf(1, 2, 3)) {
       data += "\n$errors"
       setOf(dyck1, dyck2, dyck3, dyck4).forEach { cfg ->
         val str =
@@ -582,7 +581,7 @@ class SATValiantTest {
         (0..numSamples).map {
           measureTimeMillis {
             val bad = str.random().makeError(errors)
-            val (parseForest, stubs) = cfg.parseWithStubs(bad)
+            val (_, stubs) = cfg.parseWithStubs(bad)
             val exclude = stubs.allIndicesInsideParseableRegions()
 
             bad.synthesizeIncrementally(

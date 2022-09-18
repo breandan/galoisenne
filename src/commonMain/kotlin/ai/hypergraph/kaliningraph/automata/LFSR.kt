@@ -74,38 +74,46 @@ fun <
 > BVec5<A, B, C, D, E>.lfsr(op: (C, E) -> Y) =
   BVec5(op(c, e), a, b, c, d)
 
+// For a length-4 primitive polynomial, we only need to pattern match on
+// whether the last two elements (C, D) are the same or different (xor)
 @JvmName("LFSRT") fun <
   A: Bool<A, *>,
   B: Bool<B, *>,
   C: Bool<C, *>,
   D: Bool<D, *>
-> BVec4<A, B, C, D>.lfsr(): BVec4<龖, A, B, C> = BVec4(T, a, b, c)
+> BVec4<A, B, C, D> // <- Matches the case when C & D are different (xor = true)
+  .lfsr(): BVec4<龖, A, B, C> = BVec4(T, a, b, c)
 
 @JvmName("LFSRF") fun <
   A: Bool<A, *>,
   B: Bool<B, *>,
   C: Bool<C, *>
-> BVec4<A, B, C, C>.lfsr(): BVec4<口, A, B, C> = BVec4(F, a, b, c)
+> BVec4<A, B, C, C> // <- Matches the case when C & D are the same (xor = false)
+  .lfsr(): BVec4<口, A, B, C> = BVec4(F, a, b, c)
 
+// Likewise for length-5 primitive polynomials, we only need to compare whether
+// the middle (C) and last (E) elements are the same or different (xor)
 @JvmName("LFSRT") fun <
   A: Bool<A, *>,
   B: Bool<B, *>,
   C: Bool<C, *>,
   D: Bool<D, *>,
   E: Bool<E, *>
-> BVec5<A, B, C, D, E>.lfsr(): BVec5<龖, A, B, C, D> = BVec5(T, a, b, c, d)
+> BVec5<A, B, C, D, E> // <- Matches the case when C & E are different (xor = false)
+  .lfsr(): BVec5<龖, A, B, C, D> = BVec5(T, a, b, c, d)
 
 @JvmName("LFSRF") fun <
   A: Bool<A, *>,
   B: Bool<B, *>,
   C: Bool<C, *>,
   D: Bool<D, *>,
-> BVec5<A, B, C, D, C>.lfsr(): BVec5<口, A, B, C, D> = BVec5(F, a, b, c, d)
+> BVec5<A, B, C, D, C> // <- Matches the case when C & E are the same (xor = false)
+  .lfsr(): BVec5<口, A, B, C, D> = BVec5(F, a, b, c, d)
 
-fun rule(a: T, b: F) = a xor b
-fun rule(a: T, b: T) = a xor b
-fun rule(a: F, b: T) = a xor b
-fun rule(a: F, b: F) = a xor b
+fun rule(a: T, b: F): T = a xor b
+fun rule(a: T, b: T): F = a xor b
+fun rule(a: F, b: T): T = a xor b
+fun rule(a: F, b: F): F = a xor b
 
 val lfsr4 = BVec(T, F, F, T)
   .lfsr()

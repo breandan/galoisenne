@@ -5,6 +5,9 @@ import ai.hypergraph.kaliningraph.tensor.transpose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.absoluteValue
 
+// Since we cannot encode the ECA rule into + and * directly, we need to keep
+// track of the receptive field of the convolutional kernel (i.e. the neighbors)
+// in order to apply rule (nonlinearity) after computing the dot product.
 typealias Context<A> = Π3<A, A, A>
 val <A> Context<A>.p get() = π1
 val <A> Context<A>.q get() = π2
@@ -17,10 +20,13 @@ fun makeVec(len: Int) =
     else Context(null, false, null)
   }
 
-// Create a tridiagonal matrix
+// Create a tridiagonal (Toeplitz) matrix
+// https://en.wikipedia.org/wiki/Toeplitz_matrix#Discrete_convolution
+// https://leimao.github.io/blog/Convolution-Transposed-Convolution-As-Matrix-Multiplication/
 fun FreeMatrix<Context<Boolean?>?>.genMat(): FreeMatrix<Context<Boolean?>?> =
   FreeMatrix(ecaAlgebra, numRows, numRows) { r, c ->
-    if ((r - c).absoluteValue < 2) Context(null, null, null) else null
+    if (2 <= (r - c).absoluteValue) null
+    else Context(null, null, null)
   }
 
 tailrec fun FreeMatrix<Context<Boolean?>?>.evolve(
@@ -105,6 +111,7 @@ fun <
   B0, B1, B2, B3, B4, B5, B6, B7, B8, B9,
   Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9,
 > BVec10<B0, B1, B2, B3, B4, B5, B6, B7, B8, B9>.eca(
+  // Encodes periodic boundary conditions
   op0: (B9, B0, B1) -> Y0,
   op1: (B0, B1, B2) -> Y1,
   op2: (B1, B2, B3) -> Y2,
@@ -115,7 +122,7 @@ fun <
   op7: (B6, B7, B8) -> Y7,
   op8: (B7, B8, B9) -> Y8,
   op9: (B8, B9, B0) -> Y9,
-) =
+): BVec10<Y0, Y1, Y2, Y3, Y4, Y5, Y6, Y7, Y8, Y9> =
   BVec10(
     op0(b9, b0, b1),
     op1(b0, b1, b2),

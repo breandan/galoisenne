@@ -92,13 +92,13 @@ class SATTest {
 
     // Solves x != 0 in Ax = x
     val solution = (
-        (A * x) eq (x)
-        // Eliminates trivial symmetries
-        and (A neq A * A)
-        and (A neq A * A * A)
-        // Eliminates trivial eigenvectors
-        and x.data.reduce { acc, f -> acc or f }
-        and x.data.reduce { a, f -> a and f }.negate()
+      (A * x) eq (x)
+      // Eliminates trivial symmetries
+      and (A neq A * A)
+      and (A neq A * A * A)
+      // Eliminates trivial eigenvectors
+      and x.data.reduce { acc, f -> acc or f }
+      and x.data.reduce { a, f -> a and f }.negate()
     ).solve()
 
     val a = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it]!! }).also { println(it * it * it) }
