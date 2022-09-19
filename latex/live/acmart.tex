@@ -84,7 +84,7 @@ In programming, most such errors initially manifest as syntax errors, and though
 Suppose we are given the following context free grammar:
 
 \begin{tidyinput}
-S -> S and S | S or S | ( S ) | true | false | ! S
+S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{tidyinput}
 
 \noindent For reasons that will become clear in the following section, this is automatically rewritten into the equivalent grammar:
@@ -108,22 +108,21 @@ F.or → or  S → S ε+   S → F.( S.)
 \noindent Given a string containing holes such as the one below, Tidyparse will return several completions in a few milliseconds:
 
 \begin{tidyinput}
-true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _
+true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{tidyoutput}
-true or ! ( false or ( <S> ) or ! <S> ) or <S>
-true or ! ( false and ( <S> ) or ! <S> ) or <S>
-true or ! ( false and ( <S> ) and ! <S> ) or <S>
-true or ! ( false and ( <S> ) and ! <S> ) and <S>
-true and ( false and ( <S> ) and ! ! <S> ) and <S>
+true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{or}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
 ...
 \end{tidyoutput}
 
 \noindent Similarly, if provided with a string containing various errors, Tidyparse will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
 \begin{tidyinput}
-true and ( false or and true false
+true and ( false or and true false(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{tidyoutput}
@@ -300,7 +299,7 @@ Deletion, substitution and insertion can be simulated by first adding a left- an
 Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
 
 \begin{tidyinput}
-true and true ! and false or true ! true and false
+true and true ! and false or true ! true and false(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{verbatim}
@@ -417,19 +416,17 @@ F -> if X then X else X
 L -> let V = X | let rec V = X
 V -> Vexp | ( Vexp ) | Vexp Vexp
 Vexp -> VarName | FunName | Vexp VO Vexp
-Vexp -> ( VarName , VarName ) | Vexp Vexp | I
+Vexp -> ( VarName , VarName ) | Vexp Vexp
 VarName -> a | b | c | d | e | ... | z
 FunName -> foldright | map | filter
-VO ->  + | - | * | / | >
-VO -> = | < | (*@`@*)||(*@`@*) | &&
-I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+VO ->  + | - | * | / | > | = | < | (*@`@*)||(*@`@*) | &&
 ---
-let curry f = ( fun x y -> f ( _ _ _ ) )
+let curry f = ( fun x y -> f ( _ _ _(*@\caret{ }@*)) )
 \end{tidyinput}
 \begin{tidyoutput}
-let curry f = ( fun x y -> f ( <X> ) )
-let curry f = ( fun x y -> f ( <FunName> ) )
-let curry f = ( fun x y -> f ( curry <X> ) )
+let curry f = ( fun x y -> f ( (*@\hlorange{<X>}@*) ) )
+let curry f = ( fun x y -> f ( (*@\hlorange{<FunName>}@*) ) )
+let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
 \end{tidyoutput}
 
@@ -440,6 +437,12 @@ Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the us
 \begin{tidyinput}
 B -> true | false | (*@\caret{ }@*)
 \end{tidyinput}
+\begin{tidyoutput}
+B -> true | false (*@\hlred{ }@*)
+B -> true | false (*@\hlorange{<RHS>}@*)
+B -> true | false | (*@\hlgreen{<RHS>}@*)
+...
+\end{tidyoutput}
 
 \subsection{Interactive Nonterminal Expansion}
 
@@ -452,13 +455,10 @@ if <(*@\caret{V}@*)exp> X then <Vexp> else <Vexp>
 \noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
 
 \begin{tidyoutput}
-if map X then <Vexp> else <Vexp>
-if true X then <Vexp> else <Vexp>
-if false X then <Vexp> else <Vexp>
-if filter X then <Vexp> else <Vexp>
-if uncurry X then <Vexp> else <Vexp>
-if foldright X then <Vexp> else <Vexp>
-if <Vexp> <B> X then <Vexp> else <Vexp>
+if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
+if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
+if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
+...
 \end{tidyoutput}
 
 %There are some more examples too.
