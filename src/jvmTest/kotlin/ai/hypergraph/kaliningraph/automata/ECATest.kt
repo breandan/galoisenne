@@ -18,12 +18,12 @@ class ECATest {
   fun testSimpleECA() { initializeECA(20).evolve() }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSATECA"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testLooper"
 */
   @Test
   fun testLooper() {
-    for (j in 2..10) {
-      val i = initializeSATECA(50) { i -> BVar("$i") }
+    for (j in 2..20) {
+      val i = initializeSATECA(128) { i -> BVar("$i") }
       val t = (i matEq i.evolve(steps = 1)).negate() and (i matEq i.evolve(steps = j))
       try {
         val sol = t.solve()
@@ -38,7 +38,7 @@ class ECATest {
   @Test
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
-    findAll(setOf(true, false), 16).first { orphan ->
+    findAll(setOf(true, false), 128).first { orphan ->
       val i = initializeSATECA(16) { i -> BVar("$i") }
       val fs = orphan.map { if(it) T else F }
       val t = (i.evolve(steps = 1) matEq initializeSATECA(16) { fs[it] })
@@ -52,7 +52,7 @@ class ECATest {
   @Test
   fun testEndling() {
     for (j in 0..30) {
-      val i = initializeSATECA(50) { i -> BVar("$i") }
+      val i = initializeSATECA(128) { i -> BVar("$i") }
       val t =
           (i.evolve(steps = j) matEq i.evolve(steps = j+1)).negate() and
           (i.evolve(steps = j+1) matEq i.evolve(steps = j+2))
@@ -70,9 +70,9 @@ class ECATest {
 */
   @Test
   fun testChimera() {
-      val i = initializeSATECA(50) { i -> BVar("i$i") }
-      val j = initializeSATECA(50) { i -> BVar("j$i") }
-      val k = initializeSATECA(50) { i -> BVar("k$i") }
+      val i = initializeSATECA(128) { i -> BVar("i$i") }
+      val j = initializeSATECA(128) { i -> BVar("j$i") }
+      val k = initializeSATECA(128) { i -> BVar("k$i") }
     val t =
       (
         (i matEq j).negate() and
