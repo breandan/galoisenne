@@ -24,7 +24,7 @@ import kotlin.reflect.KProperty
  */
 // https://mathsat.fbk.eu/smt2examples.html
 class SMTInstance(
-  val solver: Solvers = Solvers.SMTINTERPOL,
+  val solver: Solvers = Solvers.PRINCESS,
   val context: SolverContext = SolverContextFactory.createSolverContext(solver),
   val ifm: IntegerFormulaManager = context.formulaManager.integerFormulaManager,
   val bfm: BooleanFormulaManager = context.formulaManager.booleanFormulaManager,
@@ -151,6 +151,7 @@ class SMTInstance(
       else -> throw NumberFormatException("Bad boolean $input (${input.javaClass.name})")
     }
 
+  operator fun Any.unaryMinus(): IntegerFormula = negate(wrapInt(this))
   infix fun Any.pls(b: Any): IntegerFormula = add(wrapInt(this), wrapInt(b))
   infix fun Any.mns(b: Any): IntegerFormula = subtract(wrapInt(this), wrapInt(b))
   infix fun Any.mul(b: Any): IntegerFormula = multiply(wrapInt(this), wrapInt(b))

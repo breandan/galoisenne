@@ -13,11 +13,10 @@ val <A> Context<A>.p get() = π1
 val <A> Context<A>.q get() = π2
 val <A> Context<A>.r get() = π3
 
-val ecaAlgebra = algebra()
-fun makeVec(len: Int) =
+val ecaAlgebra = contextAlgebra()
+fun initializeECA(len: Int, cc: (Int) -> Boolean = { true }) =
   FreeMatrix(ecaAlgebra, len, 1) { r, c ->
-    if (len - 1 == r) Context(null, true, null)
-    else Context(null, false, null)
+    Context(null, cc(r), null)
   }
 
 // Create a tridiagonal (Toeplitz) matrix
@@ -49,7 +48,7 @@ fun Context<Boolean?>.applyRule(
 fun FreeMatrix<Context<Boolean?>?>.nonlinearity() =
   FreeMatrix(numRows, 1) { r, c -> this[r, c]?.applyRule() }
 
-fun algebra() =
+fun contextAlgebra() =
   Ring.of<Context<Boolean?>?>(
     nil = null,
     times = { a: Context<Boolean?>?, b: Context<Boolean?>? ->

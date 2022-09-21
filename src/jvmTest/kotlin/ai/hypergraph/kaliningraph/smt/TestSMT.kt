@@ -76,7 +76,7 @@ class TestSMT {
     println("Passed.")
   }
 
-//  @Test
+  @Test
   // https://en.wikipedia.org/wiki/Sums_of_three_cubes
   fun testSumOfCubes() = SMTInstance().solve {
     val a by IntVar()
@@ -85,7 +85,7 @@ class TestSMT {
     val d by IntVar()
 
     val exp = 3
-    val f = (a pwr exp) pls (b pwr exp) pls (c pwr exp) eq d
+    val f = (a pwr exp) pls (b pwr exp) pls (c pwr exp) eq (a mul b mul c)
 
     val bigNum = 3
 
@@ -97,14 +97,14 @@ class TestSMT {
         (c pwr 2 gt bigNum) and
         (d pwr 2 gt bigNum)
 
-    val isNontrivial = f and containsNegative and areLarge
+    val isNontrivial = f and areLarge
 
     val solution = solveInteger(isNontrivial)
     println(solution)
 
     assertEquals(
       solution[a]!!.pow(exp) + solution[b]!!.pow(exp) + solution[c]!!.pow(exp),
-      solution[d]
+      solution[a]!! * solution[b]!! * solution[c]!!
     )
   }
 
