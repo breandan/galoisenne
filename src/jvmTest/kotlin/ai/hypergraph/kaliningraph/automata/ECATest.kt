@@ -22,7 +22,7 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-    for (j in 2..20) {
+    for (j in 2..10) {
       val i = initializeSATECA(128) { i -> BVar("$i") }
       val t = (i matEq i.evolve(steps = 1)).negate() and (i matEq i.evolve(steps = j))
       try {
@@ -51,7 +51,7 @@ class ECATest {
 */
   @Test
   fun testEndling() {
-    for (j in 0..30) {
+    for (j in 0..10) {
       val i = initializeSATECA(128) { i -> BVar("$i") }
       val t =
           (i.evolve(steps = j) matEq i.evolve(steps = j+1)).negate() and
@@ -87,17 +87,31 @@ class ECATest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testPrint"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTargetPatternPredecessor"
 */
   @Test
-  fun testPrint() {
-    val ts = arrayOf(0,1,0,0,0,1,1,1,1,1,1,0,0,0,1,0)
+  fun testTargetPatternPredecessor() {
+    val pp = initializeSATECA(16) { i -> BVar("i$i") }
+    val p = initializeSATECA("1100110111111011")
+    val t = pp.evolve(steps=1) matEq p
+    try {
+      val sol = t.solve()
+      println(pp.data.map { sol[it!!.π2!!]!! })
+    } catch (e: Exception) { println("No predecessor was found!") }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testECAPrint"
+*/
+  @Test
+  fun testECAPrint() {
+    val ts = arrayOf(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0)
     initializeECA(16) { i -> ts[i] == 1 }.also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
   }
 
-  fun FreeMatrix<Context<Boolean?>?>.toRingBuffer() {
+    fun FreeMatrix<Context<Boolean?>?>.toRingBuffer() {
     val degs = 360.0 / numRows
     for (i in 0 until numRows) {
       val start = 90.0 - i * degs
