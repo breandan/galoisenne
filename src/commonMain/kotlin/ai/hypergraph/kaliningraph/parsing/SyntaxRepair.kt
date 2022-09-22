@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.containsHole
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
-import kotlin.math.abs
+import kotlin.math.absoluteValue
 
 // TODO: Generate minimal strings which cannot be repaired by left or right insertion,
 //       these will become our initial set. Whenever we encounter one of these substrings
@@ -43,16 +43,21 @@ fun String.multiTokenSubstitutionsAndInsertions(
     }
 
 fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
-  setOf(1, numEdits).asSequence().flatMap { eligibleIndices.choose(it) }.map { it.sorted().toSet() }
-    .sortedWith(
-      compareBy<Set<Int>> { it.size }
-        // Out of all chosen indices, how far apart from its nearest fishy neighbor
-        // is the chosen index whose nearest fishy neighbor is the farthest apart?
-        .thenBy { it.maxOf { a -> fishyLocations.minOf { b -> abs(a - b) } } }
-  //  .thenBy { it.sumOf { a -> fishyLocations.indices.minBy { abs(a - fishyLocations[it]) } } } // Sort by precedence?
-        .thenBy { it.fold(0 to it.first()) { (a, b), it -> a + abs(it - b) to it }.first } // Sort by dispersion?
-        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
-    ).map { it.toSet() }
+  eligibleIndices.sortedWith(
+    compareBy<Int> { a -> fishyLocations.minOf { b -> (a - b).absoluteValue } }
+      .thenBy { (it - fishyLocations.first()).absoluteValue }
+  ).let { sortedIndices -> setOf(1, numEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+//  setOf(1, numEdits).asSequence()
+//    .flatMap { eligibleIndices.choose(it) }.map { it.sorted().toSet() }
+//    .sortedWith(
+//      compareBy<Set<Int>> { it.size }
+//        // Out of all chosen indices, how far apart from its nearest fishy neighbor
+//        // is the chosen index whose nearest fishy neighbor is the farthest apart?
+//        .thenBy { it.maxOf { a -> fishyLocations.minOf { b -> abs(a - b) } } }
+//  //  .thenBy { it.sumOf { a -> fishyLocations.indices.minBy { abs(a - fishyLocations[it]) } } } // Sort by precedence?
+//        .thenBy { it.fold(0 to it.first()) { (a, b), it -> a + abs(it - b) to it }.first } // Sort by dispersion?
+//        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
+//    ).map { it.toSet() }
 
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")

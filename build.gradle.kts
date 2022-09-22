@@ -98,7 +98,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        val multikVersion = "0.2.0"
+        val multikVersion = "0.2.1"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
@@ -165,11 +165,11 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.9.0")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.1")
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:2.0.0")
+        implementation("org.slf4j:slf4j-simple:2.0.2")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))

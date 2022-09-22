@@ -284,6 +284,15 @@ inline fun <reified T> Set<T>.choose(
   if (size <= k) sequenceOf(this)
   else order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
+// Enumerate k-combinations in order provided
+inline fun <reified T> List<T>.choose(
+  k: Int,
+  numEl: Int = size choose k,
+  asArray: Array<T> = toTypedArray()
+): Sequence<Set<T>> =
+  if (size <= k) sequenceOf(toSet())
+  else (0 until numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
+
 // https://en.wikipedia.org/wiki/Combinatorial_number_system
 fun Set<Int>.encode(): Int {
   var (k, i, total) = size to 0 to 0
