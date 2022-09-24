@@ -33,6 +33,11 @@ class ArrayTest {
     assertEquals(S3, t3.len)
   }
 
+  fun concatTest() {
+    val t = VT(1, 2, 3, 4)
+    val s = t cc t cc VT(1) cc VT(2)
+  }
+
   @Test
   fun naperianVTtorTest() {
     val t: TS4<Int> = TV(1, 2, 3, 4)
