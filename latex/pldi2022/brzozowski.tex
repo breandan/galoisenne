@@ -1,0 +1,31 @@
+\documentclass[pldi.tex]{subfiles}
+\begin{document}
+
+\section{On the relation with Brzozowski's Derivative}
+\begin{table}[H]
+\begin{tabular}{ccccc}
+    Valiant's $\otimes$ && Brzozowski's $\nabla$ && Right Quotient \\\\
+    $a \otimes b = \{c \mid (c \rightarrow a b) \in \Gamma\}$ &&
+    $\frac{\partial \Gamma}{\partial a} = \{a \mid (a b \rightarrow *) \in \Gamma\}$ &&
+    $\frac{\partial \Gamma}{\partial b} = \{b \mid (a b \rightarrow *) \in \Gamma\}$ \\\\
+    \begin{tabular}{|c|c|}
+        \hline
+        a & c \\ \hline
+        \multicolumn{1}{c|}{~} & b \\
+        \cline{2-2}
+    \end{tabular} &&
+    \begin{tabular}{|c|c|}
+        \hline
+        a & * \\ \hline
+        \multicolumn{1}{c|}{~} & ? \\
+        \cline{2-2}
+    \end{tabular} &&
+    \begin{tabular}{|c|c|}
+        \hline
+        ? & * \\ \hline
+        \multicolumn{1}{c|}{~} & b \\
+        \cline{2-2}
+    \end{tabular}
+\end{tabular}
+\end{table}
+\end{document}

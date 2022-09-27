@@ -35,6 +35,8 @@
 \usepackage{stmaryrd}
 \usepackage{colortbl}
 \usepackage{hyperref}
+\usepackage{subfiles}
+
 
 %% Bibliography style
 \bibliographystyle{acmart}
@@ -371,6 +373,8 @@ true and ( false or and true false(*@\caret{ }@*)
     \end{algorithm}
 
     \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
+
+    \subfile{brzozowski}
 
     \section{Realtime Error Correction}\label{sec:holes}
 
