@@ -1,3 +1,8 @@
+\usepackage{dsfont}
+\usepackage{stmaryrd}
+\usepackage{colortbl}
+\usepackage{hyperref}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
 
@@ -53,6 +58,7 @@
 \usetikzlibrary{arrows}
 \usepackage{subcaption}
 \usetikzlibrary{backgrounds}
+\usetikzlibrary{tikzmark}
 
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Var}{\mathrm{Var}}
@@ -90,17 +96,16 @@
     commentstyle={\color{gray}\ttfamily},
     emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
     numberstyle=\noncopyable,
-    emphstyle={\color{OrangeRed}},
     identifierstyle=\color{black},
     keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
-    keywordstyle={\color{NavyBlue}\bfseries},
+    keywordstyle={\bfseries},
     morecomment=[s]{/*}{*/},
     morestring=[b]",
     morestring=[s]{"""*}{*"""},
     ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
-    ndkeywordstyle={\color{BurntOrange}\bfseries},
+    ndkeywordstyle={\bfseries},
     sensitive=true,
-    stringstyle={\color{ForestGreen}\ttfamily},
+    stringstyle={\ttfamily},
     literate={`}{{\char0}}1,
     escapeinside={(*@}{@*)}
 }
@@ -245,3 +250,7 @@
 \usepackage{menukeys}
 \pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
 \pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings
+
+\DeclareRobustCommand{\laitrap}{\text{\reflectbox{$\partial$}}}
+
+\usepackage{subfiles}

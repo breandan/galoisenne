@@ -31,13 +31,6 @@
 %\setcopyright{rightsretained}
 %\copyrightyear{2018}           %% If different from \acmYear
 
-\usepackage{dsfont}
-\usepackage{stmaryrd}
-\usepackage{colortbl}
-\usepackage{hyperref}
-\usepackage{subfiles}
-
-
 %% Bibliography style
 \bibliographystyle{acmart}
 
@@ -45,11 +38,10 @@
 \begin{document}
 
 %% Title information
-    \title{Syntax Error Correction as Idempotent Matrix Completion}
+    \title{Syntacic Error Correction as Idempotent Matrix Completion}
     \begin{abstract}
-        Tidyparse is a program synthesizer that performs real-time error correction for context free languages.
-        Given both an arbitrary context free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs while the author is typing, ranked by Levenshtein edit distance.
-        Repairs are guaranteed to be complete, grammatically consistent and minimal.
+        Tidyparse is a program synthesizer that performs real-time error correction for context-free languages.
+        Given both an arbitrary context-free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs whilst the author is typing, ranked by Levenshtein edit distance. Repairs are guaranteed to be complete, grammatically consistent and minimal.
         Tidyparse is the first system of its kind offering these guarantees in a real-time editor. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes.
     \end{abstract}
 
@@ -68,7 +60,7 @@
 
     \section{Toy Example}
 
-    Suppose we are given the following context free grammar:
+    Suppose we are given the following context-free grammar:
 
 \begin{tidyinput}
 S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
@@ -124,34 +116,40 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \section{Matrix Theory}
 
-    We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P': V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:\vspace{-10pt}
+    We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P': V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:
 
     \[
         \{S\rightarrow XR \mid SS \mid LR,\; L \rightarrow (,\; R \rightarrow ),\; X\rightarrow LS\}
     \]
 
-    \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R_{\mathcal{G}'}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+    \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R_{\mathcal{G}'}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\vno$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
 
     \begin{align}
         a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
     \end{align}
 
-    \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,\vspace{-10pt}
+    \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for $\mathbf{M}^*$ via fixpoint iteration,
+
+    \newcommand\ddd{\Ddots}
+    \newcommand\vdd{\Vdots}
+    \newcommand\cdd{\Cdots}
+    \newcommand\lds{\ldots}
+    \newcommand\vno{\varnothing}
 
     \begin{align}
         \mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                           \varnothing & \{V\}_{\sigma_1} & \Cdots                  &                            & \mathcal{T} \\
-                           \Vdots      & \Ddots           & \Ddots[shorten=-0.1cm]  & \phantom{\{V\}_{\sigma_2}} & \Vdots \\
-                           &                  &                         &                            & \\
-                           &                  &                         &                            & \{V\}_{\sigma_n} \\
-                           \varnothing & \Cdots           &                         &                            & \varnothing
+                   \vno & \{V\}_{\sigma_1} & \cdd                   &                            & \mathcal{T} \\
+                   \vdd & \ddd             & \Ddots[shorten=-0.1cm] & \phantom{\{V\}_{\sigma_2}} & \vdd \\
+                        &                  &                        &                            & \\
+                        &                  &                        &                            & \{V\}_{\sigma_n} \\
+                   \vno & \cdd             &                        &                            & \vno
         \end{pNiceMatrix}\label{eq:fpm}
     \end{align}
 
-    \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
+    \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. The recognizer is defined as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
 %While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor.
-    Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
+    Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
 
     \[\begin{tikzcd}[row sep=huge, column sep=huge]
           V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
@@ -166,20 +164,20 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \subsection{Sampling k-combinations without replacement}
 
-    \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.\vspace{-10pt}
+    \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.
 
     \begin{align}
         \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                            P_1    & \Cdots &        &       &        & P_n \\
-                            \top   & \circ  & \Cdots &       &        & \circ \\
-                            \circ  & \Ddots & \Ddots &       &        & \Vdots \\
-                            \Vdots & \Ddots &        &       &        & \\
-                            &        &        &       &        & \\
-                            \circ  & \Cdots &        & \circ & \top   & \circ
+           P_1    & \cdd  &      &       &      & P_n \\
+           \top   & \circ & \cdd &       &      & \circ \\
+           \circ  & \ddd  & \ddd &       &      & \vdd \\
+           \vdd   & \ddd  &      &       &      & \\
+                  &       &      &       &      & \\
+           \circ  & \cdd  &      & \circ & \top & \circ
         \end{pNiceMatrix}^t
         \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
             V_1 \\
-            \Vdots \\
+            \vdd\\
             \\
             \\
             \\
@@ -190,13 +188,13 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
 
-    \noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:\vspace{-10pt}
+    \noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:
 
 
     \[\begin{array}{rccccccccc}{
         i & 0  &  1  &  2 &  3  &  4  &  5  &  6  &  7 \\
         \mathbf{S}_i & 1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
-        \mathbf\sigma & $C\:A$  & $B\:A$  & $A\:C$  & $C\:B$  &      & $B\:C$  &      & $B\:B$\\
+        \mathbf\sigma & \text{C A}  & \text{B A}  & \text{A C}  & \text{C B}  &  & \text{B C}  &  & \text{B B}\\
     }\]
 
     \noindent We will use this technique to lazily sample from the space of hole configurations without replacement as described in \S\ref{sec:holes}.
@@ -216,11 +214,6 @@ true and ( false or and true false(*@\caret{ }@*)
 %    \includegraphics[width=2cm]{../figures/parse4.png}
 %\end{figure}
 
-    \newcommand\ddd{\Ddots}
-    \newcommand\vdd{\Vdots}
-    \newcommand\cdd{\Cdots}
-    \newcommand\lds{\ldots}
-    \newcommand\vno{\varnothing}
     \newcommand{\ts}[1]{\textsuperscript{#1}}
     \newcommand\non{1\ts{st}}
     \newcommand\ntw{2\ts{nd}}
@@ -235,26 +228,111 @@ true and ( false or and true false(*@\caret{ }@*)
     \newcommand\pcd{\cdot}
     \newcommand\pcp{\phantom\cdot}
     \newcommand\ppp{\phantom{\nse}}
+    \newcommand\xno{\text{\emoji{cross-mark}}}
 
     \begin{figure}[H]
         \[
             \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-                               \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-                               \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-                               &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-                               &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-                               &             &                    &                   &                        & \ddd & \\
-                               &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-                               \vno & \cdd        &                    &                   &                        &      & \vno
+                \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+                \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+                     &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+                     &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+                     &             &                    &                   &                        & \ddd & \\
+                     &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+                \vno & \cdd        &                    &                   &                        &      & \vno
             \end{pNiceArray}
         \]
     \end{figure}
 
     \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
+    \subsection{Breadth-bounded tree search}
+
+    The matrix $\mathbf{M}^*$ encodes a superposition of all labeled binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees, with labels omitted to emphasize their structure:
+
+    \begin{figure}[H]
+        \[
+           \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
+              \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
+              \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
+                   &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
+                   &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
+                   &               &              &              &              & \tikzmark{v} &              \\
+              \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
+           \end{pNiceArray}
+        \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
+        \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
+        \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
+        \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
+        \draw [blubr] ({pic cs:a}) to ({pic cs:b});
+        \draw [blubr] ({pic cs:e}) to ({pic cs:b});
+        \draw [blubr] ({pic cs:h}) to ({pic cs:c});
+        \draw [blubr] ({pic cs:b}) to ({pic cs:c});
+        \draw [blubr] ({pic cs:c}) to ({pic cs:d});
+        \draw [redbr] ({pic cs:h}) to ({pic cs:i});
+        \draw [redbr] ({pic cs:j}) to ({pic cs:i});
+        \draw [redbr] ({pic cs:e}) to ({pic cs:g});
+        \draw [redbr] ({pic cs:i}) to ({pic cs:g});
+        \draw [redbr] ({pic cs:g}) to ({pic cs:d});
+        \end{tikzpicture}\Rightarrow
+        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+     \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
+                   & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
+                   &                & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
+                   &                &               & \tikzmark{p1} &               & \tikzmark{t1} & \tikzmark{x1} \\
+                   &                &               &               & \tikzmark{h1} & \tikzmark{u1} & \tikzmark{i1} \\
+                   &                &               &               &               & \tikzmark{v1} &              \\
+                   &                &               &               &               &               & \tikzmark{j1}
+           \end{NiceArray}
+        \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
+        \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
+        \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
+        \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
+        \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
+        \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
+        \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
+        \end{tikzpicture}
+        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+     \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
+                   & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
+                   &                & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
+                   &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
+                   &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
+                   &                &               &               &               & \tikzmark{v2} &              \\
+                   &                &               &               &               &               & \tikzmark{j2}
+           \end{NiceArray}
+        \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
+        \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
+        \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
+        \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
+        \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
+        \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
+        \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
+        \end{tikzpicture}
+        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+     \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
+                   & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
+                   &                & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
+                   &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
+                   &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
+                   &                &               &               &               & \tikzmark{v3} &              \\
+                   &                &               &               &               &               & \tikzmark{j3}
+           \end{NiceArray}
+        \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
+            \draw [grnbr] ({pic cs:l3}) to ({pic cs:r3});
+            \draw [grnbr] ({pic cs:n3}) to ({pic cs:p3});
+            \draw [grnbr] ({pic cs:v3}) to ({pic cs:r3});
+            \draw [grnbr] ({pic cs:r3}) to ({pic cs:w3});
+            \draw [grnbr] ({pic cs:j3}) to ({pic cs:d3});
+            \draw [grnbr] ({pic cs:a3}) to ({pic cs:d3});
+        \end{tikzpicture}\ldots
+    \]
+    \end{figure}
+
     \subsection{Deletion, substitution, and insertion}\label{sec:dsi}
 
-    Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:\vspace{5pt}
+    Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:
 
     \begin{center}
         \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
@@ -268,7 +346,6 @@ true and ( false or and true false(*@\caret{ }@*)
         \DisplayProof
     \end{center}
 
-    \vspace{5pt}
     \noindent To generate the sketch templates, we substitute two holes at an index-to-be-repaired, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, then invoke the SAT solver. Five outcomes are then possible:
 
     \begin{align}
@@ -310,21 +387,20 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \begin{figure}[H]
         \[
-            \setcounter{MaxMatrixCols}{30}
             \begin{NiceMatrix}
-                & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \ppp & \ppp \\
-                &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
-                \{V\}_{\sigma_1} & \cdd &      & A    &      &      &      &      &      & \ppp \\
-                \varnothing      & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
-                \vdd             & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-                &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
-                &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                &      &      &      &      &      &      &      & T_C  & \vdd \\
-                &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
-                &      &      &      &      &      &      &      &      & \\
-                &      &      &      &      &      &      &      &      & \\
-                &      &      &      &      &      &      &      & \ppp & \{V\}_{\sigma_n} \\
-                \varnothing      & \cdd &      &      &      &      &      &      & \varnothing &
+                  & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \ppp & \ppp \\
+                  &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+ \{V\}_{\sigma_1} & \cdd &      & A    &      &      &      &      &      & \ppp \\
+             \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+             \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                  &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+                  &      &      &      &      &      & \pcd & \cdd &      & C    \\
+                  &      &      &      &      &      &      &      & T_C  & \vdd \\
+                  &      &      &      &      &      &      & \xno &      & \\
+                  &      &      &      &      &      &      &      &      & \\
+                  &      &      &      &      &      &      &      &      & \\
+                  &      &      &      &      &      &      &      & \ppp & \{V\}_{\sigma_n} \\
+             \vno & \cdd &      &      &      &      &      &      & \vno &
             \end{NiceMatrix}
         \]\caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
     \end{figure}
@@ -357,7 +433,7 @@ true and ( false or and true false(*@\caret{ }@*)
             \end{tikzpicture}
         }
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
-    \end{figure}\vspace{-10pt}
+    \end{figure}
     \begin{algorithm}
         \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
         \begin{algorithmic}
@@ -375,6 +451,33 @@ true and ( false or and true false(*@\caret{ }@*)
     \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
     \subfile{brzozowski}
+
+\section{Closure and simplification of subexpressions}
+
+    Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified? This transformation is admissible and indeed desirable when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. Returning to Fig. 4, under what circumstances is the following reduction admissible?
+
+\begin{figure}[H]
+ \[
+    \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+       \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+       \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+            &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+            &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+            &             &                    &                   &                        & \ddd & \\
+            &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+       \vno & \cdd        &                    &                   &                        &      & \vno
+    \end{pNiceArray} \equiv
+    \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+       \vno & \rcr\mathcal{L}_{1,3} & \rcw\mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+       \vdd & \ddd                  & \mathcal{V}_{2,4}     &      & \vdd \\
+            &                       &                       & \ddd & \\
+            &                       &                       &      & \mathcal{V}_{n,n} \\
+       \vno & \cdd                  &                       &      & \vno
+    \end{pNiceArray}
+ \]
+\end{figure}
+
+    For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. How can we formalize this argument to work on arbitrary (e.g., potentially ambiguous) grammars? This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation?
 
     \section{Realtime Error Correction}\label{sec:holes}
 
@@ -461,37 +564,37 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 \hline\\[-1em]1.a) Original method  &  1.b) Synonymous variant\\[-1em]\\\hline
 \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void flush(int b) {
-buffer.write((byte) b);
-buffer.compact();
+    buffer.write((byte) b);
+    buffer.compact();
 }
 \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void flush(int b) {
-(*@\hlred{cushion}@*).write((byte) b);
-(*@\hlred{cushion}@*).compact();
+    (*@\hlred{cushion}@*).write((byte) b);
+    (*@\hlred{cushion}@*).compact();
 }
 \end{lstlisting}
 \\\hline\\[-1em]2.a) Multi-masked method   &  2.b) Multi-masked variant\\[-1em]\\\hline
 \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void <MASK>(int b) {
-buffer.<MASK>((byte) b);
-<MASK>.compact();
+    buffer.<MASK>((byte) b);
+    <MASK>.compact();
 }
 \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void <MASK>(int b) {
-cushion.<MASK>((byte) b);
-<MASK>.compact();
+    cushion.<MASK>((byte) b);
+    <MASK>.compact();
 }
 \end{lstlisting}
 \\\hline\\[-1em]3.a) Model predictions  &  3.b) Model predictions\\[-1em]\\\hline
 \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void (*@\hl{output}@*)(int b) {
-buffer.write((byte) b);
-buffer.compact();
+    buffer.write((byte) b);
+    buffer.compact();
 }
 \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
 public void (*@\hl{append}@*)(int b) {
-cushion.(*@\hl{add}@*)((byte) b);
-cushion.compact();
+    cushion.(*@\hl{add}@*)((byte) b);
+    cushion.compact();
 }
 \end{lstlisting} \\\hline
 \end{tabular}
