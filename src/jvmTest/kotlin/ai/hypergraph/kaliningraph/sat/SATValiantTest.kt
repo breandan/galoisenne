@@ -294,7 +294,8 @@ class SATValiantTest {
 
     val distinct = mutableSetOf<String>()
     "[ X _ + ( _ ) _ ( _ _ _ _ _ _ _ _ _ _ ".also { println("$it is being synthesized...") }
-      .synthesizeIncrementally(cfg, allowNTs = false).take(100)
+      .synthesizeIncrementally(cfg, allowNTs = false)
+      .take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
 //        assertTrue(decodedString !in distinct)
         distinct += decodedString
@@ -320,7 +321,8 @@ class SATValiantTest {
 
     val distinct = mutableSetOf<String>()
     "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ".also { println("$it is being synthesized...") }
-      .synthesizeIncrementally(cfg, allowNTs = false).take(100)
+      .synthesizeIncrementally(cfg, allowNTs = false)
+      .take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
         val another = decodedString
           .tokenizeByWhitespace()
@@ -347,7 +349,8 @@ class SATValiantTest {
 
     val distinct = mutableSetOf<String>()
     "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ".also { println("$it is being synthesized...") }
-      .synthesizeIncrementally(cfg, allowNTs = false).take(100)
+      .synthesizeIncrementally(cfg, allowNTs = false)
+      .take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
         val another = decodedString
           .multiTokenSubstitutionsAndInsertions()
@@ -401,6 +404,30 @@ class SATValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testIfThen"
+*/
+  @Test
+  fun testIfThen() {
+    val cfg = """
+      START -> X
+      X -> I | F | P
+      P -> I O I
+      F -> IF | BF
+      IF -> if B then I else I
+      BF -> if B then B else B
+      O -> + | - | * | /
+      I -> 1 | 2 | 3 | 4 | IF
+      B -> true | false | B BO B | ( B ) | BF | N B
+      BO -> and | or
+      N -> !
+    """.parseCFG()
+
+    "if _ _ _ _ _ _ <BO> _ _ _ _ _ _".synthesizeIncrementally(cfg)
+      .take(100).toList().also { assert(it.isNotEmpty()) }
+      .forEach { assertNotNull(cfg.parse(it.also { println(it) }), "Unparseable: $it") }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVariableLengthDecoding"
 */
   @Test
@@ -414,7 +441,8 @@ class SATValiantTest {
 
     println("Grammar:\n" + cfg.prettyPrint())
     "_ _ _ _ _ _ _ _ _ ".synthesizeIncrementally(cfg, allowNTs = false)
-      .distinct().take(100).forEach { decodedString ->
+      .distinct().take(100).toList().also { assert(it.isNotEmpty()) }
+      .forEach { decodedString ->
         val isValid = cfg.isValid(decodedString)
         println("$decodedString is ${if (isValid) "" else "not "}valid according to SetValiant!")
 
@@ -425,7 +453,8 @@ class SATValiantTest {
 
     println("Grammar:\n" + dyckPadded.prettyPrint())
     "_________".synthesizeIncrementally(dyckPadded, allowNTs = false)
-      .distinct().take(100).forEach { decodedString ->
+      .distinct().take(100).toList().also { assert(it.isNotEmpty()) }
+      .forEach { decodedString ->
         val isValid = dyckPadded.isValid(decodedString)
         println("$decodedString is ${if (isValid) "" else "not "}valid according to SetValiant!")
 
@@ -440,7 +469,8 @@ class SATValiantTest {
 
     println("Grammar:\n" + arithPadded.prettyPrint())
     "_ _ _ _ _ _ _ _ _ ".synthesizeIncrementally(arithPadded, allowNTs = false)
-      .distinct().take(100).forEach { decodedString ->
+      .distinct().take(100).toList().also { assert(it.isNotEmpty()) }
+      .forEach { decodedString ->
         val isValid = arithPadded.isValid(decodedString)
         println("$decodedString is ${if (isValid) "" else "not "}valid according to SetValiant!")
 

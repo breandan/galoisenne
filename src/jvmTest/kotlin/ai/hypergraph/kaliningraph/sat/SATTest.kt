@@ -115,9 +115,9 @@ class SATTest {
      val dim = 20
      val setVars = setOf(0 to dim - 1, 0 to 1, 2 to 3, 4 to 5)
      val A: FreeMatrix<Formula> = FreeMatrix(XOR_SAT_ALGEBRA, dim) { i, j ->
-       if (i to j in setVars) BLit(true)
+       if (i to j in setVars) T
        else if (j >= i + 1) BVar("V${i}_$j")
-       else BLit(false)
+       else F
      }
 
      val fpOp = A + A * A
@@ -143,9 +143,9 @@ class SATTest {
     val dim = 20
     val setVars = setOf(0 to dim - 1)
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j ->
-      if (i to j in setVars) BLit(true)
+      if (i to j in setVars) T
       else if (j >= i + 1 && j * i % 3 < 1 ) BVar("V${i}_$j")
-      else BLit(false)
+      else F
     }
 
     val fpOp = A + A * A

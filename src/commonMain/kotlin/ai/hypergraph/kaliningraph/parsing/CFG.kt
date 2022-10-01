@@ -223,8 +223,8 @@ private fun CFG.removeUselessSymbols(
   reachable: Set<String> = reachableSymbols(),
 ): CFG = filter { (s, _) -> s in generating && s in reachable }
 
-private fun CFG.reachableSymbols(): Set<String> =
-  graph.transitiveClosure(setOf(graph.first { it.label == START_SYMBOL }))
+fun CFG.reachableSymbols(from: String = START_SYMBOL): Set<String> =
+  graph.transitiveClosure(setOf(graph.first { it.label == from }))
     .map { it.label }.filter { it in nonterminals }.toSet()
 
 private fun CFG.generatingSymbols(

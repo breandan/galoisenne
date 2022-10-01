@@ -17,7 +17,7 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
   else List(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
       .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-      .fold(BLit(false)) { acc, satf -> acc or satf }
+      .fold(F) { acc, satf -> acc or satf }
   }
 
 @JvmName("satFormulaUnion")
@@ -60,11 +60,28 @@ fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
   if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
-// Encodes that each blank can only be one terminal
+// Encodes that each blank can only be a single terminal
 fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
+
+fun CFG.toBitVecLit(nts: Set<String>): List<Formula> =
+  if (1 < nts.size) nonterminals.map { BLit(it in nts) }
+  else BVecLit(nonterminals.size) { F }.toMutableList()
+    .also { if (1 == nts.size) it[bindex[nts.first()]] = T }
+
+// Encodes that nonterminal stubs can only be replaced by reachable nonterminals
+fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<List<Formula>>): Formula =
+  tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(holeVariables)
+    .filter { (word, hf) -> word.isNonterminalStubIn(cfg = this) }
+    .map { (word, hf) ->
+      val nt = word.drop(1).dropLast(1)
+      hf eq toBitVecLit(setOf(nt))
+      // TODO: maybe expand reachability relation to fixed depth
+//      reachableSymbols(from = nt).map { toBitVecLit(setOf(it)) }
+//        .map { hf eq it }.fold(F) { a, b -> a or b }
+    }.flatten().reduce { a, b -> a and b }
 
 val CFG.satAlgebra by cache {
   Ring.of(
@@ -83,7 +100,9 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
 
 fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHtmlPage()
 
-fun String.isHoleToken() = this == "_" || (first() == '<' && last() == '>')
+fun String.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
+fun String.isNonterminalStubIn(cfg: CFG) =
+  first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
 
 /*
 Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
@@ -104,11 +123,11 @@ Lower this matrix onto SAT. Steps:
 
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
-  holeVariables: MutableList<List<Formula>> = mutableListOf(),
-    // Precompute permanent upper right triangular submatrices
+  stringVars: MutableList<List<Formula>> = mutableListOf(),
+  // Precompute permanent upper right triangular submatrices
   literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
     ts = tokens.map { it ->
-      if (it.isHoleToken()) null
+      if (it.isHoleTokenIn(cfg = this)) null
       else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
     }.toTypedArray(),
     algebra = satLitAlgebra
@@ -117,24 +136,22 @@ fun CFG.constructInitialMatrix(
     .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it },
   formulaMatrix: UTMatrix<List<Formula>> =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
-      if (r + 1 == c && tokens[c - 1].isHoleToken()) { // Superdiagonal
-        val word = tokens[c - 1]
-        if (word.isHoleToken())
-          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
-            .also { holeVariables.add(it) } // Blank
-        else setOf(word.drop(1).dropLast(1))
-           .let { nts -> nonterminals.map { BLit(it in nts) } } // Terminal
-      } else if (r + 1 <= c) { // Strictly upper triangular matrix entries
+      // Superdiagonal
+      if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
+        BVecVar("B_${r}_${c}", nonterminals.size).also { stringVars.add(it) }
+      // Strictly upper triangular matrix entries
+      else if (r + 1 <= c) {
         val permanentBitVec = literalMatrix[r, c]
-        if (permanentBitVec.isNullOrEmpty())
-          List(nonterminals.size) { k -> BVar("B_${r}_${c}_$k") }
+        if (permanentBitVec.isNullOrEmpty()) BVecVar("B_${r}_${c}", nonterminals.size)
         else permanentBitVec.map { if (it) T else F }
-      } else emptyList()
-    }.toUTMatrix()
+      }
+      // Diagonal and subdiagonal
+      else emptyList()
+    }.toUTMatrix(),
 ): Pair<UTMatrix<List<Formula>>, MutableList<List<Formula>>> =
     (formulaMatrix
 //  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
-    to holeVariables)
+    to stringVars)
 
 @JvmName("summarizeBooleanMatrix")
 fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
@@ -179,11 +196,11 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
 fun String.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
-  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf(this) },
+  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
   updateProgress: (String) -> Unit = {}
 ): Sequence<String> {
   val cfg_ = if (!allowNTs)
-    cfg.filter { it.RHS.none { it.startsWith('<') && it.endsWith('>') } }.toSet()
+    cfg.filter { it.RHS.none { it.isNonterminalStubIn(cfg)} }.toSet()
   else cfg
 
   val allVariants: Sequence<String> =
@@ -216,7 +233,7 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
   else emptySequence()
 
 private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
-  if (tokens.none { it.isHoleToken() }) emptySequence()
+  if (tokens.none { it.isHoleTokenIn(cfg = this) }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
     val timeToFormConstraints = System.currentTimeMillis()
@@ -233,6 +250,7 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
     val parsingConstraints = try {
       isInGrammar(matrix) and
       uniquenessConstraints(holeVecVars) and
+      reachabilityConstraints(tokens, holeVecVars) and
       (matrix valiantMatEq fixpoint)
     } catch (e: Exception) { return@sequence }.also {
       val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
@@ -274,7 +292,7 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
       val completion: String =
-        tokens.map { if (it == "_") fillers.removeAt(0)!! else it }
+        tokens.map { if (it.isHoleTokenIn(cfg = this@synthesize)) fillers.removeAt(0)!! else it }
           .filterNot { "ε" in it }.joinToString(" ")
 
       if (Thread.currentThread().isInterrupted) throw InterruptedException()
