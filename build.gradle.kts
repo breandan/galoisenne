@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.20-RC"
+  kotlin("multiplatform") version "1.7.20"
   kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -128,7 +128,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.0.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.1.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -169,7 +169,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         compileOnly("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:2.0.2")
+        implementation("org.slf4j:slf4j-simple:2.0.3")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
