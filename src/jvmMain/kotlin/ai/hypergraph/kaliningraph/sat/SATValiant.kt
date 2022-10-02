@@ -75,13 +75,13 @@ fun CFG.toBitVecLit(nts: Set<String>): List<Formula> =
 fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<List<Formula>>): Formula =
   tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(holeVariables)
     .filter { (word, hf) -> word.isNonterminalStubIn(cfg = this) }
-    .map { (word, hf) ->
-      val nt = word.drop(1).dropLast(1)
-      hf eq toBitVecLit(setOf(nt))
-      // TODO: maybe expand reachability relation to fixed depth
-//      reachableSymbols(from = nt).map { toBitVecLit(setOf(it)) }
-//        .map { hf eq it }.fold(F) { a, b -> a or b }
-    }.flatten().reduce { a, b -> a and b }
+    .map { (nonterminalStub, hf) ->
+      val nt = nonterminalStub.drop(1).dropLast(1)
+      nonparametricForm.reachableSymbols(from = nt)
+        .also { println("Transitive closure: $nt ->* $it") }
+        .map { hf eq toBitVecLit(setOf(it)) }
+        .fold(F) { a, b -> a or b }
+    }.flatten().fold(T) { a, b -> a and b }
 
 val CFG.satAlgebra by cache {
   Ring.of(
@@ -252,7 +252,7 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
       uniquenessConstraints(holeVecVars) and
       reachabilityConstraints(tokens, holeVecVars) and
       (matrix valiantMatEq fixpoint)
-    } catch (e: Exception) { return@sequence }.also {
+    } catch (e: Exception) { e.printStackTrace(); return@sequence }.also {
       val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
       println("Solver formed ${it.numberOfNodes()} constraints in ${timeElapsed}ms")
     }

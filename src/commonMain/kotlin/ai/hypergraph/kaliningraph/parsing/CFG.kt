@@ -87,9 +87,9 @@ private fun CFG.normalize(): CFG =
   mutableListOf<CFG>().let { rewrites ->
     addGlobalStartSymbol()
       .expandOr()
-      .also { rewrites.add(it) }
+      .also { rewrites.add(it) } /** [originalForm] */
       .eliminateParametricityFromLHS()
-      .also { rewrites.add(it) }
+      .also { rewrites.add(it) } /** [nonparametricForm] */
       .transformIntoCNF()
       .generateStubs()
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
