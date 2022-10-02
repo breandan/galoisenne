@@ -178,8 +178,8 @@ class SetValiantTest {
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
-      val sols = "( _ _ _ _ ( ) _ _ _ _ ) ".solve(cfg, fillers = cfg.terminals + "")
-        .map { println(it); it }.take(5).toList()
+      val sols = "( _ _ _ _ ( ) _ _ _ _ ) "
+        .solve(cfg, fillers = cfg.terminals + "").take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
 
@@ -194,8 +194,7 @@ class SetValiantTest {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "_ _ _ _ _ _ _ _ ".solve(CFG)
-        .map { println(it); it }.take(5).toList()
+      val sols = "_ _ _ _ _ _ _ _ ".solve(CFG).take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -257,8 +256,8 @@ class SetValiantTest {
   @Test
   fun testDyck3Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfg ->
-      val sols = "( _ _ _ _ ( ) _ _ _ _ )".solve(cfg)
-        .map { println(it); it }.take(5).toList()
+      val sols = "( _ _ _ _ ( ) _ _ _ _ )"
+        .solve(cfg).take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.dyckCheck()) }

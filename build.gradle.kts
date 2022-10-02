@@ -270,6 +270,8 @@ tasks {
       showStackTraces = true
       showStandardStreams = true
     }
+
+    if (project.hasProperty("leaseExcludeBenchmarks")) exclude("**/**Benchmarks.class")
   }
 
   processJupyterApiResources {
