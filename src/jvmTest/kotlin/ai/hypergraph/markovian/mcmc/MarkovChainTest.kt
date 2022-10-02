@@ -65,8 +65,8 @@ class MarkovChainTest {
       a.asDNArray().slice(
         mapOf(
         //D                  I         I+1
-          1 to Slice(start = 1, stop = 2, step = 1),
-          2 to Slice(start = 2, stop = 3, step = 1)
+          1 to Slice(start = 1, stop = 1, step = 1),
+          2 to Slice(start = 2, stop = 2, step = 1)
         )
       ).toList()
     )

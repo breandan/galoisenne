@@ -76,7 +76,7 @@ class TestSMT {
     println("Passed.")
   }
 
-  @Test
+//  @Test
   // https://en.wikipedia.org/wiki/Sums_of_three_cubes
   fun testSumOfCubes() = SMTInstance().solve {
     val a by IntVar()

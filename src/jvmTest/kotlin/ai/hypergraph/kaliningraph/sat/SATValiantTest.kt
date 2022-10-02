@@ -1,11 +1,10 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.types.powerset
+import ai.hypergraph.kaliningraph.types.times
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
-import kotlin.math.pow
-import kotlin.system.measureTimeMillis
 import kotlin.test.*
 
 /*
