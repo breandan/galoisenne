@@ -550,4 +550,17 @@ class SATValiantTest {
         leval
       }.distinct().take(4).toList()
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testImpossibleSubstring"
+*/
+  @Test
+  fun testImpossibleSubstring() {
+    // How quickly can we decide whether a string s is a substring of no string in CFL ∩ Σⁿ?
+    val cfg = """E -> E + E | E * E | ( E ) | x""".parseCFG()
+
+    assertNull("_ _ _ _ x ) +".synthesizeIncrementally(cfg).firstOrNull())
+    val holes = List(30) { "_"}.joinToString(" ")
+    assertNull("$holes ( ) $holes".synthesizeIncrementally(cfg).firstOrNull())
+  }
 }

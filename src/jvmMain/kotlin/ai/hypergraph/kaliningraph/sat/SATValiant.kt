@@ -205,8 +205,42 @@ fun String.synthesizeIncrementally(
 
   val allVariants: Sequence<String> =
     variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
+      .rejectTemplatesContainingImpossibleBigrams(cfg)
+
   return allVariants.map { updateProgress(it); it }
-    .flatMap { cfg_.run { synthesize(tokenize(it)) } }.distinct()
+    .flatMap {
+      val tokens = tokenize(it)
+      cfg_.run { synthesize(tokens) }.ifEmpty {
+        tokens.rememberImpossibleBigrams(cfg)
+        emptySequence()
+      }
+    }.distinct()
+}
+
+fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
+  filter { sketch ->
+    val numTokens = sketch.count { it == ' ' }
+    cfg.impossibleBigrams.unableToFitInside(numTokens)
+//      .also { println("Impossible bigrams: $it") }
+      .none { iss ->
+        (iss in sketch).also {
+          if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
+        }
+      }
+  }
+
+fun List<String>.rememberImpossibleBigrams(cfg: CFG) {
+  windowed(2).filter {
+    it.all { it in cfg.terminals } &&
+      it.joinToString(" ") !in cfg.possibleBigrams
+  }.forEach {
+    val holes = List((size / 2).coerceAtLeast(4)) { "_" }.joinToString(" ")
+    val substring = it.joinToString(" ")
+    val tokens = tokenize("$holes $substring $holes")
+    if (cfg.synthesize(tokens).firstOrNull() == null)
+      cfg.impossibleBigrams[tokens.size] = cfg.impossibleBigrams.getOrDefault(tokens.size, setOf()) + substring
+    else cfg.possibleBigrams.add(substring)
+  }
 }
 
 fun Formula.toPython(
