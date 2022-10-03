@@ -197,7 +197,7 @@ fun String.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
-  updateProgress: (String) -> Unit = {}
+  updateProgress: (String) -> Unit = {},
 ): Sequence<String> {
   val cfg_ = if (!allowNTs)
     cfg.filter { it.RHS.none { it.isNonterminalStubIn(cfg)} }.toSet()
@@ -342,6 +342,9 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
       cleanup(timeToFormConstraints, totalSolutions)
       throw ie
     } catch (e: Exception) {
+      cleanup(timeToFormConstraints, totalSolutions)
+      break
+    } catch (e: OutOfMemoryError) {
       cleanup(timeToFormConstraints, totalSolutions)
       break
     }
