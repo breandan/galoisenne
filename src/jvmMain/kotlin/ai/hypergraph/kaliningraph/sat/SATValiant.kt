@@ -205,12 +205,10 @@ fun String.synthesizeIncrementally(
 
   val allVariants: Sequence<String> =
     variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
-      .rejectTemplatesContainingImpossibleBigrams(cfg)
-
   return allVariants.map { updateProgress(it); it }
     .flatMap {
       val tokens = tokenize(it)
-      cfg_.synthesize(tokens).ifEmpty {
+      cfg_.run { synthesize(tokens) }.ifEmpty {
         tokens.rememberImpossibleBigrams(cfg)
         emptySequence()
       }
