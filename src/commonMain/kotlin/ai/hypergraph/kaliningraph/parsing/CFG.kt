@@ -105,7 +105,7 @@ private fun CFG.normalize(): CFG =
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
       .transformIntoCNF()
-      .generateStubs()
+      .generateNonterminalStubs()
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
 
@@ -157,7 +157,7 @@ fun CFG.eliminateParametricityFromLHS(
       .eliminateParametricityFromLHS()
   }
 
-fun CFG.generateStubs(): CFG =
+fun CFG.generateNonterminalStubs(): CFG =
   this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
     .addEpsilonProduction()

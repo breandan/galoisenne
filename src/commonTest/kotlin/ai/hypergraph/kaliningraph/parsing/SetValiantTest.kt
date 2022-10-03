@@ -364,6 +364,41 @@ class SetValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
+*/
+
+  @Test
+  fun testOCaml() {
+    val cfg = """
+      S -> X
+      X -> A | V | ( X , X ) | X X | ( X )
+      A -> FUN | F | LI | M | L
+      FUN -> fun V `->` X
+      F -> if X then X else X
+      M -> match V with Branch
+      Branch -> `|` X `->` X | Branch Branch
+      L -> let V = X
+      L -> let rec V = X
+      LI -> L in X
+
+      V -> Vexp | ( Vexp ) | List | Vexp Vexp
+      Vexp -> Vname | FunName | Vexp VO Vexp | B
+      Vexp -> ( Vname , Vname ) | Vexp Vexp | I
+      List -> [] | V :: V
+      Vname -> a | b | c | d | e | f | g | h | i
+      Vname -> j | k | l | m | n | o | p | q | r
+      Vname -> s | t | u | v | w | x | y | z
+      FunName -> foldright | map | filter
+      FunName -> curry | uncurry | ( VO )
+      VO ->  + | - | * | / | >
+      VO -> = | < | `||` | `&&`
+      I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      B ->  true | false
+    """.trimIndent().parseCFG()
+    println(cfg.parse("1 + <I> + 2")!!.prettyPrint())
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUTMRepresentationEquivalence"
 */
   @ExperimentalTime
