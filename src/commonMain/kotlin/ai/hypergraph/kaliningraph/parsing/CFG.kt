@@ -30,8 +30,8 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
-val CFG.originalForm by cache { rewriteHistory.get(this)!![0] }
-val CFG.nonparametricForm by cache { rewriteHistory.get(this)!![1] }
+val CFG.originalForm by cache { rewriteHistory[this]!![0] }
+val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 
 // TODO: implement complete substring decider
 // https://nokyotsu.com/me/papers/cic01.pdf

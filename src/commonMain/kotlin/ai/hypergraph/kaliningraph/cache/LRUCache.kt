@@ -11,7 +11,7 @@ class LRUCache<K, V>(
   fun getOrPut(key: K, value: () -> V): V =
     if (key in map) map[key]!! else value().also { put(key, it) }
 
-  fun get(key: K) = map[key]
+  operator fun get(key: K) = map[key]
 
   fun put(key: K, value: V): V? {
     size += sizeOf(key, value)
@@ -41,4 +41,5 @@ class LRUCache<K, V>(
   }
 
   override fun toString() = "$size/$maxSize cached=$map"
+  operator fun contains(key: K) = key in map
 }
