@@ -5,7 +5,14 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
 
-// TODO: Generate minimal strings which cannot be repaired by left or right insertion,
+// TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
+//       we can should instead be focusing on repairing substrings which are known to be
+//       outside the language, e.g., for the following grammar and string:
+//             E → E+E | E*E | (E) | x                      (+)+x*x+x+(x*x)
+//       we know that the substring (+) cannot be in the grammar, so we can focus on it.
+//             https://nokyotsu.com/me/papers/cic01.pdf
+//
+// Idea: Generate minimal strings which cannot be repaired by left or right insertion,
 //       these will become our initial set. Whenever we encounter one of these substrings
 //       in the candidate string, we know that without repairing that part of the string
 //       candidate, its full string can never be in the language defined by the given CFG.

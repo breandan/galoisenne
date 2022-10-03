@@ -34,6 +34,20 @@ val CFG.originalForm by cache { rewriteHistory.get(this)!![0] }
 val CFG.nonparametricForm by cache { rewriteHistory.get(this)!![1] }
 //val CFG.original by cache { originalMap.get(this)!! }
 
+// TODO: implement complete substring decider
+// https://nokyotsu.com/me/papers/cic01.pdf
+// https://cs.stackexchange.com/questions/154130/minimal-length-strings-which-are-substrings-of-no-string-in-a-given-cfl
+// These strings must never appear in any length-k string in the language defined by this grammar
+val CFG.impossibleBigrams by cache { mutableMapOf<Int, Set<String>>() }
+// Underapproximates impossible substrings for a sketch template of a given length by tracking
+// the impossible substrings that cannot fit inside an equal- or longer-length string, i.e.,
+// if a string does not fit in Σ^100, then it definitely will not fit in Σ^k<100. In the worst case
+// it will be a false negative and we do unnecessary work trying to solve an impossible template.
+fun Map<Int, Set<String>>.unableToFitInside(k: Int): Set<String> =
+  keys.filter { k <= it }.flatMap { this[it] ?: setOf() }.toSet()
+// These strings all appear in an arbitrary-length string in the language defined by this grammar
+val CFG.possibleBigrams by cache { mutableSetOf<String>() }
+
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
   val precomputedJoins: MutableMap<Pair<Set<String>, Set<String>>, Set<Triple<String, String, String>>> =
