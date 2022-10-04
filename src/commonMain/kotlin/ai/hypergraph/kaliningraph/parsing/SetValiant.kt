@@ -163,7 +163,7 @@ fun String.parseCFG(
   normalize: Boolean = true,
   validate: Boolean = false
 ): CFG =
-  (if (validate) validate() else this).lines().filter(String::isNotBlank)
+  (if (validate) validate() else this).lines().filter { "->" in it}
     .map { line ->
       val prod = line.split(" -> ").map { it.trim() }
       if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")

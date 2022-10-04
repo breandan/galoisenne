@@ -366,7 +366,6 @@ class SetValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
 */
-
   @Test
   fun testOCaml() {
     val cfg = """
@@ -397,6 +396,27 @@ class SetValiantTest {
     """.trimIndent().parseCFG()
     assertNotNull(cfg.parse("1 + <I> + 2"))
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testParametricLanguage"
+*/
+  @Test
+  fun testParametricLanguage() {
+    val cfg = """
+      START -> E<X>
+      op -> + | *
+      E<X> -> E<X> op E<X>
+      X -> Int | Bool | Float
+      E<Int> -> 0 | 1 | 2 | 3
+      E<Bool> -> T | F
+      E<Float> -> E<Int> . E<Int>
+
+      Upcasting (e.g., 1.0 + 2 ⊢ E<Float>):
+      E<Float> -> E<Int> op E<Float> | E<Float> op E<Int>
+    """.trimIndent().parseCFG()
+
+  assertNotNull(cfg.parse("<E<Float>> + <E<Int>> + <E<Float>>"))
+}
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUTMRepresentationEquivalence"
