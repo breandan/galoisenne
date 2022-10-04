@@ -118,6 +118,10 @@ val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
 
 //=====================================================================================
 
+fun String.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
+fun String.isNonterminalStubIn(cfg: CFG) =
+  first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
+
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): TreeMatrix =
   FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
@@ -142,8 +146,10 @@ fun tokenize(str: String): List<String> = str.tokenizeByWhitespace()
 fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bimap[listOf(terminal)]
-        .map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
+      bimap[listOf(terminal)].let {
+        if (!terminal.isNonterminalStubIn(this)) it
+        else originalForm.equivalenceClass(it).filter { it in nonterminals }
+      }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeAlgebra()
   )

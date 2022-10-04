@@ -77,7 +77,7 @@ class Bindex(CFG: CFG) {
   operator fun get(i: Int) = indexedNTs[i]
   operator fun get(s: String) = ntIndices[s]!!
 }
-// Maps variables to expansions and expansions to variables in a Grammar
+// Maps variables to expansions and expansions to variables in a grammar
 class BiMap(CFG: CFG) {
   val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
   val R2LHS = CFG.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
@@ -104,8 +104,11 @@ private fun CFG.normalize(): CFG =
       .also { rewrites.add(it) } /** [originalForm] */
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
-      .generateNonterminalStubs()
       .transformIntoCNF()
+      // This should occur after CNF transform otherwise it causes issues
+      // during nonterminal-constrained synthesis, e.g., _ _ _ <NT> _ _ _
+      // because we do not use equivalence class during bitvector encoding
+      .generateNonterminalStubs()
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
 
@@ -158,9 +161,8 @@ fun CFG.eliminateParametricityFromLHS(
   }
 
 fun CFG.generateNonterminalStubs(): CFG =
-  this + filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
-    .map { it.LHS to listOf("<${it.LHS}>") }.toSet()
-    .addEpsilonProduction()
+  this + (filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
+    .map { it.LHS to listOf("<${it.LHS}>") }.toSet()).addEpsilonProduction()
 
 // Add start symbol if none are present (e.g., in case the user forgets)
 private fun CFG.addGlobalStartSymbol(): CFG =
@@ -236,6 +238,18 @@ private fun CFG.removeUselessSymbols(
   generating: Set<String> = generatingSymbols(),
   reachable: Set<String> = reachableSymbols(),
 ): CFG = filter { (s, _) -> s in generating && s in reachable }
+
+// Equivalence class of an NT B are all NTs, A ->* B ->* C
+// reachable via unit productions (in forward or reverse)
+fun CFG.equivalenceClass(from: Set<String>): Set<String> =
+  from.filter { it in nonterminals }.let { nts ->
+    nts.flatMap {
+      bimap[it].filter { it.size == 1 }.flatten() + bimap[listOf(it)]
+    }.filter { it in nonterminals }.toSet().let {
+      val ec = nts + it
+      if (ec == nts) ec else equivalenceClass(ec)
+    }
+  }
 
 fun CFG.reachableSymbols(from: String = START_SYMBOL): Set<String> =
   graph.transitiveClosure(setOf(graph.first { it.label == from }))

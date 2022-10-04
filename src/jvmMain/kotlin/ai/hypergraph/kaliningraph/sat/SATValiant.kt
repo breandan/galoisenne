@@ -100,10 +100,6 @@ fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
 
 fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHtmlPage()
 
-fun String.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
-fun String.isNonterminalStubIn(cfg: CFG) =
-  first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
-
 /*
 Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
 It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
