@@ -395,7 +395,7 @@ class SetValiantTest {
       I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       B ->  true | false
     """.trimIndent().parseCFG()
-    println(cfg.parse("1 + <I> + 2")!!.prettyPrint())
+    assertNotNull(cfg.parse("1 + <I> + 2"))
   }
 
 /*

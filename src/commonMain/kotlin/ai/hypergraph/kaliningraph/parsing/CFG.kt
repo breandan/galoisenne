@@ -104,8 +104,8 @@ private fun CFG.normalize(): CFG =
       .also { rewrites.add(it) } /** [originalForm] */
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
-      .transformIntoCNF()
       .generateNonterminalStubs()
+      .transformIntoCNF()
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
 

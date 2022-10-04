@@ -205,6 +205,7 @@ fun String.synthesizeIncrementally(
 
   val allVariants: Sequence<String> =
     variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
+      .rejectTemplatesContainingImpossibleBigrams(cfg)
   return allVariants.map { updateProgress(it); it }
     .flatMap {
       val tokens = tokenize(it)
@@ -219,7 +220,6 @@ fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
   filter { sketch ->
     val numTokens = sketch.count { it == ' ' }
     cfg.impossibleBigrams.unableToFitInside(numTokens)
-//      .also { println("Impossible bigrams: $it") }
       .none { iss ->
         (iss in sketch).also {
           if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
@@ -228,7 +228,7 @@ fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
   }
 
 fun List<String>.rememberImpossibleBigrams(cfg: CFG) {
-  windowed(2).filter {
+  windowed(2).asSequence().filter {
     it.all { it in cfg.terminals } &&
       it.joinToString(" ") !in cfg.possibleBigrams
   }.forEach {
