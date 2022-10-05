@@ -62,4 +62,8 @@ class Tree constructor(
 
     return removeSynthetic().first()
   }
+
+  fun contents(): String =
+    if (children.isEmpty()) "$terminal"
+    else children.joinToString(" ") { it.contents() }
 }

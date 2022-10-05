@@ -28,6 +28,7 @@ fun BVecVar(prefix: String, size: Int): List<Formula> =
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
   FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)
+fun BVecLit(l: List<Boolean>): List<Formula> = l.map { ff.constant(it)  as Formula }
 fun BVecLit(size: Int, f: (Int)-> Formula): List<Formula> = List(size) { f(it) }
 
 fun Formula.solve(): Map<Variable, Boolean> =

@@ -82,7 +82,10 @@ fun CFG.treeJoin(left: Forest, right: Forest): Forest =
 fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
-fun CFG.toBitVec(nts: Set<String>): List<Boolean> = nonterminals.map { it in nts }
+fun CFG.toBitVec(nts: Set<String>): List<Boolean> =
+  if (1 < nts.size) nonterminals.map { it in nts }
+  else List(nonterminals.size) { false }.toMutableList()
+    .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
 @JvmName("joinBitVector")
 fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =

@@ -351,13 +351,9 @@ class SATValiantTest {
       .synthesizeIncrementally(cfg, allowNTs = false)
       .take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
-        val another = decodedString
-          .multiTokenSubstitutionsAndInsertions()
-          .take(10)
-          .forEach { println(it) }
-
         println("Decoded: $decodedString")
-        println("Another: $another")
+        decodedString.multiTokenSubstitutionsAndInsertions()
+          .take(10).forEach { println("Another: $it") }
       }
   }
 
@@ -562,5 +558,18 @@ class SATValiantTest {
     assertNull("_ _ _ _ x ) +".synthesizeIncrementally(cfg).firstOrNull())
     val holes = List(30) { "_"}.joinToString(" ")
     assertNull("$holes ( ) $holes".synthesizeIncrementally(cfg).firstOrNull())
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testPrunedQuery"
+*/
+  @Test
+  fun testPrunedQuery() {
+    val cfg = """S -> w | ( ) | [ ] | < > | { } | ( S ) | [ S ] | < S > | { S } | S S""".parseCFG()
+    val longQuery = "w ( w ) w ( w ( w ( w ) w ( w ) w ( w ) ) ) w ( w ( w )" +
+    " w ( w ) w ( w ) w ( w ) w ( w ( w ) ) w ( ( w ( w ( w ) ) w ) w )" +
+    " w ( w ( ) w ( w ) ) w ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
+    val shortQuery = "w ( w ) w ( w ( w ( w ) w ( w ) w ( w ) ) ) w ( <START> ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
+    println(longQuery.synthesizeIncrementally(cfg).first())
   }
 }

@@ -66,21 +66,16 @@ fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
     .fold(T) { acc, it -> acc and it }
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
-fun CFG.toBitVecLit(nts: Set<String>): List<Formula> =
-  if (1 < nts.size) nonterminals.map { BLit(it in nts) }
-  else BVecLit(nonterminals.size) { F }.toMutableList()
-    .also { if (1 == nts.size) it[bindex[nts.first()]] = T }
-
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
 fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<List<Formula>>): Formula =
   tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(holeVariables)
-    .filter { (word, hf) -> word.isNonterminalStubIn(cfg = this) }
+    .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
       val nt = nonterminalStub.drop(1).dropLast(1)
       nonparametricForm.reachableSymbols(from = nt)
         .also { println("Transitive closure: $nt ->* $it") }
-        .map { hf eq toBitVecLit(setOf(it)) }
-        .fold(F) { a, b -> a or b }
+        .map { hf eq BVecLit(toBitVec(setOf(it))) }
+        .fold(F) { a, b -> a xor b }
     }.flatten().fold(T) { a, b -> a and b }
 
 val CFG.satAlgebra by cache {
@@ -194,41 +189,101 @@ fun String.synthesizeIncrementally(
   allowNTs: Boolean = true,
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
   updateProgress: (String) -> Unit = {},
+  skipWhen: (List<String>) -> Boolean = { false }
 ): Sequence<String> {
   val cfg_ = if (!allowNTs)
     cfg.filter { it.RHS.none { it.isNonterminalStubIn(cfg)} }.toSet()
   else cfg
 
+  val (stringToSolve, reconstructor) = cfg.prune(this)
+  if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
+
   val allVariants: Sequence<String> =
-    variations.fold(sequenceOf(this)) { a, b -> a + b() }.distinct()
-      .rejectTemplatesContainingImpossibleBigrams(cfg)
+    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b() }
+      .distinct().rejectTemplatesContainingImpossibleBigrams(cfg)
   return allVariants.map { updateProgress(it); it }
     .flatMap {
-      val tokens = tokenize(it)
-      cfg_.run { synthesize(tokens) }.ifEmpty {
-        tokens.rememberImpossibleBigrams(cfg)
-        emptySequence()
-      }
+      val variantTokens = tokenize(it)
+      if (skipWhen(variantTokens)) emptySequence()
+      else cfg_.run { synthesize(variantTokens, reconstructor) }
+        .ifEmpty {
+          variantTokens.rememberImpossibleBigrams(cfg)
+          emptySequence()
+        }
     }.distinct()
+}
+
+/**
+ * Attempts to reduce parsable subsequences into a single token to reduce total
+ * token count, e.g. ( w ) + _ => <S> + _ resulting in two fewer tokens overall.
+ * Consider 3 + 5 * _ != <S> * _ for checked arithmetic, so context-insensitive
+ * pruning is not always sound, thus we should err on the side of caution.
+ *
+ * TODO: A proper solution requires ruling out whether the left- and right-
+ *       quotients of the root nonterminal ever yield another derivation.
+ */
+
+fun CFG.prune(
+  string: String,
+  minimumWidth: Int = 4,
+  reconstructor: MutableList<Pair<String, String>> =
+    tokenize(string).filter { it.isNonterminalStubIn(this) }
+      .map { it to it }.toMutableList()
+): Pair<String, MutableList<Pair<String, String>>> {
+  val tokens = tokenize(string)
+  val stubs = parseWithStubs(string).second
+    .fold(setOf<Tree>()) { acc, t ->
+      if (acc.any { t.span isStrictSubsetOf it.span }) acc else acc + t
+    }.sortedBy { it.span.first }
+
+  val treesToBeChopped =
+    stubs.filter { "START" in equivalenceClass(setOf(it.root)) }
+      .map { it.span to it }.let {
+        val (spans, trees) = it.unzip()
+        // Find trees corresponding to ranges which have an unambiguous parse tree
+        trees.filter { tree ->
+          minimumWidth < tree.span.run { last - first } &&
+          spans.filter { it != tree.span }
+            .none { tree.span.intersect(it).isNotEmpty() }
+        }
+      }//.onEach { println(it.prettyPrint()) }
+
+  if (treesToBeChopped.isEmpty()) string to reconstructor
+
+  var totalPruned = 0
+  var previousNonterminals = 0
+  val prunedString = tokens.indices.mapNotNull { i ->
+    val possibleTree = treesToBeChopped.firstOrNull { i in it.span }
+    if (possibleTree != null)
+      if (i == possibleTree.span.first) "<${possibleTree.root}>".also {
+        val (a, b) = it to possibleTree.contents()
+        println("Reduced: $b => $a")
+        reconstructor.add(previousNonterminals++, a to b)
+      }
+      else { totalPruned++; null }
+    else tokens[i].also { if (it.isNonterminalStubIn(this)) previousNonterminals++ }
+  }.joinToString(" ")
+
+  println("Pruned $totalPruned tokens in total")
+  return if (totalPruned == 0) string to reconstructor
+  else prune(prunedString, minimumWidth, reconstructor)
 }
 
 fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
   filter { sketch ->
     val numTokens = sketch.count { it == ' ' }
-    cfg.impossibleBigrams.unableToFitInside(numTokens)
-      .none { iss ->
-        (iss in sketch).also {
-          if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
-        }
+    cfg.impossibleBigrams.unableToFitInside(numTokens).none { iss ->
+      (iss in sketch).also {
+        if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
       }
+    }
   }
 
 fun List<String>.rememberImpossibleBigrams(cfg: CFG) {
   windowed(2).asSequence().filter {
-    it.all { it in cfg.terminals } &&
-      it.joinToString(" ") !in cfg.possibleBigrams
+    it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams
   }.forEach {
-    val holes = List((size / 2).coerceAtLeast(4)) { "_" }.joinToString(" ")
+    val holes = List((size / 2).coerceIn(4..8)) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = tokenize("$holes $substring $holes")
     if (cfg.synthesize(tokens).firstOrNull() == null)
@@ -260,7 +315,11 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
       .mapNotNull { if (it.size == 1) it[0] else null }.asSequence()
   else emptySequence()
 
-private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
+private fun CFG.synthesize(
+  tokens: List<String>,
+  // Used to restore well-formed trees that were pruned
+  reconstructor: MutableList<Pair<String, String>> = mutableListOf()
+): Sequence<String> =
   if (tokens.none { it.isHoleTokenIn(cfg = this) }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])
   else sequence {
@@ -308,20 +367,18 @@ private fun CFG.synthesize(tokens: List<String>): Sequence<String> =
       val fillers: MutableList<String?> =
         holeVecVars.map { bits -> tmap[nonterminals(bits.map { solution[it]!! })] }.toMutableList()
 
-      // Try to remove unit nonterminals
-//      fillers = fillers.map { str ->
-//        if (str!= null && str.matches(Regex("<[^\\s>]*>"))) {
-//          bimap[str.drop(1).dropLast(1)].filter { ls ->
-//            ls.joinToString().let { "." !in it && "ε" !in it && it != ls[0] }
-//          }.let { if (it.size == 1) it[0].joinToString(" ") else str }
-//        } else str
-//      }.toMutableList()
-
 //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
 //      println(bMat.summarize(this@synthesize))
       val completion: String =
-        tokens.map { if (it.isHoleTokenIn(cfg = this@synthesize)) fillers.removeAt(0)!! else it }
-          .filterNot { "ε" in it }.joinToString(" ")
+        tokens.map {
+          if (it == "_") fillers.removeAt(0)!!
+          else if (it.isNonterminalStubIn(this@synthesize)) {
+            val stub = fillers.removeAt(0)!!
+            if (it != reconstructor.first().first) stub
+            else reconstructor.removeFirst().second
+          }
+          else it
+        }.filterNot { "ε" in it }.joinToString(" ")
 
       if (Thread.currentThread().isInterrupted) throw InterruptedException()
       totalSolutions++

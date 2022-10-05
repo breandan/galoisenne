@@ -30,8 +30,11 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
-val CFG.originalForm by cache { rewriteHistory[this]!![0] }
-val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
+val CFG.originalForm by cache { rewriteHistory[this]?.let{ it[0]} ?: this }
+val CFG.nonparametricForm by cache { rewriteHistory[this]?.let { it[1] } ?: this }
+//val CFG.originalForm by cache { rewriteHistory[this]!![0] }
+//val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
+val CFG.reachability by cache { mutableMapOf<String, Set<String>>() }
 
 // TODO: implement complete substring decider
 // https://nokyotsu.com/me/papers/cic01.pdf
@@ -43,8 +46,9 @@ val CFG.impossibleBigrams by cache { mutableMapOf<Int, Set<String>>() }
 // if a string does not fit in Σ^100, then it definitely will not fit in Σ^k<100. In the worst case
 // it will be a false negative and we do unnecessary work trying to solve an impossible template.
 fun Map<Int, Set<String>>.unableToFitInside(k: Int): Set<String> =
-  values.flatten().toSet() // May not work in general but for bigrams it should be fine
+  values.flatten().toSet() // May not work for ngrams but for bigrams it should be fine
 //  keys.filter { k <= it }.flatMap { this[it] ?: setOf() }.toSet()
+
 // These strings all appear in an arbitrary-length string in the language defined by this grammar
 val CFG.possibleBigrams by cache { mutableSetOf<String>() }
 
@@ -252,8 +256,10 @@ fun CFG.equivalenceClass(from: Set<String>): Set<String> =
   }
 
 fun CFG.reachableSymbols(from: String = START_SYMBOL): Set<String> =
-  graph.transitiveClosure(setOf(graph.first { it.label == from }))
-    .map { it.label }.filter { it in nonterminals }.toSet()
+  reachability.getOrPut(from) {
+    graph.transitiveClosure(setOf(graph.first { it.label == from }))
+      .map { it.label }.filter { it in nonterminals }.toSet()
+  }
 
 private fun CFG.generatingSymbols(
   from: Set<String> = terminalUnitProductions.map { it.LHS }.toSet(),

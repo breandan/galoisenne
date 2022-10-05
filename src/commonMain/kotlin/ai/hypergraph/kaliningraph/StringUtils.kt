@@ -1,9 +1,21 @@
 package ai.hypergraph.kaliningraph
 
+import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
 import kotlin.math.min
+
+infix fun Char.closes(that: Char) =
+  if (this == ')' && that == '(') true
+  else if (this == ']' && that == '[') true
+  else if (this == '}' && that == '{') true
+  else this == '>' && that == '<'
+
+fun String.hasBalancedBrackets(): Boolean =
+  filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
+    stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
+  }.isEmpty()
 
 fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   fun String.tok() = split(" -> ")

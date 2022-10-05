@@ -1,9 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.automata.Stack
-import ai.hypergraph.kaliningraph.automata.peek
-import ai.hypergraph.kaliningraph.automata.pop
-import ai.hypergraph.kaliningraph.automata.push
+import ai.hypergraph.kaliningraph.hasBalancedBrackets
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
@@ -144,7 +141,7 @@ class SetValiantTest {
 
   fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
     genCandidates(CFG, fillers).filter {
-      (it.matches(CFG) to it.dyckCheck()).also { (valiant, stack) ->
+      (it.matches(CFG) to it.hasBalancedBrackets()).also { (valiant, stack) ->
         // Should never see either of these statements if we did our job correctly
         if (!valiant && stack) println("Valiant under-approximated Stack: $it")
         else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
@@ -161,17 +158,6 @@ class SetValiantTest {
 
     }
 
-  infix fun Char.matches(that: Char) =
-    if (this == ')' && that == '(') true
-    else if (this == ']' && that == '[') true
-    else if (this == '}' && that == '{') true
-    else this == '>' && that == '<'
-
-  fun String.dyckCheck() =
-    filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
-      stack.apply { if (isNotEmpty() && c.matches(peek())) pop() else push(c) }
-    }.isEmpty()
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDyckSolver"
 */
@@ -183,7 +169,7 @@ class SetValiantTest {
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
 
-      sols.forEach { assertTrue(it.dyckCheck()) }
+      sols.forEach { assertTrue(it.hasBalancedBrackets()) }
     }
   }
 
@@ -199,7 +185,7 @@ class SetValiantTest {
 
       println("Solutions found: ${sols.joinToString(", ")}")
 
-      sols.forEach { assertTrue(it.dyckCheck()) }
+      sols.forEach { assertTrue(it.hasBalancedBrackets()) }
     }
   }
 
@@ -260,7 +246,7 @@ class SetValiantTest {
         .solve(cfg).take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
-      sols.forEach { assertTrue(it.dyckCheck()) }
+      sols.forEach { assertTrue(it.hasBalancedBrackets()) }
     }
   }
 
