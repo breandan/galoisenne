@@ -226,6 +226,7 @@ fun String.synthesizeIncrementally(
 fun CFG.prune(
   string: String,
   minimumWidth: Int = 4,
+  // Maps nonterminal stubs from pruned branches back to original string
   reconstructor: MutableList<Pair<String, String>> =
     tokenize(string).filter { it.isNonterminalStubIn(this) }
       .map { it to it }.toMutableList()
@@ -259,8 +260,7 @@ fun CFG.prune(
         val (a, b) = it to possibleTree.contents()
         println("Reduced: $b => $a")
         reconstructor.add(previousNonterminals++, a to b)
-      }
-      else { totalPruned++; null }
+      } else { totalPruned++; null }
     else tokens[i].also { if (it.isNonterminalStubIn(this)) previousNonterminals++ }
   }.joinToString(" ")
 
@@ -287,15 +287,22 @@ fun List<String>.rememberImpossibleBigrams(cfg: CFG) {
     val substring = it.joinToString(" ")
     val tokens = tokenize("$holes $substring $holes")
     if (cfg.synthesize(tokens).firstOrNull() == null)
-      cfg.impossibleBigrams[tokens.size] = cfg.impossibleBigrams.getOrDefault(tokens.size, setOf()) + substring
+      cfg.impossibleBigrams[tokens.size] =
+        cfg.impossibleBigrams.getOrDefault(tokens.size, setOf()) + substring
     else cfg.possibleBigrams.add(substring)
   }
 }
 
 fun Formula.toPython(
   params: String = variables().joinToString(", ") { it.name() },
-  bodyY: String = toString().replace("~", "neg/").replace("|", "|V|").replace("&", "|Λ|"),
-  bodyX: String = toString().replace("~", "not ").replace("|", "or").replace("&", "and")
+  bodyY: String = toString()
+    .replace("~", "neg/")
+    .replace("|", "|V|")
+    .replace("&", "|Λ|"),
+  bodyX: String = toString()
+    .replace("~", "not ")
+    .replace("|", "or")
+    .replace("&", "and")
 ) = """
 def y_constr($params):
     return $bodyY
@@ -306,7 +313,7 @@ def x_constr($params):
 
 fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
-          v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
+      v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
 private fun CFG.handleSingleton(s: String): Sequence<String> =
   if (s == "_") terminals.asSequence()
@@ -397,7 +404,7 @@ private fun CFG.synthesize(
     } catch (e: Exception) {
       cleanup(timeToFormConstraints, totalSolutions)
       break
-    } catch (e: OutOfMemoryError) {
+    } catch (e: OutOfMemoryError) { // Does this really work?
       cleanup(timeToFormConstraints, totalSolutions)
       break
     }

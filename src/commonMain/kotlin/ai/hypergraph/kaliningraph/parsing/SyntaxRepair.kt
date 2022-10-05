@@ -43,8 +43,7 @@ fun String.multiTokenSubstitutionsAndInsertions(
   fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<String> =
   allSubstitutions((padded.indices.toSet() - exclusions), numberOfEdits, fishyLocations)
-    .map { idxs -> padded.substitute(idxs) { "_ _" } }
-    .apply {
+    .map { idxs -> padded.substitute(idxs) { "_ _" } }.apply {
       println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
       println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
     }
