@@ -30,11 +30,15 @@ val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph by cache { toGraph() }
-val CFG.originalForm by cache { rewriteHistory[this]?.let{ it[0]} ?: this }
-val CFG.nonparametricForm by cache { rewriteHistory[this]?.let { it[1] } ?: this }
+val CFG.originalForm by cache { rewriteHistory[this]!![0] }
+val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 //val CFG.originalForm by cache { rewriteHistory[this]!![0] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 val CFG.reachability by cache { mutableMapOf<String, Set<String>>() }
+val CFG.noNonterminalStubs by cache {
+  filter { it.RHS.none { it.isNonterminalStubIn(this)} }.toSet()
+    .also { rewriteHistory.put(it, rewriteHistory[this]!!) }
+}
 
 // TODO: implement complete substring decider
 // https://nokyotsu.com/me/papers/cic01.pdf

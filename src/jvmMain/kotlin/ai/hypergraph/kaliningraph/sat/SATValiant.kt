@@ -192,9 +192,7 @@ fun String.synthesizeIncrementally(
   updateProgress: (String) -> Unit = {},
   skipWhen: (List<String>) -> Boolean = { false }
 ): Sequence<String> {
-  val cfg_ = if (!allowNTs)
-    cfg.filter { it.RHS.none { it.isNonterminalStubIn(cfg)} }.toSet()
-  else cfg
+  val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
   val (stringToSolve, reconstructor) =
     if(enablePruning) cfg.prune(this) else this to mutableListOf()
