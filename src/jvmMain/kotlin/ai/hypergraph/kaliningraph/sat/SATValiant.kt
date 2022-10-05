@@ -187,6 +187,7 @@ fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
 fun String.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
+  enablePruning: Boolean = false,
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
   updateProgress: (String) -> Unit = {},
   skipWhen: (List<String>) -> Boolean = { false }
@@ -195,7 +196,8 @@ fun String.synthesizeIncrementally(
     cfg.filter { it.RHS.none { it.isNonterminalStubIn(cfg)} }.toSet()
   else cfg
 
-  val (stringToSolve, reconstructor) = cfg.prune(this)
+  val (stringToSolve, reconstructor) =
+    if(enablePruning) cfg.prune(this) else this to mutableListOf()
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
   val allVariants: Sequence<String> =
