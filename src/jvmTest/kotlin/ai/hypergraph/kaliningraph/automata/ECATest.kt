@@ -2,13 +2,14 @@ package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.sampling.findAll
 import ai.hypergraph.kaliningraph.sat.*
-import ai.hypergraph.kaliningraph.sat.F
-import ai.hypergraph.kaliningraph.sat.T
 import ai.hypergraph.kaliningraph.types.π2
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest"
+*/
 class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
@@ -17,11 +18,43 @@ class ECATest {
   fun testSimpleECA() { initializeECA(20).evolve() }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA4"
+*/
+  @Test
+  fun testTypeLevelECA4() {
+    val init = BVec(T, F, F, F)
+    fun BVec.bits() = data.map { it == T }
+    init
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 1)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 2)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 3)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 4)) }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA10"
+*/
+  @Test
+  fun testTypeLevelECA10() {
+    val init = BVec(T, F, F, F, T, F, F, F, F, F)
+    fun BVec.bits() = data.map { it == T }
+    init
+      .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = 1)) }
+      .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = 2)) }
+      .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = 3)) }
+      .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = 4)) }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testLooper"
 */
   @Test
   fun testLooper() {
-    for (j in 2..10) {
+    for (j in 2..5) {
       val i = initializeSATECA(128) { i -> BVar("$i") }
       val t = (i matEq i.evolve(steps = 1)).negate() and (i matEq i.evolve(steps = j))
       try {
@@ -39,7 +72,7 @@ class ECATest {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     findAll(setOf(true, false), 128).first { orphan ->
       val i = initializeSATECA(16) { i -> BVar("$i") }
-      val fs = orphan.map { if(it) T else F }
+      val fs = orphan.map { ff.constant(it) }
       val t = (i.evolve(steps = 1) matEq initializeSATECA(16) { fs[it] })
         try { t.solve(); false } catch (e: Exception ) { true}
     }.also { println(it) }
@@ -50,7 +83,7 @@ class ECATest {
 */
   @Test
   fun testEndling() {
-    for (j in 0..10) {
+    for (j in 0..5) {
       val i = initializeSATECA(128) { i -> BVar("$i") }
       val t =
           (i.evolve(steps = j) matEq i.evolve(steps = j+1)).negate() and
@@ -70,10 +103,10 @@ class ECATest {
 */
   @Test
   fun testChimera() {
-  println(listOf(true, false, false, true).evolve(steps = 1).pretty())
-      val i = initializeSATECA(5) { i -> BVar("i$i") }
-      val j = initializeSATECA(5) { i -> BVar("j$i") }
-      val k = initializeSATECA(5) { i -> BVar("k$i") }
+    println(listOf(true, false, false, true).evolve(steps = 1).pretty())
+    val i = initializeSATECA(128) { i -> BVar("i$i") }
+    val j = initializeSATECA(128) { i -> BVar("j$i") }
+    val k = initializeSATECA(128) { i -> BVar("k$i") }
     val neqIJK = (i matEq j).negate() and (j matEq k).negate() and (k matEq i).negate()
 
     val (fi, fj, fk) =
@@ -120,7 +153,7 @@ class ECATest {
 */
   @Test
   fun testECAPrint() {
-  val ts = arrayOf(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0).map { it == 1 }
+  val ts = "0100011111100010".map { it == '1' }
     ts.evolve(0).also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
