@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 
+
 typealias Production = Π2<String, List<String>>
 typealias CFG = Set<Production>
 
@@ -15,6 +16,7 @@ val Production.RHS: List<String> get() =
   second.let { if (it.size == 1) it.map(String::stripEscapeChars) else it }
 fun Production.pretty() = LHS + " -> " + RHS.joinToString(" ")
 
+val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
 val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
 val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }

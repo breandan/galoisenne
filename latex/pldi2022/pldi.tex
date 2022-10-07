@@ -152,8 +152,8 @@ true and ( false or and true false(*@\caret{ }@*)
     Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
 
     \[\begin{tikzcd}[row sep=huge, column sep=huge]
-          V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
-          & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+          \mathcal{P}(V) \times \mathcal{P}(V) \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+          & \mathcal{P}(V) \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
           \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
           & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
     \end{tikzcd}\]
@@ -454,15 +454,15 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \section{Bar-Hillel, Impossible Substrings, and CFL Intersection}
 
-    It is a well-known fact in formal language theory that the intersection between a regular and context-free language is context-free, and the intersection between two CFLs is decidable. Anyhow, since we are working with bounded-width CFLs, everything collapses down to finite languages, which are closed under union, intersection and complementation. Thus, Bar-Hillel and other elegant constructions which took CS theorists many years to prove in full generality become trivial.
+    It is a well-known fact in formal language theory that CFLs are closed under intersection with regular languages, and the intersection between two CFLs is decidable. Anyhow, since we are working with bounded-width CFLs, everything collapses down to finite languages, which are closed under union, intersection and complementation. Thus, Bar-Hillel and other elegant constructions which took CS theorists many years to prove in full-generality become trivial when so restricted.
 
-    For any two CFGs $\mathcal{G}\cap\mathcal{G}'$, we can compute the intersection $\mathcal{G}\cap\mathcal{G}'\cap\Sigma^d$ by encoding $(\mathbf{M}_\mathcal{G}^*\sigma) = (\mathbf{M}_{\mathcal{G}'}^*\sigma)$. This allows us to combine multiple grammars to further constrain the solution space.
+    Given two CFLs $\mathcal{L}_\mathcal{G}, \mathcal{L}_{\mathcal{G}'}$, we can compute the intersection $\mathcal{L}_\mathcal{G}\cap\mathcal{L}_{\mathcal{G}'}\cap\Sigma^d$ by encoding $(\mathbf{M}_\mathcal{G}^*\sigma) = (\mathbf{M}_{\mathcal{G}'}^*\sigma)$. This allows us to build a DSL of grammar combinators to constrain the solution space.
 
-    For example, we can solve $\Sigma^d \cap \overline{\mathcal{G}}$ by enumerating ${\beta\sigma'\gamma \mid \sigma' \in \Sigma^d, \beta = \gamma = \_^k}$ by overapproximating the prefix and suffix (padding left and right), and checking for UNSAT to underapproximate \textit{impossible substrings}, strings which cannot appear in any $\{\sigma in \mathcal{G}\}$. Precomputing impossible substrings allows us to quickly eliminate inadmissible repairs and localize syntax errors.
+    For example, we can solve $\Sigma^d \cap \overline{\mathcal{L}_\mathcal{G}}$ by enumerating $\{\beta\sigma'\gamma \mid \sigma' \in \Sigma^d, \beta = \gamma = \_^k\}$, overapproximating the prefix and suffix (padding left and right), and checking for UNSAT to underapproximate \textit{impossible substrings}, strings which cannot appear in any $\{\sigma \in \mathcal{L}_\mathcal{G}\}$. Precomputing impossible substrings for a given grammar allows us to quickly eliminate inadmissible repairs and localize syntax errors in candidate strings.
 
     We can also build a set of grammars of increasing granularity, like a lattice structure. Basically, we can build up a lattice (in the order theoretic sense), consisting of grammars of increasing granularity. All programming languages require balanced parentheses, but some have additional constraints. So we can combine grammars, count and do bounded linear integer arithmetic.
 
-\section{Closure and simplification of subexpressions}
+\section{Coarsening and simplification of subexpressions}
 
     Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified? This transformation is admissible and indeed desirable when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. Returning to Fig. 4, under what circumstances is the following reduction admissible?
 

@@ -174,8 +174,11 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 
 val cache = LRUCache<String, Any>()
 fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
-// If you believe there may be a bug here, it's really important to
-// check hashCode() / deepHashCode - we expect this to be unique!
+
+// Lazily evaluates and caches result for later use, until cache expiry,
+// after which said value will be reevaluated and cached if it is needed
+// again. If you believe there may be a bug here, it is really important
+// to first check hashCode() / deepHashCode - we expect it to be unique!
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
