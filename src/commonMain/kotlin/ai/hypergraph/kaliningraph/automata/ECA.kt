@@ -14,9 +14,10 @@ val <A> Context<A>.q get() = π2
 val <A> Context<A>.r get() = π3
 
 val ecaAlgebra = contextAlgebra()
-fun initializeECA(len: Int, cc: (Int) -> Boolean = { true }) =
+fun initializeECA(len: Int, cc: (Int) -> Boolean = { false }) =
   FreeMatrix(ecaAlgebra, len, 1) { r, c ->
-    Context(null, cc(r), null)
+    val (i, j, k) = Triple(cc((r-1).mod(len)), cc(r), cc((r+1).mod(len)))
+    Context(i, j, k)
   }
 
 // Create a tridiagonal (Toeplitz) matrix
@@ -24,18 +25,21 @@ fun initializeECA(len: Int, cc: (Int) -> Boolean = { true }) =
 // https://leimao.github.io/blog/Convolution-Transposed-Convolution-As-Matrix-Multiplication/
 fun FreeMatrix<Context<Boolean?>?>.genMat(): FreeMatrix<Context<Boolean?>?> =
   FreeMatrix(ecaAlgebra, numRows, numRows) { r, c ->
-    if (2 <= (r - c).absoluteValue) null
-    else Context(null, null, null)
+    if (2 <= (r - c).absoluteValue) null else Context(null, null, null)
   }
 
+fun List<Boolean>.toECA() = initializeECA(size) { this[it] }
+fun List<Boolean>.evolve(steps: Int = 1): List<Boolean> = toECA().evolve(steps = steps).data.map { it!!.second!! }
+//  map { it!!.applyRule() }.map { it.second }
+
 tailrec fun FreeMatrix<Context<Boolean?>?>.evolve(
-  rule: FreeMatrix<Context<Boolean?>?> = genMat(),
   steps: Int = 100,
   hashes: Set<Int> = emptySet(),
   hashCode: Int = str().hashCode()
 ): FreeMatrix<Context<Boolean?>?> =
   if (steps == 0 || hashCode in hashes) this.also { it.print() }
-  else (rule * this.also { it.print() }).nonlinearity().evolve(rule, steps - 1,hashes + hashCode)
+  else map { it?.applyRule() }.data.map { it!!.second!! }.toECA().evolve(steps - 1,hashes + hashCode)
+  // TODO: (rule * this.also { it.print() }).nonlinearity().evolve(rule, steps - 1,hashes + hashCode)
 
 fun FreeMatrix<Context<Boolean?>?>.str() = transpose.map { if (it?.q == true) "1" else " " }.toString()
 fun FreeMatrix<Context<Boolean?>?>.print() = println(str())
@@ -43,7 +47,7 @@ fun FreeMatrix<Context<Boolean?>?>.print() = println(str())
 fun Context<Boolean?>.applyRule(
   // https://www.wolframalpha.com/input?i=rule+110
   rule: (Boolean, Boolean, Boolean) -> Boolean = { p, q, r -> (q && !p) || (q xor r) }
-): Context<Boolean?> = Context(null, rule(p ?: false, q!!, r ?: false), null)
+): Context<Boolean?> = Context(null, rule(p!!, q!!, r!!), null)
 
 fun FreeMatrix<Context<Boolean?>?>.nonlinearity() =
   FreeMatrix(numRows, 1) { r, c -> this[r, c]?.applyRule() }
@@ -105,6 +109,31 @@ val eca10 = BVec(F, F, F, F, F, F, F, F, F, T)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
   .eca(::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r, ::r)
+
+val eca4 = BVec(T, F, F, T)
+  .eca(::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r)
+  .eca(::r, ::r, ::r, ::r)
+
+fun <
+  B0, B1, B2, B3,
+  Y0, Y1, Y2, Y3
+  > BVec4<B0, B1, B2, B3>.eca(
+  // Encodes periodic boundary conditions
+  op0: (B3, B0, B1) -> Y0,
+  op1: (B0, B1, B2) -> Y1,
+  op2: (B1, B2, B3) -> Y2,
+  op3: (B2, B3, B0) -> Y3,
+): BVec4<Y0, Y1, Y2, Y3> =
+  BVec4(
+    op0(d, a, b),
+    op1(a, b, c),
+    op2(b, c, d),
+    op3(c, d, a),
+  )
 
 fun <
   B0, B1, B2, B3, B4, B5, B6, B7, B8, B9,

@@ -17,7 +17,7 @@ val ecaSatAlgebra = satContextAlgebra()
 fun initializeSATECA(string: String) =
   string.map { it == '1' }.let { initializeSATECA(it.size) { i -> if(it[i]) T else F } }
 fun initializeSATECA(len: Int, cc: (Int) -> Formula) =
-  FreeMatrix(ecaSatAlgebra, len, 1) { r, c -> Context(null, cc(r), null) }
+  FreeMatrix(ecaSatAlgebra, len, 1) { r, c -> Context(cc((r-1).mod(len)), cc(r), cc((r+1).mod(len))) }
 
 // Create a tridiagonal (Toeplitz) matrix
 // https://en.wikipedia.org/wiki/Toeplitz_matrix#Discrete_convolution
@@ -31,16 +31,20 @@ fun FreeMatrix<Context<Formula?>?>.genMat(): FreeMatrix<Context<Formula?>?> =
 infix fun FreeMatrix<Context<Formula?>?>.matEq(f: FreeMatrix<Context<Formula?>?>) =
   data.zip(f.data).fold(T) { acc, (a, b) -> acc and (a!!.π2!! eq b!!.π2!!) }
 
+fun List<Formula>.toSATECA() = initializeSATECA(size) {this[it]}
+
 tailrec fun FreeMatrix<Context<Formula?>?>.evolve(
   rule: FreeMatrix<Context<Formula?>?> = genMat(),
   steps: Int = 100
 ): FreeMatrix<Context<Formula?>?> =
-  if (steps == 0) this else (rule * this).nonlinearity().evolve(rule, steps - 1)
+  if (steps == 0) this
+  else map { it?.applyRule() }.data.map { it!!.π2!! }.toSATECA().evolve(rule, steps - 1)
+// TODO: else (rule * this).nonlinearity().evolve(rule, steps - 1)
 
 fun Context<Formula?>.applyRule(
   // https://www.wolframalpha.com/input?i=rule+110
   rule: (Formula, Formula, Formula) -> Formula = { p, q, r -> (q and p.negate()) or (q xor r) }
-): Context<Formula?> = Context(null, rule(p ?: F, q!!, r ?: F), null)
+): Context<Formula?> = Context(null, rule(p!!, q!!, r!!), null)
 
 fun FreeMatrix<Context<Formula?>?>.nonlinearity() =
   FreeMatrix(numRows, 1) { r, c -> this[r, c]?.applyRule() }

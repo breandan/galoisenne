@@ -1,14 +1,13 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.sampling.findAll
-import ai.hypergraph.kaliningraph.sat.BVar
-import ai.hypergraph.kaliningraph.sat.and
-import ai.hypergraph.kaliningraph.sat.solve
-import ai.hypergraph.kaliningraph.tensor.FreeMatrix
-import ai.hypergraph.kaliningraph.types.π2
+import ai.hypergraph.kaliningraph.sat.*
 import ai.hypergraph.kaliningraph.sat.F
 import ai.hypergraph.kaliningraph.sat.T
+import ai.hypergraph.kaliningraph.types.π2
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class ECATest {
 /*
@@ -65,25 +64,41 @@ class ECATest {
     }
   }
 
+  fun List<Boolean>.pretty(): String = joinToString("") { if (it) "1" else "0" }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testChimera"
 */
   @Test
   fun testChimera() {
-      val i = initializeSATECA(128) { i -> BVar("i$i") }
-      val j = initializeSATECA(128) { i -> BVar("j$i") }
-      val k = initializeSATECA(128) { i -> BVar("k$i") }
-    val t =
-      (
-        (i matEq j).negate() and
-        (j matEq k).negate() and
-        (k matEq i).negate()
-      ) and
-      (i.evolve(steps = 1) matEq j.evolve(steps = 1)) and
-      (j.evolve(steps = 1) matEq k.evolve(steps = 1))
+  println(listOf(true, false, false, true).evolve(steps = 1).pretty())
+      val i = initializeSATECA(5) { i -> BVar("i$i") }
+      val j = initializeSATECA(5) { i -> BVar("j$i") }
+      val k = initializeSATECA(5) { i -> BVar("k$i") }
+    val neqIJK = (i matEq j).negate() and (j matEq k).negate() and (k matEq i).negate()
 
-    val sol = t.solve()
-    println(i.data.map { sol[it!!.π2!!]!! })
+    val (fi, fj, fk) =
+      Triple(i.evolve(steps = 1), j.evolve(steps = 1), k.evolve(steps = 1))
+
+    val cstr = neqIJK and (fi matEq fj) and (fj matEq fk)
+//      fk.data.map { it!!.second!!.negate() }.fold(F) { a, b -> a.or(b) }
+
+    val sol = cstr.solve()
+
+    val (r, s, t) =
+      Triple(i.data.map { sol[it!!.π2!!]!! }, j.data.map { sol[it!!.π2!!]!! }, k.data.map { sol[it!!.π2!!]!! })
+
+    println("r:${r.pretty()}\ns:${s.pretty()}\nt:${t.pretty()}")
+
+    assertNotEquals(r, s)
+    assertNotEquals(s, t)
+    assertNotEquals(t, r)
+
+    val (fr, fs, ft) =
+      Triple(r.evolve(steps = 1), s.evolve(steps = 1), t.evolve(steps = 1))
+    println("f(r):${fr.pretty()}\nf(s):${fs.pretty()}\nf(t):${ft.pretty()}")
+
+    assertEquals(fr, fs, "f(r) != f(s)")
+    assertEquals(fs, ft, "f(s) != f(t)")
   }
 
 /*
@@ -105,18 +120,18 @@ class ECATest {
 */
   @Test
   fun testECAPrint() {
-    val ts = arrayOf(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0)
-    initializeECA(16) { i -> ts[i] == 1 }.also { it.toRingBuffer() }
+  val ts = arrayOf(0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0).map { it == 1 }
+    ts.evolve(0).also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
       .evolve(steps = 1).also { it.toRingBuffer() }
   }
 
-    fun FreeMatrix<Context<Boolean?>?>.toRingBuffer() {
-    val degs = 360.0 / numRows
-    for (i in 0 until numRows) {
+    fun List<Boolean>.toRingBuffer() {
+    val degs = 360.0 / size
+    for (i in indices) {
       val start = 90.0 - i * degs
       val end = 90.0 - (i + 1) * degs
-      val color = if (this[i].first()!!.q!!) "gray" else "white"
+      val color = if (this[i]) "gray" else "white"
       println("\\fill [$color] (0,0) -- ($start:1) arc [end angle=$end, start angle=$start, radius=1] -- cycle;")
     }
     println()

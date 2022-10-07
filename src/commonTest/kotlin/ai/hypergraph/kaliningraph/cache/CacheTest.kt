@@ -3,9 +3,9 @@ package ai.hypergraph.kaliningraph.cache
 import kotlin.test.Test
 
 class CacheTest {
-  fun compute() = "hello".also { println(it) }
+  fun compute() = "hello"
   interface A { /*...*/ }
-  val A.prop by lazy { compute() }
+  val A.prop by lazy { compute().also { println("Wrote: $it") } }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.cache.CacheTest.testPattern"
 */
