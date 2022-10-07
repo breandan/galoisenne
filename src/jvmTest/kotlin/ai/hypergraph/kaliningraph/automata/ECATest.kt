@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.sampling.findAll
 import ai.hypergraph.kaliningraph.sat.*
 import ai.hypergraph.kaliningraph.types.π2
+import org.logicng.formulas.Formula
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -24,11 +25,15 @@ class ECATest {
   fun testTypeLevelECA4() {
     val init = BVec(T, F, F, F)
     fun BVec.bits() = data.map { it == T }
-    init
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 1)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 2)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 3)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = 4)) }
+    var i = 1; init
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
   }
 
 /*
@@ -38,15 +43,15 @@ class ECATest {
   fun testTypeLevelECA10() {
     val init = BVec(T, F, F, F, T, F, F, F, F, F)
     fun BVec.bits() = data.map { it == T }
-    init
+    var i = 1; init
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
-      .also { assertEquals(it.bits(), init.bits().evolve(steps = 1)) }
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
-      .also { assertEquals(it.bits(), init.bits().evolve(steps = 2)) }
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
-      .also { assertEquals(it.bits(), init.bits().evolve(steps = 3)) }
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
-      .also { assertEquals(it.bits(), init.bits().evolve(steps = 4)) }
+      .also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
   }
 
 /*
@@ -98,6 +103,7 @@ class ECATest {
   }
 
   fun List<Boolean>.pretty(): String = joinToString("") { if (it) "1" else "0" }
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testChimera"
 */
@@ -112,8 +118,8 @@ class ECATest {
     val (fi, fj, fk) =
       Triple(i.evolve(steps = 1), j.evolve(steps = 1), k.evolve(steps = 1))
 
-    val cstr = neqIJK and (fi matEq fj) and (fj matEq fk)
-//      fk.data.map { it!!.second!!.negate() }.fold(F) { a, b -> a.or(b) }
+    val cstr = neqIJK and (fi matEq fj) and (fj matEq fk) and
+      fk.data.map { it!!.second!!.negate() }.fold(ff.falsum() as Formula) { a, b -> a.or(b) }
 
     val sol = cstr.solve()
 

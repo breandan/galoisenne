@@ -17,7 +17,7 @@ infix fun Bool<*, *>.or(t: T) = T
 infix fun Bool<*, *>.and(f: F) = F
 fun <nB> Bool<*, nB>.flip() = nb
 
-abstract class BVec(vararg val data: Any?)
+abstract class BVec protected constructor(vararg val data: Any?)
 class BVec2<A, B>(val a: A, val b: B): BVec(a, b)
 class BVec3<A, B, C>(val a: A, val b: B, val c: C): BVec(a, b, c)
 class BVec4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D): BVec(a, b, c, d)

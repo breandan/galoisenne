@@ -37,8 +37,9 @@ tailrec fun FreeMatrix<Context<Boolean?>?>.evolve(
   hashes: Set<Int> = emptySet(),
   hashCode: Int = str().hashCode()
 ): FreeMatrix<Context<Boolean?>?> =
-  if (steps == 0 || hashCode in hashes) this.also { it.print() }
-  else map { it?.applyRule() }.data.map { it!!.second!! }.toECA().evolve(steps - 1,hashes + hashCode)
+  if (steps == 0) this
+  else map { it?.applyRule() }.data.map { it!!.second!! }
+    .toECA().evolve(steps - 1, hashes + hashCode)
   // TODO: (rule * this.also { it.print() }).nonlinearity().evolve(rule, steps - 1,hashes + hashCode)
 
 fun FreeMatrix<Context<Boolean?>?>.str() = transpose.map { if (it?.q == true) "1" else " " }.toString()
