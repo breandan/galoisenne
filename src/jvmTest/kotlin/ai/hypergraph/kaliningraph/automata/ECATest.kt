@@ -6,6 +6,7 @@ import org.logicng.formulas.Formula
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.fail
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest"
@@ -60,12 +61,13 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-    for (j in 2..5) {
+    for (j in 2..4) {
       val i = List(128) { i -> BVar("$i") }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
       try {
         val sol = t.solve()
-        println("$j:" + i.map { sol[it]!! })
+        val bits = i.map { sol[it]!! }.also { println("Looper ($j): $it") }
+        assertEquals(bits, bits.evolve(steps = j))
       } catch (e: Exception) {}
     }
   }
@@ -89,14 +91,16 @@ class ECATest {
 */
   @Test
   fun testEndling() {
-    for (j in 0..5) {
+    for (j in 1..3) {
       val i = List(128) { i -> BVar("$i") }
       val t =
         (i.evolve(steps = j) matEq i.evolve(steps = j + 1)).negate() and
           (i.evolve(steps = j + 1) matEq i.evolve(steps = j + 2))
       try {
         val sol = t.solve()
-        println("$j:" + i.map { sol[it]!! })
+        val bits = i.map { sol[it]!! }.also { println("Endling ($j): $it") }
+        assertNotEquals(bits.evolve(steps = j), bits.evolve(steps = j + 1))
+        assertEquals(bits.evolve(steps = j + 1), bits.evolve(steps = j + 2))
       } catch (e: Exception) {
         println("No solutions in $j steps")
       }
@@ -151,7 +155,8 @@ class ECATest {
     val t = pp.evolve() matEq p
     try {
       val sol = t.solve()
-      println(pp.map { sol[it]!! })
+      val bits = pp.map { sol[it]!! }.also { println("Predecessor: $it") }
+      assertEquals(bits.evolve().map { ff.constant(it) }, p)
     } catch (e: Exception) { println("No predecessor was found!") }
   }
 
