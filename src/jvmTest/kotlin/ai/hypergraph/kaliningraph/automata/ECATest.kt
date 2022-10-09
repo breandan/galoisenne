@@ -16,7 +16,7 @@ class ECATest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
 */
   @Test
-  fun testSimpleECA() { initializeECA(20).evolve() }
+  fun testSimpleECA() { initializeECA(20).evolve(steps = 100) }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA4"
@@ -25,15 +25,17 @@ class ECATest {
   fun testTypeLevelECA4() {
     val init = BVec(T, F, F, F)
     fun BVec.bits() = data.map { it == T }
-    var i = 1; init
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
-      .eca(::r, ::r, ::r, ::r).also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
+    var i = 1; (init to init.bits())
+    .also { (a, b) -> assertEquals(a.bits(), b) }
+    .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
+    .also { (a, b) -> assertEquals(a.bits(), b) }
+    .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
+    .also { (a, b) -> assertEquals(a.bits(), b) }
+    .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
+    .also { (a, b) -> assertEquals(a.bits(), b) }
+    .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
+    .also { (a, b) -> assertEquals(a.bits(), b) }
+    .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
   }
 
 /*
