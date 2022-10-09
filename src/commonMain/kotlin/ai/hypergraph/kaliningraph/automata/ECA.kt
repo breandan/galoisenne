@@ -8,85 +8,85 @@ import kotlin.math.absoluteValue
 // Since we cannot encode the ECA rule into + and * directly, we need to keep
 // track of the receptive field of the convolutional kernel (i.e. the neighbors)
 // in order to apply rule (nonlinearity) after computing the dot product.
-typealias Kernel<A> = Π3<A, A, A>
-fun <A> Kernel<A>?.nullity(): Kernel<Int> =
-  if (this == null) (2 to 2 to 2)
-  else Kernel((π1 != null).compareTo(false), (π2  != null).compareTo(false), (π3 != null).compareTo(false))
+typealias PKernel<A> = Π3<A?, A?, A?>? // Partially constructed kernel
+typealias FKernel<A> = Π3<A, A, A> // Fully constructed kernel
+typealias KernelMatrix<A> = FreeMatrix<PKernel<A>>
 
-val ecaAlgebra = kernelAlgebra()
+fun <A> PKernel<A>.nullity(): FKernel<Int> =
+  if (this == null) 2 to 2 to 2 // Represents null
+  else (π1 != null).compareTo(false) to
+    (π2  != null).compareTo(false) to
+    (π3 != null).compareTo(false)
+
+val ecaAlgebra = kernelAlgebra<Boolean>()
 fun initializeECA(len: Int, cc: (Int) -> Boolean = { true }) =
-  FreeMatrix(ecaAlgebra, len, 1) { r, c ->
-    Kernel(null, cc(r), null)
-  }
+  FreeMatrix(ecaAlgebra, len, 1) { r, c -> null to cc(r) to null }
 
 // Create a tridiagonal (Toeplitz) matrix
 // https://en.wikipedia.org/wiki/Toeplitz_matrix#Discrete_convolution
 // https://leimao.github.io/blog/Convolution-Transposed-Convolution-As-Matrix-Multiplication/
-fun FreeMatrix<Kernel<Boolean?>?>.genMat(): FreeMatrix<Kernel<Boolean?>?> =
-  FreeMatrix(ecaAlgebra, numRows, numRows) { r, c ->
+fun <A> KernelMatrix<A>.genMat(algebra: Ring<PKernel<A>> = kernelAlgebra<A>()): KernelMatrix<A> =
+  FreeMatrix(algebra, numRows, numRows) { r, c ->
     if (2 <= (r - c).absoluteValue && setOf(r, c) != setOf(0, numRows - 1)) null
-    else Kernel(null, null, null)
+    else null to null to null
   }
 
 fun List<Boolean>.toECA() = initializeECA(size) { this[it] }
-fun List<Boolean>.evolve(steps: Int = 1): List<Boolean> = toECA().evolve(steps = steps).data.map { it!!.second!! }
+fun List<Boolean>.evolve(steps: Int = 1): List<Boolean> =
+  toECA().evolve(steps = steps, rule = { (π2 && !π1) || (π2 xor π3) }).data.map { it!!.second!! }
 
-tailrec fun FreeMatrix<Kernel<Boolean?>?>.evolve(
-  rule: FreeMatrix<Kernel<Boolean?>?> = genMat(),
+tailrec fun <A> KernelMatrix<A>.evolve(
+  rule: FKernel<A>.() -> A,
+  circulantMatrix: KernelMatrix<A> = genMat(),
   steps: Int = 1
-): FreeMatrix<Kernel<Boolean?>?> =
+): KernelMatrix<A> =
   if (steps == 0) this
-  else (rule * this).nonlinearity().evolve(rule, steps - 1)
+  else (circulantMatrix * this).nonlinearity(rule).evolve(rule, circulantMatrix, steps - 1)
 
-fun FreeMatrix<Kernel<Boolean?>?>.str() = transpose.map { if (it?.π2 == true) "1" else " " }.toString()
-fun FreeMatrix<Kernel<Boolean?>?>.print() = println(str())
+fun FreeMatrix<PKernel<Boolean>>.str() = transpose.map { if (it?.π2 == true) "1" else " " }.toString()
+fun FreeMatrix<PKernel<Boolean>>.print() = println(str())
 
-fun Kernel<Boolean?>.applyRule(
-  // https://www.wolframalpha.com/input?i=rule+110
-  rule: (Boolean, Boolean, Boolean) -> Boolean = { p, q, r -> (q && !p) || (q xor r) }
-): Kernel<Boolean?> = Kernel(null, rule(π1!!, π2!!, π3!!), null)
+fun <A> KernelMatrix<A>.nonlinearity(rule: FKernel<A>.() -> A): KernelMatrix<A> =
+  FreeMatrix(numRows, 1) { r, c -> null to (this[r, c] as FKernel<A>).rule() to null }
 
-fun FreeMatrix<Kernel<Boolean?>?>.nonlinearity() =
-  FreeMatrix(numRows, 1) { r, c -> this[r, c].also {
-    println("${it.nullity()} = $it")
-  }?.applyRule() }
+fun <A> kernelTimes(a: PKernel<A>, b: PKernel<A>): PKernel<A> =
+  when (a.nullity() to b.nullity()) {
+    (0 to 0 to 0) to (0 to 1 to 0) -> (null to b!!.π2 to null) // null + !null
+    else -> null
+  }
+
+// We can do this because there will only ever be three columns |  a  +  b  =>  a'
+// in a circulant matrix, so we populate a with the center of b | 000 + 010 => 100
+// and accumulate the dot product in a context, then reduce it  | 100 + 010 => 110
+// in a new context using nonlinearity as depicted to the right | 110 + 010 => 111 => nonlinearity => 0c0
+fun <A> kernelPlus(a: PKernel<A>, b: PKernel<A>): PKernel<A> =
+  when (a.nullity() to b.nullity()) {
+    (2 to 2 to 2) to (2 to 2 to 2) -> null // null + null
+    (2 to 2 to 2) to (0 to 1 to 0) -> (b!!.π2 to null to null) // null to !null
+    a!! -> throw Exception("Ruled out cases where a is nullable")
+    (0 to 1 to 0) to (2 to 2 to 2) -> (null to null to a.π2) // 010 + null => 001
+    (1 to 0 to 0) to (2 to 2 to 2) -> (null to null to a.π1)
+    (1 to 1 to 0) to (2 to 2 to 2) -> (null to a.π1 to a.π2)
+    (1 to 1 to 1) to (2 to 2 to 2) -> a // 111 + null => 111
+    (0 to 1 to 1) to (2 to 2 to 2) -> a // 011 + null => 111
+    (0 to 0 to 1) to (2 to 2 to 2) -> a // 001 + null => 111
+    b!! -> throw Exception("Ruled out cases where b is nullable")
+    (0 to 0 to 0) to (0 to 1 to 0) -> (b.π2 to null to null) // 000 + 010 => 100
+    (0 to 1 to 0) to (0 to 1 to 0) -> (a.π2 to b.π2 to null) // 010 + 010 => 110
+    (0 to 0 to 1) to (0 to 1 to 0) -> (b.π2 to null to a.π3) // 001 + 010 => 101
+    (1 to 0 to 1) to (0 to 1 to 0) -> (a.π1 to b.π2 to a.π3) // 101 + 010 => 111
+    (0 to 1 to 1) to (0 to 1 to 0) -> (b.π2 to a.π2 to a.π3) // 011 + 010 => 111
+    (1 to 0 to 0) to (0 to 1 to 0) -> (a.π1 to b.π2 to null) // 100 + 010 => 110
+    (1 to 1 to 0) to (0 to 1 to 0) -> (a.π1 to a.π2 to b.π2) // 110 + 010 => 111
+    else -> throw Exception("This should never have occurred!")
+  }
 
 // We want to have a stateless algebra
-fun kernelAlgebra() =
-  Ring.of<Kernel<Boolean?>?>(
+fun <T> kernelAlgebra() =
+  Ring.of<PKernel<T>>(
     nil = null,
-    times = { a: Kernel<Boolean?>?, b: Kernel<Boolean?>? ->
-      when (a.nullity() to b.nullity()) {
-        (0 to 0 to 0) to (0 to 1 to 0) -> (null to b!!.π2 to null) // null + !null
-        else -> null
-      }
-    },
-    // We can do this because there will only ever be three columns |  a  +  b  =>  a'
-    // in a circulant matrix, so we populate a with the center of b | 000 + 010 => 100
-    // and accumulate the dot product in a context, then reduce it  | 100 + 010 => 110
-    // in a new context using nonlinearity as depicted to the right | 110 + 010 => 111 => nonlinearity => 0c0
-    plus = { a: Kernel<Boolean?>?, b: Kernel<Boolean?>? ->
-      when (a.nullity() to b.nullity()) {
-        (2 to 2 to 2) to (2 to 2 to 2) -> null // null + null
-        (2 to 2 to 2) to (0 to 1 to 0) -> (b!!.π2 to null to null) // null to !null
-        a!! -> throw Exception("Ruled out cases where a is nullable")
-        (0 to 1 to 0) to (2 to 2 to 2) -> (null to null to a.π2) // 010 + null => 001
-        (1 to 0 to 0) to (2 to 2 to 2) -> (null to null to a.π1)
-        (1 to 1 to 0) to (2 to 2 to 2) -> (null to a.π1 to a.π2)
-        (1 to 1 to 1) to (2 to 2 to 2) -> a // 111 + null => 111
-        (0 to 1 to 1) to (2 to 2 to 2) -> a // 011 + null => 111
-        (0 to 0 to 1) to (2 to 2 to 2) -> a // 001 + null => 111
-        b!! -> throw Exception("Ruled out cases where b is nullable")
-        (0 to 0 to 0) to (0 to 1 to 0) -> (b.π2 to null to null) // 000 + 010 => 100
-        (0 to 1 to 0) to (0 to 1 to 0) -> (a.π2 to b.π2 to null) // 010 + 010 => 110
-        (0 to 0 to 1) to (0 to 1 to 0) -> (b.π2 to null to a.π3) // 001 + 010 => 101
-        (1 to 0 to 1) to (0 to 1 to 0) -> (a.π1 to b.π2 to a.π3) // 101 + 010 => 111
-        (0 to 1 to 1) to (0 to 1 to 0) -> (b.π2 to a.π2 to a.π3) // 011 + 010 => 111
-        (1 to 0 to 0) to (0 to 1 to 0) -> (a.π1 to b.π2 to null) // 100 + 010 => 110
-        (1 to 1 to 0) to (0 to 1 to 0) -> (a.π1 to a.π2 to b.π2) // 110 + 010 => 111
-        else -> throw Exception("This should never have occurred!")
-      }
-    }
+    times = { a: PKernel<T>, b: PKernel<T> -> kernelTimes(a, b) },
+    plus = { a: PKernel<T>, b: PKernel<T> -> kernelPlus(a, b) }
   )
 
 // Rule 110 Encoding

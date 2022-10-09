@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.sampling.findAll
 import ai.hypergraph.kaliningraph.sat.*
-import ai.hypergraph.kaliningraph.types.π2
 import org.logicng.formulas.Formula
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,7 +15,7 @@ class ECATest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
 */
   @Test
-  fun testSimpleECA() { initializeECA(20).evolve(steps = 100) }
+  fun testSimpleECA() { List(20) { true }.evolve(steps = 100) }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA4"
@@ -62,11 +61,11 @@ class ECATest {
   @Test
   fun testLooper() {
     for (j in 2..5) {
-      val i = initializeSATECA(128) { i -> BVar("$i") }
-      val t = (i matEq i.evolve(steps = 1)).negate() and (i matEq i.evolve(steps = j))
+      val i = List(128) { i -> BVar("$i") }
+      val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
       try {
         val sol = t.solve()
-        println("$j:" + i.data.map { sol[it!!.π2!!]!! })
+        println("$j:" + i.map { sol[it]!! })
       } catch (e: Exception) {}
     }
   }
@@ -78,9 +77,9 @@ class ECATest {
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     findAll(setOf(true, false), 128).first { orphan ->
-      val i = initializeSATECA(16) { i -> BVar("$i") }
+      val i = List(16) { i -> BVar("$i") }
       val fs = orphan.map { ff.constant(it) }
-      val t = (i.evolve(steps = 1) matEq initializeSATECA(16) { fs[it] })
+      val t = (i.evolve() matEq List(16) { fs[it] })
         try { t.solve(); false } catch (e: Exception ) { true}
     }.also { println(it) }
   }
@@ -91,13 +90,13 @@ class ECATest {
   @Test
   fun testEndling() {
     for (j in 0..5) {
-      val i = initializeSATECA(128) { i -> BVar("$i") }
+      val i = List(128) { i -> BVar("$i") }
       val t =
-          (i.evolve(steps = j) matEq i.evolve(steps = j+1)).negate() and
-          (i.evolve(steps = j+1) matEq i.evolve(steps = j+2))
+        (i.evolve(steps = j) matEq i.evolve(steps = j + 1)).negate() and
+          (i.evolve(steps = j + 1) matEq i.evolve(steps = j + 2))
       try {
         val sol = t.solve()
-        println("$j:" + i.data.map { sol[it!!.π2!!]!! })
+        println("$j:" + i.map { sol[it]!! })
       } catch (e: Exception) {
         println("No solutions in $j steps")
       }
@@ -111,22 +110,22 @@ class ECATest {
 */
   @Test
   fun testChimera() {
-    println(listOf(true, false, false, true).evolve(steps = 1).pretty())
-    val i = initializeSATECA(128) { i -> BVar("i$i") }
-    val j = initializeSATECA(128) { i -> BVar("j$i") }
-    val k = initializeSATECA(128) { i -> BVar("k$i") }
+    println(listOf(true, false, false, true).evolve().pretty())
+    val i = List(128) { i -> BVar("i$i") }
+    val j = List(128) { i -> BVar("j$i") }
+    val k = List(128) { i -> BVar("k$i") }
     val neqIJK = (i matEq j).negate() and (j matEq k).negate() and (k matEq i).negate()
 
     val (fi, fj, fk) =
-      Triple(i.evolve(steps = 1), j.evolve(steps = 1), k.evolve(steps = 1))
+      Triple(i.evolve(), j.evolve(), k.evolve())
 
     val cstr = neqIJK and (fi matEq fj) and (fj matEq fk) and
-      fk.data.map { it!!.second!!.negate() }.fold(ff.falsum() as Formula) { a, b -> a.or(b) }
+      fk.map { it.negate() }.fold(ff.falsum() as Formula) { a, b -> a.or(b) }
 
     val sol = cstr.solve()
 
     val (r, s, t) =
-      Triple(i.data.map { sol[it!!.π2!!]!! }, j.data.map { sol[it!!.π2!!]!! }, k.data.map { sol[it!!.π2!!]!! })
+      Triple(i.map { sol[it]!! }, j.map { sol[it]!! }, k.map { sol[it]!! })
 
     println("r:${r.pretty()}\ns:${s.pretty()}\nt:${t.pretty()}")
 
@@ -135,7 +134,7 @@ class ECATest {
     assertNotEquals(t, r)
 
     val (fr, fs, ft) =
-      Triple(r.evolve(steps = 1), s.evolve(steps = 1), t.evolve(steps = 1))
+      Triple(r.evolve(), s.evolve(), t.evolve())
     println("f(r):${fr.pretty()}\nf(s):${fs.pretty()}\nf(t):${ft.pretty()}")
 
     assertEquals(fr, fs, "f(r) != f(s)")
@@ -147,12 +146,12 @@ class ECATest {
 */
   @Test
   fun testTargetPatternPredecessor() {
-    val pp = initializeSATECA(16) { i -> BVar("i$i") }
-    val p = initializeSATECA("1100110111111011")
-    val t = pp.evolve(steps=1) matEq p
+    val pp = List(16) { i -> BVar("i$i") }
+    val p = "1100110111111011".toBitVector()
+    val t = pp.evolve() matEq p
     try {
       val sol = t.solve()
-      println(pp.data.map { sol[it!!.π2!!]!! })
+      println(pp.map { sol[it]!! })
     } catch (e: Exception) { println("No predecessor was found!") }
   }
 
@@ -163,8 +162,8 @@ class ECATest {
   fun testECAPrint() {
   val ts = "0100011111100010".map { it == '1' }
     ts.evolve(0).also { it.toRingBuffer() }
-      .evolve(steps = 1).also { it.toRingBuffer() }
-      .evolve(steps = 1).also { it.toRingBuffer() }
+      .evolve().also { it.toRingBuffer() }
+      .evolve().also { it.toRingBuffer() }
   }
 
     fun List<Boolean>.toRingBuffer() {
