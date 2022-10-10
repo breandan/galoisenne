@@ -1,15 +1,14 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
-import org.logicng.formulas.Constant
 import org.logicng.formulas.Formula
-import org.logicng.formulas.Variable
 import kotlin.collections.filter
+
+typealias FormulaMatrix = UTMatrix<List<Formula>>
 
 @JvmName("joinFormula")
 fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
@@ -35,13 +34,13 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun UTMatrix<List<Formula>>.valiantMatEq(that: UTMatrix<List<Formula>>): Formula =
+infix fun FormulaMatrix.valiantMatEq(that: FormulaMatrix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
   else diagonals.flatten().zip(that.diagonals.flatten())
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
-fun CFG.isInGrammar(mat: UTMatrix<List<Formula>>): Formula =
+fun CFG.isInGrammar(mat: FormulaMatrix): Formula =
   mat.diagonals.last().first()[bindex[START_SYMBOL]]
 
 // Encodes the constraint that bit-vectors representing a unary production
@@ -87,31 +86,6 @@ val CFG.satAlgebra by cache {
   )
 }
 
-fun FreeMatrix<Set<Tree>>.toGraphTable(): FreeMatrix<String> =
-  data.map {
-    it.mapIndexed { i, t -> t.toGraph("$i") }
-    .fold(LabeledGraph()) { ac, lg -> ac + lg }.html()
-  }.let { FreeMatrix(it) }
-
-fun CFG.parseHTML(s: String): String = parseTable(s).toGraphTable().toHtmlPage()
-
-/*
-Do we need Lee to do [en/de]coding? https://arxiv.org/pdf/cs/0112018.pdf#page=10
-It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
-Lee shows that a faster procedure for BMM would automatically give a fast
-procedure for CFL parsing, i.e., BMM⇄CFL. Once we can reduce from semirings to
-BMM, encoding to SAT becomes straightforward using Tseitin (1968).
-
-Lower this matrix onto SAT. Steps:
-  1.) Encode CFL as BMM.
-  2.) Symbolically evaluate BMM to get a Boolean formula.
-  3.) Encode symbolic Boolean formula as CNF using Tsetin.
-  4.) Run SAT solver and decode variable assignments.
-
-  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
-  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
- */
-
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
   stringVars: MutableList<List<Formula>> = mutableListOf(),
@@ -125,7 +99,7 @@ fun CFG.constructInitialMatrix(
   ).seekFixpoint(),
   literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
     .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it },
-  formulaMatrix: UTMatrix<List<Formula>> =
+  formulaMatrix: FormulaMatrix =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       // Superdiagonal
       if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
@@ -139,51 +113,11 @@ fun CFG.constructInitialMatrix(
       // Diagonal and subdiagonal
       else emptyList()
     }.toUTMatrix(),
-): Pair<UTMatrix<List<Formula>>, MutableList<List<Formula>>> =
+): Pair<FormulaMatrix, List<List<Formula>>> =
     (formulaMatrix
 //  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
     to stringVars)
 
-@JvmName("summarizeBooleanMatrix")
-fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
-  map {
-    when {
-      it == null -> "?"
-      it.toString().length < 5 -> ""
-//      else -> "C"
-      cfg.toNTSet(it).isEmpty() -> it.distinct()
-      else -> "${cfg.toNTSet(it)}".replace("START", "S")
-    }
-  }.toString()
-
-@JvmName("summarizeFormulaMatrix")
-fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
-  map {
-    when {
-      it.isEmpty() -> ""
-      it.all { it is Variable } -> "V[${it.size}]"
-      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T })}]"
-//      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
-      it.any { it is Variable } -> "M"
-      else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"
-    }
-  }.toString()
-
-// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
-fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
-  bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
-
-// Summarize fill structure of bit vector variables
-fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
-  FreeMatrix(numRows, numCols) { r, c ->
-    this[r, c].let {
-      if (it.all { it == F }) "0"
-      else if (it.all { it in setOf(T, F) }) "LV$r$c"
-      else "BV$r$c[len=${it.toString().length}]"
-    }
-  }
-
-// Generates a lazy sequence of solutions to sketch-based synthesis problems
 fun String.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
@@ -191,129 +125,14 @@ fun String.synthesizeIncrementally(
   variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
   updateProgress: (String) -> Unit = {},
   skipWhen: (List<String>) -> Boolean = { false }
-): Sequence<String> {
-  val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
+): Sequence<String> = synthesizeWithVariations(
+  cfg, allowNTs, enablePruning, variations, updateProgress, skipWhen,
+  synthesizer = { a, b -> cfg.synthesize(a, b) }
+)
 
-  val (stringToSolve, reconstructor) =
-    if(enablePruning) cfg.prune(this) else this to mutableListOf()
-  if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
-
-  val allVariants: Sequence<String> =
-    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b() }
-      .distinct().rejectTemplatesContainingImpossibleBigrams(cfg)
-  return allVariants.map { updateProgress(it); it }
-    .flatMap {
-      val variantTokens = tokenize(it)
-      if (skipWhen(variantTokens)) emptySequence()
-      else cfg_.run { synthesize(variantTokens, reconstructor) }
-        .ifEmpty {
-          variantTokens.rememberImpossibleBigrams(cfg)
-          emptySequence()
-        }
-    }.distinct()
-}
-
-/**
- * Attempts to reduce parsable subsequences into a single token to reduce total
- * token count, e.g. ( w ) + _ => <S> + _ resulting in two fewer tokens overall.
- * Consider 3 + 5 * _ != <S> * _ for checked arithmetic, so context-insensitive
- * pruning is not always sound, thus we should err on the side of caution.
- *
- * TODO: A proper solution requires ruling out whether the left- and right-
- *       quotients of the root nonterminal ever yield another derivation.
- */
-
-fun CFG.prune(
-  string: String,
-  minimumWidth: Int = 4,
-  // Maps nonterminal stubs from pruned branches back to original string
-  reconstructor: MutableList<Pair<String, String>> =
-    tokenize(string).filter { it.isNonterminalStubIn(this) }
-      .map { it to it }.toMutableList()
-): Pair<String, MutableList<Pair<String, String>>> {
-  val tokens = tokenize(string)
-  val stubs = parseWithStubs(string).second
-    .fold(setOf<Tree>()) { acc, t ->
-      if (acc.any { t.span isStrictSubsetOf it.span }) acc else acc + t
-    }.sortedBy { it.span.first }
-
-  val treesToBeChopped =
-    stubs.filter { "START" in equivalenceClass(setOf(it.root)) }
-      .map { it.span to it }.let {
-        val (spans, trees) = it.unzip()
-        // Find trees corresponding to ranges which have an unambiguous parse tree
-        trees.filter { tree ->
-          minimumWidth < tree.span.run { last - first } &&
-          spans.filter { it != tree.span }
-            .none { tree.span.intersect(it).isNotEmpty() }
-        }
-      }//.onEach { println(it.prettyPrint()) }
-
-  if (treesToBeChopped.isEmpty()) string to reconstructor
-
-  var totalPruned = 0
-  var previousNonterminals = 0
-  val prunedString = tokens.indices.mapNotNull { i ->
-    val possibleTree = treesToBeChopped.firstOrNull { i in it.span }
-    if (possibleTree != null)
-      if (i == possibleTree.span.first) "<${possibleTree.root}>".also {
-        val (a, b) = it to possibleTree.contents()
-        println("Reduced: $b => $a")
-        reconstructor.add(previousNonterminals++, a to b)
-      } else { totalPruned++; null }
-    else tokens[i].also { if (it.isNonterminalStubIn(this)) previousNonterminals++ }
-  }.joinToString(" ")
-
-  println("Pruned $totalPruned tokens in total")
-  return if (totalPruned == 0) string to reconstructor
-  else prune(prunedString, minimumWidth, reconstructor)
-}
-
-fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
-  filter { sketch ->
-    val numTokens = sketch.count { it == ' ' }
-    cfg.impossibleBigrams.unableToFitInside(numTokens).none { iss ->
-      (iss in sketch).also {
-        if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
-      }
-    }
-  }
-
-fun List<String>.rememberImpossibleBigrams(cfg: CFG) {
-  windowed(2).asSequence().filter {
-    it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams
-  }.forEach {
-    val holes = List((size / 2).coerceIn(4..8)) { "_" }.joinToString(" ")
-    val substring = it.joinToString(" ")
-    val tokens = tokenize("$holes $substring $holes")
-    if (cfg.synthesize(tokens).firstOrNull() == null)
-      cfg.impossibleBigrams[tokens.size] =
-        cfg.impossibleBigrams.getOrDefault(tokens.size, setOf()) + substring
-    else cfg.possibleBigrams.add(substring)
-  }
-}
-
-fun Formula.toPython(
-  params: String = variables().joinToString(", ") { it.name() },
-  bodyY: String = toString()
-    .replace("~", "neg/")
-    .replace("|", "|V|")
-    .replace("&", "|Λ|"),
-  bodyX: String = toString()
-    .replace("~", "not ")
-    .replace("|", "or")
-    .replace("&", "and")
-) = """
-def y_constr($params):
-    return $bodyY
-    
-def x_constr($params):
-    return $bodyX
-""".trimIndent()
-
-fun Map<Variable, Boolean>.toPython() =
-  "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
-      v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
+// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
+fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
+  bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
 private fun CFG.handleSingleton(s: String): Sequence<String> =
   if (s == "_") terminals.asSequence()
@@ -322,10 +141,26 @@ private fun CFG.handleSingleton(s: String): Sequence<String> =
       .mapNotNull { if (it.size == 1) it[0] else null }.asSequence()
   else emptySequence()
 
+/*
+Does Lee's method give demonstrable speedup? https://arxiv.org/pdf/cs/0112018.pdf#page=10
+It seems Valiant gives a reduction from CFL parsing to BMM, i.e., CFL→BMM and
+Lee shows that a faster procedure for BMM would automatically give a fast
+procedure for CFL parsing, i.e., BMM⇄CFL.
+
+Lowers Valiant matrix onto SAT. Steps:
+  1.) Encode CFL as BMM.
+  2.) Symbolically evaluate BMM to get a Boolean formula.
+  3.) Encode symbolic Boolean formula as CNF using Tsetin.
+  4.) Run SAT solver and decode variable assignments.
+
+  https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
+  https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
+ */
+
 private fun CFG.synthesize(
   tokens: List<String>,
   // Used to restore well-formed trees that were pruned
-  reconstructor: MutableList<Pair<String, String>> = mutableListOf()
+  reconstructor: Reconstructor = mutableListOf()
 ): Sequence<String> =
   if (tokens.none { it.isHoleTokenIn(cfg = this) }) emptySequence()
   else if (tokens.size == 1) handleSingleton(tokens[0])

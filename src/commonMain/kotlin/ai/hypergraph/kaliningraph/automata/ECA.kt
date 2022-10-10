@@ -55,10 +55,11 @@ fun <A> kernelTimes(a: PKernel<A>, b: PKernel<A>): PKernel<A> =
     else -> null
   }
 
-// We can do this because there will only ever be three columns |  a  +  b  =>  a'
-// in a circulant matrix, so we populate a with the center of b | 000 + 010 => 100
-// and accumulate the dot product in a context, then reduce it  | 100 + 010 => 110
-// in a new context using nonlinearity as depicted to the right | 110 + 010 => 111 => nonlinearity => 0c0
+// We can do this because there is never more than three columns
+// in a circulant matrix, so we fill in A with the contents of B
+// and accumulate the dot product in a PKernel until it is full.
+// When the kernel straddles an array boundary we must shift the
+// accumulated contents left or right depending on the location.
 fun <A> kernelPlus(a: PKernel<A>, b: PKernel<A>): PKernel<A> =
   when (a.nullity() to b.nullity()) {
     (2 to 2 to 2) to (2 to 2 to 2) -> null // null + null

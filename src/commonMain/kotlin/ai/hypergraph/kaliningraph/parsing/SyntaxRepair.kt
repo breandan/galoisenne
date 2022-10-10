@@ -6,10 +6,11 @@ import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
-//       we can should instead be focusing on repairing substrings which are known to be
-//       outside the language, e.g., for the following grammar and string:
+//       we should work out a principled way to localize holes using the language quotient.
+//       For example, we can do this bottom-up, by localizing substrings which are known to
+//       be outside the language, e.g., for the following grammar and string:
 //             E → E+E | E*E | (E) | x                      (+)+x*x+x+(x*x)
-//       we know that the substring (+) cannot be in the grammar, so we can focus on it.
+//       we know that the substring (+) cannot be in the grammar, so we can infer (_+_).
 //             https://nokyotsu.com/me/papers/cic01.pdf
 //
 // Idea: Generate minimal strings which cannot be repaired by left or right insertion,
@@ -68,7 +69,8 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
 
-fun String.tokenizeByWhitespace(): List<String> = split(" ").filter { it.isNotBlank() }
+fun String.tokenizeByWhitespace(): List<String> =
+  split(Regex("\\s+")).filter { it.isNotBlank() }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
@@ -95,6 +97,10 @@ fun String.everySingleHoleConfig(): Sequence<String> {
  *           __w__w_w__w__
  *           ___w__w_w__w___
  */
+
+fun String.mergeHoles() =
+  replace(Regex("\\s+"), " ")
+    .replace(Regex("(?<=_)\\s(?=_)"), "")
 
 fun String.increasingLengthChunks(): Sequence<String> {
   val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))

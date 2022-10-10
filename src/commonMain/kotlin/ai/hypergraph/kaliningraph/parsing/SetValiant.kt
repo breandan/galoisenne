@@ -134,31 +134,21 @@ fun CFG.initialMatrix(str: List<String>): TreeMatrix =
     }.toSet()
   }
 
-fun String.splitKeeping(str: String): List<String> =
-  split(str).flatMap { listOf(it, str) }.dropLast(1)
-
-fun String.mergeHoles() =
-  replace(Regex("\\s+"), " ")
-    .replace(Regex("(?<=_)\\s(?=_)"), "")
-
 fun tokenize(str: String): List<String> = str.tokenizeByWhitespace()
-//  delimiters.fold(listOf(str.mergeHoles())) { l, delim ->
-//    l.flatMap { if (it in delimiters) listOf(it) else it.splitKeeping(delim) }
-//  }.filter(String::isNotBlank)
 
 fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
       bimap[listOf(terminal)].let {
         if (!terminal.isNonterminalStubIn(this)) it
-        else originalForm.equivalenceClass(it).filter { it in nonterminals }
+        else originalForm.equivalenceClass(it)
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeAlgebra()
   )
 
 private val freshNames: Sequence<String> =
-  ('A'..'Z').map { "$it" }.asSequence()
+  ('A'..'Z').asSequence().map { "$it" }
   .let { it + (it * it).map { (a, b) -> a + b } }
     .filter { it != START_SYMBOL }
 
@@ -166,12 +156,11 @@ fun String.parseCFG(
   normalize: Boolean = true,
   validate: Boolean = false
 ): CFG =
-  (if (validate) validate() else this).lines().filter { "->" in it}
-    .map { line ->
-      val prod = line.split(" -> ").map { it.trim() }
-      if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
-      else throw Exception("Invalid production ${prod.size}: $line")
-    }.toSet().let { if (normalize) it.normalForm else it }
+  (if (validate) validate() else this).lines().filter { "->" in it }.map { line ->
+    val prod = line.split(" -> ").map { it.trim() }
+    if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].split(" ")
+    else throw Exception("Invalid production ${prod.size}: $line")
+  }.toSet().let { if (normalize) it.normalForm else it }
 
 fun String.stripEscapeChars(escapeSeq: String = "`"): String = replace(escapeSeq, "")
 
@@ -185,10 +174,8 @@ fun CFGCFG(names: Collection<String>): CFG = """
 
 fun String.validate(
   presets: Set<String> = setOf("|", "->"),
-  ws: Regex = Regex("\\s+"),
-  tokens: List<String> = split(ws).filter { it.isNotBlank() && it !in presets },
-  names: Map<String, String> =
-    freshNames.filterNot(this::contains).zip(tokens.asSequence()).toMap(),
+  tokens: Sequence<String> = tokenizeByWhitespace().filter { it !in presets }.asSequence(),
+  names: Map<String, String> = freshNames.filterNot(::contains).zip(tokens).toMap(),
 ): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
-  .split(ws).filter(String::isNotBlank).joinToString(" ") { names[it] ?: it }
+  .tokenizeByWhitespace().joinToString(" ") { names[it] ?: it }
   .let { if (CFGCFG(names.values).isValid(it)) this else throw Exception("!CFL: $it") }

@@ -31,3 +31,5 @@ infix fun CFL.intersect(cfl: CFL): CSL = CSL(this, cfl)
 infix fun CSL.intersect(cfl: CFL): CSL = CSL(*cfls, cfl)
 infix fun CFL.intersect(csl: CSL): CSL = CSL(this, *csl.cfls)
 infix fun CSL.intersect(csl: CSL): CSL = CSL(*cfls, *csl.cfls)
+
+// Complement: https://nokyotsu.com/me/papers/cic01.pdf
