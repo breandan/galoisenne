@@ -134,7 +134,7 @@
 
   Let $\mathcal V$ represent $2^V$. If the root is known, (e.g., $S$), this represents a scalar-valued function, $p: \mathcal{V}^* \rightarrow S$. We may define a gradient operator, $\nabla: (\mathcal{V} \rightarrow S) \rightarrow \mathcal{V}$ which simultaneously tracks the partials with respect to multiple nonterminals, i.e., ambiguous variables, yielding a known root.
 
-  If the root itself is unknown, we can define an operator, $\mathbf{H}: (\mathcal{V} \rightarrow \mathcal{W}) \rightarrow (\mathcal{V}\times\mathcal{W})$, which tracks all partial derivatives for a vector variable representing a subset of possible nonterminals.
+  If the root itself is unknown, we can define an operator, $\mathcal{H}: (\mathcal{V} \rightarrow \mathcal{W}) \rightarrow (\mathcal{V}\times\mathcal{W})$, which tracks all partial derivatives for a vector variable representing a subset of possible nonterminals. Note that partials, in general, do not commute.
 
   \definecolor{R}{RGB}{202,65,55}
   \definecolor{G}{RGB}{151,216,56}
@@ -175,23 +175,46 @@
 
   \showcellnumberfalse
 
-
   \bgroup
+  \newcommand\ddd{\Ddots}
+  \newcommand\vdd{\Vdots}
+  \newcommand\cdd{\Cdots}
+  \newcommand\lds{\ldots}
+  \newcommand\vno{\varnothing}
+  \newcommand{\ts}[1]{\textsuperscript{#1}}
+  \newcommand\non{1\ts{st}}
+  \newcommand\ntw{2\ts{nd}}
+  \newcommand\nth{3\ts{rd}}
+  \newcommand\nfo{4\ts{th}}
+  \newcommand\nfi{5\ts{th}}
+  \newcommand\nsi{6\ts{th}}
+  \newcommand\nse{7\ts{th}}
+  \newcommand{\vs}[1]{\{V\}_{\sigma_{#1}}}
+  \newcommand\rcr{\rowcolor{black!15}}
+  \newcommand\rcw{\rowcolor{white}}
+  \newcommand\pcd{\cdot}
+  \newcommand\pcp{\phantom\cdot}
+  \newcommand\ppp{\phantom{\nse}}
 
   \begin{figure}
-    \[\hphantom{===}
+    \[
     \begin{matrix}
-      a & \rightarrow & ac \mid cb \mid bb \mid aa\\
-      b & \rightarrow & cc \mid ca \mid bb \mid ba\\
-      c & \rightarrow & cb \mid ac \mid bc \mid aa
-    \end{matrix} \hphantom{====} \mathcal{J}_{w_1} = \begin{pmatrix}
-       \pder{a}{a} & \pder{a}{b} & \pder{a}{c}\\
-       \pder{b}{a} & \pder{b}{b} & \pder{b}{c}\\
-       \pder{c}{a} & \pder{c}{b} & \pder{c}{c}
-    \end{pmatrix}
+      o & \rightarrow & os \mid sr \mid rr \mid oo\\
+      r & \rightarrow & ss \mid so \mid rr \mid ro\\
+      s & \rightarrow & sr \mid os \mid rs \mid oo
+    \end{matrix} \phantom{===} \mathcal{H}_o = \begin{pmatrix}
+          \highlight{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
+          \pder{^2 o}{\cev{r}\partial\vec{o}} & \highlight{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \highlight{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
+          \highlight{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
+        \end{pmatrix}
+%    \mathcal{J} = \begin{pmatrix}
+%       \pder{o}{o} & \pder{o}{r} & \pder{o}{s}\\
+%       \pder{r}{o} & \pder{r}{r} & \pder{r}{s}\\
+%       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
+%    \end{pmatrix}
     \]
-    \hspace{-0.5cm}\begin{minipage}[l]{4.8cm}
-    \begin{tikzpicture}
+    \hspace{-0.5cm}\begin{minipage}[l]{4.4cm}
+    \scalebox{0.8}{\begin{tikzpicture}
       \clip (-3,-2.5) rectangle (3,2.5);
       \begin{scope}[tdplot_main_coords]
         \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
@@ -226,24 +249,21 @@
         \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
         (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
       \end{scope}
-    \end{tikzpicture}
-    \end{minipage}\hspace{0.5cm}
+    \end{tikzpicture}}
+    \end{minipage}
     \begin{minipage}[c]{3.5cm}
       \begin{align*}
-        \mathcal{J}_{w_1} &= \begin{pmatrix}
-              \pder{y_1}{x_1} & \pder{y_1}{x_3} & \pder{y_1}{x_3}\\
-              \pder{y_2}{x_1} & \pder{y_2}{x_3} & \pder{y_2}{x_3}\\
-              \pder{y_3}{x_1} & \pder{y_3}{x_3} & \pder{y_3}{x_3}
-        \end{pmatrix}\\
-        \mathcal{J}_{w_2} &= \begin{pmatrix}
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}\\
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}\\
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}
-        \end{pmatrix}\\
-        \mathcal{J}_{w_3} &= \begin{pmatrix}
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}\\
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}\\
-              \pder{y_1}{x_1} & \pder{y_1}{x_1} & \pder{y_1}{x_1}
+        \mathcal{H}_r = & \begin{pmatrix}
+           \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \highlight{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
+           \pder{^2 r}{\cev{r}\partial\vec{o}} & \highlight{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
+           \highlight{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \highlight{\pder{^2 r}{\cev{s}\partial\vec{s}}}
+        \end{pmatrix}
+      \end{align*}
+        \begin{align*}
+        \mathcal{H}_s = & \begin{pmatrix}
+           \highlight{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \highlight{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
+           \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \highlight{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
+           \highlight{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
         \end{pmatrix}
       \end{align*}
     \end{minipage}
@@ -263,26 +283,6 @@
 %    \includegraphics[width=2cm]{../figures/parse3.png}
 %    \includegraphics[width=2cm]{../figures/parse4.png}
 %\end{figure}
-
-  \newcommand\ddd{\Ddots}
-  \newcommand\vdd{\Vdots}
-  \newcommand\cdd{\Cdots}
-  \newcommand\lds{\ldots}
-  \newcommand\vno{\varnothing}
-  \newcommand{\ts}[1]{\textsuperscript{#1}}
-  \newcommand\non{1\ts{st}}
-  \newcommand\ntw{2\ts{nd}}
-  \newcommand\nth{3\ts{rd}}
-  \newcommand\nfo{4\ts{th}}
-  \newcommand\nfi{5\ts{th}}
-  \newcommand\nsi{6\ts{th}}
-  \newcommand\nse{7\ts{th}}
-  \newcommand{\vs}[1]{\{V\}_{\sigma_{#1}}}
-  \newcommand\rcr{\rowcolor{black!15}}
-  \newcommand\rcw{\rowcolor{white}}
-  \newcommand\pcd{\cdot}
-  \newcommand\pcp{\phantom\cdot}
-  \newcommand\ppp{\phantom{\nse}}
 
   \begin{figure}[H]
     \[
