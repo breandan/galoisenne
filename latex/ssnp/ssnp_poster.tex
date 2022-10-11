@@ -162,7 +162,7 @@
 
       \mysection{Algebraic Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\\
+          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal 2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\\
       \end{minipage}
 
       \[
@@ -216,8 +216,8 @@
         \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
         \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
         \[\begin{tikzcd}
-            V \times V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
-            & V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+            2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+            & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
             \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
             & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
         \end{tikzcd}\]

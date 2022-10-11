@@ -67,7 +67,7 @@ We present a framework for probabilistic program synthesis based on Galois theor
 
 \section{Introduction}
 
-A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}/n$ where $n$ is prime. We are primarily interested in GF$(2^n)$, taking values on $\{0, 1\}^n$, due to its amenability to SAT/SMT encoding, well-studied theoretical properties, circuit synthesizability and broad applicability to signal processing and computational linguistics. For example, the theory of context-free grammars are a special case~\citep{jansson2016certified, bakinova2020formal}. Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal P(V)$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
+A Galois field is a field containing a finite set of elements, e.g., $\mathbb{Z}/n$ where $n$ is prime. We are primarily interested in GF$(2^n)$, taking values on $\{0, 1\}^n$, due to its amenability to SAT/SMT encoding, well-studied theoretical properties, circuit synthesizability and broad applicability to signal processing and computational linguistics. For example, the theory of context-free grammars are a special case~\citep{jansson2016certified, bakinova2020formal}. Given a CFG $\mathcal{G} := \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal 2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
 
 \vspace{-7pt}
 \[

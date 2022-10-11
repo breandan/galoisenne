@@ -157,7 +157,7 @@ Lowers Valiant matrix onto SAT. Steps:
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
  */
 
-private fun CFG.synthesize(
+fun CFG.synthesize(
   tokens: List<String>,
   // Used to restore well-formed trees that were pruned
   reconstructor: Reconstructor = mutableListOf()
