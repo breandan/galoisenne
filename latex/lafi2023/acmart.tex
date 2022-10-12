@@ -43,7 +43,7 @@
 %% Title information
   \title{Backpropagation of Syntax Errors in Context-Free Languages using the Lifted Brzozowski Derivative}
   \begin{abstract}
-    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between parsing with derivatives and Valiant's fixpoint construction in the context-free setting. By lifting these constructions into the domain of tensors over finite fields, we draw a loose analogy to partial differentiation over Euclidean vector fields. This theory has yielded practical applications for program repair, autocompletion and incremental parsing. For example, we can can use it to repair errors, and perform syntax-guided synthesis in context-free languages.
+    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between parsing with derivatives and Valiant's fixpoint construction in the context-free setting. By lifting these constructions into the domain of tensors over finite fields, we draw a loose analogy to partial differentiation over Euclidean vector fields. This theory has yielded practical applications for program repair, autocompletion, incremental parsing and language induction. For example, we can can use it to repair errors, and perform syntax-guided synthesis in context-free languages, among other tasks.
   \end{abstract}
 
   \author{Breandan Mark Considine}
@@ -138,7 +138,6 @@
 
   \definecolor{R}{RGB}{202,65,55}
   \definecolor{G}{RGB}{151,216,56}
-  \definecolor{B}{RGB}{0,0,0}
   \definecolor{W}{RGB}{255,255,255}
   \definecolor{X}{RGB}{65,65,65}
 
@@ -158,17 +157,17 @@
   \xdef\myarray{{\myarray}}%
   }
   \TikZRubikFaceLeft
-  {X}{W}{W}
-  {W}{X}{X}
-  {X}{W}{W}
+  {LA}{W}{W}
+  {W}{LB}{LC}
+  {LD}{W}{W}
   \TikZRubikFaceRight
-  {W}{X}{W}
-  {X}{W}{X}
-  {W}{X}{W}
+  {W}{LK}{W}
+  {LC}{W}{LG}
+  {W}{LH}{W}
   \TikZRubikFaceTop
-  {X}{W}{X}
-  {W}{W}{X}
-  {W}{X}{W}
+  {LA}{W}{LI}
+  {W}{W}{LJ}
+  {W}{LK}{W}
   \BuildArray
   \pgfmathsetmacro\radius{0.1}
   \tdplotsetmaincoords{55}{135}
@@ -199,13 +198,13 @@
   \begin{figure}
     \[
     \begin{matrix}
-      o & \rightarrow & os \mid sr \mid rr \mid oo\\
-      r & \rightarrow & ss \mid so \mid rr \mid ro\\
-      s & \rightarrow & sr \mid os \mid rs \mid oo
-    \end{matrix} \phantom{===} \mathcal{H}_o = \begin{pmatrix}
-          \highlight{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
-          \pder{^2 o}{\cev{r}\partial\vec{o}} & \highlight{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \highlight{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
-          \highlight{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
+      o \rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr} \mid \hiliA{oo}\\
+      r \rightarrow \hiliE{so} \mid \hiliK{os} \mid \hiliF{rr} \mid \hiliH{ss} \\
+      s \rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
+    \end{matrix} \phantom{=} \mathcal{H}_o = \begin{pmatrix}
+          \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
+          \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
+          \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
         \end{pmatrix}
 %    \mathcal{J} = \begin{pmatrix}
 %       \pder{o}{o} & \pder{o}{r} & \pder{o}{s}\\
@@ -254,16 +253,16 @@
     \begin{minipage}[c]{3.5cm}
       \begin{align*}
         \mathcal{H}_r = & \begin{pmatrix}
-           \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \highlight{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
-           \pder{^2 r}{\cev{r}\partial\vec{o}} & \highlight{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
-           \highlight{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \highlight{\pder{^2 r}{\cev{s}\partial\vec{s}}}
+           \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
+           \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
+           \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
         \end{pmatrix}
       \end{align*}
         \begin{align*}
         \mathcal{H}_s = & \begin{pmatrix}
-           \highlight{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \highlight{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
-           \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \highlight{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
-           \highlight{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
+           \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
+           \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
+           \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
         \end{pmatrix}
       \end{align*}
     \end{minipage}
@@ -287,13 +286,13 @@
   \begin{figure}[H]
     \[
       \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-                       \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-                       \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-                       &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-                       &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-                       &             &                    &                   &                        & \ddd & \\
-                       &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-                       \vno & \cdd        &                    &                   &                        &      & \vno
+           \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+           \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+                &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+                &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+                &             &                    &                   &                        & \ddd & \\
+                &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+           \vno & \cdd        &                    &                   &                        &      & \vno
       \end{pNiceArray}
     \]
   \end{figure}
