@@ -428,14 +428,13 @@ class SATValiantTest {
   @Test
   fun testVariableLengthDecoding() {
     val cfg = """
-      START -> A B C
-      A -> a A | ε
-      B -> b B | ε
-      C -> ε
+      START -> A B
+      A -> a A
+      B -> b B
     """.parseCFG()
 
     println("Grammar:\n" + cfg.prettyPrint())
-    "_ _ _ _ _ _ _ _ _ ".synthesizeIncrementally(cfg, allowNTs = false)
+    "_ _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg, allowNTs = false)
       .distinct().take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
         val isValid = cfg.isValid(decodedString)

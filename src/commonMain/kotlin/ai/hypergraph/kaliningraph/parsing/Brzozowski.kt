@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.*
 
+// https://matt.might.net/papers/might2011derivatives.pdf
 // TODO: We want a gadget that respects linearity d(a⊗b) = d(a)⊗b ⊕ a⊗d(b)
 fun CFG.dl(r: Set<String>, x: Set<String>): Set<String> =
   (r * x * nonterminals)
