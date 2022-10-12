@@ -19,7 +19,7 @@ class SATValiantTest {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
 
     val pwrsetSquared =
-      cfg.nonterminals.take(5).powerset().let { it * it }
+      cfg.nonterminals.take(5).powerset().let { it * it }.toList()
     println("Cardinality:" + pwrsetSquared.size)
 
     /*

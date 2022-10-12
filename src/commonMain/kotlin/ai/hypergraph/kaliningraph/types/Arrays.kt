@@ -37,7 +37,7 @@ operator fun IntProgression.times(s: IntProgression): Set<V2<Int>> =
   flatMap { s.map(it::cc).toSet() }.toSet()
 
 infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
-  flatMap { other.map(it::to) }.toSet()
+  flatMap { other.map(it::to) }
 
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
@@ -57,6 +57,9 @@ fun <T> Collection<T>.powerset(): Sequence<Set<T>> = sequence {
 infix fun IntRange.isSubsetOf(ir: IntRange) = ir.first <= first && last <= ir.last
 infix fun IntRange.isStrictSubsetOf(ir: IntRange) =
   ir.first <= first && last <= ir.last && this != ir
+
+@JvmName("cartProdPairSeq") operator fun <E: Π2<A, B>, A, B, Z> Sequence<E>.times(s: Sequence<Z>): Sequence<Π3<A, B, Z>> =
+  flatMap { s.map(it::to) }
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
