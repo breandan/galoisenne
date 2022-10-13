@@ -23,7 +23,7 @@ fun repair(
 
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
   val sanitized: String = tokensWithHoles.joinToString(" ")
-  val maxResults = 1
+  val maxResults = 10
 
   val variations: List<(String) -> Sequence<String>> =
     listOf({
@@ -41,7 +41,8 @@ fun repair(
     sanitized.synthesizeWithVariations(
       cfg = cfg,
       variations = variations,
-      synthesizer = synthesizer
+      synthesizer = synthesizer,
+//      enablePruning = true
     ).take(maxResults).toList().sortedWith(tokens.ranker()).map { it.uncoarsen(prompt) }
 
   return repairs
