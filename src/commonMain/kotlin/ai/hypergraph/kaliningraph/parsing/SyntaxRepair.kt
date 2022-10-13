@@ -14,7 +14,7 @@ fun repair(
   cfg: CFG,
   coarsen: String.() -> String = { this },
   uncoarsen: String.(String) -> String = { this },
-  synthesizer: (List<String>, Reconstructor) -> Sequence<String>
+  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
 ): List<String> {
   val coarsened = prompt.coarsen()
   val tokens = coarsened.tokenizeByWhitespace()
@@ -61,7 +61,7 @@ fun String.synthesizeWithVariations(
   variations: List<String.() -> Sequence<String>> = listOf({ sequenceOf() }),
   updateProgress: (String) -> Unit = {},
   skipWhen: (List<String>) -> Boolean = { false },
-  synthesizer: (List<String>, Reconstructor) -> Sequence<String>
+  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
 ): Sequence<String> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
@@ -71,7 +71,7 @@ fun String.synthesizeWithVariations(
 
   val allVariants: Sequence<String> =
     variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b() }
-      .distinct().rejectTemplatesContainingImpossibleBigrams(cfg)
+      .distinct().rejectTemplatesContainingImpossibleBigrams(cfg_)
 
   return allVariants.map { updateProgress(it); it }
     .flatMap {
@@ -79,7 +79,7 @@ fun String.synthesizeWithVariations(
       if (skipWhen(variantTokens)) emptySequence()
       else cfg_.run { synthesizer(variantTokens, reconstructor) }
         .ifEmpty {
-          variantTokens.rememberImpossibleBigrams(cfg, synthesizer)
+          variantTokens.rememberImpossibleBigrams(cfg_, synthesizer)
           emptySequence()
         }
     }.distinct()
@@ -169,7 +169,7 @@ fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
 
 fun List<String>.rememberImpossibleBigrams(
   cfg: CFG,
-  synthesizer: (List<String>, Reconstructor) -> Sequence<String>
+  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
 ) {
   windowed(2).asSequence().filter {
     it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams + cfg.impossibleBigrams
@@ -177,7 +177,7 @@ fun List<String>.rememberImpossibleBigrams(
     val holes = List((size / 2).coerceIn(4..8)) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = tokenize("$holes $substring $holes")
-    if (synthesizer(tokens, mutableListOf()).firstOrNull() == null)
+    if (cfg.synthesizer(tokens, mutableListOf()).firstOrNull() == null)
       cfg.impossibleBigrams.getOrPut(tokens.size) { mutableSetOf() }.add(substring)
     else cfg.possibleBigrams.add(substring)
   }

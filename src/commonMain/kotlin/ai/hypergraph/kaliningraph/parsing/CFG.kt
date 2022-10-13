@@ -38,8 +38,8 @@ val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 val CFG.reachability by cache { mutableMapOf<String, Set<String>>() }
 val CFG.noNonterminalStubs by cache {
-  filter { it.RHS.none { it.isNonterminalStubIn(this)} }.toSet()
-    .also { rewriteHistory.put(it, rewriteHistory[this]!!) }
+  filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
+    .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
 }
 
 class JoinMap(val CFG: CFG) {

@@ -90,13 +90,17 @@ val CFG.satAlgebra by cache {
   )
 }
 
+// Precomputes literals in the fixpoint to avoid solving for invariant entries
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
   stringVars: MutableList<SATVector> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
   literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
     ts = tokens.map { it ->
+      // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+      // shadow of bitvector variables on UTMatrix, which we represent as nulls
       if (it.isHoleTokenIn(cfg = this)) null
+      // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
       else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
     }.toTypedArray(),
     algebra = satLitAlgebra
@@ -130,7 +134,7 @@ fun String.synthesizeIncrementally(
   skipWhen: (List<String>) -> Boolean = { false }
 ): Sequence<String> = synthesizeWithVariations(
   cfg, allowNTs, enablePruning, variations, updateProgress, skipWhen,
-  synthesizer = { a, b -> cfg.synthesize(a, b) }
+  synthesizer = { a, b -> synthesize(a, b) }
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
@@ -210,7 +214,7 @@ fun CSL.synthesize(
             if (it == "_") fillers.removeAt(0)!!
             else if (it.isNonterminalStubIn(this@synthesize)) {
               val stub = fillers.removeAt(0)!!
-              if (it != reconstructor.first().first) stub
+              if (reconstructor.isEmpty() || it != reconstructor.first().first) stub
               else reconstructor.removeFirst().second
             } else it
           }.filterNot { "ε" in it }.joinToString(" ")
@@ -242,6 +246,8 @@ fun CSL.synthesize(
 fun CFG.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>> {
   println("Synthesizing: ${tokens.joinToString(" ")}")
   val (matrix, holeVecVars) = constructInitialMatrix(tokens)
+
+  println(prettyPrint())
 
   // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
   //       nonterminal in the original string to reduce fixedpoint matrix size.
