@@ -247,8 +247,6 @@ fun CFG.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>
   println("Synthesizing: ${tokens.joinToString(" ")}")
   val (matrix, holeVecVars) = constructInitialMatrix(tokens)
 
-  println(prettyPrint())
-
   // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
   //       nonterminal in the original string to reduce fixedpoint matrix size.
     return isInGrammar(matrix) and
