@@ -569,6 +569,6 @@ class SATValiantTest {
     " w ( w ) w ( w ) w ( w ) w ( w ( w ) ) w ( ( w ( w ( w ) ) w ) w )" +
     " w ( w ( ) w ( w ) ) w ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
     val shortQuery = "w ( w ) w ( w ( w ( w ) w ( w ) w ( w ) ) ) w ( <START> ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
-    println(longQuery.synthesizeIncrementally(cfg).first())
+    println(longQuery.synthesizeIncrementally(cfg, enablePruning = true).first())
   }
 }
