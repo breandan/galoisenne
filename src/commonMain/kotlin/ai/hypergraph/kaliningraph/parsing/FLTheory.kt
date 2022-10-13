@@ -9,6 +9,8 @@ val REG.language: REL by cache { REL(this) }
 val REG.asCFG: CFG by cache { map { (a, b) -> a to listOf(b) }.toSet() }
 val CFG.asCSL: CSL by cache { CSL(language) }
 
+infix fun CFG.intersect(that: CFG) = CSL(language, that.language)
+
 data class REL(val reg: REG) // https://en.wikipedia.org/wiki/Regular_language#Closure_properties
 data class CFL(val cfg: CFG) // https://en.wikipedia.org/wiki/Context-free_language#Closure_properties
 // Not actually context-sensitive, but close enough for now.

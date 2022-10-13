@@ -1,8 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.types.powerset
-import ai.hypergraph.kaliningraph.types.times
+import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.test.*
@@ -570,5 +569,32 @@ class SATValiantTest {
     " w ( w ( ) w ( w ) ) w ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
     val shortQuery = "w ( w ) w ( w ( w ( w ) w ( w ) w ( w ) ) ) w ( <START> ( w ( w ) _ w ( w ) w ( ) ) w ( ) w"
     println(longQuery.synthesizeIncrementally(cfg, enablePruning = true).first())
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCFLPumping"
+*/
+  @Test
+  fun testCFLPumping() {
+    val cfgA = """
+      START -> L R
+      L -> a b | a L b
+      R -> c | c R
+    """.parseCFG()
+
+    val cfgB = """
+      START -> L R
+      R -> b c | b R c
+      L -> a | a L
+    """.parseCFG()
+
+    // This language should recognize {aⁿbⁿcⁿ | n > 0}
+    val csl = (cfgA intersect cfgB)
+    csl.synthesize("_ _ _ _ _ _ _ _ _ _ _ _ _ _".tokenizeByWhitespace()).take(10).forEach {
+      println(it)
+//      val (a, b, c) = it.count { it == 'a' } to it.count { it == 'b' } to it.count { it == 'c' }
+//      assertEquals(a, b)
+//      assertEquals(b, c)
+    }
   }
 }

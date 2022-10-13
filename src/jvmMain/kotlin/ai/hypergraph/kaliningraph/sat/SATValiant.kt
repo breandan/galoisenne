@@ -115,13 +115,15 @@ fun CFG.constructInitialMatrix(
       // Strictly upper triangular matrix entries
       else if (r + 1 <= c) {
         val permanentBitVec = literalMatrix[r, c]
-        if (permanentBitVec.isNullOrEmpty()) BVecVar("B_${r}_${c}", nonterminals.size)
+        if (permanentBitVec.isNullOrEmpty()) BVecVar("B_${r}_${c}_${hashCode()}", nonterminals.size)
         else permanentBitVec.map { if (it) T else F }
       }
       // Diagonal and subdiagonal
       else emptyList()
     }.toUTMatrix(),
-): Pair<SATRubix, List<SATVector>> = (rubix to stringVars)
+): Pair<SATRubix, List<SATVector>> =
+   /** TODO: Remove unnecessary return value [stringVars] and decode from naming scheme where needed*/
+  (rubix to stringVars)
 //  .also { println("SAT matrix[$i]:\n${it.first.toFullMatrix().summarize(this)}") }
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
@@ -259,6 +261,7 @@ fun CSL.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>
   val timeToFormConstraints = System.currentTimeMillis()
 
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
+  // TODO: need to constrain superdiagonals of all CFG matrices to use the same variables
   val parsingConstraints = t.fold(T) { a, b -> a and b }
   val holeVecVars = q.first()
 
