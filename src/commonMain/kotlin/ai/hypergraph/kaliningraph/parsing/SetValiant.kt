@@ -122,8 +122,10 @@ val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
 //=====================================================================================
 
 fun String.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
-fun String.isNonterminalStubIn(cfg: CFG) =
+fun String.isNonterminalStubIn(cfg: CFG): Boolean =
   first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
+fun String.isNonterminalStubIn(csl: CSL): Boolean =
+  csl.cfgs.map { isNonterminalStubIn(it) }.all { it }
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<String>): TreeMatrix =

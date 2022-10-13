@@ -8,10 +8,11 @@ import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
 
-typealias FormulaMatrix = UTMatrix<List<Formula>>
+typealias SATVector = List<Formula>
+typealias SATRubix = UTMatrix<SATVector>
 
 @JvmName("joinFormula")
-fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
+fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) emptyList()
   else List(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
@@ -20,13 +21,13 @@ fun CFG.join(left: List<Formula>, right: List<Formula>): List<Formula> =
   }
 
 @JvmName("satFormulaUnion")
-infix fun List<Formula>.union(that: List<Formula>): List<Formula> =
+infix fun SATVector.union(that: SATVector): SATVector =
   if (isEmpty()) that else if (that.isEmpty()) this
   else List(size) { i -> this[i] or that[i] }
 
-fun List<Boolean>.toLitVec(): List<Formula> = map { BLit(it) }
+fun List<Boolean>.toLitVec(): SATVector = map { BLit(it) }
 
-infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
+infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
   else if (this == that) T
   else zip(that).partition { (l, r) -> l == r }
@@ -34,20 +35,23 @@ infix fun List<Formula>.vecEq(that: List<Formula>): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun FormulaMatrix.valiantMatEq(that: FormulaMatrix): Formula =
+infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
   else diagonals.flatten().zip(that.diagonals.flatten())
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
-fun CFG.isInGrammar(mat: FormulaMatrix): Formula =
-  mat.diagonals.last().first()[bindex[START_SYMBOL]]
+fun CFG.isInGrammar(mat: SATRubix): Formula =
+  mat.diagonals.last().first()[bindex[START_SYMBOL]] and
+    mat.let { it valiantMatEq (it * it)
+//    .also { println(it.toFullMatrix().summarize(this)) }
+    }
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
 // the bitvector cannot have the configuration [A=1 B=1 C=0 D=1], it must
 // be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
-fun CFG.mustBeOnlyOneTerminal(bitvec: List<Formula>): Formula =
+fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula =
   // terminal        possible nonterminals it can represent
   terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
     val (insiders, outsiders) = bitvec.join(nonterminals).partition { it in possibleNTs }
@@ -60,13 +64,13 @@ fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
 // Encodes that each blank can only be a single terminal
-fun CFG.uniquenessConstraints(holeVariables: List<List<Formula>>): Formula =
+fun CFG.uniquenessConstraints(holeVariables: List<SATVector>): Formula =
   holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
-fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<List<Formula>>): Formula =
+fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<SATVector>): Formula =
   tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(holeVariables)
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
@@ -88,7 +92,7 @@ val CFG.satAlgebra by cache {
 
 fun CFG.constructInitialMatrix(
   tokens: List<String>,
-  stringVars: MutableList<List<Formula>> = mutableListOf(),
+  stringVars: MutableList<SATVector> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
   literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
     ts = tokens.map { it ->
@@ -99,7 +103,7 @@ fun CFG.constructInitialMatrix(
   ).seekFixpoint(),
   literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
     .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it },
-  formulaMatrix: FormulaMatrix =
+  rubix: SATRubix =
     FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
       // Superdiagonal
       if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
@@ -113,11 +117,10 @@ fun CFG.constructInitialMatrix(
       // Diagonal and subdiagonal
       else emptyList()
     }.toUTMatrix(),
-): Pair<FormulaMatrix, List<List<Formula>>> =
-    (formulaMatrix
-//  .also { println("SAT matrix[$i]:\n${it.summarize(this)}") }
-    to stringVars)
+): Pair<SATRubix, List<SATVector>> = (rubix to stringVars)
+//  .also { println("SAT matrix[$i]:\n${it.first.toFullMatrix().summarize(this)}") }
 
+/** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun String.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
@@ -134,12 +137,12 @@ fun String.synthesizeIncrementally(
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
   bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
-private fun CFG.handleSingleton(s: String): Sequence<String> =
-  if (s == "_") terminals.asSequence()
+private fun CFG.handleSingleton(s: String): Set<String> =
+  if (s == "_") terminals
   else if (s.matches(Regex("<.+>")))
     bimap[s.substring(1, s.length - 1)]
-      .mapNotNull { if (it.size == 1) it[0] else null }.asSequence()
-  else emptySequence()
+      .mapNotNull { if (it.size == 1) it[0] else null }.toSet()
+  else setOf()
 
 /*
 Does Lee's method give demonstrable speedup? https://arxiv.org/pdf/cs/0112018.pdf#page=10
@@ -161,92 +164,102 @@ fun CFG.synthesize(
   tokens: List<String>,
   // Used to restore well-formed trees that were pruned
   reconstructor: Reconstructor = mutableListOf()
+): Sequence<String> = asCSL.synthesize(tokens, reconstructor)
+
+fun CSL.synthesize(
+  tokens: List<String>,
+  // Used to restore well-formed trees that were pruned
+  reconstructor: Reconstructor = mutableListOf()
 ): Sequence<String> =
-  if (tokens.none { it.isHoleTokenIn(cfg = this) }) emptySequence()
-  else if (tokens.size == 1) handleSingleton(tokens[0])
-  else sequence {
-    val timeToFormConstraints = System.currentTimeMillis()
-    println("Synthesizing: ${tokens.joinToString(" ")}")
-    ff.clear()
-    val (matrix, holeVecVars) = constructInitialMatrix(tokens)
-    val holeVars = holeVecVars.flatten().toSet()
+  check(tokens.all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }.let {
+    if (tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) }) emptySequence()
+    else if (tokens.size == 1)
+      cfgs.map { it.handleSingleton(tokens[0]) }.intersect().asSequence()
+    else sequence {
+      val (parsingConstraints, holeVecVars) = generateConstraints(tokens)
+      val holeVars = holeVecVars.flatten().toSet()
 
-    val fixpoint = matrix * matrix
-//    println(fixpoint.summarize(this@synthesize))
+  // Tries to put ε in as many holes as possible to prioritize simple repairs
+  // val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
 
-    // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
-    //       nonterminal in the original string to reduce fixedpoint matrix size.
-    val parsingConstraints = try {
-      isInGrammar(matrix) and
-      uniquenessConstraints(holeVecVars) and
-      reachabilityConstraints(tokens, holeVecVars) and
-      (matrix valiantMatEq fixpoint)
-    } catch (e: Exception) { e.printStackTrace(); return@sequence }.also {
-      val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-      println("Solver formed ${it.numberOfNodes()} constraints in ${timeElapsed}ms")
-    }
+  // Sometimes simplification can take longer or even switch SAT->UNSAT?
+  // println("Original: ${parsingConstraints.numberOfNodes()}")
+  // parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
+  // parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
+  // println("Reduction: ${parsingConstraints.numberOfNodes()}")
+  // println(parsingConstraints.cnf().toPython())
 
-// Tries to put ε in as many holes as possible to prioritize simple repairs
-// val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
+      var (solver, solution) =
+        parsingConstraints.let { f ->
+          try { f.solveIncrementally() }
+  //      try { f.solveMaxSat(softConstraints) }
+          catch (npe: NullPointerException) { return@sequence }
+        }
+  //  var freshnessConstraints = 0L
+      var totalSolutions = 0
+      while (true) try {
+        //    println(solution.toPython())
+        val cfg = cfgs.first()
+        val fillers: MutableList<String?> =
+          holeVecVars.map { bits -> cfg.tmap[cfg.nonterminals(bits.map { solution[it]!! })] }.toMutableList()
 
-//  Sometimes simplification can take longer or even switch SAT->UNSAT?
-//  println("Original: ${parsingConstraints.numberOfNodes()}")
-//  parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
-//  parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
-//  println("Reduction: ${parsingConstraints.numberOfNodes()}")
-//  println(parsingConstraints.cnf().toPython())
+  //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
+  //      println(bMat.summarize(this@synthesize))
+        val completion: String =
+          tokens.map {
+            if (it == "_") fillers.removeAt(0)!!
+            else if (it.isNonterminalStubIn(this@synthesize)) {
+              val stub = fillers.removeAt(0)!!
+              if (it != reconstructor.first().first) stub
+              else reconstructor.removeFirst().second
+            } else it
+          }.filterNot { "ε" in it }.joinToString(" ")
 
-    var (solver, solution) =
-      parsingConstraints.let { f ->
-        try { f.solveIncrementally() }
-//      try { f.solveMaxSat(softConstraints) }
-        catch (npe: NullPointerException) { return@sequence }
+        if (Thread.currentThread().isInterrupted) throw InterruptedException()
+        totalSolutions++
+        if (completion.trim().isNotBlank()) yield(completion)
+
+        val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
+  //      freshnessConstraints += isFresh.numberOfAtoms()
+  //      println("Freshness constraints: $freshnessConstraints")
+
+        val model = solver.run { add(isFresh); sat(); model() }
+  //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
+        solution = solution.keys.associateWith { model.evaluateLit(it) }
+      } catch(ie: InterruptedException) {
+        ff.clear()
+        throw ie
+      } catch (e: Exception) {
+        ff.clear()
+        break
+      } catch (e: OutOfMemoryError) { // Does this really work?
+        ff.clear()
+        break
       }
-//  var freshnessConstraints = 0L
-    var totalSolutions = 0
-    while (true) try {
-//    println(solution.toPython())
-      val fillers: MutableList<String?> =
-        holeVecVars.map { bits -> tmap[nonterminals(bits.map { solution[it]!! })] }.toMutableList()
-
-//      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
-//      println(bMat.summarize(this@synthesize))
-      val completion: String =
-        tokens.map {
-          if (it == "_") fillers.removeAt(0)!!
-          else if (it.isNonterminalStubIn(this@synthesize)) {
-            val stub = fillers.removeAt(0)!!
-            if (it != reconstructor.first().first) stub
-            else reconstructor.removeFirst().second
-          }
-          else it
-        }.filterNot { "ε" in it }.joinToString(" ")
-
-      if (Thread.currentThread().isInterrupted) throw InterruptedException()
-      totalSolutions++
-      if (completion.trim().isNotBlank()) yield(completion)
-
-      val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
-//      freshnessConstraints += isFresh.numberOfAtoms()
-//      println("Freshness constraints: $freshnessConstraints")
-
-      val model = solver.run { add(isFresh); sat(); model() }
-//      val model = solver.run { addHardFormula(isFresh); solve(); model() }
-      solution = solution.keys.associateWith { model.evaluateLit(it) }
-    } catch(ie: InterruptedException) {
-      cleanup(timeToFormConstraints, totalSolutions)
-      throw ie
-    } catch (e: Exception) {
-      cleanup(timeToFormConstraints, totalSolutions)
-      break
-    } catch (e: OutOfMemoryError) { // Does this really work?
-      cleanup(timeToFormConstraints, totalSolutions)
-      break
     }
-  }
+}
 
-fun cleanup(timeToFormConstraints: Long, totalSolutions: Int) {
-  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-  println("Solver decoded $totalSolutions total solutions in ${timeElapsed}ms")
+fun CFG.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>> {
+  println("Synthesizing: ${tokens.joinToString(" ")}")
+  val (matrix, holeVecVars) = constructInitialMatrix(tokens)
+
+  // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
+  //       nonterminal in the original string to reduce fixedpoint matrix size.
+    return isInGrammar(matrix) and
+      uniquenessConstraints(holeVecVars) and
+      reachabilityConstraints(tokens, holeVecVars) to holeVecVars
+}
+
+fun CSL.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>> {
   ff.clear()
+  val timeToFormConstraints = System.currentTimeMillis()
+
+  val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
+  val parsingConstraints = t.fold(T) { a, b -> a and b }
+  val holeVecVars = q.first()
+
+  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+  println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
+
+  return parsingConstraints to holeVecVars
 }

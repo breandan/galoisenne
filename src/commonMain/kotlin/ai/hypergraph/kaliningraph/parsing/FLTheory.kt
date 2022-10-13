@@ -1,12 +1,13 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.types.cache
-import ai.hypergraph.kaliningraph.types.Π2
+import ai.hypergraph.kaliningraph.types.*
+import kotlin.collections.intersect
 
 // https://en.wikipedia.org/wiki/Regular_grammar
 typealias REG = Set<Π2<String, String>>
 val REG.language: REL by cache { REL(this) }
 val REG.asCFG: CFG by cache { map { (a, b) -> a to listOf(b) }.toSet() }
+val CFG.asCSL: CSL by cache { CSL(language) }
 
 data class REL(val reg: REG) // https://en.wikipedia.org/wiki/Regular_language#Closure_properties
 data class CFL(val cfg: CFG) // https://en.wikipedia.org/wiki/Context-free_language#Closure_properties
@@ -14,7 +15,16 @@ data class CFL(val cfg: CFG) // https://en.wikipedia.org/wiki/Context-free_langu
 // May need to stage set expressions to support both ∪ and ∩,
 // but currently just represents the intersection of CFL(s).
 // https://en.wikipedia.org/wiki/Context-sensitive_grammar#Closure_properties
-class CSL(vararg cfls: CFL) { val cfls: Array<CFL> = cfls.toSet().toTypedArray() }
+
+class CSL(vararg cfls: CFL) {
+  val cfls: Array<CFL> = cfls.toSet().toTypedArray()
+  val cfgs by lazy { cfls.map { it.cfg } }
+  val nonterminals: Set<String> by lazy { intersect { nonterminals } }
+  val terminals: Set<String> by lazy { intersect { terminals } }
+  val symbols: Set<String> by lazy { intersect { symbols } }
+
+  private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> = cfgs.map { it.item() }.intersect()
+}
 
 // REL ⊂ CFL ⊂ CSL
 operator fun REL.contains(s: String): Boolean = s in reg.asCFG.language

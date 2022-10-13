@@ -42,6 +42,9 @@ infix operator fun <T, U> Sequence<T>.times(other: Sequence<U>) =
 operator fun <A, Z> Set<A>.times(s: Set<Z>): Set<Π2<A, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
+fun <T> Iterable<Set<T>>.intersect(): Set<T> =
+  fold(first().toMutableSet()) { a, b -> a.apply { retainAll(b) } }
+
 fun <T> Collection<T>.powerset(): Sequence<Set<T>> = sequence {
   when (size) {
     0 -> yield(emptySet())

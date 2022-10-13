@@ -32,7 +32,7 @@ fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
   }.toString()
 
 @JvmName("summarizeFormulaMatrix")
-fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
+fun FreeMatrix<SATVector>.summarize(cfg: CFG): String =
   map {
     when {
       it.isEmpty() -> ""
@@ -45,7 +45,7 @@ fun FreeMatrix<List<Formula>>.summarize(cfg: CFG): String =
   }.toString()
 
 // Summarize fill structure of bit vector variables
-fun FreeMatrix<List<Formula>>.fillStructure(): FreeMatrix<String> =
+fun FreeMatrix<SATVector>.fillStructure(): FreeMatrix<String> =
   FreeMatrix(numRows, numCols) { r, c ->
     this[r, c].let {
       if (it.all { it == F }) "0"
