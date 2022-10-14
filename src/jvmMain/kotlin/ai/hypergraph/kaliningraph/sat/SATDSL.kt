@@ -11,7 +11,9 @@ import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.formulas.Variable
 import org.logicng.solvers.MaxSATSolver
 import org.logicng.solvers.MiniSat
+import org.logicng.solvers.SATSolver
 
+typealias Model = Map<Variable, Boolean>
 //val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
 
 val ff: FormulaFactory = //get() =
@@ -30,17 +32,17 @@ fun BLit(b: Boolean): Formula = ff.constant(b)
 fun BVecLit(l: List<Boolean>): SATVector = l.map { ff.constant(it)  as Formula }
 fun BVecLit(size: Int, f: (Int)-> Formula): SATVector = List(size) { f(it) }
 
-fun Formula.solve(): Map<Variable, Boolean> =
+fun Formula.solve(): Model =
   ff.let { ff: FormulaFactory ->
     val vars = variables()
     val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
-    vars.associateWith { model.evaluateLit(it) }
+    if (model == null) mapOf() else vars.associateWith { model.evaluateLit(it) }
   }
 
 fun Formula.solveMaxSat(
   softConstaints: SATVector,
   maxiSat: MaxSATSolver = MaxSATSolver.incWBO(ff)
-): Pair<MaxSATSolver, Map<Variable, Boolean>> =
+): Pair<MaxSATSolver, Model> =
   maxiSat to maxiSat.apply {
     addHardFormula(this@solveMaxSat)
     softConstaints.forEach { addSoftFormula(it, 1) }
@@ -48,15 +50,23 @@ fun Formula.solveMaxSat(
   }.model()
     .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
+fun SATSolver.addConstraintAndSolve(f: Formula): Model {
+  val model = this.run { add(f); sat(); model() }
+  return if (model == null) mapOf() else model.negativeVariables()
+    .associateWith { false } + model.positiveVariables().associateWith { true }
+}
+  //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
+
 fun Formula.solveIncrementally(
   miniSat: MiniSat = MiniSat.miniSat(ff)
 //    miniSat: MiniSat = MiniSat.glucose(ff)
-): Pair<MiniSat, Map<Variable, Boolean>> =
-  miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model()
-    .let { model -> variables().associateWith { model.evaluateLit(it) } }
+): Pair<MiniSat, Model> =
+  miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model().let { model ->
+    if(model == null) mapOf() else variables().associateWith { model.evaluateLit(it) }
+  }
 
 // Ensures that at least one of the formulas in stale are fresh
-fun Map<Variable, Boolean>.areFresh() =
+fun Model.areFresh() =
   entries.map { (v, _) -> v.negate() as Formula }
 //    .shuffled().let { it.take(it.size / 2) }
 //    .also { println("${it.size} new constraints added!") }

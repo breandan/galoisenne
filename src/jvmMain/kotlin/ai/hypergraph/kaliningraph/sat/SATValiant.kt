@@ -195,19 +195,16 @@ fun CSL.synthesize(
   // println("Reduction: ${parsingConstraints.numberOfNodes()}")
   // println(parsingConstraints.cnf().toPython())
 
-      var (solver, solution) =
-        parsingConstraints.let { f ->
-          try { f.solveIncrementally() }
-  //      try { f.solveMaxSat(softConstraints) }
-          catch (npe: NullPointerException) { return@sequence }
-        }
+      var (solver, model) = parsingConstraints.solveIncrementally()
+      model.ifEmpty { ff.clear(); return@sequence }
+
   //  var freshnessConstraints = 0L
       var totalSolutions = 0
       while (true) try {
         //    println(solution.toPython())
         val cfg = cfgs.first()
         val fillers: MutableList<String?> =
-          holeVecVars.map { bits -> cfg.tmap[cfg.nonterminals(bits.map { solution[it]!! })] }.toMutableList()
+          holeVecVars.map { bits -> cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })] }.toMutableList()
 
   //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
   //      println(bMat.summarize(this@synthesize))
@@ -225,17 +222,15 @@ fun CSL.synthesize(
         totalSolutions++
         if (completion.trim().isNotBlank()) yield(completion)
 
-        val isFresh = solution.filter { (k, v) -> k in holeVars && v }.areFresh()
+        val isFresh = model.filter { (k, v) -> k in holeVars && v }.areFresh()
   //      freshnessConstraints += isFresh.numberOfAtoms()
   //      println("Freshness constraints: $freshnessConstraints")
 
-        val model = solver.run { add(isFresh); sat(); model() }
-  //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
-        solution = solution.keys.associateWith { model.evaluateLit(it) }
+        model = solver.addConstraintAndSolve(isFresh).ifEmpty { ff.clear(); return@sequence }
       } catch(ie: InterruptedException) {
         ff.clear()
         throw ie
-      } catch (e: Exception) {
+      } catch (e: NullPointerException) {
         ff.clear()
         break
       } catch (e: OutOfMemoryError) { // Does this really work?

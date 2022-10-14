@@ -61,14 +61,14 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-    for (j in 2..4) {
-      val i = List(128) { i -> BVar("$i") }
+    (2..4).mapNotNull { j ->
+      val i = List(64) { i -> BVar("$i") }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
-      try {
-        val sol = t.solve()
-        val bits = i.map { sol[it]!! }.also { println("Looper ($j): $it") }
-        assertEquals(bits, bits.evolve(steps = j))
-      } catch (e: Exception) {}
+      val sol = t.solve()
+      if(sol.isEmpty()) null else i.map { sol[it]!! }.also { println("Looper ($j): $it") } to j
+    }.forEach { (bits, j) ->
+      assertNotEquals(bits, bits.evolve())
+      assertEquals(bits, bits.evolve(steps = j))
     }
   }
 
