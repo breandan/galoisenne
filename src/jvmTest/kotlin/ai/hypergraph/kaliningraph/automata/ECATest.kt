@@ -59,7 +59,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testLooper"
 */
-  @Test
+//  @Test
   fun testLooper() {
     (2..4).mapNotNull { j ->
       val i = List(64) { i -> BVar("$i") }
