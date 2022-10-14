@@ -580,21 +580,21 @@ class SATValiantTest {
       START -> L R
       L -> a b | a L b
       R -> c | c R
-    """.parseCFG()
+    """.parseCFG().noNonterminalStubs
 
     val cfgB = """
       START -> L R
       R -> b c | b R c
       L -> a | a L
-    """.parseCFG()
+    """.parseCFG().noNonterminalStubs
 
     // This language should recognize {aⁿbⁿcⁿ | n > 0}
     val csl = (cfgA intersect cfgB)
-    csl.synthesize("_ _ _ _ _ _ _ _ _ _ _ _ _ _".tokenizeByWhitespace()).take(10).forEach {
+    csl.synthesize(List(20) { "_" }.joinToString(" ").tokenizeByWhitespace()).forEach {
       println(it)
-//      val (a, b, c) = it.count { it == 'a' } to it.count { it == 'b' } to it.count { it == 'c' }
-//      assertEquals(a, b)
-//      assertEquals(b, c)
+      val (a, b, c) = it.count { it == 'a' } to it.count { it == 'b' } to it.count { it == 'c' }
+      assertEquals(a, b)
+      assertEquals(b, c)
     }
   }
 }

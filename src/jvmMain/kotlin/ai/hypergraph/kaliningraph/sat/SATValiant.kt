@@ -11,6 +11,8 @@ import kotlin.collections.filter
 typealias SATVector = List<Formula>
 typealias SATRubix = UTMatrix<SATVector>
 
+val SATRubix.holeVariables by cache { diagonals.first().filter { !it.first().isConstantFormula } }
+
 @JvmName("joinFormula")
 fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) emptyList()
@@ -54,7 +56,8 @@ fun CFG.isInGrammar(mat: SATRubix): Formula =
 fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula =
   // terminal        possible nonterminals it can represent
   terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
-    val (insiders, outsiders) = bitvec.join(nonterminals).partition { it in possibleNTs }
+    val (insiders, outsiders) =
+      bitvec.join(nonterminals).partition { it in possibleNTs }
     (insiders + outsiders.map { it.negate() }).reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
 
@@ -64,14 +67,14 @@ fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
 // Encodes that each blank can only be a single terminal
-fun CFG.uniquenessConstraints(holeVariables: List<SATVector>): Formula =
-  holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
+fun CFG.uniquenessConstraints(rubix: SATRubix): Formula =
+  rubix.holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
-fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<SATVector>): Formula =
-  tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(holeVariables)
+fun CFG.reachabilityConstraints(tokens: List<String>, rubix: SATRubix): Formula =
+  tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(rubix.holeVariables)
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
       val nt = nonterminalStub.drop(1).dropLast(1)
@@ -80,6 +83,30 @@ fun CFG.reachabilityConstraints(tokens: List<String>, holeVariables: List<SATVec
         .map { hf eq BVecLit(toBitVec(setOf(it))) }
         .fold(F) { a, b -> a xor b }
     }.flatten().fold(T) { a, b -> a and b }
+
+// Computes equivalences between unit nonterminals in each CFG
+fun CSL.alignNonterminals(rubices: List<SATRubix>): Formula {
+  if (rubices.size == 1) return T
+
+  val terminalsToNTs = cfgs.map { it.terminals }.intersect()
+    .map { terminal -> cfgs.map { it.bindex[it.bimap[listOf(terminal)].first()] } }
+
+  if (terminalsToNTs.isEmpty()) return F.also { println("No terminals in common!") }
+
+  return rubices.map { it.holeVariables }
+    .let { FreeMatrix(rubices.size, it.first().size, it.flatten()) }.cols
+    .map { vecs ->
+      terminalsToNTs.map {
+        it.windowed(2).map { it[0] to it[1] }
+          .zip(vecs.windowed(2).map { it[0] to it[1] })
+          .map { (a, b) ->
+            val (i1, i2) = a
+            val (v1, v2) = b
+            v1[i1] eq v2[i2]
+          }
+      }
+    }.flatten().flatten().fold(T) { a, b -> a and b }
+}
 
 val CFG.satAlgebra by cache {
   Ring.of(
@@ -91,7 +118,7 @@ val CFG.satAlgebra by cache {
 }
 
 // Precomputes literals in the fixpoint to avoid solving for invariant entries
-fun CFG.constructInitialMatrix(
+fun CFG.constructRubix(
   tokens: List<String>,
   stringVars: MutableList<SATVector> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
@@ -106,25 +133,21 @@ fun CFG.constructInitialMatrix(
     algebra = satLitAlgebra
   ).seekFixpoint(),
   literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
-    .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it },
-  rubix: SATRubix =
-    FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
-      // Superdiagonal
-      if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
-        BVecVar("B_${r}_${c}", nonterminals.size).also { stringVars.add(it) }
-      // Strictly upper triangular matrix entries
-      else if (r + 1 <= c) {
-        val permanentBitVec = literalMatrix[r, c]
-        if (permanentBitVec.isNullOrEmpty()) BVecVar("B_${r}_${c}_${hashCode()}", nonterminals.size)
-        else permanentBitVec.map { if (it) T else F }
-      }
-      // Diagonal and subdiagonal
-      else emptyList()
-    }.toUTMatrix(),
-): Pair<SATRubix, List<SATVector>> =
-   /** TODO: Remove unnecessary return value [stringVars] and decode from naming scheme where needed*/
-  (rubix to stringVars)
-//  .also { println("SAT matrix[$i]:\n${it.first.toFullMatrix().summarize(this)}") }
+    .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it }
+): SATRubix =
+  FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
+    // Superdiagonal
+    if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
+      BVecVar("HV_${r}_${c}_${hashCode()}", nonterminals.size).also { stringVars.add(it) }
+    // Strictly upper triangular matrix entries
+    else if (r + 1 <= c) {
+      val permanentBitVec = literalMatrix[r, c]
+      if (permanentBitVec.isNullOrEmpty()) BVecVar("HT_${r}_${c}_${hashCode()}", nonterminals.size)
+      else permanentBitVec.map { if (it) T else F }
+    }
+    // Diagonal and subdiagonal
+    else emptyList()
+  }.toUTMatrix()
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun String.synthesizeIncrementally(
@@ -182,11 +205,8 @@ fun CSL.synthesize(
     else if (tokens.size == 1)
       cfgs.map { it.handleSingleton(tokens[0]) }.intersect().asSequence()
     else sequence {
-      val (parsingConstraints, holeVecVars) = generateConstraints(tokens)
-      val holeVars = holeVecVars.flatten().toSet()
-
-  // Tries to put ε in as many holes as possible to prioritize simple repairs
-  // val softConstraints = holeVecVars.map { it[nonterminals.indexOf("EPSILON_DO_NOT_USE")] }
+      val (parsingConstraints, rubix) = generateConstraints(tokens)
+      val holeVars = rubix.holeVariables.flatten().toSet()
 
   // Sometimes simplification can take longer or even switch SAT->UNSAT?
   // println("Original: ${parsingConstraints.numberOfNodes()}")
@@ -199,15 +219,13 @@ fun CSL.synthesize(
       model.ifEmpty { ff.clear(); return@sequence }
 
   //  var freshnessConstraints = 0L
-      var totalSolutions = 0
       while (true) try {
-        //    println(solution.toPython())
         val cfg = cfgs.first()
         val fillers: MutableList<String?> =
-          holeVecVars.map { bits -> cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })] }.toMutableList()
+          rubix.holeVariables.map { bits ->
+            cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+          }.toMutableList()
 
-  //      val bMat = FreeMatrix(matrix.data.map { it.map { if (it is Variable) solution[it]!! else if (it is Constant) it == T else false } as List<Boolean>? })
-  //      println(bMat.summarize(this@synthesize))
         val completion: String =
           tokens.map {
             if (it == "_") fillers.removeAt(0)!!
@@ -219,7 +237,6 @@ fun CSL.synthesize(
           }.filterNot { "ε" in it }.joinToString(" ")
 
         if (Thread.currentThread().isInterrupted) throw InterruptedException()
-        totalSolutions++
         if (completion.trim().isNotBlank()) yield(completion)
 
         val isFresh = model.filter { (k, v) -> k in holeVars && v }.areFresh()
@@ -240,28 +257,24 @@ fun CSL.synthesize(
     }
 }
 
-fun CFG.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>> {
-  println("Synthesizing: ${tokens.joinToString(" ")}")
-  val (matrix, holeVecVars) = constructInitialMatrix(tokens)
+fun CFG.generateConstraints(
+  tokens: List<String>,
+  rubix: SATRubix = constructRubix(tokens)
+): Pair<Formula, SATRubix> =
+  isInGrammar(rubix) and
+    uniquenessConstraints(rubix) and
+    reachabilityConstraints(tokens, rubix) to rubix
 
-  // TODO: Replace contiguous (i.e. hole-free) subexpressions with their corresponding
-  //       nonterminal in the original string to reduce fixedpoint matrix size.
-    return isInGrammar(matrix) and
-      uniquenessConstraints(holeVecVars) and
-      reachabilityConstraints(tokens, holeVecVars) to holeVecVars
-}
-
-fun CSL.generateConstraints(tokens: List<String>): Pair<Formula, List<SATVector>> {
+fun CSL.generateConstraints(tokens: List<String>): Pair<Formula, SATRubix> {
   ff.clear()
+  println("Synthesizing: ${tokens.joinToString(" ")}")
   val timeToFormConstraints = System.currentTimeMillis()
-
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
   // TODO: need to constrain superdiagonals of all CFG matrices to use the same variables
-  val parsingConstraints = t.fold(T) { a, b -> a and b }
-  val holeVecVars = q.first()
+  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
 
   val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
   println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
 
-  return parsingConstraints to holeVecVars
+  return parsingConstraints to q.first()
 }

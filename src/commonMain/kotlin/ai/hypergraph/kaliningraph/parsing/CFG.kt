@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.formatAsGrid
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
+import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 
@@ -30,14 +31,14 @@ val CFG.tmap by cache { terminals.associateBy { word -> bimap[listOf(word)] } }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.pretty by cache { map { it.pretty() }.formatAsGrid(3) }
-val CFG.graph by cache { toGraph() }
-val CFG.originalForm by cache { rewriteHistory[this]!![0] }
-val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
+val CFG.pretty: FreeMatrix<String> by cache { map { it.pretty() }.formatAsGrid(3) }
+val CFG.graph: LabeledGraph by cache { toGraph() }
+val CFG.originalForm: CFG by cache { rewriteHistory[this]!![0] }
+val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.originalForm by cache { rewriteHistory[this]!![0] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 val CFG.reachability by cache { mutableMapOf<String, Set<String>>() }
-val CFG.noNonterminalStubs by cache {
+val CFG.noNonterminalStubs: CFG by cache {
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
     .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
 }
