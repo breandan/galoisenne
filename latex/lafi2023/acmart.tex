@@ -40,19 +40,14 @@
 \input{preamble.tex}
 \begin{document}
 
-%% Title information
-  \title{Backpropagation of Syntax Errors in Context-Free Languages using the Lifted Brzozowski Derivative}
+  \title{Propagation of Syntax Errors in Context-Sensitive\\Languages using the Lifted Brzozowski Derivative}
   \begin{abstract}
-    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between parsing with derivatives and Valiant's fixpoint construction in the context-free setting. By lifting these constructions into the domain of tensors over finite fields, we draw a loose analogy to partial differentiation over Euclidean vector fields. This theory has yielded practical applications for program repair, autocompletion, incremental parsing and language induction. For example, we can can use it to repair errors, and perform syntax-guided synthesis in context-free languages, among other tasks.
+    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between Brzozowski's derivative and Valiant's fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection. By lowering these constructions onto a tensor algebra over finite fields, we draw a loose analogy to partial differentiation in Euclidean spaces. Accompanying its theoretical contributions, our method has also yielded practical applications to incremental parsing, code completion and program repair. For example, we use it to repair syntax errors and perform sketch-based program synthesis, among other common programming-related tasks.
   \end{abstract}
 
   \author{Breandan Mark Considine}
   \affiliation{\institution{McGill University}}
   \email{bre@ndan.co}
-
-  \author{Jin Guo}
-  \affiliation{\institution{McGill University}}
-  \email{jguo@cs.mcgill.ca}
 
   \author{Xujie Si}
   \affiliation{\institution{McGill University}}
@@ -88,7 +83,7 @@
 
   \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
-  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
+  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$). %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
 
 %While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor.
   Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
@@ -102,9 +97,9 @@
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-  Similarly, this expression can be lifted into the domain of bitvector variables, producing an algebraic expression for the scalar inhabitant representing $S$ in the northeasternmost bitvector, whose solutions correspond to valid parse forests. We consider two cases, where the string is left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$ where $\alpha: \highlight{\Sigma}^k$ and $\gamma: \Sigma^d$.\footnote{Hereinafter, we will use \highlight{\text{highlighting}} to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
+  This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector, whose solutions correspond to valid parse forests for an incomplete string in the superdiagonal. Consider two cases, where the derivation is left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.\footnote{Hereinafter, we shall use gray highlighting to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
 
-  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of a known factor in a binary production. %In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
+  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. %In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
 
   \begin{table}[H]
     \begin{tabular}{ccc}
@@ -126,15 +121,17 @@
     \end{tabular}
   \end{table}
 
-  The left quotient coincides with the derivative operator in the context-free setting originally considered by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular langauges. These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
+  The left quotient coincides with the derivative operator in the context-free setting originally considered by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages.
 
-  $\frac{\partial}{\partial x}(f\otimes g) = \frac{\partial f}{\partial x}\otimes g \oplus f\otimes\frac{\partial g}{\partial x}$
-
-  TODO: prove the product rule holds for CFG reachability.
+%  These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
+%
+%  $\frac{\partial}{\partial x}(f\otimes g) = \frac{\partial f}{\partial x}\otimes g \oplus f\otimes\frac{\partial g}{\partial x}$
+%
+%  TODO: prove the product rule holds for CFG reachability.
 
   Let $\mathcal V$ represent $2^V$. If the root is known, (e.g., $S$), this represents a scalar-valued function, $p: \mathcal{V}^* \rightarrow S$. We may define a gradient operator, $\nabla: (\mathcal{V} \rightarrow S) \rightarrow \mathcal{V}$ which simultaneously tracks the partials with respect to multiple nonterminals, i.e., ambiguous variables, yielding a known root.
 
-  If the root itself is unknown, we can define an operator, $\mathcal{H}: (\mathcal{V} \rightarrow \mathcal{W}) \rightarrow (\mathcal{V}\times\mathcal{W})$, which tracks all partial derivatives for a vector variable representing a subset of possible nonterminals. Note that partials, in general, do not commute.
+  If the root itself is unknown, we can define an operator, $\mathcal{H}: (\mathcal{V} \rightarrow \mathcal{W}) \rightarrow (\mathcal{V}\times\mathcal{W})$, which tracks all partial derivatives for a vector variable representing a subset of possible nonterminals. Unlike differential calculus on smooth manifolds, partials in this calculus need not be commutative.
 
   \definecolor{R}{RGB}{202,65,55}
   \definecolor{G}{RGB}{151,216,56}
@@ -197,11 +194,11 @@
 
   \begin{figure}
     \[
-    \begin{matrix}
-      o \rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr} \mid \hiliA{oo}\\
-      r \rightarrow \hiliE{so} \mid \hiliK{os} \mid \hiliF{rr} \mid \hiliH{ss} \\
-      s \rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
-    \end{matrix} \phantom{=} \mathcal{H}_o = \begin{pmatrix}
+    \begin{align*}
+      o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
+      r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
+      s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
+    \end{align*} \phantom{=} \mathcal{H}_o = \begin{pmatrix}
           \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
           \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
           \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
