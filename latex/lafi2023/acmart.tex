@@ -42,7 +42,7 @@
 
   \title{Propagation of Syntax Errors in Context-Sensitive\\Languages using the Lifted Brzozowski Derivative}
   \begin{abstract}
-    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between Brzozowski's derivative and Valiant's fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection. By lowering these constructions onto a tensor algebra over finite fields, we draw a loose analogy to partial differentiation in Euclidean spaces. Accompanying its theoretical contributions, our method has also yielded practical applications to incremental parsing, code completion and program repair. For example, we use it to repair syntax errors and perform sketch-based program synthesis, among other common programming-related tasks.
+    Brzozowski defines the derivative of a regular language as the suffixes that complete a known prefix. In this work, we establish a Galois connection between Brzozowski's derivative and Valiant's fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection. We show how context-sensitive language recognition can be reduced into a tensor algebra over finite fields, drawing a loose analogy to partial differentiation in Euclidean spaces. In addition to its theoretical contributions, our method has yielded applications to incremental parsing, code completion and program repair. For example, we use it to repair syntax errors and perform sketch-based program synthesis, among other language decision problems.
   \end{abstract}
 
   \author{Breandan Mark Considine}
@@ -57,33 +57,35 @@
 
   \section{Introduction}
 
-  We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P': V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xy$, or $w \rightarrow \sigma$, where $w, x, y: V$ and $\sigma: \Sigma$. For example, the CFG, $P=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-10pt}
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xy$, or $w \rightarrow \sigma$, where $w, x, y: V$ and $\sigma: \Sigma$. For example, the CFG, $P=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
-  \[
-    P'=\{S\rightarrow XR \mid SS \mid LR,\; L \rightarrow (,\; R \rightarrow ),\; X\rightarrow LS\}
-  \]
+  \begin{table}[H]
+    \begin{tabular}{llll}
+      $P'=\big\{\;S\rightarrow XR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $X\rightarrow LS\;\big\}$
+    \end{tabular}
+  \end{table}\vspace{-8pt}
 
-  \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R_{\mathcal{G}'}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+  \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
-    x \otimes y := \{W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\}
+    x \otimes y := \big\{\;W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\;\big\}
   \end{align}
 
   \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,\vspace{-10pt}
 
   \begin{align}
     \mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                     \varnothing & \{V\}_{\sigma_1} & \Cdots                  &                            & \mathcal{T} \\
-                     \Vdots      & \Ddots           & \Ddots[shorten=-0.1cm]  & \phantom{\{V\}_{\sigma_2}} & \Vdots \\
-                     &                  &                         &                            & \\
-                     &                  &                         &                            & \{V\}_{\sigma_n} \\
-                     \varnothing & \Cdots           &                         &                            & \varnothing
+       \varnothing & \{V\}_{\sigma_1} & \Cdots                 &                            & \mathcal{T} \\
+       \Vdots      & \Ddots           & \Ddots[shorten=-0.1cm] & \phantom{\{V\}_{\sigma_2}} & \Vdots \\
+                   &                  &                        &                            & \\
+                   &                  &                        &                            & \{V\}_{\sigma_n} \\
+       \varnothing & \Cdots           &                        &                            & \varnothing
     \end{pNiceMatrix}\label{eq:fpm}
   \end{align}
 
   \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
 
-  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$). %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
+  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$). %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
 
 %While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor.
   Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
@@ -97,15 +99,15 @@
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-  This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector, whose solutions correspond to valid parse forests for an incomplete string in the superdiagonal. Consider two cases, where the derivation is left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.\footnote{Hereinafter, we shall use gray highlighting to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
+  This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Consider two cases, where the derivation is left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.\footnote{Hereinafter, we shall use gray highlighting to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
 
   Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. %In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
 
   \begin{table}[H]
     \begin{tabular}{ccc}
       Left Quotient && Right Quotient \\\\
-      $\frac{\partial f}{\partial \cev{x}} = \{y \mid (w \rightarrow x y) \in P\}$ &&
-      $\frac{\partial f}{\partial \vec{y}} = \{x \mid (w \rightarrow x y) \in P\}$ \\\\
+      $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y) \in P\;\big\}$ &&
+      $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y) \in P\;\big\}$ \\\\
       \begin{tabular}{|c|c|}
         \hline
         \cellcolor{black!15}x & \cellcolor{black!15}w \\ \hline
@@ -121,7 +123,7 @@
     \end{tabular}
   \end{table}
 
-  The left quotient coincides with the derivative operator in the context-free setting originally considered by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages.
+  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work).
 
 %  These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
 %
@@ -129,9 +131,9 @@
 %
 %  TODO: prove the product rule holds for CFG reachability.
 
-  Let $\mathcal V$ represent $2^V$. If the root is known, (e.g., $S$), this represents a scalar-valued function, $p: \mathcal{V}^* \rightarrow S$. We may define a gradient operator, $\nabla: (\mathcal{V} \rightarrow S) \rightarrow \mathcal{V}$ which simultaneously tracks the partials with respect to multiple nonterminals, i.e., ambiguous variables, yielding a known root.
+  Let $\mathcal V$ represent $2^V$. Assuming the root is known, (e.g., $S$), the operator $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ is a dependently-typed function which returns the unknown RHS factor. We may also define a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which tracks the partials with respect to multiple unknown factors.
 
-  If the root itself is unknown, we can define an operator, $\mathcal{H}: (\mathcal{V} \rightarrow \mathcal{W}) \rightarrow (\mathcal{V}\times\mathcal{W})$, which tracks all partial derivatives for a vector variable representing a subset of possible nonterminals. Unlike differential calculus on smooth manifolds, partials in this calculus need not be commutative.
+  If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal{W}\subseteq\mathcal{V}}: (\cev{\mathcal{V}}\times\vec{\mathcal{V}}\times\mathcal{W}) \rightarrow (\vec{\mathcal{V}}\times\vec{\mathcal{V}}\rightarrow\mathcal{W})$, which tracks second-order partial derivatives for all roots in $\mathcal{W}$. Unlike differential calculus on smooth manifolds, partials in this calculus do not necessarily commute depending on the CFG.
 
   \definecolor{R}{RGB}{202,65,55}
   \definecolor{G}{RGB}{151,216,56}
@@ -198,7 +200,7 @@
       o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
       r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
       s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
-    \end{align*} \phantom{=} \mathcal{H}_o = \begin{pmatrix}
+    \end{align*} \phantom{=} \mathcal{H}_{\{o\}} = \begin{pmatrix}
           \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
           \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
           \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
@@ -209,7 +211,7 @@
 %       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
 %    \end{pmatrix}
     \]
-    \hspace{-0.5cm}\begin{minipage}[l]{4.4cm}
+    \hspace{-0.5cm}\begin{minipage}[l]{4.3cm}
     \scalebox{0.8}{\begin{tikzpicture}
       \clip (-3,-2.5) rectangle (3,2.5);
       \begin{scope}[tdplot_main_coords]
@@ -249,20 +251,41 @@
     \end{minipage}
     \begin{minipage}[c]{3.5cm}
       \begin{align*}
-        \mathcal{H}_r = & \begin{pmatrix}
+        \mathcal{H}_{\{r\}} = & \begin{pmatrix}
            \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
            \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
            \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
         \end{pmatrix}
       \end{align*}
         \begin{align*}
-        \mathcal{H}_s = & \begin{pmatrix}
+        \mathcal{H}_{\{s\}} = & \begin{pmatrix}
            \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
            \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
            \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
         \end{pmatrix}
       \end{align*}
     \end{minipage}
+    \caption{CFGs are witnessed by a Rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathbf{M}^*$, we constrain the superposition of admissible parse forests.}
+  \end{figure}
+
+  \section{Context Sensitive Reachability}
+
+  A well-known result in formal language theory is that the family of CFLs is not closed under intersection. For example, let us consider $\mathcal{L}^\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$, defined as follows:
+
+  \begin{table}[H]
+  \begin{tabular}{llll}
+    $\mathcal{G}_1 := \big\{\;S \rightarrow L R$ & $L \rightarrow a b \mid a L b$ & $R \rightarrow c \mid c R\;\big\}$\\
+    $\mathcal{G}_2 := \big\{\;S \rightarrow L R$ & $R \rightarrow b c \mid b R c$ & $L \rightarrow a \mid a L\;\big\}$
+  \end{tabular}
+  \end{table}
+
+  \noindent Note that $\mathcal{L}^\cap$ generates the language $\big\{\;a^n b^n c^n \mid n > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode bounded intersections of CFLs $\bigcap_{\mathcal{G} \in \Gamma}^n \mathcal{L}(\mathcal{G})$ as an elongated polygonal prism with upper-triangular matrices adjoined to each rectangular face, like the fletching on an arrow. The center shaft represents equivalent nonterminals on the left hand side of a unit production. Solutions to this system of equations yield bounded-width strings at the intersection of a finite collection of CFLs.
+
+  \begin{figure}[H]
+  \includegraphics[width=0.1668\textwidth]{../figures/angle2.png}
+  \includegraphics[width=0.147\textwidth]{../figures/angle3.png}
+  \includegraphics[width=0.145\textwidth]{../figures/angle4.png}
+    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^9$ configuration.}
   \end{figure}
 
   \subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
@@ -283,22 +306,22 @@
   \begin{figure}[H]
     \[
       \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-           \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-           \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-                &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-                &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-                &             &                    &                   &                        & \ddd & \\
-                &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-           \vno & \cdd        &                    &                   &                        &      & \vno
+          \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+          \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+               &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+               &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+               &             &                    &                   &                        & \ddd & \\
+               &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+          \vno & \cdd        &                    &                   &                        &      & \vno
       \end{pNiceArray}
     \]
   \end{figure}
 
-  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+%  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
   \subsection{Deletion, substitution, and insertion}\label{sec:dsi}
 
-  Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:\vspace{5pt}
+  Deletion, substitution and insertion can be simulated by adding a left- and right- $\varepsilon$ production to each unit production:\vspace{5pt}
 
   \begin{prooftree}
     \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
@@ -323,7 +346,7 @@
     &\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlgreen{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 \notin \{\varepsilon, \sigma_i\}, \gamma_2 = \sigma_i\label{eq:ins2}
   \end{align}
 
-  \noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
+  \noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
 
   \bibliography{../bib/acmart}
 \end{document}
