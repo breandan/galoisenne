@@ -57,7 +57,7 @@
 
   \section{Introduction}
 
-  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xy$, or $w \rightarrow \sigma$, where $w, x, y: V$ and $\sigma: \Sigma$. For example, the CFG, $P=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xy$, or $w \rightarrow \sigma$, where $w, x, y: V$ and $\sigma: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -93,8 +93,8 @@
   \[\begin{tikzcd}[row sep=huge, column sep=huge]
       2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
       & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
-      \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
-      & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+      \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+      & \mathbb{Z}_2^{|V|} \arrow[u, "\mathds{1}^{-1}"]
   \end{tikzcd}\]
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
@@ -268,29 +268,7 @@
     \caption{CFGs are witnessed by a Rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathbf{M}^*$, we constrain the superposition of admissible parse forests.}
   \end{figure}
 
-  \section{Context Sensitive Reachability}
-
-  A well-known result in formal language theory is that the family of CFLs is not closed under intersection. For example, let us consider $\mathcal{L}^\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$, defined as follows:
-
-  \begin{table}[H]
-  \begin{tabular}{llll}
-    $\mathcal{G}_1 := \big\{\;S \rightarrow L R$ & $L \rightarrow a b \mid a L b$ & $R \rightarrow c \mid c R\;\big\}$\\
-    $\mathcal{G}_2 := \big\{\;S \rightarrow L R$ & $R \rightarrow b c \mid b R c$ & $L \rightarrow a \mid a L\;\big\}$
-  \end{tabular}
-  \end{table}
-
-  \noindent Note that $\mathcal{L}^\cap$ generates the language $\big\{\;a^n b^n c^n \mid n > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode bounded intersections of CFLs $\bigcap_{\mathcal{G} \in \Gamma}^n \mathcal{L}(\mathcal{G})$ as an elongated polygonal prism with upper-triangular matrices adjoined to each rectangular face, like the fletching on an arrow. The center shaft represents equivalent nonterminals on the left hand side of a unit production. Solutions to this system of equations yield bounded-width strings at the intersection of a finite collection of CFLs.
-
-  \begin{figure}[H]
-  \includegraphics[width=0.1668\textwidth]{../figures/angle2.png}
-  \includegraphics[width=0.147\textwidth]{../figures/angle3.png}
-  \includegraphics[width=0.145\textwidth]{../figures/angle4.png}
-    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^9$ configuration.}
-  \end{figure}
-
-  \subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
-
-  By allowing the matrix $\mathbf{M}^*$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$.
+  By allowing the matrix $\mathbf{M}^*$ in Eq.~\ref{eq:fpm} to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the parse forests occur along the upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$. Depicted below is the case $\highlight{\alpha}\gamma$ where $\mathbf{M}^*$ is left-constrained:
 
 %We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 
@@ -318,6 +296,26 @@
   \end{figure}
 
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+
+  \section{Context-Sensitive Reachability}
+
+  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}^\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
+
+  \begin{table}[H]
+  \begin{tabular}{llll}
+    $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
+    $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+  \end{tabular}
+  \end{table}
+
+  \noindent Note that $\mathcal{L}^\cap$ generates the language $\big\{\;a^n b^n c^n \mid n > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode finite intersections of CFLs $\bigcap_{i}^n \mathcal{L}(\mathcal{G}_i)$ as a prism with upper-triangular matrices adjoined to each rectangular face, like the fletches of an arrow. As $n \rightarrow \infty$, this shape approximates a right circular cone whose axis intersects equivalent nonterminals on the left hand side of unit productions, and base perimeter represents $S_{i} \in \mathcal{T}_{i}$. Equations of this form are equiexpressive with the family of CSLs realizable by intersecting a finite collection of CFLs.
+
+  \begin{figure}[H]
+  \includegraphics[height=0.117\textwidth]{../figures/angle1.png}\hspace{-5pt}
+  \includegraphics[height=0.117\textwidth]{../figures/angle2.png}\hspace{-5pt}
+  \includegraphics[height=0.117\textwidth]{../figures/angle3.png}
+    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
+  \end{figure}
 
   \subsection{Deletion, substitution, and insertion}\label{sec:dsi}
 
