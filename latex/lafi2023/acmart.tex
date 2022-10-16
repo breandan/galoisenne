@@ -89,18 +89,23 @@
 
   \section{Method}
 
-  Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
+  Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$ (respectively), so that the following diagram commutes:
 
-  \[\begin{tikzcd}[row sep=huge, column sep=huge] \hphantom{ai}\text{Set}\hphantom{aai} & \hphantom{aai}\text{Bit}\hphantom{aai} & \hphantom{ai}\text{SAT} \end{tikzcd}\]\vspace{-10pt}
-  \[\begin{tikzcd}[row sep=huge, column sep=huge]
-      2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"]
-      & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[r, "\varphi^2", labels=above] & \mathcal{V} \times \mathcal{V} \arrow[l, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \\
-      2^V \arrow[r, "\mathds{1}^{-1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[r, "\varphi", labels=above] & \mathcal{V} \arrow[l, "\varphi^{-1}", labels=below]
+  \begin{figure}[H]
+  \adjustbox{scale=0.65,center}{%
+  \[\begin{tikzcd}[row sep=large, column sep=huge]
+   \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[leftrightarrow, drrr] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}'_{\varepsilon}, (\Sigma \cup \{\_\})^{n-1}\rangle \arrow[drr] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+   \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & 2^{V^{n^2}} \times 2^{V^{n^2}} \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n^2}} \times \mathbb{Z}_2^{|V|^{n^2}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V}^{n^2} \times \mathcal{V}^{n^2} \arrow[llll, rightharpoondown, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
+   \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoondown, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
+   \text{Scalar} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}^{-1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
   \end{tikzcd}\]
+  }
+  \end{figure}
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Let us consider two cases, where $\mathbf{M}^*$ is either left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.\footnote{Hereinafter, we shall use gray highlighting to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
+%  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
+  \noindent Where $\mathcal{V}$ is the domain of XOR-SAT expressions, i.e., linear equations over $GF(2)$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero (i.e., be UNSAT), one, or in general, many values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\mathbf{M}^*$ is either left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.\footnote{Hereinafter, we shall use gray highlighting to distinguish between \highlight{\text{bound variables}} (i.e., constants) and free variables that are unhighlighted.}
 
   Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. %In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
 
