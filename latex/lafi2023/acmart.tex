@@ -91,11 +91,11 @@
 
   Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:\vspace{-10pt}
 
+  \[\begin{tikzcd}[row sep=huge, column sep=huge] \hphantom{ai}\text{Set}\hphantom{aai} & \hphantom{aai}\text{Bit}\hphantom{aai} & \hphantom{ai}\text{SAT} \end{tikzcd}\]\vspace{-10pt}
   \[\begin{tikzcd}[row sep=huge, column sep=huge]
-      2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
-      & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
-      \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
-      & \mathbb{Z}_2^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+      2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"]
+      & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[r, "\varphi^2", labels=above] & \mathcal{V} \times \mathcal{V} \arrow[l, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \\
+      2^V \arrow[r, "\mathds{1}^{-1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[r, "\varphi", labels=above] & \mathcal{V} \arrow[l, "\varphi^{-1}", labels=below]
   \end{tikzcd}\]
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
@@ -320,9 +320,10 @@ We also need the constraint that no two conflicting nonterminals may be active a
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
   \end{figure}
 
-  \noindent More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, we construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$, and glue them together:
+  \noindent More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, we construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$, and glue them all together:
+
  \begin{align}
-  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 0}^{c-2}\bigwedge_{i=0}^{|\sigma| - 1} E(\sigma_i, \mathcal{G}_j) \equiv E(\sigma_i, \mathcal{G}_{j+1})
+  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 0}^{c-2}\bigwedge_{i=0}^{|\sigma| - 1} E(t, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
   \end{align}
 
   Together with the uniqueness constraint this ensures that at least one representative of each equivalence class is included... (TODO).
