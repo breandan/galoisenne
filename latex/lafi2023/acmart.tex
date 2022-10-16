@@ -71,31 +71,31 @@
     x \otimes y := \big\{\;W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\;\big\}
   \end{align}
 
-  \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', e) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for a matrix $\mathbf{M}^*$ via fixpoint iteration,\vspace{-10pt}
+  \noindent If we define $\shup\sigma_r \coloneqq \{V \mid (V \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r=c+1}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
   \begin{align}
-    \mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-       \varnothing & \{V\}_{\sigma_1} & \Cdots                 &                            & \mathcal{T} \\
-       \Vdots      & \Ddots           & \Ddots[shorten=-0.1cm] & \phantom{\{V\}_{\sigma_2}} & \Vdots \\
-                   &                  &                        &                            & \\
-                   &                  &                        &                            & \{V\}_{\sigma_n} \\
-       \varnothing & \Cdots           &                        &                            & \varnothing
+    M^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+       \varnothing & \shup\sigma_1  & \Cdots                 &                         & \mathcal{T} \\
+       \Vdots      & \Ddots         & \Ddots[shorten=-0.1cm] & \phantom{\shup\sigma_2} & \Vdots \\
+                   &                &                        &                         & \\
+                   &                &                        &                         & \shup\sigma_n \\
+       \varnothing & \Cdots         &                        &                         & \varnothing
     \end{pNiceMatrix}\label{eq:fpm}
   \end{align}
 
-  \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. We can then define the recognizer as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
+  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in \mathcal{T}? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $M = M + M^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $M^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $M = M^2$.}
 
   \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$). %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
 
   \section{Method}
 
-  Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$ (respectively), so that the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+  Note that $\bigoplus_{k = 1}^n M_{ik} \otimes M_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors, so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
   \begin{figure}[H]
   \adjustbox{scale=0.62,center}{%
   \[\begin{tikzcd}[row sep=large, column sep=huge]
-   \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-2mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
-   \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & 2^{V^{n\times n}} \times 2^{V^{n\times n}} \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{V}^{n\times n} \times \mathcal{V}^{n\times n} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
+   \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+   \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
    \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
    \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
   \end{tikzcd}\]
@@ -105,9 +105,9 @@
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
 %  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
-  \noindent Where $\mathcal{V}$ is the domain of XOR-SAT expressions, i.e., linear equations over $GF(2)$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero (i.e., be UNSAT), one, or in general, many values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\mathbf{M}^*$ is either left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.
+  \noindent Where $\mathcal{V}$ is the domain of XOR-SAT expressions, i.e., linear equations over $GF(2)$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero (i.e., be UNSAT), one, or in general, many values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\mathcal{M}^*$ is either left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.
 
-  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. %In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
+  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
 
   \begin{table}[H]
     \begin{tabular}{ccc}
@@ -129,15 +129,13 @@
     \end{tabular}
   \end{table}
 
-  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work).
+  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also define a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
 
 %  These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
 %
 %  $\frac{\partial}{\partial x}(f\otimes g) = \frac{\partial f}{\partial x}\otimes g \oplus f\otimes\frac{\partial g}{\partial x}$
 %
 %  TODO: prove the product rule holds for CFG reachability.
-
-  Let $\mathcal V$ represent $2^V$. Assuming the root is known, (e.g., $S$), the operator $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ is a dependently-typed function which returns the unknown RHS factor. We may also define a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which tracks the partials with respect to multiple unknown factors.
 
   If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal{W}\subseteq\mathcal{V}}: (\cev{\mathcal{V}}\times\vec{\mathcal{V}}\times\mathcal{W}) \rightarrow (\vec{\mathcal{V}}\times\vec{\mathcal{V}}\rightarrow\mathcal{W})$, which tracks second-order partial derivatives for all roots in $\mathcal{W}$. Unlike differential calculus on smooth manifolds, partials in this calculus do not necessarily commute depending on the CFG.
 
@@ -193,7 +191,7 @@
   \newcommand\nfi{5\ts{th}}
   \newcommand\nsi{6\ts{th}}
   \newcommand\nse{7\ts{th}}
-  \newcommand{\vs}[1]{\{V\}_{\sigma_{#1}}}
+  \newcommand{\vs}[1]{\shup\sigma_{#1}}
   \newcommand\rcr{\rowcolor{black!15}}
   \newcommand\rcw{\rowcolor{white}}
   \newcommand\pcd{\cdot}
@@ -271,10 +269,10 @@
         \end{pmatrix}
       \end{align*}
     \end{minipage}
-    \caption{CFGs are witnessed by a rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathbf{M}^*$, we constrain the superposition of admissible parse forests.}
+    \caption{CFGs are witnessed by a rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathcal{M}^*$, we constrain the superposition of admissible parse forests.}
   \end{figure}
 
-  \noindent By allowing the matrix $\mathbf{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathbf{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathbf{M}^*_{r + 1 < c}$. In the case depicted below, $\mathbf{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
+  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
 
 %We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 
@@ -289,7 +287,7 @@
 
   \begin{figure}[H]
     \[
-      \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
           \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
           \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
                &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
@@ -315,7 +313,7 @@ We also need the constraint that no two conflicting nonterminals may be active a
   \end{tabular}
   \end{table}
 
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode finite intersections of CFLs $\bigcap_{i=0}^c \mathcal{L}(\mathcal{G}_i)$ as a prism with upper-triangular matrices joined to each rectangular face, like the fletches of an arrow. As $c \rightarrow \infty$, this shape approximates a right circular cone whose symmetric axis intersects equivalent $V_i$'s in each CNF unit production $w \rightarrow t$, and base perimeter represents $S_{i} \in \mathcal{T}_{i}$. Equations of this form are equiexpressive with the family of CSLs realizable by intersecting a finite collection of CFLs.
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode finite intersections of CFLs $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a prism with upper-triangular matrices joined to each rectangular face, like the fletches of an arrow. As $c \rightarrow \infty$, this shape approximates a right circular cone whose symmetric axis intersects equivalent $\shup\sigma_i$'s in each CNF unit production $w_i \rightarrow t$, and base perimeter represents $S_{i} \in \mathcal{T}_{i}$. Equations of this form are equiexpressive with the family of CSLs realizable by intersecting a finite collection of CFLs.
 
   % Generated by cfl4_intersection.vox, open with https://voxelator.com/
   \begin{figure}[H]
@@ -328,10 +326,10 @@ We also need the constraint that no two conflicting nonterminals may be active a
   \noindent More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, we construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$, and glue them all together:
 
  \begin{align}
-  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 0}^{c-2}\bigwedge_{i=0}^{|\sigma| - 1} E(t, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
+  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
   \end{align}
 
-  Together with the uniqueness constraint this ensures that at least one representative of each equivalence class is included... (TODO).
+%  Together with the uniqueness constraint this ensures that at least one representative of each equivalence class is included... (TODO).
 
   Although emptiness for CSLs is, in general, undecidable, unsatisfiability corresponds to emptiness of bounded CSLs. Anyhow, since we are working with bounded-width CSLs, everything collapses down to finite languages, which are always closed. Thus, Bar-Hillel and other elegant constructions become trivial when so restricted. So we can use it to decide impossible substrings and other decision problems which are typically intractable in more general settings.
 
