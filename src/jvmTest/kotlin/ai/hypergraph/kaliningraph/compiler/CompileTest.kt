@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.compiler
 
-import ai.hypergraph.kaliningraph.automata.T
 import com.tschuchort.compiletesting.*
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.*
@@ -58,6 +57,7 @@ class CompileTest {
 
       inheritClassPath = true
       messageOutputStream = System.out // see diagnostics in real time
+      verbose = false
     }.compile()
 
     assertEquals(OK, result.exitCode)
@@ -179,6 +179,7 @@ class CompileTest {
       sources = listOf(kotlinSource)
       inheritClassPath = true
       messageOutputStream = System.out // see diagnostics in real time
+      verbose = false
     }.compile()
 
     assertEquals(exitCode, result.exitCode)
