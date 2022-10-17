@@ -32,10 +32,7 @@ fun repair(
         exclusions = exclude,
         fishyLocations = listOf(tokens.size)
       )
-    },
-//      String::everySingleHoleConfig,
-//      String::increasingLengthChunks
-      )
+    })
 
   val repairs =
     sanitized.synthesizeWithVariations(

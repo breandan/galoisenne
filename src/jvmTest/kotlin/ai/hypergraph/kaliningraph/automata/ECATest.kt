@@ -15,13 +15,13 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
 */
-  @Test
+  //@Test
   fun testSimpleECA() { List(20) { true }.evolve(steps = 100) }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA4"
 */
-  @Test
+  //@Test
   fun testTypeLevelECA4() {
     val init = BVec(T, F, F, F)
     fun BVec.bits() = data.map { it == T }
@@ -41,7 +41,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA10"
 */
-  @Test
+  //@Test
   fun testTypeLevelECA10() {
     val init = BVec(T, F, F, F, T, F, F, F, F, F)
     fun BVec.bits() = data.map { it == T }
@@ -59,7 +59,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testLooper"
 */
-//  @Test
+//  //@Test
   fun testLooper() {
     (2..4).mapNotNull { j ->
       val i = List(64) { i -> BVar("$i") }
@@ -75,7 +75,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testOrphan"
 */
-  @Test
+  //@Test
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     findAll(setOf(true, false), 128).first { orphan ->
@@ -89,7 +89,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testEndling"
 */
-  @Test
+  //@Test
   fun testEndling() {
     for (j in 1..3) {
       val i = List(128) { i -> BVar("$i") }
@@ -112,7 +112,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testChimera"
 */
-  @Test
+  //@Test
   fun testChimera() {
     println(listOf(true, false, false, true).evolve().pretty())
     val i = List(128) { i -> BVar("i$i") }
@@ -148,7 +148,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTargetPatternPredecessor"
 */
-  @Test
+  //@Test
   fun testTargetPatternPredecessor() {
     val pp = List(16) { i -> BVar("i$i") }
     val p = "1100110111111011".toBitVector()
@@ -163,7 +163,7 @@ class ECATest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testECAPrint"
 */
-  @Test
+  //@Test
   fun testECAPrint() {
   val ts = "0100011111100010".map { it == '1' }
     ts.evolve(0).also { it.toRingBuffer() }

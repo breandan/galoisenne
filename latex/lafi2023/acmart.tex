@@ -110,6 +110,7 @@
   Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
 
   \begin{table}[H]
+    \adjustbox{scale=0.92,center}{%
     \begin{tabular}{ccc}
       Left Quotient && Right Quotient \vspace{3pt}\\
       $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y) \in P\;\big\}$ &&
@@ -127,6 +128,7 @@
         \cline{2-2}
       \end{tabular}
     \end{tabular}
+    }
   \end{table}
 
   \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also define a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
