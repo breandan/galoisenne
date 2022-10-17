@@ -154,8 +154,7 @@ class SetValiantTest {
     MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
       fold("" to it) { (a, b), c ->
         if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
-      }.first.replace("ε", "").also { println(it) }
-
+      }.first.replace("ε", "")
     }
 
 /*
