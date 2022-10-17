@@ -146,7 +146,7 @@ kotlin {
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:3.14.0")
+        implementation("org.sosy-lab:java-smt:3.14.3")
 
         // val libZ3Version = "4.8.15"
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
@@ -161,7 +161,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.4.2"
+        val kotestVersion = "5.4.2" // Unable to update?
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")

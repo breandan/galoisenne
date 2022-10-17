@@ -10,7 +10,7 @@ import kotlin.random.Random
  * using an abstract algebra (e.g., tropical semiring). Useful for many
  * problems in graph theory.
  *
- * @see [MatrixRing]
+ * @see [Ring]
  */
 
 interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, Int, T>> {
