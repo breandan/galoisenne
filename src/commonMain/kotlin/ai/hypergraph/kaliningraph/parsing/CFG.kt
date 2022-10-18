@@ -8,7 +8,7 @@ import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 
-
+@Suppress("NonAsciiCharacters")
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
 typealias CFG = Set<Production>
@@ -16,7 +16,7 @@ typealias CFG = Set<Production>
 val Production.LHS: Σᐩ get() = first
 val Production.RHS: List<Σᐩ> get() =
   second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
-fun Production.pretty() = LHS + " -> " + RHS.joinToString(" ")
+fun Production.pretty(): Σᐩ = LHS + " -> " + RHS.joinToString(" ")
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
@@ -28,7 +28,7 @@ val CFG.terminalUnitProductions: Set<Production>
 val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
-val CFG.tmap by cache { terminals.associateBy { word -> bimap[listOf(word)] } }
+val CFG.tmap by cache { terminals.associateBy { bimap[listOf(it)] } }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
@@ -51,7 +51,7 @@ class JoinMap(val CFG: CFG) {
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
       .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
 
-  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Boolean = false): Set<Triple<Σᐩ, Σᐩ, Σᐩ>> =
+  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Boolean = false): Set<Π3A<Σᐩ>> =
     if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
     else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
 

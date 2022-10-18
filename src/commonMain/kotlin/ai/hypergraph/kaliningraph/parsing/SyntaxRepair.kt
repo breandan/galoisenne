@@ -10,21 +10,30 @@ import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 typealias Reconstructor = MutableList<Pair<Σᐩ, Σᐩ>>
 typealias Mutator = (Σᐩ) -> Sequence<Σᐩ>
 
+// Terminals which are blocked from synthesis
+val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
+
 fun repair(
   prompt: Σᐩ,
   cfg: CFG,
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
-  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
+  blockers: Set<Σᐩ> = setOf()
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   val tokens = coarsened.tokenizeByWhitespace()
-  val (parseForest, stubs) = cfg.parseWithStubs(coarsened)
-  val exclude = stubs.allIndicesInsideParseableRegions()
-
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
+  if (80 < tokensWithHoles.size) return listOf() // Pass on long samples
+
+  val (parseForest, stubs) = cfg.parseWithStubs(coarsened)
+
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
-  val maxResults = 10
+
+  val exclude = stubs.allIndicesInsideParseableRegions() +
+    tokensWithHoles.indices.filter { tokensWithHoles[it] in blockers }
+
+  val maxResults = 1
 
   val variations: List<Mutator> =
     listOf({
@@ -40,6 +49,7 @@ fun repair(
       cfg = cfg,
       variations = variations,
       synthesizer = synthesizer,
+      allowNTs = false
 //      enablePruning = true
     ).take(maxResults).toList().sortedWith(tokens.ranker()).map { it.uncoarsen(prompt) }
 
@@ -60,7 +70,7 @@ fun Σᐩ.synthesizeWithVariations(
   variations: List<Mutator> = listOf({ sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
   skipWhen: (List<Σᐩ>) -> Boolean = { false },
-  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
@@ -76,7 +86,7 @@ fun Σᐩ.synthesizeWithVariations(
     .flatMap {
       val variantTokens = tokenize(it)
       if (skipWhen(variantTokens)) emptySequence()
-      else cfg_.run { synthesizer(variantTokens, reconstructor) }
+      else cfg_.run { synthesizer(variantTokens) }
         .ifEmpty {
           variantTokens.rememberImpossibleBigrams(cfg_, synthesizer)
           emptySequence()
@@ -168,7 +178,7 @@ fun Sequence<Σᐩ>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Sequen
 
 fun List<Σᐩ>.rememberImpossibleBigrams(
   cfg: CFG,
-  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ) {
   windowed(2).asSequence().filter {
     it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams + cfg.impossibleBigrams
@@ -176,7 +186,7 @@ fun List<Σᐩ>.rememberImpossibleBigrams(
     val holes = List((size / 2).coerceIn(4..8)) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = tokenize("$holes $substring $holes")
-    if (cfg.synthesizer(tokens, mutableListOf()).firstOrNull() == null)
+    if (cfg.synthesizer(tokens).firstOrNull() == null)
       cfg.impossibleBigrams.getOrPut(tokens.size) { mutableSetOf() }.add(substring)
     else cfg.possibleBigrams.add(substring)
   }
@@ -216,15 +226,17 @@ fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
   padded: List<Σᐩ> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
+  holeToken: Σᐩ = "_",
   exclusions: Set<Int> = setOf(),
   // Sorted list of locations believed to be erroneous
   fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<Σᐩ> =
   allSubstitutions((padded.indices.toSet() - exclusions), numberOfEdits, fishyLocations)
-    .map { idxs -> padded.substitute(idxs) { "_ _" } }.apply {
-      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
-      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
-    }
+    .map { idxs -> padded.substitute(idxs) { "$holeToken $holeToken" } }
+//    .apply {
+//      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
+//      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
+//    }
 
 fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
   eligibleIndices.sortedWith(

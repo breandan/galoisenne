@@ -54,15 +54,15 @@ fun CFG.isInGrammar(mat: SATRubix): Formula =
 // the bitvector cannot have the configuration [A=1 B=1 C=0 D=1], it must
 // be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
 fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula =
-  // terminal        possible nonterminals it can represent
-  terminals.map { bitvec.join(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
+  // terminal                 possible nonterminals it can represent
+  (terminals - blocked).map { bitvec.projectOnto(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
     val (insiders, outsiders) =
-      bitvec.join(nonterminals).partition { it in possibleNTs }
+      bitvec.projectOnto(nonterminals).partition { it in possibleNTs }
     (insiders + outsiders.map { it.negate() }).reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
 
 // Returns list elements matching the intersection between set and on (indexed by on)
-fun <E, T> List<E>.join(set: Set<T>, on: Set<T> = set): Set<E> =
+fun <E, T> List<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
   if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
@@ -159,7 +159,7 @@ fun Σᐩ.synthesizeIncrementally(
   skipWhen: (List<Σᐩ>) -> Boolean = { false }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg, allowNTs, enablePruning, variations, updateProgress, skipWhen,
-  synthesizer = { a, b -> synthesize(a, b) }
+  synthesizer = { a -> asCSL.synthesize(a) }
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
@@ -189,17 +189,9 @@ Lowers Valiant matrix onto SAT. Steps:
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
  */
 
-fun CFG.synthesize(
-  tokens: List<Σᐩ>,
-  // Used to restore well-formed trees that were pruned
-  reconstructor: Reconstructor = mutableListOf()
-): Sequence<Σᐩ> = asCSL.synthesize(tokens, reconstructor)
+fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCSL.synthesize(tokens)
 
-fun CSL.synthesize(
-  tokens: List<Σᐩ>,
-  // Used to restore well-formed trees that were pruned
-  reconstructor: Reconstructor = mutableListOf()
-): Sequence<Σᐩ> =
+fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
   check(tokens.all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }.let {
     if (tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) }) emptySequence()
     else if (tokens.size == 1)
@@ -229,11 +221,7 @@ fun CSL.synthesize(
         val completion: Σᐩ =
           tokens.map {
             if (it == "_") fillers.removeAt(0)!!
-            else if (it.isNonterminalStubIn(this@synthesize)) {
-              val stub = fillers.removeAt(0)!!
-              if (reconstructor.isEmpty() || it != reconstructor.first().first) stub
-              else reconstructor.removeFirst().second
-            } else it
+            else if (it.isNonterminalStubIn(this@synthesize)) { fillers.removeAt(0)!! } else it
           }.filterNot { "ε" in it }.joinToString(" ")
 
         if (Thread.currentThread().isInterrupted) throw InterruptedException()
