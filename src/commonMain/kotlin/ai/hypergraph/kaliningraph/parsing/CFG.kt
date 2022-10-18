@@ -42,6 +42,7 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.noNonterminalStubs: CFG by cache {
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
     .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
+    .also { it.blocked.addAll(blocked) }
 }
 
 class JoinMap(val CFG: CFG) {

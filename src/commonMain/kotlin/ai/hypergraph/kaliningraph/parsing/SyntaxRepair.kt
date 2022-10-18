@@ -31,9 +31,9 @@ fun repair(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val exclude = stubs.allIndicesInsideParseableRegions() +
-    tokensWithHoles.indices.filter { tokensWithHoles[it] in blockers }
+    tokensWithHoles.indices.filter { i -> tokensWithHoles[i] in blockers }
 
-  val maxResults = 1
+  val maxResults = 10
 
   val variations: List<Mutator> =
     listOf({
@@ -226,13 +226,12 @@ fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
   padded: List<Σᐩ> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
-  holeToken: Σᐩ = "_",
   exclusions: Set<Int> = setOf(),
   // Sorted list of locations believed to be erroneous
   fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<Σᐩ> =
-  allSubstitutions((padded.indices.toSet() - exclusions), numberOfEdits, fishyLocations)
-    .map { idxs -> padded.substitute(idxs) { "$holeToken $holeToken" } }
+  allSubstitutions(padded.indices.toSet() - exclusions.map { it + 1 }.toSet(), numberOfEdits, fishyLocations)
+    .map { idxs -> padded.substitute(idxs) { "_ _" } }
 //    .apply {
 //      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
 //      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
@@ -242,7 +241,8 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
   eligibleIndices.sortedWith(
     compareBy<Int> { a -> fishyLocations.minOf { b -> (a - b).absoluteValue } }
       .thenBy { (it - fishyLocations.first()).absoluteValue }
-  ).let { sortedIndices -> setOf(1, numEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+  ).let { sortedIndices -> setOf(1, numEdits)
+    .asSequence().flatMap { sortedIndices.choose(it) } }
 //  setOf(1, numEdits).asSequence()
 //    .flatMap { eligibleIndices.choose(it) }.map { it.sorted().toSet() }
 //    .sortedWith(
@@ -256,7 +256,7 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 //    ).map { it.toSet() }
 
 private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ) -> Σᐩ): Σᐩ =
-  mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
+  mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ").trim()
 
 fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =
   split(Regex("\\s+")).filter { it.isNotBlank() }
