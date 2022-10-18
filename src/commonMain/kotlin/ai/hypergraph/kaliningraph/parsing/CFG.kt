@@ -9,19 +9,20 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 
 
-typealias Production = Π2<String, List<String>>
+typealias Σᐩ = String
+typealias Production = Π2<Σᐩ, List<Σᐩ>>
 typealias CFG = Set<Production>
 
-val Production.LHS: String get() = first
-val Production.RHS: List<String> get() =
-  second.let { if (it.size == 1) it.map(String::stripEscapeChars) else it }
+val Production.LHS: Σᐩ get() = first
+val Production.RHS: List<Σᐩ> get() =
+  second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
 fun Production.pretty() = LHS + " -> " + RHS.joinToString(" ")
 
 val CFG.language: CFL by cache { CFL(this) }
-val CFG.delimiters: Array<String> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
-val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
-val CFG.symbols: Set<String> by cache { nonterminals + flatMap { it.RHS } }
-val CFG.terminals: Set<String> by cache { symbols - nonterminals }
+val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
+val CFG.nonterminals: Set<Σᐩ> by cache { map { it.LHS }.toSet() }
+val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
+val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
 val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 }.toSet() }
@@ -31,13 +32,13 @@ val CFG.tmap by cache { terminals.associateBy { word -> bimap[listOf(word)] } }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.pretty: FreeMatrix<String> by cache { map { it.pretty() }.formatAsGrid(3) }
+val CFG.pretty: FreeMatrix<Σᐩ> by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph: LabeledGraph by cache { toGraph() }
 val CFG.originalForm: CFG by cache { rewriteHistory[this]!![0] }
 val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.originalForm by cache { rewriteHistory[this]!![0] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
-val CFG.reachability by cache { mutableMapOf<String, Set<String>>() }
+val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.noNonterminalStubs: CFG by cache {
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
     .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
@@ -45,17 +46,17 @@ val CFG.noNonterminalStubs: CFG by cache {
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
-  val precomputedJoins: MutableMap<Π2A<Set<String>>, Set<Π3A<String>>> =
+  val precomputedJoins: MutableMap<Π2A<Set<Σᐩ>>, Set<Π3A<Σᐩ>>> =
     CFG.nonterminals.choose(1..3).let { it * it }
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
       .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
 
-  fun join(l: Set<String>, r: Set<String>, tryCache: Boolean = false): Set<Triple<String, String, String>> =
+  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Boolean = false): Set<Triple<Σᐩ, Σᐩ, Σᐩ>> =
     if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
     else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
 
   @JvmName("setJoin")
-  operator fun get(l: Set<String>, r: Set<String>): Set<String> =
+  operator fun get(l: Set<Σᐩ>, r: Set<Σᐩ>): Set<Σᐩ> =
     join(l, r, false).map { it.first }.toSet()
 
   @JvmName("treeJoin")
@@ -67,20 +68,20 @@ class JoinMap(val CFG: CFG) {
 }
 // Maps indices to nonterminals and nonterminals to indices
 class Bindex(CFG: CFG) {
-  val indexedNTs: Array<String> by cache { CFG.nonterminals.toTypedArray() }
-  val ntIndices: Map<String, Int> by cache { indexedNTs.zip(indexedNTs.indices).toMap() }
+  val indexedNTs: Array<Σᐩ> by cache { CFG.nonterminals.toTypedArray() }
+  val ntIndices: Map<Σᐩ, Int> by cache { indexedNTs.zip(indexedNTs.indices).toMap() }
   operator fun get(i: Int) = indexedNTs[i]
-  operator fun get(s: String) = ntIndices[s]!!
+  operator fun get(s: Σᐩ) = ntIndices[s]!!
 }
 // Maps variables to expansions and expansions to variables in a grammar
 class BiMap(CFG: CFG) {
   val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
   val R2LHS = CFG.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
-  operator fun get(p: List<String>): Set<String> = R2LHS[p] ?: emptySet()
-  operator fun get(p: String): Set<List<String>> = L2RHS[p] ?: emptySet()
+  operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
+  operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.prettyPrint(): String = pretty.toString()
+fun CFG.prettyPrint(): Σᐩ = pretty.toString()
 
 fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
 
@@ -117,12 +118,12 @@ fun CFG.transformIntoCNF(): CFG =
 
 val START_SYMBOL = "START"
 
-fun String.getParametersIn(cfg: CFG) =
+fun Σᐩ.getParametersIn(cfg: CFG) =
   cfg.unitProductions.map { it.LHS }.filter { "<$it>" in this }
 
 fun CFG.eliminateParametricityFromRHS(
-  ntReplaced: String,
-  ntReplacements: Set<String>
+  ntReplaced: Σᐩ,
+  ntReplacements: Set<Σᐩ>
 ): CFG =
   if (ntReplacements.isEmpty()) this
   else flatMap { prod ->
@@ -133,12 +134,12 @@ fun CFG.eliminateParametricityFromRHS(
   }.toSet()
 
 fun CFG.eliminateParametricityFromLHS(
-  parameters: Set<String> =
+  parameters: Set<Σᐩ> =
     nonterminals.flatMap { it.getParametersIn(this) }.toSet()
 ): CFG =
   if (parameters.isEmpty()) this else {
     var i = false
-    var (ntReplaced, ntReplacements) = "" to setOf<String>()
+    var (ntReplaced, ntReplacements) = "" to setOf<Σᐩ>()
     flatMap { prod ->
       val params = prod.LHS.getParametersIn(this)
       if (params.isEmpty() || i) return@flatMap listOf(prod)
@@ -167,7 +168,7 @@ private fun CFG.addGlobalStartSymbol(): CFG =
 // Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)
 private fun CFG.expandOr(): CFG =
   flatMap { prod ->
-    prod.RHS.fold(listOf(listOf<String>())) { acc, s ->
+    prod.RHS.fold(listOf(listOf<Σᐩ>())) { acc, s ->
       if (s == "|") (acc + listOf(listOf()))
       else (acc.dropLast(1) + listOf(acc.last() + s))
     }.map { prod.LHS to it }
@@ -182,11 +183,11 @@ private fun CFG.addEpsilonProduction(): CFG =
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
 tailrec fun CFG.nullableNonterminals(
-  nbls: Set<String> = setOf("ε"),
-  nnts: Set<String> = filter { nbls.containsAll(it.RHS) }.map { it.LHS }.toSet()
-): Set<String> = if (nnts == (nbls - "ε")) nnts else nullableNonterminals(nnts + nbls)
+  nbls: Set<Σᐩ> = setOf("ε"),
+  nnts: Set<Σᐩ> = filter { nbls.containsAll(it.RHS) }.map { it.LHS }.toSet()
+): Set<Σᐩ> = if (nnts == (nbls - "ε")) nnts else nullableNonterminals(nnts + nbls)
 
-fun List<String>.drop(nullables: Set<String>, keep: Set<Int>): List<String> =
+fun List<Σᐩ>.drop(nullables: Set<Σᐩ>, keep: Set<Int>): List<Σᐩ> =
   mapIndexedNotNull { i, s ->
     if (s in nullables && i !in keep) null
     else if (s in nullables && i in keep) s
@@ -194,7 +195,7 @@ fun List<String>.drop(nullables: Set<String>, keep: Set<Int>): List<String> =
   }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.2
-fun Production.allSubSeq(nullables: Set<String>): Set<Production> =
+fun Production.allSubSeq(nullables: Set<Σᐩ>): Set<Production> =
     RHS.indices.filter { RHS[it] in nullables }.powerset().toSet()
     .map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
 
@@ -209,7 +210,7 @@ fun Production.allSubSeq(nullables: Set<String>): Set<Production> =
  *  - Remove all productions with an empty RHS
  */
 
-fun CFG.refactorEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
+fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
   (this + setOf(START_SYMBOL to listOf(START_SYMBOL, "ε")))
     .flatMap { p -> if (p.RHS.any { it in nlbls }) p.allSubSeq(nlbls) else listOf(p) }
     .filter { it.RHS.isNotEmpty() }.toSet()
@@ -229,13 +230,13 @@ fun CFG.refactorEpsilonProds(nlbls: Set<String> = nullableNonterminals()): CFG =
  */
 
 private fun CFG.removeUselessSymbols(
-  generating: Set<String> = generatingSymbols(),
-  reachable: Set<String> = reachableSymbols(),
+  generating: Set<Σᐩ> = generatingSymbols(),
+  reachable: Set<Σᐩ> = reachableSymbols(),
 ): CFG = filter { (s, _) -> s in generating && s in reachable }
 
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
-fun CFG.equivalenceClass(from: Set<String>): Set<String> =
+fun CFG.equivalenceClass(from: Set<Σᐩ>): Set<Σᐩ> =
   from.intersect(nonterminals).let { nts ->
     nts.flatMap {
       bimap[it].filter { it.size == 1 }.flatten() + bimap[listOf(it)]
@@ -245,16 +246,16 @@ fun CFG.equivalenceClass(from: Set<String>): Set<String> =
     }
   }
 
-fun CFG.reachableSymbols(from: String = START_SYMBOL): Set<String> =
+fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) {
     graph.transitiveClosure(setOf(graph.first { it.label == from }))
       .map { it.label }.filter { it in nonterminals }.toSet()
   }
 
 private fun CFG.generatingSymbols(
-  from: Set<String> = terminalUnitProductions.map { it.LHS }.toSet(),
+  from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
   revGraph: LabeledGraph = graph.reversed()
-): Set<String> =
+): Set<Σᐩ> =
   revGraph.transitiveClosure(revGraph.filter { it.label in from }.toSet())
     .map { it.label }.toSet()
 
@@ -264,9 +265,9 @@ private fun CFG.generatingSymbols(
  * After elimination: (A -> c, A -> d, B -> c, B -> d)
  */
 private tailrec fun CFG.elimVarUnitProds(
-  toVisit: Set<String> = nonterminals,
-  vars: Set<String> = nonterminals,
-  toElim: String? = toVisit.firstOrNull()
+  toVisit: Set<Σᐩ> = nonterminals,
+  vars: Set<Σᐩ> = nonterminals,
+  toElim: Σᐩ? = toVisit.firstOrNull()
 ): CFG {
   fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
   if (toElim == null) return filter { !it.isVariableUnitProd() }

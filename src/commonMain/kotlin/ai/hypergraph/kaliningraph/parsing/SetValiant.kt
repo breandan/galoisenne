@@ -9,10 +9,10 @@ import kotlin.math.*
 
 // SetValiant interface
 //=====================================================================================
-fun String.matches(cfg: String): Boolean = matches(cfg.validate().parseCFG())
-fun String.matches(CFG: CFG): Boolean = CFG.isValid(this)
-fun String.parse(s: String): Tree? = parseCFG().parse(s)
-fun CFG.parse(s: String): Tree? =
+fun Σᐩ.matches(cfg: Σᐩ): Boolean = matches(cfg.validate().parseCFG())
+fun Σᐩ.matches(CFG: CFG): Boolean = CFG.isValid(this)
+fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
+fun CFG.parse(s: Σᐩ): Tree? =
   try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }
   catch (e: Exception) { null }
 
@@ -22,26 +22,26 @@ fun CFG.parse(s: String): Tree? =
  * is empty, the string is invalid. If the entry is S, it parses.
  */
 
-fun CFG.isValid(str: String): Boolean =
+fun CFG.isValid(str: Σᐩ): Boolean =
   tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: String): Forest = solveFixedpoint(tokenize(str))[0].last()
-fun CFG.parseTable(str: String): TreeMatrix = solveFixedpoint(tokenize(str))
+fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(tokenize(str))[0].last()
+fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(tokenize(str))
 
 fun CFG.parse(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
 ): Forest = utMatrix.seekFixpoint().diagonals.last().firstOrNull() ?: emptySet()
 //  .also { if (it) println("Sol:\n$finalConfig") }
 
 fun CFG.solveFixedpoint(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   utMatrix: UTMatrix<Forest> = initialUTMatrix(tokens),
 ): TreeMatrix = utMatrix.seekFixpoint().toFullMatrix()
 
 // Returns first valid whole-parse tree if the string is syntactically valid, and if not,
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
-fun CFG.parseWithStubs(s: String): Pair<Forest, List<Tree>> =
+fun CFG.parseWithStubs(s: Σᐩ): Pair<Forest, List<Tree>> =
   solveFixedpoint(tokenize(s)).toUTMatrix().diagonals.asReversed().let {
     it.first()[0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
       it.flatten().flatten().map { it.denormalize() }
@@ -78,11 +78,11 @@ fun CFG.treeJoin(left: Forest, right: Forest): Forest =
     bimap[listOf(lt.root, rt.root)].map { Tree(it, null, lt, rt) }
   }.toSet()
 
-//fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> = joinMap[left, right]
-fun CFG.setJoin(left: Set<String>, right: Set<String>): Set<String> =
+//fun CFG.setJoin(left: Set<Σᐩ>, right: Set<Σᐩ>): Set<Σᐩ> = joinMap[left, right]
+fun CFG.setJoin(left: Set<Σᐩ>, right: Set<Σᐩ>): Set<Σᐩ> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
-fun CFG.toBitVec(nts: Set<String>): List<Boolean> =
+fun CFG.toBitVec(nts: Set<Σᐩ>): List<Boolean> =
   if (1 < nts.size) nonterminals.map { it in nts }
   else List(nonterminals.size) { false }.toMutableList()
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
@@ -105,10 +105,10 @@ fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
   else if (left.isNotEmpty() && right.isEmpty()) left
   else left.zip(right) { l, r -> l or r }
 
-fun CFG.toNTSet(nts: List<Boolean>): Set<String> =
+fun CFG.toNTSet(nts: List<Boolean>): Set<Σᐩ> =
   nts.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
-fun List<Boolean>.decodeWith(cfg: CFG): Set<String> =
+fun List<Boolean>.decodeWith(cfg: CFG): Set<Σᐩ> =
   mapIndexedNotNull { i, it -> if (it) cfg.bindex[i] else null }.toSet()
 
 val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
@@ -121,14 +121,14 @@ val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
 
 //=====================================================================================
 
-fun String.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
-fun String.isNonterminalStubIn(cfg: CFG): Boolean =
+fun Σᐩ.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
+fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean =
   first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
-fun String.isNonterminalStubIn(csl: CSL): Boolean =
+fun Σᐩ.isNonterminalStubIn(csl: CSL): Boolean =
   csl.cfgs.map { isNonterminalStubIn(it) }.all { it }
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-fun CFG.initialMatrix(str: List<String>): TreeMatrix =
+fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
   FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
     else bimap[listOf(str[j - 1])].map {
@@ -136,9 +136,9 @@ fun CFG.initialMatrix(str: List<String>): TreeMatrix =
     }.toSet()
   }
 
-fun tokenize(str: String): List<String> = str.tokenizeByWhitespace()
+fun tokenize(str: Σᐩ): List<Σᐩ> = str.tokenizeByWhitespace()
 
-fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
+fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
       bimap[listOf(terminal)].let {
@@ -149,12 +149,12 @@ fun CFG.initialUTMatrix(tokens: List<String>): UTMatrix<Forest> =
     algebra = makeAlgebra()
   )
 
-private val freshNames: Sequence<String> =
+private val freshNames: Sequence<Σᐩ> =
   ('A'..'Z').asSequence().map { "$it" }
   .let { it + (it * it).map { (a, b) -> a + b } }
     .filter { it != START_SYMBOL }
 
-fun String.parseCFG(
+fun Σᐩ.parseCFG(
   normalize: Boolean = true,
   validate: Boolean = false
 ): CFG =
@@ -164,9 +164,9 @@ fun String.parseCFG(
     else throw Exception("Invalid production ${prod.size}: $line")
   }.toSet().let { if (normalize) it.normalForm else it }
 
-fun String.stripEscapeChars(escapeSeq: String = "`"): String = replace(escapeSeq, "")
+fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
 
-fun CFGCFG(names: Collection<String>): CFG = """
+fun CFGCFG(names: Collection<Σᐩ>): CFG = """
     START -> CFG
     CFG -> PRD | CFG \n CFG
     PRD -> VAR `->` RHS
@@ -174,10 +174,10 @@ fun CFGCFG(names: Collection<String>): CFG = """
     RHS -> VAR | RHS RHS | RHS `|` RHS
   """.parseCFG(validate = false)
 
-fun String.validate(
-  presets: Set<String> = setOf("|", "->"),
-  tokens: Sequence<String> = tokenizeByWhitespace().filter { it !in presets }.asSequence(),
-  names: Map<String, String> = freshNames.filterNot(::contains).zip(tokens).toMap(),
-): String = lines().filter(String::isNotBlank).joinToString(" \\n ")
+fun Σᐩ.validate(
+  presets: Set<Σᐩ> = setOf("|", "->"),
+  tokens: Sequence<Σᐩ> = tokenizeByWhitespace().filter { it !in presets }.asSequence(),
+  names: Map<Σᐩ, Σᐩ> = freshNames.filterNot(::contains).zip(tokens).toMap(),
+): Σᐩ = lines().filter(Σᐩ::isNotBlank).joinToString(" \\n ")
   .tokenizeByWhitespace().joinToString(" ") { names[it] ?: it }
   .let { if (CFGCFG(names.values).isValid(it)) this else throw Exception("!CFL: $it") }

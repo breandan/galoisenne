@@ -1,15 +1,16 @@
 package ai.hypergraph.kaliningraph.automata
 
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import kotlin.random.Random
 
 // TODO: rewrite in matrix form
-class KRegex(val regex: String) {
+class KRegex(val regex: Σᐩ) {
   val postfixRegex = PostFix.toPostfix(regex)
   val symbols = mutableListOf<Char>()
   val transitions = mutableListOf<Transition>()
   val finalStates = mutableListOf<State>()
   val initialStates = mutableListOf<State>()
-  val states = mutableListOf<String>()
+  val states = mutableListOf<Σᐩ>()
 
   private var saveFinal: State? = null
   private val stackInitial = Stack<State>()
@@ -22,7 +23,7 @@ class KRegex(val regex: String) {
     updateInitialState()
   }
 
-  fun check(input: String): String {
+  fun check(input: Σᐩ): Σᐩ {
     var currentStates = initialStates
     var tmpStateList = mutableListOf<State>()
     for (element in input) {
@@ -52,9 +53,9 @@ class KRegex(val regex: String) {
     }
 
     val result = if (finalStates[0] in currentStates) {
-      "String was accepted (states = ${currentStates.toSet()})"
+      "Σᐩ was accepted (states = ${currentStates.toSet()})"
     } else {
-      "String was rejected (states = ${currentStates.toSet()})"
+      "Σᐩ was rejected (states = ${currentStates.toSet()})"
     }
     return result
   }
@@ -186,8 +187,8 @@ class KRegex(val regex: String) {
     override fun toString() = stateId.toString()
   }
 
-  class Transition(val sym: String, val from: State, val to: State) {
-    constructor(transitionSymbol: String) : this(transitionSymbol, State(), State())
+  class Transition(val sym: Σᐩ, val from: State, val to: State) {
+    constructor(transitionSymbol: Σᐩ) : this(transitionSymbol, State(), State())
 
     init {
       from.nextStates.add(to)
@@ -203,8 +204,8 @@ class KRegex(val regex: String) {
 
     private fun getPrecedence(c: Char) = precedenceMap[c] ?: 6
 
-    private fun format(regex: String): String {
-      var res = String()
+    private fun format(regex: Σᐩ): Σᐩ {
+      var res = ""
       val allOperators = listOf('|', '*', '^')
       val binaryOperators = listOf('^', '|')
       for (i in regex.indices) {
@@ -220,8 +221,8 @@ class KRegex(val regex: String) {
       return res
     }
 
-    fun toPostfix(infixRegex: String): String {
-      var postfix = String()
+    fun toPostfix(infixRegex: Σᐩ): Σᐩ {
+      var postfix = ""
       val stack = Stack<Char>()
       val formattedRegEx = format(infixRegex)
       for (c in formattedRegEx.toCharArray()) {

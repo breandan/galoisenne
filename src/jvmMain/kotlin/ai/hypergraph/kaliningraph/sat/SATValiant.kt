@@ -73,7 +73,7 @@ fun CFG.uniquenessConstraints(rubix: SATRubix): Formula =
 //    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
-fun CFG.reachabilityConstraints(tokens: List<String>, rubix: SATRubix): Formula =
+fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =
   tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(rubix.holeVariables)
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
@@ -119,7 +119,7 @@ val CFG.satAlgebra by cache {
 
 // Precomputes literals in the fixpoint to avoid solving for invariant entries
 fun CFG.constructRubix(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   stringVars: MutableList<SATVector> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
   literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
@@ -150,23 +150,23 @@ fun CFG.constructRubix(
   }.toUTMatrix()
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
-fun String.synthesizeIncrementally(
+fun Σᐩ.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
-  variations: List<String.() -> Sequence<String>> = listOf { sequenceOf() },
-  updateProgress: (String) -> Unit = {},
-  skipWhen: (List<String>) -> Boolean = { false }
-): Sequence<String> = synthesizeWithVariations(
+  variations: List<Σᐩ.() -> Sequence<Σᐩ>> = listOf { sequenceOf() },
+  updateProgress: (Σᐩ) -> Unit = {},
+  skipWhen: (List<Σᐩ>) -> Boolean = { false }
+): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg, allowNTs, enablePruning, variations, updateProgress, skipWhen,
   synthesizer = { a, b -> synthesize(a, b) }
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
-fun CFG.nonterminals(bitvec: List<Boolean>): Set<String> =
+fun CFG.nonterminals(bitvec: List<Boolean>): Set<Σᐩ> =
   bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
 
-private fun CFG.handleSingleton(s: String): Set<String> =
+private fun CFG.handleSingleton(s: Σᐩ): Set<Σᐩ> =
   if (s == "_") terminals
   else if (s.matches(Regex("<.+>")))
     bimap[s.substring(1, s.length - 1)]
@@ -190,16 +190,16 @@ Lowers Valiant matrix onto SAT. Steps:
  */
 
 fun CFG.synthesize(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   // Used to restore well-formed trees that were pruned
   reconstructor: Reconstructor = mutableListOf()
-): Sequence<String> = asCSL.synthesize(tokens, reconstructor)
+): Sequence<Σᐩ> = asCSL.synthesize(tokens, reconstructor)
 
 fun CSL.synthesize(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   // Used to restore well-formed trees that were pruned
   reconstructor: Reconstructor = mutableListOf()
-): Sequence<String> =
+): Sequence<Σᐩ> =
   check(tokens.all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }.let {
     if (tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) }) emptySequence()
     else if (tokens.size == 1)
@@ -221,12 +221,12 @@ fun CSL.synthesize(
   //  var freshnessConstraints = 0L
       while (true) try {
         val cfg = cfgs.first()
-        val fillers: MutableList<String?> =
+        val fillers: MutableList<Σᐩ?> =
           rubix.holeVariables.map { bits ->
             cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
           }.toMutableList()
 
-        val completion: String =
+        val completion: Σᐩ =
           tokens.map {
             if (it == "_") fillers.removeAt(0)!!
             else if (it.isNonterminalStubIn(this@synthesize)) {
@@ -258,14 +258,14 @@ fun CSL.synthesize(
 }
 
 fun CFG.generateConstraints(
-  tokens: List<String>,
+  tokens: List<Σᐩ>,
   rubix: SATRubix = constructRubix(tokens)
 ): Pair<Formula, SATRubix> =
   isInGrammar(rubix) and
     uniquenessConstraints(rubix) and
     reachabilityConstraints(tokens, rubix) to rubix
 
-fun CSL.generateConstraints(tokens: List<String>): Pair<Formula, SATRubix> {
+fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   ff.clear()
   println("Synthesizing: ${tokens.joinToString(" ")}")
   val timeToFormConstraints = System.currentTimeMillis()

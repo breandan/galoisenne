@@ -7,23 +7,23 @@ import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 
-typealias Reconstructor = MutableList<Pair<String, String>>
-typealias Mutator = (String) -> Sequence<String>
+typealias Reconstructor = MutableList<Pair<Σᐩ, Σᐩ>>
+typealias Mutator = (Σᐩ) -> Sequence<Σᐩ>
 
 fun repair(
-  prompt: String,
+  prompt: Σᐩ,
   cfg: CFG,
-  coarsen: String.() -> String = { this },
-  uncoarsen: String.(String) -> String = { this },
-  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
-): List<String> {
+  coarsen: Σᐩ.() -> Σᐩ = { this },
+  uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
+  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
+): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   val tokens = coarsened.tokenizeByWhitespace()
   val (parseForest, stubs) = cfg.parseWithStubs(coarsened)
   val exclude = stubs.allIndicesInsideParseableRegions()
 
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
-  val sanitized: String = tokensWithHoles.joinToString(" ")
+  val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
   val maxResults = 10
 
   val variations: List<Mutator> =
@@ -35,7 +35,7 @@ fun repair(
       )
     })
 
-  val repairs =
+  val repairs: List<Σᐩ> =
     sanitized.synthesizeWithVariations(
       cfg = cfg,
       variations = variations,
@@ -46,29 +46,29 @@ fun repair(
   return repairs
 }
 
-fun List<String>.ranker(): Comparator<String> =
+fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
   compareBy(tokenwiseEdits(this)).thenBy { it.length }
 
-private fun tokenwiseEdits(tokens: List<String>): (String) -> Comparable<*> =
+private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
 // Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
-fun String.synthesizeWithVariations(
+fun Σᐩ.synthesizeWithVariations(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ sequenceOf() }),
-  updateProgress: (String) -> Unit = {},
-  skipWhen: (List<String>) -> Boolean = { false },
-  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
-): Sequence<String> {
+  updateProgress: (Σᐩ) -> Unit = {},
+  skipWhen: (List<Σᐩ>) -> Boolean = { false },
+  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
+): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
   val (stringToSolve, reconstructor) =
     if (enablePruning) cfg.prune(this) else this to mutableListOf()
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
-  val allVariants: Sequence<String> =
+  val allVariants: Sequence<Σᐩ> =
     variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(this@synthesizeWithVariations) }
       .distinct().rejectTemplatesContainingImpossibleBigrams(cfg_)
 
@@ -95,13 +95,13 @@ fun String.synthesizeWithVariations(
  */
 
 fun CFG.prune(
-  string: String,
+  string: Σᐩ,
   minimumWidth: Int = 4,
   // Maps nonterminal stubs from pruned branches back to original string
   reconstructor: Reconstructor =
     tokenize(string).filter { it.isNonterminalStubIn(this) }
       .map { it to it }.toMutableList()
-): Pair<String, Reconstructor> {
+): Pair<Σᐩ, Reconstructor> {
   val tokens = tokenize(string)
   val stubs = parseWithStubs(string).second
     .fold(setOf<Tree>()) { acc, t ->
@@ -144,19 +144,19 @@ fun CFG.prune(
 // https://nokyotsu.com/me/papers/cic01.pdf
 // https://cs.stackexchange.com/questions/154130/minimal-length-strings-which-are-substrings-of-no-string-in-a-given-cfl
 // These strings must never appear in any length-k string in the language defined by this grammar
-val CFG.impossibleBigrams by cache { mutableMapOf<Int, MutableSet<String>>() }
+val CFG.impossibleBigrams by cache { mutableMapOf<Int, MutableSet<Σᐩ>>() }
 // Underapproximates impossible substrings for a sketch template of a given length by tracking
 // the impossible substrings that cannot fit inside an equal- or longer-length string, i.e.,
 // if a string does not fit in Σ^100, then it definitely will not fit in Σ^k<100. In the worst case
 // it will be a false negative and we do unnecessary work trying to solve an impossible template.
-fun Map<Int, Set<String>>.unableToFitInside(k: Int): Set<String> =
+fun Map<Int, Set<Σᐩ>>.unableToFitInside(k: Int): Set<Σᐩ> =
   values.flatten().toSet() // May not work for ngrams but for bigrams it should be fine
 //  keys.filter { k <= it }.flatMap { this[it] ?: setOf() }.toSet()
 
 // These strings all appear in an arbitrary-length string in the language defined by this grammar
-val CFG.possibleBigrams by cache { mutableSetOf<String>() }
+val CFG.possibleBigrams by cache { mutableSetOf<Σᐩ>() }
 
-fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Sequence<String> =
+fun Sequence<Σᐩ>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Sequence<Σᐩ> =
   filter { sketch ->
     val numTokens = sketch.count { it == ' ' }
     cfg.impossibleBigrams.unableToFitInside(numTokens).none { iss ->
@@ -166,9 +166,9 @@ fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Seque
     }
   }
 
-fun List<String>.rememberImpossibleBigrams(
+fun List<Σᐩ>.rememberImpossibleBigrams(
   cfg: CFG,
-  synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
+  synthesizer: CFG.(List<Σᐩ>, Reconstructor) -> Sequence<Σᐩ>
 ) {
   windowed(2).asSequence().filter {
     it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams + cfg.impossibleBigrams
@@ -209,17 +209,17 @@ fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
  *           _ww w_w ww_
  */
 
-fun String.singleTokenSubtitutionsAndInsertions(): Sequence<String> =
+fun Σᐩ.singleTokenSubtitutionsAndInsertions(): Sequence<Σᐩ> =
   multiTokenSubstitutionsAndInsertions(numberOfEdits = 1)
 
-fun String.multiTokenSubstitutionsAndInsertions(
-  tokens: List<String> = tokenizeByWhitespace(),
-  padded: List<String> = listOf("", *tokens.toTypedArray(), ""),
+fun Σᐩ.multiTokenSubstitutionsAndInsertions(
+  tokens: List<Σᐩ> = tokenizeByWhitespace(),
+  padded: List<Σᐩ> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf(),
   // Sorted list of locations believed to be erroneous
   fishyLocations: List<Int> = listOf(tokens.size)
-): Sequence<String> =
+): Sequence<Σᐩ> =
   allSubstitutions((padded.indices.toSet() - exclusions), numberOfEdits, fishyLocations)
     .map { idxs -> padded.substitute(idxs) { "_ _" } }.apply {
       println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
@@ -243,10 +243,10 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 //        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
 //    ).map { it.toSet() }
 
-private fun List<String>.substitute(idxs: Set<Int>, sub: (String) -> String): String =
+private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ) -> Σᐩ): Σᐩ =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ")
 
-fun String.tokenizeByWhitespace(): List<String> =
+fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =
   split(Regex("\\s+")).filter { it.isNotBlank() }
 
 /*
@@ -259,7 +259,7 @@ fun String.tokenizeByWhitespace(): List<String> =
  *           ...    ...    ...
  */
 
-fun String.everySingleHoleConfig(): Sequence<String> {
+fun Σᐩ.everySingleHoleConfig(): Sequence<Σᐩ> {
   val new = replace(Regex("(_( )*)+"), "_ ")
   val toks = new.tokenizeByWhitespace()
   val indices = toks.indices.filter { toks[it] == "_" }.powerset()
@@ -275,11 +275,11 @@ fun String.everySingleHoleConfig(): Sequence<String> {
  *           ___w__w_w__w___
  */
 
-fun String.mergeHoles(): String =
+fun Σᐩ.mergeHoles(): Σᐩ =
   replace(Regex("\\s+"), " ")
     .replace(Regex("(?<=_)\\s(?=_)"), "")
 
-fun String.increasingLengthChunks(): Sequence<String> {
+fun Σᐩ.increasingLengthChunks(): Sequence<Σᐩ> {
   val chunks = mergeHoles().split(Regex("((?<=[^_])|(?=[^_]))"))
   return (2..chunks.maxOf { it.length }).asSequence()
     .map { l -> chunks.joinToString("") { if (it.containsHole()) it.take(l).toCharArray().joinToString(" ") else it } }

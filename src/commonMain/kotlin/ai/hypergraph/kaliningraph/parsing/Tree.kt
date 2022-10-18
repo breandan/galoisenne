@@ -8,8 +8,8 @@ typealias TreeMatrix = FreeMatrix<Forest>
 typealias Forest = Set<Tree>
 
 class Tree constructor(
-  val root: String,
-  val terminal: String? = null,
+  val root: Σᐩ,
+  val terminal: Σᐩ? = null,
   vararg val children: Tree,
   val span: IntRange = children.fold(Int.MAX_VALUE to Int.MIN_VALUE) { (a, b), t ->
     minOf(a, t.span.first) to maxOf(b, t.span.last)}.let { it.first..it.second }
@@ -18,7 +18,7 @@ class Tree constructor(
   override fun hashCode() = root.hashCode()
   override fun equals(other: Any?) = hashCode() == other.hashCode()
 
-  fun toGraph(j: String = "0"): LabeledGraph =
+  fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +
       children.foldIndexed(
         LabeledGraph {
@@ -28,26 +28,22 @@ class Tree constructor(
         }
       ) { i, acc, it -> acc + it.toGraph("$j.$i") }
 
-  fun prettyPrint(
-    buffer: String = "",
-    prefix: String = "",
-    childrenPrefix: String = "",
-  ): String =
+  fun prettyPrint(buffer: Σᐩ = "", prefix: Σᐩ = "", nextPrefix: Σᐩ = ""): Σᐩ =
     if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()} [${span.first}]\n")
     else children.foldIndexed("$buffer$prefix" + root.htmlify() +
-      (if (-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: String, it: Tree ->
+      (if (-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: Σᐩ, it: Tree ->
         if (i == children.size - 1)
-          it.prettyPrint(acc + "", "$childrenPrefix└── ", "$childrenPrefix    ")
-        else it.prettyPrint(acc, "$childrenPrefix├── ", "$childrenPrefix│   ")
+          it.prettyPrint(acc + "", "$nextPrefix└── ", "$nextPrefix    ")
+        else it.prettyPrint(acc, "$nextPrefix├── ", "$nextPrefix│   ")
       }
 
-  fun latexify(): String = "\\Tree ${qtreeify()}"
+  fun latexify(): Σᐩ = "\\Tree ${qtreeify()}"
 
-  private fun qtreeify(): String =
+  private fun qtreeify(): Σᐩ =
    if (children.isEmpty()) "\\texttt{$terminal}"
    else "[.\\texttt{$root} " + children.joinToString(" ", "", " ]") { it.qtreeify() }
 
-  private fun String.htmlify() =
+  private fun Σᐩ.htmlify() =
     replace('<', '⟨').replace('>', '⟩')
 
   // Xujie's algorithm - it works! :-D
@@ -63,7 +59,7 @@ class Tree constructor(
     return removeSynthetic().first()
   }
 
-  fun contents(): String =
+  fun contents(): Σᐩ =
     if (children.isEmpty()) "$terminal"
     else children.joinToString(" ") { it.contents() }
 }

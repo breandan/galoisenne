@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.types.*
 
 // https://en.wikipedia.org/wiki/Regular_grammar
-typealias REG = Set<Π2A<String>>
+typealias REG = Set<Π2A<Σᐩ>>
 val REG.language: REL by cache { REL(this) }
 val REG.asCFG: CFG by cache { map { (a, b) -> a to listOf(b) }.toSet() }
 val CFG.asCSL: CSL by cache { CSL(language) }
@@ -20,17 +20,17 @@ data class CFL(val cfg: CFG) // https://en.wikipedia.org/wiki/Context-free_langu
 class CSL(vararg cfls: CFL) {
   val cfls: Array<CFL> = cfls.toSet().toTypedArray()
   val cfgs by lazy { cfls.map { it.cfg } }
-  val nonterminals: Set<String> by lazy { intersect { nonterminals } }
-  val terminals: Set<String> by lazy { intersect { terminals } }
-  val symbols: Set<String> by lazy { intersect { symbols } }
+  val nonterminals: Set<Σᐩ> by lazy { intersect { nonterminals } }
+  val terminals: Set<Σᐩ> by lazy { intersect { terminals } }
+  val symbols: Set<Σᐩ> by lazy { intersect { symbols } }
 
   private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> = cfgs.map { it.item() }.intersect()
 }
 
 // REL ⊂ CFL ⊂ CSL
-operator fun REL.contains(s: String): Boolean = s in reg.asCFG.language
-operator fun CFL.contains(s: String): Boolean = cfg.parse(s) != null
-operator fun CSL.contains(s: String): Boolean = cfls.all { s in it }
+operator fun REL.contains(s: Σᐩ): Boolean = s in reg.asCFG.language
+operator fun CFL.contains(s: Σᐩ): Boolean = cfg.parse(s) != null
+operator fun CSL.contains(s: Σᐩ): Boolean = cfls.all { s in it }
 
 // https://arxiv.org/pdf/2209.06809.pdf
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf
