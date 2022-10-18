@@ -8,6 +8,7 @@ import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 
 typealias Reconstructor = MutableList<Pair<String, String>>
+typealias Mutator = (String) -> Sequence<String>
 
 fun repair(
   prompt: String,
@@ -25,7 +26,7 @@ fun repair(
   val sanitized: String = tokensWithHoles.joinToString(" ")
   val maxResults = 10
 
-  val variations: List<(String) -> Sequence<String>> =
+  val variations: List<Mutator> =
     listOf({
       it.multiTokenSubstitutionsAndInsertions(
         numberOfEdits = 2,
@@ -45,18 +46,18 @@ fun repair(
   return repairs
 }
 
-fun List<String>.ranker() =
+fun List<String>.ranker(): Comparator<String> =
   compareBy(tokenwiseEdits(this)).thenBy { it.length }
 
 private fun tokenwiseEdits(tokens: List<String>): (String) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
-// Generates a lazy sequence of solutions to sketch-based synthesis problems
+// Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
 fun String.synthesizeWithVariations(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
-  variations: List<String.() -> Sequence<String>> = listOf({ sequenceOf() }),
+  variations: List<Mutator> = listOf({ sequenceOf() }),
   updateProgress: (String) -> Unit = {},
   skipWhen: (List<String>) -> Boolean = { false },
   synthesizer: CFG.(List<String>, Reconstructor) -> Sequence<String>
@@ -68,7 +69,7 @@ fun String.synthesizeWithVariations(
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
   val allVariants: Sequence<String> =
-    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b() }
+    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(this@synthesizeWithVariations) }
       .distinct().rejectTemplatesContainingImpossibleBigrams(cfg_)
 
   return allVariants.map { updateProgress(it); it }
@@ -155,7 +156,7 @@ fun Map<Int, Set<String>>.unableToFitInside(k: Int): Set<String> =
 // These strings all appear in an arbitrary-length string in the language defined by this grammar
 val CFG.possibleBigrams by cache { mutableSetOf<String>() }
 
-fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG) =
+fun Sequence<String>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Sequence<String> =
   filter { sketch ->
     val numTokens = sketch.count { it == ' ' }
     cfg.impossibleBigrams.unableToFitInside(numTokens).none { iss ->
@@ -274,7 +275,7 @@ fun String.everySingleHoleConfig(): Sequence<String> {
  *           ___w__w_w__w___
  */
 
-fun String.mergeHoles() =
+fun String.mergeHoles(): String =
   replace(Regex("\\s+"), " ")
     .replace(Regex("(?<=_)\\s(?=_)"), "")
 

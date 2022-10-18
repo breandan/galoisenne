@@ -71,7 +71,7 @@
     x \otimes y := \big\{\;W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\shup\sigma_r \coloneqq \{V \mid (V \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r=c+1}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\shup\sigma_r \coloneqq \{V \mid (V \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
   \begin{align}
     M^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -337,7 +337,7 @@ We also need the constraint that no two conflicting nonterminals may be active a
 
   \section{Applications}
 
-  This technique can be used to repair syntax errors in programming languages.
+  This technique can be used to repair syntax errors in programming languages. It also has the nice advantage that it can provide partial parse trees for invalid strings, i.e., we can decode the tree from the structure of M directly without any special error recovery.
 
 %  \subsection{Deletion, substitution, and insertion}\label{sec:dsi}
 %

@@ -194,10 +194,9 @@ fun List<String>.drop(nullables: Set<String>, keep: Set<Int>): List<String> =
   }
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.2
-fun Production.allSubSeq(
-  nullables: Set<String>,
-  indices: Set<Set<Int>> = RHS.indices.filter { RHS[it] in nullables }.powerset().toSet()
-): Set<Production> = indices.map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
+fun Production.allSubSeq(nullables: Set<String>): Set<Production> =
+    RHS.indices.filter { RHS[it] in nullables }.powerset().toSet()
+    .map { idxs -> LHS to RHS.drop(nullables, idxs) }.toSet()
 
 /**
  * Makes ε-productions optional. n.b. We do not use CNF, but almost-CNF!
