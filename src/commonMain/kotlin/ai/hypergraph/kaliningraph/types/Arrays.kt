@@ -4,7 +4,12 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
-// Multi-typed arrays
+// Monomorphic arrays
+typealias Π2A<A> = Π2<A, A>
+typealias Π3A<A> = Π3<A, A, A>
+typealias Π4A<A> = Π4<A, A, A, A>
+
+// Multimorphic arrays
 data class Π1<A>(val π1: A)/*: V1<A> by VT(π1)*/
 
 typealias Π2<A, B> = Pair<A, B>

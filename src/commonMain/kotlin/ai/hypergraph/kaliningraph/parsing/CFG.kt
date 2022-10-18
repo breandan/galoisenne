@@ -45,7 +45,7 @@ val CFG.noNonterminalStubs: CFG by cache {
 
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
-  val precomputedJoins: MutableMap<Pair<Set<String>, Set<String>>, Set<Triple<String, String, String>>> =
+  val precomputedJoins: MutableMap<Π2A<Set<String>>, Set<Π3A<String>>> =
     CFG.nonterminals.choose(1..3).let { it * it }
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
       .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()

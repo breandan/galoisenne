@@ -8,8 +8,8 @@ import kotlin.math.absoluteValue
 // Since we cannot encode the ECA rule into + and * directly, we need to keep
 // track of the receptive field of the convolutional kernel (i.e. the neighbors)
 // in order to apply rule (nonlinearity) after computing the dot product.
-typealias PKernel<A> = Π3<A?, A?, A?>? // Partially constructed kernel
-typealias FKernel<A> = Π3<A, A, A> // Fully constructed kernel
+typealias PKernel<A> = Π3A<A?>? // Partially constructed kernel
+typealias FKernel<A> = Π3A<A> // Fully constructed kernel
 typealias KernelMatrix<A> = FreeMatrix<PKernel<A>>
 
 fun <A> PKernel<A>.nullity(): FKernel<Int> =

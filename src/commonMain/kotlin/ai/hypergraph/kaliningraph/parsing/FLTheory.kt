@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.types.*
 
 // https://en.wikipedia.org/wiki/Regular_grammar
-typealias REG = Set<Π2<String, String>>
+typealias REG = Set<Π2A<String>>
 val REG.language: REL by cache { REL(this) }
 val REG.asCFG: CFG by cache { map { (a, b) -> a to listOf(b) }.toSet() }
 val CFG.asCSL: CSL by cache { CSL(language) }
