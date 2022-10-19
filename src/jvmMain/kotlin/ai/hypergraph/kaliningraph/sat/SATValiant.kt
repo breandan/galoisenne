@@ -44,10 +44,7 @@ infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: SATRubix): Formula =
-  mat.diagonals.last().first()[bindex[START_SYMBOL]] and
-    mat.let { it valiantMatEq (it * it)
-//    .also { println(it.toFullMatrix().summarize(this)) }
-    }
+  mat.diagonals.last().first()[bindex[START_SYMBOL]] and mat.let { it valiantMatEq (it * it) }
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
@@ -138,11 +135,11 @@ fun CFG.constructRubix(
   FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
     // Superdiagonal
     if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
-      BVecVar("HV_${r}_${c}_${hashCode()}", nonterminals.size).also { stringVars.add(it) }
+      BVecVar(nonterminals.size) { i -> "HV_${r}_${c}_${bindex[i]}" } .also { stringVars.add(it) }
     // Strictly upper triangular matrix entries
     else if (r + 1 <= c) {
       val permanentBitVec = literalMatrix[r, c]
-      if (permanentBitVec.isNullOrEmpty()) BVecVar("HT_${r}_${c}_${hashCode()}", nonterminals.size)
+      if (permanentBitVec.isNullOrEmpty()) BVecVar(nonterminals.size, "HT_${r}_${c}")
       else permanentBitVec.map { if (it) T else F }
     }
     // Diagonal and subdiagonal
@@ -175,10 +172,12 @@ fun Σᐩ.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
+  variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
   allowNTs = allowNTs,
+  variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
   synthesizer = { a -> asCSL.synthesize(a) }

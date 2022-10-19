@@ -69,15 +69,13 @@ class SATValiantBenchmarks {
         (0..numSamples).map {
           measureTimeMillis {
             val bad = str.random().makeError(errors)
-            val (_, stubs) = cfg.parseWithStubs(bad)
-            val exclude = stubs.allIndicesInsideParseableRegions()
 
             bad.synthesizeIncrementally(
               cfg = cfg,
-              variations = listOf {
+              variations = listOf { a, b ->
                 bad.multiTokenSubstitutionsAndInsertions(
                   numberOfEdits = 3,
-                  exclusions = exclude,
+                  exclusions = b,
                 )
               }
             ).also { println(it.take(1).toList()) }

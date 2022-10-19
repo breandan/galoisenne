@@ -6,8 +6,9 @@ import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
+import ai.hypergraph.kaliningraph.types.Π2A
 
-typealias Reconstructor = MutableList<Pair<Σᐩ, Σᐩ>>
+typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 
 // Terminals which are blocked from synthesis
@@ -61,10 +62,11 @@ fun Σᐩ.synthesizeWithVariations(
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
   val tokens = stringToSolve.tokenizeByWhitespace()
-  if (80 < tokens.size) return sequenceOf() // Pass on long samples
+  if (80 < tokens.size) return sequenceOf<Σᐩ>()
+    .also { println("Too many tokens: $stringToSolve") }
   val recStubs = reconstructor.map { it.first }.toSet()
   val exclude =
-    tokens.indices.filter { i -> tokens[i].let { it in cfg_.blocked || it in recStubs } }.toSet()
+      tokens.indices.filter { i -> tokens[i].let { it in cfg_.blocked || it in recStubs } }.toSet()
 
   val allVariants: Sequence<Σᐩ> =
     variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }
@@ -75,16 +77,17 @@ fun Σᐩ.synthesizeWithVariations(
       val variantTokens = tokenize(it)
       cfg_.run { synthesizer(variantTokens) }
         .ifEmpty {
+          println("Empty query, searching for impossible bigrams with grammar: ${cfg_.pretty}")
           variantTokens.rememberImpossibleBigrams(cfg_, synthesizer)
           emptySequence()
         }
     }.distinct().map {
-      val rec = reconstructor.toList().toMutableList()
+      val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
         if ("ε" in it) ""
-        else if (it.isNonterminalStubIn(cfg_) && it == rec.first().first) rec.removeFirst().second
+        else if (it.isNonterminalStubIn(cfg_) && it == rec.firstOrNull()?.first) rec.removeFirst().second
         else it
-      }.joinToString(" ")
+      }.filter { it.isNotBlank() }.joinToString(" ")
     }
 }
 
@@ -175,11 +178,12 @@ fun List<Σᐩ>.rememberImpossibleBigrams(
   windowed(2).asSequence().filter {
     it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams + cfg.impossibleBigrams
   }.forEach {
-    val holes = List((size / 2).coerceIn(4..8)) { "_" }.joinToString(" ")
+    val holes = List((size / 2).coerceIn(8..16)) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = tokenize("$holes $substring $holes")
     if (cfg.synthesizer(tokens).firstOrNull() == null)
-      cfg.impossibleBigrams.getOrPut(tokens.size) { mutableSetOf() }.add(substring)
+      cfg.impossibleBigrams.getOrPut(tokens.size) { mutableSetOf() }
+          .add(substring.also { println("$it was determined to be impossible bigram!") })
     else cfg.possibleBigrams.add(substring)
   }
 }
