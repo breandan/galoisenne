@@ -16,7 +16,7 @@ class ECATest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testSimpleECA"
 */
   //@Test
-  fun testSimpleECA() { List(20) { true }.evolve(steps = 100) }
+  fun testSimpleECA() { BooleanArray(20) { true }.evolve(steps = 100) }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testTypeLevelECA4"
@@ -24,7 +24,7 @@ class ECATest {
   //@Test
   fun testTypeLevelECA4() {
     val init = BVec(T, F, F, F)
-    fun BVec.bits() = data.map { it == T }
+    fun BVec.bits() = data.map { it == T }.toBooleanArray()
     var i = 1; (init to init.bits())
     .also { (a, b) -> assertEquals(a.bits(), b) }
     .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
@@ -44,7 +44,7 @@ class ECATest {
   //@Test
   fun testTypeLevelECA10() {
     val init = BVec(T, F, F, F, T, F, F, F, F, F)
-    fun BVec.bits() = data.map { it == T }
+    fun BVec.bits() = data.map { it == T }.toBooleanArray()
     var i = 1; init
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)
       .also { assertEquals(it.bits(), init.bits().evolve(steps = i++)) }
@@ -62,10 +62,10 @@ class ECATest {
 //  //@Test
   fun testLooper() {
     (2..4).mapNotNull { j ->
-      val i = List(64) { i -> BVar("$i") }
+      val i = Array(64) { i -> BVar("$i") }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
       val sol = t.solve()
-      if(sol.isEmpty()) null else i.map { sol[it]!! }.also { println("Looper ($j): $it") } to j
+      if(sol.isEmpty()) null else i.map { sol[it]!! }.toBooleanArray().also { println("Looper ($j): $it") } to j
     }.forEach { (bits, j) ->
       assertNotEquals(bits, bits.evolve())
       assertEquals(bits, bits.evolve(steps = j))
@@ -79,9 +79,9 @@ class ECATest {
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     findAll(setOf(true, false), 128).first { orphan ->
-      val i = List(16) { i -> BVar("$i") }
+      val i = Array(16) { i -> BVar("$i") }
       val fs = orphan.map { ff.constant(it) }
-      val t = (i.evolve() matEq List(16) { fs[it] })
+      val t = (i.evolve() matEq Array(16) { fs[it] })
         try { t.solve(); false } catch (e: Exception ) { true}
     }.also { println(it) }
   }
@@ -92,13 +92,13 @@ class ECATest {
   //@Test
   fun testEndling() {
     for (j in 1..3) {
-      val i = List(128) { i -> BVar("$i") }
+      val i = Array(128) { i -> BVar("$i") }
       val t =
         (i.evolve(steps = j) matEq i.evolve(steps = j + 1)).negate() and
           (i.evolve(steps = j + 1) matEq i.evolve(steps = j + 2))
       try {
         val sol = t.solve()
-        val bits = i.map { sol[it]!! }.also { println("Endling ($j): $it") }
+        val bits = i.map { sol[it]!! }.toBooleanArray().also { println("Endling ($j): $it") }
         assertNotEquals(bits.evolve(steps = j), bits.evolve(steps = j + 1))
         assertEquals(bits.evolve(steps = j + 1), bits.evolve(steps = j + 2))
       } catch (e: Exception) {
@@ -107,17 +107,17 @@ class ECATest {
     }
   }
 
-  fun List<Boolean>.pretty(): String = joinToString("") { if (it) "1" else "0" }
+  fun BooleanArray.pretty(): String = joinToString("") { if (it) "1" else "0" }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testChimera"
 */
   //@Test
   fun testChimera() {
-    println(listOf(true, false, false, true).evolve().pretty())
-    val i = List(128) { i -> BVar("i$i") }
-    val j = List(128) { i -> BVar("j$i") }
-    val k = List(128) { i -> BVar("k$i") }
+    println(booleanArrayOf(true, false, false, true).evolve().pretty())
+    val i = Array(128) { i -> BVar("i$i") }
+    val j = Array(128) { i -> BVar("j$i") }
+    val k = Array(128) { i -> BVar("k$i") }
     val neqIJK = (i matEq j).negate() and (j matEq k).negate() and (k matEq i).negate()
 
     val (fi, fj, fk) =
@@ -129,7 +129,7 @@ class ECATest {
     val sol = cstr.solve()
 
     val (r, s, t) =
-      Triple(i.map { sol[it]!! }, j.map { sol[it]!! }, k.map { sol[it]!! })
+      Triple(i.map { sol[it]!! }.toBooleanArray(), j.map { sol[it]!! }.toBooleanArray(), k.map { sol[it]!! }.toBooleanArray())
 
     println("r:${r.pretty()}\ns:${s.pretty()}\nt:${t.pretty()}")
 
@@ -150,13 +150,13 @@ class ECATest {
 */
   //@Test
   fun testTargetPatternPredecessor() {
-    val pp = List(16) { i -> BVar("i$i") }
+    val pp = Array(16) { i -> BVar("i$i") }
     val p = "1100110111111011".toBitVector()
     val t = pp.evolve() matEq p
     try {
       val sol = t.solve()
-      val bits = pp.map { sol[it]!! }.also { println("Predecessor: $it") }
-      assertEquals(bits.evolve().map { ff.constant(it) }, p)
+      val bits = pp.map { sol[it]!! }.toBooleanArray().also { println("Predecessor: $it") }
+      assertEquals(bits.evolve().map { ff.constant(it) as Formula }.toTypedArray(), p)
     } catch (e: Exception) { println("No predecessor was found!") }
   }
 
@@ -165,13 +165,13 @@ class ECATest {
 */
   //@Test
   fun testECAPrint() {
-  val ts = "0100011111100010".map { it == '1' }
+  val ts = "0100011111100010".map { it == '1' }.toBooleanArray()
     ts.evolve(0).also { it.toRingBuffer() }
       .evolve().also { it.toRingBuffer() }
       .evolve().also { it.toRingBuffer() }
   }
 
-    fun List<Boolean>.toRingBuffer() {
+    fun BooleanArray.toRingBuffer() {
     val degs = 360.0 / size
     for (i in indices) {
       val start = 90.0 - i * degs

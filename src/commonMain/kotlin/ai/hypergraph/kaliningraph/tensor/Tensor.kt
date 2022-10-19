@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.tensor
 
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.jvm.JvmName
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -346,7 +345,7 @@ class UTMatrix<T> constructor(
     algebra = alg
   )
 
-  override val data: List<T> by lazy {
+    override val data: List<T> by lazy {
     (diagonals + listOf(emptyList())).flip()
       .map { List(diagonals.size + 1 - it.size) { algebra.nil } + it }.flatten()
   }

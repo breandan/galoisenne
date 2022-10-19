@@ -410,7 +410,7 @@ class SetValiantTest {
   @Test
   fun testUTMRepresentationEquivalence() {
     with("""P -> ( P ) | P P | ε""".parseCFG()) {
-      val str = tokenize("( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( )")
+      val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( )".tokenizeByWhitespace()
       val slowTransitionFP =  measureTimedValue {
         initialMatrix(str).seekFixpoint(succ={it + it * it})
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value

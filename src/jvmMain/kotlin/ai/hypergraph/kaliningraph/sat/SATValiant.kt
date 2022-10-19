@@ -8,15 +8,15 @@ import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
 
-typealias SATVector = List<Formula>
+typealias SATVector = Array<Formula>
 typealias SATRubix = UTMatrix<SATVector>
 
 val SATRubix.holeVariables by cache { diagonals.first().filter { !it.first().isConstantFormula } }
 
 @JvmName("joinFormula")
 fun CFG.join(left: SATVector, right: SATVector): SATVector =
-  if (left.isEmpty() || right.isEmpty()) emptyList()
-  else List(left.size) { i ->
+  if (left.isEmpty() || right.isEmpty()) arrayOf()
+  else Array(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
       .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
       .fold(F) { acc, satf -> acc or satf }
@@ -25,9 +25,9 @@ fun CFG.join(left: SATVector, right: SATVector): SATVector =
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
   if (isEmpty()) that else if (that.isEmpty()) this
-  else List(size) { i -> this[i] or that[i] }
+  else Array(size) { i -> this[i] or that[i] }
 
-fun List<Boolean>.toLitVec(): SATVector = map { BLit(it) }
+fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
 infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
@@ -59,7 +59,7 @@ fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula =
   }.reduce { acc, satf -> acc xor satf }
 
 // Returns list elements matching the intersection between set and on (indexed by on)
-fun <E, T> List<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
+fun <E, T> Array<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
   if (size != on.size) throw Exception("Size mismatch: List[$size] != Set[${on.size}]")
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
@@ -107,8 +107,8 @@ fun CSL.alignNonterminals(rubices: List<SATRubix>): Formula {
 
 val CFG.satAlgebra by cache {
   Ring.of(
-    nil = emptyList(),
-    one = List(nonterminals.size) { T },
+    nil = arrayOf(),
+    one = Array(nonterminals.size) { T },
     plus = { a, b -> a union b },
     times = { a, b -> join(a, b) }
   )
@@ -119,18 +119,18 @@ fun CFG.constructRubix(
   tokens: List<Σᐩ>,
   stringVars: MutableList<SATVector> = mutableListOf(),
   // Precompute permanent upper right triangular submatrices
-  literalUDM: UTMatrix<List<Boolean>?> = UTMatrix(
+  literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
     ts = tokens.map { it ->
       // Nulls on the superdiagonal will cast either a rectangular or pentagonal
       // shadow of bitvector variables on UTMatrix, which we represent as nulls
       if (it.isHoleTokenIn(cfg = this)) null
       // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }
+      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
     algebra = satLitAlgebra
   ).seekFixpoint(),
-  literalMatrix: FreeMatrix<List<Boolean>?> = literalUDM.toFullMatrix()
-    .map { if (it == null || toNTSet(it).isEmpty()) emptyList() else it }
+  literalMatrix: FreeMatrix<BooleanArray?> = literalUDM.toFullMatrix()
+    .map { if (it == null || toNTSet(it).isEmpty()) booleanArrayOf() else it }
 ): SATRubix =
   FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
     // Superdiagonal
@@ -139,11 +139,11 @@ fun CFG.constructRubix(
     // Strictly upper triangular matrix entries
     else if (r + 1 <= c) {
       val permanentBitVec = literalMatrix[r, c]
-      if (permanentBitVec.isNullOrEmpty()) BVecVar(nonterminals.size, "HT_${r}_${c}")
-      else permanentBitVec.map { if (it) T else F }
+      if (permanentBitVec == null || permanentBitVec.isEmpty()) BVecVar(nonterminals.size, "HT_${r}_${c}")
+      else permanentBitVec.map { if (it) T else F }.toTypedArray()
     }
     // Diagonal and subdiagonal
-    else emptyList()
+    else arrayOf()
   }.toUTMatrix()
 
 fun CFG.generateConstraints(
@@ -219,7 +219,7 @@ fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
       cfgs.map { it.handleSingleton(tokens[0]) }.intersect().asSequence()
     else sequence {
       val (parsingConstraints, rubix) = generateConstraints(tokens)
-      val holeVars = rubix.holeVariables.flatten().toSet()
+      val holeVars = rubix.holeVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
   // Sometimes simplification can take longer or even switch SAT->UNSAT?
   // println("Original: ${parsingConstraints.numberOfNodes()}")

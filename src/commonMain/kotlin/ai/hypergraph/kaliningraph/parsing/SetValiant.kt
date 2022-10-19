@@ -23,10 +23,10 @@ fun CFG.parse(s: Σᐩ): Tree? =
  */
 
 fun CFG.isValid(str: Σᐩ): Boolean =
-  tokenize(str).let { START_SYMBOL in parse(it).map { it.root } }
+  str.tokenizeByWhitespace().let { START_SYMBOL in parse(it).map { it.root } }
 
-fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(tokenize(str))[0].last()
-fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(tokenize(str))
+fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
+fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
 
 fun CFG.parse(
   tokens: List<Σᐩ>,
@@ -42,7 +42,7 @@ fun CFG.solveFixedpoint(
 // Returns first valid whole-parse tree if the string is syntactically valid, and if not,
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
 fun CFG.parseWithStubs(s: Σᐩ): Pair<Forest, List<Tree>> =
-  solveFixedpoint(tokenize(s)).toUTMatrix().diagonals.asReversed().let {
+  solveFixedpoint(s.tokenizeByWhitespace()).toUTMatrix().diagonals.asReversed().let {
     it.first()[0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
       it.flatten().flatten().map { it.denormalize() }
   }
@@ -82,38 +82,38 @@ fun CFG.treeJoin(left: Forest, right: Forest): Forest =
 fun CFG.setJoin(left: Set<Σᐩ>, right: Set<Σᐩ>): Set<Σᐩ> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
-fun CFG.toBitVec(nts: Set<Σᐩ>): List<Boolean> =
-  if (1 < nts.size) nonterminals.map { it in nts }
-  else List(nonterminals.size) { false }.toMutableList()
+fun CFG.toBitVec(nts: Set<Σᐩ>): BooleanArray =
+  if (1 < nts.size) nonterminals.map { it in nts }.toBooleanArray()
+  else BooleanArray(nonterminals.size) { false }
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
 @JvmName("joinBitVector")
-fun CFG.join(left: List<Boolean>, right: List<Boolean>): List<Boolean> =
-  if (left.isEmpty() || right.isEmpty()) emptyList()
-  else List(left.size) { i ->
+fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray =
+  if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
+  else BooleanArray(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
       .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
       .fold(false) { acc, satf -> acc or satf }
   }
 
-fun CFG.maybeJoin(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+fun CFG.maybeJoin(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   if (left == null || right == null) null else join(left, right)
 
-fun maybeUnion(left: List<Boolean>?, right: List<Boolean>?): List<Boolean>? =
+fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   if (left == null || right == null) { left ?: right }
   else if (left.isEmpty() && right.isNotEmpty()) right
   else if (left.isNotEmpty() && right.isEmpty()) left
-  else left.zip(right) { l, r -> l or r }
+  else left.zip(right) { l, r -> l or r }.toBooleanArray()
 
-fun CFG.toNTSet(nts: List<Boolean>): Set<Σᐩ> =
-  nts.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
+fun CFG.toNTSet(nts: BooleanArray): Set<Σᐩ> =
+  nts.mapIndexed { i, it -> if (it) bindex[i] else null }.filterNotNull().toSet()
 
-fun List<Boolean>.decodeWith(cfg: CFG): Set<Σᐩ> =
-  mapIndexedNotNull { i, it -> if (it) cfg.bindex[i] else null }.toSet()
+fun BooleanArray.decodeWith(cfg: CFG): Set<Σᐩ> =
+  mapIndexed { i, it -> if (it) cfg.bindex[i] else null }.filterNotNull().toSet()
 
-val CFG.satLitAlgebra: Ring<List<Boolean>?> by cache {
+val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
   Ring.of(
-    nil = List(nonterminals.size) { false },
+    nil = BooleanArray(nonterminals.size) { false },
     plus = { x, y -> maybeUnion(x, y) },
     times = { x, y -> maybeJoin(x, y) }
   )
@@ -135,8 +135,6 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
       Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
     }.toSet()
   }
-
-fun tokenize(str: Σᐩ): List<Σᐩ> = str.tokenizeByWhitespace()
 
 fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
   UTMatrix(

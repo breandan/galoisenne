@@ -30,7 +30,7 @@ class SATValiantTest {
      */
     pwrsetSquared.forEach { (a, b) ->
       with(cfg) {
-        assertEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
+        assertContentEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
         assertEquals(setJoin(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
       }
     }
@@ -121,7 +121,7 @@ class SATValiantTest {
         println("BV join:" + join(toBitVec(a), toBitVec(b)))
         println("Set join:" + toNTSet(join(toBitVec(a), toBitVec(b))))
 
-        assertEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
+        assertContentEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
         assertEquals(setJoin(a, b), toNTSet(join(toBitVec(a), toBitVec(b))))
       }
     }
@@ -137,29 +137,29 @@ class SATValiantTest {
         val trueJoin = cfg.setJoin(a, b)
         println("True join: $trueJoin")
 
-        val litA: List<Formula> = cfg.toBitVec(a).toLitVec()
-        val satB: List<Formula> = List(cfg.toBitVec(b).size) { i -> BVar("BV$i") }
-        val litC: List<Formula> = cfg.toBitVec(cfg.setJoin(a, b)).toLitVec()
+        val litA: SATVector = cfg.toBitVec(a).toLitVec()
+        val satB: SATVector = BVecVar(cfg.toBitVec(b).size) { i -> "BV$i" }
+        val litC: SATVector = cfg.toBitVec(cfg.setJoin(a, b)).toLitVec()
 
         println("\nSolving for B:")
         val solution = (cfg.join(litA, satB) vecEq litC).solve()
         println(solution)
-        println("B=" + satB.map { solution[it] ?: false }.decodeWith(cfg))
+        println("B=" + satB.map { solution[it] ?: false }.toBooleanArray().decodeWith(cfg))
 
-        val satA: List<Formula> = List(cfg.toBitVec(b).size) { i -> BVar("AV$i") }
-        val litB: List<Formula> = cfg.toBitVec(b).toLitVec()
+        val satA: SATVector = BVecVar(cfg.toBitVec(b).size) { i -> "AV$i" }
+        val litB: SATVector = cfg.toBitVec(b).toLitVec()
 
         println("\nSolving for A:")
         val solution1 = (cfg.join(satA, litB) vecEq litC).solve()
         println(solution1)
-        println("A=" + satA.map { solution1[it] ?: false }.decodeWith(cfg))
+        println("A=" + satA.map { solution1[it] ?: false }.toBooleanArray().decodeWith(cfg))
 
-        val satC: List<Formula> = List(cfg.toBitVec(b).size) { i -> BVar("CV$i") }
+        val satC: SATVector = BVecVar(cfg.toBitVec(b).size) { i -> "CV$i" }
 
         println("\nSolving for C:")
         val solution2 = (cfg.join(litA, litB) vecEq satC).solve()
         println(solution2)
-        val bitVecJoin = satC.map { solution2[it]!! }.decodeWith(cfg)
+        val bitVecJoin = satC.map { solution2[it]!! }.toBooleanArray().decodeWith(cfg)
         println("C=$bitVecJoin")
 
         assertEquals(trueJoin, bitVecJoin)
@@ -322,8 +322,7 @@ class SATValiantTest {
       .synthesizeIncrementally(cfg, allowNTs = false)
       .take(100).toList().also { assert(it.isNotEmpty()) }
       .forEach { decodedString ->
-        val another = decodedString
-          .tokenizeByWhitespace()
+        val another = decodedString.tokenizeByWhitespace()
           .joinToString(" ") { if (Math.random() < 0.7) "_" else it }
           .synthesizeIncrementally(cfg, allowNTs = false)
           .firstOrNull() ?: return@forEach
@@ -393,7 +392,7 @@ class SATValiantTest {
       r.map { it.replace(START_SYMBOL, "S") }
     }.toSet()
 
-    val t = cfg.initialMatrix(tokenize("3 + 1 = 4"))
+    val t = cfg.initialMatrix("3 + 1 = 4".tokenizeByWhitespace())
     assertNotEquals(t * (t * t), (t * t) * t)
   }
 
@@ -408,10 +407,10 @@ class SATValiantTest {
           S -> X | Y | Z | F
 
           S -> S <= S
-      """.parseCFG().also { println(it.prettyPrint()) }
+      """.parseCFG().noNonterminalStubs.also { println(it.prettyPrint()) }
 
       assertNotNull(cfg.parse("Z <= Y"))
-      "Z <= _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
+      "Z <= _ _ _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
     }
 
 /*

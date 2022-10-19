@@ -9,7 +9,7 @@ import ai.hypergraph.kaliningraph.types.*
 import org.logicng.formulas.Formula
 
 val ecaSatAlgebra = kernelAlgebra<Formula>()
-fun String.toBitVector(): SATVector = map { if (it == '1') T else F }
+fun String.toBitVector(): SATVector = map { if (it == '1') T else F }.toTypedArray()
 private fun initializeSATECA(len: Int, cc: (Int) -> Formula) =
   FreeMatrix(ecaSatAlgebra, len, 1) { r, c -> PKernel(null, cc(r), null) }
 
@@ -21,4 +21,4 @@ fun SATVector.evolve(
   rule: FKernel<Formula>.() -> Formula = { (π2 and π1.negate()) or (π2 xor π3) },
 ): SATVector =
   initializeSATECA(size) { this[it] }
-    .evolve(steps = steps, rule = rule).data.map { it!!.second!! }
+    .evolve(steps = steps, rule = rule).data.map { it!!.second!! }.toTypedArray()

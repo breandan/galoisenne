@@ -26,8 +26,8 @@ fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
       it == null -> "?"
       it.toString().length < 5 -> ""
 //      else -> "C"
-      cfg.toNTSet(it).isEmpty() -> it.distinct()
-      else -> "${cfg.toNTSet(it)}".replace("START", "S")
+      cfg.toNTSet(it.toBooleanArray()).isEmpty() -> it.distinct()
+      else -> "${cfg.toNTSet(it.toBooleanArray())}".replace("START", "S")
     }
   }.toString()
 
@@ -37,7 +37,7 @@ fun FreeMatrix<SATVector>.summarize(cfg: CFG): String =
     when {
       it.isEmpty() -> ""
       it.all { it is Variable } -> "V[${it.size}]"
-      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T })}]"
+      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T }.toBooleanArray())}]"
 //      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
       it.any { it is Variable } -> "M"
       else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"

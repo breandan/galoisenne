@@ -31,9 +31,9 @@ fun <A> KernelMatrix<A>.genMat(algebra: Ring<PKernel<A>> = kernelAlgebra<A>()): 
     else null to null to null
   }
 
-fun List<Boolean>.toECA() = initializeECA(size) { this[it] }
-fun List<Boolean>.evolve(steps: Int = 1): List<Boolean> =
-  toECA().evolve(steps = steps, rule = { (π2 && !π1) || (π2 xor π3) }).data.map { it!!.second!! }
+fun BooleanArray.toECA() = initializeECA(size) { this[it] }
+fun BooleanArray.evolve(steps: Int = 1): BooleanArray =
+  toECA().evolve(steps = steps, rule = { (π2 && !π1) || (π2 xor π3) }).data.map { it!!.second!! }.toBooleanArray()
 
 tailrec fun <A> KernelMatrix<A>.evolve(
   rule: FKernel<A>.() -> A,

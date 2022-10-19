@@ -9,6 +9,7 @@ import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
+// Takes a string and a set of invariant indices and returns mutated strings
 typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 
 // Terminals which are blocked from synthesis
@@ -34,8 +35,7 @@ fun repair(
       synthesizer = synthesizer,
       allowNTs = false,
       variations = variations,
-    ).take(maxResults).toList().sortedWith(tokens.ranker())
-    .map { it.uncoarsen(prompt) }
+  ).take(maxResults).toList().sortedWith(tokens.ranker()).map { it.uncoarsen(prompt) }
 
   return repairs
 }
@@ -70,17 +70,16 @@ fun Σᐩ.synthesizeWithVariations(
 
   val allVariants: Sequence<Σᐩ> =
     variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }
-      .distinct().rejectTemplatesContainingImpossibleBigrams(cfg_)
+      .distinct().filter { !cfg_.containsImpossibleBigram(it) }
 
   return allVariants.map { updateProgress(it); it }
     .flatMap {
-      val variantTokens = tokenize(it)
-      cfg_.run { synthesizer(variantTokens) }
-        .ifEmpty {
-          println("Empty query, searching for impossible bigrams with grammar: ${cfg_.pretty}")
-          variantTokens.rememberImpossibleBigrams(cfg_, synthesizer)
-          emptySequence()
-        }
+      val variantTokens = it.tokenizeByWhitespace()
+      cfg_.run { synthesizer(variantTokens) }.ifEmpty {
+        println("Empty query, searching for impossible bigrams with grammar: ${cfg_.pretty}")
+        cfg_.rememberImpossibleBigrams(variantTokens, synthesizer)
+        emptySequence()
+      }
     }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
@@ -106,10 +105,10 @@ fun CFG.prune(
   minimumWidth: Int = 4,
   // Maps nonterminal stubs from pruned branches back to original string
   reconstructor: Reconstructor =
-    tokenize(string).filter { it.isNonterminalStubIn(this) }
+    string.tokenizeByWhitespace().filter { it.isNonterminalStubIn(this) }
       .map { it to it }.toMutableList()
 ): Pair<Σᐩ, Reconstructor> {
-  val tokens = tokenize(string)
+  val tokens = string.tokenizeByWhitespace()
   val stubs = parseWithStubs(string).second
     .fold(setOf<Tree>()) { acc, t ->
       if (acc.any { t.span isStrictSubsetOf it.span }) acc else acc + t
@@ -125,7 +124,7 @@ fun CFG.prune(
             spans.filter { it != tree.span }
               .none { tree.span.intersect(it).isNotEmpty() }
         }
-      }//.onEach { println(it.prettyPrint()) }
+      }
 
   var totalPruned = 0
   var previousNonterminals = 0
@@ -149,44 +148,33 @@ fun CFG.prune(
 // https://nokyotsu.com/me/papers/cic01.pdf
 // https://cs.stackexchange.com/questions/154130/minimal-length-strings-which-are-substrings-of-no-string-in-a-given-cfl
 // These strings must never appear in any length-k string in the language defined by this grammar
-val CFG.impossibleBigrams by cache { mutableMapOf<Int, MutableSet<Σᐩ>>() }
+val CFG.impossibleBigrams by cache { mutableSetOf<Σᐩ>() }
 // Underapproximates impossible substrings for a sketch template of a given length by tracking
-// the impossible substrings that cannot fit inside an equal- or longer-length string, i.e.,
-// if a string does not fit in Σ^100, then it definitely will not fit in Σ^k<100. In the worst case
+// the impossible substrings that cannot fit inside an equal- or longer-length string, i.e., if
+// a string does not fit in Σ^100, then it definitely will not fit in Σ^k<100. In the worst case
 // it will be a false negative and we do unnecessary work trying to solve an impossible template.
-fun Map<Int, Set<Σᐩ>>.unableToFitInside(k: Int): Set<Σᐩ> =
-  values.flatten().toSet() // May not work for ngrams but for bigrams it should be fine
-//  keys.filter { k <= it }.flatMap { this[it] ?: setOf() }.toSet()
 
 // These strings all appear in an arbitrary-length string in the language defined by this grammar
 val CFG.possibleBigrams by cache { mutableSetOf<Σᐩ>() }
 
-fun Sequence<Σᐩ>.rejectTemplatesContainingImpossibleBigrams(cfg: CFG): Sequence<Σᐩ> =
-  filter { sketch ->
-    val numTokens = sketch.count { it == ' ' }
-    cfg.impossibleBigrams.unableToFitInside(numTokens).none { iss ->
-      (iss in sketch).also {
-        if (it) println("$sketch rejected because it contains an impossible bigram: $iss")
-      }
+fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
+  str.windowed(2).any { bigram ->
+    (bigram in impossibleBigrams).also {
+      if (it) println("$it rejected because it contains an impossible bigram: $bigram")
     }
   }
 
-fun List<Σᐩ>.rememberImpossibleBigrams(
-  cfg: CFG,
-  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
-) {
-  windowed(2).asSequence().filter {
-    it.all { it in cfg.terminals } && it.joinToString(" ") !in cfg.possibleBigrams + cfg.impossibleBigrams
+fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>) =
+  str.windowed(2).asSequence().filter {
+    it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
     val holes = List((size / 2).coerceIn(8..16)) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
-    val tokens = tokenize("$holes $substring $holes")
-    if (cfg.synthesizer(tokens).firstOrNull() == null)
-      cfg.impossibleBigrams.getOrPut(tokens.size) { mutableSetOf() }
-          .add(substring.also { println("$it was determined to be impossible bigram!") })
-    else cfg.possibleBigrams.add(substring)
+    val tokens = "$holes $substring $holes".tokenizeByWhitespace()
+    if (synthesizer(tokens).firstOrNull() == null)
+      impossibleBigrams.add(substring.also { println("$it was determined to be an impossible bigram!") })
+    else possibleBigrams.add(substring)
   }
-}
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
 //       we should work out a principled way to localize holes using the language quotient.
@@ -254,8 +242,7 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ) -> Σᐩ): Σᐩ =
   mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ").trim()
 
-fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =
-  split(Regex("\\s+")).filter { it.isNotBlank() }
+fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every
