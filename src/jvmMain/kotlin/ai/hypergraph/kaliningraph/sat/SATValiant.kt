@@ -149,16 +149,38 @@ fun CFG.constructRubix(
     else emptyList()
   }.toUTMatrix()
 
+fun CFG.generateConstraints(
+  tokens: List<Σᐩ>,
+  rubix: SATRubix = constructRubix(tokens)
+): Pair<Formula, SATRubix> =
+  isInGrammar(rubix) and
+    uniquenessConstraints(rubix) and
+    reachabilityConstraints(tokens, rubix) to rubix
+
+fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+  ff.clear()
+  println("Synthesizing: ${tokens.joinToString(" ")}")
+  val timeToFormConstraints = System.currentTimeMillis()
+  val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
+  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
+
+  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+  println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
+
+  return parsingConstraints to q.first()
+}
+
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
-  variations: List<Σᐩ.() -> Sequence<Σᐩ>> = listOf { sequenceOf() },
   updateProgress: (Σᐩ) -> Unit = {},
-  skipWhen: (List<Σᐩ>) -> Boolean = { false }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
-  cfg, allowNTs, enablePruning, variations, updateProgress, skipWhen,
+  cfg = cfg,
+  allowNTs = allowNTs,
+  enablePruning = enablePruning,
+  updateProgress = updateProgress,
   synthesizer = { a -> asCSL.synthesize(a) }
 )
 
@@ -219,10 +241,12 @@ fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
           }.toMutableList()
 
         val completion: Σᐩ =
-          tokens.map {
+          tokens.joinToString(" ") {
             if (it == "_") fillers.removeAt(0)!!
-            else if (it.isNonterminalStubIn(this@synthesize)) { fillers.removeAt(0)!! } else it
-          }.filterNot { "ε" in it }.joinToString(" ")
+            else if (it.isNonterminalStubIn(this@synthesize)) {
+              fillers.removeAt(0)!!
+            } else it
+          }
 
         if (Thread.currentThread().isInterrupted) throw InterruptedException()
         if (completion.trim().isNotBlank()) yield(completion)
@@ -243,26 +267,4 @@ fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
         break
       }
     }
-}
-
-fun CFG.generateConstraints(
-  tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens)
-): Pair<Formula, SATRubix> =
-  isInGrammar(rubix) and
-    uniquenessConstraints(rubix) and
-    reachabilityConstraints(tokens, rubix) to rubix
-
-fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
-  ff.clear()
-  println("Synthesizing: ${tokens.joinToString(" ")}")
-  val timeToFormConstraints = System.currentTimeMillis()
-  val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
-  // TODO: need to constrain superdiagonals of all CFG matrices to use the same variables
-  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
-
-  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-  println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
-
-  return parsingConstraints to q.first()
 }

@@ -8,7 +8,7 @@ import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 
 typealias Reconstructor = MutableList<Pair<Σᐩ, Σᐩ>>
-typealias Mutator = (Σᐩ) -> Sequence<Σᐩ>
+typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 
 // Terminals which are blocked from synthesis
 val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
@@ -19,39 +19,22 @@ fun repair(
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
-  blockers: Set<Σᐩ> = setOf()
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   val tokens = coarsened.tokenizeByWhitespace()
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
-  if (80 < tokensWithHoles.size) return listOf() // Pass on long samples
-
-  val (parseForest, stubs) = cfg.parseWithStubs(coarsened)
-
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
-  val exclude = stubs.allIndicesInsideParseableRegions() +
-    tokensWithHoles.indices.filter { i -> tokensWithHoles[i] in blockers }
-
-  val maxResults = 10
-
   val variations: List<Mutator> =
-    listOf({
-      it.multiTokenSubstitutionsAndInsertions(
-        numberOfEdits = 3,
-        exclusions = exclude,
-        fishyLocations = listOf(tokens.size)
-      )
-    })
-
-  val repairs: List<Σᐩ> =
-    sanitized.synthesizeWithVariations(
+    listOf({ a, b -> a.multiTokenSubstitutionsAndInsertions(numberOfEdits = 3, exclusions = b)})
+  val maxResults = 10
+  val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
       cfg = cfg,
-      variations = variations,
       synthesizer = synthesizer,
-      allowNTs = false
-//      enablePruning = true
-    ).take(maxResults).toList().sortedWith(tokens.ranker()).map { it.uncoarsen(prompt) }
+      allowNTs = false,
+      variations = variations,
+    ).take(maxResults).toList().sortedWith(tokens.ranker())
+    .map { it.uncoarsen(prompt) }
 
   return repairs
 }
@@ -67,31 +50,42 @@ fun Σᐩ.synthesizeWithVariations(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
-  variations: List<Mutator> = listOf({ sequenceOf() }),
+  variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
-  skipWhen: (List<Σᐩ>) -> Boolean = { false },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
   val (stringToSolve, reconstructor) =
-    if (enablePruning) cfg.prune(this) else this to mutableListOf()
+    if (enablePruning) cfg_.prune(this) else this to mutableListOf()
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
+  val tokens = stringToSolve.tokenizeByWhitespace()
+  if (80 < tokens.size) return sequenceOf() // Pass on long samples
+  val recStubs = reconstructor.map { it.first }.toSet()
+  val exclude =
+    tokens.indices.filter { i -> tokens[i].let { it in cfg_.blocked || it in recStubs } }.toSet()
+
   val allVariants: Sequence<Σᐩ> =
-    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(this@synthesizeWithVariations) }
+    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }
       .distinct().rejectTemplatesContainingImpossibleBigrams(cfg_)
 
   return allVariants.map { updateProgress(it); it }
     .flatMap {
       val variantTokens = tokenize(it)
-      if (skipWhen(variantTokens)) emptySequence()
-      else cfg_.run { synthesizer(variantTokens) }
+      cfg_.run { synthesizer(variantTokens) }
         .ifEmpty {
           variantTokens.rememberImpossibleBigrams(cfg_, synthesizer)
           emptySequence()
         }
-    }.distinct()
+    }.distinct().map {
+      val rec = reconstructor.toList().toMutableList()
+      it.tokenizeByWhitespace().mapIndexed { i, it ->
+        if ("ε" in it) ""
+        else if (it.isNonterminalStubIn(cfg_) && it == rec.first().first) rec.removeFirst().second
+        else it
+      }.joinToString(" ")
+    }
 }
 
 /**
@@ -129,8 +123,6 @@ fun CFG.prune(
               .none { tree.span.intersect(it).isNotEmpty() }
         }
       }//.onEach { println(it.prettyPrint()) }
-
-  if (treesToBeChopped.isEmpty()) string to reconstructor
 
   var totalPruned = 0
   var previousNonterminals = 0
