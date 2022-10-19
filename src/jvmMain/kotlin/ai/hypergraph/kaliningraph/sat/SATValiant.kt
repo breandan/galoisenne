@@ -44,19 +44,22 @@ infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: SATRubix): Formula =
-  mat.diagonals.last().first()[bindex[START_SYMBOL]] and mat.let { it valiantMatEq (it * it) }
+    (if (possibleDerivations.size == 1) mat.diagonals.last().first()[bindex[START_SYMBOL]]
+     else possibleDerivations.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] }) and
+    mat.let { it valiantMatEq (it * it) }
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
 // the bitvector cannot have the configuration [A=1 B=1 C=0 D=1], it must
 // be either [A=1 B=1 C=0 D=0] or [A=0 B=0 C=1 D=1].
-fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula =
+fun CFG.mustBeOnlyOneTerminal(bitvec: SATVector): Formula {
+  val ntbv = bitvec.projectOnto(nonterminals)
   // terminal                 possible nonterminals it can represent
-  (terminals - blocked).map { bitvec.projectOnto(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
-    val (insiders, outsiders) =
-      bitvec.projectOnto(nonterminals).partition { it in possibleNTs }
+  return (terminals - blocked).map { bitvec.projectOnto(bimap[listOf(it)], nonterminals) }.map { possibleNTs ->
+    val (insiders, outsiders) = ntbv.partition { it in possibleNTs }
     (insiders + outsiders.map { it.negate() }).reduce { acc, satf -> acc and satf }
   }.reduce { acc, satf -> acc xor satf }
+}
 
 // Returns list elements matching the intersection between set and on (indexed by on)
 fun <E, T> Array<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
@@ -67,7 +70,6 @@ fun <E, T> Array<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
 fun CFG.uniquenessConstraints(rubix: SATRubix): Formula =
   rubix.holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
-//    .also { println("Uniqueness constraints: ${it.numberOfAtoms()}") }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
 fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =

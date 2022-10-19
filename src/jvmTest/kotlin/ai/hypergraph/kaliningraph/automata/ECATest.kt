@@ -22,7 +22,7 @@ class ECATest {
   fun testTypeLevelECA4() {
     val init = BVec(T, F, F, F)
     fun BVec.bits() = data.map { it == T }.toBooleanArray()
-    var i = 1; (init to init.bits())
+    (init to init.bits())
     .also { (a, b) -> assertContentEquals(a.bits(), b) }
     .let { it.first.eca(::r, ::r, ::r, ::r) to it.second.evolve() }
     .also { (a, b) -> assertContentEquals(a.bits(), b) }
@@ -62,7 +62,7 @@ class ECATest {
       val i = BVecVar(64) { i -> "$i" }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
       val sol = t.solve()
-      if(sol.isEmpty()) null else i.map { sol[it]!! }.toBooleanArray()
+      if (sol.isEmpty()) null else i.map { sol[it]!! }.toBooleanArray()
           .also { println("Looper ($j): ${it.pretty()}") } to j
     }.forEach { (bits, j) ->
       assertNotEquals(bits, bits.evolve())
@@ -81,7 +81,7 @@ class ECATest {
       val i = BVecVar(size) { i -> "$i" }
       val t = i.evolve() matEq BVecLit(orphan)
       t.solve().isEmpty()
-    }.also { println(it.toBooleanArray().pretty()) }
+    }.toBooleanArray().also { println(it.pretty()) }
   }
 
 /*
@@ -126,7 +126,11 @@ class ECATest {
     val sol = cstr.solve()
 
     val (r, s, t) =
-      Triple(i.map { sol[it]!! }.toBooleanArray(), j.map { sol[it]!! }.toBooleanArray(), k.map { sol[it]!! }.toBooleanArray())
+      Triple(
+        i.map { sol[it]!! }.toBooleanArray(),
+        j.map { sol[it]!! }.toBooleanArray(),
+        k.map { sol[it]!! }.toBooleanArray()
+      )
 
     println("r:${r.pretty()}\ns:${s.pretty()}\nt:${t.pretty()}")
 

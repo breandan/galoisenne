@@ -40,6 +40,7 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.noNonterminalStubs: CFG by cache {
+  println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
     .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
     .also { it.blocked.addAll(blocked) }
@@ -179,7 +180,7 @@ private fun CFG.expandOr(): CFG =
 // so that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonProduction(): CFG =
   terminalUnitProductions.filterNot { "ε" in it.pretty() }.map { it.LHS }.toSet()
-    .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) } +
+    .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) + (it to listOf("ε+", it))} +
     "ε+".let { (it to listOf(it, it)) } + ("ε+" to listOf("ε"))
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1

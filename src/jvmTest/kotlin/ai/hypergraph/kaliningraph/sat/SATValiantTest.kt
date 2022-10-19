@@ -402,15 +402,21 @@ class SATValiantTest {
     @Test
     fun whyIsItEmpty() {
       val cfg = """
-          S -> S + S | S * S | S - S | S / S | ( S ) | S = S
-          S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-          S -> X | Y | Z | F
+          START -> D T P
+P -> A | ( P ) | ( ) | { P } | [ P ] | < P > | P P
+D -> public | static | void | D D
+A -> w | . | ; | A , A | A A | =
+W -> w
+T -> W | W < T >
+PT -> byte | short | int | long | float | double | char | String | null | boolean
+KW -> class | null | true | false | void | for | if
+KW -> new | return | private | String | this | public | import
+      """.parseCFG().also { println(it.prettyPrint()) }
 
-          S -> S <= S
-      """.parseCFG().noNonterminalStubs.also { println(it.prettyPrint()) }
+//      println(cfg.parse("Z <= X + Y")?.prettyPrint())
 
-      assertNotNull(cfg.parse("Z <= Y"))
-      "Z <= _ _ _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
+//      assertNotNull(cfg.parse("Z <= Y"))
+      "_ _ _ _ _ _ _ _ public static _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
     }
 
 /*

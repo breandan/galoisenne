@@ -76,7 +76,7 @@ fun Σᐩ.synthesizeWithVariations(
     .flatMap {
       val variantTokens = it.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }.ifEmpty {
-        println("Empty query, searching for impossible bigrams with grammar: ${cfg_.pretty}")
+        println("Empty query, searching for impossible bigrams!")
         cfg_.rememberImpossibleBigrams(variantTokens, synthesizer)
         emptySequence()
       }
@@ -164,16 +164,19 @@ fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
     }
   }
 
+val CFG.possibleDerivations by cache { mutableSetOf(START_SYMBOL) }
 fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>) =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
-    val holes = List((size / 2).coerceIn(8..16)) { "_" }.joinToString(" ")
+    val holes = List(8) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = "$holes $substring $holes".tokenizeByWhitespace()
+    possibleDerivations.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
     if (synthesizer(tokens).firstOrNull() == null)
       impossibleBigrams.add(substring.also { println("$it was determined to be an impossible bigram!") })
     else possibleBigrams.add(substring)
+    possibleDerivations.removeAll { it != START_SYMBOL }
   }
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
