@@ -38,7 +38,7 @@ fun repair(
   val variations: List<Mutator> =
     listOf({
       it.multiTokenSubstitutionsAndInsertions(
-        numberOfEdits = 2,
+        numberOfEdits = 3,
         exclusions = exclude,
         fishyLocations = listOf(tokens.size)
       )
