@@ -33,14 +33,12 @@ fun repair(
     listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
   val maxResults = 10
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
-      cfg = cfg,
-      synthesizer = synthesizer,
-      allowNTs = false,
-      variations = variations,
+    cfg = cfg,
+    synthesizer = synthesizer,
+    allowNTs = false,
+    variations = variations,
   ).take(maxResults).toList().sortedWith(tokens.ranker())
-    .also { println("Found ${it.size} repairs!\n" +
-      it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")
-    )}
+    .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
     .map { it.uncoarsen(prompt) }
 
   return repairs
@@ -227,7 +225,7 @@ fun Σᐩ.randomSubstitutions(
   exclusions: Set<Int> = setOf(),
 ): Sequence<Σᐩ> =
   (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
-    .let { sortedIndices -> setOf(numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+    .let { sortedIndices -> setOf(1, numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
     .map { idxs -> padded.substitute(idxs) { "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(
