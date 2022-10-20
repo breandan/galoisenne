@@ -44,6 +44,7 @@ fun repair(
   return repairs
 }
 
+// Use distance from the matching token as a heuristic (downrank edits far away from source)?
 fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
   compareBy(tokenwiseEdits(this)).thenBy { it.length }
 
