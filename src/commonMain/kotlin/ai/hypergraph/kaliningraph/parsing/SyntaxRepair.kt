@@ -24,19 +24,24 @@ fun repair(
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
+  if (cfg.parse(coarsened) != null) return emptyList()
   val tokens = coarsened.tokenizeByWhitespace()
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val variations: List<Mutator> =
-    listOf({ a, b -> a.multiTokenSubstitutionsAndInsertions(numberOfEdits = 3, exclusions = b)})
+    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
   val maxResults = 10
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
       cfg = cfg,
       synthesizer = synthesizer,
       allowNTs = false,
       variations = variations,
-  ).take(maxResults).toList().sortedWith(tokens.ranker()).map { it.uncoarsen(prompt) }
+  ).take(maxResults).toList().sortedWith(tokens.ranker())
+    .also { println("Found ${it.size} repairs!\n" +
+      it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")
+    )}
+    .map { it.uncoarsen(prompt) }
 
   return repairs
 }
@@ -55,7 +60,7 @@ fun Σᐩ.synthesizeWithVariations(
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
-  secondsBeforeTimeout: Int = 20,
+  secondsBeforeTimeout: Int = 90,
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
@@ -78,7 +83,7 @@ fun Σᐩ.synthesizeWithVariations(
       .distinct().filter { !cfg_.containsImpossibleBigram(it) }
 
   return allVariants
-    .takeWhile { t.elapsedNow().inWholeSeconds < 90 }
+    .takeWhile { t.elapsedNow().inWholeSeconds < secondsBeforeTimeout }
     .map { updateProgress(it); it }
     .flatMap {
       val variantTokens = it.tokenizeByWhitespace()
@@ -214,6 +219,16 @@ fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
 
 fun Σᐩ.singleTokenSubtitutionsAndInsertions(): Sequence<Σᐩ> =
   multiTokenSubstitutionsAndInsertions(numberOfEdits = 1)
+
+fun Σᐩ.randomSubstitutions(
+  tokens: List<Σᐩ> = tokenizeByWhitespace(),
+  padded: List<Σᐩ> = listOf("", *tokens.toTypedArray(), ""),
+  numberOfEdits: Int = minOf(2, tokens.size),
+  exclusions: Set<Int> = setOf(),
+): Sequence<Σᐩ> =
+  (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
+    .let { sortedIndices -> setOf(numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+    .map { idxs -> padded.substitute(idxs) { "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
