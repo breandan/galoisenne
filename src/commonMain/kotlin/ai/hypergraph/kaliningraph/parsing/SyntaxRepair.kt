@@ -7,6 +7,7 @@ import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
+import kotlin.time.*
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 // Takes a string and a set of invariant indices and returns mutated strings
@@ -47,15 +48,19 @@ private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
 // Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
+@OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariations(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
+  secondsBeforeTimeout: Int = 20,
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
+
+  val t = TimeSource.Monotonic.markNow()
 
   val (stringToSolve, reconstructor) =
     if (enablePruning) cfg_.prune(this) else this to mutableListOf()
@@ -72,11 +77,12 @@ fun Σᐩ.synthesizeWithVariations(
     variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }
       .distinct().filter { !cfg_.containsImpossibleBigram(it) }
 
-  return allVariants.map { updateProgress(it); it }
+  return allVariants
+    .takeWhile { t.elapsedNow().inWholeSeconds < 90 }
+    .map { updateProgress(it); it }
     .flatMap {
       val variantTokens = it.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }.ifEmpty {
-        println("Empty query, searching for impossible bigrams!")
         cfg_.rememberImpossibleBigrams(variantTokens, synthesizer)
         emptySequence()
       }
