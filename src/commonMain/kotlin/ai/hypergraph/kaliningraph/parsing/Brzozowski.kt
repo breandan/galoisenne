@@ -16,7 +16,6 @@ fun CFG.dr(r: Set<Σᐩ>, y: Set<Σᐩ>): Set<Σᐩ> =
       if (w to listOf(x, y) in this) acc + x else acc
     }
 
-
 //fun CFG.leftQuotientGLB(r: Set<Σᐩ>, x: Set<Σᐩ>): Set<Σᐩ> =
 //  (nonterminals * x * nonterminals).fold(setOf()) { acc, (w, x, y) ->
 //    if (w to listOf(x, y) in this) acc + y else acc
