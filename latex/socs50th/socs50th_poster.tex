@@ -30,6 +30,7 @@
 \usepackage{adjustbox}
 \usepackage{tikz-3dplot}
 \usetikzlibrary{3d}
+\usepackage{dsfont}
 \usetikzlibrary{calligraphy}
 \newif\ifshowcellnumber
 \showcellnumbertrue
@@ -240,7 +241,7 @@
       \vspace*{-1cm}
       \null\hspace*{3cm}{\huge\begin{minipage}[c]{0.95\columnwidth}
       \begin{itemize}
-        \item $GF(2^n)$ matrices are useful structures for studying finite state machines
+        \item Matrices over $\mathbb{Z}_2^n$ are useful structures for studying finite state machines
         \item The operators $\{\text{XOR}, \land, \top$\} are \textit{functionally complete} logical primitives
         \item We use them to implement probabilistic context-sensitive program repair
       \end{itemize}
@@ -308,19 +309,19 @@
       {\huge
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
-        \item CYK parser can be lowered onto a tensor $\mathbb{Z}_2^{n\times n \times |V|}$ and $GF(2^{|V|})^{n\times n}$
-        \item Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
+        \item CYK parsers can be lowered onto $\mathbb{Z}_2^{n\times n \times |V|}$ or $\mathcal{M}: (\mathbb{Z}_2^p\rightarrow\mathbb{Z}_2)^{n\times n \times|V|}$
+        \item $\mathcal{M}^*$ can be solved for directly using Gaussian elimination or XOR-SAT
         \item Enables sketch-based synthesis in $\sigma$ or $\mathcal G$: just use variables for holes!
-        \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
-        \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+        \item We can encode using the characteristic function, i.e., $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{Z}_2^{|V|}$
+        \item $\oplus, \otimes$ are defined as $\highlight{\boxplus}, \highlight{\boxtimes}$, so that the following diagram commutes:
       \end{itemize}
       \vspace{2cm}
         \adjustbox{scale=0.62,center}{%
           \[\begin{tikzcd}[row sep=large]
-            \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\textbf{Set} \arrow[d, phantom] & \textbf{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \textbf{SAT} \arrow[d, phantom]\\[-30pt]
-            \textbf{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-21mm}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-23.3mm}\highlight{\mathlarger\boxplus}\:\:\highlight{\mathlarger\boxtimes}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-18.5mm}+\:\:\:*"] \\
-            \textbf{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-15.5mm}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-17.5mm}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-15.5mm}\boxplus\:\boxtimes"] \arrow[u] \\
-            \textbf{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-1}", labels=below] \arrow[u]
+            \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\textbf{Set} \arrow[d, phantom] & [-70pt] & \phantom{\langle\mathcal{G}', \Sigma^{n-1}\rangle} & [-70pt] & \textbf{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \textbf{SAT} \arrow[d, phantom]\\[-30pt]
+            \textbf{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[rrrr, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-21mm}\bigoplus\:\bigotimes"]& [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-23.3mm}\highlight{\mathlarger\boxplus}\:\:\highlight{\mathlarger\boxtimes}"] \arrow[llll, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-18.5mm}+\:\:\:*"] \\
+            \textbf{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[rrrr, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-15.5mm}\oplus\:\otimes"] & [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-17.5mm}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[llll, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-15.5mm}\boxplus\:\boxtimes"] \arrow[u] \\
+            \textbf{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[rrrr, "\mathds{1}", labels=above] & [-90pt] & & [-90pt] & \mathbb{Z}_2^{|V|} \arrow[llll, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-1}", labels=below] \arrow[u]
         \end{tikzcd}\]
         }
 %        \item These operators can be lifted into matrices and tensors in the usual way
@@ -329,49 +330,41 @@
 %        \item If density is desired, possible to use the Maculay representation
 %        \item If you know of a more eﬀicient encoding, please let us know!
       \end{minipage}
-      \vspace{6cm}
       }
       \pagebreak
 
       \jointspacing
 
-      \mysection{Probabilistic Programming}
-
-      {\huge
-      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      \vspace{1cm}Let $\textbf{R}: \text{GF}(2^{n\times n})$ be a matrix $\mathbf{M}_{0, c} = P_c + \mathbf{M}_{r+1=c} = \top$, where $P$ is a feedback polynomial with coefficients $P_{1\ldots n}$ and $\oplus := \veebar, \otimes := \land$:\\
-      \end{minipage}
-
-      \[
-        \mathbf{M}^tV = \begin{pNiceMatrix}
-          P_1    & \Cdots &        &       & P_n \\
-          \top   & \circ  & \Cdots &       & \circ \\
-          \circ  & \Ddots & \Ddots &       & \Vdots \\
-          \Vdots & \Ddots &        &       &       \\
-          \circ  & \Cdots & \circ  & \top  & \circ
-        \end{pNiceMatrix}^t
-        \begin{pNiceMatrix}
-          V_1 \\
-          \Vdots \\
-              \\
-              \\
-          V_n
-        \end{pNiceMatrix}
-      \]\\
-
-      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a \textit{primitive polynomial}, then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
-      \end{minipage}
-
-      \[
-        \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}
-      \]
-
-      \vspace{2cm}\hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      This sequence has \textit{full periodicity}, i.e., $\forall i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
-      \end{minipage}
-      }
-      \jointspacing
+%      \mysection{Probabilistic Programming}
+%
+%      {\huge
+%      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+%      \vspace{1cm}Let $\text{R}: \mathbb{Z}_2^{n\times n}$ be a matrix $\text{R}_{0, c} = P_c + \text{R}_{r=c+1} = \top$, where $P$ is a feedback polynomial with coefficients $P_{1\ldots n}$ and $\oplus := \veebar, \otimes := \land$:\\
+%      \end{minipage}
+%
+%      \[
+%        \text{R}^tV = \begin{pNiceMatrix}
+%          P_1    & \Cdots &        &       & P_n \\
+%          \top   & \circ  & \Cdots &       & \circ \\
+%          \circ  & \Ddots & \Ddots &       & \Vdots \\
+%          \Vdots & \Ddots &        &       &       \\
+%          \circ  & \Cdots & \circ  & \top  & \circ
+%        \end{pNiceMatrix}^t
+%        \begin{pNiceMatrix}
+%          V_1 \\
+%          \Vdots \\
+%              \\
+%              \\
+%          V_n
+%        \end{pNiceMatrix}
+%      \]\\
+%
+%      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+%      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a \textit{primitive polynomial}, then powering the matrix $\text{R}$ generates an ergodic sequence over GF$(2^n)$, which
+%      has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \text{R}^{i}V = \text{R}^{j}V \Rightarrow i = j$.
+%      \end{minipage}
+%      }
+%      \jointspacing
 
       \mysection{Brozozowski's Derivative}
 
@@ -524,18 +517,38 @@
           \end{align*}
         \end{minipage}
 
-      {\huge
-      \hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-       \vspace{1cm}It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
+      \mysection{Context Sensitivity}
 
-      \begin{table}[H]
+      {\huge
+      \hspace*{2.5cm}\begin{minipage}[c]{0.90\columnwidth}
+       \vspace{1cm}It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$ defined in the following way:\\
+
+       \begin{center}
         \begin{tabular}{llll}
           $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
-          $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+          $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$\\\\
         \end{tabular}
-      \end{table}
+        \end{center}
 
          $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which is not context free.
+
+       We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. Specifically, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$ and glue them together at each $\sigma_i$:
+
+       \[
+         \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
+         \]
+
+       % Generated by cfl4_intersection.vox, open with https://voxelator.com/
+         \includegraphics[height=0.127\textwidth]{../figures/angle1.png}\hspace{-0.7cm}
+         \includegraphics[height=0.127\textwidth]{../figures/angle2.png}\hspace{-0.7cm}
+         \includegraphics[height=0.127\textwidth]{../figures/angle5.png}\hspace{-0.7cm}
+         \includegraphics[height=0.127\textwidth]{../figures/angle3.png}\hspace{-0.7cm}
+         \includegraphics[height=0.127\textwidth]{../figures/angle4.png}
+         \begin{center}Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration, reprojected into 2-space.\end{center}\\\vspace{2cm}
+
+       \noindent As $c \rightarrow \infty$, this shape takes the form of a circular cone whose symmetric axis intersects orthogonal CNF unit productions $w_i \rightarrow t$, with $S_i \in \mathcal{T}_{i}$ encoded by bitvectors along the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.\\
+
+
       \end{minipage}
       }
 
