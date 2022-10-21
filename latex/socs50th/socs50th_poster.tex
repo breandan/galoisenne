@@ -22,6 +22,7 @@
 \usepackage{amsmath, amsthm, amssymb, bm}
 \usepackage{nicematrix}
 %\usepackage{array}
+\usepackage{xcolor,colortbl}
 %\usepackage{booktabs}
 \usepackage{multirow}
 %\usepackage{hyperref}
@@ -31,10 +32,11 @@
 \usepackage{tikz-3dplot}
 \usetikzlibrary{3d}
 \usepackage{dsfont}
-\usetikzlibrary{calligraphy}
+\usetikzlibrary{decorations.pathreplacing,calligraphy}
 \newif\ifshowcellnumber
 \showcellnumbertrue
 \usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc}
+
 \tikzstyle{mybox} = [draw=white, rectangle]
 %\definecolor{darkblue}{rgb}{0,0.08,0.45}
 %\definecolor{blue}{rgb}{0,0,1}
@@ -252,11 +254,11 @@
       \mysection{Algebraic Parsing}
       {\huge
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-          Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in Chomsky Normal Form (CNF), we can define a \textit{recognizer}, $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for bounded strings $\sigma: \Sigma^n$ using the following construction. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$:\\
+          Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in Chomsky Normal Form (CNF), we can define a \textit{recognizer}, $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for bounded strings $\sigma: \highlight{\Sigma}^n$ using the following construction. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$:\\
       \end{minipage}
 
         \[
-          x \otimes y := \big\{\;W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\;\big\}
+          X \otimes Y := \big\{\;w \mid \langle x, y\rangle \in X \times Y, (w\rightarrow xy) \in P\;\big\}
         \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
@@ -309,18 +311,18 @@
       {\huge
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
-        \item CYK parsers can be lowered onto $\mathbb{Z}_2^{n\times n \times |V|}$ or $\mathcal{M}: (\mathbb{Z}_2^p\rightarrow\mathbb{Z}_2)^{n\times n \times|V|}$
+        \item CYK parsers can be lowered onto $\mathbb{Z}_2^{|V|\times n\times n}$ or $\mathcal{M}: (\mathbb{Z}_2^p\rightarrow\mathbb{Z}_2)^{|V|\times n\times n}$
         \item $\mathcal{M}^*$ can be solved for directly using Gaussian elimination or XOR-SAT
         \item Enables sketch-based synthesis in $\sigma$ or $\mathcal G$: just use variables for holes!
         \item We can encode using the characteristic function, i.e., $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{Z}_2^{|V|}$
-        \item $\oplus, \otimes$ are defined as $\highlight{\boxplus}, \highlight{\boxtimes}$, so that the following diagram commutes:
+        \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
       \end{itemize}
       \vspace{2cm}
         \adjustbox{scale=0.62,center}{%
           \[\begin{tikzcd}[row sep=large]
             \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\textbf{Set} \arrow[d, phantom] & [-70pt] & \phantom{\langle\mathcal{G}', \Sigma^{n-1}\rangle} & [-70pt] & \textbf{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \textbf{SAT} \arrow[d, phantom]\\[-30pt]
-            \textbf{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[rrrr, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-21mm}\bigoplus\:\bigotimes"]& [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-23.3mm}\highlight{\mathlarger\boxplus}\:\:\highlight{\mathlarger\boxtimes}"] \arrow[llll, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-18.5mm}+\:\:\:*"] \\
-            \textbf{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[rrrr, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-15.5mm}\oplus\:\otimes"] & [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-17.5mm}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[llll, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-15.5mm}\boxplus\:\boxtimes"] \arrow[u] \\
+            \textbf{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[rrrr, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-17.5mm}+\:\:\:*"]& [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-17.5mm}+\:\:\:*"] \arrow[llll, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-17.5mm}+\:\:\:*"] \\
+            \textbf{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[rrrr, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-15.5mm}\oplus\:\otimes"] & [-70pt] & & [-70pt] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.5mm}\boxplus\:\boxtimes"] \arrow[llll, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-15.5mm}\boxplus\:\boxtimes"] \arrow[u] \\
             \textbf{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[rrrr, "\mathds{1}", labels=above] & [-90pt] & & [-90pt] & \mathbb{Z}_2^{|V|} \arrow[llll, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=3.5mm, "\varphi^{-1}", labels=below] \arrow[u]
         \end{tikzcd}\]
         }
@@ -367,155 +369,171 @@
 %      \jointspacing
 
       \mysection{Brozozowski's Derivative}
-
-      \begin{table}
-          \begin{tabular}{ccc}
-            Left Quotient && Right Quotient \vspace{3pt}\\
-            $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y) \in P\;\big\}$ &&
-            $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y) \in P\;\big\}$ \vspace{5pt}\\
-            \begin{tabular}{|c|c|}
-              \hline
-              \cellcolor{black!15}x & \cellcolor{black!15}w \\ \hline
-              \multicolumn{1}{c|}{~} & y \\
-              \cline{2-2}
-            \end{tabular} &&
-            \begin{tabular}{|c|c|}
-              \hline
-              x & \cellcolor{black!15}w \\ \hline
-              \multicolumn{1}{c|}{~} & \cellcolor{black!15}y \\
-              \cline{2-2}
-            \end{tabular}
-          \end{tabular}
-      \end{table}
-
-      \definecolor{R}{RGB}{202,65,55}
-      \definecolor{G}{RGB}{151,216,56}
-      \definecolor{W}{RGB}{255,255,255}
-      \definecolor{X}{RGB}{65,65,65}
-
-      \newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-      \newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-      \newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-      \newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
-      {\ifnum\Y=1%
-      \xdef\myarray{"\X"}%
-      \else%
-      \xdef\myarray{\myarray,"\X"}%
-      \fi}%
-      \foreach \X in \myarrayR%
-      {\xdef\myarray{\myarray,"\X"}}%
-      \foreach \X in \myarrayT%
-      {\xdef\myarray{\myarray,"\X"}}%
-      \xdef\myarray{{\myarray}}%
+      {\huge
+      \hspace*{2.5cm}\begin{minipage}[c]{0.90\columnwidth}
+         \vspace{1cm}Valiant's $\otimes$ operator, which unifies known factors in a binary CFG, implies a left- and right-quotient, which yield the set of nonterminal forests that may appear to either side of a known factor and its corresponding root.\\
+       \end{minipage}
       }
-      \TikZRubikFaceLeft
-      {LA}{W}{W}
-      {W}{LB}{LC}
-      {LD}{W}{W}
-      \TikZRubikFaceRight
-      {W}{LK}{W}
-      {LC}{W}{LG}
-      {W}{LH}{W}
-      \TikZRubikFaceTop
-      {LA}{W}{LI}
-      {W}{W}{LJ}
-      {W}{LK}{W}
-      \BuildArray
-      \pgfmathsetmacro\radius{0.1}
-      \tdplotsetmaincoords{55}{135}
 
-      \showcellnumberfalse
+      {\LARGE
+      \begin{center}
+        \begin{tabular}{ccccccc}
+          Valiant's $\otimes$ &&& Left Quotient &&& Right Quotient \\\\
+          $x \otimes y = \big\{\;w \mid (w \rightarrow x y)\;\big\}$ &&&
+          $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y)\;\big\}$ &&&
+          $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y)\;\big\}$ \\\\
+          \begin{tabular}{|c|c|}
+            \hline
+            \cellcolor{black!15}\:x\: & \:w\: \\ \hline
+            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:y\: \\
+            \cline{2-2}
+          \end{tabular} &&&
+          \begin{tabular}{|c|c|}
+            \hline
+            \cellcolor{black!15}\:x\: & \cellcolor{black!15}\:w\: \\ \hline
+            \multicolumn{1}{c|}{~} & \:y\: \\
+            \cline{2-2}
+          \end{tabular} &&&
+          \begin{tabular}{|c|c|}
+            \hline
+            \:x\: & \cellcolor{black!15}\:w\: \\ \hline
+            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:y\: \\
+            \cline{2-2}
+          \end{tabular}
+        \end{tabular}
+      \end{center}
+      }
+\vspace{1cm}
+      {\huge
+      \hspace*{2.5cm}\begin{minipage}[c]{0.90\columnwidth}
+           The left quotient coincides with Brzozowski's derivative (1964) over regular languages, here lifted into the context-sensitive setting (our work).\\
+      \end{minipage}
+      }
 
-      \bgroup
-      \newcommand\ddd{\Ddots}
-      \newcommand\vdd{\Vdots}
-      \newcommand\cdd{\Cdots}
-      \newcommand\lds{\ldots}
-      \newcommand\vno{\varnothing}
-      \newcommand{\ts}[1]{\textsuperscript{#1}}
-      \newcommand\non{1\ts{st}}
-      \newcommand\ntw{2\ts{nd}}
-      \newcommand\nth{3\ts{rd}}
-      \newcommand\nfo{4\ts{th}}
-      \newcommand\nfi{5\ts{th}}
-      \newcommand\nsi{6\ts{th}}
-      \newcommand\nse{7\ts{th}}
-      \newcommand\rcr{\rowcolor{black!15}}
-      \newcommand\rcw{\rowcolor{white}}
-      \newcommand\pcd{\cdot}
-      \newcommand\pcp{\phantom\cdot}
-      \newcommand\ppp{\phantom{\nse}}
-
-        \[
-          \begin{align*}
-            o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
-            r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
-            s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
-          \end{align*} \phantom{=} \mathcal{H}_{\{o\}} = \begin{pmatrix}
-                 \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
-                 \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
-                 \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
-          \end{pmatrix}
-%    \mathcal{J} = \begin{pmatrix}
-%       \pder{o}{o} & \pder{o}{r} & \pder{o}{s}\\
-%       \pder{r}{o} & \pder{r}{r} & \pder{r}{s}\\
-%       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
-%    \end{pmatrix}
-        \]
-        \hspace{-0.5cm}\begin{minipage}[l]{25cm}
-         \scalebox{2}{\begin{tikzpicture}
-                \clip (-3,-2.5) rectangle (3,2.5);
-                \begin{scope}[tdplot_main_coords]
-                  \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                  \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                  \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                  \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
-                    \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
-                      \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
-                      \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                      \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                      \ifshowcellnumber
-                      \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
-                      \fi
-                      \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
-                      \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                      \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                      \ifshowcellnumber
-                      \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
-                      \fi
-                      \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
-                      \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                      \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                      \ifshowcellnumber
-                      \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
-                      \fi
-                    }
-                  }
-                  \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
-                  (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
-                  \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-                  (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_y$};
-                  \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-                  (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
-                \end{scope}
-         \end{tikzpicture}}
-        \end{minipage}
-        \begin{minipage}[c]{25.5cm}
-          \begin{align*}
-            \mathcal{H}_{\{r\}} = & \begin{pmatrix}
-                      \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
-                      \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
-                      \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
-            \end{pmatrix}
-          \end{align*}
-          \begin{align*}
-            \mathcal{H}_{\{s\}} = & \begin{pmatrix}
-                      \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
-                      \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
-                      \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
-            \end{pmatrix}
-          \end{align*}
-        \end{minipage}
+%      \noindent
+%
+%      \definecolor{R}{RGB}{202,65,55}
+%      \definecolor{G}{RGB}{151,216,56}
+%      \definecolor{W}{RGB}{255,255,255}
+%      \definecolor{X}{RGB}{65,65,65}
+%
+%      \newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+%      \newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+%      \newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+%      \newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
+%      {\ifnum\Y=1%
+%      \xdef\myarray{"\X"}%
+%      \else%
+%      \xdef\myarray{\myarray,"\X"}%
+%      \fi}%
+%      \foreach \X in \myarrayR%
+%      {\xdef\myarray{\myarray,"\X"}}%
+%      \foreach \X in \myarrayT%
+%      {\xdef\myarray{\myarray,"\X"}}%
+%      \xdef\myarray{{\myarray}}%
+%      }
+%      \TikZRubikFaceLeft
+%      {LA}{W}{W}
+%      {W}{LB}{LC}
+%      {LD}{W}{W}
+%      \TikZRubikFaceRight
+%      {W}{LK}{W}
+%      {LC}{W}{LG}
+%      {W}{LH}{W}
+%      \TikZRubikFaceTop
+%      {LA}{W}{LI}
+%      {W}{W}{LJ}
+%      {W}{LK}{W}
+%      \BuildArray
+%      \pgfmathsetmacro\radius{0.1}
+%      \tdplotsetmaincoords{55}{135}
+%
+%      \showcellnumberfalse
+%
+%      \bgroup
+%      \newcommand\ddd{\Ddots}
+%      \newcommand\vdd{\Vdots}
+%      \newcommand\cdd{\Cdots}
+%      \newcommand\lds{\ldots}
+%      \newcommand\vno{\varnothing}
+%      \newcommand{\ts}[1]{\textsuperscript{#1}}
+%      \newcommand\non{1\ts{st}}
+%      \newcommand\ntw{2\ts{nd}}
+%      \newcommand\nth{3\ts{rd}}
+%      \newcommand\nfo{4\ts{th}}
+%      \newcommand\nfi{5\ts{th}}
+%      \newcommand\nsi{6\ts{th}}
+%      \newcommand\nse{7\ts{th}}
+%      \newcommand\rcr{\rowcolor{black!15}}
+%      \newcommand\rcw{\rowcolor{white}}
+%      \newcommand\pcd{\cdot}
+%      \newcommand\pcp{\phantom\cdot}
+%      \newcommand\ppp{\phantom{\nse}}
+%
+%        \hspace{2.5cm}\begin{minipage}[l]{6cm}
+%        \begin{tikzpicture}
+%               \clip (-3,-2.5) rectangle (3,2.5);
+%               \begin{scope}[tdplot_main_coords]
+%                 \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+%                 \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+%                 \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+%                 \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
+%                   \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
+%                     \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
+%                     \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+%                     \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+%                     \ifshowcellnumber
+%                     \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
+%                     \fi
+%                     \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
+%                     \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+%                     \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+%                     \ifshowcellnumber
+%                     \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
+%                     \fi
+%                     \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
+%                     \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+%                     \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+%                     \ifshowcellnumber
+%                     \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
+%                     \fi
+%                   }
+%                 }
+%                 \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
+%                 (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
+%                 \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+%                 (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_y$};
+%                 \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+%                 (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
+%               \end{scope}
+%        \end{tikzpicture}
+%        \end{minipage}
+%        \begin{minipage}[c]{10cm}
+%            \begin{align*}
+%              o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
+%              r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
+%              s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
+%            \end{align*}
+%        \end{minipage}
+%        \begin{minipage}[c]{25.5cm}
+%            \begin{align*}
+%            \mathcal{H} = \left[\begin{pmatrix}
+%                \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
+%                \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
+%                \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
+%            \end{pmatrix},
+%            \begin{pmatrix}
+%                \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
+%                \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
+%                \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
+%            \end{pmatrix},
+%            \begin{pmatrix}
+%                \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
+%                \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
+%                \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
+%            \end{pmatrix}\right]
+%          \end{align*}
+%        \end{minipage}
 
       \mysection{Context Sensitivity}
 
@@ -530,7 +548,7 @@
         \end{tabular}
         \end{center}
 
-         $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which is not context free.
+         $\mathcal{L}_\cap$ is equivalent to the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which is not a CFL.
 
        We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. Specifically, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$ and glue them together at each $\sigma_i$:
 
@@ -546,9 +564,7 @@
          \includegraphics[height=0.127\textwidth]{../figures/angle4.png}
          \begin{center}Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration, reprojected into 2-space.\end{center}\\\vspace{2cm}
 
-       \noindent As $c \rightarrow \infty$, this shape takes the form of a circular cone whose symmetric axis intersects orthogonal CNF unit productions $w_i \rightarrow t$, with $S_i \in \mathcal{T}_{i}$ encoded by bitvectors along the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.\\
-
-
+       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthogonal CNF unit productions $w_i \rightarrow t$, with $S_i \in \mathcal{T}_{i}$ represented by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
       \end{minipage}
       }
 
@@ -560,7 +576,7 @@
     %    \hfill\bottomboxlogo{img/kotlin_logo.png}
     % Comment out the line below out to hide logo
     \hspace{4cm}
-    \begin{minipage}[c][0.1\paperheight][c]{0.18\textwidth}\qrcode[height=2.6in]{ssnp.ndan.co} \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.18\textwidth}\qrcode[height=2.2in]{ssnp.ndan.co} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.25\textwidth}\includegraphics[height=2.6in]{../figures/fpt_logo.png} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=2.6in]{../figures/mcgill.png} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3.2in]{../figures/mila.png} \end{minipage}
