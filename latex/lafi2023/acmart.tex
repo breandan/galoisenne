@@ -82,21 +82,21 @@
                \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix} &\Rightarrow M^* =
       \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shup & \mathcal{V} & \Cdots & \mathcal{V}^*\\
+        \varnothing & \sigma_1^\shup & V           & \Cdots & V^*\\
         \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                    &                &             &        & \mathcal{V}\\
+                    &                &             &        & V\\
                     &                &             &        & \sigma_n^\shup \\
         \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix}
   \end{align*}
 
-  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in \mathcal{V}^*? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in V^*? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
   \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
 
   \section{Method}
 
-  Note that $\bigoplus_{k = 1}^n M_{ik} \otimes M_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+  Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
   \begin{figure}[H]
   \adjustbox{scale=0.62,center}{%
@@ -112,9 +112,9 @@
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
 %  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
-  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\Sigma^n$ is either left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
+  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to represent an element of $\mathbb{Z}_2^{|V|}$ as a unique $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
 
-  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to either side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
+  Valiant's $\otimes$ operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
   \begin{table}[H]
     \adjustbox{scale=0.92,center}{%
@@ -281,37 +281,37 @@
     \caption{CFGs are witnessed by a rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathcal{M}^*$, we constrain the superposition of admissible parse forests.}
   \end{figure}
 
-  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
-
-%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
-
-%We illustrate this fact in \S\ref{sec:error}:
+%  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
 %
-%\begin{figure}[H]
-%    \includegraphics[width=2cm]{../figures/parse1.png}
-%    \includegraphics[width=2cm]{../figures/parse2.png}
-%    \includegraphics[width=2cm]{../figures/parse3.png}
-%    \includegraphics[width=2cm]{../figures/parse4.png}
-%\end{figure}
-
-  \begin{figure}[H]
-    \[
-      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-          \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-          \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-               &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-               &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-               &             &                    &                   &                        & \ddd & \\
-               &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-          \vno & \cdd        &                    &                   &                        &      & \vno
-      \end{pNiceArray}
-    \]
-  \end{figure}
+%%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
+%
+%%We illustrate this fact in \S\ref{sec:error}:
+%%
+%%\begin{figure}[H]
+%%    \includegraphics[width=2cm]{../figures/parse1.png}
+%%    \includegraphics[width=2cm]{../figures/parse2.png}
+%%    \includegraphics[width=2cm]{../figures/parse3.png}
+%%    \includegraphics[width=2cm]{../figures/parse4.png}
+%%\end{figure}
+%
+%  \begin{figure}[H]
+%    \[
+%      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+%          \vno & \rcr \shup x_1 &  \Cdots      & \mathcal{V}_{1,|x|} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}^* \\
+%          \vdd & \ddd           &  \Ddots      & \rcr\Vdots          & \rcw\vdd               &      & \vdd \\
+%               &                &              & \rcr\shup x_{|x|}   & \rcw                   &      & \\
+%               &                &              &                     & \mathcal{V}_{4,4}      &      & \\
+%               &                &              &                     &                        & \ddd & \\
+%               &                &              &                     &                        &      & \mathcal{V}_{n,n} \\
+%          \vno & \cdd           &              &                     &                        &      & \vno
+%      \end{pNiceArray}
+%    \]
+%  \end{figure}
 
 We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-  \pagebreak\subsection{Context-Sensitive Reachability}
+  \subsection{Context-Sensitive Reachability}
 
   It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
 
@@ -322,7 +322,7 @@ We also need the constraint that no two conflicting nonterminals may be active a
   \end{tabular}
   \end{table}
 
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$ and glue them together:
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and glue them together:
 
   % Generated by cfl4_intersection.vox, open with https://voxelator.com/
   \begin{figure}[H]
