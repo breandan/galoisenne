@@ -274,16 +274,16 @@
               \varnothing & \Cdots         &             &        & \varnothing
           \end{pNiceMatrix} \Rightarrow
           M^* = \begin{pNiceMatrix}
-              \varnothing & \sigma_1^\shup & \Cdots                 &                          & \mathcal{T} \\
-              \Vdots      & \Ddots         & \Ddots[shorten=-0.1cm] & \phantom{\sigma_2^\shup} & \Vdots \\
-                          &                &                        &                          & \\
-                          &                &                        &                          & \sigma_n^\shup \\
-              \varnothing & \Cdots         &                        &                          & \varnothing
+                  \varnothing & \sigma_1^\shup & \mathcal{V} & \Cdots & \mathcal{V}^* \\
+                  \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                              &                &             &        & \mathcal{V}\\
+                              &                &             &        & \sigma_n^\shup \\
+                  \varnothing & \Cdots         &             &        & \varnothing
         \end{pNiceMatrix}
         \]
 
       \vspace{1cm}\null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in \mathcal{T}? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in \mathcal{V}^*? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
       \end{minipage}
       }
 
@@ -311,7 +311,7 @@
       {\huge
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
-        \item CYK parsers can be lowered onto $\mathbb{Z}_2^{|V|\times n\times n}$ or $\mathcal{M}: (\mathbb{Z}_2^p\rightarrow\mathbb{Z}_2)^{|V|\times n\times n}$
+        \item CYK parsers can be lowered onto $\mathbb{Z}_2^{|V|\times n\times n}$ or $\mathcal{M}: (\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2)^{|V|\times n\times n}$
         \item $\mathcal{M}^*$ can be solved for directly using Gaussian elimination or XOR-SAT
         \item Enables sketch-based synthesis in $\sigma$ or $\mathcal G$: just use variables for holes!
         \item We can encode using the characteristic function, i.e., $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{Z}_2^{|V|}$
@@ -564,7 +564,7 @@
          \includegraphics[height=0.127\textwidth]{../figures/angle4.png}
          \begin{center}Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration, reprojected into 2-space.\end{center}\\\vspace{2cm}
 
-       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthogonal CNF unit productions $w_i \rightarrow t$, with $S_i \in \mathcal{T}_{i}$ represented by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t$, with $S_i \in \mathcal{T}_{i}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
       \end{minipage}
       }
 

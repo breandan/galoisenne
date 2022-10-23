@@ -57,39 +57,46 @@
 
   \section{Introduction}
 
-  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xy$, or $w \rightarrow t$, where $w, x, y: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
-      $P'=\big\{\;S\rightarrow XR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $X\rightarrow LS\;\big\}$
+      $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow LS\;\big\}$
     \end{tabular}
   \end{table}\vspace{-8pt}
 
   \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
-    x \otimes y := \big\{\;W \mid \langle X, Y\rangle \in x \times y, (W\rightarrow XY) \in P\;\big\}
+    X \otimes Y := \big\{\;w \mid \langle x, z\rangle \in X \times Y, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
   \noindent If we define $\shup\sigma_r \coloneqq \{V \mid (V \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
-  \begin{align}
-    M^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-       \varnothing & \shup\sigma_1  & \Cdots                 &                         & \mathcal{T} \\
-       \Vdots      & \Ddots         & \Ddots[shorten=-0.1cm] & \phantom{\shup\sigma_2} & \Vdots \\
-                   &                &                        &                         & \\
-                   &                &                        &                         & \shup\sigma_n \\
-       \varnothing & \Cdots         &                        &                         & \varnothing
-    \end{pNiceMatrix}\label{eq:fpm}
-  \end{align}
+  \begin{align*}
+      M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+               \varnothing & \sigma_1^\shup & \varnothing & \Cdots & \varnothing \\
+               \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                           &                &             &        & \varnothing\\
+                           &                &             &        & \sigma_n^\shup \\
+               \varnothing & \Cdots         &             &        & \varnothing
+      \end{pNiceMatrix} &\Rightarrow M^* =
+      \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+        \varnothing & \sigma_1^\shup & \mathcal{V} & \Cdots & \mathcal{V}^*\\
+        \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                    &                &             &        & \mathcal{V}\\
+                    &                &             &        & \sigma_n^\shup \\
+        \varnothing & \Cdots         &             &        & \varnothing
+      \end{pNiceMatrix}
+  \end{align*}
 
-  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in \mathcal{T}? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $M = M + M^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $M^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $M = M^2$.}
+  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in \mathcal{V}^*? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$). %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
+  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
 
   \section{Method}
 
-  Note that $\bigoplus_{k = 1}^n M_{ik} \otimes M_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors, so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+  Note that $\bigoplus_{k = 1}^n M_{ik} \otimes M_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
   \begin{figure}[H]
   \adjustbox{scale=0.62,center}{%
@@ -105,26 +112,26 @@
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
 %  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
-  \noindent Where $\mathcal{V}$ is the domain of XOR-SAT expressions, i.e., linear equations over $GF(2)$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero (i.e., be UNSAT), one, or in general, many values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\mathcal{M}^*$ is either left- or right-constrained, i.e., $\highlight{\alpha}\gamma$, $\gamma\highlight{\alpha}$.
+  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode an element of $\mathbb{Z}_2^{|V|}$ into $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Let us consider two cases, where $\Sigma^n$ is either left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
 
-  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to the right- or left-side, respectively, of known factors in a ternary configuration. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a new derivation.
+  Valiant's $\otimes$ operator, which solves for the set of productions unifying known factors in a binary CFG, implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear to either side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
   \begin{table}[H]
     \adjustbox{scale=0.92,center}{%
-    \begin{tabular}{ccc}
-      Left Quotient && Right Quotient \vspace{3pt}\\
-      $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y) \in P\;\big\}$ &&
-      $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y) \in P\;\big\}$ \vspace{5pt}\\
+    \begin{tabular}{cccc}
+      Left Quotient &&& Right Quotient \\\\
+      $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y)\in P\;\big\}$ &&&
+      $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y)\in P\;\big\}$ \\\\
       \begin{tabular}{|c|c|}
         \hline
-        \cellcolor{black!15}x & \cellcolor{black!15}w \\ \hline
-        \multicolumn{1}{c|}{~} & y \\
+        \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+        \multicolumn{1}{c|}{~} & \hspace{-0.95mm}$z$\hspace{-0.95mm} \\
         \cline{2-2}
-      \end{tabular} &&
+      \end{tabular} &&&
       \begin{tabular}{|c|c|}
         \hline
-        x & \cellcolor{black!15}w \\ \hline
-        \multicolumn{1}{c|}{~} & \cellcolor{black!15}y \\
+        \hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+        \multicolumn{1}{c|}{~} & \cellcolor{black!15}\hspace{-0.95mm}$z$\hspace{-0.95mm} \\
         \cline{2-2}
       \end{tabular}
     \end{tabular}
@@ -315,27 +322,29 @@ We also need the constraint that no two conflicting nonterminals may be active a
   \end{tabular}
   \end{table}
 
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. In our formalism, we encode finite intersections of CFLs $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a prism with upper-triangular matrices joined to each rectangular face, like the fletches of an arrow. As $c \rightarrow \infty$, this shape approximates a right circular cone whose symmetric axis intersects equivalent $\shup\sigma_i$'s in each CNF unit production $w_i \rightarrow t$, and base perimeter represents $S_{i} \in \mathcal{T}_{i}$. Equations of this form are equiexpressive with the family of CSLs realizable by intersecting a finite collection of CFLs.
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$ and glue them together:
 
   % Generated by cfl4_intersection.vox, open with https://voxelator.com/
   \begin{figure}[H]
-  \includegraphics[height=0.117\textwidth]{../figures/angle1.png}\hspace{-5pt}
-  \includegraphics[height=0.117\textwidth]{../figures/angle2.png}\hspace{-5pt}
-  \includegraphics[height=0.117\textwidth]{../figures/angle3.png}
+  \includegraphics[height=0.063\textwidth]{../figures/angle1.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle2.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle5.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle3.png}\hspace{-3pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle4.png}
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
   \end{figure}
 
-  \noindent More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t \in \Sigma_\cap$, we construct an equivalence class $E(t, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t) \in P_i\}$, and glue them all together:
+  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \mathcal{V}^*_{i}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
 
  \begin{align}
-  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
+  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
   \end{align}
 
 %  Together with the uniqueness constraint this ensures that at least one representative of each equivalence class is included... (TODO).
 
   Although emptiness for CSLs is, in general, undecidable, unsatisfiability corresponds to emptiness of bounded CSLs. Anyhow, since we are working with bounded-width CSLs, everything collapses down to finite languages, which are always closed. Thus, Bar-Hillel and other elegant constructions become trivial when so restricted. So we can use it to decide impossible substrings and other decision problems which are typically intractable in more general settings.
 
-  \section{Applications}
+  \section{Conclusion}
 
   This technique can be used to repair syntax errors in programming languages. It also has the nice advantage that it can provide partial parse trees for invalid strings, i.e., we can decode the tree from the structure of M directly without any special error recovery.
 
