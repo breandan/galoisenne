@@ -34,6 +34,7 @@
 \usepackage{colortbl}
 \usepackage{hyperref}
 
+
 %% Bibliography style
 \bibliographystyle{acmart}
 
@@ -82,7 +83,7 @@
                \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix} &\Rightarrow M^* =
       \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shup & V           & \Cdots & V^*\\
+        \varnothing & \sigma_1^\shup & V           & \Cdots & V^*_\sigma\\
         \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
                     &                &             &        & V\\
                     &                &             &        & \sigma_n^\shup \\
@@ -90,13 +91,13 @@
       \end{pNiceMatrix}
   \end{align*}
 
-  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in V^*? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in V^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
   \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
 
   \section{Method}
 
-  Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes:\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+  Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
   \begin{figure}[H]
   \adjustbox{scale=0.62,center}{%
@@ -112,7 +113,7 @@
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
 %  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
-  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to represent an element of $\mathbb{Z}_2^{|V|}$ as a unique $\mathcal{V}$, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
+  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
 
   Valiant's $\otimes$ operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
@@ -146,7 +147,7 @@
 %
 %  TODO: prove the product rule holds for CFG reachability.
 
-  If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal{W}\subseteq\mathcal{V}}: (\cev{\mathcal{V}}\times\vec{\mathcal{V}}\times\mathcal{W}) \rightarrow (\vec{\mathcal{V}}\times\vec{\mathcal{V}}\rightarrow\mathcal{W})$, which tracks second-order partial derivatives for all roots in $\mathcal{W}$. Unlike differential calculus on smooth manifolds, partials in this calculus do not necessarily commute depending on the CFG.
+%  If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal{W}\subseteq\mathcal{V}}: (\cev{\mathcal{V}}\times\vec{\mathcal{V}}\times\mathcal{W}) \rightarrow (\vec{\mathcal{V}}\times\vec{\mathcal{V}}\rightarrow\mathcal{W})$, which tracks second-order partial derivatives for all roots in $\mathcal{W}$. Unlike differential calculus on smooth manifolds, partials in this calculus do not necessarily commute depending on the CFG.
 
   \definecolor{R}{RGB}{202,65,55}
   \definecolor{G}{RGB}{151,216,56}
@@ -308,8 +309,20 @@
 %    \]
 %  \end{figure}
 
-We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
+%We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+
+  \subsection{Deriving the hole locations}
+
+  Valiant's procedure defines a bottom-up synthesizer for a string template with known hole locations. Given a string which contains an error, i.e. $\squiggly\sigma: \Sigma^+$ s.t. $S \notin V^*_{\sigma}$, where should we put the holes in order for the string to parse? We can derive the hole locations by backpropagating Brzozowski's derivative across upper-triangular entries of $\mathcal{M}^*$. This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
+
+  \begin{align*}
+    \text{\textbf{data} \textit{Tree} } a &= \varnothing \mid \langle a, \langle\textit{Tree a, Tree a}\rangle\rangle\\
+    \text{\textbf{data} \textit{Forest} } a &= \varnothing \mid \langle \{a\}, \{\langle\textit{Forest a,  Forest a}\rangle\}\rangle\\
+    \text{\textbf{data} \textit{Taiga} } a &= \varnothing \mid \langle a, [\langle\textit{Taiga (Taiga a)}\rangle^2]\rangle
+  \end{align*}
+
+  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultanously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously explore all three possibilities.
 
   \subsection{Context-Sensitive Reachability}
 
@@ -334,7 +347,7 @@ We also need the constraint that no two conflicting nonterminals may be active a
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
   \end{figure}
 
-  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \mathcal{V}^*_{i}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \mathcal{V}^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
 
  \begin{align}
   \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})

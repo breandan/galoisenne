@@ -258,7 +258,7 @@
       \end{minipage}
 
         \[
-          X \otimes Y := \big\{\;w \mid \langle x, y\rangle \in X \times Y, (w\rightarrow xy) \in P\;\big\}
+          X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
         \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
@@ -274,7 +274,7 @@
               \varnothing & \Cdots         &             &        & \varnothing
           \end{pNiceMatrix} \Rightarrow
           M^* = \begin{pNiceMatrix}
-                  \varnothing & \sigma_1^\shup & V           & \Cdots & V^* \\
+                  \varnothing & \sigma_1^\shup & V           & \Cdots & V^*_\sigma \\
                   \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
                               &                &             &        & V\\
                               &                &             &        & \sigma_n^\shup \\
@@ -283,7 +283,7 @@
         \]
 
       \vspace{1cm}\null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in V^*? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in V^*_\sigma? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
       \end{minipage}
       }
 
@@ -379,25 +379,25 @@
       \begin{center}
         \begin{tabular}{ccccccc}
           Valiant's $\otimes$ &&& Left Quotient &&& Right Quotient \\\\
-          $x \otimes y = \big\{\;w \mid (w \rightarrow x y)\;\big\}$ &&&
-          $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y)\;\big\}$ &&&
-          $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y)\;\big\}$ \\\\
+          $x \otimes y = \big\{\;w \mid (w \rightarrow x z)\;\big\}$ &&&
+          $\frac{\partial f}{\partial \cev{x}} = \big\{\;z \mid (w \rightarrow x z)\;\big\}$ &&&
+          $\frac{\partial f}{\partial \vec{z}} = \big\{\;x \mid (w \rightarrow x z)\;\big\}$ \\\\
           \begin{tabular}{|c|c|}
             \hline
             \cellcolor{black!15}\,\,x\,\, & \:w\: \\ \hline
-            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:y\: \\
+            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:z\: \\
             \cline{2-2}
           \end{tabular} &&&
           \begin{tabular}{|c|c|}
             \hline
             \cellcolor{black!15}\,\,x\,\, & \cellcolor{black!15}\:w\: \\ \hline
-            \multicolumn{1}{c|}{~} & \:y\: \\
+            \multicolumn{1}{c|}{~} & \:z\: \\
             \cline{2-2}
           \end{tabular} &&&
           \begin{tabular}{|c|c|}
             \hline
             \,\,x\,\, & \cellcolor{black!15}\:w\: \\ \hline
-            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:y\: \\
+            \multicolumn{1}{c|}{~} & \cellcolor{black!15}\:z\: \\
             \cline{2-2}
           \end{tabular}
         \end{tabular}
@@ -564,7 +564,7 @@
          \includegraphics[height=0.127\textwidth]{../figures/angle4.png}
          \begin{center}Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration, reprojected into 2-space.\end{center}\\\vspace{2cm}
 
-       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t$, with $S_i \in V^*_{i}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t$, with $S_i \in V^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
       \end{minipage}
       }
 
