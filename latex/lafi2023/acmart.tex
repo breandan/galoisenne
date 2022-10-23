@@ -69,10 +69,10 @@
   \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
-    X \otimes Y := \big\{\;w \mid \langle x, z\rangle \in X \times Y, (w\rightarrow xz) \in P\;\big\}
+    X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\shup\sigma_r \coloneqq \{V \mid (V \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\shup\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
   \begin{align*}
       M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -83,15 +83,15 @@
                \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix} &\Rightarrow M^* =
       \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shup & V           & \Cdots & V^*_\sigma\\
-        \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                    &                &             &        & V\\
-                    &                &             &        & \sigma_n^\shup \\
-        \varnothing & \Cdots         &             &        & \varnothing
+        \varnothing & \sigma_1^\shup & \Lambda & \Cdots & \Lambda^*_\sigma\\
+        \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                    &                &         &        & \Lambda\\
+                    &                &         &        & \sigma_n^\shup \\
+        \varnothing & \Cdots         &         &        & \varnothing
       \end{pNiceMatrix}
   \end{align*}
 
-  \noindent this yields the recognizer, $R(\mathcal{G}', \sigma) := S \in V^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+  \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
   \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
 
@@ -121,8 +121,8 @@
     \adjustbox{scale=0.92,center}{%
     \begin{tabular}{cccc}
       Left Quotient &&& Right Quotient \\\\
-      $\frac{\partial f}{\partial \cev{x}} = \big\{\;y \mid (w \rightarrow x y)\in P\;\big\}$ &&&
-      $\frac{\partial f}{\partial \vec{y}} = \big\{\;x \mid (w \rightarrow x y)\in P\;\big\}$ \\\\
+      $\frac{\partial f}{\partial \cev{x}} = \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&&
+      $\frac{\partial f}{\partial \vec{z}} = \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
       \begin{tabular}{|c|c|}
         \hline
         \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
@@ -314,7 +314,7 @@
 
   \subsection{Deriving the hole locations}
 
-  Valiant's procedure defines a bottom-up synthesizer for a string template with known hole locations. Given a string which contains an error, i.e. $\squiggly\sigma: \Sigma^+$ s.t. $S \notin V^*_{\sigma}$, where should we put the holes in order for the string to parse? We can derive the hole locations by backpropagating Brzozowski's derivative across upper-triangular entries of $\mathcal{M}^*$. This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
+  Valiant's procedure defines a bottom-up synthesizer for a string template with known hole locations. Given a string which contains an error, i.e. $\squiggly\sigma: \Sigma^+$ s.t. $S \notin \Lambda^*_{\sigma}$, where should we put the holes in order for the string to parse? We can derive the hole locations by backpropagating Brzozowski's derivative across upper-triangular entries of $\mathcal{M}^*$. This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
 
   \begin{align*}
     \text{\textbf{data} \textit{Tree} } a &= \varnothing \mid \langle a, \langle\textit{Tree a, Tree a}\rangle\rangle\\
@@ -347,7 +347,7 @@
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
   \end{figure}
 
-  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \mathcal{V}^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \Lambda^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
 
  \begin{align}
   \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})

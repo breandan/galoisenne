@@ -262,7 +262,7 @@
         \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-        Valiant (1975) shows that if we let $\sigma_r^{\shup} \coloneqq \{V \mid (V \rightarrow \sigma_r^{\shup}) \in P\}$, initialize the matrix $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^\shup$ and solve for its fixpoint $M^* = M + M^2$,\\
+        Valiant (1975) shows that if we let $\sigma_r^{\shup} \coloneqq \{w \mid (w \rightarrow \sigma_r^{\shup}) \in P\}$, initialize the matrix $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^\shup$ and solve for its fixpoint $M^* = M + M^2$,\\
       \end{minipage}
 
         \[
@@ -274,16 +274,16 @@
               \varnothing & \Cdots         &             &        & \varnothing
           \end{pNiceMatrix} \Rightarrow
           M^* = \begin{pNiceMatrix}
-                  \varnothing & \sigma_1^\shup & V           & \Cdots & V^*_\sigma \\
-                  \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                              &                &             &        & V\\
-                              &                &             &        & \sigma_n^\shup \\
-                  \varnothing & \Cdots         &             &        & \varnothing
+                  \varnothing & \sigma_1^\shup & \Lambda & \Cdots & \Lambda^*_\sigma \\
+                  \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                              &                &         &        & \Lambda\\
+                              &                &         &        & \sigma_n^\shup \\
+                  \varnothing & \Cdots         &         &        & \varnothing
         \end{pNiceMatrix}
         \]
 
       \vspace{1cm}\null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in V^*_\sigma? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
+        the recognizer is then defined as: $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Longleftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
       \end{minipage}
       }
 
@@ -314,7 +314,7 @@
         \item CYK parsers can be lowered onto $\mathbb{Z}_2^{|V|\times n\times n}$ or $\mathcal{M}: (\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2)^{|V|\times n\times n}$
         \item $\mathcal{M}^*$ can be solved for directly using Gaussian elimination or XOR-SAT
         \item Enables sketch-based synthesis in $\sigma$ or $\mathcal G$: just use variables for holes!
-        \item We can encode using the characteristic function, i.e., $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{Z}_2^{|V|}$
+        \item We can encode using the characteristic function, i.e., $\mathds{1}_{\subseteq V}: 2^V\rightarrow \mathbb{Z}_2^{|V|}$
         \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
       \end{itemize}
       \vspace{2cm}
@@ -564,7 +564,7 @@
          \includegraphics[height=0.127\textwidth]{../figures/angle4.png}
          \begin{center}Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration, reprojected into 2-space.\end{center}\\\vspace{2cm}
 
-       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t$, with $S_i \in V^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+       \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t$, with $S_i \in \Lambda^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
       \end{minipage}
       }
 
