@@ -180,8 +180,8 @@ private fun CFG.expandOr(): CFG =
 // so that holes can be [optionally] elided by the SAT solver.
 private fun CFG.addEpsilonProduction(): CFG =
   terminalUnitProductions.filterNot { "ε" in it.pretty() }.map { it.LHS }.toSet()
-    .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) + (it to listOf("ε+", it))} +
-    "ε+".let { (it to listOf(it, it)) } + ("ε+" to listOf("ε"))
+    .fold(this) { acc, it -> acc + (it to listOf(it, "ε+")) + (it to listOf("ε+", it)) } +
+    ("ε+" to listOf("ε+", "ε+")) + ("ε+" to listOf("ε"))
 
 // http://firsov.ee/cert-norm/cfg-norm.pdf#subsection.3.1
 tailrec fun CFG.nullableNonterminals(

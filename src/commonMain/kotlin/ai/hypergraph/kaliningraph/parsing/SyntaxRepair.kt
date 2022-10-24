@@ -21,7 +21,7 @@ fun repair(
   cfg: CFG,
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
-  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
+  synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>,
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   if (cfg.parse(coarsened) != null) return emptyList()
@@ -60,7 +60,7 @@ fun Σᐩ.synthesizeWithVariations(
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
   secondsBeforeTimeout: Int = 90,
-  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
+  synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
@@ -86,7 +86,7 @@ fun Σᐩ.synthesizeWithVariations(
     .map { updateProgress(it); it }
     .flatMap {
       val variantTokens = it.tokenizeByWhitespace()
-      cfg_.run { synthesizer(variantTokens) }.ifEmpty {
+      cfg_.run { synthesizer(listOf(variantTokens)) }.ifEmpty {
         cfg_.rememberImpossibleBigrams(variantTokens, synthesizer)
         emptySequence()
       }
@@ -168,14 +168,15 @@ val CFG.impossibleBigrams by cache { mutableSetOf<Σᐩ>() }
 val CFG.possibleBigrams by cache { mutableSetOf<Σᐩ>() }
 
 fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
-  str.windowed(2).any { bigram ->
-    (bigram in impossibleBigrams).also {
-      if (it) println("$it rejected because it contains an impossible bigram: $bigram")
+  str.tokenizeByWhitespace().windowed(2).any { bigram ->
+    val bg = bigram.joinToString(" ")
+    (bg in impossibleBigrams).also {
+      if (it) println("$str was rejected because it contains an impossible bigram: $bg")
     }
   }
 
 val CFG.possibleDerivations by cache { mutableSetOf(START_SYMBOL) }
-fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>) =
+fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>) =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
@@ -183,7 +184,7 @@ fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ
     val substring = it.joinToString(" ")
     val tokens = "$holes $substring $holes".tokenizeByWhitespace()
     possibleDerivations.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
-    if (synthesizer(tokens).firstOrNull() == null)
+    if (synthesizer(listOf(tokens)).firstOrNull().also { println("Found: $it") } == null)
       impossibleBigrams.add(substring.also { println("$it was determined to be an impossible bigram!") })
     else possibleBigrams.add(substring)
     possibleDerivations.removeAll { it != START_SYMBOL }
@@ -226,7 +227,7 @@ fun Σᐩ.randomSubstitutions(
   exclusions: Set<Int> = setOf(),
 ): Sequence<Σᐩ> =
   (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
-    .let { sortedIndices -> setOf(1, numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+    .let { sortedIndices -> setOf(1).asSequence().flatMap { sortedIndices.choose(it) } }
     .map { idxs -> padded.substitute(idxs) { "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(

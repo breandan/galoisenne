@@ -115,8 +115,8 @@ class SATValiantTest {
         println("Set A:$a")
         println("Set B:$b")
         println("Join A*B:" + setJoin(a, b))
-        println("A:" + toBitVec(a))
-        println("B:" + toBitVec(b))
+        println("A:" + toBitVec(a).toList())
+        println("B:" + toBitVec(b).toList())
 
         println("BV join:" + join(toBitVec(a), toBitVec(b)))
         println("Set join:" + toNTSet(join(toBitVec(a), toBitVec(b))))
@@ -416,6 +416,8 @@ KW -> new | return | private | String | this | public | import
 //      println(cfg.parse("Z <= X + Y")?.prettyPrint())
 
 //      assertNotNull(cfg.parse("Z <= Y"))
+      "public static w ( ) _ _ _ _ _ _".synthesizeIncrementally(cfg)
+        .forEach { println(it) }
       "_ _ _ _ _ _ _ _ public static _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
     }
 
@@ -576,7 +578,7 @@ KW -> new | return | private | String | this | public | import
     val cfg = """E -> E + E | E * E | ( E ) | x""".parseCFG()
 
     assertNull("_ _ _ _ x ) +".synthesizeIncrementally(cfg).firstOrNull())
-    val holes = List(30) { "_"}.joinToString(" ")
+    val holes = List(30) { "_" }.joinToString(" ")
     assertNull("$holes ( ) $holes".synthesizeIncrementally(cfg).firstOrNull())
   }
 

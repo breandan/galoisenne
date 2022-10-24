@@ -96,28 +96,28 @@ fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray =
       .fold(false) { acc, satf -> acc or satf }
   }
 
-fun CFG.maybeJoin(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
-  if (left == null || right == null) null else join(left, right)
-
-fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
-  if (left == null || right == null) { left ?: right }
-  else if (left.isEmpty() && right.isNotEmpty()) right
-  else if (left.isNotEmpty() && right.isEmpty()) left
-  else left.zip(right) { l, r -> l or r }.toBooleanArray()
+//fun CFG.maybeJoin(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
+//  if (left == null || right == null) null else join(left, right)
+//
+//fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
+//  if (left == null || right == null) { left ?: right }
+//  else if (left.isEmpty() && right.isNotEmpty()) right
+//  else if (left.isNotEmpty() && right.isEmpty()) left
+//  else left.zip(right) { l, r -> l or r }.toBooleanArray()
+//
+//val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
+//  Ring.of(
+//    nil = BooleanArray(nonterminals.size) { false },
+//    plus = { x, y -> maybeUnion(x, y) },
+//    times = { x, y -> maybeJoin(x, y) }
+//  )
+//}
 
 fun CFG.toNTSet(nts: BooleanArray): Set<Σᐩ> =
   nts.mapIndexed { i, it -> if (it) bindex[i] else null }.filterNotNull().toSet()
 
 fun BooleanArray.decodeWith(cfg: CFG): Set<Σᐩ> =
   mapIndexed { i, it -> if (it) cfg.bindex[i] else null }.filterNotNull().toSet()
-
-val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
-  Ring.of(
-    nil = BooleanArray(nonterminals.size) { false },
-    plus = { x, y -> maybeUnion(x, y) },
-    times = { x, y -> maybeJoin(x, y) }
-  )
-}
 
 //=====================================================================================
 

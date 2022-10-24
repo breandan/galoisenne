@@ -11,7 +11,7 @@ import kotlin.collections.filter
 typealias SATVector = Array<Formula>
 typealias SATRubix = UTMatrix<SATVector>
 
-val SATRubix.holeVariables by cache { diagonals.first().filter { !it.first().isConstantFormula } }
+val SATRubix.stringVariables by cache { diagonals.first() }
 
 @JvmName("joinFormula")
 fun CFG.join(left: SATVector, right: SATVector): SATVector =
@@ -31,7 +31,7 @@ fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
 infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
-  else if (this == that) T
+  else if (contentEquals(that)) T
   else zip(that).partition { (l, r) -> l == r }
 //    .also { (a, b) -> if (a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
@@ -68,12 +68,12 @@ fun <E, T> Array<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
 
 // Encodes that each blank can only be a single terminal
 fun CFG.uniquenessConstraints(rubix: SATRubix): Formula =
-  rubix.holeVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
+  rubix.stringVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
     .fold(T) { acc, it -> acc and it }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
 fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =
-  tokens.filter { it.isHoleTokenIn(cfg = this) }.zip(rubix.holeVariables)
+  tokens.zip(rubix.stringVariables)
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
       val nt = nonterminalStub.drop(1).dropLast(1)
@@ -92,7 +92,7 @@ fun CSL.alignNonterminals(rubices: List<SATRubix>): Formula {
 
   if (terminalsToNTs.isEmpty()) return F.also { println("No terminals in common!") }
 
-  return rubices.map { it.holeVariables }
+  return rubices.map { it.stringVariables }
     .let { FreeMatrix(rubices.size, it.first().size, it.flatten()) }.cols
     .map { vecs ->
       terminalsToNTs.map {
@@ -118,49 +118,54 @@ val CFG.satAlgebra by cache {
 
 // Precomputes literals in the fixpoint to avoid solving for invariant entries
 fun CFG.constructRubix(
-  tokens: List<Σᐩ>,
-  stringVars: MutableList<SATVector> = mutableListOf(),
+  numTokens: Int,
   // Precompute permanent upper right triangular submatrices
-  literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
-    ts = tokens.map { it ->
-      // Nulls on the superdiagonal will cast either a rectangular or pentagonal
-      // shadow of bitvector variables on UTMatrix, which we represent as nulls
-      if (it.isHoleTokenIn(cfg = this)) null
-      // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
-    }.toTypedArray(),
-    algebra = satLitAlgebra
-  ).seekFixpoint(),
-  literalMatrix: FreeMatrix<BooleanArray?> = literalUDM.toFullMatrix()
-    .map { if (it == null || toNTSet(it).isEmpty()) booleanArrayOf() else it }
+//  literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
+//    ts = tokens.map { it ->
+//      // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+//      // shadow of bitvector variables on UTMatrix, which we represent as nulls
+//      if (it.isHoleTokenIn(cfg = this)) null
+//      // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
+//      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+//    }.toTypedArray(),
+//    algebra = satLitAlgebra
+//  ).seekFixpoint(),
+//  literalMatrix: FreeMatrix<BooleanArray?> = literalUDM.toFullMatrix()
+//    .map { if (it == null || toNTSet(it).isEmpty()) booleanArrayOf() else it }
 ): SATRubix =
-  FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
-    // Superdiagonal
-    if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
-      BVecVar(nonterminals.size) { i -> "HV_${r}_${c}_${bindex[i]}" } .also { stringVars.add(it) }
+  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
     // Strictly upper triangular matrix entries
-    else if (r + 1 <= c) {
-      val permanentBitVec = literalMatrix[r, c]
-      if (permanentBitVec == null || permanentBitVec.isEmpty()) BVecVar(nonterminals.size, "HT_${r}_${c}")
-      else permanentBitVec.map { if (it) T else F }.toTypedArray()
-    }
+    if (r + 1 <= c) { BVecVar(nonterminals.size, "HT_${r}_${c}") }
     // Diagonal and subdiagonal
     else arrayOf()
   }.toUTMatrix()
 
 fun CFG.generateConstraints(
-  tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens)
+  tokens: List<List<Σᐩ>>,
+  rubix: SATRubix = constructRubix(tokens.first().size)
 ): Pair<Formula, SATRubix> =
   isInGrammar(rubix) and
+    encodeTokens(rubix, tokens) and
     uniquenessConstraints(rubix) and
-    reachabilityConstraints(tokens, rubix) to rubix
+    reachabilityConstraints(tokens.first(), rubix) to rubix
 
-fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
+  bimap[listOf(token)].let { nts -> nonterminals.map { it in nts } }
+    .toBooleanArray().toLitVec()
+
+fun CFG.encodeTokens(rubix: SATRubix, strings: List<List<Σᐩ>>): Formula =
+  strings.fold(F) { a, toks ->
+    a or rubix.stringVariables.zip(toks).fold(T) { acc: Formula, (v, b) ->
+      acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
+    }
+  }
+
+fun CSL.generateConstraints(tokens: List<List<Σᐩ>>): Pair<Formula, SATRubix> {
   ff.clear()
-  println("Synthesizing: ${tokens.joinToString(" ")}")
+  println("Synthesizing: ${tokens.joinToString("\n") { it.joinToString(" ") }}")
   val timeToFormConstraints = System.currentTimeMillis()
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
+//  println(q.first().toFullMatrix().summarize(cfgs.first()))
   val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
 
   val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
@@ -182,7 +187,7 @@ fun Σᐩ.synthesizeIncrementally(
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
-  synthesizer = { a -> asCSL.synthesize(a) }
+  synthesizer = { a -> asCSL.synthesize(*a.toTypedArray()) }
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
@@ -214,50 +219,45 @@ Lowers Valiant matrix onto SAT. Steps:
 
 fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCSL.synthesize(tokens)
 
-fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
-  check(tokens.all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }.let {
-    if (tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) }) emptySequence()
-    else if (tokens.size == 1)
-      cfgs.map { it.handleSingleton(tokens[0]) }.intersect().asSequence()
-    else sequence {
+fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
+  val tokens = strs.asList()
+  check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }
+  check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: $strs" }
+  return when {
+    tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence()
+    tokens.first().size == 1 -> cfgs.map { it.handleSingleton(tokens.first()[0]) }.intersect().asSequence()
+    else -> sequence {
       val (parsingConstraints, rubix) = generateConstraints(tokens)
-      val holeVars = rubix.holeVariables.fold(setOf<Formula>()) { a, b -> a + b }
+      val strVars = rubix.stringVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
-  // Sometimes simplification can take longer or even switch SAT->UNSAT?
-  // println("Original: ${parsingConstraints.numberOfNodes()}")
-  // parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
-  // parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
-  // println("Reduction: ${parsingConstraints.numberOfNodes()}")
-  // println(parsingConstraints.cnf().toPython())
+      // Sometimes simplification can take longer or even switch SAT->UNSAT?
+      // println("Original: ${parsingConstraints.numberOfNodes()}")
+      // parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
+      // parsingConstraints = BackboneSimplifier.get().apply(parsingConstraints, false)
+      // println("Reduction: ${parsingConstraints.numberOfNodes()}")
+      // println(parsingConstraints.cnf().toPython())
 
       var (solver, model) = parsingConstraints.solveIncrementally()
       model.ifEmpty { ff.clear(); return@sequence }
 
-  //  var freshnessConstraints = 0L
+      //  var freshnessConstraints = 0L
       while (true) try {
         val cfg = cfgs.first()
-        val fillers: MutableList<Σᐩ?> =
-          rubix.holeVariables.map { bits ->
-            cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
-          }.toMutableList()
+        val fillers = rubix.stringVariables.map { bits ->
+          cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+        }
 
-        val completion: Σᐩ =
-          tokens.joinToString(" ") {
-            if (it == "_") fillers.removeAt(0)!!
-            else if (it.isNonterminalStubIn(this@synthesize)) {
-              fillers.removeAt(0)!!
-            } else it
-          }
-
+        val completion: Σᐩ = fillers.joinToString(" ")
         if (Thread.currentThread().isInterrupted) throw InterruptedException()
         if (completion.trim().isNotBlank()) yield(completion)
 
-        val isFresh = model.filter { (k, v) -> k in holeVars && v }.areFresh()
-  //      freshnessConstraints += isFresh.numberOfAtoms()
-  //      println("Freshness constraints: $freshnessConstraints")
+        val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
+        //      freshnessConstraints += isFresh.numberOfAtoms()
+        //      println("Freshness constraints: $freshnessConstraints")
 
-        model = solver.addConstraintAndSolve(isFresh).ifEmpty { ff.clear(); return@sequence }
-      } catch(ie: InterruptedException) {
+        model = solver.addConstraintAndSolve(isFresh)
+          .ifEmpty { ff.clear(); return@sequence }
+      } catch (ie: InterruptedException) {
         ff.clear()
         throw ie
       } catch (e: NullPointerException) {
@@ -268,4 +268,5 @@ fun CSL.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
         break
       }
     }
+  }
 }

@@ -31,7 +31,7 @@ fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
 fun BLit(b: Boolean): Formula = ff.constant(b)
 fun BVecLit(l: BooleanArray): SATVector = l.map { ff.constant(it)  as Formula }.toTypedArray()
 fun BVecLit(l: List<Boolean>): SATVector = BVecLit(l.toBooleanArray())
-fun BVecLit(size: Int, f: (Int)-> Formula): SATVector = Array(size) { f(it) }
+fun BVecLit(size: Int, f: (Int) -> Formula): SATVector = Array(size) { f(it) }
 
 fun Formula.solve(): Model =
   ff.let { ff: FormulaFactory ->
@@ -50,6 +50,9 @@ fun Formula.solveMaxSat(
     solve()
   }.model()
     .let { model -> variables().associateWith { model.evaluateLit(it) } }
+
+// Trick to "remove" a clause: https://groups.google.com/g/minisat/c/ffXxBpqKh90
+fun SATSolver.removeConstraintAndSolve(f: Formula): Model = TODO()
 
 fun SATSolver.addConstraintAndSolve(f: Formula): Model {
   val model = this.run { add(f); sat(); model() }
