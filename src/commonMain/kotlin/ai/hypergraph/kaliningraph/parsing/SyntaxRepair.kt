@@ -86,10 +86,8 @@ fun Σᐩ.synthesizeWithVariations(
     .map { updateProgress(it); it }
     .flatMap {
       val variantTokens = it.tokenizeByWhitespace()
-      cfg_.run { synthesizer(listOf(variantTokens)) }.ifEmpty {
-        cfg_.rememberImpossibleBigrams(variantTokens, synthesizer)
-        emptySequence()
-      }
+      cfg_.run { synthesizer(listOf(variantTokens)) }
+        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
     }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
@@ -175,20 +173,20 @@ fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
     }
   }
 
-val CFG.possibleDerivations by cache { mutableSetOf(START_SYMBOL) }
-fun CFG.rememberImpossibleBigrams(str: List<Σᐩ>, synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>) =
+val CFG.startSymbols by cache { mutableSetOf(START_SYMBOL) }
+fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>) =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
     val holes = List(8) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
-    val tokens = "$holes $substring $holes".tokenizeByWhitespace()
-    possibleDerivations.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
-    if (synthesizer(listOf(tokens)).firstOrNull().also { println("Found: $it") } == null)
-      impossibleBigrams.add(substring.also { println("$it was determined to be an impossible bigram!") })
+    val tokens = "$holes $holes".tokenizeByWhitespace()
+    startSymbols.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
+    if (synthesizer(listOf(tokens)).firstOrNull() == null)
+      impossibleBigrams.add(substring.also { println("\"$it\" was determined to be an impossible bigram!") })
     else possibleBigrams.add(substring)
-    possibleDerivations.removeAll { it != START_SYMBOL }
-  }
+    startSymbols.removeAll { it != START_SYMBOL }
+  }.let { emptySequence<Σᐩ>() }
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
 //       we should work out a principled way to localize holes using the language quotient.

@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
+import prettyPrint
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue

@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
+import prettyPrint
 import kotlin.test.*
 
 /*
@@ -419,6 +420,12 @@ KW -> new | return | private | String | this | public | import
       "public static w ( ) _ _ _ _ _ _".synthesizeIncrementally(cfg)
         .forEach { println(it) }
       "_ _ _ _ _ _ _ _ public static _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg).take(10).forEach { println(it) }
+
+      println("Synthesizing a counterexample:")
+      "_ _ _ _ _ _ _ _ ( ) _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg).take(10).forEach {
+        println(it)
+        assertNotNull(cfg.parse(it))
+      }
     }
 
 /*

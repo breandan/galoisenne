@@ -58,6 +58,11 @@ class ECATest {
 */
   @Test
   fun testLooper() {
+  val t = "1101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101".toBitVector()
+  val u = t.evolve().evolve()
+
+  assertContentEquals(t, u)
+
     (2..4).mapNotNull { j ->
       val i = BVecVar(64) { i -> "$i" }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))
@@ -70,6 +75,9 @@ class ECATest {
     }
   }
 
+  fun SATVector.isOrphan() =
+    (BVecVar(size).evolve() matEq this).solve().isEmpty()
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testOrphan"
 */
@@ -77,11 +85,16 @@ class ECATest {
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     val size = 128
-    findAll(setOf(true, false), size).first { orphan ->
-      val i = BVecVar(size) { i -> "$i" }
-      val t = i.evolve() matEq BVecLit(orphan)
-      t.solve().isEmpty()
-    }.toBooleanArray().also { println(it.pretty()) }
+  val r = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110111010000011001"
+  val s = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110100110000011001"
+  val t = "01100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101001101100110000011001"
+  assertContentEquals(r.toBitVector().evolve(), s.toBitVector().evolve())
+  assertContentEquals(s.toBitVector().evolve(), t.toBitVector().evolve())
+//  val t = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+//  assertTrue(t.toBitVector().isOrphan())
+//    findAll(setOf(true, false), size).first { orphan ->
+//      BVecLit(orphan).isOrphan()
+//    }.toBooleanArray().also { println(it.pretty()) }
   }
 
 /*

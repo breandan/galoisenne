@@ -66,7 +66,7 @@ fun Formula.solveIncrementally(
 //    miniSat: MiniSat = MiniSat.glucose(ff)
 ): Pair<MiniSat, Model> =
   miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model().let { model ->
-    if(model == null) mapOf() else variables().associateWith { model.evaluateLit(it) }
+    if (model == null) mapOf() else variables().associateWith { model.evaluateLit(it) }
   }
 
 // Ensures that at least one of the formulas in stale are fresh

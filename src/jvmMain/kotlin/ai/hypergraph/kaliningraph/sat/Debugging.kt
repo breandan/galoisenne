@@ -2,10 +2,7 @@ package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.image.toHtmlPage
-import ai.hypergraph.kaliningraph.parsing.CFG
-import ai.hypergraph.kaliningraph.parsing.Tree
-import ai.hypergraph.kaliningraph.parsing.parseTable
-import ai.hypergraph.kaliningraph.parsing.toNTSet
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.visualization.html
 import org.logicng.formulas.*
@@ -76,3 +73,9 @@ fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
     v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
+fun SATRubix.startVariable(cfg: CFG) = diagonals.last().first()[cfg.bindex[START_SYMBOL]]
+
+fun Formula.stringVariables() =
+  variables().map { it.name().substringBefore("#") }
+    .filter { it.substringAfter("_").split("_").let { it[0].toInt() + 1 == it[1].toInt() } }
+    .distinct()

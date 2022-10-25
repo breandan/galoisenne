@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
+import pretty
 import kotlin.jvm.JvmName
 
 @Suppress("NonAsciiCharacters")
@@ -16,7 +17,6 @@ typealias CFG = Set<Production>
 val Production.LHS: Σᐩ get() = first
 val Production.RHS: List<Σᐩ> get() =
   second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
-fun Production.pretty(): Σᐩ = LHS + " -> " + RHS.joinToString(" ")
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
@@ -32,7 +32,6 @@ val CFG.tmap by cache { terminals.associateBy { bimap[listOf(it)] } }
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.joinMap: JoinMap by cache { JoinMap(this) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.pretty: FreeMatrix<Σᐩ> by cache { map { it.pretty() }.formatAsGrid(3) }
 val CFG.graph: LabeledGraph by cache { toGraph() }
 val CFG.originalForm: CFG by cache { rewriteHistory[this]!![0] }
 val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
@@ -82,8 +81,6 @@ class BiMap(CFG: CFG) {
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
-
-fun CFG.prettyPrint(): Σᐩ = pretty.toString()
 
 fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
 
