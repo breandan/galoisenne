@@ -31,7 +31,7 @@ infix fun SATVector.union(that: SATVector): SATVector =
 fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
 infix fun SATVector.vecEq(that: SATVector): Formula =
-  if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch!")
+  if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch! ($size, ${that.size})")
   else if (contentEquals(that)) T
   else zip(that).partition { (l, r) -> l == r }
 //    .also { (a, b) -> if (a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
@@ -39,14 +39,14 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
 infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
-  if (shape() != that.shape()) throw Exception("Shape mismatch, incomparable!")
+  if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
   else diagonals.flatten().zip(that.diagonals.flatten())
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
 fun CFG.isInGrammar(mat: SATRubix): Formula =
     startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
-      (mat valiantMatEq mat + mat * mat)
+      (mat valiantMatEq mat * mat)
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
@@ -117,53 +117,48 @@ val CFG.satAlgebra by cache {
 }
 
 // Precomputes literals in the fixpoint to avoid solving for invariant entries
-fun CFG.constructRubix(
-  tokens: List<Σᐩ>,
-//  Precompute permanent upper right triangular submatrices
-  literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
-    ts = tokens.map { it ->
-      // Nulls on the superdiagonal will cast either a rectangular or pentagonal
-      // shadow of bitvector variables on UTMatrix, which we represent as nulls
-      if (it.isHoleTokenIn(cfg = this)) null
-      // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-      else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
-    }.toTypedArray(),
-    algebra = satLitAlgebra
-  ).seekFixpoint(),
-  literalMatrix: FreeMatrix<BooleanArray?> = literalUDM.toFullMatrix()
-    .map { if (it == null || toNTSet(it).isEmpty()) booleanArrayOf() else it }
-): SATRubix =
-  FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
-    // Superdiagonal
-    if (r + 1 == c && tokens[c - 1].isHoleTokenIn(cfg = this))
-      BVecVar(nonterminals.size) { i -> "HV_${r}_${c}_${bindex[i]}" }
-      // Strictly upper triangular matrix entries
-      else if (r + 1 <= c) {
-      val permanentBitVec = literalMatrix[r, c]
-      if (permanentBitVec == null || permanentBitVec.isEmpty()) BVecVar(nonterminals.size, "HT_${r}_${c}")
-      else permanentBitVec.map { if (it) T else F }.toTypedArray()
-    }
-      if (r + 1 <= c) { BVecVar(nonterminals.size, "HT_${r}_${c}") }
-      // Diagonal and subdiagonal
-      else arrayOf()
-    }.toUTMatrix()
+fun CFG.constructRubix(numTokens: Int): SATRubix =
+  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
+    // Strictly upper triangular matrix entries
+    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_${r}_${c}#" }
+    // Diagonal and subdiagonal
+    else arrayOf()
+  }.toUTMatrix()
 
 fun CFG.generateConstraints(
   tokens: List<List<Σᐩ>>,
-  rubix: SATRubix = constructRubix(tokens.first())
+  rubix: SATRubix = constructRubix(tokens.first().size)
 ): Pair<Formula, SATRubix> =
-  isInGrammar(rubix) to rubix
-//    encodeTokens(rubix, tokens.first()) and
-//    uniquenessConstraints(rubix) and
-//    reachabilityConstraints(tokens.first(), rubix) to rubix
+  isInGrammar(rubix) and
+  encodeTokens(rubix, tokens) and
+  uniquenessConstraints(rubix) and
+  reachabilityConstraints(tokens.first(), rubix) to rubix
 
 fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
   bimap[listOf(token)].let { nts -> nonterminals.map { it in nts } }
     .toBooleanArray().toLitVec()
 
-fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
+fun CFG.encodeTokens(rubix: SATRubix, strings: List<List<Σᐩ>>): Formula =
+//  if (strings.size == 1) {
+//    //  Precompute permanent upper right triangular submatrices
+//    val literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
+//      ts = strings.first().map { it ->
+//        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+//        // shadow of bitvector variables on UTMatrix, which we represent as nulls
+//        if (it.isHoleTokenIn(cfg = this)) null
+//        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
+//        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+//      }.toTypedArray(),
+//      algebra = satLitAlgebra
+//    ).seekFixpoint()
+////    println(rubix.toFullMatrix().summarize(this))
+////    println(FreeMatrix(literalUDM.data.map { it?.toLitVec() ?: arrayOf() }).summarize(this))
+//    rubix.data.zip(literalUDM.data).fold(T) { acc, (a, b) ->
+//      if (b == null || b.isEmpty() || a.isEmpty()) acc else acc and (a.vecEq(b.toLitVec()))
+//    }
+//  } else
   strings.fold(F) { a, toks ->
-    a or rubix.stringVariables.zip(strings).fold(T) { acc: Formula, (v, b) ->
+    a or rubix.stringVariables.zip(toks).fold(T) { acc: Formula, (v, b) ->
       acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
     }
   }
@@ -175,11 +170,11 @@ fun CSL.generateConstraints(tokens: List<List<Σᐩ>>): Pair<Formula, SATRubix> 
   val timeToFormConstraints = System.currentTimeMillis()
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
 //  println(q.first().toFullMatrix().summarize(cfgs.first()))
-  val parsingConstraints = t.first()//t.fold(T) { a, b -> a and b }// and alignNonterminals(q)
+  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
 
   val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
   println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
-  println("S variables " + parsingConstraints.stringVariables().let { "(${it.size}): $it" })
+//  println("S variables " + parsingConstraints.stringVariables().let { "(${it.size}): $it" })
 
   return parsingConstraints to q.first()
 }

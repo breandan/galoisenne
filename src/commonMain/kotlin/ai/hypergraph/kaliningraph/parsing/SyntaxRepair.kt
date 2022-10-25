@@ -84,10 +84,13 @@ fun Σᐩ.synthesizeWithVariations(
   return allVariants
     .takeWhile { t.elapsedNow().inWholeSeconds < secondsBeforeTimeout }
     .map { updateProgress(it); it }
-    .flatMap {
-      val variantTokens = it.tokenizeByWhitespace()
+    .flatMap { variant ->
+      val variantTokens = variant.tokenizeByWhitespace()
       cfg_.run { synthesizer(listOf(variantTokens)) }
-        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
+        .ifEmpty {
+          println("Unable to find results for \"$variant\", storing bigram polarity")
+          cfg_.rememberBigramPolarity(variantTokens, synthesizer)
+        }
     }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
@@ -180,10 +183,10 @@ fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<List<Σ�
   }.forEach {
     val holes = List(8) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
-    val tokens = "$holes $holes".tokenizeByWhitespace()
+    val tokens = "$holes $substring $holes".tokenizeByWhitespace()
     startSymbols.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
-    if (synthesizer(listOf(tokens)).firstOrNull() == null)
-      impossibleBigrams.add(substring.also { println("\"$it\" was determined to be an impossible bigram!") })
+    if (synthesizer(listOf(tokens)).firstOrNull().also { println("Found: $it") } == null)
+      impossibleBigrams.add(substring.also { println("\"$it\" determined to be an impossible bigram!") })
     else possibleBigrams.add(substring)
     startSymbols.removeAll { it != START_SYMBOL }
   }.let { emptySequence<Σᐩ>() }

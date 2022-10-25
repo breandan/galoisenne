@@ -58,10 +58,10 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-  val t = "1101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101".toBitVector()
-  val u = t.evolve().evolve()
+    val t = "1101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101".toBitVector()
+    val u = t.evolve().evolve()
 
-  assertContentEquals(t, u)
+    assertContentEquals(t, u)
 
     (2..4).mapNotNull { j ->
       val i = BVecVar(64) { i -> "$i" }
@@ -75,7 +75,7 @@ class ECATest {
     }
   }
 
-  fun SATVector.isOrphan() =
+  fun SATVector.isOrphan(): Boolean =
     (BVecVar(size).evolve() matEq this).solve().isEmpty()
 
 /*
@@ -85,16 +85,9 @@ class ECATest {
   fun testOrphan() {
     // Can we do better? https://wpmedia.wolfram.com/uploads/sites/13/2018/02/22-4-3.pdf
     val size = 128
-  val r = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110111010000011001"
-  val s = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110100110000011001"
-  val t = "01100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101001101100110000011001"
-  assertContentEquals(r.toBitVector().evolve(), s.toBitVector().evolve())
-  assertContentEquals(s.toBitVector().evolve(), t.toBitVector().evolve())
-//  val t = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-//  assertTrue(t.toBitVector().isOrphan())
-//    findAll(setOf(true, false), size).first { orphan ->
-//      BVecLit(orphan).isOrphan()
-//    }.toBooleanArray().also { println(it.pretty()) }
+
+    findAll(setOf(true, false), size).first { orphan -> BVecLit(orphan).isOrphan() }
+      .toBooleanArray().also { println(it.pretty()) }
   }
 
 /*
@@ -118,6 +111,27 @@ class ECATest {
   }
 
   fun BooleanArray.pretty(): String = joinToString("") { if (it) "1" else "0" }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testHWQ1"
+*/
+  @Test
+  fun testHWQ1() {
+    val r = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110111010000011001"
+    val s = "10100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101110110100110000011001"
+    val t = "01100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001101001101100110000011001"
+    assertContentEquals(r.toBitVector().evolve(), s.toBitVector().evolve())
+    assertContentEquals(s.toBitVector().evolve(), t.toBitVector().evolve())
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testHWQ2"
+*/
+  @Test
+  fun testHWQ2() {
+    val t = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    assertTrue(t.toBitVector().isOrphan())
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testChimera"
