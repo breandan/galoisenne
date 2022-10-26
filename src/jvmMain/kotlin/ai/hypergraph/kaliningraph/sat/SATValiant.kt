@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
+import kotlin.time.*
 
 typealias SATVector = Array<Formula>
 typealias SATRubix = UTMatrix<SATVector>
@@ -43,9 +44,11 @@ infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
     .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
 
+@OptIn(ExperimentalTime::class)
 fun CFG.isInGrammar(mat: SATRubix): Formula =
     startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
-      (mat valiantMatEq mat * mat)
+      // TODO: Cache this to speedup computation!
+      (mat valiantMatEq measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
