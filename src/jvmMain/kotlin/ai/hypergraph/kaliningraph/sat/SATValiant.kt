@@ -140,24 +140,24 @@ fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
     .toBooleanArray().toLitVec()
 
 fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
-//  if (strings.size == 1) {
-//    //  Precompute permanent upper right triangular submatrices
-//    val literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
-//      ts = strings.first().map { it ->
-//        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
-//        // shadow of bitvector variables on UTMatrix, which we represent as nulls
-//        if (it.isHoleTokenIn(cfg = this)) null
-//        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-//        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
-//      }.toTypedArray(),
-//      algebra = satLitAlgebra
-//    ).seekFixpoint()
-////    println(rubix.toFullMatrix().summarize(this))
-////    println(FreeMatrix(literalUDM.data.map { it?.toLitVec() ?: arrayOf() }).summarize(this))
-//    rubix.data.zip(literalUDM.data).fold(T) { acc, (a, b) ->
-//      if (b == null || b.isEmpty() || a.isEmpty()) acc else acc and (a.vecEq(b.toLitVec()))
-//    }
-//  } else
+  if (strings.size == 1) {
+    //  Precompute permanent upper right triangular submatrices
+    val literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
+      ts = strings.map { it ->
+        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+        // shadow of bitvector variables on UTMatrix, which we represent as nulls
+        if (it.isHoleTokenIn(cfg = this)) null
+        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
+        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+      }.toTypedArray(),
+      algebra = satLitAlgebra
+    ).seekFixpoint()
+//    println(rubix.toFullMatrix().summarize(this))
+//    println(FreeMatrix(literalUDM.data.map { it?.toLitVec() ?: arrayOf() }).summarize(this))
+    rubix.data.zip(literalUDM.data).fold(T) { acc, (a, b) ->
+      if (b == null || b.isEmpty() || a.isEmpty()) acc else acc and (a.vecEq(b.toLitVec()))
+    }
+  } else
     rubix.stringVariables.zip(strings).fold(T) { acc: Formula, (v, b) ->
       acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
     }
