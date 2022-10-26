@@ -120,7 +120,7 @@ val CFG.satAlgebra by cache {
 fun CFG.constructRubix(numTokens: Int): SATRubix =
   FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
     // Strictly upper triangular matrix entries
-    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_${r}_${c}#" }
+    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV[r=${r}][c=${c}][cfgHash=${hashCode()}]" }
     // Diagonal and subdiagonal
     else arrayOf()
   }.toUTMatrix()

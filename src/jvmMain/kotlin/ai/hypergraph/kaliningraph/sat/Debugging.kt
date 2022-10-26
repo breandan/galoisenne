@@ -74,8 +74,3 @@ fun Map<Variable, Boolean>.toPython() =
     v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"
 
 fun SATRubix.startVariable(cfg: CFG) = diagonals.last().first()[cfg.bindex[START_SYMBOL]]
-
-fun Formula.stringVariables() =
-  variables().map { it.name().substringBefore("#") }
-    .filter { it.substringAfter("_").split("_").let { it[0].toInt() + 1 == it[1].toInt() } }
-    .distinct()

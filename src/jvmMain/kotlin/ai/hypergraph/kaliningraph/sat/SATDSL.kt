@@ -25,7 +25,7 @@ val ff: FormulaFactory = //get() =
 
 fun BVar(name: String): Formula = ff.variable(name)
 fun BVecVar(size: Int, prefix: String = "", pfx: (Int) -> String = { prefix }): SATVector =
-   Array(size) { k -> BVar("${pfx(k)}_$k") }
+   Array(size) { k -> BVar("${pfx(k)}[f=$k]") }
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
   FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)

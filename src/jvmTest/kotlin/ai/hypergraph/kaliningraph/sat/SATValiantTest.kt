@@ -626,12 +626,13 @@ class SATValiantTest {
     val csl = (cfgA intersect cfgB)
     println("CSL:\n" + csl.pretty())
     csl.synthesize(List(20) { "_" }.joinToString(" ").tokenizeByWhitespace())
-      .take(10).toList().also { assert(it.isNotEmpty()) }
-      .forEach {
+      .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
+      .map {
         println(it)
         val (a, b, c) = it.count { it == 'a' } to it.count { it == 'b' } to it.count { it == 'c' }
         assertEquals(a, b)
         assertEquals(b, c)
-      }
+        it
+      }.take(5).toList().also { assert(it.isNotEmpty()) }
   }
 }
