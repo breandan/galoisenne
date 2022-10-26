@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.cache.LRUCache
-import ai.hypergraph.kaliningraph.formatAsGrid
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
-import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
 import pretty
 import kotlin.jvm.JvmName

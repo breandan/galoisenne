@@ -7,6 +7,7 @@ import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
+import prettyPrint
 import kotlin.time.*
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
@@ -21,7 +22,7 @@ fun repair(
   cfg: CFG,
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
-  synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>,
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   if (cfg.parse(coarsened) != null) return emptyList()
@@ -38,8 +39,8 @@ fun repair(
     allowNTs = false,
     variations = variations,
   ).take(maxResults).toList().sortedWith(tokens.ranker())
-    .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
-    .map { it.uncoarsen(prompt) }
+   .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
+   .map { it.uncoarsen(prompt) }
 
   return repairs
 }
@@ -60,7 +61,7 @@ fun Σᐩ.synthesizeWithVariations(
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
   secondsBeforeTimeout: Int = 90,
-  synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
 
@@ -73,6 +74,7 @@ fun Σᐩ.synthesizeWithVariations(
   val tokens = stringToSolve.tokenizeByWhitespace()
   if (80 < tokens.size) return sequenceOf<Σᐩ>()
     .also { println("Too many tokens: $stringToSolve") }
+
   val recStubs = reconstructor.map { it.first }.toSet()
   val exclude =
       tokens.indices.filter { i -> tokens[i].let { it in cfg_.blocked || it in recStubs } }.toSet()
@@ -82,13 +84,13 @@ fun Σᐩ.synthesizeWithVariations(
       .distinct().filter { !cfg_.containsImpossibleBigram(it) }
 
   return allVariants
+    .filter { s -> s.tokenizeByWhitespace().any { it.isHoleTokenIn(cfg) } }
     .takeWhile { t.elapsedNow().inWholeSeconds < secondsBeforeTimeout }
     .map { updateProgress(it); it }
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
-      cfg_.run { synthesizer(listOf(variantTokens)) }
+      cfg_.run { synthesizer(variantTokens) }
         .ifEmpty {
-          println("Unable to find results for \"$variant\", storing bigram polarity")
           cfg_.rememberBigramPolarity(variantTokens, synthesizer)
         }
     }.distinct().map {
@@ -177,18 +179,24 @@ fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
   }
 
 val CFG.startSymbols by cache { mutableSetOf(START_SYMBOL) }
-fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<List<Σᐩ>>) -> Sequence<Σᐩ>) =
+fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>) =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
     val holes = List(8) { "_" }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = "$holes $substring $holes".tokenizeByWhitespace()
+
     startSymbols.addAll(nonterminals) // If anything can be derived from the whole string, it is "possible"
-    if (synthesizer(listOf(tokens)).firstOrNull().also { println("Found: $it") } == null)
-      impossibleBigrams.add(substring.also { println("\"$it\" determined to be an impossible bigram!") })
+    val blockers = blocked.toSet()
+    blocked.removeAll(blockers)
+
+    if (synthesizer(tokens).firstOrNull() == null)
+      impossibleBigrams.add(substring.also { println("\"$it\" determined to be an impossible bigram using:\n${prettyPrint()}\n") })
     else possibleBigrams.add(substring)
+
     startSymbols.removeAll { it != START_SYMBOL }
+    blocked.addAll(blockers)
   }.let { emptySequence<Σᐩ>() }
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
@@ -228,7 +236,7 @@ fun Σᐩ.randomSubstitutions(
   exclusions: Set<Int> = setOf(),
 ): Sequence<Σᐩ> =
   (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
-    .let { sortedIndices -> setOf(1).asSequence().flatMap { sortedIndices.choose(it) } }
+    .let { sortedIndices -> setOf(1, numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
     .map { idxs -> padded.substitute(idxs) { "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(

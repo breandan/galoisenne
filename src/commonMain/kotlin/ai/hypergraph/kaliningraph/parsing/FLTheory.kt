@@ -19,10 +19,10 @@ data class CFL(val cfg: CFG) // https://en.wikipedia.org/wiki/Context-free_langu
 
 class CSL(vararg cfls: CFL) {
   val cfls: Array<CFL> = cfls.toSet().toTypedArray()
-  val cfgs by lazy { cfls.map { it.cfg } }
-  val nonterminals: Set<Σᐩ> by lazy { intersect { nonterminals } }
-  val terminals: Set<Σᐩ> by lazy { intersect { terminals } }
-  val symbols: Set<Σᐩ> by lazy { intersect { symbols } }
+  val cfgs by cache { cfls.map { it.cfg } }
+  val nonterminals: Set<Σᐩ> by cache { intersect { nonterminals } }
+  val terminals: Set<Σᐩ> by cache { intersect { terminals } }
+  val symbols: Set<Σᐩ> by cache { intersect { symbols } }
 
   private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> = cfgs.map { it.item() }.intersect()
 }

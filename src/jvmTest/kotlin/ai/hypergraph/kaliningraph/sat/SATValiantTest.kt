@@ -3,8 +3,6 @@ package ai.hypergraph.kaliningraph.sat
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
-import org.logicng.formulas.Formula
-import pretty
 import prettyPrint
 import kotlin.test.*
 
@@ -588,8 +586,12 @@ class SATValiantTest {
     val cfg = """E -> E + E | E * E | ( E ) | x""".parseCFG()
 
     assertNull("_ _ _ _ x ) +".synthesizeIncrementally(cfg).firstOrNull())
-    val holes = List(30) { "_" }.joinToString(" ")
+    val holes = List(10) { "_" }.joinToString(" ")
     assertNull("$holes ( ) $holes".synthesizeIncrementally(cfg).firstOrNull())
+
+    val cfg1 = "S -> w | ( ) | [ ] | { } | ( S ) | [ S ] | { S } | S S".parseCFG().noNonterminalStubs
+    println(cfg1.prettyPrint())
+    assertNotNull(cfg1.synthesize("_ _ _ _ _ _ _ _ w ( _ _ _ _ _ _ _ _".tokenizeByWhitespace()).firstOrNull().also { println(it) })
   }
 
 /*
@@ -624,7 +626,7 @@ class SATValiantTest {
 
     // This language should recognize {aⁿbⁿcⁿ | n > 0}
     val csl = (cfgA intersect cfgB)
-    println("CSL:\n" + csl.pretty())
+    println("CSL:\n" + csl.prettyPrint())
     csl.synthesize(List(20) { "_" }.joinToString(" ").tokenizeByWhitespace())
       .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
       .map {

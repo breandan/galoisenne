@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
-import pretty
 import kotlin.collections.filter
 
 typealias SATVector = Array<Formula>
@@ -67,8 +66,10 @@ fun <E, T> Array<E>.projectOnto(set: Set<T>, on: Set<T> = set): Set<E> =
   else set.intersect(on).map { this[on.indexOf(it)] }.toSet()
 
 // Encodes that each blank can only be a single terminal
-fun CFG.uniquenessConstraints(rubix: SATRubix): Formula =
-  rubix.stringVariables.map { bitvec -> mustBeOnlyOneTerminal(bitvec) }
+fun CFG.uniquenessConstraints(rubix: SATRubix, tokens: List<Σᐩ>): Formula =
+  rubix.stringVariables.zip(tokens)
+    .filter { it.second.isHoleTokenIn(this) }
+    .map { mustBeOnlyOneTerminal(it.first) }
     .fold(T) { acc, it -> acc and it }
 
 // Encodes that nonterminal stubs can only be replaced by reachable nonterminals
@@ -126,19 +127,19 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
   }.toUTMatrix()
 
 fun CFG.generateConstraints(
-  tokens: List<List<Σᐩ>>,
-  rubix: SATRubix = constructRubix(tokens.first().size)
+  tokens: List<Σᐩ>,
+  rubix: SATRubix = constructRubix(tokens.size)
 ): Pair<Formula, SATRubix> =
   isInGrammar(rubix) and
   encodeTokens(rubix, tokens) and
-  uniquenessConstraints(rubix) and
-  reachabilityConstraints(tokens.first(), rubix) to rubix
+  uniquenessConstraints(rubix, tokens) and
+  reachabilityConstraints(tokens, rubix) to rubix
 
 fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
   bimap[listOf(token)].let { nts -> nonterminals.map { it in nts } }
     .toBooleanArray().toLitVec()
 
-fun CFG.encodeTokens(rubix: SATRubix, strings: List<List<Σᐩ>>): Formula =
+fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
 //  if (strings.size == 1) {
 //    //  Precompute permanent upper right triangular submatrices
 //    val literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
@@ -157,15 +158,13 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<List<Σᐩ>>): Formula =
 //      if (b == null || b.isEmpty() || a.isEmpty()) acc else acc and (a.vecEq(b.toLitVec()))
 //    }
 //  } else
-  strings.fold(F) { a, toks ->
-    a or rubix.stringVariables.zip(toks).fold(T) { acc: Formula, (v, b) ->
+    rubix.stringVariables.zip(strings).fold(T) { acc: Formula, (v, b) ->
       acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
     }
-  }
 
-fun CSL.generateConstraints(tokens: List<List<Σᐩ>>): Pair<Formula, SATRubix> {
+fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   ff.clear()
-  println("Synthesizing: ${tokens.joinToString("\n") { it.joinToString(" ") }}")
+  println("Synthesizing (${tokens.size}): ${tokens.joinToString(" ")}")
 //  println("Using grammar:\n${pretty()}")
   val timeToFormConstraints = System.currentTimeMillis()
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
@@ -192,7 +191,7 @@ fun Σᐩ.synthesizeIncrementally(
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
-  synthesizer = { a -> asCSL.synthesize(*a.toTypedArray()) }
+  synthesizer = { a -> asCSL.synthesize(a) }
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
@@ -227,12 +226,12 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCSL.synthesize(toke
 fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
   val tokens = strs.asList()
   check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }
-  check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: $strs" }
+  check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: ${strs.map { it.size }}" }
   return when {
-    tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence()
+    tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
     tokens.first().size == 1 -> cfgs.map { it.handleSingleton(tokens.first()[0]) }.intersect().asSequence()
     else -> sequence {
-      val (parsingConstraints, rubix) = generateConstraints(tokens)
+      val (parsingConstraints, rubix) = generateConstraints(tokens.first())
       val strVars = rubix.stringVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
       // Sometimes simplification can take longer or even switch SAT->UNSAT?
