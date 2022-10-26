@@ -247,8 +247,8 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       //  var freshnessConstraints = 0L
       while (true) try {
         val cfg = cfgs.first()
-        val fillers = rubix.stringVariables.map { bits ->
-          cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+        val fillers = rubix.stringVariables.zip(tokens.first()).map { (bits, token) ->
+            if (cfgs.any { token.isHoleTokenIn(it) }) cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })] else token
         }
 
         val completion: Σᐩ = fillers.joinToString(" ")
