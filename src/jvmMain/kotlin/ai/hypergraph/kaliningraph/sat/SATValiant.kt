@@ -19,14 +19,18 @@ fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
   else Array(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
-      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
+      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+      .fold(F) { acc, satf -> acc or satf }
+//      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
+//      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
   }
 
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
   if (isEmpty()) that else if (that.isEmpty()) this
-  else Array(size) { i -> this[i].let { it.factory().or(it, that[i]) } }
+  else Array(size) { i -> this[i] or that[i] }
+//  if (isEmpty()) that else if (that.isEmpty()) this
+//  else Array(size) { i -> this[i].let { it.factory().or(it, that[i]) } }
 
 fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
@@ -34,7 +38,6 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch! ($size, ${that.size})")
   else if (contentEquals(that)) T
   else zip(that).partition { (l, r) -> l == r }
-//    .also { (a, b) -> if (a.isNotEmpty()) println("Eliminated ${a.size}/${a.size + b.size} identical SAT variables") }
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
@@ -144,27 +147,21 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
 // Since Valiant matrix multiplication procedure takes a long time, and we use
 // the same base matrix each time, we precompute a large matrix template and
 // reuse submatrices for each individual sketch.
-val CFG.parseMatrix: Π2A<SATRubix> by cache {
-  constructRubix(50).let { it to (it * it) }.let { (a, b) ->
-    a to (a matEq b)
-  }
-}
+//val CFG.parseMatrix: Π2A<SATRubix> by cache {
+//  constructRubix(MAX_TOKENS).let { it to (it * it) }.let { (a, b) ->
+//    a to (a matEq b)
+//  }
+//}
 
-infix fun SATRubix.matEq(other: SATRubix) =
-  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
-    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) ->
-      g.factory().equivalence(g, h)
-    }.toTypedArray() } }, algebra)
-
-fun CFG.matrix(dim: Int): SATRubix = parseMatrix.first.submatrix(dim, this)
-fun CFG.matrixFPEq(dim: Int): SATRubix = parseMatrix.second.submatrix(dim, this)
+//fun CFG.matrix(dim: Int): SATRubix = parseMatrix.first.submatrix(dim, this)
+//fun CFG.matrixFPEq(dim: Int): SATRubix = parseMatrix.second.submatrix(dim, this)
 
 //fun SATRubix.submatrix(dim: Int): SATRubix =
 //   UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }, algebra)
 
-fun SATRubix.submatrix(dim: Int, cfg: CFG): SATRubix =
-  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
-    .map { it.map { it.map { ff.importFormula(it) }.toTypedArray() } }, cfg.satAlgebra)
+//fun SATRubix.submatrix(dim: Int, cfg: CFG): SATRubix =
+//  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
+//    .map { it.map { it.map { ff.importFormula(it) }.toTypedArray() } }, cfg.satAlgebra)
 
 //fun UTMatrix<Array<String>?>.submatrix(dim: Int, cfg: CFG): SATRubix =
 //  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
@@ -178,10 +175,16 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
     else arrayOf()
   }.toUTMatrix()
 
+infix fun SATRubix.matEq(other: SATRubix) =
+  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
+    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) -> g eq h }.toTypedArray() } }, algebra)
+
 @OptIn(ExperimentalTime::class)
 fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
   measureTimedValue {
-    (matrix(i) to matrixFPEq(i)).let { (s, t ) ->
+  constructRubix(i).let { it to (it matEq it * it) }
+//    (matrix(i) to matrixFPEq(i))
+    .let { (s, t ) ->
       startSymbols.fold(F) { acc, it -> acc or s.diagonals.last().first()[bindex[it]] } and
       t.data.map { it.toList() }.flatten().fold(T) { a, b -> a and b } to s
     }

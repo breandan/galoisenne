@@ -15,18 +15,19 @@ import org.logicng.solvers.MiniSat
 import org.logicng.solvers.SATSolver
 
 typealias Model = Map<Variable, Boolean>
-val ffCache = mutableMapOf<String, FormulaFactory>()
+//val ffCache = mutableMapOf<String, FormulaFactory>()
 
 val ff: FormulaFactory =
     FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
 
 //fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
 
-fun BVar(name: String): Formula = (if(name.startsWith("HV"))
-  ffCache.getOrPut(name.substringAfter("cfgHash::").substringBefore("_")) {
-    ffCache.keys.forEach { ffCache.remove(it)?.clear() }
-    FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(PANIC).build())
-  } else ff).variable(name)
+fun BVar(name: String): Formula = ff.variable(name)
+//  (if(name.startsWith("HV"))
+//  ffCache.getOrPut(name.substringAfter("cfgHash::").substringBefore("_")) {
+//    ffCache.keys.forEach { ffCache.remove(it)?.clear() }
+//    FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(PANIC).build())
+//  } else ff).variable(name)
 fun BVecVar(size: Int, prefix: String = "", pfx: (Int) -> String = { prefix }): SATVector =
    Array(size) { k -> BVar("${pfx(k)}_f::$k") }
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =

@@ -52,6 +52,7 @@ fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
 private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
+var MAX_TOKENS = 80
 // Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
 @OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariations(
@@ -72,7 +73,7 @@ fun Σᐩ.synthesizeWithVariations(
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
   val tokens = stringToSolve.tokenizeByWhitespace()
-  if (80 < tokens.size) return sequenceOf<Σᐩ>()
+  if (MAX_TOKENS < tokens.size) return sequenceOf<Σᐩ>()
     .also { println("Too many tokens: $stringToSolve") }
 
   val recStubs = reconstructor.map { it.first }.toSet()
