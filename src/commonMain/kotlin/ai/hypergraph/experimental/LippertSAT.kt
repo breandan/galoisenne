@@ -1,15 +1,20 @@
 package ai.hypergraph.experimental
 
+import kotlin.jvm.JvmName
+
 // https://learn.microsoft.com/en-us/archive/blogs/ericlippert/lambda-expressions-vs-anonymous-methods-part-five
 
 object T
 object F
 typealias DT = (T) -> Unit
 typealias DF = (F) -> Unit
+
+@JvmName("MDT")
 fun M(dt: DT) {
   println("true");
   dt(T)
 }
+@JvmName("MDF")
 fun M(df: DF) {
   println("false")
   df(F)
