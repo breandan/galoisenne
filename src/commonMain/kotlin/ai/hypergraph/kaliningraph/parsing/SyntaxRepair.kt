@@ -32,13 +32,12 @@ fun repair(
 
   val variations: List<Mutator> =
     listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
-  val maxResults = 10
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,
     variations = variations,
-  ).take(maxResults).toList().sortedWith(tokens.ranker())
+  ).take(MAX_SAMPLE).toList().sortedWith(tokens.ranker())
    .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
    .map { it.uncoarsen(prompt) }
 
@@ -52,7 +51,9 @@ fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
 private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
+var MAX_SAMPLE = 10
 var MAX_TOKENS = 80
+
 // Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
 @OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariations(

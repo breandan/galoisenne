@@ -179,24 +179,39 @@ infix fun SATRubix.matEq(other: SATRubix) =
   UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
     c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) -> g eq h }.toTypedArray() } }, algebra)
 
-@OptIn(ExperimentalTime::class)
-fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
-  measureTimedValue {
-  constructRubix(i).let { it to (it matEq it * it) }
-//    (matrix(i) to matrixFPEq(i))
-    .let { (s, t ) ->
-      startSymbols.fold(F) { acc, it -> acc or s.diagonals.last().first()[bindex[it]] } and
-      t.data.map { it.toList() }.flatten().fold(T) { a, b -> a and b } to s
-    }
-  }.also { println("Formed grammar constraints in ${it.duration.inWholeMilliseconds}ms") }.value
+//@OptIn(ExperimentalTime::class)
+//fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
+//  measureTimedValue {
+//  constructRubix(i).let { it to (it matEq it * it) }
+////    (matrix(i) to matrixFPEq(i))
+//    .let { (s, t ) ->
+//      startSymbols.fold(F) { acc, it -> acc or s.diagonals.last().first()[bindex[it]] } and
+//      t.data.map { it.toList() }.flatten().fold(T) { a, b -> a and b } to s
+//    }
+//  }.also { println("Formed grammar constraints in ${it.duration.inWholeMilliseconds}ms") }.value
+//
+//fun CFG.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+//  val (t, q) = isInGrammar(tokens.size)
+//  return t and
+//    encodeTokens(q, tokens) and
+//    uniquenessConstraints(q, tokens) and
+//    reachabilityConstraints(tokens, q) to q
+//}
 
-fun CFG.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
-  val (t, q) = isInGrammar(tokens.size)
-  return t and
-    encodeTokens(q, tokens) and
-    uniquenessConstraints(q, tokens) and
-    reachabilityConstraints(tokens, q) to q
-}
+//@OptIn(ExperimentalTime::class)
+fun CFG.isInGrammar(mat: SATRubix): Formula =
+  startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
+    // TODO: Cache this to speedup computation?
+    (mat valiantMatEq mat * mat)//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
+
+fun CFG.generateConstraints(
+  tokens: List<Σᐩ>,
+  rubix: SATRubix = constructRubix(tokens.size)
+): Pair<Formula, SATRubix> =
+  isInGrammar(rubix) and
+    encodeTokens(rubix, tokens) and
+    uniquenessConstraints(rubix, tokens) and
+    reachabilityConstraints(tokens, rubix) to rubix
 
 fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   ff.clear()
