@@ -218,4 +218,15 @@ class SATTest {
 
     assertEquals(lits, solution)
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testMultipleFactories"
+*/
+  @Test
+  fun testMultipleFactories()  {
+    val a = BVar("HV[cfgHash=123]")
+    val b = BVar("hello")
+
+    println((a xor b).solve())
+  }
 }

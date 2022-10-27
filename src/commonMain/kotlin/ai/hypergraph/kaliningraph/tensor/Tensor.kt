@@ -125,7 +125,7 @@ val GF2_ALGEBRA: Ring<Int> =
     times = { a, b -> (a * b) % 2 }
   )
 
-private fun <T> TODO_ALGEBRA(t: T?): Ring<T?> =
+fun <T> TODO_ALGEBRA(t: T?): Ring<T?> =
   Ring.of(
     nil = t,
     plus = { _, _ -> TODO() },

@@ -69,6 +69,10 @@ def x_constr($params):
     return $bodyX
 """.trimIndent()
 
+fun Formula.getCFGHash() =
+  variables().first().name().substringAfter("cfgHash::").substringBefore("_")
+
+
 fun Map<Variable, Boolean>.toPython() =
   "assert x_constr(" + entries.joinToString(","){ (k, v) -> k.name() + "=" +
     v.toString().let { it[0].uppercase() + it.substring(1) } } + ")"

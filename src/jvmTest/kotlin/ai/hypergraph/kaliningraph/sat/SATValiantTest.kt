@@ -58,11 +58,13 @@ class SATValiantTest {
     """.parseCFG()
 
     println(cfg.prettyPrint())
-    //println(cfg.parse("3 + 1 = 4"))
+    println(cfg.parse("3 + 1 = 4")?.prettyPrint())
+    println("_ _ _ = _".synthesizeIncrementally(cfg).first())
+    println("_ _ _ _ _ _ _ _ + 1 _ _ _ _ _ _ _ _".synthesizeIncrementally(cfg).first())
     //cfg.parseHTML("3 + 1 = 4").show()
-    assertEquals("3 + 1 = 4", "3 + _ = 4".synthesizeIncrementally(cfg, allowNTs = false).first())
-    assertEquals("3 + 1 = 4", "_ + 1 = 4".synthesizeIncrementally(cfg, allowNTs = false).first())
-    assertEquals("3 + 1 = 4", "3 + 1 = _".synthesizeIncrementally(cfg, allowNTs = false).first())
+    assertEquals("3 + 1 = 4", "3 + _ = 4".synthesizeIncrementally(cfg, allowNTs = false).first().also { println("Got $it")})
+    assertEquals("3 + 1 = 4", "_ + 1 = 4".synthesizeIncrementally(cfg, allowNTs = false).first().also { println("Got $it")})
+    assertEquals("3 + 1 = 4", "3 + 1 = _".synthesizeIncrementally(cfg, allowNTs = false).first().also { println("Got $it")})
 
     assertTrue("3 + 1 = 4".matches(cfg))
     assertTrue("2 + 2 = 4".matches(cfg))
@@ -198,7 +200,7 @@ class SATValiantTest {
       B -> X | Y | Z
     """.parseCFG()
 
-    "[ X _ + _ _ _ ( _ ) _ [ _ _ _ ] _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ + _ _ _ "
+    "[ X _ + _ _ _ ( _ ) _ [ _ _ _ ] _ _ _ _ _ _ _ _ + _ _ _ "
       .also { println("$it is being synthesized...") }
       .synthesizeIncrementally(cfg, allowNTs = false).take(10)
       .toList().also { assert(it.isNotEmpty()) }
@@ -561,7 +563,7 @@ class SATValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
 */
-  @Test
+//  @Test
   fun testCheckedArithmetic() {
     "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )"
       .synthesizeIncrementally(checkedArithCFG, allowNTs = false)

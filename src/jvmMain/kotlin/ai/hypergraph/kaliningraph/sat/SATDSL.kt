@@ -8,24 +8,27 @@ import org.logicng.formulas.Formula
 import org.logicng.formulas.FormulaFactory
 import org.logicng.formulas.FormulaFactoryConfig
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
+import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.PANIC
 import org.logicng.formulas.Variable
 import org.logicng.solvers.MaxSATSolver
 import org.logicng.solvers.MiniSat
 import org.logicng.solvers.SATSolver
 
 typealias Model = Map<Variable, Boolean>
-//val ffCache = ConcurrentHashMap<Long, FormulaFactory>()
+val ffCache = mutableMapOf<String, FormulaFactory>()
 
-val ff: FormulaFactory = //get() =
-//  ffCache.getOrPut(Thread.currentThread().id) {
+val ff: FormulaFactory =
     FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
-//  }
 
 //fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
 
-fun BVar(name: String): Formula = ff.variable(name)
+fun BVar(name: String): Formula = (if(name.startsWith("HV"))
+  ffCache.getOrPut(name.substringAfter("cfgHash::").substringBefore("_")) {
+    ffCache.keys.forEach { ffCache.remove(it)?.clear() }
+    FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(PANIC).build())
+  } else ff).variable(name)
 fun BVecVar(size: Int, prefix: String = "", pfx: (Int) -> String = { prefix }): SATVector =
-   Array(size) { k -> BVar("${pfx(k)}[f=$k]") }
+   Array(size) { k -> BVar("${pfx(k)}_f::$k") }
 fun BMatVar(name: String, algebra: Ring<Formula>, rows: Int, cols: Int = rows) =
   FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
 fun BLit(b: Boolean): Formula = ff.constant(b)
@@ -55,7 +58,7 @@ fun Formula.solveMaxSat(
 fun SATSolver.removeConstraintAndSolve(f: Formula): Model = TODO()
 
 fun SATSolver.addConstraintAndSolve(f: Formula): Model {
-  val model = this.run { add(f); sat(); model() }
+  val model = run { add(f); sat(); model() }
   return if (model == null) mapOf() else model.negativeVariables()
     .associateWith { false } + model.positiveVariables().associateWith { true }
 }

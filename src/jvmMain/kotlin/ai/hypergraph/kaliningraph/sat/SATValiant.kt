@@ -19,14 +19,14 @@ fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
   else Array(left.size) { i ->
     bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-      .fold(F) { acc, satf -> acc or satf }
+      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
+      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
   }
 
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
   if (isEmpty()) that else if (that.isEmpty()) this
-  else Array(size) { i -> this[i] or that[i] }
+  else Array(size) { i -> this[i].let { it.factory().or(it, that[i]) } }
 
 fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
@@ -40,15 +40,8 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
 
 infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
-  else diagonals.flatten().zip(that.diagonals.flatten())
-    .filter { (l, r) -> l.isNotEmpty() && r.isNotEmpty() }
+  else diagonals.drop(1).flatten().zip(that.diagonals.drop(1).flatten())
     .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
-
-@OptIn(ExperimentalTime::class)
-fun CFG.isInGrammar(mat: SATRubix): Formula =
-    startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
-      // TODO: Cache this to speedup computation!
-      (mat valiantMatEq measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
@@ -120,31 +113,14 @@ val CFG.satAlgebra by cache {
   )
 }
 
-// Precomputes literals in the fixpoint to avoid solving for invariant entries
-fun CFG.constructRubix(numTokens: Int): SATRubix =
-  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
-    // Strictly upper triangular matrix entries
-    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV[r=${r}][c=${c}][cfgHash=${hashCode()}]" }
-    // Diagonal and subdiagonal
-    else arrayOf()
-  }.toUTMatrix()
-
-fun CFG.generateConstraints(
-  tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens.size)
-): Pair<Formula, SATRubix> =
-  isInGrammar(rubix) and
-  encodeTokens(rubix, tokens) and
-  uniquenessConstraints(rubix, tokens) and
-  reachabilityConstraints(tokens, rubix) to rubix
-
 fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
   bimap[listOf(token)].let { nts -> nonterminals.map { it in nts } }
     .toBooleanArray().toLitVec()
 
 fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
   if (strings.size == 1) {
-    //  Precompute permanent upper right triangular submatrices
+    // Precomputes literals (permanent upper right triangular submatrices) in
+    // the fixpoint to avoid solving for invariant entries that are fixed.
     val literalUDM: UTMatrix<BooleanArray?> = UTMatrix(
       ts = strings.map { it ->
         // Nulls on the superdiagonal will cast either a rectangular or pentagonal
@@ -165,18 +141,69 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
       acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
     }
 
+// Since Valiant matrix multiplication procedure takes a long time, and we use
+// the same base matrix each time, we precompute a large matrix template and
+// reuse submatrices for each individual sketch.
+val CFG.parseMatrix: Π2A<SATRubix> by cache {
+  constructRubix(50).let { it to (it * it) }.let { (a, b) ->
+    a to (a matEq b)
+  }
+}
+
+infix fun SATRubix.matEq(other: SATRubix) =
+  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
+    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) ->
+      g.factory().equivalence(g, h)
+    }.toTypedArray() } }, algebra)
+
+fun CFG.matrix(dim: Int): SATRubix = parseMatrix.first.submatrix(dim, this)
+fun CFG.matrixFPEq(dim: Int): SATRubix = parseMatrix.second.submatrix(dim, this)
+
+//fun SATRubix.submatrix(dim: Int): SATRubix =
+//   UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }, algebra)
+
+fun SATRubix.submatrix(dim: Int, cfg: CFG): SATRubix =
+  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
+    .map { it.map { it.map { ff.importFormula(it) }.toTypedArray() } }, cfg.satAlgebra)
+
+//fun UTMatrix<Array<String>?>.submatrix(dim: Int, cfg: CFG): SATRubix =
+//  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
+//    .map { it.map { it!!.map { ff.parse(it) }.toTypedArray() } }, cfg.satAlgebra)
+
+fun CFG.constructRubix(numTokens: Int): SATRubix =
+  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
+    // Strictly upper triangular matrix entries
+    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_r::${r}_c::${c}_cfgHash::${hashCode()}" }
+    // Diagonal and subdiagonal
+    else arrayOf()
+  }.toUTMatrix()
+
+@OptIn(ExperimentalTime::class)
+fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
+  measureTimedValue {
+    (matrix(i) to matrixFPEq(i)).let { (s, t ) ->
+      startSymbols.fold(F) { acc, it -> acc or s.diagonals.last().first()[bindex[it]] } and
+      t.data.map { it.toList() }.flatten().fold(T) { a, b -> a and b } to s
+    }
+  }.also { println("Formed grammar constraints in ${it.duration.inWholeMilliseconds}ms") }.value
+
+fun CFG.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+  val (t, q) = isInGrammar(tokens.size)
+  return t and
+    encodeTokens(q, tokens) and
+    uniquenessConstraints(q, tokens) and
+    reachabilityConstraints(tokens, q) to q
+}
+
 fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   ff.clear()
   println("Synthesizing (${tokens.size}): ${tokens.joinToString(" ")}")
-//  println("Using grammar:\n${pretty()}")
   val timeToFormConstraints = System.currentTimeMillis()
   val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
-//  println(q.first().toFullMatrix().summarize(cfgs.first()))
   val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
 
   val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
   println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
-//  println("S variables " + parsingConstraints.stringVariables().let { "(${it.size}): $it" })
 
   return parsingConstraints to q.first()
 }
@@ -200,6 +227,7 @@ fun Σᐩ.synthesizeIncrementally(
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<Σᐩ> =
   bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
+    .apply { ifEmpty { throw Exception("Unable to reconstruct NTs from: $bitvec") } }
 
 private fun CFG.handleSingleton(s: Σᐩ): Set<Σᐩ> =
   if (s == "_") terminals
@@ -228,7 +256,8 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCSL.synthesize(toke
 
 fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
   val tokens = strs.asList()
-  check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') }) { "All tokens passed into synthesize() must be in all CFGs" }
+  check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') })
+    { "All tokens passed into synthesize() must be contained in all CFGs" }
   check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: ${strs.map { it.size }}" }
   return when {
     tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
@@ -250,9 +279,11 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       //  var freshnessConstraints = 0L
       while (true) try {
         val cfg = cfgs.first()
-        val fillers = rubix.stringVariables.zip(tokens.first()).map { (bits, token) ->
-            if (cfgs.any { token.isHoleTokenIn(it) }) cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })] else token
-        }
+        val fillers = rubix.stringVariables.zip(tokens.first())
+          .map { (bits, token) ->
+            if (cfgs.none { token.isHoleTokenIn(it) }) token
+            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+          }
 
         val completion: Σᐩ = fillers.joinToString(" ")
         if (Thread.currentThread().isInterrupted) throw InterruptedException()

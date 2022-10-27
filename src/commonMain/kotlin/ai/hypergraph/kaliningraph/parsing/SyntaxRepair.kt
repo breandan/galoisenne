@@ -90,9 +90,8 @@ fun Σᐩ.synthesizeWithVariations(
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }
-        .ifEmpty {
-          cfg_.rememberBigramPolarity(variantTokens, synthesizer)
-        }
+        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
+        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
     }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
@@ -179,7 +178,9 @@ fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
   }
 
 val CFG.startSymbols by cache { mutableSetOf(START_SYMBOL) }
-fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>) =
+fun CFG.rememberPossibleBigrams(str: List<Σᐩ>) =
+  possibleBigrams.addAll(str.windowed(2).asSequence().map{ it.joinToString(" ")})
+fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
