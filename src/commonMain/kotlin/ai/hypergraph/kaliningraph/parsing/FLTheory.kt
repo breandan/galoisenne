@@ -24,7 +24,8 @@ class CSL(vararg cfls: CFL) {
   val terminals: Set<Σᐩ> by cache { intersect { terminals } }
   val symbols: Set<Σᐩ> by cache { intersect { symbols } }
 
-  private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> = cfgs.map { it.item() }.intersect()
+  private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> =
+    cfgs.map { it.item() }.intersect()
 }
 
 // REL ⊂ CFL ⊂ CSL
