@@ -112,7 +112,7 @@
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
 %  \noindent This construction can be lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal.
-  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple values in $\mathbb{Z}_2^{|V|}$. Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
+  \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$. Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
 
   Valiant's $\otimes$ operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
@@ -258,7 +258,7 @@
         \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
         (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
         \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-        (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_y$};
+        (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_z$};
         \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
         (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
       \end{scope}
@@ -280,7 +280,7 @@
         \end{pmatrix}
       \end{align*}
     \end{minipage}
-    \caption{CFGs are witnessed by a rank-3 binary tensor, whose nonzero entries indicate CNF productions. Derivatives in this setting effectively condition the parse tensor. By backpropagating $\mathcal{H}$ across upper-triangular entries of $\mathcal{M}^*$, we constrain the superposition of admissible parse forests.}
+    \caption{CFGs are witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.}
   \end{figure}
 
 %  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
@@ -315,7 +315,7 @@
 
   \subsection{Gradient approximation}
 
-  Given some unparseable string, i.e., $\squiggly{\sigma_1\ldots\sigma_n}: \Sigma^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm k}\sim\Delta_{k}(\sigma)$ from the Levenshtein k-ball centered on $\sigma$, i.e., the space of all edits with Levenshtein distance $\leq k$. Let us consider (2), % This loosely corresponds to a finite difference approximation in $\mathbb{R}^n$.
+  Given some unparseable string, i.e., $\squiggly{\sigma_1\ldots\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. Let us consider (2) and % This loosely corresponds to a finite difference approximation in $\mathbb{R}^n$.
 %  In other words, we seek:
 %
 %  \begin{align}
@@ -323,11 +323,11 @@
 %  \end{align}
 
 
-  \noindent and let $U: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a primitive polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
+  \noindent suppose $U: \mathbb{Z}_2^{n\times n}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
 
   \begin{align}
     U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                      P_1    & \cdd  &       &       & P_n \\
+                      C_1    & \cdd  &       &       & C_m \\
                       \top   & \circ & \cdd  &       & \circ \\
                       \circ  & \ddd  & \ddd  &       & \vdd \\
                       \vdd   & \ddd  &       &       & \\
@@ -338,11 +338,11 @@
       \vdd\\
       \\
       \\
-      V_n
+      V_m
     \end{pNiceMatrix}\label{eq:lfsr}
   \end{align}
 
-  \noindent $\mathbf{S} = \begin{pmatrix}V & UV & \cdots & U^{2^n-1}V \end{pmatrix}\label{eq:ergo}$ is an ergodic sequence with \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then reject samples indexing into nonexistent element(s) of $\Sigma$. On average, this technique rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^n)$ to cover the space. Next, to admit deletion, we augment P with $(\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+)$ and replace each $(w \rightarrow t)$ with $(w \rightarrow t\:\varepsilon^+ \mid \varepsilon^+\:t \mid t)$. Finally, to generate $\bm{\sigma}\sim\Delta_{k}(\sigma)$, we substitute two adjacent holes $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \binom{n}{1\ldots k}$.
+  \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must be \textit{fully periodic}, i.e., for all ${i, j \in[0, 2^m), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$. Next, to admit deletion, we augment P with $(\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+)$ and replace each production $(w \rightarrow t)$ with $(w \rightarrow t\:\varepsilon^+ \mid \varepsilon^+\:t \mid t)$. Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we substitute two adjacent holes $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{m}$ and $m \in 1 \ldots q$.
 
   \noindent If a solution exists, each edit location has one of six choices:
 
@@ -378,10 +378,10 @@
   \end{tabular}
   \end{table}
 
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and glue them together:
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together:
 
  \begin{align}
-  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
+  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
   \end{align}
 
   % Generated by cfl4_intersection.vox, open with https://voxelator.com/
@@ -391,7 +391,7 @@
   \includegraphics[height=0.063\textwidth]{../figures/angle5.png}\hspace{-5pt}
   \includegraphics[height=0.063\textwidth]{../figures/angle3.png}\hspace{-3pt}
   \includegraphics[height=0.063\textwidth]{../figures/angle4.png}
-    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with outermost bitvector inhabitants representing $S_i \in \Lambda^*_{\sigma}$? Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
+    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and outermost bitvector inhabitants representing $S_i \in \Lambda^*_{\sigma}?$. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
   \end{figure}
 
 %  Together with the uniqueness constraint this ensures that at least one representative of each equivalence class is included... (TODO).
@@ -400,7 +400,7 @@
 
  \section{Conclusion}
 
-  Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context-free and sensitive languages. In contrast with LL and LR-style parsers, our technique can easily recover partial forests from invalid strings by inspecting the structure of M. In future work, we hope to extend our method to more natural grammars like PCFG and LCRS.
+  Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with LL and LR-style parsers, our technique can easily recover partial forests from invalid strings by inspecting the structure of M. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
 
   \bibliography{../bib/acmart}
 \end{document}
