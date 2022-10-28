@@ -298,7 +298,11 @@
   \@ifnextchar\bgroup{\@pder{#1}}{\@pder{}{#1}}}
 \newcommand{\@pder}[2]{\frac{\partial#1}{\partial#2}}
 \makeatother
-\newcommand{\shup}{\shortuparrow\hspace{-1mm}}
+
+\usepackage{stmaryrd}
+\newcommand{\shup}{\shortuparrow}
+\newcommand{\shri}{\shortrightarrow}
+\newcommand{\shur}{\shup\hspace{-5pt}\shri}
 
 \makeatletter
 \def\squiggly{\bgroup \markoverwith{\textcolor{red}{\lower3.5\p@\hbox{\sixly \char58}}}\ULon}

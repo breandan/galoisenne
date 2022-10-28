@@ -30,7 +30,6 @@
 %\copyrightyear{2018}           %% If different from \acmYear
 
 \usepackage{dsfont}
-\usepackage{stmaryrd}
 \usepackage{colortbl}
 \usepackage{hyperref}
 
@@ -72,18 +71,18 @@
     X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\shup\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\shup\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
   \begin{align*}
       M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-               \varnothing & \sigma_1^\shup & \varnothing & \Cdots & \varnothing \\
+               \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
                \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
                            &                &             &        & \varnothing\\
                            &                &             &        & \sigma_n^\shup \\
                \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix} &\Rightarrow M^* =
       \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shup & \Lambda & \Cdots & \Lambda^*_\sigma\\
+        \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
         \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
                     &                &         &        & \Lambda\\
                     &                &         &        & \sigma_n^\shup \\
@@ -121,8 +120,8 @@
     \adjustbox{scale=0.92,center}{%
     \begin{tabular}{cccc}
       Left Quotient &&& Right Quotient \\\\
-      $\frac{\partial f}{\partial \cev{x}} = \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&&
-      $\frac{\partial f}{\partial \vec{z}} = \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
+      $\frac{\partial}{\partial \cev{x}} = \big\{\;z \mid (w \rightarrow x z)\in P\;\big\}$ &&&
+      $\frac{\partial}{\partial \vec{z}} = \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
       \begin{tabular}{|c|c|}
         \hline
         \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
@@ -139,7 +138,7 @@
     }
   \end{table}
 
-  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also define a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
+  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also consider a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
 
 %  These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
 %
@@ -312,17 +311,48 @@
 %We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-  \subsection{Deriving the hole locations}
+  \subsection{Approximating the gradient}
 
-  Valiant's procedure defines a bottom-up synthesizer for a string template with known hole locations. Given a string which contains an error, i.e. $\squiggly\sigma: \Sigma^+$ s.t. $S \notin \Lambda^*_{\sigma}$, where should we put the holes in order for the string to parse? We can derive the hole locations by backpropagating Brzozowski's derivative across upper-triangular entries of $\mathcal{M}^*$. This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
+  Given some unparseable string, i.e., $\squiggly{\sigma_1\ldots\sigma_n}: \Sigma^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain $\sigma' \in \mathcal{L}(\mathcal{G})$? We can estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$ by stochastically sampling \textit{minibatches} $\bm{\sigma}\sim\Delta_{k}(\sigma)$ from the Levenshtein k-ball centered on $\sigma$, i.e., the space of all possible Levenshtein edits $\leq k$, and backpropagating $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$. In other words,
 
-  \begin{align*}
-    \text{\textbf{data} \textit{Tree} } a &= \varnothing \mid \langle a, \langle\textit{Tree a, Tree a}\rangle\rangle\\
-    \text{\textbf{data} \textit{Forest} } a &= \varnothing \mid \langle \{a\}, \{\langle\textit{Forest a,  Forest a}\rangle\}\rangle\\
-    \text{\textbf{data} \textit{Taiga} } a &= \varnothing \mid \langle a, [\langle\textit{Taiga (Taiga a)}\rangle^2]\rangle
-  \end{align*}
+  \begin{align}
+    \sigma \sim
+  \end{align}
 
-  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
+  \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.
+
+  \begin{align}
+    \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+                      P_1    & \cdd  &      &       &      & P_n \\
+                      \top   & \circ & \cdd &       &      & \circ \\
+                      \circ  & \ddd  & \ddd &       &      & \vdd \\
+                      \vdd   & \ddd  &      &       &      & \\
+                      &       &      &       &      & \\
+                      \circ  & \cdd  &      & \circ & \top & \circ
+    \end{pNiceMatrix}^t
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      V_1 \\
+      \vdd\\
+      \\
+      \\
+      \\
+      V_n
+    \end{pNiceMatrix}\label{eq:lfsr}\\
+    \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}\label{eq:ergo}
+  \end{align}
+
+  \noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
+
+
+%  This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
+%
+%  \begin{align*}
+%    \text{\textbf{data} \textit{Tree} } a &= \varnothing \mid \langle a, \langle\textit{Tree a, Tree a}\rangle\rangle\\
+%    \text{\textbf{data} \textit{Forest} } a &= \varnothing \mid \langle \{a\}, \{\langle\textit{Forest a,  Forest a}\rangle\}\rangle\\
+%    \text{\textbf{data} \textit{Taiga} } a &= \varnothing \mid \langle a, [\langle\textit{Taiga (Taiga a)}\rangle^2]\rangle
+%  \end{align*}
+%
+%  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
 
   \subsection{Context-Sensitive Reachability}
 
@@ -347,7 +377,7 @@
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration.}
   \end{figure}
 
-  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with $S_i \in \Lambda^*_{\sigma}?$ encoded by bitvectors on the base perimeter. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
+  \noindent As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis intersects orthonormal CNF unit productions $w_i \rightarrow t_\cap$, with outermost bitvector inhabitants representing $S_i \in \Lambda^*_{\sigma}$? Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.
 
  \begin{align}
   \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t, \mathcal{G}_{j+1})
