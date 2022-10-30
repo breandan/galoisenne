@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.hasBalancedBrackets
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -178,4 +179,29 @@ fun Σᐩ.validate(
   names: Map<Σᐩ, Σᐩ> = freshNames.filterNot(::contains).zip(tokens).toMap(),
 ): Σᐩ = lines().filter(Σᐩ::isNotBlank).joinToString(" \\n ")
   .tokenizeByWhitespace().joinToString(" ") { names[it] ?: it }
-  .let { if (CFGCFG(names.values).isValid(it)) this else throw Exception("!CFL: $it") }
+  .let { if (CFGCFG(names.values).isValid(it)) this
+  else throw Exception("!CFL: $it") }
+
+/*
+ * Takes a grammar and a partially complete string where '_' denotes holes, and
+ * returns a set of completed strings consistent with that grammar. Naive search
+ * over all holes takes O(|Σ|^n) where n is the number of holes.
+ */
+
+fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
+  genCandidates(CFG, fillers).filter {
+    (it.matches(CFG) to it.hasBalancedBrackets()).also { (valiant, stack) ->
+      // Should never see either of these statements if we did our job correctly
+//      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
+//      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
+    }.first
+  }
+
+val HOLE_MARKER = '_'
+
+fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
+  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
+    fold("" to it) { (a, b), c ->
+      if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
+    }.first.replace("ε ", "")
+  }

@@ -38,7 +38,7 @@ fun repair(
     allowNTs = false,
     variations = variations,
   ).take(MAX_SAMPLE).toList().sortedWith(tokens.ranker())
-   .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
+//   .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
    .map { it.uncoarsen(prompt) }
 
   return repairs
@@ -53,8 +53,10 @@ private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
 
 var MAX_SAMPLE = 10
 var MAX_TOKENS = 80
+var TIMEOUT_MS = 90000
 
-// Generates a lazy sequence of mutations for a broken string and feeds them to the synthesizer
+// Generates a lazy sequence of mutations for a broken string
+// and feeds them to the synthesizer for completion.
 @OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariations(
   cfg: CFG,
@@ -62,7 +64,6 @@ fun Σᐩ.synthesizeWithVariations(
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
-  secondsBeforeTimeout: Int = 90,
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
@@ -82,18 +83,18 @@ fun Σᐩ.synthesizeWithVariations(
       tokens.indices.filter { i -> tokens[i].let { it in cfg_.blocked || it in recStubs } }.toSet()
 
   val allVariants: Sequence<Σᐩ> =
-    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }
-      .distinct().filter { !cfg_.containsImpossibleBigram(it) }
+    variations.fold(sequenceOf(stringToSolve)) { a, b -> a + b(stringToSolve, exclude) }.distinct()
+//      .filter { !cfg_.containsImpossibleBigram(it) }
 
   return allVariants
     .filter { s -> s.tokenizeByWhitespace().any { it.isHoleTokenIn(cfg) } }
-    .takeWhile { t.elapsedNow().inWholeSeconds < secondsBeforeTimeout }
+    .takeWhile { t.elapsedNow().inWholeSeconds < TIMEOUT_MS }
     .map { updateProgress(it); it }
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }
-        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
-        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
+//        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
+//        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
     }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
@@ -239,7 +240,7 @@ fun Σᐩ.randomSubstitutions(
   exclusions: Set<Int> = setOf(),
 ): Sequence<Σᐩ> =
   (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
-    .let { sortedIndices -> setOf(1, numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
+    .let { sortedIndices -> (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
     .map { idxs -> padded.substitute(idxs) { "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(

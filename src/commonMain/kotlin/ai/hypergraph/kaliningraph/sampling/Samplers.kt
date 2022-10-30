@@ -225,8 +225,8 @@ fun <T> MDSamplerWithoutReplacement(
   cardinalities: List<Int> = dimensions.map { it.size },
   // Shuffle coordinates to increase entropy of sampling
   shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
-  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens().also { println(it) },
-  degree: Int = bitLens.sum().also { println("Sampling with LFSR(GF(2^$it))") }
+  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens(),
+  degree: Int = bitLens.sum()
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
   else if (degree !in generator) throw Exception("Space is too large! ($degree)")
