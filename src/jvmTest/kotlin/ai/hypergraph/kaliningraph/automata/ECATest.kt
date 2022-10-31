@@ -58,8 +58,9 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-    val t = "1101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101110111011101".toBitVector()
-    val u = t.evolve().evolve()
+    val t = List(128/4) { "1110" }.joinToString("").toBitVector()
+
+    val u = t.evolve()
 
     assertContentEquals(t, u)
 
@@ -178,8 +179,8 @@ class ECATest {
 */
   @Test
   fun testTargetPatternPredecessor() {
-    val pp = BVecVar(16) { i -> "i$i" }
-    val p = "1100110111111011".toBitVector()
+    val p = "00000000000000000000000000000000000111100000000000000000000000000000000000000000000000000000000000111111111000000000000000000000".toBitVector()
+    val pp = BVecVar(p.size) { i -> "i$i" }
     val t = pp.evolve() matEq p
     val sol = t.solve()
     if (sol.isEmpty()) { println("No predecessor was found!"); return }
@@ -187,9 +188,9 @@ class ECATest {
     assertContentEquals(bits.evolve().map { ff.constant(it) as Formula }.toTypedArray(), p)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testECAPrint"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.ECATest.testECAPrint"
+  */
   @Test
   fun testECAPrint() {
     val ts = "0100011111100010".map { it == '1' }.toBooleanArray()
