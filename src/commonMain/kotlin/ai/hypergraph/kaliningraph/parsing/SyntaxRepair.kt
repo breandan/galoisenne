@@ -23,6 +23,7 @@ fun repair(
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
+  filter: (Σᐩ.() -> Boolean)? = null,
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   if (cfg.parse(coarsened) != null) return emptyList()
@@ -32,14 +33,18 @@ fun repair(
 
   val variations: List<Mutator> =
     listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
+  var totalSamples = 0
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,
     variations = variations,
-  ).take(MAX_SAMPLE).toList().sortedWith(tokens.ranker())
-//   .also { println("Found ${it.size} repairs!\n" + it.mapIndexed { i, s -> "$i.) $s" }.joinToString("\n")) }
-   .map { it.uncoarsen(prompt) }
+  )
+    .map { totalSamples++; it.uncoarsen(prompt) }
+    .let { if(filter != null) it.filter(filter) else it }
+    .take(MAX_SAMPLE).toList().sortedWith(tokens.ranker())
+
+  if (filter != null) println("Filtered out ${totalSamples - repairs.size}/${totalSamples} invalid samples!")
 
   return repairs
 }
@@ -51,7 +56,7 @@ fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
 private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
   { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
-var MAX_SAMPLE = 10
+var MAX_SAMPLE = 20
 var MAX_TOKENS = 80
 var TIMEOUT_MS = 90000
 
@@ -88,7 +93,7 @@ fun Σᐩ.synthesizeWithVariations(
 
   return allVariants
     .filter { s -> s.tokenizeByWhitespace().any { it.isHoleTokenIn(cfg) } }
-    .takeWhile { t.elapsedNow().inWholeSeconds < TIMEOUT_MS }
+    .takeWhile { t.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
     .map { updateProgress(it); it }
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
