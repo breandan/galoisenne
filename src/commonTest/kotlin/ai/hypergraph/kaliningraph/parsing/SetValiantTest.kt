@@ -140,7 +140,7 @@ class SetValiantTest {
   @Test
   fun testDyckSolver() {
     """S -> ( ) | ( S ) | S S""".parseCFG().let { cfg ->
-      val sols = "( _ _ _ _ ( ) _ _ _ _ ) "
+      val sols = "( _ _ _ _ ( ) _ _ _ _ ) ".split(" ")
         .solve(cfg, fillers = cfg.terminals + "").take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -156,7 +156,7 @@ class SetValiantTest {
   fun testDyck2Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG(validate = true).let { CFG: CFG ->
       println("CFL parsed: ${CFG.prettyPrint()}")
-      val sols = "_ _ _ _ _ _ _ _ ".solve(CFG).take(5).toList()
+      val sols = "_ _ _ _ _ _ _ _ ".split(" ").solve(CFG).take(5).toList()
       println("${sols.distinct().size}/${sols.size}")
 
       println("Solutions found: ${sols.joinToString(", ")}")
@@ -173,7 +173,7 @@ class SetValiantTest {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { cfg ->
       println("Total Holes, Instances Checked, Solutions Found")
       for (len in 2..6 step 2) {
-        val template = List(len) { "_" }.joinToString("")
+        val template = List(len) { "_" }
         fun now() = Clock.System.now().toEpochMilliseconds()
         val startTime = now()
         var totalChecked = 0
@@ -218,8 +218,7 @@ class SetValiantTest {
   @Test
   fun testDyck3Solver() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | { S } | S S""".parseCFG().let { cfg ->
-      val sols = "( _ _ _ _ ( ) _ _ _ _ )"
-        .solve(cfg).take(5).toList()
+      val sols = "( _ _ _ _ ( ) _ _ _ _ )".split(" ").solve(cfg).take(5).toList()
       println("Solution found: ${sols.joinToString(", ")}")
 
       sols.forEach { assertTrue(it.hasBalancedBrackets()) }

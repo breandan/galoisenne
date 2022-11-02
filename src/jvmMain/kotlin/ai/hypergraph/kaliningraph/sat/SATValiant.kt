@@ -226,20 +226,27 @@ fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   return parsingConstraints to q.first()
 }
 
+fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
+    none { it.isNonterminalStubIn(cfg) } && count { it.isHoleTokenIn(cfg) } < 7
+
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
-  updateProgress: (Σᐩ) -> Unit = {}
+  updateProgress: (Σᐩ) -> Unit = {},
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
+    if (it.isSetValiantOptimalFor(this)) it.solve(this)
+    else asCSL.synthesize(it)
+  }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
   allowNTs = allowNTs,
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
-  synthesizer = { a -> asCSL.synthesize(a) }
+  synthesizer = synthesizer
 )
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719

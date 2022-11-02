@@ -24,7 +24,11 @@ fun CFG.parse(s: Σᐩ): Tree? =
  */
 
 fun CFG.isValid(str: Σᐩ): Boolean =
-  str.tokenizeByWhitespace().let { START_SYMBOL in parse(it).map { it.root } }
+  START_SYMBOL in str.tokenizeByWhitespace().run {
+    if (isEmpty()) generatingSymbols(setOf("ε"))
+    else if (size == 1) reachableSymbols(first())
+    else parse(this).map { it.root }
+  }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
@@ -122,11 +126,14 @@ fun BooleanArray.decodeWith(cfg: CFG): Set<Σᐩ> =
 
 //=====================================================================================
 
-fun Σᐩ.isHoleTokenIn(cfg: CFG) = this == "_" || isNonterminalStubIn(cfg)
+val HOLE_MARKER = "_"
+fun String.containsHole(): Boolean = HOLE_MARKER in this
+fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean =
   first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
 fun Σᐩ.isNonterminalStubIn(csl: CSL): Boolean =
   csl.cfgs.map { isNonterminalStubIn(it) }.all { it }
+fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
@@ -188,20 +195,18 @@ fun Σᐩ.validate(
  * over all holes takes O(|Σ|^n) where n is the number of holes.
  */
 
-fun String.solve(CFG: CFG, fillers: Set<String> = CFG.terminals): Sequence<String> =
+fun List<Σᐩ>.solve(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   genCandidates(CFG, fillers).filter {
     (it.matches(CFG) to it.hasBalancedBrackets()).also { (valiant, stack) ->
       // Should never see either of these statements if we did our job correctly
-//      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
-//      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
+      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
+      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
     }.first
   }
 
-val HOLE_MARKER = '_'
-
-fun String.genCandidates(CFG: CFG, fillers: Set<String> = CFG.terminals) =
+fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
-      if (c == '_') (a + b.first()) to b.drop(1) else (a + c) to b
+      if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
     }.first.replace("ε ", "")
   }

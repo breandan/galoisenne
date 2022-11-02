@@ -17,7 +17,7 @@ val Production.RHS: List<Σᐩ> get() =
   second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
 
 val CFG.language: CFL by cache { CFL(this) }
-val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf("_", " ")).toTypedArray() }
+val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf(HOLE_MARKER, " ")).toTypedArray() }
 val CFG.nonterminals: Set<Σᐩ> by cache { map { it.LHS }.toSet() }
 val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
@@ -249,7 +249,7 @@ fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
       .map { it.label }.filter { it in nonterminals }.toSet()
   }
 
-private fun CFG.generatingSymbols(
+fun CFG.generatingSymbols(
   from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
   revGraph: LabeledGraph = graph.reversed()
 ): Set<Σᐩ> =

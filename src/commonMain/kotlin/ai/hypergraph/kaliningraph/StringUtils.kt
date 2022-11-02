@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.parsing.HOLE_MARKER
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
@@ -61,9 +62,6 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
         .drop(4).dropLast(3)
     }
   }
-
-fun String.containsHole(): Boolean = "_" in this
-fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
 
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)

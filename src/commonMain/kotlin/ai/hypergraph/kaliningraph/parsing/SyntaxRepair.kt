@@ -27,7 +27,7 @@ fun repair(
   val coarsened = prompt.coarsen()
   if (cfg.parse(coarsened) != null) return emptyList()
   val tokens = coarsened.tokenizeByWhitespace()
-  val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else "_" }
+  val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else HOLE_MARKER }
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val variations: List<Mutator> =
@@ -187,7 +187,7 @@ fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) 
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
   }.forEach {
-    val holes = List(8) { "_" }.joinToString(" ")
+    val holes = List(8) { HOLE_MARKER }.joinToString(" ")
     val substring = it.joinToString(" ")
     val tokens = "$holes $substring $holes".tokenizeByWhitespace()
 
@@ -254,8 +254,8 @@ fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   allSubstitutions(padded.indices.toSet() - exclusions.map { it + 1 }.toSet(), numberOfEdits, fishyLocations)
     .map { idxs -> padded.substitute(idxs) { "_ _" } }
 //    .apply {
-//      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) "_".padEnd(it.length) else it }.joinToString(" ")}")
-//      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) "_".padEnd(it.length) else it }.joinToString(" ")}")
+//      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) HOLE_MARKER.padEnd(it.length) else it }.joinToString(" ")}")
+//      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) HOLE_MARKER.padEnd(it.length) else it }.joinToString(" ")}")
 //    }
 
 fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: List<Int>) =
@@ -292,10 +292,10 @@ fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it
  */
 
 fun Σᐩ.everySingleHoleConfig(): Sequence<Σᐩ> {
-  val new = replace(Regex("(_( )*)+"), "_ ")
+  val new = replace(Regex("($HOLE_MARKER( )*)+"), "$HOLE_MARKER ")
   val toks = new.tokenizeByWhitespace()
-  val indices = toks.indices.filter { toks[it] == "_" }.powerset()
-  return indices.map { ids -> toks.drop(setOf("_"), ids).joinToString(" ") }
+  val indices = toks.indices.filter { toks[it] == HOLE_MARKER }.powerset()
+  return indices.map { ids -> toks.drop(setOf(HOLE_MARKER), ids).joinToString(" ") }
 }
 
 /*
