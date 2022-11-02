@@ -58,12 +58,6 @@ class ECATest {
 */
   @Test
   fun testLooper() {
-    val t = List(128/4) { "1110" }.joinToString("").toBitVector()
-
-    val u = t.evolve()
-
-    assertContentEquals(t, u)
-
     (2..4).mapNotNull { j ->
       val i = BVecVar(64) { i -> "$i" }
       val t = (i matEq i.evolve()).negate() and (i matEq i.evolve(steps = j))

@@ -353,7 +353,7 @@ class SATValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithSubstitution"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithRandomSubstitution"
 */
   @Test
   fun testMultiSATWithRandomSubstitution() {

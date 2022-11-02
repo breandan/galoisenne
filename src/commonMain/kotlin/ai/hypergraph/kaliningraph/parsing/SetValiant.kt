@@ -26,7 +26,7 @@ fun CFG.parse(s: Σᐩ): Tree? =
 fun CFG.isValid(str: Σᐩ): Boolean =
   START_SYMBOL in str.tokenizeByWhitespace().run {
     if (isEmpty()) generatingSymbols(setOf("ε"))
-    else if (size == 1) reachableSymbols(first())
+    else if (size == 1) generatingSymbols(setOf(first()))
     else parse(this).map { it.root }
   }
 

@@ -239,7 +239,7 @@ fun Σᐩ.synthesizeIncrementally(
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
-    if (it.isSetValiantOptimalFor(this)) it.solve(this)
+    if (it.isSetValiantOptimalFor(this)) it.also { println("Using SetValiant!") }.solve(this)
     else asCSL.synthesize(it)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
