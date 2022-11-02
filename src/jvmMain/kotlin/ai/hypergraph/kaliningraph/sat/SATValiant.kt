@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
+import ai.hypergraph.markovian.pow
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
 import kotlin.time.*
@@ -227,7 +228,8 @@ fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
 }
 
 fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
-    none { it.isNonterminalStubIn(cfg) } && count { it.isHoleTokenIn(cfg) } < 7
+  none { it.isNonterminalStubIn(cfg) } &&
+    (cfg.terminals - cfg.blocked).size.pow(count { it.isHoleTokenIn(cfg) }) < 512
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(

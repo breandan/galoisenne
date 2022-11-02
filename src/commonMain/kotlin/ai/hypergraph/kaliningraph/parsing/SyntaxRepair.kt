@@ -201,7 +201,7 @@ fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) 
 
     startSymbols.removeAll { it != START_SYMBOL }
     blocked.addAll(blockers)
-  }.let { emptySequence<Σᐩ>() }
+  }.let { emptySequence() }
 
 // TODO: Instead of haphazardly splattering holes everywhere and hoping to hit the lottery
 //       we should work out a principled way to localize holes using the language quotient.

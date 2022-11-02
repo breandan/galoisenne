@@ -196,13 +196,7 @@ fun Σᐩ.validate(
  */
 
 fun List<Σᐩ>.solve(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
-  genCandidates(CFG, fillers).filter {
-    (it.matches(CFG) to it.hasBalancedBrackets()).also { (valiant, stack) ->
-      // Should never see either of these statements if we did our job correctly
-      if (!valiant && stack) println("Valiant under-approximated Stack: $it")
-      else if (valiant && !stack) println("Valiant over-approximated Stack: $it")
-    }.first
-  }
+  genCandidates(CFG, fillers).filter { it.matches(CFG) }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
