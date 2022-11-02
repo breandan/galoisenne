@@ -11,7 +11,7 @@ import kotlin.math.*
 // SetValiant interface
 //=====================================================================================
 fun Σᐩ.matches(cfg: Σᐩ): Boolean = matches(cfg.validate().parseCFG())
-fun Σᐩ.matches(CFG: CFG): Boolean = CFG.isValid(this)
+fun Σᐩ.matches(CFG: CFG): Boolean = CFG.isValid(tokenizeByWhitespace())
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: Σᐩ): Tree? =
   try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }
@@ -23,12 +23,12 @@ fun CFG.parse(s: Σᐩ): Tree? =
  * is empty, the string is invalid. If the entry is S, it parses.
  */
 
-fun CFG.isValid(str: Σᐩ): Boolean =
-  START_SYMBOL in str.tokenizeByWhitespace().run {
-    if (isEmpty()) generatingSymbols(setOf("ε"))
-    else if (size == 1) generatingSymbols(setOf(first()))
-    else parse(this).map { it.root }
-  }
+fun CFG.isValid(str: List<Σᐩ>): Boolean =
+  START_SYMBOL in parse(str.run {
+    if (isEmpty()) listOf("ε", "ε", "ε")
+    else if (size == 1) listOf("ε", first(), "ε")
+    else this
+  }).map { it.root }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
@@ -186,7 +186,7 @@ fun Σᐩ.validate(
   names: Map<Σᐩ, Σᐩ> = freshNames.filterNot(::contains).zip(tokens).toMap(),
 ): Σᐩ = lines().filter(Σᐩ::isNotBlank).joinToString(" \\n ")
   .tokenizeByWhitespace().joinToString(" ") { names[it] ?: it }
-  .let { if (CFGCFG(names.values).isValid(it)) this
+  .let { if (it.matches(CFGCFG(names.values))) this
   else throw Exception("!CFL: $it") }
 
 /*
