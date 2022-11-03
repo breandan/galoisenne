@@ -38,11 +38,9 @@
 \begin{document}
 
 %% Title information
-    \title{Syntactic Error Correction as Idempotent Matrix Completion}
+    \title{Syntax Error Correction as Idempotent Matrix Completion}
     \begin{abstract}
-        Tidyparse is a program synthesizer that performs real-time error correction for context-free languages.
-        Given both an arbitrary context-free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs whilst the author is typing, ranked by Levenshtein edit distance. Repairs are guaranteed to be complete, grammatically consistent and minimal.
-        Tidyparse is the first system of its kind offering these guarantees in a real-time editor. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes.
+      In this work, we illustrate how to lower context-free language recognition onto a tensor algebra over finite fields. In addition to its theoretical value, this connection has yielded surprisingly useful applications in incremental parsing, code completion and program repair. For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries. This line of research provides an elegant unification of context-free program repair, code completion and sketch-based program synthesis. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes.
     \end{abstract}
 
 
@@ -114,90 +112,63 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \noindent In the following paper, we will describe how we built it.
 
-    \section{Matrix Theory}
+  \section{Matrix Theory}
 
-    We recall that a CFG is a quadruple consisting of terminals, $\Sigma$, nonterminals, $V$, productions, $P: V \rightarrow (V \mid \Sigma)^*$, and the start symbol, $S$. It is a well-known fact that every CFG can be reduced to \textit{Chomsky Normal Form} (CNF), $P': V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $v_0 \rightarrow v_1 v_2$, or $v_0 \rightarrow \sigma$, where $v_{0, 1, 2}: V$ and $\sigma: \Sigma$. For example, we can rewrite the CFG $\{S \rightarrow S S \mid ( S ) \mid ()\}$, into CNF as:
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
-    \[
-        \{S\rightarrow XR \mid SS \mid LR,\; L \rightarrow (,\; R \rightarrow ),\; X\rightarrow LS\}
-    \]
+  \begin{table}[H]
+    \begin{tabular}{llll}
+      $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow LS\;\big\}$
+    \end{tabular}
+  \end{table}\vspace{-8pt}
 
-    \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R_{\mathcal{G}'}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\vno$, $\oplus$ be $\cup$, and $\otimes$ be defined as:
+  \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
-    \begin{align}
-        a \otimes b := \{C \mid \langle A, B\rangle \in a \times b, (C\rightarrow AB) \in P\}
-    \end{align}
+  \begin{align}
+    X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+  \end{align}
 
-    \noindent We initialize $\mathbf{M}^0_{r,c}(\mathcal{G}', \sigma) \coloneqq \{V \mid c = r + 1, (V \rightarrow \sigma_r) \in P\}$ and search for $\mathbf{M}^*$ via fixpoint iteration,
+  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
-    \newcommand\ddd{\Ddots}
-    \newcommand\vdd{\Vdots}
-    \newcommand\cdd{\Cdots}
-    \newcommand\lds{\ldots}
-    \newcommand\vno{\varnothing}
+  \begin{align*}
+    M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+           \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+           \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+           &                &             &        & \varnothing\\
+           &                &             &        & \sigma_n^\shup \\
+           \varnothing & \Cdots         &             &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow M^* =
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+      \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+      &                &         &        & \Lambda\\
+      &                &         &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &         &        & \varnothing
+    \end{pNiceMatrix}
+  \end{align*}
 
-    \begin{align}
-        \mathbf{M}^* = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                   \vno & \{V\}_{\sigma_1} & \cdd                   &                            & \mathcal{T} \\
-                   \vdd & \ddd             & \Ddots[shorten=-0.1cm] & \phantom{\{V\}_{\sigma_2}} & \vdd \\
-                        &                  &                        &                            & \\
-                        &                  &                        &                            & \{V\}_{\sigma_n} \\
-                   \vno & \cdd             &                        &                            & \vno
-        \end{pNiceMatrix}\label{eq:fpm}
-    \end{align}
+  \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-    \noindent where $\mathbf{M}^*$ is the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$. The recognizer is defined as: $S \in \mathcal{T}? \iff \sigma \in \mathcal{L}(\mathcal{G})?$ %\footnote{Strictly speaking, $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$ is only necessary if we need to do fixedpoint iteration. Since we solve for $\mathbf{M}^*$ and $S \in \mathcal{T}$ directly, then unlike Valiant, we can solve for the computationally more efficient fixpoint $\mathbf{M} = \mathbf{M}^2$.}
+  This decision procedure can be abstracted by lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
-%While theoretically elegant, this decision procedure can be optimized by lowering onto a rank-3 binary tensor.
-    Note that $\bigoplus_{k = 1}^n \mathbf{M}_{ik} \otimes \mathbf{M}_{kj}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+    \begin{figure}[H]
+      \adjustbox{scale=0.82,center}{%
+        \[\begin{tikzcd}[row sep=large, column sep=huge]
+            \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+            \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
+            \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
+            \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
+        \end{tikzcd}\]
+      }
+    \end{figure}
 
-    \[\begin{tikzcd}[row sep=huge, column sep=huge]
-          2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
-          & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
-          \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
-          & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
-    \end{tikzcd}\]
+    \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
+%\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
+
+    \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is believed to be the most efficient general procedure for CFL recognition.
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
-    \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. %Assuming sparsity, this technique is typically linearithmic.%, and is believed to be the most efficient procedure for CFL recognition to date.
-
-    \subsection{Sampling k-combinations without replacement}
-
-    \noindent Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a matrix whose structure is depicted in Eq.~\ref{eq:lfsr}, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$. Selecting any $V \neq \mathbf{0}$ and coefficients $P_{1\ldots n}$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$, as shown in Eq.~\ref{eq:ergo}.
-
-    \begin{align}
-        \mathbf{M}^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-           P_1    & \cdd  &      &       &      & P_n \\
-           \top   & \circ & \cdd &       &      & \circ \\
-           \circ  & \ddd  & \ddd &       &      & \vdd \\
-           \vdd   & \ddd  &      &       &      & \\
-                  &       &      &       &      & \\
-           \circ  & \cdd  &      & \circ & \top & \circ
-        \end{pNiceMatrix}^t
-        \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-            V_1 \\
-            \vdd\\
-            \\
-            \\
-            \\
-            V_n
-        \end{pNiceMatrix}\label{eq:lfsr}\\
-        \mathbf{S} = \begin{pmatrix}V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V \end{pmatrix}\label{eq:ergo}
-    \end{align}
-
-    \noindent This sequence has \textit{full periodicity}, in other words, for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle through $\mathbf{S}$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$ per sample and $\mathcal{O}(2^n)$ to exhaustively search the space.
-
-    \noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the primitive polynomial $x^4 + x^3 +1$ shown below:
-
-
-    \[\begin{array}{rccccccccc}{
-        i & 0  &  1  &  2 &  3  &  4  &  5  &  6  &  7 \\
-        \mathbf{S}_i & 1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
-        \mathbf\sigma & \text{C A}  & \text{B A}  & \text{A C}  & \text{C B}  &  & \text{B C}  &  & \text{B B}\\
-    }\]
-
-    \noindent We will use this technique to lazily sample from the space of hole configurations without replacement as described in \S\ref{sec:holes}.
 
     \subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
@@ -214,6 +185,11 @@ true and ( false or and true false(*@\caret{ }@*)
 %    \includegraphics[width=2cm]{../figures/parse4.png}
 %\end{figure}
 
+    \newcommand\ddd{\Ddots}
+    \newcommand\vdd{\Vdots}
+    \newcommand\cdd{\Cdots}
+    \newcommand\lds{\ldots}
+    \newcommand\vno{\varnothing}
     \newcommand{\ts}[1]{\textsuperscript{#1}}
     \newcommand\non{1\ts{st}}
     \newcommand\ntw{2\ts{nd}}
@@ -222,13 +198,12 @@ true and ( false or and true false(*@\caret{ }@*)
     \newcommand\nfi{5\ts{th}}
     \newcommand\nsi{6\ts{th}}
     \newcommand\nse{7\ts{th}}
-    \newcommand{\vs}[1]{\{V\}_{\sigma_{#1}}}
+    \newcommand{\vs}[1]{\shup\sigma_{#1}}
     \newcommand\rcr{\rowcolor{black!15}}
     \newcommand\rcw{\rowcolor{white}}
     \newcommand\pcd{\cdot}
     \newcommand\pcp{\phantom\cdot}
     \newcommand\ppp{\phantom{\nse}}
-    \newcommand\xno{\text{\emoji{cross-mark}}}
 
     \begin{figure}[H]
         \[
@@ -246,124 +221,95 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-    \subsection{Breadth-bounded tree search}
+    \section{Error Recovery}\label{sec:error}
 
-    The matrix $\mathbf{M}^*$ encodes a superposition of all labeled binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees, with labels omitted to emphasize their structure:
+    Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
+
+    The matrix $\mathcal{M}^*$ encodes a superposition of all labeled binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees, with labels omitted to emphasize their structure:
 
     \begin{figure}[H]
+      \scalebox{0.7}{
         \[
-           \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-      \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
-              \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
-              \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
-                   &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
-                   &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
-                   &               &              &              &              & \tikzmark{v} &              \\
-              \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
-           \end{pNiceArray}
-        \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
-        \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
-        \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
-        \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
-        \draw [blubr] ({pic cs:a}) to ({pic cs:b});
-        \draw [blubr] ({pic cs:e}) to ({pic cs:b});
-        \draw [blubr] ({pic cs:h}) to ({pic cs:c});
-        \draw [blubr] ({pic cs:b}) to ({pic cs:c});
-        \draw [blubr] ({pic cs:c}) to ({pic cs:d});
-        \draw [redbr] ({pic cs:h}) to ({pic cs:i});
-        \draw [redbr] ({pic cs:j}) to ({pic cs:i});
-        \draw [redbr] ({pic cs:e}) to ({pic cs:g});
-        \draw [redbr] ({pic cs:i}) to ({pic cs:g});
-        \draw [redbr] ({pic cs:g}) to ({pic cs:d});
-        \end{tikzpicture}\Rightarrow
-        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-     \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
-                   & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
-                   &                & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
+          \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+             \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
+                     \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
+                     \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
+                          &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
+                          &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
+                          &               &              &              &              & \tikzmark{v} &              \\
+                     \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
+          \end{pNiceArray}
+          \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
+            \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
+            \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
+            \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
+            \draw [blubr] ({pic cs:a}) to ({pic cs:b});
+            \draw [blubr] ({pic cs:e}) to ({pic cs:b});
+            \draw [blubr] ({pic cs:h}) to ({pic cs:c});
+            \draw [blubr] ({pic cs:b}) to ({pic cs:c});
+            \draw [blubr] ({pic cs:c}) to ({pic cs:d});
+            \draw [redbr] ({pic cs:h}) to ({pic cs:i});
+            \draw [redbr] ({pic cs:j}) to ({pic cs:i});
+            \draw [redbr] ({pic cs:e}) to ({pic cs:g});
+            \draw [redbr] ({pic cs:i}) to ({pic cs:g});
+            \draw [redbr] ({pic cs:g}) to ({pic cs:d});
+          \end{tikzpicture}\Rightarrow
+          \left\{\begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+                   \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
+                   \vno          & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
+                   \vdd          & \ddd           & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
                    &                &               & \tikzmark{p1} &               & \tikzmark{t1} & \tikzmark{x1} \\
                    &                &               &               & \tikzmark{h1} & \tikzmark{u1} & \tikzmark{i1} \\
                    &                &               &               &               & \tikzmark{v1} &              \\
-                   &                &               &               &               &               & \tikzmark{j1}
-           \end{NiceArray}
-        \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
-        \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
-        \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
-        \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
-        \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
-        \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
-        \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
-        \end{tikzpicture}
-        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-     \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
-                   & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
-                   &                & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
-                   &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
-                   &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
-                   &                &               &               &               & \tikzmark{v2} &              \\
-                   &                &               &               &               &               & \tikzmark{j2}
-           \end{NiceArray}
-        \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
-        \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
-        \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
-        \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
-        \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
-        \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
-        \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
-        \end{tikzpicture}
-        \begin{NiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-     \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
-                   & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
-                   &                & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
-                   &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
-                   &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
-                   &                &               &               &               & \tikzmark{v3} &              \\
-                   &                &               &               &               &               & \tikzmark{j3}
-           \end{NiceArray}
-        \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
+                   \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j1}
+          \end{pNiceArray}
+          \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
+            \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
+            \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
+            \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
+            \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
+            \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
+            \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
+          \end{tikzpicture}_{\textstyle,}
+          \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+            \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
+            \vno          & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
+            \vdd          & \ddd           & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
+            &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
+            &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
+            &                &               &               &               & \tikzmark{v2} &              \\
+            \vno          & \cdd           &               &               &               & \vno           & \tikzmark{j2}
+          \end{pNiceArray}
+          \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
+            \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
+            \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
+            \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
+            \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
+            \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
+            \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
+          \end{tikzpicture}_{\textstyle,}
+          \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+            \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
+            \vno          & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
+            \vdd          & \ddd           & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
+            &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
+            &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
+            &                &               &               &               & \tikzmark{v3} &              \\
+            \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j3}
+          \end{pNiceArray}
+          \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
             \draw [grnbr] ({pic cs:l3}) to ({pic cs:r3});
             \draw [grnbr] ({pic cs:n3}) to ({pic cs:p3});
             \draw [grnbr] ({pic cs:v3}) to ({pic cs:r3});
             \draw [grnbr] ({pic cs:r3}) to ({pic cs:w3});
             \draw [grnbr] ({pic cs:j3}) to ({pic cs:d3});
             \draw [grnbr] ({pic cs:a3}) to ({pic cs:d3});
-        \end{tikzpicture}\ldots
-    \]
+          \end{tikzpicture}\ldots\right\}
+        \]
+      }
     \end{figure}
-
-    \subsection{Deletion, substitution, and insertion}\label{sec:dsi}
-
-    Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:
-
-    \begin{center}
-        \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
-        \RightLabel{$\varepsilon\textsc{-dup}$}
-        \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
-        \DisplayProof
-        \hskip 1.5em
-        \AxiomC{$\Gamma \vdash (A \rightarrow B) \in P$}
-        \RightLabel{$\varepsilon^+\textsc{-int}$}
-        \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-        \DisplayProof
-    \end{center}
-
-    \noindent To generate the sketch templates, we substitute two holes at an index-to-be-repaired, $H(\sigma, i) = \sigma_{1\ldots i-1}\:\texttt{\_ \_}\:\sigma_{i+1\ldots n}$, then invoke the SAT solver. Five outcomes are then possible:
-
-    \begin{align}
-        &\sigma_{1}\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_{1, 2} = \varepsilon\label{eq:del}\\
-        &\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 \neq \sigma_i, \gamma_2 = \varepsilon\label{eq:sub1}\\
-        &\sigma_{1}\ldots \sigma_{i-1}\:\text{\hlred{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots \sigma_{n}, \gamma_1 = \varepsilon, \gamma_2 \neq \sigma_i\label{eq:sub2}\\
-        &\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlorange{$\gamma_1$}\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 = \sigma_i, \gamma_2 \neq \varepsilon\label{eq:ins1}\\
-        &\sigma_{1}\ldots\sigma_{i-1}\: \text{\hlgreen{$\gamma_1$}\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\sigma_{n}, \gamma_1 \notin \{\varepsilon, \sigma_i\}, \gamma_2 = \sigma_i\label{eq:ins2}
-    \end{align}
-
-    \noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
-
-    \section{Error Recovery}\label{sec:error}
-
-    Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
-
     \begin{tidyinput}
-        true and true ! and false or true ! true and false(*@\caret{ }@*)
+      (*@\squiggly{\texttt{true and true ! and false or true ! true and false}}\caret{ }@*)
     \end{tidyinput}
 
     \begin{verbatim}
@@ -450,7 +396,304 @@ true and ( false or and true false(*@\caret{ }@*)
 
     \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
-    \subfile{brzozowski}
+ \section{Backpropagation of error}
+
+%    Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
+
+  Valiant's $\otimes$-operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
+
+  \begin{table}[H]
+    \adjustbox{center}{%
+    \begin{tabular}{ccccc}
+      Valiant's $\otimes$-operator && Left Quotient && Right Quotient \\\\
+      $x \otimes y := \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&
+      $\frac{\partial}{\partial \cev{x}} := \big\{\;z \mid (w \rightarrow x z)\in P\;\big\}$ &&
+      $\frac{\partial}{\partial \vec{z}} := \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
+      \begin{tabular}{|c|c|}
+        \hline
+        \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+        \multicolumn{1}{c|}{~} & \hspace{-0.95mm}$z$\hspace{-0.95mm} \\
+        \cline{2-2}
+      \end{tabular} &&
+      \begin{tabular}{|c|c|}
+        \hline
+        \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+        \multicolumn{1}{c|}{~} & \hspace{-0.95mm}$z$\hspace{-0.95mm} \\
+        \cline{2-2}
+      \end{tabular} &&
+      \begin{tabular}{|c|c|}
+        \hline
+        \hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+        \multicolumn{1}{c|}{~} & \cellcolor{black!15}\hspace{-0.95mm}$z$\hspace{-0.95mm} \\
+        \cline{2-2}
+      \end{tabular}
+    \end{tabular}
+    }
+  \end{table}
+
+  \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also consider a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
+
+%  These operators in the context-free setting respect linearity. The $\oplus$ case is trivial. For $\otimes$, let us consider the left quotient. Its symmetric case is left as an exercise for the reader:
+%
+%  $\frac{\partial}{\partial x}(f\otimes g) = \frac{\partial f}{\partial x}\otimes g \oplus f\otimes\frac{\partial g}{\partial x}$
+%
+%  TODO: prove the product rule holds for CFG reachability.
+
+  If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal{W}\subseteq\mathcal{V}}: (\cev{\mathcal{V}}\times\vec{\mathcal{V}}\times\mathcal{W}) \rightarrow (\vec{\mathcal{V}}\times\vec{\mathcal{V}}\rightarrow\mathcal{W})$, which tracks second-order partial derivatives for all roots in $\mathcal{W}$. Unlike differential calculus on smooth manifolds, partials in this calculus do not necessarily commute depending on the CFG.
+
+  \definecolor{R}{RGB}{202,65,55}
+  \definecolor{G}{RGB}{151,216,56}
+  \definecolor{W}{RGB}{255,255,255}
+  \definecolor{X}{RGB}{65,65,65}
+
+  \newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+  \newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+  \newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+  \newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
+  {\ifnum\Y=1%
+  \xdef\myarray{"\X"}%
+  \else%
+  \xdef\myarray{\myarray,"\X"}%
+  \fi}%
+  \foreach \X in \myarrayR%
+  {\xdef\myarray{\myarray,"\X"}}%
+  \foreach \X in \myarrayT%
+  {\xdef\myarray{\myarray,"\X"}}%
+  \xdef\myarray{{\myarray}}%
+  }
+  \TikZRubikFaceLeft
+  {LA}{W}{W}
+  {W}{LB}{LC}
+  {LD}{W}{W}
+  \TikZRubikFaceRight
+  {W}{LK}{W}
+  {LC}{W}{LG}
+  {W}{LH}{W}
+  \TikZRubikFaceTop
+  {LA}{W}{LI}
+  {W}{W}{LJ}
+  {W}{LK}{W}
+  \BuildArray
+  \pgfmathsetmacro\radius{0.1}
+  \tdplotsetmaincoords{55}{135}
+
+  \showcellnumberfalse
+
+  \begin{figure}
+    \[
+    \begin{align*}
+      o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
+      r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
+      s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
+    \end{align*} \phantom{=} \mathcal{H}_{\{o\}} = \begin{pmatrix}
+          \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
+          \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
+          \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
+        \end{pmatrix}
+%    \mathcal{J} = \begin{pmatrix}
+%       \pder{o}{o} & \pder{o}{r} & \pder{o}{s}\\
+%       \pder{r}{o} & \pder{r}{r} & \pder{r}{s}\\
+%       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
+%    \end{pmatrix}
+    \]
+    \hspace{-0.5cm}\begin{minipage}[l]{4.3cm}
+    \scalebox{0.8}{\begin{tikzpicture}
+      \clip (-3,-2.5) rectangle (3,2.5);
+      \begin{scope}[tdplot_main_coords]
+        \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+        \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+        \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+        \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
+          \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
+            \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
+            \fi
+            \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
+            \fi
+            \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
+            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+            \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+            \ifshowcellnumber
+            \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
+            \fi
+          }
+        }
+        \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
+        (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
+        \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+        (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_z$};
+        \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+        (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
+      \end{scope}
+    \end{tikzpicture}}
+    \end{minipage}
+    \begin{minipage}[c]{3.5cm}
+      \begin{align*}
+        \mathcal{H}_{\{r\}} = & \begin{pmatrix}
+           \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
+           \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
+           \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
+        \end{pmatrix}
+      \end{align*}
+        \begin{align*}
+        \mathcal{H}_{\{s\}} = & \begin{pmatrix}
+           \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
+           \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
+           \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
+        \end{pmatrix}
+      \end{align*}
+    \end{minipage}
+    \caption{CFGs are witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
+  \end{figure}
+
+%  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
+%
+%%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
+%
+%%We illustrate this fact in \S\ref{sec:error}:
+%%
+%%\begin{figure}[H]
+%%    \includegraphics[width=2cm]{../figures/parse1.png}
+%%    \includegraphics[width=2cm]{../figures/parse2.png}
+%%    \includegraphics[width=2cm]{../figures/parse3.png}
+%%    \includegraphics[width=2cm]{../figures/parse4.png}
+%%\end{figure}
+%
+%  \begin{figure}[H]
+%    \[
+%      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+%          \vno & \rcr \shup x_1 &  \Cdots      & \mathcal{V}_{1,|x|} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}^* \\
+%          \vdd & \ddd           &  \Ddots      & \rcr\Vdots          & \rcw\vdd               &      & \vdd \\
+%               &                &              & \rcr\shup x_{|x|}   & \rcw                   &      & \\
+%               &                &              &                     & \mathcal{V}_{4,4}      &      & \\
+%               &                &              &                     &                        & \ddd & \\
+%               &                &              &                     &                        &      & \mathcal{V}_{n,n} \\
+%          \vno & \cdd           &              &                     &                        &      & \vno
+%      \end{pNiceArray}
+%    \]
+%  \end{figure}
+
+%We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
+%  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+
+  \section{String Repair}
+
+  Given some unparseable string, i.e., $\squiggly{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. In other words, we seek:
+
+  \begin{align}
+    \bigcup_{\bm{\sigma}\sim\Delta_{k}(\sigma)} \{\sigma' \in \bm{\sigma} \mid S \in \Lambda_{\sigma'}^*\}
+  \end{align}
+
+    Let us consider (2). Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
+
+  \begin{align}
+    U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+                      C_1    & \cdd  &       &       & C_m \\
+                      \top   & \circ & \cdd  &       & \circ \\
+                      \circ  & \ddd  & \ddd  &       & \vdd \\
+                      \vdd   & \ddd  &       &       & \\
+                      \circ  & \cdd  & \circ & \top  & \circ
+    \end{pNiceMatrix}^t
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      V_1 \\
+      \vdd\\
+      \\
+      \\
+      V_m
+    \end{pNiceMatrix}\label{eq:lfsr}
+  \end{align}
+
+
+    \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$.
+
+
+    \noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
+
+    \[\begin{array}{rccccccccc}{
+      i & 0  &  1  &  2 &  3  &  4  &  5  &  6  &  7 \\
+      \mathbf{S}_i & 1000 & 0100 & 0010 & 1001 & 1100 & 0110 & 1011 & 0101 \\
+      \mathbf\sigma & \text{C A}  & \text{B A}  & \text{A C}  & \text{C B}  &  & \text{B C}  &  & \text{B B}\\
+    }\]
+
+    Next, to admit deletion, we augment $P$ with $(\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+)$ and replace each production $(w \rightarrow t)$ with $(w \rightarrow t\:\varepsilon^+ \mid \varepsilon^+\:t \mid t)$.
+
+    \begin{center}
+      \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
+      \RightLabel{$\varepsilon\textsc{-dup}$}
+      \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
+      \DisplayProof
+      \hskip 1.5em
+      \AxiomC{$\Gamma \vdash (A \rightarrow B) \in P$}
+      \RightLabel{$\varepsilon^+\textsc{-int}$}
+      \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+      \DisplayProof
+    \end{center}
+
+    Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate hole configurations $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has at least one solution, each edit in each $\sigma' \in \bm\sigma$ will match exactly one of seven patterns:\vspace{-10pt}
+
+  \begin{align*}
+    \text{Deletion}&=\begin{cases}
+    \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \end{cases}\\
+    \text{Substitution}&=\begin{cases}
+    \sigma_{1}\:\ldots\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\label{eq:sub1}\\
+    \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\label{eq:sub2}\\
+    \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing \label{eq:sub3}
+    \end{cases}\\
+    \text{Insertion}&=\begin{cases}
+    \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+    \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+    \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \end{cases}
+  \end{align*}
+
+\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
+
+%  \noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2},~\ref{eq:sub3}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2},~\ref{eq:copy}) correspond to insertion.
+
+%  This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
+%
+%  \begin{align*}
+%    \text{\textbf{data} \textit{Tree} } a &= \varnothing \mid \langle a, \langle\textit{Tree a, Tree a}\rangle\rangle\\
+%    \text{\textbf{data} \textit{Forest} } a &= \varnothing \mid \langle \{a\}, \{\langle\textit{Forest a,  Forest a}\rangle\}\rangle\\
+%    \text{\textbf{data} \textit{Taiga} } a &= \varnothing \mid \langle a, [\langle\textit{Taiga (Taiga a)}\rangle^2]\rangle
+%  \end{align*}
+%
+%  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
+
+  \section{Context-sensitive reachability}
+
+  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
+
+  \begin{table}[H]
+  \begin{tabular}{llll}
+    $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
+    $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+  \end{tabular}
+  \end{table}
+
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together:\vspace{-5pt}
+
+ \begin{align}
+  \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
+  \end{align}
+  % Generated by cfl4_intersection.vox, open with https://voxelator.com/
+  \begin{figure}[H]
+  \includegraphics[height=0.1\textwidth]{../figures/angle1.png}\hspace{-5pt}
+  \includegraphics[height=0.1\textwidth]{../figures/angle2.png}\hspace{-5pt}
+  \includegraphics[height=0.1\textwidth]{../figures/angle5.png}\hspace{-5pt}
+  \includegraphics[height=0.1\textwidth]{../figures/angle3.png}\hspace{-3pt}
+  \includegraphics[height=0.1\textwidth]{../figures/angle4.png}
+    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
+  \end{figure}
+
 
     \section{Bar-Hillel, Impossible Substrings, and CFL Intersection}
 
@@ -568,7 +811,7 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 %
 %The line between parsing and computation is blurry.
 
-\section{Neural language modeling}
+\section{Example Repairs}
 \begin{figure}[H]
 \begin{center}
 \begin{tabular}{|p{5cm}|p{5cm}|}
@@ -722,7 +965,8 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
     Tidyparse accepts a CFG and a string to parse. If the string is valid, it returns the parse forest, otherwise, it returns a set of repairs, ordered by their Levenshtein edit distance to the invalid string. Our method compiles each CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for its fixedpoints using an incremental SAT solver. This approach to parsing has many advantages, enabling us to repair syntax errors, correct typos and generate parse trees for incomplete strings. By allowing the string to contain holes, repairs can contain either concrete tokens or nonterminals, which can be manually expanded by the user or a neural-guided search procedure. From a theoretical standpoint, this technique is particularly amenable to neural program synthesis and repair, naturally integrating with the masked-language-modeling task (MLM) used by transformer-based neural language models.
 
-    From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. Further examples can be found at our GitHub repository: \url{https://github.com/breandan/tidyparse}
+    From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. %Further examples can be found at our GitHub repository: \url{https://github.com/breandan/tidyparse} (needs anonymiziation)
+
 %\begin{itemize}
 %\item Error correction.
 %\item Program repair.
@@ -734,7 +978,5 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 %\item GPU acceleration.
 %\end{itemize}
 
-    \section{Acknowledgements}
-    The first author would like to thank his co-advisor Xujie Si for providing many helpful suggestions during the development of this project, including the optimized fixpoint, test cases, and tree denomalization procedure, Zhixin Xiong for contributing the OCaml grammar and collaborator Nghi Bui at FPT Software for early feedback on the IDE plugin.
     \bibliography{../bib/acmart}
 \end{document}
