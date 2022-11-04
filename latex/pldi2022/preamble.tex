@@ -187,6 +187,7 @@
 }
 
 \newtcblisting{tidyinput}[1][]{%
+    left skip=0.7cm,
     width=8.5cm,
     left=10pt,
     top=1pt,
@@ -208,6 +209,7 @@
 }
 
 \newtcblisting{tidyoutput}[1][]{%
+    left skip=0.7cm,
     width=8.5cm,
     left=10pt,
     top=1pt,
@@ -332,4 +334,5 @@
 \def\squiggly{\bgroup \markoverwith{\textcolor{red}{\lower3\p@\hbox{\sixly \char58}}}\ULon}
 \makeatother
 
+\newcommand{\err}[1]{\smash{\squiggly{#1}{}}}
 \newcommand{\stirlingii}{\genfrac{\{}{\}}{0pt}{}}
