@@ -186,6 +186,28 @@
     \endgroup
 }
 
+\newtcblisting{halftidyinput}[1][]{%
+  left skip=0.7cm,
+  width=6cm,
+  left=10pt,
+  top=1pt,
+  listing options={
+    language=tidy,
+    basicstyle=\ttfamily\small,
+%numberstyle=\footnotesize,
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  },
+  underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
+  }
+}
+
 \newtcblisting{tidyinput}[1][]{%
     left skip=0.7cm,
     width=8.5cm,

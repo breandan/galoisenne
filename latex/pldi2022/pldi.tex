@@ -61,17 +61,15 @@ In programming, most such errors initially manifest as syntax errors, and though
 Suppose we are given the following context-free grammar:
 
 \begin{tidyinput}
-S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
+S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{tidyinput}
 
-\noindent For reasons that will become clear in the following section, this is automatically rewritten into the equivalent grammar:
+\noindent For reasons that will become clear in \S\ref{sec:matrix}, this is automatically rewritten into the grammar:
 
 \begin{verbatim}
-F.! → !  ε+ → ε      S → false    F.and → and
-F.( → (  ε+ → ε+ ε+  S → F.! S      S.) → S F.)
-F.) → )   S → <S>    S → S or.S    or.S → F.or S
-F.ε → ε   S → true   S → S and.S  and.S → F.and S
-F.or → or  S → S ε+   S → F.( S.)
+ F.! → !     S.) → S F.)  and.S → F.and S   S → F.! S     S → false    S → S ε+
+ F.( → (   F.xor → xor    xor.S → F.xor S   S → S and.S   S → true    ε+ → ε
+ F.) → )   F.and → and        S → S xor.S   S → F.( S.)   S → <S>     ε+ → ε+ ε+
 \end{verbatim}
 
 %\noindent We can visualize the CFG as either a graph or a matrix:
@@ -89,10 +87,10 @@ true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{tidyoutput}
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{or}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
 ...
 \end{tidyoutput}
 
@@ -112,7 +110,7 @@ true and ( false or and true false(*@\caret{ }@*)
 
 \noindent In the following paper, we will describe how we built it.
 
-\section{Matrix Theory}
+\section{Matrix Theory}\label{sec:matrix}
 
 Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
@@ -195,7 +193,7 @@ This decision procedure can be abstracted by lifted into the domain of bitvector
 \newcommand\nfi{5\ts{th}}
 \newcommand\nsi{6\ts{th}}
 \newcommand\nse{7\ts{th}}
-\newcommand{\vs}[1]{\shup\sigma_{#1}}
+\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
 \newcommand\rcr{\rowcolor{black!15}}
 \newcommand\rcw{\rowcolor{white}}
 \newcommand\pcd{\cdot}
@@ -225,7 +223,7 @@ Unlike classical parsers which need special care to recover from errors, if the 
 The matrix $\mathcal{M}^*$ encodes a superposition of all labeled binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees, with labels omitted to emphasize their structure:
 
 \begin{figure}[H]
-  \scalebox{0.7}{
+  \resizebox{0.99\textwidth}{!}{
     \[
       \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
          \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
@@ -305,48 +303,60 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all labeled binary trees o
     \]
   }
 \end{figure}
-\begin{tidyinput}
-  (*@\err{\texttt{true and true ! and false or true ! true and false}}\caret{ }@*)
-\end{tidyinput}
 
-\begin{verbatim}
-Parseable subtrees (3 leaves / 2 branches):
-\end{verbatim}
-\noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
-\begin{verbatim}
-└── ! [3]   └── and [4]   └── or [6]
-\end{verbatim}
-\hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
-\begin{verbatim}
-└── S [0..2]          └── S [8..11]
-    ├── true [0]          ├── S [8..9]
-    ├── and [1]           │   ├── ! [8]
-    └── true [2]          │   └── true [9]
-                          ├── and [10]
-                          └── false [11]
-\end{verbatim}
-
-\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
+Occasionally, it is not possible to decode a full tree. In a typical parser, error recovery requires special tricks. Here, we simply analyze the structure of the matrix $\mathbf{M}$ to decode the parseable subtrees:
 
 \begin{figure}[H]
-    \[
+  \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+      \[
         \begin{NiceMatrix}
-                  & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \ppp & \ppp \\
-                  &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
- \{V\}_{\sigma_1} & \cdd &      & A    &      &      &      &      &      & \ppp \\
-             \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
-             \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-                  &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
-                  &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                  &      &      &      &      &      &      &      & T_C  & \vdd \\
-                  &      &      &      &      &      &      & \xno &      & \\
-                  &      &      &      &      &      &      &      &      & \\
-                  &      &      &      &      &      &      &      &      & \\
-                  &      &      &      &      &      &      &      & \ppp & \{V\}_{\sigma_n} \\
-             \vno & \cdd &      &      &      &      &      &      & \vno &
-       \end{NiceMatrix}
-    \]\caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
+          \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+                     &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+      \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+                \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+                \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                     &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+                     &      &      &      &      &      & \pcd & \cdd &      & C    \\
+                     &      &      &      &      &      &      &      & T_C  & \vdd \\
+                     &      &      &      &      &      &      & \xno &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+                \vno & \cdd &      &      &      &      &      &      & \vno &
+        \end{NiceMatrix}
+    \]
+  \end{minipage}
+  \hspace{1cm}
+  \begin{minipage}[l]{6cm}
+      \begin{halftidyinput}
+      (*@\err{\texttt{⊤ and ⊤ ! and ⊥ xor ⊤ ! ⊤ and ⊥}}\caret{ }@*)
+      \end{halftidyinput}
+
+      \begin{verbatim}
+    Recovered 3 parseable leaves:
+      \end{verbatim}
+      \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
+      \begin{verbatim}
+    └── ! [3]   └── and [4]   └── or [6]
+      \end{verbatim}
+
+      \begin{verbatim}
+    Recovered 2 parseable branches:
+      \end{verbatim}
+    \hspace{0.63cm}\emoji{herb}\hspace{2.48cm}\emoji{herb}\vspace{-5pt}
+      \begin{verbatim}
+    └── S [0..2]     └── S [8..11]
+        ├── ⊤ [0]        ├── S [8..9]
+        ├── and [1]      │   ├── ! [8]
+        └── ⊤ [2]        │   └── ⊤ [9]
+                         ├── and [10]
+                         └── ⊥ [11]
+      \end{verbatim}
+    \end{minipage}
+  \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
 \end{figure}
+
+\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
 
 \section{Tree Denormalization}
 
@@ -356,15 +366,30 @@ Parseable subtrees (3 leaves / 2 branches):
 Our parser emits a binary forest consisting of parse trees for the candidate string according to the CNF grammar, however this forest contains many so-called \textit{Krummholz}, or \textit{flag trees}, often found clinging to windy ridges and mountainsides.
 
 \begin{figure}[H]
-  \resizebox{.50\textwidth}{!}{
+  \begin{minipage}{.45\linewidth}
+    \begin{algorithm}[H]
+      \caption{Tree denormalization}\label{alg:cap}
+      \begin{algorithmic}
+        \Procedure{Cut}{\texttt{t: Tree}}
+          \State $\texttt{stems} \leftarrow \{\:\textsc{Cut}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+          \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
+            \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
+          \Else%\Comment{Graft the denormalized children on root.}
+            \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+          \EndIf
+        \EndProcedure
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}
+  \resizebox{.54\textwidth}{!}{
     \begin{tabular}{ll}
-        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
+        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{xor}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
 %    \Tree [.S [.NP John ] [.VP [.\tikz\node(v1){V}; sleeps ] ] ]
         \hspace{-2cm}
         &
-        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\
+        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{xor}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\\\
 %    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
-        \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
+        \hspace{1cm}\Huge{Pre-Denormalization} & \hspace{2cm}\Huge{Post-Denormalization}
     \end{tabular}
     \begin{tikzpicture}[overlay]
 %    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
@@ -375,23 +400,9 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
         \draw [red,dashed,-stealth] (v11) to[bend right] (v12);
     \end{tikzpicture}
   }
+  \caption{Since $\mathcal{G}'$ contains synthetic nodes, to recover a parse tree congruent with the original grammar $\mathcal{G}$, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).}%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.}
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
 \end{figure}
-\begin{algorithm}
-    \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
-    \begin{algorithmic}
-        \Procedure{Denormalize}{\texttt{t: Tree}}
-            \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-            \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
-                \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
-            \Else\Comment{Graft the denormalized children on root.}
-            \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
-            \EndIf
-        \EndProcedure
-    \end{algorithmic}
-\end{algorithm}
-
-\noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
 \section{Backpropagation of error}
 
@@ -685,10 +696,7 @@ It is well-known that the family of CFLs is not closed under intersection. For e
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
 \end{figure}
 
-
-\section{Bar-Hillel, Impossible Substrings, and CFL Intersection}
-
-It is a well-known fact in formal language theory that CFLs are closed under intersection with regular languages, and the intersection between two CFLs is decidable. Anyhow, since we are working with bounded-width CFLs, everything collapses down to finite languages, which are closed under union, intersection and complementation. Thus, Bar-Hillel and other elegant constructions which took CS theorists many years to prove in full-generality become trivial when so restricted.
+It is a well-known fact in formal language theory that CFLs are closed under union, composition, substitution and intersection with regular languages, and the intersection between two CFLs is decidable. Anyhow, since we are working with bounded-width CFLs, everything collapses down to finite languages, which are closed under all these operations. Thus, Bar-Hillel and other elegant constructions which took CS theorists many years to prove in full-generality become trivial when so restricted.
 
 Given two CFLs $\mathcal{L}_\mathcal{G}, \mathcal{L}_{\mathcal{G}'}$, we can compute the intersection $\mathcal{L}_\mathcal{G}\cap\mathcal{L}_{\mathcal{G}'}\cap\Sigma^d$ by encoding $(\mathbf{M}_\mathcal{G}^*\sigma) = (\mathbf{M}_{\mathcal{G}'}^*\sigma)$. This allows us to build a DSL of grammar combinators to constrain the solution space.
 
@@ -802,49 +810,6 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 %
 %The line between parsing and computation is blurry.
 
-\section{Example Repairs}
-\begin{figure}[H]
-\begin{center}
-\begin{tabular}{|p{5cm}|p{5cm}|}
-\hline\\[-1em]1.a) Original method  &  1.b) Synonymous variant\\[-1em]\\\hline
-\begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void flush(int b) {
-    buffer.write((byte) b);
-    buffer.compact();
-}
-\end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void flush(int b) {
-    (*@\hlred{cushion}@*).write((byte) b);
-    (*@\hlred{cushion}@*).compact();
-}
-\end{lstlisting}
-\\\hline\\[-1em]2.a) Multi-masked method   &  2.b) Multi-masked variant\\[-1em]\\\hline
-\begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void <MASK>(int b) {
-    buffer.<MASK>((byte) b);
-    <MASK>.compact();
-}
-\end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void <MASK>(int b) {
-    cushion.<MASK>((byte) b);
-    <MASK>.compact();
-}
-\end{lstlisting}
-\\\hline\\[-1em]3.a) Model predictions  &  3.b) Model predictions\\[-1em]\\\hline
-\begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void (*@\hl{output}@*)(int b) {
-    buffer.write((byte) b);
-    buffer.compact();
-}
-\end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
-public void (*@\hl{append}@*)(int b) {
-    cushion.(*@\hl{add}@*)((byte) b);
-    cushion.compact();
-}
-\end{lstlisting} \\\hline
-\end{tabular}
-\end{center}
-\end{figure}
 
 \section{Evaluation}
 
@@ -969,4 +934,50 @@ From a practical standpoint, we have implemented our approach as an IDE plugin a
 %\end{itemize}
 
 \bibliography{../bib/acmart}
+
+\appendix
+
+\section{Example Repairs}
+\begin{figure}[H]
+  \begin{center}
+    \begin{tabular}{|p{5cm}|p{5cm}|}
+      \hline\\[-1em]1.a) Original method  &  1.b) Synonymous variant\\[-1em]\\\hline
+      \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void flush(int b) {
+    buffer.write((byte) b);
+    buffer.compact();
+}
+      \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void flush(int b) {
+    (*@\hlred{cushion}@*).write((byte) b);
+    (*@\hlred{cushion}@*).compact();
+}
+      \end{lstlisting}
+      \\\hline\\[-1em]2.a) Multi-masked method   &  2.b) Multi-masked variant\\[-1em]\\\hline
+      \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void <MASK>(int b) {
+    buffer.<MASK>((byte) b);
+    <MASK>.compact();
+}
+      \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void <MASK>(int b) {
+    cushion.<MASK>((byte) b);
+    <MASK>.compact();
+}
+      \end{lstlisting}
+      \\\hline\\[-1em]3.a) Model predictions  &  3.b) Model predictions\\[-1em]\\\hline
+      \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void (*@\hl{output}@*)(int b) {
+    buffer.write((byte) b);
+    buffer.compact();
+}
+      \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=kotlin]
+public void (*@\hl{append}@*)(int b) {
+    cushion.(*@\hl{add}@*)((byte) b);
+    cushion.compact();
+}
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{figure}
 \end{document}
