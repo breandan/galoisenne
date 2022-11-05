@@ -8,6 +8,7 @@ import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
 import prettyPrint
+import kotlin.math.pow
 import kotlin.time.*
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
@@ -59,6 +60,10 @@ private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
 var MAX_SAMPLE = 20
 var MAX_TOKENS = 80
 var TIMEOUT_MS = 90000
+
+fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
+    none { it.isNonterminalStubIn(cfg) } &&
+    (cfg.terminals - cfg.blocked).size.toDouble().pow(count { it.isHoleTokenIn(cfg) }) < 512
 
 // Generates a lazy sequence of mutations for a broken string
 // and feeds them to the synthesizer for completion.

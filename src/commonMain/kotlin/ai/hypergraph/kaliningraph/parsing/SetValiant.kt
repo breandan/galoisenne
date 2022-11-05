@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.hasBalancedBrackets
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
@@ -195,8 +194,12 @@ fun Σᐩ.validate(
  * over all holes takes O(|Σ|^n) where n is the number of holes.
  */
 
-fun List<Σᐩ>.solve(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
-  genCandidates(CFG, fillers).filter { it.matches(CFG) }
+fun List<Σᐩ>.solve(
+  CFG: CFG,
+  fillers: Set<Σᐩ> = CFG.terminals,
+  checkInterrupted: () -> Unit = {}
+): Sequence<Σᐩ> =
+  genCandidates(CFG, fillers).filter { checkInterrupted(); it.matches(CFG) }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
@@ -204,3 +207,16 @@ fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Se
       if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
     }.first.replace("ε ", "")
   }
+
+
+// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
+fun CFG.nonterminals(bitvec: List<Boolean>): Set<Σᐩ> =
+    bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
+        .apply { ifEmpty { throw Exception("Unable to reconstruct NTs from: $bitvec") } }
+
+fun CFG.handleSingleton(s: Σᐩ): Set<Σᐩ> =
+    if (s == "_") terminals
+    else if (s.matches(Regex("<.+>")))
+        bimap[s.substring(1, s.length - 1)]
+            .mapNotNull { if (it.size == 1) it[0] else null }.toSet()
+    else setOf()
