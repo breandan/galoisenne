@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
 import ai.hypergraph.markovian.pow
 import org.logicng.formulas.Formula
+import org.logicng.io.writers.FormulaDimacsFileWriter
 import kotlin.collections.filter
 import kotlin.time.*
 
@@ -279,6 +280,8 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       val (parsingConstraints, rubix) = generateConstraints(tokens.first())
       val strVars = rubix.stringVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
+      // FormulaDimacsFileWriter.write("dimacs.cnf", parsingConstraints.cnf(), true)
+      // https://www.utbot.org/kosat/
       // Sometimes simplification can take longer or even switch SAT->UNSAT?
       // println("Original: ${parsingConstraints.numberOfNodes()}")
       // parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
