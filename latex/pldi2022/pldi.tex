@@ -82,31 +82,36 @@ S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 
 \noindent Given a string containing holes such as the one below, Tidyparse will return several completions in a few milliseconds:
 
-\begin{tidyinput}
+\begin{tcolorbox}
+  \begin{lstlisting}[language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
-\end{tidyinput}
-
-\begin{tidyoutput}
+  \end{lstlisting}
+  \tcblower
+  \begin{lstlisting}[language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
 true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
 true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
 true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
 ...
-\end{tidyoutput}
+  \end{lstlisting}
+\end{tcolorbox}
 
 \noindent Similarly, if provided with a string containing various errors, Tidyparse will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
-\begin{tidyinput}
-true and ( false or and true false(*@\caret{ }@*)
-\end{tidyinput}
 
-\begin{tidyoutput}
+\begin{tcolorbox}
+\begin{lstlisting}[language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+true and ( false or and true false(*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}[language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 1.) true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*)
 2.) true and ( false or (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
 3.) true and ( false or (*@\hlorange{(}@*) true (*@\hlorange{)}@*) (*@\hlgreen{)}@*)
 ...
 9.) true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
 \noindent In the following paper, we will describe how we built it.
 
@@ -147,7 +152,7 @@ X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow 
 
 \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-This decision procedure can be abstracted by lifted into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+This decision procedure can be abstracted by lifting into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
 \begin{figure}[H]
   \adjustbox{scale=0.82,center}{%
