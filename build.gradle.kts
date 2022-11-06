@@ -74,6 +74,10 @@ repositories {
       artifact()
     }
   }
+  // Needed for KoSAT
+  repositories {
+    maven(url = "https://jitpack.io")
+  }
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
@@ -154,7 +158,9 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
+        // TODO: Replace LogicNG with KoSAT?
         implementation("org.logicng:logicng:2.3.2")
+        implementation("com.github.UnitTestBot.kosat:kosat:main-SNAPSHOT") // multiplatform
       }
     }
 

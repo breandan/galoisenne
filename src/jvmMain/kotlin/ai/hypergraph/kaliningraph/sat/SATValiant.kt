@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
 import ai.hypergraph.markovian.pow
 import org.logicng.formulas.Formula
+import org.logicng.io.writers.FormulaDimacsFileWriter
 import kotlin.collections.filter
 import kotlin.time.*
 
@@ -227,19 +228,17 @@ fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   return parsingConstraints to q.first()
 }
 
-fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
-  none { it.isNonterminalStubIn(cfg) } &&
-    (cfg.terminals - cfg.blocked).size.pow(count { it.isHoleTokenIn(cfg) }) < 512
-
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
-  cfg: CFG,
-  allowNTs: Boolean = true,
-  enablePruning: Boolean = false,
-  variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
-  updateProgress: (Σᐩ) -> Unit = {},
-  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
-    if (it.isSetValiantOptimalFor(this)) it.also { println("Using SetValiant!") }.solve(this)
+    cfg: CFG,
+    allowNTs: Boolean = true,
+    enablePruning: Boolean = false,
+    variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
+    updateProgress: (Σᐩ) -> Unit = {},
+    checkInterrupted: () -> Unit = { if (Thread.currentThread().isInterrupted) throw InterruptedException() },
+    synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
+    if (it.isSetValiantOptimalFor(this)) it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
+        .solve(this, checkInterrupted = checkInterrupted)
     else asCSL.synthesize(it)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
@@ -250,18 +249,6 @@ fun Σᐩ.synthesizeIncrementally(
   updateProgress = updateProgress,
   synthesizer = synthesizer
 )
-
-// TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
-fun CFG.nonterminals(bitvec: List<Boolean>): Set<Σᐩ> =
-  bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
-    .apply { ifEmpty { throw Exception("Unable to reconstruct NTs from: $bitvec") } }
-
-private fun CFG.handleSingleton(s: Σᐩ): Set<Σᐩ> =
-  if (s == "_") terminals
-  else if (s.matches(Regex("<.+>")))
-    bimap[s.substring(1, s.length - 1)]
-      .mapNotNull { if (it.size == 1) it[0] else null }.toSet()
-  else setOf()
 
 /*
 Does Lee's method give demonstrable speedup? https://arxiv.org/pdf/cs/0112018.pdf#page=10
@@ -293,6 +280,8 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       val (parsingConstraints, rubix) = generateConstraints(tokens.first())
       val strVars = rubix.stringVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
+      // FormulaDimacsFileWriter.write("dimacs.cnf", parsingConstraints.cnf(), true)
+      // https://www.utbot.org/kosat/
       // Sometimes simplification can take longer or even switch SAT->UNSAT?
       // println("Original: ${parsingConstraints.numberOfNodes()}")
       // parsingConstraints = AdvancedSimplifier().apply(parsingConstraints, false)
@@ -305,32 +294,32 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
 
       //  var freshnessConstraints = 0L
       while (true) try {
-        val cfg = cfgs.first()
-        val fillers = rubix.stringVariables.zip(tokens.first())
-          .map { (bits, token) ->
-            if (cfgs.none { token.isHoleTokenIn(it) }) token
-            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
-          }
+          val cfg = cfgs.first()
+          val fillers = rubix.stringVariables.zip(tokens.first())
+              .map { (bits, token) ->
+                  if (cfgs.none { token.isHoleTokenIn(it) }) token
+                  else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+              }
 
-        val completion: Σᐩ = fillers.joinToString(" ")
-        if (Thread.currentThread().isInterrupted) throw InterruptedException()
-        if (completion.trim().isNotBlank()) yield(completion)
+          val completion: Σᐩ = fillers.joinToString(" ")
+          if (Thread.currentThread().isInterrupted) throw InterruptedException()
+          if (completion.trim().isNotBlank()) yield(completion)
 
-        val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
-        // freshnessConstraints += isFresh.numberOfAtoms()
-        // println("Freshness constraints: $freshnessConstraints")
+          val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
+          // freshnessConstraints += isFresh.numberOfAtoms()
+          // println("Freshness constraints: $freshnessConstraints")
 
-        model = solver.addConstraintAndSolve(isFresh)
-          .ifEmpty { ff.clear(); return@sequence }
+          model = solver.addConstraintAndSolve(isFresh)
+              .ifEmpty { ff.clear(); return@sequence }
       } catch (ie: InterruptedException) {
-        ff.clear()
-        throw ie
+          ff.clear()
+          throw ie
       } catch (e: NullPointerException) {
-        ff.clear()
-        break
+          ff.clear()
+          break
       } catch (e: OutOfMemoryError) { // Does this really work?
-        ff.clear()
-        break
+          ff.clear()
+          break
       }
     }
   }
