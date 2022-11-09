@@ -92,41 +92,41 @@
 
 \usepackage[dvipsnames, table]{xcolor}
 \lstdefinelanguage{kotlin}{
-    comment=[l]{//},
-    commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
-    numberstyle=\noncopyable,
-    identifierstyle=\color{black},
-    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
-    keywordstyle={\bfseries},
-    morecomment=[s]{/*}{*/},
-    morestring=[b]",
-    morestring=[s]{"""*}{*"""},
-    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
-    ndkeywordstyle={\bfseries},
-    sensitive=true,
-    stringstyle={\ttfamily},
-    literate={`}{{\char0}}1,
-    escapeinside={(*@}{@*)}
+  comment=[l]{//},
+  commentstyle={\color{gray}\ttfamily},
+  emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
+  numberstyle=\noncopyable,
+  identifierstyle=\color{black},
+  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
+  keywordstyle={\bfseries},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[s]{"""*}{*"""},
+  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
+  ndkeywordstyle={\bfseries},
+  sensitive=true,
+  stringstyle={\ttfamily},
+  literate={`}{{\char0}}1,
+  escapeinside={(*@}{@*)}
 }
 \lstdefinelanguage{tidy}{
-    comment=[l]{//},
-    commentstyle={\color{gray}\ttfamily},
-    emph={|, ->, ---},
-    emphstyle={\color{red}},
-    identifierstyle=\color{black},
-    keywords={\|, ->, ---},
-    otherkeywords={|,->},
-    morekeywords={|,->},
-    keywordstyle={\color{blue}\bfseries},
-    morecomment=[s]{/*}{*/},
-    morestring=[b]",
-    morestring=[s]{"""*}{*"""},
-    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
-    ndkeywordstyle={\color{orange}\bfseries},
-    sensitive=true,
-    stringstyle={\color{green}\ttfamily},
-    literate={`}{{\char0}}1
+  comment=[l]{//},
+  commentstyle={\color{gray}\ttfamily},
+  emph={|, ->, ---},
+  emphstyle={\color{red}},
+  identifierstyle=\color{black},
+  keywords={\|, ->, ---},
+  otherkeywords={|,->},
+  morekeywords={|,->},
+  keywordstyle={\color{blue}\bfseries},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]",
+  morestring=[s]{"""*}{*"""},
+  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
+  ndkeywordstyle={\color{orange}\bfseries},
+  sensitive=true,
+  stringstyle={\color{green}\ttfamily},
+  literate={`}{{\char0}}1
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,29 +136,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \tcbset{
-    enhanced jigsaw,
-    breakable,
-    listing only,
-    boxsep=-1pt,
-    top=-1pt,
-    bottom=-0.5pt,
-    right=-0.5pt,
-    overlay first={
-        \node[black!50] (S) at (frame.south) {\Large\ding{34}};
-        \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
-    },
-    overlay middle={
-        \node[black!50] (S) at (frame.south) {\Large\ding{34}};
-        \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
-        \node[black!50] (S) at (frame.north) {\Large\ding{34}};
-        \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
-    },
-    overlay last={
-        \node[black!50] (S) at (frame.north) {\Large\ding{34}};
-        \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
-    },
-    before={\par\vspace{5pt}},
-    after={\par\vspace{\parskip}\noindent}
+  enhanced jigsaw,
+  breakable,
+  listing only,
+%  boxsep=-1pt,
+%  top=-1pt,
+  bottom=0.1cm,
+  right=0.5cm,
+  overlay first={
+    \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+  },
+  overlay middle={
+    \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+    \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+  },
+  overlay last={
+    \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+  },
+  before={\par\vspace{5pt}},
+  after={\par\vspace{\parskip}\noindent}
 }
 
 \definecolor{slightgray}{rgb}{0.90, 0.90, 0.90}
@@ -166,31 +166,32 @@
 \usepackage{soul}
 \makeatletter
 \def\SOUL@hlpreamble{%
-    \setul{}{3.0ex}%
-    \let\SOUL@stcolor\SOUL@hlcolor%
-    \SOUL@stpreamble%
+  \setul{}{3.0ex}%
+  \let\SOUL@stcolor\SOUL@hlcolor%
+  \SOUL@stpreamble%
 }
 \makeatother
 
 \newcommand{\inline}[1]{%
-    \begingroup%
-    \sethlcolor{slightgray}%
-    \hl{\ttfamily\footnotesize #1}%
-    \endgroup
+  \begingroup%
+  \sethlcolor{slightgray}%
+  \hl{\ttfamily\footnotesize #1}%
+  \endgroup
 }
 
 \newcommand{\tinline}[1]{%
-    \begingroup%
-    \sethlcolor{slightgray}%
-    \hl{\ttfamily\tiny #1}%
-    \endgroup
+  \begingroup%
+  \sethlcolor{slightgray}%
+  \hl{\ttfamily\tiny #1}%
+  \endgroup
 }
 
 \newtcblisting{halftidyinput}[1][]{%
   left skip=0.7cm,
   width=6cm,
-  left=10pt,
-  top=1pt,
+%  left=-0.01cm,
+  top=-0.1cm,
+  bottom=-0.35cm,
   listing options={
     language=tidy,
     basicstyle=\ttfamily\small,
@@ -209,43 +210,44 @@
 }
 
 \newtcblisting{tidyinput}[1][]{%
-    left skip=0.7cm,
-    width=8.5cm,
-    left=10pt,
-    top=1pt,
-    listing options={
-        language=tidy,
-        basicstyle=\ttfamily\small,
+  left skip=1cm,
+%  width=8.5cm,
+%  left=10pt,
+%  top=1pt,
+  hbox,
+  listing options={
+    language=tidy,
+    basicstyle=\ttfamily\small,
 %numberstyle=\footnotesize,
-        showstringspaces=false,
-        tabsize=2,
-        breaklines=true,
-        numbers=none,
-        inputencoding=utf8,
-        escapeinside={(*@}{@*)},
-        #1
-    },
-    underlay unbroken and first={%
-        \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
-    }
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  },
+  underlay unbroken and first={%
+      \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
+  }
 }
 
 \newtcblisting{tidyoutput}[1][]{%
-    left skip=0.7cm,
-    width=8.5cm,
-    left=10pt,
-    top=1pt,
-    listing options={
-        basicstyle=\ttfamily\small,
+  left skip=0.7cm,
+  width=8.5cm,
+  left=10pt,
+  top=1pt,
+  listing options={
+    basicstyle=\ttfamily\small,
 %numberstyle=\footnotesize,
-        showstringspaces=false,
-        tabsize=2,
-        breaklines=true,
-        numbers=none,
-        inputencoding=utf8,
-        escapeinside={(*@}{@*)},
-        #1
-    }
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  }
 }
 
 
@@ -328,7 +330,7 @@
 
 \makeatletter
 \DeclareRobustCommand{\cev}[1]{%
-    {\mathpalette\do@cev{#1}}%
+  {\mathpalette\do@cev{#1}}%
 }
 \newcommand{\do@cev}[2]{%
   \vbox{\offinterlineskip
