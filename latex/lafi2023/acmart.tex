@@ -283,36 +283,6 @@
     \caption{CFGs are witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
   \end{figure}
 
-%  \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
-%
-%%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
-%
-%%We illustrate this fact in \S\ref{sec:error}:
-%%
-%%\begin{figure}[H]
-%%    \includegraphics[width=2cm]{../figures/parse1.png}
-%%    \includegraphics[width=2cm]{../figures/parse2.png}
-%%    \includegraphics[width=2cm]{../figures/parse3.png}
-%%    \includegraphics[width=2cm]{../figures/parse4.png}
-%%\end{figure}
-%
-%  \begin{figure}[H]
-%    \[
-%      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-%          \vno & \rcr \shup x_1 &  \Cdots      & \mathcal{V}_{1,|x|} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}^* \\
-%          \vdd & \ddd           &  \Ddots      & \rcr\Vdots          & \rcw\vdd               &      & \vdd \\
-%               &                &              & \rcr\shup x_{|x|}   & \rcw                   &      & \\
-%               &                &              &                     & \mathcal{V}_{4,4}      &      & \\
-%               &                &              &                     &                        & \ddd & \\
-%               &                &              &                     &                        &      & \mathcal{V}_{n,n} \\
-%          \vno & \cdd           &              &                     &                        &      & \vno
-%      \end{pNiceArray}
-%    \]
-%  \end{figure}
-
-%We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
-%  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
-
   \subsection{Gradient estimation}
 
   Given some unparseable string, i.e., $\squiggly{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$,\vspace{-4pt}\\where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. Let us consider (2) and % This loosely corresponds to a finite difference approximation in $\mathbb{R}^n$.

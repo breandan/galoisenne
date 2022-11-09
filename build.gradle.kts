@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.20"
+  kotlin("multiplatform") version "1.7.21"
   kotlin("jupyter.api") version "0.11.0-125"
   id("com.github.ben-manes.versions") version "0.43.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
@@ -74,10 +74,6 @@ repositories {
       artifact()
     }
   }
-  // Needed for KoSAT
-  repositories {
-    maven(url = "https://jitpack.io")
-  }
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
@@ -94,6 +90,7 @@ kotlin {
         enabled = false
       }
     }
+    binaries.executable()
   }
 
   sourceSets {
@@ -114,7 +111,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.5")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
       }
     }
 
@@ -126,13 +123,13 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.2.0")
+        implementation("org.graalvm.js:js:22.3.0")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.1.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.1.1")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -160,7 +157,6 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         implementation("org.logicng:logicng:2.3.2")
-        implementation("com.github.UnitTestBot.kosat:kosat:main-SNAPSHOT") // multiplatform
       }
     }
 

@@ -43,7 +43,6 @@
 In this work, we illustrate how to lower context-free language recognition onto a tensor algebra over finite fields. In addition to its theoretical value, this connection has yielded surprisingly useful applications in incremental parsing, code completion and program repair. For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries. This line of research provides an elegant unification of context-free program repair, code completion and sketch-based program synthesis. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes.
 \end{abstract}
 
-
 \maketitle
 
 \section{Introduction}
@@ -890,10 +889,10 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 \noindent\textbf{Level 3} - Unknown number of errors at unknown locations
 
 \subsection{Repair Datasets}
-Synthetic - Synthetic errors in natural code snippets
+Synthetic - Synthetic errors in natural code snippets\\
 Natural - Natural errors and fixes mined from Git history
 \subsection{Evaluation Metrics}
-Syntactic validity - Only considers whether the repair parses
+Syntactic validity - Only considers whether the repair parses\\
 Repair alignment - Measures string distance to true fix
 \subsection{Model configurations}
 Model configurations - LLM, ECP, ECP + LLM
