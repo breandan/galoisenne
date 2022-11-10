@@ -35,3 +35,10 @@ val CNF.solver by cache { Kosat(map { it.toMutableList() }.toMutableList(), vari
 @JvmName("caf") infix fun Clause.land(c: CNF): CNF = c.plus(setOf(this))
 @JvmName("faf") infix fun CNF.land(c: CNF): CNF = plus(c)
 
+// TODO: Not sure how quickly this will blow up, but let's see...
+fun CNF.eq(c: CNF): CNF = (this land c) lor (negate() land c.negate())
+fun CNF.xor(c: CNF): CNF = (this land c.negate()) lor (c.negate() land this)
+fun Literal.negate(): Literal = -this
+fun Clause.negate(): CNF = map { setOf(-it) }.toSet()
+fun CNF.negate(): CNF = map { it.negate() }.flatten().toSet()
+
