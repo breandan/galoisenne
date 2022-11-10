@@ -44,16 +44,16 @@ fun Formula.solve(): Model =
     if (model == null) mapOf() else vars.associateWith { model.evaluateLit(it) }
   }
 
-fun Formula.solveMaxSat(
-  softConstaints: SATVector,
-  maxiSat: MaxSATSolver = MaxSATSolver.incWBO(ff)
-): Pair<MaxSATSolver, Model> =
-  maxiSat to maxiSat.apply {
-    addHardFormula(this@solveMaxSat)
-    softConstaints.forEach { addSoftFormula(it, 1) }
-    solve()
-  }.model()
-    .let { model -> variables().associateWith { model.evaluateLit(it) } }
+//fun Formula.solveMaxSat(
+//  softConstaints: SATVector,
+//  maxiSat: MaxSATSolver = MaxSATSolver.incWBO(ff)
+//): Pair<MaxSATSolver, Model> =
+//  maxiSat to maxiSat.apply {
+//    addHardFormula(this@solveMaxSat)
+//    softConstaints.forEach { addSoftFormula(it, 1) }
+//    solve()
+//  }.model()
+//    .let { model -> variables().associateWith { model.evaluateLit(it) } }
 
 // Trick to "remove" a clause: https://groups.google.com/g/minisat/c/ffXxBpqKh90
 fun SATSolver.removeConstraintAndSolve(f: Formula): Model = TODO()
