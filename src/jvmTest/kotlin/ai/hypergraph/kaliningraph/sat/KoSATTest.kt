@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.sat
 
 import org.junit.jupiter.api.Test
 import org.kosat.Kosat
+import ai.hypergraph.reasoning.*
 
 
 class KoSATTest {
@@ -10,16 +11,13 @@ class KoSATTest {
 */
   @Test
   fun testKoSAT() {
-    val solver = Kosat(mutableListOf(), 0)
+  val cnf = (-1 lor 2) land
+      (1 lor 2) land
+      (-1 lor -2)
+
+    val solver = cnf.solver
 
     // Allocate two variables:
-    solver.addVariable()
-    solver.addVariable()
-
-    // Encode TIE-SHIRT problem:
-    solver.addClause(-1, 2)
-    solver.addClause(1, 2)
-    solver.addClause(-1, -2)
     // solver.addClause(1, -2) // UNSAT with this clause
 
     // Solve the SAT problem:
