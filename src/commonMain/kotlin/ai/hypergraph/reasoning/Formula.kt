@@ -16,23 +16,19 @@ typealias Literal = Int
 typealias SATVector = Array<CNF>
 typealias SATRubix = UTMatrix<CNF>
 
+fun CNF.pretty() = joinToString("\n") { it.joinToString(",") { it.toString() } }
+
 val CNF.asInt by cache { flatten().first() }
 val CNF.variables by cache { flatten().map { it.absoluteValue }.toSet() }
 val CNF.solution by cache {
-  val (revMap, varMap) =
-    variables.mapIndexed { i, it -> (it to i) to (i to it) }.unzip().let { (a, b) -> a.toMap() to b.toMap() }
-
-  Kosat(map { it.map { revMap[it]!! }.toMutableList() }.toMutableList(), variables.size).getModel()
-    .toSet().let { s -> Model(variables.associateWith { (it in s) }, revMap, varMap) }
+  val hashToIdx: Map<Int, Int> = variables.mapIndexed { idx, hash -> hash to idx + 1 }.toMap()
+  Kosat(map { it.map { hashToIdx[it.absoluteValue]!! }.toMutableList() }.toMutableList(), variables.size)
+    .getModel().toSet().let { s -> Model(variables.associateWith { hashToIdx[it] in s }) }
 }
 
-class Model(
-  val varMap: Map<Int, Boolean>,
-  val revMap: Map<Int, Int>,
-  val v1Map: Map<Int, Int>
-): Map<Int, Boolean> by varMap {
-  operator fun get(cnf: CNF): Boolean? = TODO()
-  override fun get(key: Int): Boolean? = TODO()
+class Model(val varMap: Map<Int, Boolean>): Map<Int, Boolean> by varMap {
+  operator fun get(cnf: CNF): Boolean? = varMap[cnf.flatten().first()]
+  override fun get(key: Int): Boolean? = varMap[key]
 }
 
 fun Boolean.toCNF(): CNF = if (this) T else F
@@ -84,8 +80,8 @@ infix fun F.ʌ(t: F) = F
 @JvmName("loc") infix fun Literal.v(l: Clause): Clause = l.plus(this)
 @JvmName("coc") infix fun Clause.v(c: Clause): Clause = plus(c)
 @JvmName("foc") infix fun CNF.v(c: Clause): CNF = map { it + c }.toSet()
-@JvmName("fol") infix fun CNF.v(l: Literal): CNF = map { it + setOf(l) }.toSet()
 @JvmName("cof") infix fun Clause.v(c: CNF): CNF = c.map { it + this }.toSet()
+@JvmName("fol") infix fun CNF.v(l: Literal): CNF = map { it + setOf(l) }.toSet()
 @JvmName("lof") infix fun Literal.v(l: CNF): CNF = l.map { it + setOf(this) }.toSet()
 @JvmName("fof") infix fun CNF.v(c: CNF): CNF = (this * c).map { (a, b) -> a + b }.toSet()
 

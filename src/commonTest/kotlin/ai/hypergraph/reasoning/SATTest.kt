@@ -16,9 +16,9 @@ class SATTest {
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testRMatInv"
   */
-  @Test
+//  @Test
   fun testRMatInv() = repeat(100) {
-    val dim = 10
+    val dim = 3
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
     val p = (0 until dim).shuffled(rand)
@@ -48,7 +48,7 @@ class SATTest {
   */
   @Test
   fun testGF2Fixpoint() {
-    val dim = 5
+    val dim = 3
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
 
     val solution = ((A * A) eq A).solution
