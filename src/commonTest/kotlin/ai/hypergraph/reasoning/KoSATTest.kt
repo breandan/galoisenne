@@ -10,12 +10,10 @@ class KoSATTest {
   @Test
   fun testKoSAT() {
     val cnf = (-1 v 2) ʌ (1 v 2) ʌ (-1 v -2)
+//  val cnf = (1 ʌ 2) eq (1 ʌ 2 v 3)
 
     // Allocate two variables:
     // solver.addClause(1, -2) // UNSAT with this clause
-
-    // Solve the SAT problem:
-    println("result = ${cnf.solution}")
 
     // Get the model:
     println("model = ${cnf.solution}")

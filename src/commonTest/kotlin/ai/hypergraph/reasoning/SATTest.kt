@@ -51,9 +51,10 @@ class SATTest {
     val dim = 3
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
 
-    val solution = ((A * A) eq A).solution
+    val solution = (((A * A) eq A) ʌ A.data[0]).solution
 
     val B = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]!! })
+    println(B.toString())
     assertEquals(B, B * B)
   }
 

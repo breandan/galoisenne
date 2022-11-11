@@ -20,15 +20,23 @@ fun CNF.pretty() = joinToString("\n") { it.joinToString(",") { it.toString() } }
 
 val CNF.asInt by cache { flatten().first() }
 val CNF.variables by cache { flatten().map { it.absoluteValue }.toSet() }
+val CNF.hashToIdx by cache { variables.mapIndexed { idx, hash -> hash to idx + 1 }.toMap() }
+val CNF.solver by cache {
+  val t = map { it.map { hashToIdx[it.absoluteValue]!! * if (it < 0) -1 else 1 }.toMutableList() }.toMutableList()
+//  println("Constraints: $t")
+  Kosat(t, variables.size).apply { solve() }
+}
+
 val CNF.solution by cache {
-  val hashToIdx: Map<Int, Int> = variables.mapIndexed { idx, hash -> hash to idx + 1 }.toMap()
-  Kosat(map { it.map { hashToIdx[it.absoluteValue]!! }.toMutableList() }.toMutableList(), variables.size)
-    .getModel().toSet().let { s -> Model(variables.associateWith { hashToIdx[it] in s }) }
+  solver.getModel().toSet()
+//    .also { println(it) }
+    .let { s -> Model(variables.associateWith { hashToIdx[it] in s }) }
 }
 
 class Model(val varMap: Map<Int, Boolean>): Map<Int, Boolean> by varMap {
   operator fun get(cnf: CNF): Boolean? = varMap[cnf.flatten().first()]
   override fun get(key: Int): Boolean? = varMap[key]
+  override fun toString() = varMap.toString()
 }
 
 fun Boolean.toCNF(): CNF = if (this) T else F
