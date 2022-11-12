@@ -50,8 +50,9 @@ class SATTest {
   fun testGF2Fixpoint() {
     val dim = 3
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
+    println("A: ${A.data.joinToString(", ")}")
 
-    val solution = (((A * A) eq A) ʌ A.data[0]).solution
+    val solution = ((A eq (A * A))).also { println("Vars" + it.variables) }.solution
 
     val B = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]!! })
     println(B.toString())

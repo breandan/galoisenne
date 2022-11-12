@@ -25,14 +25,17 @@ val CNF.hashToIdx by cache { variables.mapIndexed { idx, hash -> hash to idx + 1
 val CNF.solver by cache {
   val t =
     map { it.map { hashToIdx[it.absoluteValue]!! * if (it < 0) -1 else 1 }.toMutableList() }.toMutableList()
+  println("Formula: ${t.joinToString("\n") { it.joinToString(",")}}")
   Kosat(t, variables.size)
 }
 
 val CNF.solution: Model by cache {
-  solver
+  solver.apply { solve().also { println("Satisfiable: $it") } }
 //    .run { if(!solve()) null else this } // TODO: Needs a way to represent UNSAT
-    .getModel().toSet()
-    .let { s -> Model(variables.associateWith { hashToIdx[it] in s }) }
+    .getModel().toSet().let { s ->
+      println("Positive literals: $s")
+      Model(variables.associateWith { hashToIdx[it] in s })
+    }
 }
 
 class Model(val varMap: Map<Int, Boolean>): Map<Int, Boolean> by varMap {
@@ -58,12 +61,14 @@ infix fun T.ʌ(t: F) = F
 infix fun F.ʌ(t: T) = F
 infix fun F.ʌ(t: F) = F
 
+fun Set<Literal>.dontCare() = map { (it v -it) }.fold (T as CNF) { a, b -> a ʌ b }
+
 @JvmName("fob") infix fun CNF.v(t: F) = this
 @JvmName("lob") infix fun Literal.v(t: F) = this
-@JvmName("fot") infix fun CNF.v(t: T) = T
-@JvmName("lot") infix fun Literal.v(t: T) = T
-@JvmName("tof") infix fun T.v(t: CNF) = T
-@JvmName("tol") infix fun T.v(t: Literal) = T
+@JvmName("fot") infix fun CNF.v(t: T) = variables.dontCare()
+@JvmName("lot") infix fun Literal.v(t: T) = setOf(this).dontCare()
+@JvmName("tof") infix fun T.v(t: CNF) = t.variables.dontCare()
+@JvmName("tol") infix fun T.v(t: Literal) = setOf(t).dontCare()
 @JvmName("bof") infix fun F.v(c: CNF) = c
 @JvmName("bol") infix fun F.v(l: Literal) = l
 
@@ -90,20 +95,27 @@ infix fun F.ʌ(t: F) = F
 @JvmName("fof") infix fun CNF.v(that: CNF): CNF = when {
   this is T -> T
   this is F -> that
-  that.size == 1 && that.first().size == 1 -> map { it + that.first() }.toSet()
-  this.size == 1 && this.first().size == 1 -> that.map { it + first() }.toSet()
+  that is F -> this
+  that is T -> T
+  that.size == 1 -> this.map { it + that.first() }.toSet()
+  this.size == 1 -> that.map { it + this.first() }.toSet()
   else -> FreshLit().let { (-it v this) ʌ (it v that) }
 }
 
 fun FreshLit(s: Set<Int> = emptySet()): Literal =
-  generateSequence { Random.nextInt().absoluteValue }.dropWhile { it in s }.first()
+  generateSequence { Random.nextInt(Int.MAX_VALUE / 2, Int.MAX_VALUE) }
+    .dropWhile { it in s }.first()
 
 // TODO: Not sure how quickly this will blow up, but let's see...
-@JvmName("fef") infix fun CNF.eq(c: CNF): CNF = (this ʌ c) v (negate() ʌ c.negate())
-@JvmName("fxf") infix fun CNF.ⴲ(c: CNF): CNF = (this ʌ c.negate()) v (c.negate() ʌ this)
+@JvmName("fef") infix fun CNF.eq(that: CNF): CNF = //(this ⴲ that).negate()
+  (this ʌ that) v (this.negate() ʌ that.negate())
+@JvmName("fxf") infix fun CNF.ⴲ(that: CNF): CNF = (this ʌ that.negate()) v (this.negate() ʌ that)
 @JvmName("lng") fun Literal.negate(): Literal = -this
-@JvmName("fng") fun CNF.negate(): CNF =
-  map { it.map { setOf(-it) }.toSet() }.flatten().toSet()
+@JvmName("fng") fun CNF.negate(): CNF = when {
+  this.size == 1 && this.first().size == 1 -> (-this.first().first()).asCNF()
+  this.size == 1 -> this.first().map { -it }.fold(T as CNF) { a, b -> a ʌ b }
+  else -> map { setOf(it).negate() }.fold(F as CNF) { a, b -> a v b }
+}
 
 val RXOR_SAT_ALGEBRA get() =
   Ring.of(

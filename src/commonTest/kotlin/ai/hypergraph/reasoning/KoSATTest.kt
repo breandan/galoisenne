@@ -9,7 +9,7 @@ class KoSATTest {
 */
   @Test
   fun testKoSAT() {
-    val cnf = (-1 v 2) ʌ (1 v 2) ʌ (-1 v -2)
+    val cnf = ((-3 v 4) ʌ (3 v 4) ʌ (-3 v -4)) v ((-4 v 5) ʌ (4 v 5) ʌ (-4 v -5))
 //  val cnf = (1 ʌ 2 ʌ -3) v (T as CNF)
 
     // Allocate two variables:
