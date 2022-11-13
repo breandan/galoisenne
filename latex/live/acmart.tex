@@ -77,7 +77,7 @@ In programming, most such errors initially manifest as syntax errors, and though
 
 \section{Prior work}
 
-Prior work in this area follows two main streams. Kats~\cite{kats2009providing} and deJong~\cite{de2012automated} and Diekmann~\cite{diekmann2018dont} investigate error repair in LR grammars and more recently, Raselimo and Fischer use spectrum-based fault localization techniques~\cite{raselimo2021automatic}. Our approach can handle a more general class of context-free and bounded context-sensitive grammars and has a more theoretically rigorous grounding in language reachability~\cite{melski1997interconvertbility}. Consequently, it is much simpler and can scaled up using a GPU. As always, tradeoffs exist, which we discuss in Sec.~\ref{sec:discussion}.
+Prior work in this area follows two main streams. Kats~\cite{kats2009providing} and deJong~\cite{de2012automated} and Diekmann~\cite{diekmann2018dont} investigate error repair in LR grammars and more recently, Raselimo and Fischer use spectrum-based fault localization techniques~\cite{raselimo2021automatic}. Our approach can handle a more general class of context-free and bounded context-sensitive grammars and has a more theoretically rigorous grounding in language reachability~\cite{melski1997interconvertbility}. Consequently, it is much simpler and can scaled up using a GPU. Tradeoffs exist as usual, which are discussed in Sec.~\ref{sec:discussion}.
 
 \section{Toy Example}
 
@@ -187,7 +187,7 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
 
 \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
 
-Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is believed to be the most efficient general procedure for CFL recognition.
+Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is shown to be highly efficient.
 
 \subsection{Context-sensitive reachability}
 
@@ -215,9 +215,21 @@ It is well-known that the family of CFLs is not closed under intersection. For e
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
 \end{figure}
 
-\subsection{Sampling k-combinations without replacement}
 
-Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
+\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
+
+By allowing the matrix $M^*$ to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear equations over $\mathbb{Z}_2$, whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $M^*_{r+1 = c}$, and the parse forests occur along the upper-triangular entries $M^*_{r + 1 < c}$.
+
+%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
+
+%We illustrate this fact in \S\ref{sec:error}:
+%
+%\begin{figure}[H]
+%    \includegraphics[width=2cm]{../figures/parse1.png}
+%    \includegraphics[width=2cm]{../figures/parse2.png}
+%    \includegraphics[width=2cm]{../figures/parse3.png}
+%    \includegraphics[width=2cm]{../figures/parse4.png}
+%\end{figure}
 
 \newcommand\ddd{\Ddots}
 \newcommand\vdd{\Vdots}
@@ -240,6 +252,38 @@ Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq
 \newcommand\ppp{\phantom{\nse}}
 
 \begin{align}
+   M^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+      \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+           &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+           &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+           &             &                    &                   &                        & \ddd & \\
+           &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+      \vno & \cdd        &                    &                   &                        &      & \vno
+   \end{pNiceArray}
+\end{align}
+
+\noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+
+\subsection{Gradient estimation}\label{sec:dsi}
+
+Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling sketch templates, $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all possible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+    \RightLabel{$\varepsilon\textsc{-dup}$}
+    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+    \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
+
+\noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
+
+\begin{align}
     U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
                C_1    & \cdd  &       &       & C_m \\
                \top   & \circ & \cdd  &       & \circ \\
@@ -248,70 +292,17 @@ Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq
                \circ  & \cdd  & \circ & \top  & \circ
     \end{pNiceMatrix}^t
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        V_1 \\ \vdd\\ \\ \\ V_m
+        V_1 \\
+        \vdd\\
+        \\
+        \\
+        V_m
     \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
-\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$. For example, in order to sample $\mathbf\sigma' \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
+\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\tilde{\mathcal O}(1)$ per sample and $\tilde{\mathcal O}(|\Sigma|^d)$ to exhaustively search $\Sigma^d$.
 
-\begin{align}
-    \begin{array}{cccccccccccccc}
-        i              & 0          & 1          & 2          & 3          & 4    & 5          & 6    \\
-        \mathbf{S}_i   & 1000       & 0100       & 0010       & 1001       & 1100 & 0110       & 1011 \\
-        \mathbf\sigma' & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &
-    \end{array}
-\end{align}
-
-\noindent We will use this technique to lazily sample from the space of hole configurations without replacement as described in \S\ref{sec:holes}.
-
-\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
-
-By allowing the matrix $M^*$ to contain bitvector variables representing holes in the string and nonterminal sets, we obtain a set of multilinear SAT equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $M^*_{r+1 = c}$, and the parse forests occur along the upper-triangular entries $M^*_{r + 1 < c}$.
-
-%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
-
-%We illustrate this fact in \S\ref{sec:error}:
-%
-%\begin{figure}[H]
-%    \includegraphics[width=2cm]{../figures/parse1.png}
-%    \includegraphics[width=2cm]{../figures/parse2.png}
-%    \includegraphics[width=2cm]{../figures/parse3.png}
-%    \includegraphics[width=2cm]{../figures/parse4.png}
-%\end{figure}
-
-\begin{figure}[H]
-    \[
-        M^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-           \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-           \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-                &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-                &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-                &             &                    &                   &                        & \ddd & \\
-                &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-           \vno & \cdd        &                    &                   &                        &      & \vno
-        \end{pNiceArray}
-    \]
-\end{figure}
-
-\noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
-
-\subsection{Deletion, substitution, and insertion}\label{sec:dsi}
-
-Deletion, substitution and insertion can be simulated by first adding a left- and right- $\varepsilon$-production to each unit production:\vspace{5pt}
-
-\begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
-    \RightLabel{$\varepsilon\textsc{-dup}$}
-    \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
-\end{prooftree}
-
-\begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
-    \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-\end{prooftree}
-
-\noindent To generate the sketch templates, we substitute two holes at an index-to-be-repaired, and solve for admissible repairs. If a given sketch template has at least one repair, for each edit location in that template, exactly one of seven possible scenarios will occur, one corresponding to deletion, three for substitution and three for insertion:
+Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of seven patterns:\vspace{-10pt}
 
 \begin{align*}
     \text{Deletion}&=\begin{cases}
@@ -328,11 +319,60 @@ Deletion, substitution and insertion can be simulated by first adding a left- an
       \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
     \end{cases}
 \end{align*}
-%\noindent Eq.~(\ref{eq:del}) corresponds to deletion, Eqs.~(\ref{eq:sub1},~\ref{eq:sub2}) correspond to substitution, and Eqs.~(\ref{eq:ins1},~\ref{eq:ins2}) correspond to insertion. This procedure is repeated for all indices in the replacement set. The solutions returned by the SAT solver will be strictly equivalent to handling each edit operation as separate cases.
 
+\section{Realtime Error Correction}\label{sec:holes}
+
+Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
+
+\begin{enumerate}
+    \item Fetch the most recent CFG and string from the editor.
+    \item Exclude parsable substrings from hollowing.
+    \item Lazily enumerate all $\mathbf{\sigma}$ of increasing length.
+    \item Sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$ without replacement using Eq.~\ref{eq:lfsr}.
+    \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.\footnote{These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.}
+    \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
+    \item Feed sketch templates to an incremental SAT solver.
+    \item Decode and rerank models by Levenshtein distance.
+\end{enumerate}
+
+For example, suppose we have the following distribution over some string, $\Sigma^{90}$, say given by the historical caret position or a neural language model. Morally, we know there are some errors near $\sigma_{17, 45, 72}$ and want to prioritize edits nearby those locations.
+
+\hspace{-0.3cm}\begin{tikzpicture}[scale=0.4]
+  \begin{axis}[x=2cm, y=2cm, every axis plot post/.append style={mark=none,domain=-2:7.5,samples=50,smooth},
+    axis x line*=bottom, % no box around the plot, only x and y axis
+    ticks=none,
+    y axis line style={draw=none},
+    xticklabels={,,},
+    enlargelimits=upper] % extend the axes a bit to the right and top
+    \addplot[name path=F] {gauss(0.0,0.4)};
+    \addplot[name path=G] {gauss(3.0,0.5)};
+    \addplot[name path=H] {gauss(6.0,0.3)};
+    \addplot[name path=N] {nil(0)};
+    \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=F and N, soft clip={domain=-3:1}];
+    \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=G and N, soft clip={domain=1:5}];
+    \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=H and N, soft clip={domain=4:7.5}];
+  \end{axis}
+  \node [xshift=4.1cm, yshift=-7pt] {\footnotesize $\sigma_1\hspace{0.5cm}\sigma_{10}\err{\hspace{0.5cm}\sigma_{20}}\hspace{0.5cm}\sigma_{30}\hspace{0.5cm}\err{\sigma_{40}\hspace{0.5cm}\sigma_{50}}\hspace{0.5cm}\sigma_{60}\hspace{0.5cm}\err{\sigma_{70}\hspace{0.3cm}}\hspace{0.2cm}\sigma_{80}\hspace{0.5cm}\sigma_{90}$};
+%  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
+%  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
+\end{tikzpicture}
+
+We can sample for tokens nearby using the Kantorovich--Rubinstein (KR) metric over the Levenshtein q-ball, $\Delta_q(\sigma)$. Viewed as an optimal transport problem, $\delta_{KR}$ minimizes over $\Pi$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$, on a sample space $\Omega$:
+
+\begin{align}
+    \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+\end{align}
+
+
+We can think of this procedure as a moment-matching procedure between some joint distribution over the edit locations and an error model (e.g., finger travel distance on a physical keyboard or n-gram probability, in the case of typo correction). Morally, we want to prioritize sketch templates which are nearby probable errors and repairs which are, in some sense, ``natural'' for a given context.
+
+Not only is Tidyparse capable of suggesting repairs to incorrect strings, it can also return partial trees for strings which do not parse. This is often helpful for debugging purposes.
+
+
+\pagebreak
 \section{Error Recovery}\label{sec:error}
 
-Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
+Unlike classical parsers which require special rules for error recovery, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
 Occasionally, it is not possible to decode a full tree. In a typical parser, error recovery requires special tricks. Here, we simply analyze the structure of the matrix $M$ to decode the parseable subtrees:
 
 \begin{figure}[H]
@@ -347,7 +387,7 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
                          &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
                          &      &      &      &      &      & \pcd & \cdd &      & C    \\
                          &      &      &      &      &      &      &      & T_C  & \vdd \\
-                         &      &      &      &      &      &      & \xno &      & \\
+                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
                          &      &      &      &      &      &      &      &      & \\
                          &      &      &      &      &      &      &      &      & \\
                          &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
@@ -363,28 +403,24 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
 \noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
 
 \begin{tidyinput}
-    true and true ! and false or true ! true and false(*@\caret{ }@*)
+(*@\err{true and true ! and false or true ! true and false}\caret{ }@*)
 \end{tidyinput}
 
 \begin{verbatim}
-Recovered 3 parseable leaves:
+ Parseable subtrees (3 leaves / 2 branches):
 \end{verbatim}
 \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
-└── ! [3]   └── and [4]   └── or [6]
+    └── ! [3]   └── and [4]   └── or [6]
 \end{verbatim}
-
+\hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
-Recovered 2 parseable branches:
-\end{verbatim}
-\hspace{0.63cm}\emoji{herb}\hspace{2.48cm}\emoji{herb}\vspace{-5pt}
-\begin{verbatim}
-└── S [0..2]     └── S [8..11]
-    ├── ⊤ [0]        ├── S [8..9]
-    ├── and [1]      │   ├── ! [8]
-    └── ⊤ [2]        │   └── ⊤ [9]
-                     ├── and [10]
-                     └── ⊥ [11]
+    └── S [0..2]          └── S [8..11]
+        ├── true [0]          ├── S [8..9]
+        ├── and [1]           │   ├── ! [8]
+        └── true [2]          │   └── true [9]
+                              ├── and [10]
+                              └── false [11]
 \end{verbatim}
 
 \section{Tree Denormalization}
@@ -432,26 +468,9 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 
 \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
-\section{Realtime Error Correction}\label{sec:holes}
-
-Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given an input string, $\Sigma^n$, where should we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
-
-\begin{enumerate}
-  \item Fetch the most recent CFG and string from the editor.
-  \item Exclude parsable substrings from hollowing.
-  \item Lazily enumerate all HCs of increasing length.
-  \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
-  \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
-  \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
-  \item Feed sketch templates to an incremental SAT solver.
-  \item Decode and rerank models by Levenshtein distance.
-\end{enumerate}
-
-\noindent $^*$ These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.
-
 \section{Practical Example}
 
-Tidyparse requires a grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to resemble a more realistic use case:
+Tidyparse accepts any context-free grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to approximate the OCaml grammar. We use the \texttt{---} delimiter to separate the grammar from the example:
 
 \begin{tidyinput}
 S -> A | V | ( X , X ) | X X | ( X )
@@ -520,6 +539,7 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 %
 %The line between parsing and computation is blurry.
 
+\pagebreak
 \section{Latency Benchmark}
 
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.

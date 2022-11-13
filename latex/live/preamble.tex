@@ -357,3 +357,8 @@
 
 \newcommand{\err}[1]{\smash{\squiggly{#1}{}}}
 \newcommand{\stirlingii}{\genfrac{\{}{\}}{0pt}{}}
+
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{patterns}
+\pgfmathdeclarefunction{gauss}{2}{\pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}}
+\pgfmathdeclarefunction{nil}{1}{\pgfmathparse{0.001}}
