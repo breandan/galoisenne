@@ -300,9 +300,9 @@ Now that we have a reliable method to fix \textit{localized} errors, $S: \mathca
     \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
-\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\tilde{\mathcal O}(1)$ per sample and $\tilde{\mathcal O}(|\Sigma|^d)$ to exhaustively search $\Sigma^d$.
+\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$  is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma^d$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma|^d\right)$ to exhaust $\stirlingii{n}{d}\times\Sigma^d$.
 
-Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of seven patterns:\vspace{-10pt}
+Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in s \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of seven patterns:\vspace{-10pt}
 
 \begin{align*}
     \text{Deletion}&=\begin{cases}
@@ -322,7 +322,7 @@ Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch temp
 
 \section{Realtime Error Correction}\label{sec:holes}
 
-Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
+Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, and a uniform distribution may be sample inefficient, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
 
 \begin{enumerate}
     \item Fetch the most recent CFG and string from the editor.
@@ -363,8 +363,7 @@ We can sample for tokens nearby using the Kantorovich--Rubinstein (KR) metric ov
     \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 \end{align}
 
-
-We can think of this procedure as a moment-matching procedure between some joint distribution over the edit locations and an error model (e.g., finger travel distance on a physical keyboard or n-gram probability, in the case of typo correction). Morally, we want to prioritize sketch templates which are nearby probable errors and repairs which are, in some sense, ``natural'' for a given context.
+We can think of this procedure as a moment-matching procedure between some joint distribution over the edit locations and a cost model (e.g., finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance). Morally, we want to prioritize sketch templates which are nearby probable errors and repairs which are, in some sense, ``natural'' for a hole and its surrounding context.
 
 Not only is Tidyparse capable of suggesting repairs to incorrect strings, it can also return partial trees for strings which do not parse. This is often helpful for debugging purposes.
 

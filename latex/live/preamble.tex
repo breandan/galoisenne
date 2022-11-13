@@ -362,3 +362,7 @@
 \usetikzlibrary{patterns}
 \pgfmathdeclarefunction{gauss}{2}{\pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}}
 \pgfmathdeclarefunction{nil}{1}{\pgfmathparse{0.001}}
+
+\usepackage[symbol,hang,flushmargin]{footmisc}
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
