@@ -185,9 +185,9 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
     }
 \end{figure}
 
-\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
+\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
 
-Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is shown to be highly efficient.
+Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and we show it to be highly efficient in practice.
 
 \subsection{Context-sensitive reachability}
 
@@ -267,7 +267,7 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
 
 \subsection{Gradient estimation}\label{sec:dsi}
 
-Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling sketch templates, $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all possible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling admissible repairs, $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all possible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
 
 \begin{prooftree}
     \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
@@ -300,9 +300,9 @@ Now that we have a reliable method to fix \textit{localized} errors, $S: \mathca
     \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
-\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search through $\stirlingii{n}{d}\times\Sigma_\varepsilon^d$.
+\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
 
-Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of seven patterns:\vspace{-10pt}
+Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
 
 \begin{align*}
     \text{Deletion}&=\begin{cases}
@@ -320,23 +320,20 @@ Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate sketch temp
     \end{cases}
 \end{align*}
 
-\section{Realtime Error Correction}\label{sec:holes}
+\section{Adaptive Sampling}\label{sec:holes}
 
-Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, and a uniform distribution may be sample-inefficient, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
+Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations, each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, and a uniform distribution may be sample-inefficient, so to facilitate real-time assistance we prioritize likely repairs according to a four-step procedure:
 
 \begin{enumerate}
-    \item Fetch the most recent CFG and string from the editor.
-    \item Exclude parsable substrings from hollowing.
-    \item Lazily enumerate all $\mathbf{\sigma}$ of increasing length.
+    \item Fetch the most recent $\mathcal{G}$ and string $\err{\sigma}$ from the editor.
+    \item Lazily enumerate $\stirlingii{n}{d}$ for increasing values of $d \geq 1$.
     \item Sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$ without replacement using Eq.~\ref{eq:lfsr}.
-    \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.\footnote{These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.}
-    \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
-    \item Feed sketch templates to an incremental SAT solver.
     \item Decode and rerank models by Levenshtein distance.
 \end{enumerate}
 
-For example, suppose we have the following distribution over some string, $\Sigma^{90}$, say given by the historical caret position or a neural language model. Morally, we know there are some errors near $\sigma_{17, 45, 72}$ and want to prioritize edits nearby those locations.
+For example, suppose we have $\err{\sigma}: \Sigma^{90}$, and a probability distribution over all possible edits. This distribution, which we call $\mathcal{F}$, is then used to prioritize admissible repairs. Reprojected onto $\err{\sigma}$, the distribution $\mathcal{F}$ might appear thusly:
 
+\begin{figure}[H]
 \hspace{-0.3cm}\begin{tikzpicture}[scale=0.4]
   \begin{axis}[x=2cm, y=2cm, every axis plot post/.append style={mark=none,domain=-2:7.5,samples=50,smooth},
     axis x line*=bottom, % no box around the plot, only x and y axis
@@ -356,23 +353,22 @@ For example, suppose we have the following distribution over some string, $\Sigm
 %  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
 %  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
 \end{tikzpicture}
+\caption{The distribution $\mathcal{F}$, reprojected onto the invalid string yields a set of edit locations likely to contain admissible repairs, from which we draw subsets of size $d$.}
+\end{figure}
 
-We can sample for tokens nearby using the Kantorovich--Rubinstein (KR) metric over the Levenshtein q-ball, $\Delta_q(\sigma)$. Viewed as an optimal transport problem, $\delta_{KR}$ minimizes over $\Pi$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$, on a sample space $\Omega$:
+Morally, we would prefer sketch templates and repairs that are ``natural'' for an invalid string. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\sigma)$. One such metric, the Kantorovich--Rubinstein (KR) metric, can be viewed as an optimal transport problem, $\delta_{KR}$ minimizing over $\Pi$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
 
 \begin{align}
     \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 \end{align}
 
-We can think of this procedure as a moment-matching procedure between some joint distribution over the edit locations and a cost model (e.g., finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance). Morally, we want to prioritize sketch templates which are nearby probable errors and repairs which are, in some sense, ``natural'' for a hole and its surrounding context.
-
-Not only is Tidyparse capable of suggesting repairs to incorrect strings, it can also return partial trees for strings which do not parse. This is often helpful for debugging purposes.
+More specifically in our setting, the metric space $\Omega$ factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or static analysis), (2) tokenwise completions (e.g., from a Markov or neural language model) and (3) an associated \textit{cost model}, which can be any number of suitable distance metrics, e.g., finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance for string edits, or stochastic contextual edit distance in the case of tree edits.
 
 
 \pagebreak
 \section{Error Recovery}\label{sec:error}
 
-Unlike classical parsers which require special rules for error recovery, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
-Occasionally, it is not possible to decode a full tree. In a typical parser, error recovery requires special tricks. Here, we simply analyze the structure of the matrix $M$ to decode the parseable subtrees:
+Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover partial subtrees. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks indicate the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
 
 \begin{figure}[H]
     \hspace{-0.5cm}\begin{minipage}[l]{6cm}
@@ -402,15 +398,19 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
 \noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
 
 \begin{tidyinput}
-(*@\err{true and true ! and false or true ! true and false}\caret{ }@*)
+(*@true and true \err{! and false or true !} true and false\caret{ }@*)
 \end{tidyinput}
 
 \begin{verbatim}
- Parseable subtrees (3 leaves / 2 branches):
+Parseable subtrees (5 leaves / 2 branches):
 \end{verbatim}
 \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
     └── ! [3]   └── and [4]   └── or [6]
+\end{verbatim}
+\noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\vspace{-5pt}
+\begin{verbatim}
+    └── or [6]  └── true [7]
 \end{verbatim}
 \hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
@@ -422,6 +422,7 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
                               └── false [11]
 \end{verbatim}
 
+\pagebreak
 \section{Tree Denormalization}
 
 % https://www.ling.upenn.edu/advice/latex/qtree/qtreenotes.pdf
