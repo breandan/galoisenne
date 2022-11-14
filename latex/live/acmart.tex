@@ -185,7 +185,7 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
     }
 \end{figure}
 
-\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might take on zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
+\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while it is always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, the corresponding decoder $(\varphi^{-1})$ is not guaranteed to exist, since an arbitrary bitvector expression $(\mathcal{V})$ might take on zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
 
 Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and we show it to be highly efficient in practice.
 
@@ -551,9 +551,11 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
 \noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number tokens with holes and measure the average time taken to decode ten syntactically-admissible repairs across 100 trial runs.
 
-\begin{tikzpicture}
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
   \begin{axis}[
-      width=8.3cm,
+    width=8.3cm,
+    height=6cm,
     title={\hspace{-1cm}\textbf{Error correction time with known locations}},
     ybar,
     bar width=4pt,
@@ -566,6 +568,7 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
     xticklabels from table={\loctimings}{holes},
     ymajorgrids,
     legend pos=north west,
+    legend columns=2,
     error bars/y dir=both,
     error bars/y explicit
   ]
@@ -576,13 +579,15 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
     \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
   \end{axis}
 \end{tikzpicture}
+\end{figure}
 
 \noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the the logarithmic scale on the y-axis.
 
-\begin{tikzpicture}
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
     \begin{axis}[
         width=8.3cm,
-        height=6.6cm,
+        height=6cm,
         title={\hspace{-1cm}\textbf{Error correction time with unknown locations}},
         ybar,
         bar width=20pt,
@@ -606,14 +611,15 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
         \legend{Dyck-1, Dyck-2, Dyck-3}
     \end{axis}
 \end{tikzpicture}
+\end{figure}
 
 \section{Accuracy Benchmark}
 
-In the following benchmark, we analyze bracketing errors in a dataset of natural code snippets in Java, Kotlin and Python. For Java and Kotlin, we sample valid statements on GitHub with a nontrivial bracket nesting, synthetically delete $d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance.
+In the following benchmark, we analyze bracketing errors in a dataset of natural code snippets in Java, Kotlin and Python. For Java and Kotlin, we sample valid single-line statements on GitHub with a nontrivial bracket nesting, synthetically delete $1\ldots d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance.
 
 \begin{figure}[H]
 \centering{\textbf{Synthetic Error Correction}}\\
-\vspace{0.5cm}
+\vspace{0.25cm}
 \adjustbox{scale=0.48,center}{%
 \begin{tikzpicture}
     \begin{axis}[
@@ -633,6 +639,7 @@ In the following benchmark, we analyze bracketing errors in a dataset of natural
         xticklabels from table={\naturalerrors}{time},
         ymajorgrids,
         legend pos=north west,
+        legend columns=3,
         error bars/y dir=both,
         error bars/y explicit
     ]
@@ -661,6 +668,7 @@ In the following benchmark, we analyze bracketing errors in a dataset of natural
         xticklabels from table={\naturalerrors}{time},
         ymajorgrids,
         legend pos=north west,
+        legend columns=3,
         error bars/y dir=both,
         error bars/y explicit
     ]
@@ -673,13 +681,14 @@ In the following benchmark, we analyze bracketing errors in a dataset of natural
 }
 \end{figure}
 
-For Python, we use the Break-it-fix-it (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in natural Python snippets, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
+For Python, we sample invalid Python code snippets uniformly from the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in natural Python snippets, repair them using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
 
-\hspace{-0.5cm}\begin{tikzpicture}
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
     \begin{axis}[
         width=8.3cm,
         height=6.6cm,
-        title={\hspace{-1cm}\textbf{Natural Error Correction (Python Brackets)}},
+        title={\hspace{-1cm}\textbf{Natural Error Correction}},
         ybar,
         bar width=10pt,
         xlabel={$|\Sigma|$},
@@ -693,6 +702,7 @@ For Python, we use the Break-it-fix-it (BIFI) dataset~\cite{yasunaga2021break}, 
         xticklabels from table={\naturalerrors}{time},
         ymajorgrids,
         legend pos=north west,
+        legend columns=3,
         error bars/y dir=both,
         error bars/y explicit
     ]
@@ -702,6 +712,7 @@ For Python, we use the Break-it-fix-it (BIFI) dataset~\cite{yasunaga2021break}, 
         \legend{1s, 10s, 20s}
     \end{axis}
 \end{tikzpicture}
+\end{figure}
 
 \section{Discussion}\label{sec:discussion}
 
