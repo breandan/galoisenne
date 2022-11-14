@@ -467,7 +467,7 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 
 \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
-\section{Practical Example}
+\section{Usage Examples}
 
 Tidyparse accepts any context-free grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to approximate the OCaml grammar. We use the \texttt{---} delimiter to separate the grammar from the example:
 
@@ -544,7 +544,7 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.
 
 \begin{tidyinput}
-D1 -> () | ( D1 ) | D1 D1
+D1 -> ( ) | ( D1 ) | D1 D1
 D2 -> D1 | [ ] | ( D2 ) | [ D2 ] | D2 D2
 D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 \end{tidyinput}
@@ -609,9 +609,99 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
 \section{Accuracy Benchmark}
 
-We analyze synthetic errors in Java and Python.
+In the following benchmark, we analyze bracketing errors in a dataset of natural code snippets in Java, Kotlin and Python. For Java and Kotlin, we sample valid statements on GitHub with a nontrivial bracket nesting, synthetically delete $d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance.
 
-We also compare with the Break-it-fix-it (BIFI) dataset~\cite{yasunaga2021break}.
+\begin{figure}[H]
+\centering{\textbf{Synthetic Error Correction}}\\
+\vspace{0.5cm}
+\adjustbox{scale=0.48,center}{%
+\begin{tikzpicture}
+    \begin{axis}[
+        width=8.3cm,
+        height=6.6cm,
+        title={\hspace{-1cm}\textbf{Java Brackets}},
+        ybar,
+        bar width=10pt,
+        xlabel={$|\Sigma|$},
+        ylabel={Compiler acceptance},
+        xtick=data,
+        axis x line*=bottom,
+        axis y line*=left,
+        enlarge x limits={abs=0.5},
+        ymode=log,
+        ytick pos=left,
+        xticklabels from table={\naturalerrors}{time},
+        ymajorgrids,
+        legend pos=north west,
+        error bars/y dir=both,
+        error bars/y explicit
+    ]
+        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+        \legend{1s, 10s, 20s}
+    \end{axis}
+\end{tikzpicture}
+
+\begin{tikzpicture}
+    \begin{axis}[
+        width=8.3cm,
+        height=6.6cm,
+        title={\hspace{-1cm}\textbf{Kotlin Brackets}},
+        ybar,
+        bar width=10pt,
+        xlabel={$|\Sigma|$},
+%        ylabel={Compiler acceptance},
+        xtick=data,
+        axis x line*=bottom,
+        axis y line*=left,
+        enlarge x limits={abs=0.5},
+        ymode=log,
+        ytick pos=left,
+        xticklabels from table={\naturalerrors}{time},
+        ymajorgrids,
+        legend pos=north west,
+        error bars/y dir=both,
+        error bars/y explicit
+    ]
+        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+        \legend{1s, 10s, 20s}
+    \end{axis}
+\end{tikzpicture}
+}
+\end{figure}
+
+For Python, we use the Break-it-fix-it (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in natural Python snippets, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
+
+\hspace{-0.5cm}\begin{tikzpicture}
+    \begin{axis}[
+        width=8.3cm,
+        height=6.6cm,
+        title={\hspace{-1cm}\textbf{Natural Error Correction (Python Brackets)}},
+        ybar,
+        bar width=10pt,
+        xlabel={$|\Sigma|$},
+        ylabel={Interpreter acceptance},
+        xtick=data,
+        axis x line*=bottom,
+        axis y line*=left,
+        enlarge x limits={abs=0.5},
+        ymode=log,
+        ytick pos=left,
+        xticklabels from table={\naturalerrors}{time},
+        ymajorgrids,
+        legend pos=north west,
+        error bars/y dir=both,
+        error bars/y explicit
+    ]
+        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+        \legend{1s, 10s, 20s}
+    \end{axis}
+\end{tikzpicture}
 
 \section{Discussion}\label{sec:discussion}
 
