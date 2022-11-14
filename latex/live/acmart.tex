@@ -267,7 +267,7 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
 
 \subsection{Gradient estimation}\label{sec:dsi}
 
-Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling admissible repairs, $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\sigma)$ from the Levenshtein q-ball centered on $\sigma$, i.e., the space of all possible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
 
 \begin{prooftree}
     \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
@@ -300,34 +300,34 @@ Now that we have a reliable method to fix \textit{localized} errors, $S: \mathca
     \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
-\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
+\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we first form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
 
-Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
+Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
 
 \begin{align*}
     \text{Deletion}&=\begin{cases}
-      \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+      \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
     \end{cases}\\
     \text{Substitution}&=\begin{cases}
-      \sigma_{1}\:\ldots\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-      \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-      \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+      \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
     \end{cases}\\
     \text{Insertion}&=\begin{cases}
-      \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-      \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-      \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
     \end{cases}
 \end{align*}
 
 \section{Adaptive Sampling}\label{sec:holes}
 
-Assuming $d$ holes, there are ${n \choose d}$ possible hole configurations, each with $(|\Sigma| + 1)^{2d}$ possible repairs. In practice, depending on $n$ and $d$, this space can be intractable to search through exhaustively, and a uniform distribution may be sample-inefficient, so to facilitate real-time assistance we prioritize likely repairs according to a four-step procedure:
+Since there are $\Sigma_{d=1}^q{n \choose d}$ sketch templates in total, each with $(|\Sigma| + 1)^{2d}$ possible repairs, if $n$ and $q$ are large, this space can be intractable to search through exhaustively and a uniform prior may be highly sample-inefficient. In order to facilitate real-time assistance, we prioritize likely repairs according to the following four-step procedure:
 
 \begin{enumerate}
-    \item Fetch the most recent $\mathcal{G}$ and string $\err{\sigma}$ from the editor.
+    \item Retrieve the most recent $\mathcal{G}$ and $\err{\sigma}$ from the editor.
     \item Lazily enumerate $\stirlingii{n}{d}$ for increasing values of $d \geq 1$.
-    \item Sample $\bm{\sigma}\sim\Delta_{q}(\sigma)$ without replacement using Eq.~\ref{eq:lfsr}.
+    \item Draw $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
     \item Decode and rerank models by Levenshtein distance.
 \end{enumerate}
 
@@ -356,14 +356,13 @@ For example, suppose we have $\err{\sigma}: \Sigma^{90}$, and a probability dist
 \caption{The distribution $\mathcal{F}$, reprojected onto the invalid string yields a set of edit locations likely to contain admissible repairs, from which we draw subsets of size $d$.}
 \end{figure}
 
-Morally, we would prefer sketch templates and repairs that are ``natural'' for an invalid string. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\sigma)$. One such metric, the Kantorovich--Rubinstein (KR) metric, can be viewed as an optimal transport problem, $\delta_{KR}$ minimizing over $\Pi$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
+Morally, we would prefer sketch templates and repairs which are ``natural'', i.e., more likely to be accepted by a human programmer over those which are not. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
 
 \begin{align}
     \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 \end{align}
 
-More specifically in our setting, the metric space $\Omega$ factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or static analysis), (2) tokenwise completions (e.g., from a Markov or neural language model) and (3) an associated \textit{cost model}, which can be any number of suitable distance metrics, e.g., finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance for string edits, or stochastic contextual edit distance in the case of tree edits.
-
+More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an associated \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which can be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell-etal-2014-stochastic} in the case of probabilistic edits. Our goal then is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the grammar and latency constraints.
 
 \pagebreak
 \section{Error Recovery}\label{sec:error}
