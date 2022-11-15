@@ -152,34 +152,34 @@ true and ( false or and true false(*@\caret{ }@*)
 Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
 \begin{table}[H]
-    \begin{tabular}{llll}
-        $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow LS\;\big\}$
-    \end{tabular}
+  \begin{tabular}{llll}
+    $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow LS\;\big\}$
+  \end{tabular}
 \end{table}\vspace{-8pt}
 
 \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
 \begin{align}
-    X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+  X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
 \end{align}
 
 \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
 \begin{align*}
-    M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
-        \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                    &                &             &        & \varnothing\\
-                    &                &             &        & \sigma_n^\shup \\
-        \varnothing & \Cdots         &             &        & \varnothing
-    \end{pNiceMatrix} &\Rightarrow M^* =
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
-        \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
-                    &                &         &        & \Lambda\\
-                    &                &         &        & \sigma_n^\shup \\
-        \varnothing & \Cdots         &         &        & \varnothing
-    \end{pNiceMatrix}
+  M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+    \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                &                &             &        & \varnothing\\
+                &                &             &        & \sigma_n^\shup \\
+    \varnothing & \Cdots         &             &        & \varnothing
+  \end{pNiceMatrix} &\Rightarrow M^* =
+  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+    \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                &                &         &        & \Lambda\\
+                &                &         &        & \sigma_n^\shup \\
+    \varnothing & \Cdots         &         &        & \varnothing
+  \end{pNiceMatrix}
 \end{align*}
 
 \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
@@ -187,14 +187,14 @@ Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminal
 This decision procedure can be abstracted by lifting into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\Lambda^*_\sigma$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
 \begin{figure}[H]
-    \adjustbox{scale=0.75,center}{%
-        \[\begin{tikzcd}[row sep=large, column sep=huge]
-              \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
-              \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
-              \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
-              \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
-        \end{tikzcd}\]
-    }
+  \adjustbox{scale=0.75,center}{%
+    \[\begin{tikzcd}[row sep=large, column sep=huge]
+      \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+      \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
+      \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
+      \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
+    \end{tikzcd}\]
+  }
 \end{figure}
 
 \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while it is always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, the corresponding decoder $(\varphi^{-1})$ is not guaranteed to exist, since an arbitrary bitvector expression $(\mathcal{V})$ might take on zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
@@ -206,10 +206,10 @@ Full details of the bisimilarity between parsing and matrix multiplication can b
 It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
 
 \begin{table}[H]
-    \begin{tabular}{llll}
-        $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
-        $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
-    \end{tabular}
+  \begin{tabular}{llll}
+    $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
+    $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+  \end{tabular}
 \end{table}
 
 \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together:\vspace{-5pt}
@@ -219,12 +219,12 @@ It is well-known that the family of CFLs is not closed under intersection. For e
 \end{align}
 % Generated by cfl4_intersection.vox, open with https://voxelator.com/
 \begin{figure}[H]
-    \includegraphics[height=0.063\textwidth]{../figures/angle1.png}\hspace{-5pt}
-    \includegraphics[height=0.063\textwidth]{../figures/angle2.png}\hspace{-5pt}
-    \includegraphics[height=0.063\textwidth]{../figures/angle5.png}\hspace{-5pt}
-    \includegraphics[height=0.063\textwidth]{../figures/angle3.png}\hspace{-3pt}
-    \includegraphics[height=0.063\textwidth]{../figures/angle4.png}
-    \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
+  \includegraphics[height=0.063\textwidth]{../figures/angle1.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle2.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle5.png}\hspace{-5pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle3.png}\hspace{-3pt}
+  \includegraphics[height=0.063\textwidth]{../figures/angle4.png}
+  \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
 \end{figure}
 
 
@@ -265,13 +265,13 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
 
 \begin{align}\label{eq:satten}
    M^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-      \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-      \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-           &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-           &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-           &             &                    &                   &                        & \ddd & \\
-           &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-      \vno & \cdd        &                    &                   &                        &      & \vno
+     \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+     \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+          &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+          &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+          &             &                    &                   &                        & \ddd & \\
+          &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+     \vno & \cdd        &                    &                   &                        &      & \vno
    \end{pNiceArray}
 \end{align}
 
@@ -282,34 +282,34 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
 Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
 
 \begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
-    \RightLabel{$\varepsilon\textsc{-dup}$}
-    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
+  \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+  \RightLabel{$\varepsilon\textsc{-dup}$}
+  \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
 \end{prooftree}
 
 \begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
-    \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+  \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
 \end{prooftree}
 
 \noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
 
 \begin{align}
-    U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-               C_1    & \cdd  &       &       & C_m \\
-               \top   & \circ & \cdd  &       & \circ \\
-               \circ  & \ddd  & \ddd  &       & \vdd \\
-               \vdd   & \ddd  &       &       & \\
-               \circ  & \cdd  & \circ & \top  & \circ
-    \end{pNiceMatrix}^t
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        V_1 \\
-        \vdd\\
-        \\
-        \\
-        V_m
-    \end{pNiceMatrix}\label{eq:lfsr}
+  U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    C_1    & \cdd  &       &       & C_m \\
+    \top   & \circ & \cdd  &       & \circ \\
+    \circ  & \ddd  & \ddd  &       & \vdd \\
+    \vdd   & \ddd  &       &       & \\
+    \circ  & \cdd  & \circ & \top  & \circ
+  \end{pNiceMatrix}^t
+  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    V_1 \\
+    \vdd\\
+    \\
+    \\
+    V_m
+  \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
 \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we first form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
@@ -317,32 +317,32 @@ Now that we have a reliable method to fix \textit{localized} errors, $S: \mathca
 Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
 
 \begin{align*}
-    \text{Deletion}&=\begin{cases}
-      \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
-    \end{cases}\\
-    \text{Substitution}&=\begin{cases}
-      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-      \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
-    \end{cases}\\
-    \text{Insertion}&=\begin{cases}
-      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
-    \end{cases}
+  \text{Deletion}&=\begin{cases}
+    \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+  \end{cases}\\
+  \text{Substitution}&=\begin{cases}
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+    \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+  \end{cases}\\
+  \text{Insertion}&=\begin{cases}
+    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+  \end{cases}
 \end{align*}
 
 \section{Adaptive Sampling}\label{sec:holes}
 
-Since there are $\Sigma_{d=1}^q{n \choose d}$ sketch templates in total, each with $(|\Sigma| + 1)^{2d}$ possible repairs, if $n$ and $q$ are large, this space can be intractable to search through exhaustively and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ is unlikely to produce natural edits. In order to facilitate real-time assistance, we prioritize likely repairs according to the following six-step procedure:
+Since there are $\Sigma_{d=1}^q{n \choose d}$ total sketch templates, each with $(|\Sigma| + 1)^{2d}$ individual edits to check, if $n$ and $q$ are large, this space can be intractable to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ is likely to produce unnatural edits. To provide rapid and relevant suggestions, we prioritize likely repairs according to the following six-step procedure:
 
 \begin{enumerate}
-    \item Retrieve the most recent $\mathcal{G}$ and $\err{\sigma}$ from the editor.
-    \item Enumerate $i_{1\ldots d} \in \stirlingii{n}{d}$ for increasing values of $d \geq 1$.
-    \item Rerank edit locations according to $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
-    \item Draw $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
-    \item Decode and rerank repairs by the cost model, $C(\err{\sigma}, \sigma')$.
-    \item Display the top-k repairs in t-seconds to the user.
+  \item Retrieve the most recent $\mathcal{G}$ and $\err{\sigma}$ from the editor.
+  \item Enumerate $i_{1\ldots d} \in \stirlingii{n}{d}$ for increasing values of $d \geq 1$.
+  \item Rerank edit locations according to $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
+  \item Draw $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
+  \item Decode and rerank repairs by the cost model, $C(\err{\sigma}, \sigma')$.
+  \item Display the top-k repairs in p-seconds to the user.
 \end{enumerate}
 
 For example, given an erroneous string, $\err{\sigma}: \Sigma^{90}$, suppose we have $\mathcal{F}_\theta$, a distribution over possible edits provided by a probabilistic or neural language model, which can be used to localize admissible repairs. By marginalizing onto $\err{\sigma}$, the distribution $\mathcal{F}_\theta$ could take the following form:
@@ -370,13 +370,13 @@ For example, given an erroneous string, $\err{\sigma}: \Sigma^{90}$, suppose we 
 \caption{The distribution $\int\mathcal{F}_{\theta}(\cdot \mid i_{1\ldots d})d\theta$, projected onto the invalid string, suggests edit locations most likely to yield admissible repairs, from which we draw subsets of size $d$.}
 \end{figure}
 
-Morally, we want to prioritize sketch templates likely to yield admissible repairs and repairs which are ``natural'', i.e., likely to be written by a human programmer. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
+Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
 
 \begin{align}
-    \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+  \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 \end{align}
 
-More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an associated \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which can be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell-etal-2014-stochastic} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the given grammar and latency constraints.
+More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell-etal-2014-stochastic} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the given grammar and latency constraints.
 
 \pagebreak
 \section{Error Recovery}\label{sec:error}
@@ -384,28 +384,28 @@ More specifically in our setting, $\Omega$ is a discrete product space that fact
 Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover partial subtrees. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks indicate the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
 
 \begin{figure}[H]
-    \hspace{-0.5cm}\begin{minipage}[l]{6cm}
-      \[
-          \begin{NiceMatrix}
-              \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
-                         &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
-          \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
-                    \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
-                    \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-                         &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
-                         &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                         &      &      &      &      &      &      &      & T_C  & \vdd \\
-                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
-                         &      &      &      &      &      &      &      &      & \\
-                         &      &      &      &      &      &      &      &      & \\
-                         &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
-                    \vno & \cdd &      &      &      &      &      &      & \vno &
-          \end{NiceMatrix}
-      \]
-    \end{minipage}
-    \hspace{1cm}
+  \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+    \[
+      \begin{NiceMatrix}
+          \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+                     &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+      \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+                \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+                \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                     &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+                     &      &      &      &      &      & \pcd & \cdd &      & C    \\
+                     &      &      &      &      &      &      &      & T_C  & \vdd \\
+                     &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+                \vno & \cdd &      &      &      &      &      &      & \vno &
+      \end{NiceMatrix}
+    \]
+  \end{minipage}
+  \hspace{1cm}
 
-    \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
+  \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
 \end{figure}
 
 \noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
@@ -466,17 +466,17 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
 \end{figure}\vspace{-10pt}
 \begin{algorithm}
-    \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
-    \begin{algorithmic}
-        \Procedure{Denormalize}{\texttt{t: Tree}}
-            \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-            \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
-                \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
-            \Else\Comment{Graft the denormalized children on root.}
-                \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
-            \EndIf
-        \EndProcedure
-    \end{algorithmic}
+  \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
+  \begin{algorithmic}
+    \Procedure{Denormalize}{\texttt{t: Tree}}
+      \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+      \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
+          \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
+      \Else\Comment{Graft the denormalized children on root.}
+          \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+      \EndIf
+    \EndProcedure
+  \end{algorithmic}
 \end{algorithm}
 
 \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
@@ -601,31 +601,31 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
 \begin{figure}[H]
 \hspace{-0.25cm}\begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        height=6cm,
-        title={\hspace{-1cm}\textbf{Error correction time with unknown locations}},
-        ybar,
-        bar width=20pt,
-        xlabel={Number of errors},
-        ylabel={ms to synthesize 1 repair},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\unloctimings}{errors},
-        ymajorgrids,
-        legend pos=north west,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-        \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-        \legend{Dyck-1, Dyck-2, Dyck-3}
-    \end{axis}
+  \begin{axis}[
+    width=8.3cm,
+    height=6cm,
+    title={\hspace{-1cm}\textbf{Error correction time with unknown locations}},
+    ybar,
+    bar width=20pt,
+    xlabel={Number of errors},
+    ylabel={ms to synthesize 1 repair},
+    xtick=data,
+    axis x line*=bottom,
+    axis y line*=left,
+    enlarge x limits={abs=0.5},
+    ymode=log,
+    ytick pos=left,
+    xticklabels from table={\unloctimings}{errors},
+    ymajorgrids,
+    legend pos=north west,
+    error bars/y dir=both,
+    error bars/y explicit
+  ]
+    \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+    \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+    \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+    \legend{Dyck-1, Dyck-2, Dyck-3}
+  \end{axis}
 \end{tikzpicture}
 \end{figure}
 
@@ -638,61 +638,61 @@ In the following benchmark, we analyze bracketing errors in a dataset of natural
 \vspace{0.25cm}
 \adjustbox{scale=0.48,center}{%
 \begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        height=6.6cm,
-        title={\hspace{-1cm}\textbf{Java Brackets}},
-        ybar,
-        bar width=10pt,
-        xlabel={$|\Sigma|$},
-        ylabel={Compiler acceptance},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\naturalerrors}{time},
-        ymajorgrids,
-        legend pos=north west,
-        legend columns=3,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
-        \legend{1s, 10s, 20s}
-    \end{axis}
+  \begin{axis}[
+    width=8.3cm,
+    height=6.6cm,
+    title={\hspace{-1cm}\textbf{Java Brackets}},
+    ybar,
+    bar width=10pt,
+    xlabel={$|\Sigma|$},
+    ylabel={Compiler acceptance},
+    xtick=data,
+    axis x line*=bottom,
+    axis y line*=left,
+    enlarge x limits={abs=0.5},
+    ymode=log,
+    ytick pos=left,
+    xticklabels from table={\naturalerrors}{time},
+    ymajorgrids,
+    legend pos=north west,
+    legend columns=3,
+    error bars/y dir=both,
+    error bars/y explicit
+  ]
+    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+    \legend{1s, 10s, 20s}
+  \end{axis}
 \end{tikzpicture}
 
 \begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        height=6.6cm,
-        title={\hspace{-1cm}\textbf{Kotlin Brackets}},
-        ybar,
-        bar width=10pt,
-        xlabel={$|\Sigma|$},
-%        ylabel={Compiler acceptance},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\naturalerrors}{time},
-        ymajorgrids,
-        legend pos=north west,
-        legend columns=3,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
-        \legend{1s, 10s, 20s}
-    \end{axis}
+  \begin{axis}[
+    width=8.3cm,
+    height=6.6cm,
+    title={\hspace{-1cm}\textbf{Kotlin Brackets}},
+    ybar,
+    bar width=10pt,
+    xlabel={$|\Sigma|$},
+%    ylabel={Compiler acceptance},
+    xtick=data,
+    axis x line*=bottom,
+    axis y line*=left,
+    enlarge x limits={abs=0.5},
+    ymode=log,
+    ytick pos=left,
+    xticklabels from table={\naturalerrors}{time},
+    ymajorgrids,
+    legend pos=north west,
+    legend columns=3,
+    error bars/y dir=both,
+    error bars/y explicit
+  ]
+    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+    \legend{1s, 10s, 20s}
+  \end{axis}
 \end{tikzpicture}
 }
 \end{figure}
@@ -701,32 +701,32 @@ For Python, we sample invalid Python code snippets uniformly from the Break-It-F
 
 \begin{figure}[H]
 \hspace{-0.25cm}\begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        height=6.6cm,
-        title={\hspace{-1cm}\textbf{Natural Error Correction}},
-        ybar,
-        bar width=10pt,
-        xlabel={$|\Sigma|$},
-        ylabel={Interpreter acceptance},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\naturalerrors}{time},
-        ymajorgrids,
-        legend pos=north west,
-        legend columns=3,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-        \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
-        \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
-        \legend{1s, 10s, 20s}
-    \end{axis}
+  \begin{axis}[
+    width=8.3cm,
+    height=6.6cm,
+    title={\hspace{-1cm}\textbf{Natural Error Correction}},
+    ybar,
+    bar width=10pt,
+    xlabel={$|\Sigma|$},
+    ylabel={Interpreter acceptance},
+    xtick=data,
+    axis x line*=bottom,
+    axis y line*=left,
+    enlarge x limits={abs=0.5},
+    ymode=log,
+    ytick pos=left,
+    xticklabels from table={\naturalerrors}{time},
+    ymajorgrids,
+    legend pos=north west,
+    legend columns=3,
+    error bars/y dir=both,
+    error bars/y explicit
+  ]
+    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+    \legend{1s, 10s, 20s}
+  \end{axis}
 \end{tikzpicture}
 \end{figure}
 
