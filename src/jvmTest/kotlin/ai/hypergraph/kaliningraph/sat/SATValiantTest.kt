@@ -95,8 +95,7 @@ class SATValiantTest {
       S -> S + S | S * S | S - S | S / S | ( S )
       S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       S -> X | Y | Z
-    """.let { cfg ->
-      val cfg = cfg.parseCFG()
+    """.parseCFG().let { cfg ->
       assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))

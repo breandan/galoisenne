@@ -381,8 +381,9 @@ More specifically in our setting, $\Omega$ is a discrete product space that fact
 \pagebreak
 \section{Error Recovery}\label{sec:error}
 
-Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover partial subtrees. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks indicate the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
+Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover parse branches. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks signify the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
 
+\vspace{-.25cm}
 \begin{figure}[H]
   \hspace{-0.5cm}\begin{minipage}[l]{6cm}
     \[
@@ -405,34 +406,38 @@ Not only is Tidyparse capable of suggesting repairs to invalid strings, it can a
   \end{minipage}
   \hspace{1cm}
 
-  \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
+  \caption{By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover parseable subtrees.}
 \end{figure}
 
-\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
+\vspace{-30pt}\begin{align}
+    X\:\hat{\otimes}\:Z := \big\{\;w\hphantom{.}^{\nearrow}_{\searrow}\nobarfrac{x}{z} \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+\end{align}
+
+\noindent We first construct the parse forests bottom-up using $\hat{\otimes}$, which simply stores backpointers, then if $S \notin \Lambda^*_\sigma$, we traverse the peaks by decreasing elevation to recover parse branches.
 
 \begin{tidyinput}
 (*@true and true \err{! and false or true !} true and false\caret{ }@*)
 \end{tidyinput}
 
 \begin{verbatim}
-Parseable subtrees (5 leaves / 2 branches):
+  Parseable subtrees (5 leaves / 2 branches):
 \end{verbatim}
-\noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
+\noindent\hspace{0.96cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
-    └── ! [3]   └── and [4]   └── or [6]
+      └── ! [3]   └── and [4]   └── false [5]
 \end{verbatim}
-\noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\vspace{-5pt}
+\noindent\hspace{0.96cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
-    └── or [6]  └── true [7]
+      └── or [6]  └── true [7]
 \end{verbatim}
-\hspace{0.63cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
+\hspace{0.96cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
 \begin{verbatim}
-    └── S [0..2]          └── S [8..11]
-        ├── true [0]          ├── S [8..9]
-        ├── and [1]           │   ├── ! [8]
-        └── true [2]          │   └── true [9]
-                              ├── and [10]
-                              └── false [11]
+      └── S [0..2]          └── S [8..11]
+          ├── true [0]          ├── S [8..9]
+          ├── and [1]           │   ├── ! [8]
+          └── true [2]          │   └── true [9]
+                                ├── and [10]
+                                └── false [11]
 \end{verbatim}
 
 \pagebreak
