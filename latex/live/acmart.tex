@@ -87,6 +87,10 @@ Suppose we are given the following context free grammar:
 S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{tidyinput}
 
+%\begin{tidyinput}
+%    S -> λ v . S | S S | v | ( S ) | c(*@\caret{ }@*)
+%\end{tidyinput}
+
 \noindent For reasons that will become clear in the following section, this is automatically rewritten into the equivalent grammar:
 
 \begin{verbatim}
@@ -96,6 +100,14 @@ S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
  F.ε → ε   S → true   S → S and.S  and.S → F.and S
 F.or → or  S → S ε+   S → F.( S.)
 \end{verbatim}
+
+%\begin{verbatim}
+% F.( → (   S → S S     F.λ → λ   v...S → F.v ..S
+% F.) → )   S → c        ε+ → ε       S → F.( S.)
+% F.. → .   S → v        ε+ → ε+ ε+   S → F.λ v...S
+% F.v → v   S → S ε+    ..S → F.. S
+% F.ε → ε   S → S F.ε   S.) → S F.)
+%\end{verbatim}
 
 %\noindent We can visualize the CFG as either a graph or a matrix:
 %
@@ -251,7 +263,7 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
 \newcommand\pcp{\phantom\cdot}
 \newcommand\ppp{\phantom{\nse}}
 
-\begin{align}
+\begin{align}\label{eq:satten}
    M^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
       \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
       \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
@@ -263,7 +275,7 @@ By allowing the matrix $M^*$ to contain bitvector variables representing holes i
    \end{pNiceArray}
 \end{align}
 
-\noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
+\noindent Depicted in (\ref{eq:satten}) is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
 \subsection{Gradient estimation}\label{sec:dsi}
 
@@ -322,16 +334,18 @@ Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templ
 
 \section{Adaptive Sampling}\label{sec:holes}
 
-Since there are $\Sigma_{d=1}^q{n \choose d}$ sketch templates in total, each with $(|\Sigma| + 1)^{2d}$ possible repairs, if $n$ and $q$ are large, this space can be intractable to search through exhaustively and a uniform prior may be highly sample-inefficient. In order to facilitate real-time assistance, we prioritize likely repairs according to the following four-step procedure:
+Since there are $\Sigma_{d=1}^q{n \choose d}$ sketch templates in total, each with $(|\Sigma| + 1)^{2d}$ possible repairs, if $n$ and $q$ are large, this space can be intractable to search through exhaustively and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ is unlikely to produce natural edits. In order to facilitate real-time assistance, we prioritize likely repairs according to the following six-step procedure:
 
 \begin{enumerate}
     \item Retrieve the most recent $\mathcal{G}$ and $\err{\sigma}$ from the editor.
-    \item Lazily enumerate $\stirlingii{n}{d}$ for increasing values of $d \geq 1$.
-    \item Draw $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
-    \item Decode and rerank models by Levenshtein distance.
+    \item Enumerate $i_{1\ldots d} \in \stirlingii{n}{d}$ for increasing values of $d \geq 1$.
+    \item Rerank edit locations according to $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
+    \item Draw $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
+    \item Decode and rerank repairs by the cost model, $C(\err{\sigma}, \sigma')$.
+    \item Display the top-k repairs in t-seconds to the user.
 \end{enumerate}
 
-For example, suppose we have $\err{\sigma}: \Sigma^{90}$, and a probability distribution over all possible edits. This distribution, which we call $\mathcal{F}$, is then used to prioritize admissible repairs. Reprojected onto $\err{\sigma}$, the distribution $\mathcal{F}$ might appear thusly:
+For example, given an erroneous string, $\err{\sigma}: \Sigma^{90}$, suppose we have $\mathcal{F}_\theta$, a distribution over possible edits provided by a probabilistic or neural language model, which can be used to localize admissible repairs. By marginalizing onto $\err{\sigma}$, the distribution $\mathcal{F}_\theta$ could take the following form:
 
 \begin{figure}[H]
 \hspace{-0.3cm}\begin{tikzpicture}[scale=0.4]
@@ -353,16 +367,16 @@ For example, suppose we have $\err{\sigma}: \Sigma^{90}$, and a probability dist
 %  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
 %  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
 \end{tikzpicture}
-\caption{The distribution $\mathcal{F}$, reprojected onto the invalid string yields a set of edit locations likely to contain admissible repairs, from which we draw subsets of size $d$.}
+\caption{The distribution $\int\mathcal{F}_{\theta}(\cdot \mid i_{1\ldots d})d\theta$, projected onto the invalid string, suggests edit locations most likely to yield admissible repairs, from which we draw subsets of size $d$.}
 \end{figure}
 
-Morally, we would prefer sketch templates and repairs which are ``natural'', i.e., more likely to be accepted by a human programmer over those which are not. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
+Morally, we want to prioritize sketch templates likely to yield admissible repairs and repairs which are ``natural'', i.e., likely to be written by a human programmer. To do so, we draw holes and rank admissible repairs using a distance metric over the Levenshtein q-ball, $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over some metric space $\Omega$:
 
 \begin{align}
     \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 \end{align}
 
-More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an associated \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which can be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell-etal-2014-stochastic} in the case of probabilistic edits. Our goal then is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the grammar and latency constraints.
+More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an associated \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which can be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell-etal-2014-stochastic} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the given grammar and latency constraints.
 
 \pagebreak
 \section{Error Recovery}\label{sec:error}
@@ -543,11 +557,13 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.
 
+\begin{figure}[H]
 \begin{tidyinput}
 D1 -> ( ) | ( D1 ) | D1 D1
 D2 -> D1 | [ ] | ( D2 ) | [ D2 ] | D2 D2
 D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 \end{tidyinput}
+\end{figure}
 
 \noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number tokens with holes and measure the average time taken to decode ten syntactically-admissible repairs across 100 trial runs.
 
