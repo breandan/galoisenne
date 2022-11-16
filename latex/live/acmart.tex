@@ -201,7 +201,7 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
 
 Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and we show it to be highly efficient in practice.
 
-\subsection{Context-sensitive reachability}
+\subsection{Context-sensitive reachability}\label{sec:cslr}
 
 It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_1)$:
 
@@ -381,7 +381,7 @@ More specifically in our setting, $\Omega$ is a discrete product space that fact
 \pagebreak
 \section{Error Recovery}\label{sec:error}
 
-Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover parse branches. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks signify the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
+Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those same strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover parse branches. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks signify the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
 
 \vspace{-.25cm}
 \begin{figure}[H]
@@ -422,15 +422,15 @@ Not only is Tidyparse capable of suggesting repairs to invalid strings, it can a
 \begin{verbatim}
   Parseable subtrees (5 leaves / 2 branches):
 \end{verbatim}
-\noindent\hspace{0.96cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
+\noindent\hspace{0.97cm}\emoji{herb}\hspace{1.69cm}\emoji{herb}\hspace{2cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── ! [3]   └── and [4]   └── false [5]
 \end{verbatim}
-\noindent\hspace{0.96cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\vspace{-5pt}
+\noindent\hspace{0.97cm}\emoji{herb}\hspace{1.69cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── or [6]  └── true [7]
 \end{verbatim}
-\hspace{0.96cm}\emoji{herb}\hspace{3.4cm}\emoji{herb}\vspace{-5pt}
+\hspace{0.97cm}\emoji{herb}\hspace{3.38cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── S [0..2]          └── S [8..11]
           ├── true [0]          ├── S [8..9]
@@ -486,6 +486,72 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 
 \noindent To recover a parse tree congruent with the user-specified grammar, we prune all synthetic nodes and graft their stems onto the grandparent via a simple recursive procedure (Alg.~\ref{alg:cap}).%, which is used to denormalize both complete and partial ASTs (cf. \S~\ref{sec:error}) alike.
 
+\section{Nonterminal Stubs}
+
+\noindent As a notational conveinience, non-recursive nonterminal stubs are permitted inside the CFG definition. To support this feature, we introduce a simple substitution rule that replaces all productions containing parameterized nonterminals, $\langle\alpha\rangle$, with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$:
+
+\begin{figure}[H]
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
+    \AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
+    \RightLabel{$\alpha\textsc{-sub}$}
+    \BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
+\end{prooftree}
+\end{figure}
+
+\noindent This enables adding a placeholder for typed expressions:
+
+\begin{tidyinput}
+E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
+X -> Int | Bool
+\end{tidyinput}
+
+\noindent After preprocessing, the above grammar will take the form:
+
+\begin{tidyinput}
+E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
+E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
+\end{tidyinput}
+
+When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$:
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash v \in V$}
+    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
+\end{prooftree}
+
+Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand,
+
+\begin{tidyinput}
+false or ! true or <(*@\caret{S}@*)> and <S> or <S>
+\end{tidyinput}
+
+\noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
+
+\begin{tidyoutput}
+false or ! true or (*@\hlorange{true}@*) and <S> or <S>
+false or ! true or (*@\hlorange{false}@*) and <S> or <S>
+false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+...
+\end{tidyoutput}
+
+\noindent This functionality can also be used inside a completion:
+
+\begin{tidyinput}
+if <Vexp> _ _ _ _ _(*@\caret{ }@*)
+\end{tidyinput}
+
+\begin{tidyoutput}
+if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
+if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
+if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
+...
+\end{tidyoutput}
+
+
 \section{Usage Examples}
 
 Tidyparse accepts any context-free grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to approximate the OCaml grammar. We use the \texttt{---} delimiter to separate the grammar from the example:
@@ -512,15 +578,24 @@ let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
 \end{tidyoutput}
 
-\subsection{Context-sensitive languages}
+\subsection{Context-Sensitive Languages}
 
-Many programming languages exhibit either lexical or syntactic context-sensitivity, e.g., Python indentation. Tidyparse can analyze such languages using finite CFL-intersection, allowing it to generalize to a broader family of languages:
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
 
 \begin{tidyinput}
-S -> L R                  S -> L R
-L -> a b | a L b          R -> b c | b R c
-R -> c | c R              L -> a | a L
+S -> L R    L -> a b | a L b    R -> c | c R
+&&&
+S -> L R    R -> b c | b R c    L -> a | a L
+---
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
+\begin{tidyoutput}
+a b c
+a a b b c c
+a a a b b b c c c
+a a a a b b b b c c c c
+...
+\end{tidyoutput}
 
 \subsection{Grammar Assistance}
 
@@ -536,22 +611,6 @@ B -> true | false | (*@\hlgreen{<RHS>}@*)
 ...
 \end{tidyoutput}
 
-\subsection{Interactive Nonterminal Expansion}
-
-Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand,
-
-\begin{tidyinput}
-if <(*@\caret{V}@*)exp> X then <Vexp> else <Vexp>
-\end{tidyinput}
-
-\noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
-
-\begin{tidyoutput}
-if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
-if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
-if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
-...
-\end{tidyoutput}
 
 %There are some more examples too.
 %
