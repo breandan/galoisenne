@@ -77,7 +77,7 @@ In programming, most such errors initially manifest as syntax errors, and though
 
 \section{Prior work}
 
-Prior work in this area follows two main streams. Kats~\cite{kats2009providing} and deJong~\cite{de2012automated} and Diekmann~\cite{diekmann2018dont} investigate error repair using LR grammars and more recently, Raselimo and Fischer explore repair in the grammar itself~\cite{raselimo2021automatic}. Our approach can handle a more general class of context-free and bounded context-sensitive grammars and has a more theoretically rigorous grounding in language reachability~\cite{melski1997interconvertbility}. Consequently, it is much simpler and can scaled up using a GPU. Tradeoffs exist as usual, which are discussed in Sec.~\ref{sec:discussion}.
+Prior work in this area follows two main streams. Kats~\cite{kats2009providing}, De Jong~\cite{de2012automated} and Diekmann~\cite{diekmann2018dont} investigate error repair with LR grammars and more recently, Raselimo and Fischer perform repairs within the grammar itself~\cite{raselimo2021automatic}. Our approach handles a more general class of context-free and bounded context-sensitive grammars and offers a more theoretically rigorous grounding in language reachability~\cite{melski1997interconvertbility}. Consequently, it is much simpler and can scaled up using a GPU or TPU. As usual, plenty of tradeoffs exist, which are discussed in Sec.~\ref{sec:discussion}.
 
 \section{Toy Example}
 
@@ -124,10 +124,10 @@ true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{tidyoutput}
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{or}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
-true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
+1.) true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{or}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+2.) true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) or ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+3.) true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*)
+4.) true (*@\hlorange{or}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> (*@\hlorange{)}@*) and ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
 ...
 \end{tidyoutput}
 
@@ -499,7 +499,7 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 \end{prooftree}
 \end{figure}
 
-\noindent This enables adding a placeholder for typed expressions:
+\noindent This rule enables adding a placeholder for typed expressions:
 
 \begin{tidyinput}
 E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
@@ -530,11 +530,11 @@ false or ! true or <(*@\caret{S}@*)> and <S> or <S>
 \noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
 
 \begin{tidyoutput}
-false or ! true or (*@\hlorange{true}@*) and <S> or <S>
-false or ! true or (*@\hlorange{false}@*) and <S> or <S>
-false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
-false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
-false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+1.) false or ! true or (*@\hlorange{true}@*) and <S> or <S>
+2.) false or ! true or (*@\hlorange{false}@*) and <S> or <S>
+3.) false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+4.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+5.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
 ...
 \end{tidyoutput}
 
@@ -545,9 +545,9 @@ if <Vexp> _ _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
 
 \begin{tidyoutput}
-if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
-if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
-if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
+1.) if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
+2.) if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
+3.) if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 ...
 \end{tidyoutput}
 
@@ -572,9 +572,9 @@ VO ->  + | - | * | / | > | = | < | (*@`@*)||(*@`@*) | &&
 let curry f = ( fun x y -> f ( _ _ _(*@\caret{ }@*)) )
 \end{tidyinput}
 \begin{tidyoutput}
-let curry f = ( fun x y -> f ( (*@\hlorange{<X>}@*) ) )
-let curry f = ( fun x y -> f ( (*@\hlorange{<FunName>}@*) ) )
-let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
+1.) let curry f = ( fun x y -> f ( (*@\hlorange{<X>}@*) ) )
+2.) let curry f = ( fun x y -> f ( (*@\hlorange{<FunName>}@*) ) )
+3.) let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
 \end{tidyoutput}
 
@@ -585,18 +585,18 @@ sxp -> λ var . sxp | sxp sxp | var | ( sxp ) | const
 const -> 1 | 2 | 3 | 4 | 5 | 6
 var -> a | b | c | f | x | y | z
 ---
-( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x x )
+( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x x ) (*@\caret{ }@*)
 \end{tidyinput}
 \begin{tidyoutput}
-( λ f . ( λ x . f ( x x ) ) (*@\hlorange{)}@*) λ x . f ( x x )
-( λ f . ( λ x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) λ x . f ( x x )
-( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
+1.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{)}@*) λ x . f ( x x )
+2.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) λ x . f ( x x )
+3.) ( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 ...
 \end{tidyoutput}
 
 \subsection{Context-Sensitive Languages}
 
-Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}, which can be translated in the following way:
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
 
 \begin{tidyinput}
 S -> L R    L -> a b | a L b    R -> c | c R
@@ -606,32 +606,30 @@ S -> L R    R -> b c | b R c    L -> a | a L
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
 \end{tidyinput}
 \begin{tidyoutput}
-a b c
-a a b b c c
-a a a b b b c c c
-a a a a b b b b c c c c
+1.) a b c
+2.) a a b b c c
+3.) a a a b b b c c c
+4.) a a a a b b b b c c c c
 ...
 \end{tidyoutput}
 
-\noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are definable in principle without undue effort.
+\noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are also possible, although undocumented at present.
 
 \subsection{Grammar Assistance}
 
-Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG does not parse, it will suggest possible fixes. In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
+Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG is invalid, Tidyparse will suggest possible fixes. In the future, we intend to enhance this functionality to perform example-based codesign and grammar induction.
 
 \begin{tidyinput}
 B -> true | false | (*@\caret{ }@*)
 \end{tidyinput}
 \begin{tidyoutput}
-B -> true | false (*@\hlred{ }@*)
-B -> true | false (*@\hlorange{<RHS>}@*)
-B -> true | false | (*@\hlgreen{<RHS>}@*)
+1.) B -> true | false (*@\hlred{ }@*)
+2.) B -> true | false (*@\hlorange{<RHS>}@*)
+3.) B -> true | false | (*@\hlgreen{<RHS>}@*)
 ...
 \end{tidyoutput}
 
-%There are some more examples too.
-%
-%The line between parsing and computation is blurry.
+\noindent CFG navigation and syntax highlighting are also provided.
 
 \pagebreak
 \section{Latency Benchmark}\label{sec:latency}
