@@ -75,7 +75,7 @@ Modern research on error correction can be traced back to the early days of codi
 
 In programming, most such errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant challenge for novice programmers. The ECC problem may be refined by introducing a language, $\mathcal{L} \subset \Sigma^*$ and considering admissible edits transforming an arbitrary string, $s \in \Sigma^*$ into a string, $s'\in\mathcal{L}$. Known as \textit{error-correcting parsing} (ECP), this problem was well-studied in the early parsing literature, cf. Aho and Peterson~\cite{aho1972minimum}, but fell out of favor for many years, perhaps due to its perceived complexity. By considering only minimal-length edits, ECP can be reduced to the so-called \textit{language edit distance} (LED) problem, recently shown to be subcubic~\cite{bringmann2019truly}, suggesting its possible tractability. Previous results on ECP and LED were primarily of a theoretical nature, but now, thanks to our contributions, we have finally realized a practical prototype.
 
-\section{Prior work}
+\section{Related Work}
 
 Prior work in this area follows two main streams. Kats~\cite{kats2009providing}, De Jong~\cite{de2012automated} and Diekmann~\cite{diekmann2018dont} investigate error repair with LR grammars and more recently, Raselimo and Fischer perform repairs within the grammar itself~\cite{raselimo2021automatic}. Our approach handles a more general class of context-free and bounded context-sensitive grammars and offers a more theoretically rigorous grounding in language reachability~\cite{melski1997interconvertbility}. Consequently, it is much simpler and can scaled up using a GPU or TPU. As usual, plenty of tradeoffs exist, which are discussed in Sec.~\ref{sec:discussion}.
 
@@ -422,14 +422,17 @@ Not only is Tidyparse capable of suggesting repairs to invalid strings, it can a
 \begin{verbatim}
   Parseable subtrees (5 leaves / 2 branches):
 \end{verbatim}
+\vspace{5pt}
 \noindent\hspace{0.97cm}\emoji{herb}\hspace{1.69cm}\emoji{herb}\hspace{2cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── ! [3]   └── and [4]   └── false [5]
 \end{verbatim}
+\vspace{5pt}
 \noindent\hspace{0.97cm}\emoji{herb}\hspace{1.69cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── or [6]  └── true [7]
 \end{verbatim}
+\vspace{5pt}
 \hspace{0.97cm}\emoji{herb}\hspace{3.38cm}\emoji{herb}\vspace{-8pt}
 \begin{verbatim}
       └── S [0..2]          └── S [8..11]
@@ -594,7 +597,7 @@ var -> a | b | c | f | x | y | z
 ...
 \end{tidyoutput}
 
-\subsection{Context-Sensitive Languages}
+\subsection{Context-sensitive languages}
 
 Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
 
@@ -615,7 +618,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
 
 \noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are also possible, although undocumented at present.
 
-\subsection{Grammar Assistance}
+\subsection{Grammar assistance}
 
 Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG is invalid, Tidyparse will suggest possible fixes. In the future, we intend to enhance this functionality to perform example-based codesign and grammar induction.
 
@@ -651,9 +654,9 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
   \begin{axis}[
     width=8.3cm,
     height=6cm,
-    title={\hspace{-1cm}\textbf{Error correction time with known locations}},
+    title={\hspace{-1cm}\textbf{Latency with known locations}},
     ybar,
-    bar width=4pt,
+    bar width=6pt,
     xlabel={Number of holes},
     ylabel={ms to synthesize 10 repairs},
     xtick=data,
@@ -683,7 +686,7 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
   \begin{axis}[
     width=8.3cm,
     height=6cm,
-    title={\hspace{-1cm}\textbf{Error correction time with unknown locations}},
+    title={\hspace{-1cm}\textbf{Latency with unknown locations}},
     ybar,
     bar width=20pt,
     xlabel={Number of errors},
@@ -710,10 +713,10 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
 \section{Accuracy Benchmark}
 
-In the following benchmark, we analyze bracketing errors in a dataset of Java and Python code snippets on GitHub. For Java, we sample valid single-line statements with a nontrivial bracket nesting, synthetically delete $1\ldots d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance. To repair the snippets, we use the same language as in Sec.~\ref{sec:latency}, replacing all other tokens with \texttt{w}.
+In the following benchmark, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub. For Java, we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, repair using Tidyparse\footnote{\label{note1}Using the Dyck-n grammar augmented with \texttt{D1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{D1}. Contiguous non-bracket tokens are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser.
 
 \begin{figure}[H]
-\centering{\textbf{Synthetic Error Correction}}\\
+\centering{\textbf{Synthetic error correction accuracy}}\\
 \vspace{0.25cm}
 %\adjustbox{scale=0.48,center}{%
 \begin{tikzpicture}
@@ -724,7 +727,7 @@ In the following benchmark, we analyze bracketing errors in a dataset of Java an
     ybar,
     bar width=10pt,
     xlabel={$|\Sigma|$},
-    ylabel={Compiler acceptance},
+    ylabel={Parser acceptance},
     xtick=data,
     axis x line*=bottom,
     axis y line*=left,
@@ -776,18 +779,18 @@ In the following benchmark, we analyze bracketing errors in a dataset of Java an
 %}
 \end{figure}
 
-For Python, we sample invalid Python code snippets uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in Python snippets, repair them using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
+\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse\textsuperscript{\footnotemark[\ref{note1}]}, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
 
 \begin{figure}[H]
 \hspace{-0.25cm}\begin{tikzpicture}
   \begin{axis}[
     width=8.3cm,
     height=6.6cm,
-    title={\hspace{-1cm}\textbf{Natural Error Correction}},
+    title={\hspace{-1cm}\textbf{Organic error correction accuracy}},
     ybar,
     bar width=10pt,
     xlabel={$|\Sigma|$},
-    ylabel={Interpreter acceptance},
+    ylabel={Parser acceptance},
     xtick=data,
     axis x line*=bottom,
     axis y line*=left,
