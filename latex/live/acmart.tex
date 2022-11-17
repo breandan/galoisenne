@@ -554,7 +554,7 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 
 \section{Usage Examples}
 
-Tidyparse accepts any context-free grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to approximate the OCaml grammar. We use the \texttt{---} delimiter to separate the grammar from the example:
+Tidyparse accepts any context-free grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to approximate the OCaml grammar. We use the {\color{blue}\texttt{---}} delimiter to separate the grammar from the example:
 
 \begin{tidyinput}
 S -> A | V | ( X , X ) | X X | ( X )
@@ -578,9 +578,25 @@ let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
 \end{tidyoutput}
 
+\noindent We can also handle the untyped \lambda-calculus, as shown below:
+
+\begin{tidyinput}
+sxp -> λ var . sxp | sxp sxp | var | ( sxp ) | const
+const -> 1 | 2 | 3 | 4 | 5 | 6
+var -> a | b | c | f | x | y | z
+---
+( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x x )
+\end{tidyinput}
+\begin{tidyoutput}
+( λ f . ( λ x . f ( x x ) ) (*@\hlorange{)}@*) λ x . f ( x x )
+( λ f . ( λ x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) λ x . f ( x x )
+( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
+...
+\end{tidyoutput}
+
 \subsection{Context-Sensitive Languages}
 
-Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}, which can be translated in the following way:
 
 \begin{tidyinput}
 S -> L R    L -> a b | a L b    R -> c | c R
@@ -597,6 +613,8 @@ a a a a b b b b c c c c
 ...
 \end{tidyoutput}
 
+\noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are definable in principle without undue effort.
+
 \subsection{Grammar Assistance}
 
 Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG does not parse, it will suggest possible fixes. In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
@@ -611,13 +629,12 @@ B -> true | false | (*@\hlgreen{<RHS>}@*)
 ...
 \end{tidyoutput}
 
-
 %There are some more examples too.
 %
 %The line between parsing and computation is blurry.
 
 \pagebreak
-\section{Latency Benchmark}
+\section{Latency Benchmark}\label{sec:latency}
 
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.
 
@@ -695,17 +712,17 @@ D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 
 \section{Accuracy Benchmark}
 
-In the following benchmark, we analyze bracketing errors in a dataset of natural code snippets in Java, Kotlin and Python. For Java and Kotlin, we sample valid single-line statements on GitHub with a nontrivial bracket nesting, synthetically delete $1\ldots d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance.
+In the following benchmark, we analyze bracketing errors in a dataset of Java and Python code snippets on GitHub. For Java, we sample valid single-line statements with a nontrivial bracket nesting, synthetically delete $1\ldots d$ brackets uniformly at random, repair using Tidyparse, take the top-1 repair after $t$ seconds, and measure compiler acceptance. To repair the snippets, we use the same language as in Sec.~\ref{sec:latency}, replacing all other tokens with \texttt{w}.
 
 \begin{figure}[H]
 \centering{\textbf{Synthetic Error Correction}}\\
 \vspace{0.25cm}
-\adjustbox{scale=0.48,center}{%
+%\adjustbox{scale=0.48,center}{%
 \begin{tikzpicture}
   \begin{axis}[
     width=8.3cm,
     height=6.6cm,
-    title={\hspace{-1cm}\textbf{Java Brackets}},
+%    title={\hspace{-1cm}\textbf{Java Brackets}},
     ybar,
     bar width=10pt,
     xlabel={$|\Sigma|$},
@@ -730,38 +747,38 @@ In the following benchmark, we analyze bracketing errors in a dataset of natural
   \end{axis}
 \end{tikzpicture}
 
-\begin{tikzpicture}
-  \begin{axis}[
-    width=8.3cm,
-    height=6.6cm,
-    title={\hspace{-1cm}\textbf{Kotlin Brackets}},
-    ybar,
-    bar width=10pt,
-    xlabel={$|\Sigma|$},
-%    ylabel={Compiler acceptance},
-    xtick=data,
-    axis x line*=bottom,
-    axis y line*=left,
-    enlarge x limits={abs=0.5},
-    ymode=log,
-    ytick pos=left,
-    xticklabels from table={\naturalerrors}{time},
-    ymajorgrids,
-    legend pos=north west,
-    legend columns=3,
-    error bars/y dir=both,
-    error bars/y explicit
-  ]
-    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
-    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
-    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
-    \legend{1s, 10s, 20s}
-  \end{axis}
-\end{tikzpicture}
-}
+%\begin{tikzpicture}
+%  \begin{axis}[
+%    width=8.3cm,
+%    height=6.6cm,
+%    title={\hspace{-1cm}\textbf{Kotlin Brackets}},
+%    ybar,
+%    bar width=10pt,
+%    xlabel={$|\Sigma|$},
+%%    ylabel={Compiler acceptance},
+%    xtick=data,
+%    axis x line*=bottom,
+%    axis y line*=left,
+%    enlarge x limits={abs=0.5},
+%    ymode=log,
+%    ytick pos=left,
+%    xticklabels from table={\naturalerrors}{time},
+%    ymajorgrids,
+%    legend pos=north west,
+%    legend columns=3,
+%    error bars/y dir=both,
+%    error bars/y explicit
+%  ]
+%    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+%    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+%    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+%    \legend{1s, 10s, 20s}
+%  \end{axis}
+%\end{tikzpicture}
+%}
 \end{figure}
 
-For Python, we sample invalid Python code snippets uniformly from the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in natural Python snippets, repair them using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
+For Python, we sample invalid Python code snippets uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of human errors in Python snippets, repair them using Tidyparse, take the top-1 repair after $t$ seconds, and measure interpreter acceptance.
 
 \begin{figure}[H]
 \hspace{-0.25cm}\begin{tikzpicture}
@@ -794,7 +811,7 @@ For Python, we sample invalid Python code snippets uniformly from the Break-It-F
 \end{tikzpicture}
 \end{figure}
 
-\section{Discussion}\label{sec:discussion}
+\pagebreak\section{Discussion}\label{sec:discussion}
 
 While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are known to be concentrated in specific locations, such as the beginning or end of a string, then latency is typically below 500ms. Should errors occur uniformly at random, admissible repairs can take longer to discover, however these scenarios are unusual in our experience. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control. Further optimizations that reduce the total number of repairs checked are possible by eliminating improbable sketch templates.
 
@@ -804,8 +821,7 @@ Secondly, our current method generates sketch templates using a na\"ive enumerat
 
 Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs while syntactically admissible, are not guaranteed to be semantically valid. We note however, that it is possible to encode type-based semantic constraints into the solver and intend to explore this direction more fully in future work.
 
-%Although not intended to be a dedicated parser and we make no attempt to rigorously compare parsing latency, parsing valid strings with Tidyparse is typically competitive with classical parsing methods.
-We envision three primary use cases: (1) helping novice programmers become more quickly familiar with a new programming language (2) autocorrecting common typos among proficient but forgetful programmers and (3) as a prototyping tool for PL designers and educators.
+Although not intended to be a dedicated parser and we make no attempt to rigorously compare parsing latency, parsing valid strings with Tidyparse is typically competitive with classical parsing methods. We envision three primary use cases: (1) helping novice programmers become more quickly familiar with a new programming language (2) autocorrecting common typos among proficient but forgetful programmers and (3) as a prototyping tool for PL designers and educators.
 
 Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for testing. Although the algorithm may seem esoteric at first glance, in our experience it is much more interpretable than classical parsers, which exhibit poor error-recovery and diagnostics.
 
@@ -813,9 +829,10 @@ Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers n
 
 Tidyparse accepts a CFG and a string to parse. If the string is valid, it returns the parse forest, otherwise, it returns a set of repairs, ordered by their Levenshtein edit distance to the invalid string. Our method compiles each CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for its fixedpoints using an incremental SAT solver. This approach to parsing has many advantages, enabling us to repair syntax errors, correct typos and generate parse trees for incomplete strings.
 
-%By allowing the string to contain holes, repairs can contain either concrete tokens or nonterminals, which can be manually expanded by the user or a neural-guided search procedure. From a theoretical standpoint, this technique is particularly amenable to neural program synthesis and repair, naturally integrating with the masked-language-modeling task (MLM) used by transformer-based neural language models.
+By allowing the string to contain holes, repairs can contain either concrete tokens or nonterminals, which can be manually expanded by the user or a neural-guided search procedure. From a theoretical standpoint, this technique is particularly amenable to neural program synthesis and repair, naturally integrating with the masked-language-modeling task (MLM) used by transformer-based neural language models.
 
-From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. Further examples can be found at: \url{https://tidyparse.github.io}
+From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. Further examples can be found at our GitHub repository: \url{https://github.com/breandan/tidyparse}
+
 %\begin{itemize}
 %\item Error correction.
 %\item Program repair.
