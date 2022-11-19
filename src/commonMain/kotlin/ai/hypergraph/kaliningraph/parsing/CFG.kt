@@ -244,9 +244,9 @@ fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
 
 fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   unitReachability.getOrPut(from) {
-    LabeledGraph { unitProductions.map {
-      (it.LHS to it.RHS.first()).let { a - b; b - a }
-    } }.let {
+    LabeledGraph { unitProductions
+      .map { (it.LHS to it.RHS.first()).let { (a, b) -> a - b; b - a } }
+    }.let {
       it.transitiveClosure(setOf(it.first { it.label == from }))
         .map { it.label }.filter { it in nonterminals }.toSet()
     }

@@ -355,7 +355,7 @@ class SetValiantTest {
       I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       B ->  true | false
     """.trimIndent().parseCFG()
-    assertNotNull(cfg.parse("1 + <I> + 2"))
+    cfg.parse("1 + <I> + 2").also { println(it!!.prettyPrint()) }
   }
 
 /*
@@ -376,7 +376,7 @@ class SetValiantTest {
       E<Float> -> E<Int> op E<Float> | E<Float> op E<Int>
     """.trimIndent().parseCFG()
 
-  assertNotNull(cfg.parse("<E<Float>> + <E<Int>> + <E<Float>>"))
+  cfg.parse("<E<Float>> + <E<Int>> + <E<Float>>").also { println(it!!.prettyPrint()) }
 }
 
 /*
