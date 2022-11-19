@@ -146,9 +146,9 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
 fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bimap[listOf(terminal)].let {
-        if (!terminal.isNonterminalStubIn(this)) it
-        else originalForm.equivalenceClass(it)
+      bimap[listOf(terminal)].let {representatives ->
+        if (!terminal.isNonterminalStubIn(this)) representatives
+        else representatives.map { originalForm.equivalenceClass(it) }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeAlgebra()

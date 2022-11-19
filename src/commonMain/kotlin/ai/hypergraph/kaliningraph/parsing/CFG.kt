@@ -36,6 +36,7 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.originalForm by cache { rewriteHistory[this]!![0] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
+val CFG.unitReachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.noNonterminalStubs: CFG by cache {
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
@@ -233,20 +234,22 @@ private fun CFG.removeUselessSymbols(
 
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
-fun CFG.equivalenceClass(from: Set<Σᐩ>): Set<Σᐩ> =
-  from.intersect(nonterminals).let { nts ->
-    nts.flatMap {
-      bimap[it].filter { it.size == 1 }.flatten() + bimap[listOf(it)]
-    }.intersect(nonterminals).let {
-      val ec = nts + it
-      if (ec == nts) ec else equivalenceClass(ec)
-    }
-  }
+fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = reachableSymbolsViaUnitProds(from)
 
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) {
     graph.transitiveClosure(setOf(graph.first { it.label == from }))
       .map { it.label }.filter { it in nonterminals }.toSet()
+  }
+
+fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
+  unitReachability.getOrPut(from) {
+    LabeledGraph { unitProductions.map {
+      (it.LHS to it.RHS.first()).let { a - b; b - a }
+    } }.let {
+      it.transitiveClosure(setOf(it.first { it.label == from }))
+        .map { it.label }.filter { it in nonterminals }.toSet()
+    }
   }
 
 fun CFG.generatingSymbols(

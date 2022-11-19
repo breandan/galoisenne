@@ -140,7 +140,7 @@ fun CFG.prune(
     }.sortedBy { it.span.first }
 
   val treesToBeChopped =
-    stubs.filter { "START" in equivalenceClass(setOf(it.root)) }
+    stubs.filter { "START" in equivalenceClass(it.root) }
       .map { it.span to it }.let {
         val (spans, trees) = it.unzip()
         // Find trees corresponding to ranges which have an unambiguous parse tree

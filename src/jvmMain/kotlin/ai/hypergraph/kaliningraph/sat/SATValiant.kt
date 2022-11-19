@@ -79,7 +79,7 @@ fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
       val nt = nonterminalStub.drop(1).dropLast(1)
-      nonparametricForm.reachableSymbols(from = nt)
+      nonparametricForm.equivalenceClass(nt)
         .also { println("Transitive closure: $nt ->* $it") }
         .map { hf eq BVecLit(toBitVec(setOf(it))) }
         .fold(F) { a, b -> a xor b }

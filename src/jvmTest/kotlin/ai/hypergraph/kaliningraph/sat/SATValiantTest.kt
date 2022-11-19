@@ -522,6 +522,8 @@ class SATValiantTest {
 
   private fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
   fun Tree.eval(): Int = when {
+    middle() == "/" -> children.first().eval() / children.last().eval()
+    middle() == "-" -> children.first().eval() - children.last().eval()
     middle() == "*" -> children.first().eval() * children.last().eval()
     middle() == "+" -> children.first().eval() + children.last().eval()
     terminal?.toIntOrNull() != null -> terminal!!.toInt()
@@ -573,7 +575,7 @@ class SATValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
 */
-//  @Test
+  @Test
   fun testCheckedArithmetic() {
     "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )"
       .synthesizeIncrementally(checkedArithCFG, allowNTs = false)
