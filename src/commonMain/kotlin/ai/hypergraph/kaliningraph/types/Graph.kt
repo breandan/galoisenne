@@ -118,8 +118,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun transitiveClosure(vtxs: Set<V>): Set<V>  =
     // edges.filter { it.source in vtxs }.map { it.target }
     // TODO: Why does this work but the previous line does not?!
-    edgList.filter { it.first in vtxs }.map { it.second.target }
-      .filter { it !in vtxs }.toSet()
+    (edgList.filter { it.first in vtxs }.map { it.second.target }.toSet() - vtxs)
       .let { if (it.isEmpty()) vtxs else transitiveClosure(vtxs + it) }
 
   fun randomWalk(r: Random = Random.Default) = RandomWalk(r, this as G)

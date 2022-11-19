@@ -241,13 +241,14 @@ fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
 
 fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   unitReachability.getOrPut(from) {
-    LabeledGraph { unitProductions.map { it.LHS to it.RHS.first() }
+    LabeledGraph {
+      unitProductions.map { it.LHS to it.RHS.first() }
 //      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
       .forEach { (a, b) -> a - b }
     }.let {
-      it.transitiveClosure(setOf(from)).filter { it in nonterminals } +
-      it.reversed().transitiveClosure(setOf(from)).filter { it in nonterminals }
-    }
+      setOf(from) + (it.transitiveClosure(setOf(from)) +
+      it.reversed().transitiveClosure(setOf(from)))
+    }.filter { it in nonterminals }
   }
 
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
