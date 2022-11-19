@@ -148,8 +148,10 @@ fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
     ts = tokens.mapIndexed { i, terminal ->
       bimap[listOf(terminal)].let { representatives ->
         (if (!terminal.isNonterminalStubIn(this)) representatives
-        else representatives.map { equivalenceClass(it) }.flatten().toSet())
-//          .also { println("Equivalence class: $terminal -> $representatives -> ${it}") }
+        // We use the original form because A -> B -> C can be normalized
+        // to A -> C, and we want B to be included in the equivalence class
+        else representatives.map { originalForm.equivalenceClass(it) }.flatten().toSet())
+//          .also { println("Equivalence class: $terminal -> $representatives -> $it") }
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeAlgebra()

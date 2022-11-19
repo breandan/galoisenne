@@ -78,8 +78,9 @@ infix fun IntRange.isStrictSubsetOf(ir: IntRange) =
 @JvmName("cartProdTriple") operator fun <E: Π3<A, B, C>, A, B, C, Z> Set<E>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
   flatMap { s.map(it::to).toSet() }.toSet()
 
-// IDK why the Kotlin stdlib provides this for Map but not Set
+// IDK why the Kotlin stdlib provides these for Map but not Set
 public inline fun <T> Set<T>.filter(predicate: (T) -> Boolean): Set<T> = filterTo(HashSet(), predicate)
+//public inline fun <T, Q> Set<T>.map(tx: (T) -> Q): Set<Q> = mapTo(HashSet(), tx)
 
 interface VT<E, L: S<*>> : List<E> {
   open val len: L
@@ -136,7 +137,7 @@ inline fun <reified R: S<*>> asInt() = R::class.simpleName!!.drop(1).toInt()
 fun <E, R: S<*>, C: S<*>> Mat(r: R, c: C, vararg es: E): Mat<E, R, C> = Mat(r, c, es.toList())
 fun <E, R: S<*>, C: S<*>> Mat(r: R, c: C, es: List<E>): Mat<E, R, C> = VT.of(r, es.chunked(r, c))
 fun <E, R: S<*>, C: S<*>> Mat(r: R, c: C, f: (Int, Int) -> E): Mat<E, R, C> =
-  Mat(r, c, allPairs(r.toInt(), c.toInt()).map { (r, c) -> f(r, c) })
+  Mat(r, c, allPairs(r.toInt(), c.toInt()).map { (r, c) -> f(r, c) }.toList())
 
 fun <E> Mat2x1(t1: E, t2: E): Mat<E, L2, L1> = Mat(S2, S1, t1, t2)
 fun <E> Mat1x2(t1: E, t2: E): Mat<E, L1, L2> = Mat(S1, S2, t1, t2)

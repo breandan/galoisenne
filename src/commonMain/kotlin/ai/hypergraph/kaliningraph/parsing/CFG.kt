@@ -22,8 +22,8 @@ val CFG.nonterminals: Set<Σᐩ> by cache { map { it.LHS }.toSet() }
 val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production>
-    by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }.toSet() }
-val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 }.toSet() }
+    by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
+val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 } }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
 val CFG.tmap by cache { terminals.associateBy { bimap[listOf(it)] } }
@@ -236,28 +236,27 @@ private fun CFG.removeUselessSymbols(
 // reachable via unit productions (in forward or reverse)
 fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = reachableSymbolsViaUnitProds(from)
 
-fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
-  reachability.getOrPut(from) {
-    graph.transitiveClosure(setOf(graph.first { it.label == from }))
-      .map { it.label }.filter { it in nonterminals }.toSet()
-  }
+fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
+  transitiveClosure(filter { it.label in from }).map { it.label }.toSet()
 
 fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   unitReachability.getOrPut(from) {
-    LabeledGraph { unitProductions
-      .map { (it.LHS to it.RHS.first()).let { (a, b) -> a - b; b - a } }
+    LabeledGraph { unitProductions.map { it.LHS to it.RHS.first() }
+//      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
+      .forEach { (a, b) -> a - b }
     }.let {
-      it.transitiveClosure(setOf(it.first { it.label == from }))
-        .map { it.label }.filter { it in nonterminals }.toSet()
+      it.transitiveClosure(setOf(from)).filter { it in nonterminals } +
+      it.reversed().transitiveClosure(setOf(from)).filter { it in nonterminals }
     }
   }
+
+fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
+  reachability.getOrPut(from) { graph.transitiveClosure(setOf(from)) }
 
 fun CFG.generatingSymbols(
   from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
   revGraph: LabeledGraph = graph.reversed()
-): Set<Σᐩ> =
-  revGraph.transitiveClosure(revGraph.filter { it.label in from }.toSet())
-    .map { it.label }.toSet()
+): Set<Σᐩ> = revGraph.transitiveClosure(from)
 
 /* Drops variable unit productions, for example:
  * Initial grammar: (A -> B, B -> c, B -> d) ->
