@@ -16,7 +16,7 @@ infix fun Char.closes(that: Char) =
 fun String.hasBalancedBrackets(): Boolean =
   filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
-  }.isEmpty()
+  }.isEmpty() && "()[]{}<>".any { it in this }
 
 fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   fun String.tok() = split(" -> ")
