@@ -31,7 +31,7 @@ class SetValiantTest {
        NP -> NP PP 
         N -> fish  
         N -> fork  
-      Det -> a     
+      Det -> a
     """.let { cfg ->
       assertTrue("she eats a fish with a fork".matches(cfg))
       assertFalse("she eats fish with".matches(cfg))
