@@ -20,7 +20,9 @@ class SetValiantTest {
   @Test
   fun testSimpleGrammar() {
     """
-        S -> NP VP    VP -> eats    VP -> VP PP
+        S -> NP VP    
+       VP -> eats    
+       VP -> VP PP
        VP -> VP NP
        PP -> P NP
         P -> with
