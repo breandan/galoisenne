@@ -83,7 +83,7 @@
 }
 \makeatother
 
-\title[Tidyparse: Real-Time Context Free Error Correction]{Tidyparse: Real-Time Context Free Error Correction}
+\title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
@@ -113,7 +113,7 @@
             \scalebox{0.8}{
             \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
                 \foreach \X [count=\Y,remember=\Y as \LastY] in
-                    {finite,}
+                    {finite,regular}
                     {\ifnum\Y=1
                 \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
                 \else
@@ -130,7 +130,7 @@
                 \fi
                 }
                 \foreach \X [count=\Y,remember=\Y as \LastY] in
-                    {finite,regular,context-free,conjunctive,context sensitive}
+                    {finite,regular,context-free}
                     {\ifnum\Y=1
                 \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
                 \else
@@ -178,7 +178,7 @@
                 \fi
                 }
                 \foreach \X [count=\Y,remember=\Y as \LastY] in
-                    {finite,regular,context-free,conjunctive,context-sensitive}
+                    {finite,regular,context-free,conjunctive}
                     {\ifnum\Y=1
                 \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
                 \else
@@ -251,10 +251,10 @@
                 \hline
                 Finite & \cmark & \cmark & \cmark & \cmark & \cmark \\
                 Regular & \cmark & \cmark & \cmark & \cmark & \cmark \\
-                Context-free & \cmark & \cmark & \cmark & \cmark & \cmark \\
-                Conjunctive & \cmark & \cmark & \cmark & \cmark & \cmark \\
-                Context-sensitive & \cmark & \cmark & \cmark & \cmark & \cmark \\
-                Recursively Enumerable & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Context-free & \cmark & \xmark & \cmark & \cmark & \xmark \\
+                Conjunctive & \cmark & \cmark & \cmark & \cmark & ? \\
+                Context-sensitive & \cmark & \cmark & \cmark & + & \cmark \\
+                Recursively Enumerable & \cmark & \cmark & \cmark & \cmark & \xmark \\
             \end{tabular}
         \end{table}
     \end{frame}
