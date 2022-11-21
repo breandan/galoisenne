@@ -28,15 +28,18 @@
     basicstyle = \ttfamily,
     columns = flexible,
 }
-\makeatletter
-\renewcommand*\verbatim@nolig@list{}
-\makeatother
+%\makeatletter
+%\renewcommand*\verbatim@nolig@list{}
+%\makeatother
 \usepackage{amssymb}
 \usepackage{pmboxdraw}
 \usetikzlibrary{cd}
 \usepackage{adjustbox}
 \usepackage[pdf]{graphviz}
 \usepackage{tikz-3dplot}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 \usetikzlibrary{3d}
 \usetikzlibrary{calligraphy}
 \newif\ifshowcellnumber
@@ -62,12 +65,30 @@
     escapechar=@
 }
 
-\title[Probabilistic Array Programming on $\mathbb{F}_2^n$]{Probabilistic Array Programming on Galois Fields}
+\setbeamertemplate{footline}
+{
+    \leavevmode%
+    \hbox{%
+        \begin{beamercolorbox}[wd=.25\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+            \usebeamerfont{author in head/foot}\insertshortauthor{}{~~(\insertshortinstitute)}
+        \end{beamercolorbox}%
+        \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+            \usebeamerfont{title in head/foot}\insertshorttitle
+        \end{beamercolorbox}%
+        \begin{beamercolorbox}[wd=.25\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+            \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+            \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+        \end{beamercolorbox}}%
+    \vskip0pt%
+}
+\makeatother
+
+\title[Tidyparse: Real-Time Context Free Error Correction]{Tidyparse: Real-Time Context Free Error Correction}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
     McGill University, Mila IQIA\\
     \medskip
-    \textit{breandan.considine@mail.mcgill.ca}
+    \textit{bre@ndan.co}
 }
 \date{\today}
 
@@ -85,50 +106,157 @@
 
     %------------------------------------------------------------------------------------------------
 
-    \begin{frame}{Recap: Context free grammars}
-        Suppose we have a context free grammar (CFG) $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^+$ are the productions, $S\in V$ is the start symbol and $+$ is the Kleene plus.\newline\\
+    \begin{frame}{Background: Regular grammars}
+        A regular grammar is a 4-tuple $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$, or $A \rightarrow \varepsilon$. Regular langauges are closed under union, complementation, concatenation, and Kleene star.
+
+        \begin{center}
+            \scalebox{0.8}{
+            \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+                \fi
+                }
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,regular,context-free,conjunctive,context sensitive}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt] (F-\Y){};
+                \fi}
+            \end{tikzpicture}
+            }
+        \end{center}
+    \end{frame}
+
+    \begin{frame}{Background: Context-free grammars}
+        Suppose we have a context-free grammar (CFG) $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^+$ are the productions, $S\in V$ is the start symbol and $+$ is the Kleene plus.\newline\\
         %
         For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
         Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\{S \rightarrow S S \mid ( S ) \mid ()\}\Leftrightarrow^*\{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS\}$
 
         \begin{center}
-        \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
-            \foreach \X [count=\Y,remember=\Y as \LastY] in
-                {regular,context free}
-                {\ifnum\Y=1
-            \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
-            \else
-            \path[decoration={text along path,
-            text={|\sffamily|\X},text align=center,raise=0.3ex},decorate]
-        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
-            in (F-\LastY.west) arc(180:0:\x1 and \y1);
-            \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
-            -(F-\LastY.south)$),
-            \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
-            in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
-            node[minimum height=\y1,minimum width={\y1*\x2/\y3},
-            draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
-            \fi
+            \scalebox{0.8}{
+            \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,regular,context-free}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+                \fi
+                }
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,regular,context-free,conjunctive,context-sensitive}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt] (F-\Y){};
+                \fi}
+            \end{tikzpicture}
             }
-            \foreach \X [count=\Y,remember=\Y as \LastY] in
-                {regular,context free,context sensitive,recursively enumerable}
-                {\ifnum\Y=1
-            \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
-            \else
-            \path[decoration={text along path,
-            text={|\sffamily|\X},text align=center,raise=0.3ex},decorate]
-        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
-            in (F-\LastY.west) arc(180:0:\x1 and \y1);
-            \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
-            -(F-\LastY.south)$),
-            \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
-            in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
-            node[minimum height=\y1,minimum width={\y1*\x2/\y3},
-            draw,ellipse,inner sep=0pt] (F-\Y){};
-            \fi}
-        \end{tikzpicture}
         \end{center}
+    \end{frame}
+
+    \begin{frame}{Background: Conjunctive grammars}
+        Conjunctive grammars naturally extend CFGs with language union, intersection and complementation, respecting closure under those operations. Equivalent to trellis automata, which are like contractive ellementary cellular automata. Language inclusion is decidable in P.\\
+
+        \begin{center}
+            \scalebox{0.8}{
+            \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,regular,context-free,conjunctive}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+                \fi
+                }
+                \foreach \X [count=\Y,remember=\Y as \LastY] in
+                    {finite,regular,context-free,conjunctive,context sensitive}
+                    {\ifnum\Y=1
+                \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+                \else
+                \path[decoration={text along path,
+                text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+                let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+                in (F-\LastY.west) arc(180:0:\x1 and \y1);
+                \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+                -(F-\LastY.south)$),
+                \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+                in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+                node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+                draw,ellipse,inner sep=0pt] (F-\Y){};
+                \fi}
+            \end{tikzpicture}
+            }
+        \end{center}
+    \end{frame}
+
+
+    \begin{frame}[fragile]{Background: Closure properties of formal languages}
+        Where $\cup$ is intersection  $\cap$ is intersection  $\cdot$ is concatenation  $\star$ is Kleene star,  and $\complement$ is complementation\\
+        \begin{table}
+            \begin{tabular}{c|ccccc}
+                & $\cup$ & $\cap$ & $\cdot$ & $\star$ & $\complement$ \\
+                \hline
+                Finite & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Regular & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Context-free & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Conjunctive & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Context-sensitive & \cmark & \cmark & \cmark & \cmark & \cmark \\
+                Recursively Enumerable & \cmark & \cmark & \cmark & \cmark & \cmark \\
+            \end{tabular}
+        \end{table}
     \end{frame}
 
 
@@ -138,12 +266,12 @@
         \vspace{-7pt}
         \[
             s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
-            \text{E.g.},
+            \text{e.g.},
                 \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
         \]
-        \vspace{16pt}
+        \vspace{-20pt}
 
-        \noindent By initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, this will produce a matrix $\mathbf{M}^*$:
+        \noindent By initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, this will produce $\mathbf{M}^*$:
 
         \vspace{-5}
         \[
@@ -1302,7 +1430,7 @@ l = sqrt(sum)
 %            \item Characteristic polynomials, companion matrices, eigenvalues
             \item Solving these forms can be much faster than power iteration
             \item Unifies many problems in PL, probability and graph theory
-            \item Context free parsing is just rootfinding on a semiring algebra
+            \item Context-free parsing is just rootfinding on a semiring algebra
             \item Type checking sans recursive types is just graph reachability
             \item Unification/simplification is lazy hypergraph search
             \item Bounded program synthesis is matrix factorization/completion
@@ -1324,7 +1452,7 @@ l = sqrt(sum)
         Probability
         \begin{itemize}
             \item Look into Markov chains (detailed balance, stationarity, reversibility)
-        \item Fuse Valiant parser and probabilistic context free grammar
+        \item Fuse Valiant parser and probabilistic context-free grammar
         \item Message passing and graph diffusion processes
         \item Look into constrained optimization (e.g., L/QP) to rank feasible set
         \end{itemize}

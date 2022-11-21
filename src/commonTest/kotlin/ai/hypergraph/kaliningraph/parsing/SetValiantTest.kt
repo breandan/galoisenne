@@ -20,17 +20,15 @@ class SetValiantTest {
   @Test
   fun testSimpleGrammar() {
     """
-        S -> NP VP 
-       VP -> eats  
-       VP -> VP PP 
-       VP -> VP NP 
-       PP -> P NP  
-        P -> with  
-       NP -> she   
-       NP -> Det N 
-       NP -> NP PP 
-        N -> fish  
-        N -> fork  
+        S -> NP VP    VP -> eats    VP -> VP PP
+       VP -> VP NP
+       PP -> P NP
+        P -> with
+       NP -> she
+       NP -> Det N
+       NP -> NP PP
+        N -> fish
+        N -> fork
       Det -> a
     """.let { cfg ->
       assertTrue("she eats a fish with a fork".matches(cfg))
@@ -172,7 +170,7 @@ class SetValiantTest {
   fun benchmarkNaiveSearch() {
     """S -> ( ) | [ ] | ( S ) | [ S ] | S S""".parseCFG().let { cfg ->
       println("Total Holes, Instances Checked, Solutions Found")
-      for (len in 2..6 step 2) {
+      for (len in 2..8 step 2) {
         val template = List(len) { "_" }
         fun now() = Clock.System.now().toEpochMilliseconds()
         val startTime = now()

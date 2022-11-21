@@ -1,3 +1,5 @@
+@file:Suppress("FunctionName")
+
 package ai.hypergraph.reasoning
 
 import ai.hypergraph.kaliningraph.joinToScalar

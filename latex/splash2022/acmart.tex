@@ -43,8 +43,8 @@
 %% Title information
 \title{Tidyparse: Real-Time Context Free Error Correction}
 \begin{abstract}
-Tidyparse is a program synthesizer that performs real-time error correction for context free languages.
-Given both an arbitrary context free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs while the author is typing, ranked by Levenshtein edit distance.
+Tidyparse is a program synthesizer that performs real-time error correction for context-free languages.
+Given both an arbitrary context-free grammar (CFG) and an invalid string, the tool lazily generates admissible repairs while the author is typing, ranked by Levenshtein edit distance.
  Repairs are guaranteed to be complete, grammatically consistent and minimal.
  Tidyparse is the first system of its kind offering these guarantees in a real-time editor. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes. We have released an IDE plugin demonstrating the system described.\footnote{https://plugins.jetbrains.com/plugin/19570-tidyparse}
 \end{abstract}
@@ -81,7 +81,7 @@ Prior work in this area follows two main streams. Kats~\cite{kats2009providing},
 
 \section{Toy Example}
 
-Suppose we are given the following context free grammar:
+Suppose we are given the following context-free grammar:
 
 \begin{tidyinput}
 S -> S and S | S or S | ( S ) | true | false | ! S(*@\caret{ }@*)
