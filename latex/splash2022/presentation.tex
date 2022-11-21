@@ -2,68 +2,8 @@
 \usetheme{Madrid}
 \beamertemplatenavigationsymbolsempty
 \usepackage{graphicx}
-\usepackage{pgf-soroban}
-\usepackage{amsfonts}
-\usepackage{amsmath}
-\usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric,calc,decorations.text,bayesnet,arrows,backgrounds}
-\usepackage{stmaryrd}
-\usepackage{circledsteps}
-\usepackage{epigraph}
-\usepackage{mathtools}
-\usepackage{dsfont}
-\usepackage{bussproofs}
-\usepackage{hyperref}
-\usepackage{fontspec}
-\usepackage{array}
-\usepackage{bm}
-\usepackage{emoji}
-\setmonofont{JetBrains Mono}[
-    Contextuals = Alternate,
-    Ligatures = TeX,
-]
-\usepackage{listings}
-\lstset{
-    basicstyle = \ttfamily,
-    columns = flexible,
-}
-%\makeatletter
-%\renewcommand*\verbatim@nolig@list{}
-%\makeatother
-\usepackage{amssymb}
-\usepackage{pmboxdraw}
-\usetikzlibrary{cd}
-\usepackage{adjustbox}
-\usepackage[pdf]{graphviz}
-\usepackage{tikz-3dplot}
-\usepackage{pifont}
-\newcommand{\cmark}{\ding{51}}%
-\newcommand{\xmark}{\ding{55}}%
-\usetikzlibrary{3d}
-\usetikzlibrary{calligraphy}
-\newif\ifshowcellnumber
-\showcellnumbertrue
 
-\lstdefinelanguage{Kotlin}{
-    basicstyle = \footnotesize\ttfamily,
-    comment=[l]{//},
-    commentstyle={\color{gray}\ttfamily},
-    emph={delegate, filter, lazy, println, return@, K, E, X, P, G, E, V},
-    emphstyle={\color{red}},
-    identifierstyle=\color{black},
-    keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
-    keywordstyle={\color{blue}\bfseries},
-    morecomment=[s]{/*}{*/},
-    morestring=[b]",
-    morestring=[s]{"""*}{*"""},
-    ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, Bool, Boolean},
-    ndkeywordstyle={\color{orange}\bfseries},
-    sensitive=true,
-    stringstyle={\color{green}\ttfamily},
-    showstringspaces=false,
-    escapechar=@
-}
+\input{preamble.tex}
 
 \setbeamertemplate{footline}
 {
@@ -107,7 +47,7 @@
     %------------------------------------------------------------------------------------------------
 
     \begin{frame}{Background: Regular grammars}
-        A regular grammar is a 4-tuple $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$, or $A \rightarrow \varepsilon$. Regular langauges are closed under union, complementation, concatenation, and Kleene star.
+        A regular grammar is a 4-tuple $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ are the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). Regular langauges are closed under union, complementation, concatenation, and Kleene star.
 
         \begin{center}
             \scalebox{0.8}{
@@ -151,7 +91,7 @@
     \end{frame}
 
     \begin{frame}{Background: Context-free grammars}
-        Suppose we have a context-free grammar (CFG) $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ is the terminals, $P: V\times (V \cup \Sigma)^+$ are the productions, $S\in V$ is the start symbol and $+$ is the Kleene plus.\newline\\
+        In a context-free grammar $G = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$.\newline\\
         %
         For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
@@ -260,7 +200,7 @@
     \end{frame}
 
 
-    \begin{frame}[fragile]{Algebraic parsing, distilled}
+    \begin{frame}[fragile]{Context-free parsing, distilled}
         Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
 
         \vspace{-7pt}
@@ -271,20 +211,51 @@
         \]
         \vspace{-20pt}
 
-        \noindent By initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, this will produce $\mathbf{M}^*$:
+         \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
-        \vspace{-5}
-        \[
-            \mathbf{M}^* = \begin{pmatrix}
-                               \varnothing & \{V\}_{\sigma_1} & \ldots & \ldots & \mathcal{T} \\
-                               \varnothing & \varnothing & \{V\}_{\sigma_2} & \ldots & \ldots \\
-                               \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_3} & \ldots \\
-                               \varnothing & \varnothing & \varnothing & \varnothing & \{V\}_{\sigma_4} \\
-                               \varnothing & \varnothing & \varnothing & \varnothing & \varnothing
-            \end{pmatrix}
-        \]
+        \begin{align*}
+          M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+            \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+            \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                        &                &             &        & \varnothing\\
+                        &                &             &        & \sigma_n^\shup \\
+            \varnothing & \Cdots         &             &        & \varnothing
+          \end{pNiceMatrix} &\Rightarrow M^* =
+          \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+            \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+            \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                        &                &         &        & \Lambda\\
+                        &                &         &        & \sigma_n^\shup \\
+            \varnothing & \Cdots         &         &        & \varnothing
+          \end{pNiceMatrix}
+        \end{align*}
 
         \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+    \end{frame}
+
+    \begin{frame}[fragile]{Conjunctive parsing}
+        It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
+
+        \begin{table}[H]
+          \begin{tabular}{llll}
+            $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
+            $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+          \end{tabular}
+        \end{table}
+
+        \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. To encode $\mathcal{L}_\cap$, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ as follows:\vspace{-5pt}
+
+        \begin{align}
+            \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
+        \end{align}
+        % Generated by cfl4_intersection.vox, open with https://voxelator.com/
+        \begin{figure}[H]
+          \includegraphics[height=0.093\textwidth]{../figures/angle1.png}\hspace{-5pt}
+          \includegraphics[height=0.093\textwidth]{../figures/angle2.png}\hspace{-5pt}
+          \includegraphics[height=0.093\textwidth]{../figures/angle5.png}\hspace{-5pt}
+          \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
+          \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
+        \end{figure}
     \end{frame}
 
     \begin{frame}[fragile]{Kotlin implementation: CFG definition}
@@ -377,6 +348,19 @@
 %            \item Set joins are an active topic of research in SQL query optimization
             \item If you know of a more efficient encoding, please let us know!
         \end{itemize}
+    \end{frame}
+
+    \begin{frame}[fragile]{A birds eye view of the algorithm}
+    \begin{figure}[H]
+      \adjustbox{scale=0.75,center}{%
+        \[\begin{tikzcd}[row sep=large, column sep=huge]
+          \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+          \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
+          \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-9pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.5pt}\boxplus\:\boxtimes"] \arrow[u] \\
+          \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
+        \end{tikzcd}\]
+      }
+    \end{figure}
     \end{frame}
 
     \begin{frame}[fragile]{Tidyparse IDE plugin}
@@ -1396,8 +1380,8 @@ l = sqrt(sum)
             \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
             \item There are (at least) two schools of thought about Boolean circuits:
             \begin{itemize}
-                \item Logical: Conjunctive Normal Form (CNF). Not necessarily unique.
-                \item Algebra: Zhegalkin Normal Form (ZNF). It is necessarily unique.
+                \item Logical: Conjunctive Normal Form (CNF). May not be unique.
+                \item Algebra: Zhegalkin Normal Form (ZNF). Always unique.
             \end{itemize}
             \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2$ possesses $2^{2^{n}}$ inhabitants.
         \end{itemize}
