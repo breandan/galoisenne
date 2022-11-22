@@ -254,6 +254,24 @@
         \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
     \end{frame}
 
+    \begin{frame}[fragile]{Lattices, Matrices and Trellises}
+      The art of treillage has been practiced from ancient through modern times.
+      \begin{center}
+        \begin{tabular}{ c c c c c }
+          \includegraphics[width=0.17\textwidth]{../figures/trellis.png} & & \includegraphics[width=0.12\textwidth]{../figures/grid_topiary.jpeg} & & \includegraphics[width=0.23\textwidth]{../figures/tree_pyramid.jpeg} \\\\
+          \includegraphics[width=0.17\textwidth]{../figures/jiaxian_triangle.png} & &
+          \rotatebox{37}{\scalebox{0.9}{$\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted,delimiters-color=gray]
+            \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+                           & \Ddots  & \Ddots & \Vdots\\
+                           &         &        & \Lambda\\
+                           &         &        & \sigma_n^\shup \\
+          \end{pNiceMatrix}$}} & & \scalebox{0.23}{\mkJiaxian{9}}\\
+          Jia Xian Triangle && CYK Parsing && Trellis Automaton\\
+          Jia, $\sim$1030 A.D. && Sakai, 1961 A.D. && Dyer, 1980 A.D.\\
+        \end{tabular}
+      \end{center}
+    \end{frame}
+
     \begin{frame}[fragile]{Conjunctive parsing}
         It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
 
@@ -277,23 +295,6 @@
           \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
           \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
         \end{figure}
-    \end{frame}
-
-    \begin{frame}[fragile]{Trellis Automata}
-        \begin{center}
-        \begin{tabular}{ c c c }
-        \includegraphics[width=0.17\textwidth]{../figures/jiaxian_triangle.png} &
-        \rotatebox{37}{\scalebox{0.9}{$\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted,delimiters-color=gray]
-          \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
-                         & \Ddots  & \Ddots & \Vdots\\
-                         &         &        & \Lambda\\
-                         &         &        & \sigma_n^\shup \\
-          \end{pNiceMatrix}$}}
-        & \scalebox{0.23}{\mkJiaxian{9}}\\
-        Jia Xian & CYK Parsing & Trellis Automaton\\
-        Jia, $\sim$1030 A.D. & Sakai, 1961 A.D. & Dyer, 1980 A.D.\\
-        \end{tabular}
-        \end{center}
     \end{frame}
 
     \begin{frame}[fragile]{Kotlin implementation: CFG definition}
