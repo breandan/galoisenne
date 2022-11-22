@@ -391,3 +391,38 @@
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}
 
 \newcommand{\nobarfrac}{\genfrac{}{}{0pt}{}}
+
+\def\mkJiaxian#1{
+  \begin{tikzpicture}
+    \def\dx{20pt}
+    \def\dy{30pt}
+    \newcounter{i}
+    \stepcounter{i}
+    \node[circle, draw] (\arabic{i}) at (0,0) {1};
+    \foreach [count=\i] \x in {2,...,#1}{
+      \pgfmathsetmacro{\lox}{\x-1}%
+      \pgfmathsetmacro{\loxt}{\x-3}%
+      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+        \pgfmathsetmacro{\jj}{\j-1}%
+        \stepcounter{i}
+        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+        \node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {\pgfmathint{}\pgfmathresult};
+      }
+    }
+    \newcounter{z}
+    \newcounter{xn}
+    \newcounter{xnn}
+    \pgfmathsetmacro{\maxx}{#1 - 1}
+    \foreach \x in {1,...,\maxx}{
+      \foreach \xx in {1,...,\x}{
+        \stepcounter{z}
+        \setcounter{xn}{\arabic{z}}
+        \addtocounter{xn}{\x}
+        \setcounter{xnn}{\arabic{xn}}
+        \stepcounter{xnn}
+        \draw [<-] (\arabic{z}) -- (\arabic{xn});
+        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
+      }
+    }
+  \end{tikzpicture}
+}
