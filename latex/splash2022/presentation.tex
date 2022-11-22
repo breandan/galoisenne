@@ -280,10 +280,20 @@
     \end{frame}
 
     \begin{frame}[fragile]{Trellis Automata}
-        \begin{tabular}{ c c }
-        \includegraphics[width=0.35\textwidth]{../figures/jiaxian_triangle.png} & \scalebox{0.47}{\mkJiaxian{9}}\\
-        Jia Xian Triangle (Jia, $\~1030$ A.D.) & Trellis Automaton (Dyer, 1980 A.D.)
+        \begin{center}
+        \begin{tabular}{ c c c }
+        \includegraphics[width=0.17\textwidth]{../figures/jiaxian_triangle.png} &
+        \rotatebox{37}{\scalebox{0.9}{$\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted,delimiters-color=gray]
+          \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+                         & \Ddots  & \Ddots & \Vdots\\
+                         &         &        & \Lambda\\
+                         &         &        & \sigma_n^\shup \\
+          \end{pNiceMatrix}$}}
+        & \scalebox{0.23}{\mkJiaxian{9}}\\
+        Jia Xian & CYK Parsing & Trellis Automaton\\
+        Jia, $\sim$1030 A.D. & Sakai, 1961 A.D. & Dyer, 1980 A.D.\\
         \end{tabular}
+        \end{center}
     \end{frame}
 
     \begin{frame}[fragile]{Kotlin implementation: CFG definition}
