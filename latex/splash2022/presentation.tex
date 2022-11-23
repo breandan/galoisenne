@@ -161,7 +161,7 @@
     \end{frame}
 
     \begin{frame}{Background: Conjunctive grammars}
-        Conjunctive grammars naturally extend CFGs with language union, intersection and complementation, respecting closure under those operations. Equivalent to trellis automata, which are like contractive ellementary cellular automata. Language inclusion is decidable in P.\\
+        Conjunctive grammars naturally extend CFGs with language union and intersection, respecting closure under those operations. Equivalent to trellis automata, which are like contractive ellementary cellular automata. Language inclusion is decidable in P.\\
 
         \begin{center}
             \scalebox{0.8}{
@@ -206,7 +206,7 @@
 
 
     \begin{frame}[fragile]{Background: Closure properties of formal languages}
-        Where $\cup$ is intersection  $\cap$ is intersection  $\cdot$ is concatenation  $\star$ is Kleene star,  and $\complement$ is complementation\\
+        Formal languages are not closed, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $\star$ be Kleene star, and $\complement$ be complementation:\\
         \begin{table}
             \begin{tabular}{c|ccccc}
                 & $\cup$ & $\cap$ & $\cdot$ & $\star$ & $\complement$ \\
@@ -273,6 +273,15 @@
       \end{center}
     \end{frame}
 
+    \begin{frame}{Incrementalization}
+        \begin{center}
+            \begin{tabular}{ c c c }
+        \scalebox{0.5}{\mkJiaxianAppend{7}} && \scalebox{0.5}{\mkJiaxianInsert{7}} \\
+                Append && Insert \\
+        $\mathcal{O}(n)$&&$\mathcal{O}(n^2)$ \\
+            \end{tabular}
+        \end{center}
+    \end{frame}
 
     \begin{frame}{A few observations on algebraic parsing}
         \begin{itemize}
