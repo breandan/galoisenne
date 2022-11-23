@@ -392,13 +392,13 @@
 
 \newcommand{\nobarfrac}{\genfrac{}{}{0pt}{}}
 
-\renewcommand<>{\mkJiaxian}[1]{
+\renewcommand<>{\mkTrellis}[1]{
   \begin{tikzpicture}
     \def\dx{20pt}
     \def\dy{30pt}
     \newcounter{i}
     \stepcounter{i}
-    \node[circle, draw] (\arabic{i}) at (0,0){};
+    \node[circle, draw, fill=black!30] (\arabic{i}) at (0,0){};
     \foreach [count=\i] \x in {2,...,#1}{
       \pgfmathsetmacro{\lox}{\x-1}%
       \pgfmathsetmacro{\loxt}{\x-3}%
@@ -438,7 +438,7 @@
 \newcounter{z}
 \newcounter{xn}
 \newcounter{xnn}
-\newcommand{\mkJiaxianAppend}[1]{
+\newcommand{\mkTrellisAppend}[1]{
     \begin{tikzpicture}
         \setcounter{i}{0}
         \setcounter{z}{0}
@@ -476,7 +476,7 @@
     \end{tikzpicture}
 }
 
-\newcommand{\mkJiaxianInsert}[1]{
+\newcommand{\mkTrellisInsert}[1]{
     \begin{tikzpicture}
         \setcounter{i}{0}
         \setcounter{z}{0}

@@ -36,7 +36,7 @@
         \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
             \usebeamerfont{title in head/foot}\insertshorttitle
         \end{beamercolorbox}%
-        \begin{beamercolorbox}[wd=.25\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+        \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
             \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
             \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
         \end{beamercolorbox}}%
@@ -266,23 +266,11 @@
                            & \Ddots  & \Ddots & \Vdots\\
                            &         &        & \Lambda\\
                            &         &        & \sigma_n^\shup \\
-          \end{pNiceMatrix}$}} & & \scalebox{0.23}{\mkJiaxian{9}}\\
+          \end{pNiceMatrix}$}} & & \scalebox{0.23}{\mkTrellis{9}}\\
           Jia Xian Triangle && CYK Parsing && Trellis Automaton\\
           Jia, $\sim$1030 A.D. && Sakai, 1961 A.D. && Dyer, 1980 A.D.\\
         \end{tabular}
       \end{center}
-    \end{frame}
-
-    \begin{frame}{Incremental parsing}
-        Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$.
-        \begin{center}
-            \begin{tabular}{ c c c c c }
-        \scalebox{0.32}{\mkJiaxianAppend{7}} && \scalebox{0.32}{\mkJiaxianInsert{6}} && \scalebox{0.32}{\mkJiaxianInsert{7}}  \\
-                Append && Delete && Insert \\
-        $\mathcal{O}(n)$&&$\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ && $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$\\
-            \end{tabular}
-        \end{center}
-        Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to minimize redundancy.
     \end{frame}
 
     \begin{frame}{A few observations on algebraic parsing}
@@ -326,6 +314,18 @@
         \end{itemize}
     \end{frame}
 
+    \begin{frame}{Incremental parsing}
+        Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$.
+        \begin{center}
+            \begin{tabular}{ c c c c c }
+                \scalebox{0.32}{\mkTrellisAppend{7}} && \scalebox{0.32}{\mkTrellisInsert{6}} && \scalebox{0.32}{\mkTrellisInsert{7}}  \\
+                Append && Delete && Insert \\
+                $\mathcal{O}(n)$&&$\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ && $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$\\
+            \end{tabular}
+        \end{center}
+        Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
+    \end{frame}
+
     \begin{frame}[fragile]{Conjunctive parsing}
         It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
 
@@ -363,6 +363,7 @@
         \end{tikzcd}\]
       }
     \end{figure}
+        So far, we only consider Cartesian closed categories, however, we can also consider other categories, such as the category of CFLs under conjunction, which allows us to encode the intersection of two CFGs.
     \end{frame}
 
     \begin{frame}[fragile]{Kotlin implementation: CFG definition}
