@@ -519,3 +519,11 @@
         }
     \end{tikzpicture}
 }
+
+\usetikzlibrary{automata, positioning, arrows}
+\tikzset{
+    node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
+%    every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+    initial text=$ $, % sets the text that appears on the start arrow
+}
+\newcommand*{\ttinline}[1]{{\sethlcolor{slightgray}\ttfamily\footnotesize\relax\highlight{#1}}}

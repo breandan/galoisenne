@@ -68,8 +68,50 @@
 
     %------------------------------------------------------------------------------------------------
 
-    \begin{frame}{Background: Regular grammars}
-        A regular grammar is a 4-tuple $G = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ are the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). Regular langauges are closed under union, complementation, concatenation, and Kleene star.
+    \begin{frame}[fragile]{Background: Regular grammars}
+        A regular grammar is a 4-tuple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ are the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). Regular langauges are closed under union, complementation, concatenation, and Kleene star.
+
+        % https://www3.nd.edu/~kogge/courses/cse30151-fa17/Public/other/tikz_tutorial.pdf
+        % Glushkov's algorithm: https://www.irif.fr/~jep/PDF/MPRI/MPRI.pdf#subsection.3.5.2
+        \begin{figure}
+            \hspace{-1cm}\begin{minipage}[t]{0.25\linewidth}
+                \vspace{-2.3cm}\scalebox{0.6}{
+            \begin{aligned}[t]
+                S &\rightarrow Q_0 \mid Q_2 \mid Q_3 \mid Q_5\\
+                Q_0 &\rightarrow \varepsilon \\
+                Q_1 &\rightarrow Q_0 b \mid Q_2 b\\
+                Q_2 &\rightarrow Q_1 a \\
+                Q_3 &\rightarrow Q_0 a \mid Q_3 a \mid Q_5 a \\
+                Q_4 &\rightarrow Q_3 a \mid Q_5 a \\
+                Q_5 &\rightarrow Q_4 b \\
+            \end{aligned}}
+                \end{minipage}
+            \hspace{0.5cm}\begin{minipage}[t]{0.48\linewidth}
+            \scalebox{0.5}{
+            \begin{tikzpicture}[->, >=stealth,]
+                \node[state, initial above, accepting] (Q0) {$Q_0$};
+                \node[state, left of=Q0] (Q1) {$Q_1$};
+                \node[state, accepting, left of=Q1] (Q2) {$Q_2$};
+                \node[state, accepting, right of=Q0] (Q3) {$Q_3$};
+                \node[state, above right of=Q3] (Q4) {$Q_4$};
+                \node[state, accepting, below right of=Q3] (Q5) {$Q_5$};
+                \draw
+        %        (Q0) edge[loop above] (Q0)
+                (Q0) edge node{\ttinline b} (Q1)
+                (Q0) edge node{\ttinline a} (Q3)
+                (Q1) edge[bend right] node{\ttinline a} (Q2)
+                (Q2) edge[bend right] node{\ttinline b} (Q1)
+                (Q3) edge[loop above] node{\ttinline a} (Q3)
+                (Q3) edge node{\ttinline a} (Q4)
+                (Q5) edge node{\ttinline a} (Q3)
+                (Q4) edge[bend left] node{\ttinline b} (Q5)
+                (Q5) edge[bend left] node{\ttinline a} (Q4)
+            \end{tikzpicture}
+            }
+            \end{minipage}
+            \caption{RG and NFA corresponding to the language defined by \tinline{(a(ab)*)*(ba)*}.}
+            \label{fig:regex_to_nfa}
+        \end{figure}
 
         \begin{center}
             \scalebox{0.8}{
@@ -113,7 +155,7 @@
     \end{frame}
 
     \begin{frame}{Background: Context-free grammars}
-        In a context-free grammar $G = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$.\newline\\
+        In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $n^\omega$, n.b. CFLs are \textbf{not} closed under intersection!\newline\\
         %
         For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
         %
@@ -161,7 +203,13 @@
     \end{frame}
 
     \begin{frame}{Background: Conjunctive grammars}
-        Conjunctive grammars naturally extend CFGs with language union and intersection, respecting closure under those operations. Equivalent to trellis automata, which are like contractive ellementary cellular automata. Language inclusion is decidable in P.\\
+        Conjunctive grammars naturally extend CFGs with CFL union and intersection, respecting closure under those operations. Equivalent to trellis automata, which are like contractive elementary cellular automata. Language inclusion is decidable in P.\\
+
+        \begin{prooftree}
+            \AxiomC{$\Gamma \vdash \mathcal{G}_1, \mathcal{G}_2 : \texttt{CG}$}
+            \RightLabel{$\cap$}
+            \UnaryInfC{$\Gamma \vdash \exists \:\mathcal{G}_3: \texttt{CG}\:.\:\mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_1} \leftrightarrow \mathcal{G}_3$}
+        \end{prooftree}
 
         \begin{center}
             \scalebox{0.8}{
