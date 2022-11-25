@@ -44,6 +44,14 @@
 }
 \makeatother
 
+\makeatletter
+\let\HL\hl
+\renewcommand\hl{%
+    \let\set@color\beamerorig@set@color
+    \let\reset@color\beamerorig@reset@color
+    \HL}
+\makeatother
+
 \title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction}
 \titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo.png}}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
@@ -538,80 +546,80 @@
                                  \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
             \end{cases}\\
             \text{Substitution}&=\begin{cases}
-                                     \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-                                     \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-                                     \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+               \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+               \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+               \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
             \end{cases}\\
             \text{Insertion}&=\begin{cases}
-                                  \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-                                  \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-                                  \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+                \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
             \end{cases}
         \end{align*}
     \end{frame}
 
     \begin{frame}[fragile]{Error correction: Known Error Locations}
-        \begin{figure}[H]
-            \hspace{-0.25cm}\begin{tikzpicture}
-                                \begin{axis}[
-                                    width=8.3cm,
-                                    height=6cm,
-                                    title={\hspace{-1cm}\textbf{Latency with known locations}},
-                                    ybar,
-                                    bar width=6pt,
-                                    xlabel={Number of holes},
-                                    ylabel={ms to synthesize 10 repairs},
-                                    xtick=data,
-                                    axis x line*=bottom,
-                                    axis y line*=left,
-                                    ytick pos=left,
-                                    xticklabels from table={\loctimings}{holes},
-                                    ymajorgrids,
-                                    legend pos=north west,
-                                    legend columns=2,
-                                    error bars/y dir=both,
-                                    error bars/y explicit
-                                ]
-                                    \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
-                                    \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
-                                    \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
-                                    \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
-                                    \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
-                                \end{axis}
-            \end{tikzpicture}
-        \end{figure}
+      \begin{figure}[H]
+        \hspace{-0.25cm}\begin{tikzpicture}
+          \begin{axis}[
+              width=8.3cm,
+              height=6cm,
+              title={\hspace{-1cm}\textbf{Latency with known locations}},
+              ybar,
+              bar width=6pt,
+              xlabel={Number of holes},
+              ylabel={ms to synthesize 10 repairs},
+              xtick=data,
+              axis x line*=bottom,
+              axis y line*=left,
+              ytick pos=left,
+              xticklabels from table={\loctimings}{holes},
+              ymajorgrids,
+              legend pos=north west,
+              legend columns=2,
+              error bars/y dir=both,
+              error bars/y explicit
+          ]
+              \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
+              \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
+              \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
+              \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
+              \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
+          \end{axis}
+        \end{tikzpicture}
+      \end{figure}
     \end{frame}
 
     \begin{frame}[fragile]{Error correction: Unknown Error Locations}
-        \begin{figure}[H]
-            \hspace{-0.25cm}\begin{tikzpicture}
-                                \begin{axis}[
-                                    width=8.3cm,
-                                    height=6cm,
-                                    title={\hspace{-1cm}\textbf{Latency with unknown locations}},
-                                    ybar,
-                                    bar width=20pt,
-                                    xlabel={Number of errors},
-                                    ylabel={ms to synthesize 1 repair},
-                                    xtick=data,
-                                    axis x line*=bottom,
-                                    axis y line*=left,
-                                    enlarge x limits={abs=0.5},
-                                    ymode=log,
-                                    ytick pos=left,
-                                    xticklabels from table={\unloctimings}{errors},
-                                    ymajorgrids,
-                                    legend pos=north west,
-                                    error bars/y dir=both,
-                                    error bars/y explicit
-                                ]
-                                    \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-                                    \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-                                    \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-                                    \legend{Dyck-1, Dyck-2, Dyck-3}
-                                \end{axis}
-            \end{tikzpicture}
-        \end{figure}
+      \begin{figure}[H]
+        \hspace{-0.25cm}\begin{tikzpicture}
+            \begin{axis}[
+                width=8.3cm,
+                height=6cm,
+                title={\hspace{-1cm}\textbf{Latency with unknown locations}},
+                ybar,
+                bar width=20pt,
+                xlabel={Number of errors},
+                ylabel={ms to synthesize 1 repair},
+                xtick=data,
+                axis x line*=bottom,
+                axis y line*=left,
+                enlarge x limits={abs=0.5},
+                ymode=log,
+                ytick pos=left,
+                xticklabels from table={\unloctimings}{errors},
+                ymajorgrids,
+                legend pos=north west,
+                error bars/y dir=both,
+                error bars/y explicit
+            ]
+                \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+                \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+                \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+                \legend{Dyck-1, Dyck-2, Dyck-3}
+            \end{axis}
+        \end{tikzpicture}
+      \end{figure}
     \end{frame}
 
     \begin{frame}[fragile]{Error correction: MiniGithub Java Dataset}
@@ -650,39 +658,39 @@
     \end{frame}
 
     \begin{frame}[fragile]{Error correction: Break-it-fix-it Dataset}
-        \begin{figure}[H]
-            \hspace{-0.25cm}\begin{tikzpicture}
-                                \begin{axis}[
-                                width=8.3cm,
-                                height=6.6cm,
-                                title={\hspace{-1cm}\textbf{Organic error correction accuracy}},
-                                ybar,
-                                bar width=10pt,
-                                xlabel={$|\Sigma^*|$},
-                                ylabel={Parser acceptance},
-                                xtick=data,
-                                axis x line*=bottom,
-                                axis y line*=left,
-                                enlarge x limits={abs=0.5},
-                                ytick pos=left,
-                                xticklabels from table={\naturalerrors}{len},
-                                ymajorgrids,
-                                y tick label style={/pgf/number format/.cd,%
-                                scaled y ticks = false,
-                                set thousands separator={},
-                                fixed},
-                                legend pos=north east,
-                                legend columns=3,
-                                error bars/y dir=both,
-                                error bars/y explicit
-                                ]
-                                \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
-                                \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
-                                \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
-                                \legend{10s, 30s, 60s}
-                                \end{axis}
-            \end{tikzpicture}
-        \end{figure}
+      \begin{figure}[H]
+        \hspace{-0.25cm}\begin{tikzpicture}
+           \begin{axis}[
+           width=8.3cm,
+           height=6.6cm,
+           title={\hspace{-1cm}\textbf{Organic error correction accuracy}},
+           ybar,
+           bar width=10pt,
+           xlabel={$|\Sigma^*|$},
+           ylabel={Parser acceptance},
+           xtick=data,
+           axis x line*=bottom,
+           axis y line*=left,
+           enlarge x limits={abs=0.5},
+           ytick pos=left,
+           xticklabels from table={\naturalerrors}{len},
+           ymajorgrids,
+           y tick label style={/pgf/number format/.cd,%
+           scaled y ticks = false,
+           set thousands separator={},
+           fixed},
+           legend pos=north east,
+           legend columns=3,
+           error bars/y dir=both,
+           error bars/y explicit
+           ]
+           \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
+           \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
+           \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
+           \legend{10s, 30s, 60s}
+           \end{axis}
+        \end{tikzpicture}
+      \end{figure}
     \end{frame}
 
     \begin{frame}{Abbreviated history of algebraic parsing}
