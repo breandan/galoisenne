@@ -97,7 +97,7 @@ fun Set<Literal>.dontCare() = map { (it v -it) }.fold (T as CNF) { a, b -> a ʌ 
 @JvmName("faf") infix fun CNF.ʌ(c: CNF): CNF = plus(c)
 
 // Nothing very interesting happens up until this point.
-// Follows Jason's "Building up CNF CNFs Directly" strategy:
+// Follows Jason's "Building up CNF Formulas Directly" strategy:
 // https://www.cs.jhu.edu/~jason/tutorials/convert-to-CNF.html
 @JvmName("lol") infix fun Literal.v(l: Literal): CNF = setOf(setOf(this, l))
 @JvmName("fol") infix fun CNF.v(l: Literal): CNF = this v l.asCNF()

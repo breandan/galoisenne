@@ -58,8 +58,8 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
     val takeAway = (0 until minCols).map { toMerge.col(it).minOf { toRemove.find(it)!!.value.length } }
     val subs = takeAway.map { List(it) { " " }.joinToString("") }
     toMerge.joinToString("\n", "\n") {
-      it.mapIndexed { i, it -> if (i < minCols) it.replaceFirst(subs[i], "   ") else it }.joinToString("→")
-        .drop(4).dropLast(3)
+      it.mapIndexed { i, it -> if (i < minCols) it.replaceFirst(subs[i], "   ") else it }
+        .joinToString("→").drop(4).dropLast(3)
     }
   }
 
