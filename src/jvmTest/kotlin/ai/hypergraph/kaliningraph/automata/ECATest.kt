@@ -40,7 +40,7 @@ class ECATest {
 */
   @Test
   fun testTypeLevelECA10() {
-    val init = BVec(T, F, F, F, T, F, F, F, F, F)
+    val init: BVec10<龖, 口, 口, 口, 龖, 口, 口, 口, 口, 口> = BVec(T, F, F, F, T, F, F, F, F, F)
     fun BVec.bits() = data.map { it == T }.toBooleanArray()
     var i = 1; init
       .eca(::r, ::r, ::r, ::r,::r, ::r, ::r, ::r,::r, ::r)

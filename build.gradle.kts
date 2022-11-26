@@ -1,13 +1,14 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.21"
-  kotlin("jupyter.api") version "0.11.0-125"
+  kotlin("multiplatform") version "1.7.10"
+  kotlin("jupyter.api") version "0.11.0-187"
   id("com.github.ben-manes.versions") version "0.43.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -156,7 +157,7 @@ kotlin {
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         // TODO: Replace LogicNG with KoSAT?
-        implementation("org.logicng:logicng:2.3.2")
+        implementation("org.logicng:logicng:2.4.0")
       }
     }
 
@@ -171,7 +172,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:2.0.3")
+        implementation("org.slf4j:slf4j-simple:2.0.5")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
@@ -197,7 +198,7 @@ kotlin {
         implementation("org.eclipse.collections:eclipse-collections-api:11.1.0")
         implementation("org.eclipse.collections:eclipse-collections:11.1.0")
 
-        implementation("com.github.tschuchortdev:kotlin-compile-testing:1.4.9")
+        implementation(kotlin("scripting-jsr223"))
       }
     }
 
@@ -255,6 +256,10 @@ kotlin {
 }
 
 tasks {
+  withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "17"
+  }
+
   withType<Test> {
     minHeapSize = "1g"
     maxHeapSize = "3g"
