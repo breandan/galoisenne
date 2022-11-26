@@ -376,12 +376,12 @@
 \end{frame}
 
 \begin{frame}{Incremental parsing}
-  Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$.
+  Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
   \begin{center}
     \begin{tabular}{ c c c c c }
       \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
       Append                               & & Delete                                       & & Insert                                       \\
-      $\mathcal{O}(n)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
+      $\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
     \end{tabular}
   \end{center}
   Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
@@ -432,69 +432,14 @@
     \adjustbox{scale=0.75,center}{%
       \[\begin{tikzcd}[row sep=large, col sep=huge]
           \text{String} && \text{Grammar} && \err{\text{String}} \\
-          \highlight{\Sigma}^{n-1} \arrow[dr] && \mathcal{G}_\varepsilon \arrow[dl]\arrow[ddl, bend left] \arrow[dr]\arrow[ddr, bend right] & & \err{\Sigma^{n-1}} \arrow[dl] \\
-          & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\_\})^{n-1} \arrow[d, shift left]\arrow[d, shift right] & \\
-          & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{n\times n \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
-          & CST & & \langle \Sigma \setminus \{\varepsilon\}, CST \rangle &
+          \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[dl]\arrow[ddl, bend left] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
+          & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\_\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
+          & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
+          & CST & & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
       \end{tikzcd}\]
     }
   \end{figure}
-  Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise if the string contains an error, our algorithm returns a set of admissible corrections, alongside their CSTs.
-\end{frame}
-
-\begin{frame}[fragile]{Kotlin implementation: CFG definition}
-  \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
-        typealias Production = Pair<String, List<String>>
-        typealias CFG = Set<Production>
-        val Production.LHS: String get() = first
-        val Production.RHS: List<String> get() = second
-        val CFG.nonterminals: Set<String> by cache { map { it.LHS }.toSet() }
-        val CFG.words: Set<String> by cache { nonterminals + flatMap { it.RHS } }
-        val CFG.terminals: Set<String> by cache { words - nonterminals }
-        // Many-to-many mapping of nonterminals to RHS expansions
-        val CFG.bimap: BidirectionalMap by cache { BidirectionalMap(this) }
-
-        fun CFG.makeAlgebra(): Ring<Set<String>> =
-          Ring.of(
-            // 0 = @\color{gray}\texttt{∅}@
-            nil = setOf(),
-            // x + y = x @\color{gray}\texttt{∪}@ y
-            plus = { x, y -> x union y },
-            // x · y = { A0 | A1 @\color{gray}\texttt{∈}@ x, A2 @\color{gray}\texttt{∈}@ y, (A0 -> A1 A2) @\color{gray}\texttt{∈}@ P }
-            times = { x, y -> join(x, y) }
-          )
-
-        fun CFG.join(ls: Set<String>, rs: Set<String>): Set<String> =
-          (ls * rs).flatMap { (l, r) -> bimap[listOf(l, r)] }.toSet()
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Kotlin implementation: the recognizer}
-  \begin{lstlisting}[language=Kotlin, gobble=8, basicstyle=\scriptsize\ttfamily]
-        // Constructs initial matrix according to: M@\color{gray}\textsubscript{i+1=j}@ = { A | (A -> @\color{gray}\texttt{σ}\textsubscript{i}@) @\color{gray}\texttt{∈}@ P }
-        fun CFG.initialMatrix(str: List<String>): Matrix<Set<String>> =
-          Matrix(makeAlgebra(), str.size + 1) { i, j ->
-            // Aligns nonterminals matching each terminal along superdiagonal
-            if (i + 1 != j) emptySet() else bimap[listOf(str[j - 1])].toSet()
-          }
-
-        // Computes the fixpoint of an abstract matrix function
-        tailrec fun <T: Matrix<S>, S> T.seekFixpoint(op: (T) -> T): T {
-          val next = op(this)
-          return if (this == next) next else next.seekFixpoint(op)
-        }
-
-        // Checks whether start symbol is contained in the northeasternmost entry
-        fun CFG.check(s: String): Boolean = START in parse(tokenize(s))[0].last()
-
-        // Since matrix is strictly UT, this converges in at most |tokens| steps
-        fun CFG.parse(tokens: List<String>): Matrix<Set<String>> =
-            initialMatrix(tokens).seekFixpoint { it + it * it }
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Tidyparse IDE plugin}
-  \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
+  Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
 \end{frame}
 
 \begin{frame}[fragile]{Error Correction}
