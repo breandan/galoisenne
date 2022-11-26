@@ -1,6 +1,7 @@
 package ai.hypergraph.reasoning
 
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 
 class KoSATTest {
@@ -9,7 +10,7 @@ class KoSATTest {
 */
   @Test
   fun testKoSAT() {
-    val cnf = ((-3 v 4) ʌ (3 v 4) ʌ (-3 v -4)) v ((-4 v 5) ʌ (4 v 5) ʌ (-4 v -5))
+    val cnf: CNF = ((-3 v 4) ʌ (3 v 4) ʌ (-3 v -4)) v ((-4 v 5) ʌ (4 v 5) ʌ (-4 v -5))
 //  val cnf = (1 ʌ 2 ʌ -3) v (T as CNF)
 
     // Allocate two variables:
@@ -17,5 +18,6 @@ class KoSATTest {
 
     // Get the model:
     println("model = ${cnf.solution}")
+    assertTrue(cnf(cnf.solution))
   }
 }

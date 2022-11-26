@@ -6,6 +6,7 @@ import ai.hypergraph.reasoning.*
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest"
@@ -52,7 +53,10 @@ class SATTest {
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
     println("A: ${A.data.joinToString(", ")}")
 
-    val solution = ((A eq (A * A))).also { println("Vars" + it.variables) }.solution
+    val cnf = ((A eq (A * A)) ʌ A.data.first()).also { println("Vars" + it.variables) }
+    val solution = cnf.solution
+
+    assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
 
     val B = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]!! })
     println(B.toString())

@@ -55,7 +55,6 @@ fun dpll(clauses: ArrayList<ArrayList<Int>>): MutableList<Int>? {
     if (clauses.any { it.isEmpty() })
         return null
 
-
     val unitLits = unitPropagate(clauses) ?: return null
     if (clauses.isEmpty())
     return mutableListOf<Int>().apply { addAll(unitLits) }

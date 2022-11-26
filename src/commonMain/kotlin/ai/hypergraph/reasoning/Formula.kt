@@ -40,6 +40,14 @@ val CNF.solution: Model by cache {
     }
 }
 
+operator fun CNF.invoke(model: Model): Boolean =
+  if (model.isEmpty()) false else map { clause ->
+    clause.map { lit ->
+      val v = model[lit.absoluteValue]!!
+      if (lit < 0) !v else v
+    }.any()
+  }.all { it }
+
 class Model(val varMap: Map<Int, Boolean>): Map<Int, Boolean> by varMap {
   operator fun get(cnf: CNF): Boolean? = varMap[cnf.flatten().first()]
   override fun get(key: Int): Boolean? = varMap[key]
