@@ -77,7 +77,7 @@
 %------------------------------------------------------------------------------------------------
 
 \begin{frame}[fragile]{Background: Regular grammars}
-  A regular grammar is a 4-tuple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ is the set of nonterminals, $\Sigma$ are the terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). Regular langauges are closed under union, complementation, concatenation, and Kleene star.
+  A regular grammar (RG) is a quadruple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ are nonterminals, $\Sigma$ are terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). RLs are closed under $\cup$, complementation, concatenation, and Kleene star. E.g., the following RG and NFA correspond to the language defined by the \textit{regex} \tinline{(a(ab)*)*(ba)*}:
 
   % https://www3.nd.edu/~kogge/courses/cse30151-fa17/Public/other/tikz_tutorial.pdf
   % Glushkov's algorithm: https://www.irif.fr/~jep/PDF/MPRI/MPRI.pdf#subsection.3.5.2
@@ -120,8 +120,6 @@
         \end{tikzpicture}
       }
     \end{minipage}
-    \caption{RG and NFA corresponding to the language defined by \tinline{(a(ab)*)*(ba)*}.}
-    \label{fig:regex_to_nfa}
   \end{figure}
 
   \begin{center}
@@ -265,19 +263,20 @@
 
 
 \begin{frame}[fragile]{Background: Closure properties of formal languages}
-  Formal languages are not closed, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $\star$ be Kleene star, and $\complement$ be complementation:\\
+  Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $\star$ be Kleene star, and $\complement$ be complementation:\\
   \begin{table}
     \begin{tabular}{c|ccccc}
       & $\cup$ & $\cap$ & $\cdot$ & $\star$ & $\complement$ \\
       \hline
-      Finite                 & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
-      Regular                & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
-      Context-free           & \cmark & \xmark & \cmark  & \cmark  & \xmark        \\
-      Conjunctive            & \cmark & \cmark & \cmark  & \cmark  & ?             \\
-      Context-sensitive      & \cmark & \cmark & \cmark  & +       & \cmark        \\
-      Recursively Enumerable & \cmark & \cmark & \cmark  & \cmark  & \xmark        \\
+      Finite$^1$                 & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
+      Regular$^1$                & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
+      Context-free$^1$           & \cmark & \xmark & \cmark  & \cmark  & \xmark        \\
+      \rowcolor{slightgray} Conjunctive$^{1,2}$    & \cmark & \cmark & \cmark  & \cmark  & ?             \\
+      Context-sensitive$^2$      & \cmark & \cmark & \cmark  & +       & \cmark        \\
+      Recursively Enumerable$^2$ & \cmark & \cmark & \cmark  & \cmark  & \xmark        \\
     \end{tabular}
   \end{table}
+  We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.
 \end{frame}
 
 
@@ -312,7 +311,7 @@
     \end{pNiceMatrix}
   \end{align*}
 
-  \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+  \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}_{\mathcal{G}}$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}_\mathcal{G}}(\sigma)$.
 \end{frame}
 
 \begin{frame}[fragile]{Lattices, Matrices and Trellises}
@@ -388,7 +387,7 @@
 \end{frame}
 
 \begin{frame}[fragile]{Conjunctive parsing}
-  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
+  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_2}$:
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -433,7 +432,7 @@
       \[\begin{tikzcd}[row sep=large, col sep=huge]
           \text{String} && \text{Grammar} && \err{\text{String}} \\
           \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[dl]\arrow[ddl, bend left] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
-          & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\_\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
+          & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
           & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
           & CST & & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
       \end{tikzcd}\]
@@ -442,8 +441,8 @@
   Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
 \end{frame}
 
-\begin{frame}[fragile]{Error Correction}
-  Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+\begin{frame}[fragile]{Error Correction: Levenshtein q-Balls}
+  Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\texttt{\_}}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}_\mathcal{G}$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$ (this is loosely analogous to a finite difference approximation). To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
 
   \begin{prooftree}
     \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
@@ -480,7 +479,7 @@
 \newcommand\ppp{\phantom{\nse}}
 
 
-\begin{frame}[fragile]{Error Correction}
+\begin{frame}[fragile]{Error Correction: d-Subset Sampling}
   \noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
 
   \begin{align}
@@ -500,11 +499,11 @@
     \end{pNiceMatrix}\label{eq:lfsr}
   \end{align}
 
-  \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we first form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
+  \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we first form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
 \end{frame}
 
-\begin{frame}[fragile]{Error Correction}
-  Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
+\begin{frame}[fragile]{Error Correction: Sketch Templates}
+  Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate a series of sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\texttt{\_} \texttt{\_}}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match exactly one of the following seven edit patterns:\vspace{-10pt}
 
   \begin{align*}
     \text{Deletion}&=\begin{cases}
