@@ -17,9 +17,9 @@
   basicstyle = \ttfamily,
   columns = flexible,
 }
-%\makeatletter
-%\renewcommand*\verbatim@nolig@list{}
-%\makeatother
+\makeatletter
+\renewcommand*\verbatim@nolig@list{}
+\makeatother
 \usepackage{pmboxdraw}
 \usetikzlibrary{cd}
 \usepackage{pifont}
@@ -757,202 +757,6 @@
   \end{itemize}
 \end{frame}
 
-
-\section{Typelevel Programming}
-
-\begin{frame}{Abacus arithmetic}
-  \begin{itemize}
-    \item Computational complexity of arithmetic is notation-dependent(!)
-    \item For example, $\pm$ in unary arithmetic is concatenation and decatenation
-    \item Multiplication and division by natural powers of the radix is $\mathcal{O}(1)$
-    \item We can describe the abacus as a kind of abstract rewriting system
-  \end{itemize}
-  \ladj{0.25}
-  \begin{prooftree}
-    \AxiomC{
-      \tikz \fill [white] (0,0) rectangle (1,2);
-    }
-    \UnaryInfC{
-      \begin{tikzpicture}
-        \tige{1}{0}{0}
-        \tige{2}{0}{0}
-        \tige{3}{0}{0}
-        \cadre{3}
-      \end{tikzpicture}
-    }
-    \DisplayProof
-    \hskip 1em
-    \AxiomC{
-      \begin{tikzpicture}
-        \tige{1}{0}{0}
-        \barres{1}
-      \end{tikzpicture}$_n+10^n$
-    }
-    \UnaryInfC{
-      \begin{tikzpicture}
-        \tige{1}{1}{0}
-        \barres{1}
-      \end{tikzpicture}$_n\phantom{n+0^n}$
-    }
-    \DisplayProof
-    \hskip 1em
-    \AxiomC{
-      \begin{tikzpicture}
-        \tige{1}{4}{0}
-        \barres{1}
-      \end{tikzpicture}$_n+10^n$
-    }
-    \UnaryInfC{
-      \begin{tikzpicture}
-        \tige{1}{5}{0}
-        \barres{1}
-      \end{tikzpicture}$_n\phantom{n+0^n}$
-    }
-    \DisplayProof
-    \hskip 1em
-    \AxiomC{
-      \begin{tikzpicture}
-        \tige{1}{0}{0}
-        \barres{1}
-        \tige[2]{1}{9}{0}
-        \barres[2]{1}
-      \end{tikzpicture}$_n+10^n$
-    }
-    \UnaryInfC{
-      \begin{tikzpicture}
-        \tige{1}{1}{0}
-        \barres{1}
-        \tige[2]{1}{0}{0}
-        \barres[2]{1}
-      \end{tikzpicture}$_n\phantom{n+0^n}$
-    }
-  \end{prooftree}
-\end{frame}
-
-\begin{frame}[fragile]{Abacus dependent types}
-  \begin{lstlisting}[language=Kotlin, gobble=7]
-        sealed class B<X, P : B<X, P>>(open val x: X? = null) {
-          val T: T<P> get() = T(this as P)
-          val F: F<P> get() = F(this as P)
-        }
-
-        class U(val i: Int) : B<Any, U>() // Checked at runtime
-
-        object Ø: B<Ø, Ø>(null) // Denotes the end of a bitlist
-
-        class T<X>(override val x: X = Ø as X) : B<X, T<X>>(x)
-          { companion object: T<Ø>(Ø) }
-
-        class F<X>(override val x: X = Ø as X) : B<X, F<X>>(x)
-          { companion object: F<Ø>(Ø) }
-
-        val b0: F<Ø> = F
-        val b1: T<Ø> = T
-        val b2: F<T<Ø>> = T.F // Note the raw type is reversed
-        val b4: F<F<T<Ø>>> = T.F.F
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Abacus dependent types}
-  \begin{lstlisting}[language=Kotlin, gobble=7]
-        typealias B_0<K> = F<K> // Type synonyms for legibility
-        typealias B_1<K> = T<K>
-        typealias B_2<K> = F<T<K>>
-        typealias B_3<K> = T<T<K>>
-        typealias B_4<K> = F<F<T<K>>>
-        typealias B_7<K> = T<T<T<K>>>
-        typealias B_8<K> = F<F<F<T<K>>>>
-
-        // Calculates k + 1 for all k == 2@\color{gray}\textsuperscript{n}@ - 1, 0 <= n < 4
-        operator fun Ø.plus(t: T<Ø>) = b1
-        operator fun B_0<Ø>.plus(t: T<Ø>) = b1
-        operator fun B_1<Ø>.plus(t: T<Ø>): B_2<Ø> = F(x + b1)
-        operator fun B_3<Ø>.plus(t: T<Ø>): B_4<Ø> = F(x + b1)
-        operator fun B_7<Ø>.plus(t: T<Ø>): B_8<Ø> = F(x + b1)
-
-        // Calculates k + 1 for all k @≡@ 2@\color{gray}\textsuperscript{n}@ - 1 (mod 2@\color{gray}\textsuperscript{n+1}@), 1 <= n < 4
-        operator fun <K: B<*, *>> B_0<K>.plus(t: T<Ø>) = T(x)
-        operator fun <K: B<*, *>> B_1<F<K>>.plus(t: T<Ø>) = F(x + b1)
-        operator fun <K: B<*, *>> B_3<F<K>>.plus(t: T<Ø>) = F(x + b1)
-        operator fun <K: B<*, *>> B_7<F<K>>.plus(t: T<Ø>) = F(x + b1)
-  \end{lstlisting}
-\end{frame}
-
-\begin{frame}[fragile]{Abacus dependent types: birds eye view}
-  \begin{tiny}
-    \begin{verbatim}
-             i\j│  0  1  …  k-1  k  │  k+1  k+2  …  k+c  │  k+c+1  …  k+c+d-1
-             ───┼───────────────────┼────────────────────┼────────────────────┐
-              0 │                   │                    │                  __|
-              1 │                   │                    │               __/░░
-              … │       i ± j       │        i + j       │            __/░░░░░
-              … │       j ± i       │        j ± i       │         __/░░░░░░░░
-            k-1 │                   │                    │      __/░░░░░░░░░░░
-              k │                   │                    │   __╱░░░░░░░░░░░░░░
-            ────┼───────────────────┼────────────────────┴──┘░░░░░░░░░░░░░░░░░
-            k+1 │                   │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-            k+2 │                   │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-              … │       i ± j       │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-              … │       j + i       │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-          k+c-1 │                   │░░░░░░░░░░░░                ░░░░░░░░░░░░░
-            k+c │                   │░░░░░░░░░░░░    Run-time    ░░░░░░░░░░░░░
-           ─────┼───────────────────┤░░░░░░░░░░░░                ░░░░░░░░░░░░░
-          k+c+1 │                __/░░░░░░░░░░░░░  type checked  ░░░░░░░░░░░░░
-          k+c+2 │             __/░░░░░░░░░░░░░░░░                ░░░░░░░░░░░░░
-              … │          __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-              … │       __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-        k+c+d-2 │    __/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-        k+c+d-1 │___/░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-    \end{verbatim}
-  \end{tiny}
-\end{frame}
-
-\begin{frame}{Annotated history of typed eDSLs}
-  \begin{itemize}
-    \item \href{https://www.cs.utexas.edu/~wcook/papers/FBound89/CookFBound89.pdf}{Canning et al. (1989) - F-Bounded Polymorphism is first invented}
-    \item \href{https://ecommons.cornell.edu/bitstream/handle/1813/5614/TR2003-1901.pdf}{Cheney \& Hinze (2003) - Phantom types (good for type-safe builders)}
-    \item \href{https://dl.acm.org/doi/pdf/10.1145/1142473.1142552}{Meijer et al. (2006) - Language integrated querying (LINQ)}
-    \item \href{https://jooq.org}{Eder (2011) - Commercial reimplementation LINQ in Java/jOOQ}
-    \item \href{https://arxiv.org/pdf/1605.05274.pdf}{Grigore (2016) - Java Generics shown to be Turing Complete}
-    \item \href{https://github.com/erdos/java-logic}{Erdős (2017) - Encodes Boolean logic into Java type system}
-    \item \href{https://dl.acm.org/doi/10.1145/3136040.3136041}{Nakamaru et al. (2017) - Silverchain: a fluent API generator}
-    \item \href{http://breandan.net/public/masters_thesis.pdf#2}{\textbf{Considine (2019) - Shape-safe matrix multiplication in Kotlin$\nabla$}}
-    \item \href{https://drops.dagstuhl.de/opus/volltexte/2019/10805/pdf/LIPIcs-ECOOP-2019-13.pdf}{Gil \& Roth (2019) - Fling, a fluent API parser generator}
-    \item \href{https://github.com/tribbloid/shapesafe}{Cheng (2020) - Automatic theorem proving in the Scala type system}
-    \item \href{https://arxiv.org/pdf/2109.03950.pdf}{Roth (2021) - Encodes CFL into Nominal Subtyping with Variance}
-    \item \href{https://github.com/breandan/galoisenne}{\textbf{Considine (2021) - Arithmetic in Kotlin via typelevel abacus}}
-    \item We know how to lower parsing onto types, what about vis versa?
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Can we lower type checking onto parsing?}
-  First, let us consider the untyped version:
-  \begin{lstlisting}[language=Kotlin, gobble=5]
-        Exp -> 0 | 1 | ... | T | F
-        Exp -> Exp Op Exp | if ( Exp ) Exp else Exp
-        Op -> and | or | + | *
-  \end{lstlisting}
-  Now, let us consider the GADT/HOAS version:
-  \begin{lstlisting}[language=Kotlin, gobble=5]
-        Exp<Bool> -> T | F
-        Op<Bool> -> and | or
-        Exp<Int> -> 0 | 1 | ... | 9
-        Op<Int> -> + | *
-        Exp<E> -> Exp<E> Op<E> Exp<E> // Es must be exactly the same!
-        Exp<E> -> if ( Exp<Bool> ) Exp<E> else Exp<E>
-  \end{lstlisting}
-  We can eliminate contextuality by concretizing over \lstinline[language=Kotlin]{E -> Bool | Int}:
-  \begin{lstlisting}[language=Kotlin, gobble=5]
-        Exp<Bool> -> T | F
-        Exp<Bool> -> Exp<Bool> or Exp<Bool> | Exp<Bool> and Exp<Bool>
-        Exp<Bool> -> if ( Exp<Bool> ) Exp<Bool> else Exp<Bool>
-        Exp<Int> -> 0 | 1 | ... | 9
-        Exp<Int> -> Exp<Int> + Exp<Int> | Exp<Int> * Exp<Int>
-        Exp<Int> -> if ( Exp<Bool> ) Exp<Int> else Exp<Int>
-  \end{lstlisting}
-\end{frame}
-
-
 \section{Graph Programming}
 
 \begin{frame}[fragile]{Classical programs are graphs}
@@ -1133,8 +937,8 @@ l = sqrt(sum)
     \tikz[baseline=(math.base)] \node[fill=gray!30] (math) {$\m@th#1#2$};%
   }
   \makeatother
-% http://maximustann.github.io/mach/2015/07/06/belief-network-2/
-% http://frnsys.com/notes/ai/foundations/probabilistic_graphical_models.html
+% https://maximustann.github.io/mach/2015/07/06/belief-network-2/
+% https://frnsys.com/notes/ai/foundations/probabilistic_graphical_models.html
   \begin{prooftree}
     \AxiomC{$X \cancel\perp Y \mid Z$}
     \RightLabel{\textsc{V}}
@@ -1228,21 +1032,21 @@ l = sqrt(sum)
 
   \begin{prooftree}
     \bottomAlignProof
-    \AxiomC{$a • (b • c)$}
+    \AxiomC{$a \cdot (b \cdot c)$}
     \RightLabel{\small\textsc{Assoc}}
-    \UnaryInfC{$(a • b) • c$}
+    \UnaryInfC{$(a \cdot b) \cdot c$}
     \DisplayProof
     \hskip 2.5em
     \bottomAlignProof
-    \AxiomC{$a • \circled 1$}
+    \AxiomC{$a \cdot \circled 1$}
     \RightLabel{\small\textsc{Neutral}}
     \UnaryInfC{$a$\vphantom{$()$}}
     \DisplayProof
     \hskip 2.5em
     \bottomAlignProof
-    \AxiomC{$a • b$}
+    \AxiomC{$a \cdot b$}
     \RightLabel{\small\textsc{Comm}}
-    \UnaryInfC{$b • a$\vphantom{$()$}}
+    \UnaryInfC{$b \cdot a$\vphantom{$()$}}
   \end{prooftree}
 
   \begin{prooftree}
@@ -1321,15 +1125,15 @@ l = sqrt(sum)
     \DisplayProof
     \hskip 2.5em
     \bottomAlignProof
-    \AxiomC{$a • (b • c)$}
+    \AxiomC{$a \cdot (b \cdot c)$}
     \RightLabel{Assoc$_{\land\vee}$}
-    \UnaryInfC{$(a • b) • c$}
+    \UnaryInfC{$(a \cdot b) \cdot c$}
     \DisplayProof
     \hskip 2.5em
     \bottomAlignProof
-    \AxiomC{$a • b$}
+    \AxiomC{$a \cdot b$}
     \RightLabel{Comm$_{\land\vee}$}
-    \UnaryInfC{$b • a$}
+    \UnaryInfC{$b \cdot a$}
     \DisplayProof
     \vskip 2.5em
 
