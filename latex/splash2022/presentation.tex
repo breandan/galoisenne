@@ -52,6 +52,26 @@
   \HL}
 \makeatother
 
+\newcommand\ddd{\Ddots}
+\newcommand\vdd{\Vdots}
+\newcommand\cdd{\Cdots}
+\newcommand\lds{\ldots}
+\newcommand\vno{\varnothing}
+\newcommand{\ts}[1]{\textsuperscript{#1}}
+\newcommand\non{1\ts{st}}
+\newcommand\ntw{2\ts{nd}}
+\newcommand\nth{3\ts{rd}}
+\newcommand\nfo{4\ts{th}}
+\newcommand\nfi{5\ts{th}}
+\newcommand\nsi{6\ts{th}}
+\newcommand\nse{7\ts{th}}
+\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
+\newcommand\rcr{\rowcolor{black!15}}
+\newcommand\rcw{\rowcolor{white}}
+\newcommand\pcd{\cdot}
+\newcommand\pcp{\phantom\cdot}
+\newcommand\ppp{\phantom{\nse}}
+
 \title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction}
 \titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo.png}}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
@@ -72,19 +92,19 @@
 \end{frame}
 
 
-\section{Algebraic Parsing}\label{sec:algebraic-parsing}
+\section{Formal Language Theory}\label{sec:fltheory}
 
 %------------------------------------------------------------------------------------------------
 
 \begin{frame}[fragile]{Background: Regular grammars}
-  A regular grammar (RG) is a quadruple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ are nonterminals, $\Sigma$ are terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). RLs are closed under $\cup$, complementation, concatenation, and Kleene star. E.g., the following RG and NFA correspond to the language defined by the \textit{regex} \tinline{(a(ab)*)*(ba)*}:
+  A regular grammar (RG) is a quadruple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ are nonterminals, $\Sigma$ are terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). E.g., the following RG and NFA correspond to the language defined by the \textit{regex} \tinline{(a(ab)*)*(ba)*}:
 
   % https://www3.nd.edu/~kogge/courses/cse30151-fa17/Public/other/tikz_tutorial.pdf
   % Glushkov's algorithm: https://www.irif.fr/~jep/PDF/MPRI/MPRI.pdf#subsection.3.5.2
   \begin{figure}
     \hspace{-1cm}
     \begin{minipage}[t]{0.25\linewidth}
-      \vspace{-2.3cm}\scalebox{0.6}{
+      \vspace{-2.4cm}\scalebox{0.6}{
         \begin{aligned}[t]
           S &\rightarrow Q_0 \mid Q_2 \mid Q_3 \mid Q_5\\
           Q_0 &\rightarrow \varepsilon \\
@@ -279,6 +299,7 @@
   We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.
 \end{frame}
 
+\section{Algebraic Parsing}\label{sec:algebraic-parsing}
 
 \begin{frame}[fragile]{Context-free parsing, distilled}
   Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
@@ -301,7 +322,7 @@
                   &                &             &        & \varnothing\\
                   &                &             &        & \sigma_n^\shup \\
       \varnothing & \Cdots         &             &        & \varnothing
-    \end{pNiceMatrix} &\Rightarrow M^* =
+    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
       \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
@@ -374,7 +395,53 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Incremental parsing}
+\begin{frame}[fragile]{Chomsky Denormalization}
+  Chomksy normalization is needed for matrix-based parsing, however produces lopsided parse trees. We can denormalize them using a simple recusive procedure to restore the natural shape of the original CFG:\vspace{0.5cm}\\
+
+  \begin{minipage}[l]{6cm}
+    \vspace{0.3cm}\resizebox{\textwidth}{!}{
+      \begin{tabular}{ll}
+        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
+%    \Tree [.S [.NP John ] [.VP [.\tikz\node(v1){V}; sleeps ] ] ]
+        \hspace{-2cm}
+        &
+        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\
+%    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
+        \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
+      \end{tabular}
+      \begin{tikzpicture}[overlay]
+%    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
+        \draw [red,dashed,-stealth] (v3) to[bend left] (v4);
+%    \draw [red,dashed,-stealth] (v5) to[bend left] (v6);
+        \draw [red,dashed,-stealth] (v7) to[bend left] (v8);
+%    \draw [red,dashed,-stealth] (v9) to[bend right] (v10);
+        \draw [red,dashed,-stealth] (v11) to[bend right] (v12);
+      \end{tikzpicture}
+    }
+%    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
+  \end{minipage}
+  \hspace{-0.7cm}\scalebox{0.6}{
+    \begin{minipage}[l]{10cm}
+  \begin{algorithm}[H]
+    \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
+    \begin{algorithmic}
+      \Procedure{Denormalize}{\texttt{t: Tree}}
+        \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+        \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
+          \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
+        \Else\Comment{Graft the denormalized children on root.}
+        \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+        \EndIf
+      \EndProcedure
+    \end{algorithmic}
+  \end{algorithm}
+  \end{minipage}
+}
+
+\vspace{1cm}All synthetic nonterminals are excised during Chomsky denormalization. Rewriting improves legibility but does not alter the underlying semantics.
+\end{frame}
+
+\begin{frame}[fragile]{Incremental parsing}
   Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
   \begin{center}
     \begin{tabular}{ c c c c c }
@@ -385,6 +452,35 @@
   \end{center}
   Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
 \end{frame}
+
+%\begin{frame}{Error Recovery}
+%  \begin{figure}[H]
+%    \adjustbox{scale=0.75,center}{%
+%    \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+%      \[
+%        \begin{NiceMatrix}
+%              \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+%                         &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+%          \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+%                    \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+%                    \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+%                         &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+%                         &      &      &      &      &      & \pcd & \cdd &      & C    \\
+%                         &      &      &      &      &      &      &      & T_C  & \vdd \\
+%                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
+%                         &      &      &      &      &      &      &      &      & \\
+%                         &      &      &      &      &      &      &      &      & \\
+%                         &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+%                    \vno & \cdd &      &      &      &      &      &      & \vno &
+%        \end{NiceMatrix}
+%      \]
+%    \end{minipage}
+%    }
+%    \hspace{1cm}
+%
+%    \caption{By recursing over upper diagonals of decreasing elevation and discarding subtrees that fall under the shadow of another's canopy, we can recover parseable subtrees.}
+%  \end{figure}
+%\end{frame}
 
 \begin{frame}[fragile]{Conjunctive parsing}
   It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_2}$:
@@ -431,15 +527,17 @@
     \adjustbox{scale=0.75,center}{%
       \[\begin{tikzcd}[row sep=large, col sep=huge]
           \text{String} && \text{Grammar} && \err{\text{String}} \\
-          \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[dl]\arrow[ddl, bend left] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
+          [-20pt] \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[u, dashed, no head, color=gray] \arrow[dl]\arrow[ddl, bend left] \arrow[ddd, dashed, no head, color=gray] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
           & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
           & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
-          & CST & & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
+          & CST & \phantom{.} & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
       \end{tikzcd}\]
     }
   \end{figure}
   Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
 \end{frame}
+
+\section{Error Correction}\label{sec:error-correction}
 
 \begin{frame}[fragile]{Error Correction: Levenshtein q-Balls}
   Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\texttt{\_}}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}_\mathcal{G}$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$ (this is loosely analogous to a finite difference approximation). To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
@@ -456,28 +554,6 @@
     \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
   \end{prooftree}
 \end{frame}
-
-
-\newcommand\ddd{\Ddots}
-\newcommand\vdd{\Vdots}
-\newcommand\cdd{\Cdots}
-\newcommand\lds{\ldots}
-\newcommand\vno{\varnothing}
-\newcommand{\ts}[1]{\textsuperscript{#1}}
-\newcommand\non{1\ts{st}}
-\newcommand\ntw{2\ts{nd}}
-\newcommand\nth{3\ts{rd}}
-\newcommand\nfo{4\ts{th}}
-\newcommand\nfi{5\ts{th}}
-\newcommand\nsi{6\ts{th}}
-\newcommand\nse{7\ts{th}}
-\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
-\newcommand\rcr{\rowcolor{black!15}}
-\newcommand\rcw{\rowcolor{white}}
-\newcommand\pcd{\cdot}
-\newcommand\pcp{\phantom\cdot}
-\newcommand\ppp{\phantom{\nse}}
-
 
 \begin{frame}[fragile]{Error Correction: d-Subset Sampling}
   \noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
@@ -522,7 +598,7 @@
   \end{align*}
 \end{frame}
 
-\begin{frame}[fragile]{Error correction: Known Error Locations}
+\begin{frame}[fragile]{Level I: Known Error Locations}
   \begin{figure}[H]
     \hspace{-0.25cm}
     \begin{tikzpicture}
@@ -555,7 +631,7 @@
   \end{figure}
 \end{frame}
 
-\begin{frame}[fragile]{Error correction: Unknown Error Locations}
+\begin{frame}[fragile]{Level II: Unknown Locations, Fixed Error Count}
   \begin{figure}[H]
     \hspace{-0.25cm}
     \begin{tikzpicture}
@@ -588,7 +664,7 @@
   \end{figure}
 \end{frame}
 
-\begin{frame}[fragile]{Error correction: MiniGithub Java Dataset}
+\begin{frame}[fragile]{Level III: MiniGithub, Unknown Count, Synthetic Errors}
   \begin{figure}[H]
     \centering{\textbf{Synthetic error correction accuracy}}\\
     \vspace{0.25cm}
@@ -624,7 +700,7 @@
   \end{figure}
 \end{frame}
 
-\begin{frame}[fragile]{Error correction: Break-it-fix-it Dataset}
+\begin{frame}[fragile]{Level IV: BIFI Dataset, Unknown Count, Real Errors}
   \begin{figure}[H]
     \hspace{-0.25cm}
     \begin{tikzpicture}
@@ -878,134 +954,6 @@
 
 
 \section{Graph Programming}
-
-\begin{frame}[fragile]{Inductive and algberaic graph representations}
-  We can represent a graph inductively, using a CFG/ADT:
-  \begin{align*}
-    \textsc{Vertex} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Int}\\
-    \textsc{Neighbors} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Vertex}\phantom{\vee} \mid \phantom{\vee}\textsc{Vertex} \phantom{\vee} \textsc{Neighbors} \\
-    \textsc{Context} &\phantom{\vee}\rightarrow\phantom{\vee} ([\textsc{Neighbors}], \textsc{Vertex}, [\textsc{Neighbors}]) \\
-    \textsc{Graph} &\phantom{\vee}\rightarrow\phantom{\vee} \textsc{Empty}\phantom{\vee} \mid\phantom{\vee} \textsc{Context} \phantom{\vee} \textsc{Graph}
-  \end{align*}
-
-  We can also represent graphs algebraically using the graph Laplacian:
-  \[
-    \mathcal{L}_{i,j} := \begin{cases}
-                           \deg(v_i) & \mbox{if}\ i = j \\
-                           -1 & \mbox{if}\ i \neq j\ \mbox{and}\ (v_i \rightarrow v_j) \in E \\
-                           0 & \mbox{otherwise},
-    \end{cases}\]
-
-  The latter form is preferred for representation learning [\href{https://www.cs.mcgill.ca/~wlh/grl_book/}{Hamilton (2020)}].
-\end{frame}
-
-\begin{frame}[fragile]{Graph combinator}
-  To merge two unlabeled graphs, apply $G_1 \oplus G_2 = (V_1\cup V_2) \times (E_1\cup E_2)$:
-
-  \begin{figure}[H]
-    \begin{center}
-      \scalebox{0.8}{
-        \begin{tikzpicture}[scale=0.8]
-          \node[shape=circle,draw=black] (A) at (0,2.5)  {$s_1$};
-          \node[shape=circle,draw=black] (B) at (2.5,4)  {$s_2$};
-          \node[shape=circle,draw=black] (C) at (2.5,1)  {$s_3$};
-
-          \node[shape=circle,draw=black] (D) at (6.5,2.5){$s_4$};
-          \node[shape=circle,draw=black] (E) at (4,4)    {$s_2$};
-          \node[shape=circle,draw=black] (F) at (4,1)    {$s_3$};
-
-          \path [->] (A) edge node[left] {} (B);
-          \path [->](A) edge node[left] {} (C);
-          \path [->](C) edge node[top] {\hspace{3.3em}$\oplus$} (B);
-
-          \path [->] (D) edge node[left] {} (E);
-          \path [->](D) edge node[left] {} (F);
-          \path [->](F) edge node[top] {\hspace{15em}$=$} (E);
-        \end{tikzpicture}
-        \begin{tikzpicture}[scale=0.8]
-          \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
-          \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
-          \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
-
-          \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
-
-          \path [->] (A) edge node[left] {} (B);
-          \path [->](A) edge node[left] {} (C);
-          \path [->](C) edge node[top] {} (B);
-
-          \path [->] (D) edge node[left] {} (B);
-          \path [->](D) edge node[left] {} (C);
-        \end{tikzpicture}
-      }
-    \end{center}
-  \end{figure}
-
-  Can be specialized to join ADTs, e.g.: $G_1 \oplus G_2 = (V_1 \cup V_2) \times (E_1 \Join E_2)$:
-
-  \begin{figure}[H]
-    \begin{center}
-      \scalebox{0.8}{
-        \begin{tikzpicture}[scale=0.8]
-          \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
-          \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
-          \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
-
-          \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
-
-          \path [->] (A) edge node[left] {} (B);
-          \path [->](A) edge node[left] {} (C);
-
-          \path [->](C) edge [bend left] node[top] {\colorbox{white}{\texttt{ab}}} (B);
-          \path [->](C) edge [bend right] node[top] {\colorbox{white}{\texttt{bc}}} (B);
-
-          \path [->] (D) edge node[left] {} (B);
-          \path [->](D) edge node[left] {} (C);
-        \end{tikzpicture}
-        \hspace{5em}
-        \begin{tikzpicture}[scale=0.8]
-          \node[shape=circle,draw=black] (A) at (0,2.5) {$s_1$};
-          \node[shape=circle,draw=black] (B) at (2.5,4) {$s_2$};
-          \node[shape=circle,draw=black] (C) at (2.5,1) {$s_3$};
-
-          \node[shape=circle,draw=black] (D) at (5,2.5) {$s_4$};
-
-          \path [->] (A) edge node[left] {} (B);
-          \path [->](A) edge node[left] {} (C);
-
-          \path [->](C) edge node[top] {\colorbox{white}{\texttt{ab, bc}}} (B);
-
-          \path [->] (D) edge node[left] {} (B);
-          \path [->](D) edge node[left] {} (C);
-        \end{tikzpicture}
-      }
-    \end{center}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{A type family for graphs}
-  \begin{lstlisting}[language=Kotlin, gobble=8]
-    interface IGF<G, E, V> where
-      G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V> {
-        val G: (vertices: Set<V>) -> G
-        val E: (s: V, t: V) -> E
-        val V: (old: V, edgeMap: (V) -> Set<E>) -> V
-
-        fun G(vararg graphs: G): G = G(graphs.toList())
-        fun G(vararg vertices: V): G = G(vertices.map { it.graph })
-        fun G(l: List<Any>): G = when {
-          l allAre G -> l.fold(G()) { it, acc -> it + acc as G }
-          l allAre V -> list.map { it as V }.toSet()
-        }.let { G(it) }
-
-        operator fun G.plus(that: G): G =
-          G((this - that) + (this join that) + (that - this))
-
-        operator fun G.minus(that: G): G = G(vertices - that.vertices)
-
-        infix fun G.join(that: G): Set<V> = TODO("Override me!")
-    }
-  \end{lstlisting}
-\end{frame}
 
 \begin{frame}[fragile]{Classical programs are graphs}
   Programs can be compiled into DFGs and represented using a big matrix.
@@ -1343,188 +1291,6 @@ l = sqrt(sum)
 \end{frame}
 
 
-\section{Random Numbers}
-
-\begin{frame}{Linear Finite State Registers}
-  Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial over $GF(2^n)$ with coefficients $P_{1\ldots n}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\\
-
-  \[
-    \mathbf{M}^tV =
-    \begin{pmatrix}
-      P_1   & P_2   & P_3   & P_4   & P_5   \\
-      \top  & \circ & \circ & \circ & \circ \\
-      \circ & \top  & \circ & \circ & \circ \\
-      \circ & \circ & \top  & \circ & \circ \\
-      \circ & \circ & \circ & \top  & \circ
-    \end{pmatrix}^t
-    \begin{pmatrix}
-      V_1 \\
-      V_2 \\
-      V_3 \\
-      V_4 \\
-      V_5
-    \end{pmatrix}
-  \]\\
-
-  Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial} then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:\\
-
-  \[
-    \mathbf{S} = \begin{pmatrix}
-                   V & \mathbf{M}V & \mathbf{M}^{2}V & \mathbf{M}^{3}V & \cdots & \mathbf{M}^{2^n-1}V
-    \end{pmatrix}
-  \]
-
-  This sequence has \textit{full periodicity}, i.e., for all $i, j \in [0, 2^n), \mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$.
-\end{frame}
-
-\begin{frame}[fragile]{Linear finite state registers}
-  \begin{verbatim}
- a  b  c  d  e     V₁             1  +  x³ +  x⁵
- 1  0  0  0  0     V₂    P = 20 = 0  0  1  0  1
- 0  1  0  0  0  *  V₃             ∥  ∥  ∥  ∥  ∥
- 0  0  1  0  0     V₄             a  b  c  d  e
- 0  0  0  1  0     V₅       ╭────────── ⊗ ────╮
-                            │           │     │
-       M        *  V        0 ──► 1  0  1  1  1 ──►
-                                        ╰──┬──╯
- S₄ = M … S₁ = M * V                    "taps"
- ∥        ∥        ∥
- 0        0        1        S₀ = 1  0  1  1  1
- 0        1        0        S₁ = 0  1  0  1  1
- 1        0        1        S₂ = 1  0  1  0  1
- 0        1        1        S₃ = 0  1  0  1  0
- 1        0        1        S₄ = 0  0  1  0  1
-  \end{verbatim}
-\end{frame}
-
-\begin{frame}[fragile]{Multidimensional sampling: the hasty pudding trick}
-  \definecolor{R}{RGB}{202,65,55}
-  \definecolor{G}{RGB}{151,216,56}
-  \definecolor{B}{RGB}{0,0,0}
-  \definecolor{W}{RGB}{255,255,255}
-  \definecolor{X}{RGB}{65,65,65}
-
-  \newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-  \newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-  \newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
-  \newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
-  {\ifnum\Y=1%
-  \xdef\myarray{"\X"}%
-  \else%
-  \xdef\myarray{\myarray,"\X"}%
-  \fi}%
-  \foreach \X in \myarrayR%
-  {\xdef\myarray{\myarray,"\X"}}%
-  \foreach \X in \myarrayT%
-  {\xdef\myarray{\myarray,"\X"}}%
-  \xdef\myarray{{\myarray}}%
-  }
-  \TikZRubikFaceLeft
-  {X}{W}{W}
-  {W}{X}{X}
-  {X}{W}{W}
-  \TikZRubikFaceRight
-  {W}{X}{W}
-  {X}{W}{X}
-  {W}{X}{W}
-  \TikZRubikFaceTop
-  {X}{W}{X}
-  {W}{W}{X}
-  {W}{X}{W}
-  \BuildArray
-  \pgfmathsetmacro\radius{0.1}
-  \tdplotsetmaincoords{55}{135}
-
-  \showcellnumberfalse
-
-
-  \bgroup
-
-  \begin{figure}
-    \hspace{-0.5cm}
-    \begin{minipage}[l]{5cm}
-      \begin{tikzpicture}
-        \clip (-3,-2.5) rectangle (3,2.5);
-        \begin{scope}[tdplot_main_coords]
-          \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-          \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-          \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-          \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
-            \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
-              \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
-              \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-              \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-              \ifshowcellnumber
-              \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
-              \fi
-              \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
-              \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-              \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-              \ifshowcellnumber
-              \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
-              \fi
-              \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
-              \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-              \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-              \ifshowcellnumber
-              \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
-              \fi
-            }
-          }
-
-          \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
-          (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $|\Sigma|$};
-          \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-          (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $|\Sigma|$};
-          \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-          (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $|\Sigma|$};
-        \end{scope}
-      \end{tikzpicture}
-    \end{minipage}
-    \hspace{1cm}
-    \begin{minipage}[c]{5.5cm}
-      To uniformly sample $\bm\sigma \sim \Sigma^n$ without replacement, we could track historical samples, or, we can form an injection $GF(2^n)\rightharpoonup\Sigma^d$, cycle a primitive polynomial over $GF(2^n)$, then discard samples that do not identify an element in any indexed dimension. This procedure rejects $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples on average and requires $\sim\mathcal{O}(1)$.
-    \end{minipage}
-  \end{figure}
-  \begin{small}
-    \begin{verbatim}
-                   e.g., Σ² = {A, B, C}², x⁴ + x³ + 1
-
-   S₀     S₁     S₂     S₃     S₄     S₅     S₆     S₇
-   ||     ||     ||     ||     ||     ||     ||     ||
- [1000] [0100] [0010] [1001] [1100] [0110] [1011] [0101]
-  C A    B A    A C    C B           B C           B B
-    \end{verbatim}
-  \end{small}
-  \egroup
-\end{frame}
-
-\begin{frame}[fragile]{Multidimensional no-replacement sampler}
-  \begin{lstlisting}[language=Kotlin, gobble=8]
-        fun List<Int>.bitLens() = map { ceil(log2(it.toDouble())).toInt() }
-
-        // Splits a bitvector into designated chunks and returns indices
-        // (10101011, [3, 2, 3]) -> [101, 01, 011] -> [4, 1, 3]
-        fun List<Boolean>.toIndexes(bitLens: List<Int>): List<Int> =
-          bitLens.fold(listOf<List<Boolean>>() to this) { (a, b), i ->
-            (a + listOf(b.take(i))) to b.drop(i)
-          }.first.map { it.toInt() }
-
-        fun Sequence<List<Boolean>>.hastyPudding(lengths: List<Int>) =
-          map { it.toIndexes(lengths.bitLens()) }
-           .filter { it.zip(lengths).all { (a, b) -> a < b } }
-
-        fun <T> List<Set<T>>.sampleWithoutReplacement(
-          lengths: List<Int> = map { it.size },
-          bitLens: List<Int> = map(Set<T>::size).bitLens(),
-          degree: Int = bitLens.sum().also { println("LFSR(GF(2^$it))") }
-        ): Sequence<List<T>> =
-          LFSR(degree).hastyPudding(lengths)
-            .map { zip(it).map { (dims, idx) -> dims[idx] } }
-  \end{lstlisting}
-\end{frame}
-
-
 \section{Finite Fields}\label{sec:finite-fields}
 
 \begin{frame}{Recap: Classical logic in a nutshell}
@@ -1759,9 +1525,9 @@ l = sqrt(sum)
       Justine Gehring\\
       \phantom{}\\
     }
-    \href{https://cs.mcgill.ca}{\includegraphics[scale=0.08]{../figures/mcgill_logo.png}}
-    \href{https://www.fpt-software.com}{\includegraphics[scale=0.19]{../figures/fpt_logo.png}}
-    \href{https://mila.quebec}{\includegraphics[scale=0.13]{../figures/mila_logo.png}}
+    \href{https://cs.mcgill.ca}{\includegraphics[scale=0.06]{../figures/mcgill_logo.png}}
+    \href{https://www.fpt-software.com}{\includegraphics[scale=0.15]{../figures/fpt_logo.png}}
+    \href{https://mila.quebec}{\includegraphics[scale=0.1]{../figures/mila_logo.png}}
   \end{center}
 \end{frame}
 
