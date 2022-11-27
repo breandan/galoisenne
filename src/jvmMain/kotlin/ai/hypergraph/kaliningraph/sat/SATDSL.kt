@@ -4,15 +4,15 @@ import ai.hypergraph.kaliningraph.joinToScalar
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
-import org.logicng.formulas.Formula
-import org.logicng.formulas.FormulaFactory
-import org.logicng.formulas.FormulaFactoryConfig
+import org.kosat.*
+import org.kosat.solveCnf
+import org.logicng.formulas.*
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
-import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.PANIC
-import org.logicng.formulas.Variable
-import org.logicng.solvers.MaxSATSolver
+import org.logicng.io.writers.FormulaDimacsFileWriter
 import org.logicng.solvers.MiniSat
 import org.logicng.solvers.SATSolver
+import java.util.*
+import kotlin.math.absoluteValue
 
 typealias Model = Map<Variable, Boolean>
 //val ffCache = mutableMapOf<String, FormulaFactory>()
@@ -72,6 +72,46 @@ fun Formula.solveIncrementally(
   miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model().let { model ->
     if (model == null) mapOf() else variables().associateWith { model.evaluateLit(it) }
   }
+
+fun Formula.toDimacs(): String {
+  val formula = this
+  val var2id: SortedMap<Variable, Long> = TreeMap()
+  var i: Long = 1
+  for (`var` in TreeSet(formula.variables())) {
+    var2id[`var`] = i++
+  }
+  require(formula.isCNF()) { "Cannot write a non-CNF formula to dimacs.  Convert to CNF first." }
+  val parts: MutableList<Formula> = ArrayList()
+  if (formula.type() == FType.LITERAL || formula.type() == FType.OR) {
+    parts.add(formula)
+  } else {
+    for (part in formula) {
+      parts.add(part)
+    }
+  }
+  val sb = StringBuilder("p cnf ")
+  val partsSize = if (formula.type() == FType.FALSE) 1 else parts.size
+  sb.append(var2id.size).append(" ").append(partsSize).append(System.lineSeparator())
+
+  for (part in parts) {
+    for (lit in part.literals()) {
+      sb.append(if (lit.phase()) "" else "-").append(var2id[lit.variable()]).append(" ")
+    }
+    sb.append(String.format(" 0%n"))
+  }
+  if (formula.type() == FType.FALSE) {
+    sb.append(String.format("0%n"))
+  }
+  return sb.toString()
+}
+
+// CDCL
+fun solveCnfWithModel(cnf: CnfRequest): Pair<CDCL, Map<Int, Boolean>?> {
+  val clauses = (cnf.clauses.map { it.lits }).toMutableList()
+  return CDCL(clauses.map { Clause(it) }.toMutableList(), cnf.vars).let { it to it.solve()?.associate { it.absoluteValue to (it > 0) } }
+}
+
+fun Formula.solveUsingKosat(): Pair<CDCL, Map<Int, Boolean>?> = solveCnfWithModel(readCnfRequests(toDimacs()).first())
 
 // Ensures that at least one of the formulas in stale are fresh
 fun Model.areFresh() =

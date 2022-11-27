@@ -5,9 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.*
-import ai.hypergraph.markovian.pow
 import org.logicng.formulas.Formula
-import org.logicng.io.writers.FormulaDimacsFileWriter
 import kotlin.collections.filter
 import kotlin.time.*
 
@@ -85,7 +83,7 @@ fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =
     }.flatten().fold(T) { a, b -> a and b }
 
 // Computes equivalences between unit nonterminals in each CFG
-fun CSL.alignNonterminals(rubices: List<SATRubix>): Formula {
+fun CJL.alignNonterminals(rubices: List<SATRubix>): Formula {
   if (rubices.size == 1) return T
 
   val terminalsToNTs = cfgs.map { it.terminals }.intersect()
@@ -142,7 +140,7 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
     }
   } else
     rubix.stringVariables.zip(strings).fold(T) { acc: Formula, (v, b) ->
-      acc and v.vecEq(if (b.isHoleTokenIn(this)) v else encodeTokenAsSATVec(b))
+      acc and v.vecEq(if (b.isHoleTokenIn(cfg = this)) v else encodeTokenAsSATVec(b))
     }
 
 // Since Valiant matrix multiplication procedure takes a long time, and we use
@@ -214,7 +212,8 @@ fun CFG.generateConstraints(
     uniquenessConstraints(rubix, tokens) and
     reachabilityConstraints(tokens, rubix) to rubix
 
-fun CSL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+// TODO: incrementalize
+fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   ff.clear()
   println("Synthesizing (${tokens.size}): ${tokens.joinToString(" ")}")
   val timeToFormConstraints = System.currentTimeMillis()
@@ -238,7 +237,7 @@ fun Σᐩ.synthesizeIncrementally(
     synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
     if (it.isSetValiantOptimalFor(this)) it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
         .solve(this, checkInterrupted = checkInterrupted)
-    else asCSL.synthesize(it)
+    else asCJL.synthesize(it)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
@@ -265,9 +264,11 @@ Lowers Valiant matrix onto SAT. Steps:
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
  */
 
-fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCSL.synthesize(tokens)
+fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(tokens)
 
-fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
+// TODO: As new keystrokes are received, we should incrementally update
+//  existing constraints rather than creating a fresh SAT instance.
+fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
   val tokens = strs.asList()
   check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') })
     { "All tokens passed into synthesize() must be contained in all CFGs" }
@@ -289,27 +290,42 @@ fun CSL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       // println(parsingConstraints.cnf().toPython())
 
       var (solver, model) = parsingConstraints.solveIncrementally()
+      // LogicNG's Formula datatype is not monoidal/threadsafe, so we cannot run it in parallel.
+      // Instead we want an immutable Formula datatype that can be combined without affecting solver.
+      // This would enable incremental editing, rollbacks, reset to initial state, etc.
+      // TODO: var (solver, model) = parsingConstraints.solveUsingKosat()
       model.ifEmpty { ff.clear(); return@sequence }
 
-      //  var freshnessConstraints = 0L
+      //  var totalFreshnessConstraints = 0L
+      // Tries to enumerate all strings that satisfy the constraints, adding a freshness constraint after each one.
       while (true) try {
           val cfg = cfgs.first()
+          // Decode model from SAT solver into the corresponding string
           val fillers = rubix.stringVariables.zip(tokens.first())
               .map { (bits, token) ->
+                  // If the token is not a hole token, use the original token.
                   if (cfgs.none { token.isHoleTokenIn(it) }) token
+                  // Otherwise, use the model to decode the bits into a terminal.
                   else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
               }
 
           val completion: Σᐩ = fillers.joinToString(" ")
+
+          // Check whether the solver thread was interrupted (e.g., by a new keystroke)
+          // Ideally we want to do this inside the SAT solver which is why we need to DIY.
+          // Currently, if there is a difficult instance, the UI will appear to hang,
+          // because the solver thread does not check for interrupts until it can prove SAT or UNSAT.
           if (Thread.currentThread().isInterrupted) throw InterruptedException()
+
           if (completion.trim().isNotBlank()) yield(completion)
 
           val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
           // freshnessConstraints += isFresh.numberOfAtoms()
-          // println("Freshness constraints: $freshnessConstraints")
+          // println("Total freshness constraints: $totalFreshnessConstraints")
 
           model = solver.addConstraintAndSolve(isFresh)
-              .ifEmpty { ff.clear(); return@sequence }
+      // If model is empty or we receive an error, assume that all models have been exhausted.
+            .ifEmpty { ff.clear(); return@sequence }
       } catch (ie: InterruptedException) {
           ff.clear()
           throw ie
