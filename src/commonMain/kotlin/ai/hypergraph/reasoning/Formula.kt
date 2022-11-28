@@ -27,16 +27,17 @@ val CNF.hashToIdx by cache { variables.mapIndexed { idx, hash -> hash to idx + 1
 val CNF.solver by cache {
   val t =
     map { it.map { hashToIdx[it.absoluteValue]!! * if (it < 0) -1 else 1 }.toMutableList() }.toMutableList()
-  println("Formula: ${t.joinToString("\n") { it.joinToString(",")}}")
+  println("Formula: ${t.joinToString("\n") { it.joinToString(",")}.let { "$it\nLength: ${it.length}" }}")
+//  println("Formula: ${t.joinToString("\n") { it.joinToString(",")}.length}")
   Kosat(t, variables.size)
 }
 
 val CNF.solution: Model by cache {
   solver.apply { solve().also { println("Satisfiable: $it") } }
 //    .run { if(!solve()) null else this } // TODO: Needs a way to represent UNSAT
-    .getModel().toSet().let { s ->
-      println("Positive literals: $s")
-      Model(variables.associateWith { hashToIdx[it] in s })
+    .getModel().toSet().let { positiveLiterals ->
+      println("Positive literals: ${positiveLiterals.size}")
+      Model(variables.associateWith { hashToIdx[it] in positiveLiterals })
     }
 }
 
@@ -96,6 +97,9 @@ fun Set<Literal>.dontCare() = map { (it v -it) }.fold (T as CNF) { a, b -> a ʌ 
 @JvmName("laf") infix fun Literal.ʌ(c: CNF): CNF = c.plus(setOf(setOf(this)))
 @JvmName("faf") infix fun CNF.ʌ(c: CNF): CNF = plus(c)
 
+fun CNF.unitPropagate(l: Literal): CNF =
+  mapNotNull { clause -> if (l in clause) null else clause - (-l) }.toSet()
+
 // Nothing very interesting happens up until this point.
 // Follows Jason's "Building up CNF Formulas Directly" strategy:
 // https://www.cs.jhu.edu/~jason/tutorials/convert-to-CNF.html
@@ -117,13 +121,14 @@ fun FreshLit(s: Set<Int> = emptySet()): Literal =
     .dropWhile { it in s }.first()
 
 // TODO: Not sure how quickly this will blow up, but let's see...
-@JvmName("fef") infix fun CNF.eq(that: CNF): CNF = //(this ⴲ that).negate()
-  (this ʌ that) v (this.negate() ʌ that.negate())
+@JvmName("fef") infix fun CNF.eq(that: CNF): CNF = (this ʌ that) v (this.negate() ʌ that.negate())
 @JvmName("fxf") infix fun CNF.ⴲ(that: CNF): CNF = (this ʌ that.negate()) v (this.negate() ʌ that)
 @JvmName("lng") fun Literal.negate(): Literal = -this
 @JvmName("fng") fun CNF.negate(): CNF = when {
   this.size == 1 && this.first().size == 1 -> (-this.first().first()).asCNF()
+  // If φ has the form ~(P v Q), then return CONVERT(~P ^ ~Q).  // de Morgan's Law
   this.size == 1 -> this.first().map { -it }.fold(T as CNF) { a, b -> a ʌ b }
+  // If φ has the form ~(P ^ Q), then return CONVERT(~P v ~Q).  // de Morgan's Law
   else -> map { setOf(it).negate() }.fold(F as CNF) { a, b -> a v b }
 }
 

@@ -166,17 +166,10 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
 //  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
 //    .map { it.map { it!!.map { ff.parse(it) }.toTypedArray() } }, cfg.satAlgebra)
 
-fun CFG.constructRubix(numTokens: Int): SATRubix =
-  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
-    // Strictly upper triangular matrix entries
-    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_r::${r}_c::${c}_cfgHash::${hashCode()}" }
-    // Diagonal and subdiagonal
-    else arrayOf()
-  }.toUTMatrix()
 
-infix fun SATRubix.matEq(other: SATRubix) =
-  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
-    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) -> g eq h }.toTypedArray() } }, algebra)
+//infix fun SATRubix.matEq(other: SATRubix) =
+//  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
+//    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) -> g eq h }.toTypedArray() } }, algebra)
 
 //@OptIn(ExperimentalTime::class)
 //fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
@@ -203,6 +196,14 @@ fun CFG.isInGrammar(mat: SATRubix): Formula =
     // TODO: Cache this to speedup computation?
     (mat valiantMatEq mat * mat)//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
+fun CFG.constructRubix(numTokens: Int): SATRubix =
+  FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
+    // Strictly upper triangular matrix entries
+    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_r::${r}_c::${c}_cfgHash::${hashCode()}" }
+    // Diagonal and subdiagonal
+    else arrayOf()
+  }.toUTMatrix()
+
 fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
   rubix: SATRubix = constructRubix(tokens.size)
@@ -228,15 +229,16 @@ fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
-    cfg: CFG,
-    allowNTs: Boolean = true,
-    enablePruning: Boolean = false,
-    variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
-    updateProgress: (Σᐩ) -> Unit = {},
-    checkInterrupted: () -> Unit = { if (Thread.currentThread().isInterrupted) throw InterruptedException() },
-    synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
-    if (it.isSetValiantOptimalFor(this)) it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
-        .solve(this, checkInterrupted = checkInterrupted)
+  cfg: CFG,
+  allowNTs: Boolean = true,
+  enablePruning: Boolean = false,
+  variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
+  updateProgress: (Σᐩ) -> Unit = {},
+  checkInterrupted: () -> Unit = { if (Thread.currentThread().isInterrupted) throw InterruptedException() },
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
+    if (it.isSetValiantOptimalFor(this))
+      it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
+      .solve(this, checkInterrupted = checkInterrupted)
     else asCJL.synthesize(it)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
@@ -262,7 +264,7 @@ Lowers Valiant matrix onto SAT. Steps:
 
   https://people.csail.mit.edu/virgi/6.s078/papers/valiant.pdf#page=13
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
- */
+*/
 
 fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(tokens)
 
@@ -270,8 +272,8 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(toke
 //  existing constraints rather than creating a fresh SAT instance.
 fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
   val tokens = strs.asList()
-  check(tokens.flatten().all { it in symbols || it == "_" || it.startsWith('<') && it.endsWith('>') })
-    { "All tokens passed into synthesize() must be contained in all CFGs" }
+  check(tokens.flatten().all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
+  { "All tokens passed into synthesize() must be contained in all CFGs" }
   check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: ${strs.map { it.size }}" }
   return when {
     tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
@@ -299,42 +301,43 @@ fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       //  var totalFreshnessConstraints = 0L
       // Tries to enumerate all strings that satisfy the constraints, adding a freshness constraint after each one.
       while (true) try {
-          val cfg = cfgs.first()
-          // Decode model from SAT solver into the corresponding string
-          val fillers = rubix.stringVariables.zip(tokens.first())
-              .map { (bits, token) ->
-                  // If the token is not a hole token, use the original token.
-                  if (cfgs.none { token.isHoleTokenIn(it) }) token
-                  // Otherwise, use the model to decode the bits into a terminal.
-                  else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
-              }
+        // In the case of intersections, which CFG is used to generate the string does not matter.
+        val cfg = cfgs.first()
+        // Decode model from SAT solver into the corresponding string
+        val fillers = rubix.stringVariables.zip(tokens.first())
+          .map { (bits, token) ->
+            // If the token is not a hole token, use the original token.
+            if (cfgs.none { token.isHoleTokenIn(it) }) token
+            // Otherwise, use the model to decode the bits into a terminal.
+            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+          }
 
-          val completion: Σᐩ = fillers.joinToString(" ")
+        val completion: Σᐩ = fillers.joinToString(" ")
 
-          // Check whether the solver thread was interrupted (e.g., by a new keystroke)
-          // Ideally we want to do this inside the SAT solver which is why we need to DIY.
-          // Currently, if there is a difficult instance, the UI will appear to hang,
-          // because the solver thread does not check for interrupts until it can prove SAT or UNSAT.
-          if (Thread.currentThread().isInterrupted) throw InterruptedException()
+        // Check whether the solver thread was interrupted (e.g., by a new keystroke)
+        // Ideally we want to do this inside the SAT solver which is why we need to DIY.
+        // Currently, if there is a difficult instance, the UI will appear to hang,
+        // because the solver thread does not check for interrupts until it can prove SAT or UNSAT.
+        if (Thread.currentThread().isInterrupted) throw InterruptedException()
 
-          if (completion.trim().isNotBlank()) yield(completion)
+        if (completion.trim().isNotBlank()) yield(completion)
 
-          val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
-          // freshnessConstraints += isFresh.numberOfAtoms()
-          // println("Total freshness constraints: $totalFreshnessConstraints")
+        val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
+        // freshnessConstraints += isFresh.numberOfAtoms()
+        // println("Total freshness constraints: $totalFreshnessConstraints")
 
-          model = solver.addConstraintAndSolve(isFresh)
-      // If model is empty or we receive an error, assume that all models have been exhausted.
-            .ifEmpty { ff.clear(); return@sequence }
+        model = solver.addConstraintAndSolve(isFresh)
+          // If model is empty or we receive an error, assume that all models have been exhausted.
+          .ifEmpty { ff.clear(); return@sequence }
       } catch (ie: InterruptedException) {
-          ff.clear()
-          throw ie
+        ff.clear()
+        throw ie
       } catch (e: NullPointerException) {
-          ff.clear()
-          break
+        ff.clear()
+        break
       } catch (e: OutOfMemoryError) { // Does this really work?
-          ff.clear()
-          break
+        ff.clear()
+        break
       }
     }
   }

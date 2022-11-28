@@ -18,7 +18,9 @@ typealias Model = Map<Variable, Boolean>
 //val ffCache = mutableMapOf<String, FormulaFactory>()
 
 val ff: FormulaFactory =
-    FormulaFactory(FormulaFactoryConfig.builder().formulaMergeStrategy(IMPORT).build())
+    FormulaFactory(FormulaFactoryConfig.builder()
+      .formulaMergeStrategy(IMPORT)
+      .build())
 
 //fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
 
@@ -74,13 +76,13 @@ fun Formula.solveIncrementally(
   }
 
 fun Formula.toDimacs(): String {
-  val formula = this
+  val formula = cnf()
   val var2id: SortedMap<Variable, Long> = TreeMap()
   var i: Long = 1
   for (`var` in TreeSet(formula.variables())) {
     var2id[`var`] = i++
   }
-  require(formula.isCNF()) { "Cannot write a non-CNF formula to dimacs.  Convert to CNF first." }
+  require(formula.isCNF) { "Cannot write a non-CNF formula to dimacs.  Convert to CNF first." }
   val parts: MutableList<Formula> = ArrayList()
   if (formula.type() == FType.LITERAL || formula.type() == FType.OR) {
     parts.add(formula)

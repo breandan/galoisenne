@@ -53,7 +53,7 @@ class SATTest {
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
     println("A: ${A.data.joinToString(", ")}")
 
-    val cnf = ((A eq (A * A)) ʌ A.data.first()).also { println("Vars" + it.variables) }
+    val cnf = ((A eq (A * A)) ʌ A.data[0]).also { println("Vars" + it.variables) }
     val solution = cnf.solution
 
     assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
@@ -62,6 +62,26 @@ class SATTest {
     println(B.toString())
     assertEquals(B, B * B)
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testBooleanFixpoint"
+*/
+  @Test
+  fun testBooleanFixpoint() {
+    val dim = 3
+    val A: FreeMatrix<CNF> = RMatVar("a", RSAT_ALGEBRA, dim)
+    println("A: ${A.data.joinToString(", ")}")
+
+    val cnf = ((A eq (A * A)) ʌ A[0,1].negate() ʌ A[1,0].negate() ʌ A[0, 0]).also { println("Vars" + it.variables) }
+    val solution = cnf.solution
+
+    assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
+
+    val B = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it]!! })
+    println(B.toString())
+    assertEquals(B, B * B)
+  }
+
 
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testGF2Eigenvector"

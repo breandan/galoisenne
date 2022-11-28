@@ -126,12 +126,11 @@ fun BooleanArray.decodeWith(cfg: CFG): Set<Σᐩ> =
 //=====================================================================================
 
 val HOLE_MARKER = "_"
-fun String.containsHole(): Boolean = HOLE_MARKER in this
+fun Σᐩ.containsHole(): Boolean = HOLE_MARKER in this
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
-fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean =
-  first() == '<' && last() == '>' && drop(1).dropLast(1) in cfg.nonterminals
-fun Σᐩ.isNonterminalStubIn(CJL: CJL): Boolean =
-  CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
+fun Σᐩ.isNonterminalStub() = first() == '<' && last() == '>'
+fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
+fun Σᐩ.isNonterminalStubIn(CJL: CJL): Boolean = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
 fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }

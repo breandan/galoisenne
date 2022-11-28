@@ -52,10 +52,13 @@ class SATTest {
 */
   @Test
   fun testGF2Fixpoint() {
-    val dim = 5
+    val dim = 3
     val A: FreeMatrix<Formula> = BMatVar("a", XOR_SAT_ALGEBRA, dim)
 
-    val solution = ((A * A) eq A).solve()
+    val constr = ((A * A) eq A) and A[0, 1] and A[1, 0]
+    println(constr.cnf().toDimacs())
+
+    val solution = constr.solve()
 
     val B = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]!! }).also { println(it) }
     assertEquals(B, B * B)
