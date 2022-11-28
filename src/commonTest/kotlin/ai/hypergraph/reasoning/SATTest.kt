@@ -1,8 +1,6 @@
 package ai.hypergraph.reasoning
 
 import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.times
-import ai.hypergraph.reasoning.*
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +28,7 @@ class SATTest {
     val B = RMatVar("B", RSAT_ALGEBRA, dim)
 
     val isInverse = (A * B * A) eq A
-    val solution = isInverse.solution
+    val solution = isInverse.model
 
 //    println(solution.entries.joinToString("\n") { it.key.toString() + "," + it.value })
 
@@ -45,16 +43,35 @@ class SATTest {
   }
 
   /*
-  ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testGF2Fixpoint"
+  ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testMatEq"
   */
   @Test
+  fun testMatEq() {
+    val dim = 2
+    val A: FreeMatrix<CNF> = RMatVar("a", RSAT_ALGEBRA, dim)
+    println("A: ${A.data.joinToString(", ")}")
+
+    val cnf = ((A eq (A * A))).also { println("Vars" + it.variables) }
+    val solution = cnf.model
+
+    assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
+
+    val B = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it]!! })
+    println(B.toString())
+    assertEquals(B, B * B)
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.reasoning.SATTest.testGF2Fixpoint"
+  */
+//  @Test
   fun testGF2Fixpoint() {
-    val dim = 3
+    val dim = 2
     val A: FreeMatrix<CNF> = RMatVar("a", RXOR_SAT_ALGEBRA, dim)
     println("A: ${A.data.joinToString(", ")}")
 
-    val cnf = ((A eq (A * A)) ʌ A.data[0]).also { println("Vars" + it.variables) }
-    val solution = cnf.solution
+    val cnf = ((A eq (A * A))).also { println("Vars" + it.variables) }
+    val solution = cnf.model
 
     assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
 
@@ -68,12 +85,13 @@ class SATTest {
 */
   @Test
   fun testBooleanFixpoint() {
-    val dim = 3
+    val dim = 2
     val A: FreeMatrix<CNF> = RMatVar("a", RSAT_ALGEBRA, dim)
     println("A: ${A.data.joinToString(", ")}")
 
-    val cnf = ((A eq (A * A)) ʌ A[0,1].negate() ʌ A[1,0].negate() ʌ A[0, 0]).also { println("Vars" + it.variables) }
-    val solution = cnf.solution
+    val cnf = ((A eq (A * A))).also { println("Vars" + it.variables) }
+//  val cnf = ((A eq (A * A)) ʌ A[0,1].negate() ʌ A[1,0].negate() ʌ A[0, 0]).also { println("Vars" + it.variables) }
+  val solution = cnf.model
 
     assertTrue(cnf.invoke(solution).also { println("Solution: $it") })
 
@@ -95,7 +113,7 @@ class SATTest {
     // Solves x != 0 in Ax = x
     val model = ((A * x) eq (x) ʌ (x.data).reduce { acc, f -> f v acc })
     try {
-      val solution = model.solution
+      val solution = model.model
       val s = BooleanMatrix(dim, 1, x.data.map { solution[it]!! }, XOR_ALGEBRA).also { println(it) }
       val a = BooleanMatrix(XOR_ALGEBRA, A.data.map { it == T })
 
@@ -120,8 +138,8 @@ class SATTest {
         (A neq A * A * A) ʌ
         // Eliminates trivial eigenvectors
         x.data.reduce { acc, f -> acc v f } ʌ
-        x.data.reduce { a, f -> a ʌ f }.negate()
-      ).solution
+        -x.data.reduce { a, f -> a ʌ f }
+      ).model
 
     val a = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it]!! }).also { println(it * it * it) }
     val s = BooleanMatrix(dim, 1, x.data.map { solution[it]!! }, BOOLEAN_ALGEBRA).also { println(it) }
@@ -149,7 +167,7 @@ class SATTest {
 
     val isFixpoint = fpOp eqUT A
 
-    val solution = isFixpoint.solution
+    val solution = isFixpoint.model
     val D = BooleanMatrix(XOR_ALGEBRA, A.data.map { solution[it]?: (it == T) })
 
     println("Decoding:\n$D")
@@ -176,7 +194,7 @@ class SATTest {
 
     val isFixpoint = fpOp eqUT A
 
-    val solution = isFixpoint.solution
+    val solution = isFixpoint.model
 
     val D = BooleanMatrix(BOOLEAN_ALGEBRA, A.data.map { solution[it] ?: (it == T) })
 
@@ -215,7 +233,7 @@ class SATTest {
 //    println("Y:$Y")
 
     val intersection = (A * X * B.transpose) eq Y
-    val solution = intersection.solution
+    val solution = intersection.model
 
     val expected = setA intersect setB
     val actual = solution.keys.mapNotNull { "$it".drop(1).toIntOrNull() }.toSet()

@@ -32,13 +32,18 @@ val CNF.solver by cache {
   Kosat(t, variables.size)
 }
 
-val CNF.solution: Model by cache {
-  solver.apply { solve().also { println("Satisfiable: $it") } }
-//    .run { if(!solve()) null else this } // TODO: Needs a way to represent UNSAT
-    .getModel().toSet().let { positiveLiterals ->
-      println("Positive literals: ${positiveLiterals.size}")
-      Model(variables.associateWith { hashToIdx[it] in positiveLiterals })
-    }
+val CNF.model: Model by cache { models.first() }
+
+val CNF.models: Sequence<Model> by cache {
+  var prev: Set<Int>
+  generateSequence {
+    val t = solver.apply { if (!solve()) return@generateSequence null }
+      .getModel().also { prev = it.toSet() }.toSet().let { positiveLiterals ->
+        Model(variables.associateWith { hashToIdx[it] in positiveLiterals })
+      }
+    solver.addClause(prev.map { -it }) // Ensures each model is unique
+    t
+  }
 }
 
 operator fun CNF.invoke(model: Model): Boolean =
@@ -56,7 +61,6 @@ class Model(val varMap: Map<Int, Boolean>): Map<Int, Boolean> by varMap {
 }
 
 fun Boolean.toCNF(): CNF = if (this) T else F
-fun Int.toCNF(): CNF = setOf(setOf(absoluteValue))
 fun Int.asCNF(): CNF = setOf(setOf(this))
 
 object T: CNF by setOf(setOf())
@@ -117,13 +121,13 @@ fun CNF.unitPropagate(l: Literal): CNF =
 }
 
 fun FreshLit(s: Set<Int> = emptySet()): Literal =
-  generateSequence { Random.nextInt(Int.MAX_VALUE / 2, Int.MAX_VALUE) }
-    .dropWhile { it in s }.first()
+  generateSequence { Random.nextInt(Int.MAX_VALUE / 2, Int.MAX_VALUE) }.dropWhile { it in s }.first()
 
 // TODO: Not sure how quickly this will blow up, but let's see...
 @JvmName("fef") infix fun CNF.eq(that: CNF): CNF = (this ʌ that) v (this.negate() ʌ that.negate())
 @JvmName("fxf") infix fun CNF.ⴲ(that: CNF): CNF = (this ʌ that.negate()) v (this.negate() ʌ that)
 @JvmName("lng") fun Literal.negate(): Literal = -this
+operator fun CNF.unaryMinus(): CNF = negate()
 @JvmName("fng") fun CNF.negate(): CNF = when {
   this.size == 1 && this.first().size == 1 -> (-this.first().first()).asCNF()
   // If φ has the form ~(P v Q), then return CONVERT(~P ^ ~Q).  // de Morgan's Law
@@ -148,7 +152,7 @@ val RSAT_ALGEBRA get() =
     times = { a, b -> a ʌ b }
   )
 
-fun BVar(name: String): CNF = name.hashCode().toCNF()
+fun BVar(name: String): CNF = name.hashCode().absoluteValue.asCNF()
 fun BVecVar(size: Int, prefix: String = "", pfx: (Int) -> String = { prefix }): SATVector =
   Array(size) { k -> BVar("${pfx(k)}_f::$k") }
 fun RMatVar(name: String, algebra: Ring<CNF>, rows: Int, cols: Int = rows) =
