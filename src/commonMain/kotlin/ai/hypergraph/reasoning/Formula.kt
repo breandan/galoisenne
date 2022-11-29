@@ -117,11 +117,12 @@ fun CNF.unitPropagate(l: Literal): CNF =
   that is T -> T
   that.size == 1 -> this.map { it + that.first() }.toSet()
   this.size == 1 -> that.map { it + this.first() }.toSet()
-  else -> FreshLit().let { (-it v this) ʌ (it v that) }
+  // P v Q <=> CONVERT(~Z v P) and CONVERT(Z v Q)
+  else -> FreshLit(variables + that.variables).let { (-it v this) ʌ (it v that) }
 }
 
 fun FreshLit(s: Set<Int> = emptySet()): Literal =
-  generateSequence { Random.nextInt(Int.MAX_VALUE / 2, Int.MAX_VALUE) }.dropWhile { it in s }.first()
+  generateSequence { Random.nextInt(Int.MAX_VALUE / 2, Int.MAX_VALUE) }.first { it !in s }
 
 // TODO: Not sure how quickly this will blow up, but let's see...
 @JvmName("fef") infix fun CNF.eq(that: CNF): CNF = (this ʌ that) v (this.negate() ʌ that.negate())

@@ -24,10 +24,10 @@ class KoSATTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.reasoning.KoSATTest.testManualMatrixMultiplication"
+./gradlew jvmTest --tests "ai.hypergraph.reasoning.KoSATTest.testIdempotentMatrixMultiplication"
 */
   @Test
-  fun testManualMatrixMultiplication() {
+  fun testIdempotentMatrixMultiplication() {
     // Boolean matrix multiplication: A * B
     //  A     B
     // 1 2   1 2
