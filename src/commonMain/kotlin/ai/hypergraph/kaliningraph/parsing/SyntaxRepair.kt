@@ -24,8 +24,10 @@ fun repair(
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
+  updateProgress: (Σᐩ) -> Unit = {},
   filter: (Σᐩ.() -> Boolean)? = null,
 ): List<Σᐩ> {
+  println("Repairing: $prompt")
   val coarsened = prompt.coarsen()
   if (cfg.parse(coarsened) != null) return emptyList()
   val tokens = coarsened.tokenizeByWhitespace()
@@ -39,6 +41,7 @@ fun repair(
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,
+    updateProgress = updateProgress,
     variations = variations,
   )
     .map { totalSamples++; it.uncoarsen(prompt) }

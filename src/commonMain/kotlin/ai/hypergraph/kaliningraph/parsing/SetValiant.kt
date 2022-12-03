@@ -199,9 +199,9 @@ fun Σᐩ.validate(
 fun List<Σᐩ>.solve(
   CFG: CFG,
   fillers: Set<Σᐩ> = CFG.terminals,
-  checkInterrupted: () -> Unit = {}
+  checkInterrupted: () -> Boolean = { true }
 ): Sequence<Σᐩ> =
-  genCandidates(CFG, fillers).filter { checkInterrupted(); it.matches(CFG) }
+  genCandidates(CFG, fillers).takeWhile { !checkInterrupted() }.filter { it.matches(CFG) }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
