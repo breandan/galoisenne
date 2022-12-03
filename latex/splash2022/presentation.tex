@@ -1285,14 +1285,13 @@ l = sqrt(sum)
 \begin{frame}{What's the point?}
   \begin{itemize}
     \item Algebraists have developed a powerful language for rootfinding
-    \item Tradition handed down from Euler, Galois, Borel, Kleene, Chomsky
-    \item We know closed forms for exponentials of structured matrices
+    \item Tradition handed down from Fermat, Euler, Galois, Kleene, Chomsky
+    \item We have closed forms for exponentials of structured matrices
 %            \item Characteristic polynomials, companion matrices, eigenvalues
     \item Solving these forms can be much faster than power iteration
     \item Unifies many problems in PL, probability and graph theory
     \item Context-free parsing is just rootfinding on a semiring algebra
-    \item Type checking sans recursive types is just graph reachability
-    \item Unification/simplification is lazy hypergraph search
+    \item Unification/simplification a form of lazy hypergraph search
     \item Bounded program synthesis is matrix factorization/completion
     \item By doing so, we can leverage well-known algebraic techniques
   \end{itemize}
@@ -1301,19 +1300,20 @@ l = sqrt(sum)
 \begin{frame}{Future work}
   Parsing
   \begin{itemize}
-    \item The line between parsing and computation is blurry
-    \item Investigate connection between dynamical and term rewrite systems
-    \item Extend Valiant's parser to tensors/context-sensitive languages
-    \item Recover the original parse tree or eliminate Chomsky Normal Form
-    \item What is the connection to Leibnizian differentiability?
-    \item What is the meaning of abstract algebraic eigenvalues?
+    \item Error propagation in discrete dynamical systems and TRS
+    \item Dynamic matrix inverse and incremental transitive closure
+    \item Language Edit Distance with metrizable Boolean semirings
+    \item Unify parser-lexer for scannerless ECP on a real language
+    \item Investigate the feasibility of grammar induction and repair
+    \item Strengthen the connection to Leibnizian differentiability
+%    \item What is the meaning of abstract algebraic eigenvalues?
   \end{itemize}
   \phantom{space}\\
   Probability
   \begin{itemize}
     \item Look into Markov chains (detailed balance, stationarity, reversibility)
     \item Fuse Valiant parser and probabilistic context-free grammar
-    \item Message passing and graph diffusion processes
+    \item Contextualize belief propagation and graph diffusion processes
     \item Look into constrained optimization (e.g., L/QP) to rank feasible set
   \end{itemize}
 \end{frame}
@@ -1338,7 +1338,7 @@ l = sqrt(sum)
 \begin{frame}
   \begin{center}
     \huge{Learn more at: \\~\\
-    \href{https://github.com/breandan/tidyparse}{\color{blue}{https://github.com/breandan/tidyparse}}}
+    \href{https://tidyparse.github.io}{\color{blue}{https://tidyparse.github.io}}}
   \end{center}
 \end{frame}
 \end{document}

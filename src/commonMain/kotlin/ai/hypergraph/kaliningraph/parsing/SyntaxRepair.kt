@@ -29,7 +29,7 @@ fun repair(
 ): List<Σᐩ> {
   println("Repairing: $prompt")
   val coarsened = prompt.coarsen()
-  if (cfg.parse(coarsened) != null) return emptyList()
+//  if (cfg.parse(coarsened) != null) return emptyList()
   val tokens = coarsened.tokenizeByWhitespace()
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else HOLE_MARKER }
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
