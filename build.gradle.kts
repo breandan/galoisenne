@@ -7,9 +7,9 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.7.10"
-  kotlin("jupyter.api") version "0.11.0-187"
-  id("com.github.ben-manes.versions") version "0.43.0"
+  kotlin("multiplatform") version "1.8.0-RC"
+  kotlin("jupyter.api") version "0.11.0-196"
+  id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
@@ -112,7 +112,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
       }
     }
 

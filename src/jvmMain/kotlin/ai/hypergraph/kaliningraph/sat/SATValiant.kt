@@ -234,7 +234,7 @@ fun Σᐩ.synthesizeIncrementally(
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
-  checkInterrupted: () -> Boolean = { Thread.currentThread().isInterrupted },
+  checkInterrupted: () -> Boolean = { !Thread.currentThread().isInterrupted },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
     if (it.isSetValiantOptimalFor(this))
       it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
