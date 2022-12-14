@@ -8,6 +8,7 @@ import org.kosat.*
 import org.kosat.solveCnf
 import org.logicng.formulas.*
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
+import org.logicng.handlers.SATHandler
 import org.logicng.io.writers.FormulaDimacsFileWriter
 import org.logicng.solvers.MiniSat
 import org.logicng.solvers.SATSolver
@@ -39,10 +40,14 @@ fun BVecLit(l: BooleanArray): SATVector = l.map { ff.constant(it)  as Formula }.
 fun BVecLit(l: List<Boolean>): SATVector = BVecLit(l.toBooleanArray())
 fun BVecLit(size: Int, f: (Int) -> Formula): SATVector = Array(size) { f(it) }
 
-fun Formula.solve(): Model =
+fun Formula.solve(
+  takeMoreWhile: (() -> Boolean)? = null,
+  handler: SATHandler = if (takeMoreWhile == null) object: SATHandler {}
+  else object: SATHandler { override fun aborted(): Boolean = !takeMoreWhile.invoke() }
+): Model =
   ff.let { ff: FormulaFactory ->
     val vars = variables()
-    val model = MiniSat.miniSat(ff).apply { add(this@solve); sat() }.model()
+    val model = MiniSat.miniSat(ff).apply { add(this@solve); sat(handler) }.model()
     if (model == null) mapOf() else vars.associateWith { model.evaluateLit(it) }
   }
 
@@ -60,20 +65,27 @@ fun Formula.solve(): Model =
 // Trick to "remove" a clause: https://groups.google.com/g/minisat/c/ffXxBpqKh90
 fun SATSolver.removeConstraintAndSolve(f: Formula): Model = TODO()
 
-fun SATSolver.addConstraintAndSolve(f: Formula): Model {
-  val model = run { add(f); sat(); model() }
+fun SATSolver.addConstraintAndSolve(
+  f: Formula,
+  takeMoreWhile: (() -> Boolean)? = null,
+  handler: SATHandler = if (takeMoreWhile == null) object: SATHandler {}
+  else object: SATHandler { override fun aborted(): Boolean = !takeMoreWhile.invoke() }
+): Model {
+  val model = run { add(f); sat(handler); model() }
   return if (model == null) mapOf() else model.negativeVariables()
     .associateWith { false } + model.positiveVariables().associateWith { true }
 }
   //      val model = solver.run { addHardFormula(isFresh); solve(); model() }
 
 fun Formula.solveIncrementally(
-  miniSat: MiniSat = MiniSat.miniSat(ff)
+  miniSat: MiniSat = MiniSat.miniSat(ff),
 //    miniSat: MiniSat = MiniSat.glucose(ff)
+  takeMoreWhile: (() -> Boolean)? = null,
+  handler: SATHandler = if (takeMoreWhile == null) object: SATHandler {}
+  else object: SATHandler { override fun aborted(): Boolean = !takeMoreWhile.invoke() }
 ): Pair<MiniSat, Model> =
-  miniSat to miniSat.apply { add(this@solveIncrementally); sat() }.model().let { model ->
-    if (model == null) mapOf() else variables().associateWith { model.evaluateLit(it) }
-  }
+  miniSat to miniSat.apply { add(this@solveIncrementally); sat(handler) }.model()
+    .let { model -> if (model == null) mapOf() else variables().associateWith { model.evaluateLit(it) } }
 
 fun Formula.toDimacs(): String {
   val formula = cnf()

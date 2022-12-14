@@ -234,12 +234,12 @@ fun Σᐩ.synthesizeIncrementally(
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
-  checkInterrupted: () -> Boolean = { !Thread.currentThread().isInterrupted },
+  takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
     if (it.isSetValiantOptimalFor(this))
       it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
-      .solve(this, checkInterrupted = checkInterrupted)
-    else asCJL.synthesize(it)
+      .solve(this, takeMoreWhile = takeMoreWhile)
+    else asCJL.synthesize(it, takeMoreWhile = takeMoreWhile)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
@@ -270,7 +270,10 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(toke
 
 // TODO: As new keystrokes are received, we should incrementally update
 //  existing constraints rather than creating a fresh SAT instance.
-fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
+fun CJL.synthesize(
+  vararg strs: List<Σᐩ>,
+  takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted }
+): Sequence<Σᐩ> {
   val tokens = strs.asList()
   check(tokens.flatten().all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
   { "All tokens passed into synthesize() must be contained in all CFGs" }
@@ -291,7 +294,7 @@ fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
       // println("Reduction: ${parsingConstraints.numberOfNodes()}")
       // println(parsingConstraints.cnf().toPython())
 
-      var (solver, model) = parsingConstraints.solveIncrementally()
+      var (solver, model) = parsingConstraints.solveIncrementally(takeMoreWhile = takeMoreWhile)
       // LogicNG's Formula datatype is not monoidal/threadsafe, so we cannot run it in parallel.
       // Instead we want an immutable Formula datatype that can be combined without affecting solver.
       // This would enable incremental editing, rollbacks, reset to initial state, etc.
@@ -314,21 +317,15 @@ fun CJL.synthesize(vararg strs: List<Σᐩ>): Sequence<Σᐩ> {
 
         val completion: Σᐩ = fillers.joinToString(" ")
 
-        // Check whether the solver thread was interrupted (e.g., by a new keystroke)
-        // Ideally we want to do this inside the SAT solver which is why we need to DIY.
-        // Currently, if there is a difficult instance, the UI will appear to hang,
-        // because the solver thread does not check for interrupts until it can prove SAT or UNSAT.
-        if (Thread.currentThread().isInterrupted) throw InterruptedException()
-
         if (completion.trim().isNotBlank()) yield(completion)
 
         val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
         // freshnessConstraints += isFresh.numberOfAtoms()
         // println("Total freshness constraints: $totalFreshnessConstraints")
 
-        model = solver.addConstraintAndSolve(isFresh)
-          // If model is empty or we receive an error, assume that all models have been exhausted.
-          .ifEmpty { ff.clear(); return@sequence }
+        model = solver.addConstraintAndSolve(isFresh, takeMoreWhile)
+        // If model is empty or we receive an error, assume that all models have been exhausted.
+        .ifEmpty { ff.clear(); return@sequence }
       } catch (ie: InterruptedException) {
         ff.clear()
         throw ie
