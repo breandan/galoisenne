@@ -8,7 +8,7 @@ plugins {
   signing
   `maven-publish`
   kotlin("multiplatform") version "1.8.0-RC"
-  kotlin("jupyter.api") version "0.11.0-196"
+  kotlin("jupyter.api") version "0.11.0-198"
   id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -171,8 +171,8 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.9.1")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:23.0.0")
-        implementation("org.slf4j:slf4j-simple:2.0.5")
+        implementation("org.jetbrains:annotations:23.1.0")
+        implementation("org.slf4j:slf4j-simple:2.0.6")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
