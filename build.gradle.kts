@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.0-RC"
+  kotlin("multiplatform") version "1.8.0-RC2"
   kotlin("jupyter.api") version "0.11.0-198"
   id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
