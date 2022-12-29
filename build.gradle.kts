@@ -7,8 +7,8 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.0-RC2"
-  kotlin("jupyter.api") version "0.11.0-198"
+  kotlin("multiplatform") version "1.8.0"
+  kotlin("jupyter.api") version "0.11.0-213"
   id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -157,7 +157,7 @@ kotlin {
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         // TODO: Replace LogicNG with KoSAT?
-        implementation("org.logicng:logicng:2.4.0")
+        implementation("org.logicng:logicng:2.4.1")
       }
     }
 
