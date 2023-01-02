@@ -8,7 +8,7 @@ plugins {
   signing
   `maven-publish`
   kotlin("multiplatform") version "1.8.0"
-  kotlin("jupyter.api") version "0.11.0-213"
+  kotlin("jupyter.api") version "0.11.0-216"
   id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -112,7 +112,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
       }
     }
 
@@ -130,7 +130,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.1.1")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.2.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
