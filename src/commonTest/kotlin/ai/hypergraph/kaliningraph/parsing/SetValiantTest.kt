@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.hasBalancedBrackets
-import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
@@ -405,19 +404,21 @@ class SetValiantTest {
   fun testLevenshteinAutomata() {
     // Levenshtein automata for the word "flees" with d=1 and Σ={x,f,l,e,s}
     val cfg = """
-       START -> d40 | d41 | d50 | d51
+       START -> d:4:0 | d:4:1 | d:5:0 | d:5:1
        * -> x | f | l | e | s
-       d50 -> d40 s 
-       d40 -> d30 e 
-       d30 -> d20 e 
-       d20 -> d10 l 
-       d10 -> f 
-       d51 -> d40 * | d50 * | d41 s | d30 s
-       d41 -> d30 * | d40 * | d31 e | d20 e
-       d31 -> d20 * | d30 * | d21 e | d10 e
-       d21 -> d10 * | d20 * | d11 l | l
-       d11 -> d00 * | d10 * | d01 f | *
-       d01 -> *
+       
+       d:1:0 -> f
+       d:2:0 -> d:1:0 l
+       d:3:0 -> d:2:0 e
+       d:4:0 -> d:3:0 e
+       d:5:0 -> d:4:0 s
+       
+       d:0:1 -> *
+       d:1:1 -> d:0:1 f | d:1:0 * | *
+       d:2:1 -> d:1:1 l | d:1:0 * | d:2:0 * | l
+       d:3:1 -> d:2:1 e | d:2:0 * | d:3:0 * | d:1:0 e
+       d:4:1 -> d:3:1 e | d:3:0 * | d:4:0 * | d:2:0 e
+       d:5:1 -> d:4:1 s | d:4:0 * | d:5:0 * | d:3:0 s
     """.trimIndent().parseCFG()
 
     assertNotNull(cfg.parse("f l e e s"))
@@ -426,5 +427,22 @@ class SetValiantTest {
     assertNotNull(cfg.parse("f l e e s x"))
     assertNotNull(cfg.parse("f l e e s x"))
     assertNull(cfg.parse("f e e l s"))
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testLevenshteinGrammar"
+*/
+  @Test
+  fun testLevenshteinGrammar() {
+    val cfg = constructLevenshteinCFG("flees".map { it.toString() }, 2, "flesx".map { it.toString() }.toSet())
+      .also { println(it) }
+      .parseCFG()
+    assertNotNull(cfg.parse("f l e e s"))
+    assertNotNull(cfg.parse("x l e e s"))
+    assertNotNull(cfg.parse("f x l e e s"))
+    assertNotNull(cfg.parse("f l e e s x"))
+    assertNotNull(cfg.parse("f l e e s x"))
+    assertNotNull(cfg.parse("f e e l s"))
+    assertNull(cfg.parse("f e e l s s")?.prettyPrint())
   }
 }
