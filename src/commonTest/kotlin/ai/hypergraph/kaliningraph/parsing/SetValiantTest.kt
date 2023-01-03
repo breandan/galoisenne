@@ -376,8 +376,8 @@ class SetValiantTest {
       E<Float> -> E<Int> op E<Float> | E<Float> op E<Int>
     """.trimIndent().parseCFG()
 
-  cfg.parse("<E<Float>> + <E<Int>> + <E<Float>>").also { println(it!!.prettyPrint()) }
-}
+    cfg.parse("<E<Float>> + <E<Int>> + <E<Float>>").also { println(it!!.prettyPrint()) }
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUTMRepresentationEquivalence"
@@ -396,5 +396,35 @@ class SetValiantTest {
 
       assertEquals(slowTransitionFP, fastTransitionFP)
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testLevenshteinAutomata"
+*/
+  @Test
+  fun testLevenshteinAutomata() {
+    // Levenshtein automata for the word "flees" with d=1 and Σ={x,f,l,e,s}
+    val cfg = """
+       START -> d40 | d41 | d50 | d51
+       * -> x | f | l | e | s
+       d50 -> d40 s 
+       d40 -> d30 e 
+       d30 -> d20 e 
+       d20 -> d10 l 
+       d10 -> f 
+       d51 -> d40 * | d50 * | d41 s | d30 s
+       d41 -> d30 * | d40 * | d31 e | d20 e
+       d31 -> d20 * | d30 * | d21 e | d10 e
+       d21 -> d10 * | d20 * | d11 l | l
+       d11 -> d00 * | d10 * | d01 f | *
+       d01 -> *
+    """.trimIndent().parseCFG()
+
+    assertNotNull(cfg.parse("f l e e s"))
+    assertNotNull(cfg.parse("x l e e s"))
+    assertNotNull(cfg.parse("f x l e e s"))
+    assertNotNull(cfg.parse("f l e e s x"))
+    assertNotNull(cfg.parse("f l e e s x"))
+    assertNull(cfg.parse("f e e l s"))
   }
 }
