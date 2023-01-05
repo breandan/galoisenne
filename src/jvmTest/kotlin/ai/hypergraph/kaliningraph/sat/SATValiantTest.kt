@@ -657,26 +657,31 @@ class SATValiantTest {
 */
   @Test
   fun testLevensheteinIntersection() {
-  val arithSimp = """
-    START -> S
-    O -> +
-    S -> S O S | N1 | N2 | N3
-    N1 -> 1 
-    N2 -> 2 
-    N3 -> 3
-    """.trimIndent().parseCFG().noNonterminalStubs.also { println(it.prettyPrint()) }
+    val arithSimp = """
+      START -> S
+      O -> +
+      S -> S O S | N1 | N2 | N3
+      N1 -> 1 
+      N2 -> 2 
+      N3 -> 3
+    """.trimIndent().parseCFG().noNonterminalStubs
+//    .also { println(it.prettyPrint()) }
     val levCFG = constructLevenshteinCFG("1+2+3".map { it.toString() }, 2, "123+".map { it.toString() }.toSet())
-      .parseCFG().noNonterminalStubs//.also { println(it.prettyPrint()) }
+//      .also { println(it) }
+      .parseCFG().noNonterminalStubs
 
-  val template = "_ _ _ _ _"
-    val allL5 = template.synthesizeIncrementally(levCFG).toSet().also { println("L5: $it") }
-    val allA5 = template.synthesizeIncrementally(arithSimp).toSet().also { println("A5: $it") }
+    val template = "_ _ _ _ _ _ _"
+    val allL5 = template.synthesizeIncrementally(levCFG).toSet()//.also { println("L5: $it") }
+    val allA5 = template.synthesizeIncrementally(arithSimp).toSet()//.also { println("A5: $it") }
 
     val setIntersect = allA5.intersect(allL5).also { println("A5 ∩ L5: $it") }
+    assertNotEquals(setIntersect, emptySet())
 
     val cflIntersect = arithSimp.intersect(levCFG).synthesize(template.tokenizeByWhitespace())
       .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
       .distinct().toSet().also { println("CFL intersect: $it") }
-//    assertEquals(setIntersect, cflIntersect) // TODO: This fails
+    assertNotEquals(cflIntersect, emptySet())
+
+    assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
   }
 }

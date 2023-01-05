@@ -25,6 +25,10 @@ val ff: FormulaFactory =
 
 //fun elimFormulaFactory() = ffCache.remove(Thread.currentThread().id)
 
+/**
+ * n.b.: Variables in the SAT solver are label-sensitive, so we must be careful to avoid
+ *       unintended collisions when assigning a name to a variable during construction.
+ */
 fun BVar(name: String): Formula = ff.variable(name)
 //  (if(name.startsWith("HV"))
 //  ffCache.getOrPut(name.substringAfter("cfgHash::").substringBefore("_")) {

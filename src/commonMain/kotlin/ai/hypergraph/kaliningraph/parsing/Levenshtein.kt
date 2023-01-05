@@ -27,8 +27,8 @@ fun levDist(symbols: List<String>, i: Int) =
 fun constructLevenshteinCFG(symbols: List<String>, dist: Int, alphabet: Set<String> = symbols.toSet() + "ε"): String =
   """
      START -> ${acceptStates(symbols.size, dist).joinToString(" | ")}
-     * -> ${(alphabet + symbols).joinToString(" | ")}
-     d:1:0 -> ${symbols[0]}
+     * -> ${(alphabet + symbols).joinToString(" | ") { "%$it" }}
   """.trimIndent() +
+      (alphabet + symbols).joinToString("\n", "\n", "\n") { "%$it -> $it" } + "d:1:0 -> ${symbols[0]}\n" +
       symbols.drop(1).mapIndexed { i, symbol -> "d:${i+2}:0 -> d:${i+1}:0 $symbol" }.joinToString("\n", "\n") +
       (1..dist).joinToString("\n\n", "\n") { levDist(symbols, it) }
