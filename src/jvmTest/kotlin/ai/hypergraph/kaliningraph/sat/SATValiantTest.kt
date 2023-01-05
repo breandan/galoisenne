@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.sat
 import ai.hypergraph.kaliningraph.hasBalancedBrackets
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
-import io.kotest.matchers.sequences.shouldNotBeEmpty
 import org.junit.jupiter.api.Test
 import prettyPrint
 import kotlin.test.*
@@ -653,11 +652,11 @@ class SATValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinRepair"
 */
   @Test
-  fun testLevensheteinIntersection() {
-    val arithSimp = """
+  fun testLevensheteinRepair() {
+    val sumCFG = """
       START -> S
       O -> +
       S -> S O S | N1 | N2 | N3
@@ -666,22 +665,20 @@ class SATValiantTest {
       N3 -> 3
     """.trimIndent().parseCFG().noNonterminalStubs
 //    .also { println(it.prettyPrint()) }
-    val levCFG = constructLevenshteinCFG("1+2+3".map { it.toString() }, 2, "123+".map { it.toString() }.toSet())
+    val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
+    val levCFG = constructLevenshteinCFG(strWithParseErr, 2)
 //      .also { println(it) }
       .parseCFG().noNonterminalStubs
 
     val template = "_ _ _ _ _ _ _"
     val allL5 = template.synthesizeIncrementally(levCFG).toSet()//.also { println("L5: $it") }
-    val allA5 = template.synthesizeIncrementally(arithSimp).toSet()//.also { println("A5: $it") }
+    val allA5 = template.synthesizeIncrementally(sumCFG).toSet()//.also { println("A5: $it") }
 
-    val setIntersect = allA5.intersect(allL5).also { println("A5 ∩ L5: $it") }
+    val setIntersect = (allA5 intersect allL5).also { println("A5 ∩ L5: $it") }
     assertNotEquals(setIntersect, emptySet())
 
-    val cflIntersect = arithSimp.intersect(levCFG).synthesize(template.tokenizeByWhitespace())
-      .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
-      .distinct().toSet().also { println("CFL intersect: $it") }
+    val cflIntersect = levenshteinRepair(sumCFG, 2, strWithParseErr, solver = { synthesize(it) }).toSet()
     assertNotEquals(cflIntersect, emptySet())
-
     assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
   }
 }
