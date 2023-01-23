@@ -676,24 +676,30 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
 
 \section{Levenshtein reachability}
 
-Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+1}$. By intersection with a finite string and CFG, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can be depicted as an NFA, populated by accept states within radius $q$ of $S$:
+Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+1}$. By intersection with a finite string and CFG, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can be depicted as an NFA, populated by accept states within radius $k$ of $q_{0n}$:
 
 \begin{figure}[H]
 \resizebox{.64\textwidth}{!}{
-\begin{tikzpicture}
-\node[state, initial] (00) {};
-\node[state, right of=00] (01) {};
-\node[state, right of=01] (02) {};
-\node[state, right of=02] (03) {};
+\begin{tikzpicture}[
+->, % makes the edges directed
+>=stealth',
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+initial text=$ $, % sets the text that appears on the start arrow
+]
+\node[state, initial] (00) {$q_{00}$};
+\node[state, right of=00] (01) {$q_{01}$};
+\node[state, right of=01] (02) {$q_{02}$};
+\node[state, right of=02] (03) {$q_{03}$};
 \node[right of=03] (04) {$\cdots$};
-\node[accepting, state, right of=04] (0n) {S};
+\node[accepting, state, right of=04] (0n) {$q_{0n}$};
 
-\node[state, above of=00] (10) {};
-\node[state, right of=10] (11) {};
-\node[state, right of=11] (12) {};
-\node[state, right of=12] (13) {};
+\node[state, above of=00] (10) {$q_{10}$};
+\node[state, right of=10] (11) {$q_{11}$};
+\node[state, right of=11] (12) {$q_{12}$};
+\node[state, right of=12] (13) {$q_{13}$};
 \node[right of=13] (14) {$\cdots$};
-\node[accepting, state, right of=14] (1n) {};
+\node[accepting, state, right of=14] (1n) {$q_{1n}$};
 
 \node[above of=10] (q0) {$\vdots$};
 \node[right of=q0] (q1) {$\vdots$};
@@ -702,12 +708,12 @@ Levenshtein reachability is recognized by the nondeterministic infinite automato
 \node[right of=q3] (q4) {$\ddots$};
 \node[accepting, right of=q4] (qn) {$\vdots$};
 
-\node[state, above of=q0] (k0) {};
-\node[state, right of=k0] (k1) {};
-\node[state, right of=k1] (k2) {};
-\node[state, right of=k2] (k3) {};
+\node[state, above of=q0] (k0) {$q_{k0}$};
+\node[state, right of=k0] (k1) {$q_{k1}$};
+\node[state, right of=k1] (k2) {$q_{k2}$};
+\node[state, right of=k2] (k3) {$q_{k3}$};
 \node[right of=k3] (k4) {$\cdots$};
-\node[accepting, state, right of=k4] (kn) {};
+\node[accepting, state, right of=k4] (kn) {$q_{kn}$};
 
 
 \draw [->] (00) edge[below] node{$\sigma_1$} (01);
