@@ -360,3 +360,57 @@
 
 \newcommand{\err}[1]{\smash{\squiggly{#1}{}}}
 \newcommand{\stirlingii}{\genfrac{\{}{\}}{0pt}{}}
+
+%======== Arrows =========
+\newcommand{\knightarrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (0pt,6pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
+    \fill (6pt,6pt) circle [radius = 1pt];
+    \fill (12pt,0pt) circle [radius = 1pt];
+    \fill (12pt,6pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
+    \fill (12pt,0pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (12pt,6pt);
+  }
+}
+
+\newcommand{\kingarrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
+    \fill (0pt,6pt) circle [radius = 1pt];
+    \fill (6pt,6pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (6pt,6pt);
+    \draw [-to] (0pt,0pt) -- (0pt,6pt);
+    \draw [-to] (0pt,0pt) -- (6pt,0pt);
+  }
+}
+
+\newcommand{\knightkingarrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (0pt,6pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
+    \fill (6pt,6pt) circle [radius = 1pt];
+    \fill (12pt,0pt) circle [radius = 1pt];
+    \fill (12pt,6pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (6pt,6pt);
+    \draw [-to] (0pt,0pt) -- (0pt,6pt);
+    \draw [-to] (0pt,0pt) -- (6pt,0pt);
+    \draw [-to] (0pt,0pt) -- (12pt,6pt);
+  }
+}
+
+%======== Arrows =========
+
+\usetikzlibrary{automata, positioning, arrows}
+
+\tikzset{
+  ->, % makes the edges directed
+  >=stealth',
+  node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+  initial text=$ $, % sets the text that appears on the start arrow
+}

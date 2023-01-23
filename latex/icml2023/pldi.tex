@@ -341,7 +341,7 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
       \end{verbatim}
       \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
       \begin{verbatim}
-    └── ! [3]   └── and [4]   └── or [6]
+    └── ! [3]   └── and [4]   └── xor [6]
       \end{verbatim}
 
       \begin{verbatim}
@@ -673,6 +673,122 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
 %  \end{align*}
 %
 %  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
+
+\section{Levenshtein reachability}
+
+Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+1}$. By intersection with a finite string and CFG, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can be depicted as an NFA, populated by accept states within radius $q$ of $S$:
+
+\begin{figure}[H]
+\resizebox{.64\textwidth}{!}{
+\begin{tikzpicture}
+\node[state, initial] (00) {};
+\node[state, right of=00] (01) {};
+\node[state, right of=01] (02) {};
+\node[state, right of=02] (03) {};
+\node[right of=03] (04) {$\cdots$};
+\node[accepting, state, right of=04] (0n) {S};
+
+\node[state, above of=00] (10) {};
+\node[state, right of=10] (11) {};
+\node[state, right of=11] (12) {};
+\node[state, right of=12] (13) {};
+\node[right of=13] (14) {$\cdots$};
+\node[accepting, state, right of=14] (1n) {};
+
+\node[above of=10] (q0) {$\vdots$};
+\node[right of=q0] (q1) {$\vdots$};
+\node[right of=q1] (q2) {$\vdots$};
+\node[right of=q2] (q3) {$\vdots$};
+\node[right of=q3] (q4) {$\ddots$};
+\node[accepting, right of=q4] (qn) {$\vdots$};
+
+\node[state, above of=q0] (k0) {};
+\node[state, right of=k0] (k1) {};
+\node[state, right of=k1] (k2) {};
+\node[state, right of=k2] (k3) {};
+\node[right of=k3] (k4) {$\cdots$};
+\node[accepting, state, right of=k4] (kn) {};
+
+
+\draw [->] (00) edge[below] node{$\sigma_1$} (01);
+\draw [->] (01) edge[below] node{$\sigma_2$} (02);
+\draw [->] (02) edge[below] node{$\sigma_3$} (03);
+\draw [->] (03) edge[below] node{} (04);
+\draw [->] (04) edge[below] node{$\sigma_n$} (0n);
+
+\draw [->] (10) edge[below] node{$\sigma_1$} (11);
+\draw [->] (11) edge[below] node{$\sigma_2$} (12);
+\draw [->] (12) edge[below] node{$\sigma_3$} (13);
+\draw [->] (13) edge[below] node{} (14);
+\draw [->] (14) edge[below] node{$\sigma_n$} (1n);
+
+\draw [->] (q0) edge[below] node{$\sigma_1$} (q1);
+\draw [->] (q1) edge[below] node{$\sigma_2$} (q2);
+\draw [->] (q2) edge[below] node{$\sigma_3$} (q3);
+\draw [->] (q3) edge[below] node{} (q4);
+\draw [->] (q4) edge[below] node{$\sigma_n$} (qn);
+
+\draw [->] (k0) edge[below] node{$\sigma_1$} (k1);
+\draw [->] (k1) edge[below] node{$\sigma_2$} (k2);
+\draw [->] (k2) edge[below] node{$\sigma_3$} (k3);
+\draw [->] (k3) edge[below] node{} (k4);
+\draw [->] (k4) edge[below] node{$\sigma_n$} (kn);
+
+\draw [->] (00) edge[left] node{$*$} (11);
+\draw [->] (01) edge[left] node{$*$} (12);
+\draw [->] (02) edge[left] node{$*$} (13);
+\draw [->] (03) edge[left] node{$*$} (14);
+
+\draw [->] (10) edge[left] node{$*$} (q1);
+\draw [->] (11) edge[left] node{$*$} (q2);
+\draw [->] (12) edge[left] node{$*$} (q3);
+\draw [->] (13) edge[left] node{$*$} (q4);
+
+\draw [->] (q0) edge[left] node{$*$} (k1);
+\draw [->] (q1) edge[left] node{$*$} (k2);
+\draw [->] (q2) edge[left] node{$*$} (k3);
+\draw [->] (q3) edge[left] node{$*$} (k4);
+
+\draw [->] (00) edge[bend left, left] node{$*$} (10);
+\draw [->] (01) edge[bend left, left] node{$*$} (11);
+\draw [->] (02) edge[bend left, left] node{$*$} (12);
+\draw [->] (03) edge[bend left, left] node{$*$} (13);
+\draw [->] (04) edge[bend left, left] node{$*$} (14);
+\draw [->] (0n) edge[bend left, left] node{$*$} (1n);
+
+\draw [->] (10) edge[bend left, left] node{$*$} (q0);
+\draw [->] (11) edge[bend left, left] node{$*$} (q1);
+\draw [->] (12) edge[bend left, left] node{$*$} (q2);
+\draw [->] (13) edge[bend left, left] node{$*$} (q3);
+\draw [->] (14) edge[bend left, left] node{$*$} (q4);
+\draw [->] (1n) edge[bend left, left] node{$*$} (qn);
+
+\draw [->] (q0) edge[bend left, left] node{$*$} (k0);
+\draw [->] (q1) edge[bend left, left] node{$*$} (k1);
+\draw [->] (q2) edge[bend left, left] node{$*$} (k2);
+\draw [->] (q3) edge[bend left, left] node{$*$} (k3);
+\draw [->] (q4) edge[bend left, left] node{$*$} (k4);
+\draw [->] (qn) edge[bend left, left] node{$*$} (kn);
+
+\draw [->] (00) edge[below] node{$\sigma_2$} (12);
+\draw [->] (01) edge[below] node{$\sigma_3$} (13);
+\draw [->] (02) edge[below] node{$\sigma_4$} (14);
+
+\draw [->] (10) edge[below] node{$\sigma_2$} (q2);
+\draw [->] (11) edge[below] node{$\sigma_3$} (q3);
+\draw [->] (12) edge[below] node{$\sigma_4$} (q4);
+
+\draw [->] (q0) edge[below] node{$\sigma_2$} (k2);
+\draw [->] (q1) edge[below] node{$\sigma_3$} (k3);
+\draw [->] (q2) edge[below] node{$\sigma_4$} (k4);
+
+%https://tex.stackexchange.com/a/20986/139648
+%\draw [decorate,decoration={brace,amplitude=10pt,mirror,raise=10pt},yshift=0pt]
+%(q_0.south west) -- (q_3.south east);
+\end{tikzpicture}
+}
+\end{figure}
+
 
 \section{Context-sensitive reachability}
 
