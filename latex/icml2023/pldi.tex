@@ -687,106 +687,114 @@ node distance=2.5cm, % specifies the minimum distance between two nodes. Change 
 %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
 initial text=$ $, % sets the text that appears on the start arrow
 ]
-\node[state, initial] (00) {$q_{00}$};
-\node[state, right of=00] (01) {$q_{01}$};
-\node[state, right of=01] (02) {$q_{02}$};
-\node[state, right of=02] (03) {$q_{03}$};
-\node[right of=03] (04) {$\cdots$};
-\node[accepting, state, right of=04] (0n) {$q_{0n}$};
+\node[state, initial]                (00) {$q_{0,0}$};
+\node[state, right of=00]            (10) {$q_{1,0}$};
+\node[state, right of=10]            (20) {$q_{2,0}$};
+\node[state, right of=20]            (30) {$q_{3,0}$};
+\node[right of=30]                   (40) {$\vphantom{\vdots}\cdots$};
+\node[accepting, state, right of=40] (n0) {$q_{n,0}$};
 
-\node[state, above of=00] (10) {$q_{10}$};
-\node[state, right of=10] (11) {$q_{11}$};
-\node[state, right of=11] (12) {$q_{12}$};
-\node[state, right of=12] (13) {$q_{13}$};
-\node[right of=13] (14) {$\cdots$};
-\node[accepting, state, right of=14] (1n) {$q_{1n}$};
+\node[state, above of=00]            (01) {$q_{0,1}$};
+\node[state, right of=01]            (11) {$q_{1,1}$};
+\node[state, right of=11]            (21) {$q_{2,1}$};
+\node[state, right of=21]            (31) {$q_{3,1}$};
+\node[right of=31]                   (41) {$\vphantom{\vdots}\cdots$};
+\node[accepting, state, right of=41] (n1) {$q_{n,1}$};
 
-\node[above of=10] (q0) {$\vdots$};
-\node[right of=q0] (q1) {$\vdots$};
-\node[right of=q1] (q2) {$\vdots$};
-\node[right of=q2] (q3) {$\vdots$};
-\node[right of=q3] (q4) {$\ddots$};
-\node[accepting, right of=q4] (qn) {$\vdots$};
+\node[above of=01]                   (0j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=0j]                   (1j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=1j]                   (2j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=2j]                   (3j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=3j]                   (4j) {$\iddots$};
+\node[accepting, right of=4j]        (nj) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
 
-\node[state, above of=q0] (k0) {$q_{k0}$};
-\node[state, right of=k0] (k1) {$q_{k1}$};
-\node[state, right of=k1] (k2) {$q_{k2}$};
-\node[state, right of=k2] (k3) {$q_{k3}$};
-\node[right of=k3] (k4) {$\cdots$};
-\node[accepting, state, right of=k4] (kn) {$q_{kn}$};
+\node[state, above of=0j]            (0k) {$q_{0,k}$};
+\node[state, right of=0k]            (1k) {$q_{1,k}$};
+\node[state, right of=1k]            (2k) {$q_{2,k}$};
+\node[state, right of=2k]            (3k) {$q_{3,k}$};
+\node[right of=3k]                   (4k) {$\vphantom{\vdots}\cdots$};
+\node[accepting, state, right of=4k] (nk) {$q_{n,k}$};
 
+\draw [->] (00) edge[below] node{$\sigma_1$}    (10);
+\draw [->] (10) edge[below] node{$\sigma_2$}    (20);
+\draw [->] (20) edge[below] node{$\sigma_3$}    (30);
+\draw [->] (30) edge[below] node{$\sigma_4$}              (40);
+\draw [->] (40) edge[below] node{$\sigma_n$}    (n0);
 
-\draw [->] (00) edge[below] node{$\sigma_1$} (01);
-\draw [->] (01) edge[below] node{$\sigma_2$} (02);
-\draw [->] (02) edge[below] node{$\sigma_3$} (03);
-\draw [->] (03) edge[below] node{} (04);
-\draw [->] (04) edge[below] node{$\sigma_n$} (0n);
+\draw [->] (01) edge[below] node{$\sigma_1$}    (11);
+\draw [->] (11) edge[below] node{$\sigma_2$}    (21);
+\draw [->] (21) edge[below] node{$\sigma_3$}    (31);
+\draw [->] (31) edge[below] node{$\sigma_4$}              (41);
+\draw [->] (41) edge[below] node{$\sigma_n$}    (n1);
 
-\draw [->] (10) edge[below] node{$\sigma_1$} (11);
-\draw [->] (11) edge[below] node{$\sigma_2$} (12);
-\draw [->] (12) edge[below] node{$\sigma_3$} (13);
-\draw [->] (13) edge[below] node{} (14);
-\draw [->] (14) edge[below] node{$\sigma_n$} (1n);
+\draw [->] (0j) edge[below] node{$\sigma_1$}    (1j);
+\draw [->] (1j) edge[below] node{$\sigma_2$}    (2j);
+\draw [->] (2j) edge[below] node{$\sigma_3$}    (3j);
+\draw [->] (3j) edge[below] node{$\sigma_4$}              (4j);
+\draw [->] (4j) edge[below] node{$\sigma_n$}    (nj);
 
-\draw [->] (q0) edge[below] node{$\sigma_1$} (q1);
-\draw [->] (q1) edge[below] node{$\sigma_2$} (q2);
-\draw [->] (q2) edge[below] node{$\sigma_3$} (q3);
-\draw [->] (q3) edge[below] node{} (q4);
-\draw [->] (q4) edge[below] node{$\sigma_n$} (qn);
+\draw [->] (0k) edge[below] node{$\sigma_1$}    (1k);
+\draw [->] (1k) edge[below] node{$\sigma_2$}    (2k);
+\draw [->] (2k) edge[below] node{$\sigma_3$}    (3k);
+\draw [->] (3k) edge[below] node{$\sigma_4$}              (4k);
+\draw [->] (4k) edge[below] node{$\sigma_n$}    (nk);
 
-\draw [->] (k0) edge[below] node{$\sigma_1$} (k1);
-\draw [->] (k1) edge[below] node{$\sigma_2$} (k2);
-\draw [->] (k2) edge[below] node{$\sigma_3$} (k3);
-\draw [->] (k3) edge[below] node{} (k4);
-\draw [->] (k4) edge[below] node{$\sigma_n$} (kn);
+\draw [->] (00) edge[left] node{$*$}            (11);
+\draw [->] (10) edge[left] node{$*$}            (21);
+\draw [->] (20) edge[left] node{$*$}            (31);
+\draw [->] (30) edge[left] node{$*$}            (41);
+\draw [->] (30) edge[bend right, below] node{$\sigma_5$}            (41);
+\draw [->] (40) edge[           right] node{$\sigma_n$}            (n1);
+\draw [->] (40) edge[bend right, left] node{$*$}            (n1);
 
-\draw [->] (00) edge[left] node{$*$} (11);
-\draw [->] (01) edge[left] node{$*$} (12);
-\draw [->] (02) edge[left] node{$*$} (13);
-\draw [->] (03) edge[left] node{$*$} (14);
+\draw [->] (01) edge[left] node{$*$}            (1j);
+\draw [->] (11) edge[left] node{$*$}            (2j);
+\draw [->] (21) edge[left] node{$*$}            (3j);
+\draw [->] (31) edge[left] node{$*$}            (4j);
+\draw [->] (31) edge[bend right, below] node{$\sigma_5$}            (4j);
+\draw [->] (41) edge[           right] node{$\sigma_n$}            (nj);
+\draw [->] (41) edge[bend right, left] node{$*$}            (nj);
 
-\draw [->] (10) edge[left] node{$*$} (q1);
-\draw [->] (11) edge[left] node{$*$} (q2);
-\draw [->] (12) edge[left] node{$*$} (q3);
-\draw [->] (13) edge[left] node{$*$} (q4);
+\draw [->] (0j) edge[left] node{$*$}            (1k);
+\draw [->] (1j) edge[left] node{$*$}            (2k);
+\draw [->] (2j) edge[left] node{$*$}            (3k);
+\draw [->] (3j) edge[left] node{$*$}            (4k);
+\draw [->] (3j) edge[bend right, below] node{$\sigma_5$}            (4k);
+\draw [->] (4j) edge[           right] node{$\sigma_n$}            (nk);
+\draw [->] (4j) edge[bend right, left] node{$*$}            (nk);
 
-\draw [->] (q0) edge[left] node{$*$} (k1);
-\draw [->] (q1) edge[left] node{$*$} (k2);
-\draw [->] (q2) edge[left] node{$*$} (k3);
-\draw [->] (q3) edge[left] node{$*$} (k4);
+\draw [->] (00) edge[bend left, left] node{$*$} (01);
+\draw [->] (10) edge[bend left, left] node{$*$} (11);
+\draw [->] (20) edge[bend left, left] node{$*$} (21);
+\draw [->] (30) edge[bend left, left] node{$*$} (31);
+\draw [->] (40) edge[           left] node{$*$} (41);
+\draw [->] (n0) edge[bend right, right] node{$*$} (n1);
 
-\draw [->] (00) edge[bend left, left] node{$*$} (10);
-\draw [->] (01) edge[bend left, left] node{$*$} (11);
-\draw [->] (02) edge[bend left, left] node{$*$} (12);
-\draw [->] (03) edge[bend left, left] node{$*$} (13);
-\draw [->] (04) edge[bend left, left] node{$*$} (14);
-\draw [->] (0n) edge[bend left, left] node{$*$} (1n);
+\draw [->] (01) edge[bend left, left] node{$*$} (0j);
+\draw [->] (11) edge[bend left, left] node{$*$} (1j);
+\draw [->] (21) edge[bend left, left] node{$*$} (2j);
+\draw [->] (31) edge[bend left, left] node{$*$} (3j);
+\draw [->] (41) edge[           left] node{$*$} (4j);
+\draw [->] (n1) edge[bend right, right] node{$*$} (nj);
 
-\draw [->] (10) edge[bend left, left] node{$*$} (q0);
-\draw [->] (11) edge[bend left, left] node{$*$} (q1);
-\draw [->] (12) edge[bend left, left] node{$*$} (q2);
-\draw [->] (13) edge[bend left, left] node{$*$} (q3);
-\draw [->] (14) edge[bend left, left] node{$*$} (q4);
-\draw [->] (1n) edge[bend left, left] node{$*$} (qn);
+\draw [->] (0j) edge[bend left, left] node{$*$} (0k);
+\draw [->] (1j) edge[bend left, left] node{$*$} (1k);
+\draw [->] (2j) edge[bend left, left] node{$*$} (2k);
+\draw [->] (3j) edge[bend left, left] node{$*$} (3k);
+\draw [->] (4j) edge[           left] node{$*$} (4k);
+\draw [->] (nj) edge[bend right, right] node{$*$} (nk);
 
-\draw [->] (q0) edge[bend left, left] node{$*$} (k0);
-\draw [->] (q1) edge[bend left, left] node{$*$} (k1);
-\draw [->] (q2) edge[bend left, left] node{$*$} (k2);
-\draw [->] (q3) edge[bend left, left] node{$*$} (k3);
-\draw [->] (q4) edge[bend left, left] node{$*$} (k4);
-\draw [->] (qn) edge[bend left, left] node{$*$} (kn);
+\draw [->] (00) edge[below] node{$\sigma_2$}    (21);
+\draw [->] (10) edge[below] node{$\sigma_3$}    (31);
+\draw [->] (20) edge[below] node{$\sigma_4$}    (41);
 
-\draw [->] (00) edge[below] node{$\sigma_2$} (12);
-\draw [->] (01) edge[below] node{$\sigma_3$} (13);
-\draw [->] (02) edge[below] node{$\sigma_4$} (14);
+\draw [->] (01) edge[below] node{$\sigma_2$}    (2j);
+\draw [->] (11) edge[below] node{$\sigma_3$}    (3j);
+\draw [->] (21) edge[below] node{$\sigma_4$}    (4j);
 
-\draw [->] (10) edge[below] node{$\sigma_2$} (q2);
-\draw [->] (11) edge[below] node{$\sigma_3$} (q3);
-\draw [->] (12) edge[below] node{$\sigma_4$} (q4);
-
-\draw [->] (q0) edge[below] node{$\sigma_2$} (k2);
-\draw [->] (q1) edge[below] node{$\sigma_3$} (k3);
-\draw [->] (q2) edge[below] node{$\sigma_4$} (k4);
+\draw [->] (0j) edge[below] node{$\sigma_2$}    (2k);
+\draw [->] (1j) edge[below] node{$\sigma_3$}    (3k);
+\draw [->] (2j) edge[below] node{$\sigma_4$}    (4k);
 
 %https://tex.stackexchange.com/a/20986/139648
 %\draw [decorate,decoration={brace,amplitude=10pt,mirror,raise=10pt},yshift=0pt]
