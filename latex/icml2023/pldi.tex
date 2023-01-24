@@ -662,7 +662,7 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
   \end{cases}
 \end{align*}
 
-\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
+\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. In the following section, we will give a more efficient construction for generating and accepting $\Delta_{q}(\err{\sigma})$ that does not enumerating hole configurations.%As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
 
 %  This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
 %
@@ -674,14 +674,16 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
 %
 %  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
 
-\section{Levenshtein reachability}
+\section{Levenshtein reachability}\label{sec:levenshtein}
 
-Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+1}$. By intersection with a finite string and CFG, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can be depicted as an NFA, populated by accept states within radius $k$ of $q_{0n}$:
+Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. By intersection with a CFG and $\Sigma^n$, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can characterized as an acyclic NFA, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
 
 \begin{figure}[H]
-\resizebox{.64\textwidth}{!}{
+\begin{minipage}[c]{0.5\textwidth}
+\centering
+\resizebox{\textwidth}{!}{
 \begin{tikzpicture}[
-->, % makes the edges directed
+%->, % makes the edges directed
 >=stealth',
 node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
 %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
@@ -767,21 +769,21 @@ initial text=$ $, % sets the text that appears on the start arrow
 \draw [->] (10) edge[bend left, left] node{$*$} (11);
 \draw [->] (20) edge[bend left, left] node{$*$} (21);
 \draw [->] (30) edge[bend left, left] node{$*$} (31);
-\draw [->] (40) edge[           left] node{$*$} (41);
+\draw [->] (40) edge[right] node{$*$} (41);
 \draw [->] (n0) edge[bend right, right] node{$*$} (n1);
 
 \draw [->] (01) edge[bend left, left] node{$*$} (0j);
 \draw [->] (11) edge[bend left, left] node{$*$} (1j);
 \draw [->] (21) edge[bend left, left] node{$*$} (2j);
 \draw [->] (31) edge[bend left, left] node{$*$} (3j);
-\draw [->] (41) edge[           left] node{$*$} (4j);
+\draw [->] (41) edge[right] node{$*$} (4j);
 \draw [->] (n1) edge[bend right, right] node{$*$} (nj);
 
 \draw [->] (0j) edge[bend left, left] node{$*$} (0k);
 \draw [->] (1j) edge[bend left, left] node{$*$} (1k);
 \draw [->] (2j) edge[bend left, left] node{$*$} (2k);
 \draw [->] (3j) edge[bend left, left] node{$*$} (3k);
-\draw [->] (4j) edge[           left] node{$*$} (4k);
+\draw [->] (4j) edge[right] node{$*$} (4k);
 \draw [->] (nj) edge[bend right, right] node{$*$} (nk);
 
 \draw [->] (00) edge[below] node{$\sigma_2$}    (21);
@@ -797,12 +799,25 @@ initial text=$ $, % sets the text that appears on the start arrow
 \draw [->] (2j) edge[below] node{$\sigma_4$}    (4k);
 
 %https://tex.stackexchange.com/a/20986/139648
-%\draw [decorate,decoration={brace,amplitude=10pt,mirror,raise=10pt},yshift=0pt]
-%(q_0.south west) -- (q_3.south east);
+\draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (n0.south east) node[midway,yshift=-3em]{\textbf{String length}};
+\draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-40pt,rotate=90]{\textbf{Levenshtein edit distance}};
 \end{tikzpicture}
 }
+\end{minipage}
+\hfill
+\begin{minipage}[l]{5 cm}
+\centering
+\begin{align*}
+S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
+* &\Rightarrow \{\cdot \in \Sigma\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i, j-1}*\} \mid i, j \in [1, n]\times[1, k]\big\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i-1, j-1}*\}\mid i, j\in[1, n]\times [1, k]\big\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i-1, j} \sigma_i \}\mid i, j \in [1, n]\times[0, k]\big\} \\
+\big\{q_{i, j} &\Rightarrow \{q_{i-2, j-1} \sigma_i\} \mid i, j \in [2, n]\times[1, k] \big\}\\
+\end{align*}
+\end{minipage}
+\caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG. These representations are equivalent, and can be used to both recognize or generate by reversing the arrows.}
 \end{figure}
-
 
 \section{Context-sensitive reachability}
 
@@ -830,11 +845,13 @@ It is well-known that the family of CFLs is not closed under intersection. For e
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
 \end{figure}
 
-It is a well-known fact in formal language theory that CFLs are closed under union, composition, substitution and intersection with regular languages, and the intersection between two CFLs is decidable. Anyhow, since we are working with bounded-width CFLs, everything collapses down to finite languages, which are closed under all these operations. Thus, Bar-Hillel and other elegant constructions which took CS theorists many years to prove in full-generality become trivial when so restricted.
+It is a well-known fact in formal language theory that CFLs are closed under union, composition, substitution and intersection with regular languages, and the intersection between two CFLs is decidable. However CFLs are not closed under intersection, which requires a more general formalism. Following Okhotin, we define higher-order grammar combinators $\cup, \cap: \mathcal{G}^*\times\mathcal{G}^*\rightarrow\mathcal{G}^*$ where $\mathcal{G}^*$ is a conjunctive grammar, which are basically finite collections of CFGs. Unlike parser combinators which are susceptible to ambiguity errors, our grammar combinators return parse forests in case of syntactic ambiguity, and do not suffer from the same shortcomings.
 
 Given two CFLs $\mathcal{L}_\mathcal{G}, \mathcal{L}_{\mathcal{G}'}$, we can compute the intersection $\mathcal{L}_\mathcal{G}\cap\mathcal{L}_{\mathcal{G}'}\cap\Sigma^d$ by encoding $(\mathbf{M}_\mathcal{G}^*\sigma) = (\mathbf{M}_{\mathcal{G}'}^*\sigma)$. This allows us to build a DSL of grammar combinators to constrain the solution space.
 
 For example, we can solve $\Sigma^d \cap \overline{\mathcal{L}_\mathcal{G}}$ by enumerating $\{\beta\sigma'\gamma \mid \sigma' \in \Sigma^d, \beta = \gamma = \_^k\}$, overapproximating the prefix and suffix (padding left and right), and checking for UNSAT to underapproximate \textit{impossible substrings}, strings which cannot appear in any $\{\sigma \in \mathcal{L}_\mathcal{G}\}$. Precomputing impossible substrings for a given grammar allows us to quickly eliminate inadmissible repairs and localize syntax errors in candidate strings.
+
+Using the technique from Sec.~\ref{sec:levenshtein}, we can also compute language edit distance, the minimum number of Levenshtein edits required to fix a syntactically invalid string. Language intersection is significantly faster than approximating the gradient via sampling.
 
 We can also build a set of grammars of increasing granularity, like a lattice structure. Basically, we can build up a lattice (in the order theoretic sense), consisting of grammars of increasing granularity. All programming languages require balanced parentheses, but some have additional constraints. So we can combine grammars, count and do bounded linear integer arithmetic.
 
@@ -1114,4 +1131,5 @@ public void (*@\hl{append}@*)(int b) {
     \end{tabular}
   \end{center}
 \end{figure}
+\bibliography{../bib/acmart}
 \end{document}
