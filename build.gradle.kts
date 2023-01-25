@@ -8,7 +8,7 @@ plugins {
   signing
   `maven-publish`
   kotlin("multiplatform") version "1.8.0"
-  kotlin("jupyter.api") version "0.11.0-216"
+  kotlin("jupyter.api") version "0.11.0-221"
   id("com.github.ben-manes.versions") version "0.44.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -125,7 +125,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.3.0")
+        implementation("org.graalvm.js:js:22.3.1")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
@@ -169,10 +169,10 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.9.1")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.2")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:23.1.0")
+        implementation("org.jetbrains:annotations:24.0.0")
         implementation("org.slf4j:slf4j-simple:2.0.6")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf

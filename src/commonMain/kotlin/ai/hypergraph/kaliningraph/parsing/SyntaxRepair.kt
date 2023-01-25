@@ -195,7 +195,7 @@ fun CFG.containsImpossibleBigram(str: Σᐩ): Boolean =
 
 val CFG.startSymbols by cache { mutableSetOf(START_SYMBOL) }
 fun CFG.rememberPossibleBigrams(str: List<Σᐩ>) =
-  possibleBigrams.addAll(str.windowed(2).asSequence().map{ it.joinToString(" ")})
+  possibleBigrams.addAll(str.windowed(2).asSequence().map { it.joinToString(" ")})
 fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> =
   str.windowed(2).asSequence().filter {
     it.all { it in terminals } && it.joinToString(" ") !in (possibleBigrams + impossibleBigrams)
