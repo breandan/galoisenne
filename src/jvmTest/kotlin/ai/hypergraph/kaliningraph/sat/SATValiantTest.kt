@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import prettyPrint
+import kotlin.system.measureTimeMillis
 import kotlin.test.*
 
 /*
@@ -651,12 +652,7 @@ class SATValiantTest {
       }.take(5).toList().also { assert(it.isNotEmpty()) }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinRepair"
-*/
-  @Test
-  fun testLevensheteinRepair() {
-    val sumCFG = """
+  val sumCFG = """
       START -> S
       O -> +
       S -> S O S | N1 | N2 | N3
@@ -664,11 +660,13 @@ class SATValiantTest {
       N2 -> 2 
       N3 -> 3
     """.trimIndent().parseCFG().noNonterminalStubs
-//    .also { println(it.prettyPrint()) }
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
+*/
+  @Test
+  fun testLevensheteinIntersection() {
     val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
-    val levCFG = constructLevenshteinCFG(strWithParseErr, 2)
-//      .also { println(it) }
-      .parseCFG().noNonterminalStubs
+    val levCFG = constructLevenshteinCFG(strWithParseErr, 2).parseCFG().noNonterminalStubs
 
     val template = "_ _ _ _ _ _ _"
     val allL5 = template.synthesizeIncrementally(levCFG).toSet()//.also { println("L5: $it") }
@@ -677,8 +675,25 @@ class SATValiantTest {
     val setIntersect = (allA5 intersect allL5).also { println("A5 ∩ L5: $it") }
     assertNotEquals(setIntersect, emptySet())
 
-    val cflIntersect = levenshteinRepair(sumCFG, 2, strWithParseErr, solver = { synthesize(it) }).toSet()
+    val cflIntersect = sumCFG.levenshteinRepair(2, strWithParseErr, solver = { synthesize(it) }).toSet()
     assertNotEquals(cflIntersect, emptySet())
     assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinCompleteness"
+*/
+  @Test
+  fun testLevensheteinCompleteness() {
+    val strWithParseErr = "1 + 3 + + 1 + 2 +"
+    val tokens = strWithParseErr.tokenizeByWhitespace()
+
+    var levRepairs = setOf<String>()
+    measureTimeMillis { levRepairs = sumCFG.levenshteinRepair(2, tokens, solver = { synthesize(it) }).toSet() }
+
+    var scnRepairs = setOf<String>()
+    measureTimeMillis { scnRepairs = repair(strWithParseErr, sumCFG, synthesizer = { synthesize(it) }).toSet() }
+
+    assertTrue(scnRepairs in levRepairs)
   }
 }

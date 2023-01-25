@@ -66,6 +66,8 @@ infix fun IntRange.isSubsetOf(ir: IntRange) = ir.first <= first && last <= ir.la
 infix fun IntRange.isStrictSubsetOf(ir: IntRange) =
   ir.first <= first && last <= ir.last && this != ir
 
+operator fun <T> Set<T>.contains(s: Set<T>) = containsAll(s)
+
 @JvmName("cartProdPairSeq") operator fun <E: Π2<A, B>, A, B, Z> Sequence<E>.times(s: Sequence<Z>): Sequence<Π3<A, B, Z>> =
   flatMap { s.map(it::to) }
 

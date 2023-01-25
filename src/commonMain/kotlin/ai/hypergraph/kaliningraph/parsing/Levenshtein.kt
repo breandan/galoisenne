@@ -38,8 +38,8 @@ fun constructLevenshteinCFG(symbols: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ
  * parseable strings each within Levenshtein distance δ([unparseable], ·) <= [maxDist].
  * @see [CJL.alignNonterminals]
  */
-fun levenshteinRepair(cfg: CFG, maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> {
+fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> {
   val levCFG = constructLevenshteinCFG(unparseable, maxDist).parseCFG().noNonterminalStubs
-  return (cfg intersect levCFG).solver(List(unparseable.size + maxDist) { "_" })
+  return (this intersect levCFG).solver(List(unparseable.size + maxDist) { "_" })
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
 }

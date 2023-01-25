@@ -322,7 +322,7 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
                      &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
                      &      &      &      &      &      & \pcd & \cdd &      & C    \\
                      &      &      &      &      &      &      &      & T_C  & \vdd \\
-                     &      &      &      &      &      &      & \xno &      & \\
+                     &      &      &      &      &      &      &      &      & \\
                      &      &      &      &      &      &      &      &      & \\
                      &      &      &      &      &      &      &      &      & \\
                      &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
@@ -662,7 +662,7 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
   \end{cases}
 \end{align*}
 
-\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. In the following section, we will give a more efficient construction for generating and accepting $\Delta_{q}(\err{\sigma})$ that does not enumerating hole configurations.%As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
+\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. In the following section, we will give a more efficient construction for generating and accepting $\Delta_{q}(\err{\sigma})$ that does not require enumerating hole configurations.%As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
 
 %  This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
 %
@@ -882,22 +882,22 @@ Clearly, the solving process is polynomial in the size of the string. For the sa
 
 For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. How can we formalize this argument to work on arbitrary (e.g., potentially ambiguous) grammars? This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation?
 
-\section{Realtime Error Correction}\label{sec:holes}
-
-Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given an input string, $\Sigma^n$, where should we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
-
-\begin{enumerate}
-    \item Fetch the most recent CFG and string from the editor.
-    \item Exclude parsable substrings from hollowing.
-    \item Lazily enumerate all HCs of increasing length.
-    \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
-    \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
-    \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
-    \item Feed sketch templates to an incremental SAT solver.
-    \item Decode and rerank models by Levenshtein distance.
-\end{enumerate}
-
-\noindent $^*$ These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.
+%\section{Realtime Error Correction}\label{sec:holes}
+%
+%Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given an input string, $\Sigma^n$, where should we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
+%
+%\begin{enumerate}
+%    \item Fetch the most recent CFG and string from the editor.
+%    \item Exclude parsable substrings from hollowing.
+%    \item Lazily enumerate all HCs of increasing length.
+%    \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
+%    \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
+%    \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
+%    \item Feed sketch templates to an incremental SAT solver.
+%    \item Decode and rerank models by Levenshtein distance.
+%\end{enumerate}
+%
+%\noindent $^*$ These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.
 
 
 \section{Practical Example}

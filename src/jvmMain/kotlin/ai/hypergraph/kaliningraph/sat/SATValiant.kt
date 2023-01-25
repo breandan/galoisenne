@@ -254,7 +254,7 @@ fun Σᐩ.synthesizeIncrementally(
   cfg: CFG,
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
-  variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
+  variations: List<Mutator> = listOf({ _, _ -> sequenceOf() }),
   updateProgress: (Σᐩ) -> Unit = {},
   takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ> = {
@@ -294,18 +294,17 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(toke
 // TODO: As new keystrokes are received, we should incrementally update
 //  existing constraints rather than creating a fresh SAT instance.
 fun CJL.synthesize(
-  vararg strs: List<Σᐩ>,
+  strs: List<Σᐩ>,
   takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted }
 ): Sequence<Σᐩ> {
-  val tokens = strs.asList()
-  check(tokens.flatten().all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
+  val tokens = strs
+  check(tokens.all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
   { "All tokens passed into synthesize() must be contained in all CFGs" }
-  check(tokens.all { it.size == tokens[0].size }) { "Size mismatch: ${strs.map { it.size }}" }
   return when {
-    tokens.flatten().none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
-    tokens.first().size == 1 -> cfgs.map { it.handleSingleton(tokens.first()[0]) }.intersect().asSequence()
+    tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
+    tokens.size == 1 -> cfgs.map { it.handleSingleton(tokens.first()) }.intersect().asSequence()
     else -> sequence {
-      val (parsingConstraints, rubix) = generateConstraints(tokens.first())
+      val (parsingConstraints, rubix) = generateConstraints(tokens)
       val strVars = rubix.stringVariables.fold(setOf<Formula>()) { a, b -> a + b }
 
       // FormulaDimacsFileWriter.write("dimacs.cnf", parsingConstraints.cnf(), true)
@@ -330,7 +329,7 @@ fun CJL.synthesize(
         // In the case of intersections, which CFG is used to generate the string does not matter.
         val cfg = cfgs.first()
         // Decode model from SAT solver into the corresponding string
-        val fillers = rubix.stringVariables.zip(tokens.first())
+        val fillers = rubix.stringVariables.zip(tokens)
           .map { (bits, token) ->
             // If the token is not a hole token, use the original token.
             if (cfgs.none { token.isHoleTokenIn(it) }) token
