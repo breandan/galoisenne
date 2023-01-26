@@ -654,7 +654,8 @@ class SATValiantTest {
   val sumCFG = """
       START -> S
       O -> +
-      S -> S O S | N1 | N2 | N3
+      S -> S O S | N
+      N -> N1 | N2 | N3 | N N
       N1 -> 1 
       N2 -> 2 
       N3 -> 3
@@ -688,19 +689,22 @@ class SATValiantTest {
     val strWithParseErr = "1 + 1 + 3 + + 1 + 2 + 4"
     val tokens = strWithParseErr.tokenizeByWhitespace()
 
-    MAX_SAMPLE = 50
+    val sampleSize = 50
     var time = System.currentTimeMillis()
     val levenshteinRadius = 2
     val levRepairs = sumCFG.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
       .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
-      .take(MAX_SAMPLE).toSet()
+      .take(sampleSize).toSet()
 
-    println("Lev repairs: $levRepairs")
+    println("Lev repairs (total time = ${System.currentTimeMillis() - time}ms): $levRepairs")
 
     time = System.currentTimeMillis()
-    val scnRepairs= repair(strWithParseErr, sumCFG, synthesizer = { synthesize(it) },
-      updateProgress = { println("${System.currentTimeMillis() - time}, $it") }).toSet()
+    val scnRepairs= repairLazily(strWithParseErr, sumCFG, synthesizer = { synthesize(it) })
       .filter { levenshtein(it.tokenizeByWhitespace(), strWithParseErr.tokenizeByWhitespace()) <= levenshteinRadius }
+      .distinct().mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
+      .take(sampleSize).toSet()
+
+    println("Scn repairs (total time = ${System.currentTimeMillis() - time}ms): $scnRepairs")
 
     assertTrue(scnRepairs in levRepairs, "$scnRepairs ⊈ $levRepairs")
   }

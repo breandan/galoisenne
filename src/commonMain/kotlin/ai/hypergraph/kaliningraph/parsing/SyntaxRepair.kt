@@ -53,6 +53,34 @@ fun repair(
   return repairs
 }
 
+fun repairLazily(
+  prompt: Σᐩ,
+  cfg: CFG,
+  coarsen: Σᐩ.() -> Σᐩ = { this },
+  uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
+  synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
+  filter: (Σᐩ.() -> Boolean)? = null,
+): Sequence<Σᐩ> {
+  println("Repairing: $prompt")
+  val coarsened = prompt.coarsen()
+//  if (cfg.parse(coarsened) != null) return emptyList()
+  val tokens = coarsened.tokenizeByWhitespace()
+  val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else HOLE_MARKER }
+  val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
+
+  val variations: List<Mutator> =
+    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
+  var totalSamples = 0
+  return sanitized.synthesizeWithVariations(
+    cfg = cfg,
+    synthesizer = synthesizer,
+    allowNTs = false,
+    variations = variations,
+  )
+    .map { totalSamples++; it.uncoarsen(prompt) }
+    .let { if(filter != null) it.filter(filter) else it }
+}
+
 // Use distance from the matching token as a heuristic (downrank edits far away from source)?
 fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
   compareBy(tokenwiseEdits(this)).thenBy { it.length }
