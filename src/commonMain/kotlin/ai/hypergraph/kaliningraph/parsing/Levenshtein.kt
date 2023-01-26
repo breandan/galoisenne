@@ -13,7 +13,7 @@ fun backtrace(x: Int, y: Int, sym: Σᐩ) =
     if (x == 0 && y == 0) sym else if (x < 0) "" else "d:$x:$y $sym"
 
 // https://fulmicoton.com/posts/levenshtein#observations-lets-count-states
-fun levDist(symbols: List<Σᐩ>, i: Int) =
+private fun levenshteinTransitions(symbols: List<Σᐩ>, i: Int) =
   "d:0:$i -> ${if(i == 1) "" else "d:0:${i - 1} "}*\n" +
     symbols.mapIndexed { j, s ->
       "d:${j + 1}:$i -> " +
@@ -31,7 +31,7 @@ fun constructLevenshteinCFG(symbols: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ
   """.trimIndent() +
       (alphabet + symbols).joinToString("\n", "\n", "\n") { "%$it -> $it" } + "d:1:0 -> ${symbols[0]}\n" +
       symbols.drop(1).mapIndexed { i, symbol -> "d:${i+2}:0 -> d:${i+1}:0 $symbol" }.joinToString("\n", "\n") +
-      (1..dist).joinToString("\n\n", "\n") { levDist(symbols, it) }
+      (1..dist).joinToString("\n\n", "\n") { levenshteinTransitions(symbols, it) }
 
 /**
  * Takes a [CFG], an [unparseable] string, and a [solver], and returns a sequence of
@@ -41,5 +41,5 @@ fun constructLevenshteinCFG(symbols: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ
 fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> {
   val levCFG = constructLevenshteinCFG(unparseable, maxDist).parseCFG().noNonterminalStubs
   return (this intersect levCFG).solver(List(unparseable.size + maxDist) { "_" })
-    .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
+    .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }

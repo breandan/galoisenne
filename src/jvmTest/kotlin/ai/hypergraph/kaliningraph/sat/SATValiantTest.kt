@@ -1,20 +1,19 @@
 package ai.hypergraph.kaliningraph.sat
 
-import ai.hypergraph.kaliningraph.hasBalancedBrackets
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import org.junit.jupiter.api.Test
 import prettyPrint
-import kotlin.system.measureTimeMillis
 import kotlin.test.*
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest"
 */
 class SATValiantTest {
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVecJoin"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVecJoin"
+  */
   @Test
   fun testVecJoin() {
     val cfg = "S -> ( S ) | ( ) | S S".parseCFG()
@@ -38,9 +37,9 @@ class SATValiantTest {
     }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
+  */
   @Test
   fun testTLArithmetic() {
     val cfg = """
@@ -86,9 +85,9 @@ class SATValiantTest {
       R2 -> ]
     """
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmetic"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmetic"
+  */
   @Test
   fun testArithmetic() {
     """
@@ -105,9 +104,9 @@ class SATValiantTest {
     }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExample"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExample"
+  */
   @Test
   fun testXujieExample() {
     val cfg = xujieGrammar.trimIndent().parseCFG(normalize=false)
@@ -130,9 +129,9 @@ class SATValiantTest {
     }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testSingleStepMultiplication"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testSingleStepMultiplication"
+  */
   @Test
   fun testSingleStepMultiplication()  {
     xujieGrammar.trimIndent().parseCFG(normalize = false).let { cfg ->
@@ -170,9 +169,9 @@ class SATValiantTest {
     }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testBalancedBrackets"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testBalancedBrackets"
+  */
   @Test
   fun testBalancedBrackets()  {
     val cfg = "S -> [ S ] | [ ] | S S".parseCFG().noNonterminalStubs
@@ -200,9 +199,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP"
+  */
   @Test
   fun testXujieParsingWithFP()  {
     val cfg = """
@@ -224,9 +223,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExWithNT"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExWithNT"
+  */
   @Test
   fun testXujieExWithNT()  {
     val cfg = """
@@ -253,9 +252,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testOCamlHW"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testOCamlHW"
+  */
   @Test
   fun testOCamlHW()  {
     val cfg = """
@@ -274,9 +273,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP1"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieParsingWithFP1"
+  */
   @Test
   fun testXujieParsingWithFP1()  {
     val cfg = """
@@ -297,9 +296,9 @@ class SATValiantTest {
     assertTrue(isValid)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSAT"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSAT"
+  */
   @Test
   fun testMultiSAT() {
     val cfg = """
@@ -324,9 +323,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithSubstitution"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithSubstitution"
+  */
   @Test
   fun testMultiSATWithSubstitution() {
     val cfg = """
@@ -351,9 +350,9 @@ class SATValiantTest {
       }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithRandomSubstitution"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testMultiSATWithRandomSubstitution"
+  */
   @Test
   fun testMultiSATWithRandomSubstitution() {
     val cfg = """
@@ -396,9 +395,9 @@ class SATValiantTest {
     assertTrue(isValid)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testAssociativity"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testAssociativity"
+  */
   @Test
   fun testAssociativity() {
     val cfg = """
@@ -407,19 +406,19 @@ class SATValiantTest {
       S -> X | Y | Z
     """.parseCFG().map { (l, r) ->
       l.replace(START_SYMBOL, "S", ) to
-      r.map { it.replace(START_SYMBOL, "S") }
+          r.map { it.replace(START_SYMBOL, "S") }
     }.toSet()
 
     val t = cfg.initialMatrix("3 + 1 = 4".tokenizeByWhitespace())
     assertNotEquals(t * (t * t), (t * t) * t)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.whyIsItEmpty"
-*/
-    @Test
-    fun whyIsItEmpty() {
-      val cfg = """
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.whyIsItEmpty"
+  */
+  @Test
+  fun whyIsItEmpty() {
+    val cfg = """
         START -> P
         P -> A | ( P ) | ( ) | P P | W
         W -> w | public static
@@ -428,21 +427,21 @@ class SATValiantTest {
 //    println(cfg.parse("Z <= X + Y")?.prettyPrint())
 
 //    assertNotNull(cfg.parse("Z <= Y"))
-      "public static w ( ) _ _ _ _ _ _"
-        .synthesizeIncrementally(cfg).take(10).forEach { println(it) }
+    "public static w ( ) _ _ _ _ _ _"
+      .synthesizeIncrementally(cfg).take(10).forEach { println(it) }
 
-      "_ _ _ _ _ _ _ _ static public _ _ _ _ _ _ _ _"
-        .synthesizeIncrementally(cfg).take(10).forEach { println(it) }
+    "_ _ _ _ _ _ _ _ static public _ _ _ _ _ _ _ _"
+      .synthesizeIncrementally(cfg).take(10).forEach { println(it) }
 
-      println("Synthesizing a counterexample:")
-      "_ _ _ _ _ _ _ _ ( ) _ _ _ _ _ _ _ _"
-        .synthesizeIncrementally(cfg).take(10)
-        .forEach { println(it); assertNotNull(cfg.parse(it)) }
-    }
+    println("Synthesizing a counterexample:")
+    "_ _ _ _ _ _ _ _ ( ) _ _ _ _ _ _ _ _"
+      .synthesizeIncrementally(cfg).take(10)
+      .forEach { println(it); assertNotNull(cfg.parse(it)) }
+  }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testIfThen"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testIfThen"
+  */
   @Test
   fun testIfThen() {
     val cfg = """
@@ -464,9 +463,9 @@ class SATValiantTest {
       .forEach { assertNotNull(cfg.parse(it.also { println(it) }), "Unparseable: $it") }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVariableLengthDecoding"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testVariableLengthDecoding"
+  */
   @Test
   fun testVariableLengthDecoding() {
     val cfg = """
@@ -520,7 +519,7 @@ class SATValiantTest {
     S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
   """.parseCFG()
 
-  private fun Tree.middle(): String? = children.drop(1).firstOrNull()?.terminal
+  private fun Tree.middle(): Σᐩ? = children.drop(1).firstOrNull()?.terminal
   fun Tree.eval(): Int = when {
     middle() == "/" -> children.first().eval() / children.last().eval()
     middle() == "-" -> children.first().eval() - children.last().eval()
@@ -531,9 +530,9 @@ class SATValiantTest {
     else -> children.asSequence().map { it.eval() }.first { 0 <= it }
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmeticEval"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmeticEval"
+  */
   @Test
   fun testArithmeticEval() {
     assertEquals(arith.parse("( 1 + 2 ) * ( 3 * 4 )")!!.eval(), 36)
@@ -572,9 +571,9 @@ class SATValiantTest {
     P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
   """.parseCFG()
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
+  */
   @Test
   fun testCheckedArithmetic() {
     "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )"
@@ -591,9 +590,9 @@ class SATValiantTest {
       }.distinct().take(4).toList()
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testImpossibleSubstring"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testImpossibleSubstring"
+  */
   @Test
   fun testImpossibleSubstring() {
     // How quickly can we decide whether a string s is a substring of no string in CFL ∩ Σⁿ?
@@ -608,9 +607,9 @@ class SATValiantTest {
     assertNotNull(cfg1.synthesize("_ _ _ _ _ _ _ _ w ( _ _ _ _ _ _ _ _".tokenizeByWhitespace()).firstOrNull().also { println(it) })
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testPrunedQuery"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testPrunedQuery"
+  */
   @Test
   fun testPrunedQuery() {
     val cfg = """S -> w | ( ) | [ ] | < > | { } | ( S ) | [ S ] | < S > | { S } | S S""".parseCFG()
@@ -621,9 +620,9 @@ class SATValiantTest {
     println(longQuery.synthesizeIncrementally(cfg, enablePruning = true).first())
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCFLPumping"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCFLPumping"
+  */
   @Test
   fun testCFLPumping() {
     val cfgA = """
@@ -641,7 +640,7 @@ class SATValiantTest {
     // This language should recognize {aⁿbⁿcⁿ | n > 0}
     val csl = (cfgA intersect cfgB)
     println("CSL:\n" + csl.prettyPrint())
-    csl.synthesize(List(20) { "_" }.joinToString(" ").tokenizeByWhitespace())
+    csl.synthesize(List(20) { "_" })
       .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
       .map {
         println(it)
@@ -660,9 +659,10 @@ class SATValiantTest {
       N2 -> 2 
       N3 -> 3
     """.trimIndent().parseCFG().noNonterminalStubs
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
-*/
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
+  */
   @Test
   fun testLevensheteinIntersection() {
     val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
@@ -680,20 +680,28 @@ class SATValiantTest {
     assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinCompleteness"
-*/
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinCompleteness"
+  */
   @Test
   fun testLevensheteinCompleteness() {
-    val strWithParseErr = "1 + 3 + + 1 + 2 +"
+    val strWithParseErr = "1 + 1 + 3 + + 1 + 2 + 4"
     val tokens = strWithParseErr.tokenizeByWhitespace()
 
-    var levRepairs = setOf<String>()
-    measureTimeMillis { levRepairs = sumCFG.levenshteinRepair(2, tokens, solver = { synthesize(it) }).toSet() }
+    MAX_SAMPLE = 50
+    var time = System.currentTimeMillis()
+    val levenshteinRadius = 2
+    val levRepairs = sumCFG.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
+      .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
+      .take(MAX_SAMPLE).toSet()
 
-    var scnRepairs = setOf<String>()
-    measureTimeMillis { scnRepairs = repair(strWithParseErr, sumCFG, synthesizer = { synthesize(it) }).toSet() }
+    println("Lev repairs: $levRepairs")
 
-    assertTrue(scnRepairs in levRepairs)
+    time = System.currentTimeMillis()
+    val scnRepairs= repair(strWithParseErr, sumCFG, synthesizer = { synthesize(it) },
+      updateProgress = { println("${System.currentTimeMillis() - time}, $it") }).toSet()
+      .filter { levenshtein(it.tokenizeByWhitespace(), strWithParseErr.tokenizeByWhitespace()) <= levenshteinRadius }
+
+    assertTrue(scnRepairs in levRepairs, "$scnRepairs ⊈ $levRepairs")
   }
 }
