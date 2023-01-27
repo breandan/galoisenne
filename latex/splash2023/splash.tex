@@ -133,25 +133,26 @@ X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow 
 \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
 \begin{align*}
-  M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-         \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
-         \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                     &                &             &        & \varnothing\\
-                     &                &             &        & \sigma_n^\shup \\
-         \varnothing & \Cdots         &             &        & \varnothing
-  \end{pNiceMatrix} &\Rightarrow M^* =
-  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-    \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
-    \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
-                &                &         &        & \Lambda\\
-                &                &         &        & \sigma_n^\shup \\
-    \varnothing & \Cdots         &         &        & \varnothing
-  \end{pNiceMatrix}
+M^0:=
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+   \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+   \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+               &                &             &        & \varnothing\\
+               &                &             &        & \sigma_n^\shup \\
+   \varnothing & \Cdots         &             &        & \varnothing
+\end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+   \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+   \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+               &                &         &        & \Lambda\\
+               &                &         &        & \sigma_n^\shup \\
+   \varnothing & \Cdots         &         &        & \varnothing
+\end{pNiceMatrix}
 \end{align*}
 
 \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-This decision procedure can be abstracted by lifting into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
+This decision procedure can be abstracted by lifting into the domain of bitvector variables, producing an algebraic expression for each scalar inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. Furthermore, we can lower Valiant's algorithm onto a polynomial system of equations over finite fields, allowing us to solve for holes and parse trees. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
 \begin{figure}[H]
   \adjustbox{scale=0.82,center}{%
@@ -164,14 +165,27 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
   }
 \end{figure}
 
-\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, $\varphi^{-1}$ may not exist, as an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
+\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
 
-\noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is believed to be the most efficient general procedure for CFL recognition.
+\noindent So far, we only consider Cartesian closed categories, however, we can also consider other categories, such as the category of CFLs under conjunction, which allows us to encode the intersection of two CFGs. Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to Boolean matrix multiplication are realizable by CFL parsers. Assuming sparsity, this technique is typically linearithmic, and is believed to be the most efficient general procedure for CFL recognition.
+
+\pagebreak\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
+
+\begin{figure}[H]
+\adjustbox{scale=0.75,center}{%
+\[\begin{tikzcd}[row sep=large, col sep=huge]
+\text{String} && \text{Grammar} && \err{\text{String}} \\
+[-20pt] \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[u, dashed, no head, color=gray] \arrow[dl]\arrow[ddl, bend left] \arrow[ddd, dashed, no head, color=gray] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
+& V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
+& \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
+& CST & \phantom{.} & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
+\end{tikzcd}\]
+}
+\end{figure}
+
+Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
-
-
-\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
 %We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 
@@ -220,7 +234,19 @@ This decision procedure can be abstracted by lifting into the domain of bitvecto
 
 \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-\section{Error Recovery}\label{sec:error}
+\subsection{Incrementalizing the parser}\label{sec:incrementalization}
+
+Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
+\begin{center}
+\begin{tabular}{ c c c c c }
+\scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
+Append                               & & Delete                                       & & Insert                                       \\
+$\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
+\end{tabular}
+\end{center}
+Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
+
+\pagebreak\section{Error Recovery}\label{sec:error}
 
 Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
 
@@ -408,14 +434,41 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 %    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
 \end{figure}
 
-\section{Backpropagation of error}
+\section{Coarsening and simplification of subexpressions}
+
+Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified? This transformation is admissible and indeed desirable when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. Returning to Fig. 4, under what circumstances is the following reduction admissible?
+
+\begin{figure}[H]
+\[
+\mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+\vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+\vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+&             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+&             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+&             &                    &                   &                        & \ddd & \\
+&             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+\vno & \cdd        &                    &                   &                        &      & \vno
+\end{pNiceArray} \equiv
+\begin{pNiceArray}{>{\strut}ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+\vno & \rcr\mathcal{L}_{1,3} & \rcw\mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+\vdd & \ddd                  & \mathcal{V}_{2,4}     &      & \vdd \\
+&                       &                       & \ddd & \\
+&                       &                       &      & \mathcal{V}_{n,n} \\
+\vno & \cdd                  &                       &      & \vno
+\end{pNiceArray}
+\]
+\end{figure}
+
+For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. How can we formalize this argument to work on arbitrary (e.g., potentially ambiguous) grammars? This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation? To answer this question, we must introduce the concept of a context-free language language derivative.
+
+\pagebreak\section{Backpropagation of error}
 
 %    Although holes may occur anywhere, let us consider two cases in which $\Sigma^+$ is strictly left- or right-constrained, i.e., $\highlight{x}z, x\highlight{z}: \Sigma^{|x|+|z|}$.
 
 Valiant's $\otimes$-operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
 \begin{table}[H]
-  \adjustbox{center}{%
+\resizebox{0.8\textwidth}{!}{
   \begin{tabular}{ccccc}
     Valiant's $\otimes$-operator && Left Quotient && Right Quotient \\\\
     $x \otimes z := \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&
@@ -440,7 +493,7 @@ Valiant's $\otimes$-operator, which yields the set of productions unifying known
       \cline{2-2}
     \end{tabular}
   \end{tabular}
-  }
+}
 \end{table}
 
 \noindent The left quotient coincides with the derivative operator first proposed by Brzozowski~\cite{brzozowski1964derivatives} and Antimirov~\cite{antimirov1996partial} over regular languages, lifted into the context-free setting (our work). When the root and LHS are fixed, e.g., $\frac{\partial S}{\partial \cev{x}}: (\cev{V} \rightarrow S) \rightarrow \vec{\mathcal{V}}$ returns the set of admissible nonterminals to the RHS. One may also consider a gradient operator, $\cev{\nabla} S: (\cev{\mathcal{V}} \rightarrow S) \rightarrow \vec{\mathcal{V}}$, which simultaneously tracks the partials with respect to a set of multiple LHS nonterminals produced by a fixed root.
@@ -562,7 +615,7 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
       \end{pmatrix}
     \end{align*}
   \end{minipage}
-  \caption{CFGs are witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
+  \caption{CFGs are witnessed by a rank-3 tensor, whose inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
 \end{figure}
 
 \noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
@@ -595,7 +648,7 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
 %We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-\section{String Repair}
+\pagebreak\section{String Repair}
 
 Given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^\complement$, where should we put holes to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. In other words, we seek:
 
@@ -620,15 +673,15 @@ U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
 
 \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$.
 
-\noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
-
-\begin{align}
-\begin{array}{cccccccccccccc}
-  i              & 0          & 1          & 2          & 3          & 4    & 5          & 6    & 7          & 8          & 9     & 10   & 11   \\
-  \mathbf{S}_i   & 1000       & 0100       & 0010       & 1001       & 1100 & 0110       & 1011 & 0101       & 1010       & 1101  & 1011 & 0101 \\
-  \mathbf\sigma & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &      & \text{B B} & \text{C C} &       &      &
-\end{array}
-\end{align}
+%\noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
+%
+%\begin{align}
+%\begin{array}{cccccccccccccc}
+%  i              & 0          & 1          & 2          & 3          & 4    & 5          & 6    & 7          & 8          & 9     & 10   & 11   \\
+%  \mathbf{S}_i   & 1000       & 0100       & 0010       & 1001       & 1100 & 0110       & 1011 & 0101       & 1010       & 1101  & 1011 & 0101 \\
+%  \mathbf\sigma & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &      & \text{B B} & \text{C C} &       &      &
+%\end{array}
+%\end{align}
 
 Next, to admit deletion, we augment $P$ with $(\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+)$ and replace each production $(w \rightarrow t)$ with $(w \rightarrow t\:\varepsilon^+ \mid \varepsilon^+\:t \mid t)$.
 
@@ -674,13 +727,15 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
 %
 %  This is needed because of the doubly-ambiguous nature of tree search: a single string may have a parse forest, and an incomplete string simultaneously occupies a superposition of possible parse forests. When we encounter two adjacent parse forests which cannot be joined, we know that either (1) the left derivation must change (2) the right derivation must change or (3) there must be a hole in the middle which joins the two together. When recursing over the state space, we must simultaneously consider all three possibilities.
 
+\pagebreak
 \section{Levenshtein reachability}\label{sec:levenshtein}
 
-Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space can characterized as an acyclic NFA, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
+Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space is representable as an acyclic NFA, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
 
 \begin{figure}[H]
-\begin{minipage}[c]{0.5\textwidth}
+\begin{minipage}[c]{0.45\textwidth}
 \centering
+\underline{NFA}\vspace{10pt}
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[
 %->, % makes the edges directed
@@ -807,6 +862,7 @@ initial text=$ $, % sets the text that appears on the start arrow
 \hfill
 \begin{minipage}[l]{5 cm}
 \centering
+\underline{CFG}\vspace{7pt}
 \begin{align*}
 S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 * &\Rightarrow \{\cdot \in \Sigma\}\\
@@ -816,7 +872,7 @@ S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 \big\{q_{i, j} &\Rightarrow \{q_{i-2, j-1} \sigma_i\} \mid i, j \in [2, n]\times[1, k] \big\}\\
 \end{align*}
 \end{minipage}
-\caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG. These representations are equivalent, and can be used to both recognize or generate by reversing the arrows.}
+\caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG.}
 \end{figure}
 
 \section{Language Edit Reachability}
@@ -842,23 +898,33 @@ node contents={}}
 \draw [dashed] \firstcirclea;
 \draw [dashed] \firstcircleb;
 \draw [dashed] \firstcirclec;
-\draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$q_1$};
-\draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$q_2$};
-\draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\ldots$};
-\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$q^*$};
+\draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
+\draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
+\draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\vphantom{d}\ldots$};
+\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^*$};
 \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
 \draw \secondcircle;
-\node [above] at (current bounding box.north -| a) {$\mathcal{L}(g(\err\sigma, q^*))$};
+\node [above] at (current bounding box.north -| a) {$\mathcal{L}(G(\err\sigma, d^*))$};
 \node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
 \end{tikzpicture}
 }
 \end{minipage}
-\caption{LED is computed gradually by incrementing $q$ until $\mathcal{L}^\cap_{q}\neq \varnothing$.}
+\caption{LED is computed gradually by incrementing $d$ until $\mathcal{L}^\cap_{d}\neq \varnothing$.}
 \end{wrapfigure}
 
-Let $\Phi: (\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ be a hypothetical function taking an arbitrary nonempty context-free grammar, $\mathcal{G}'$, and an unparseable string, $\err{\sigma}$, which returns elements of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
+Assume a hypothetical $\Phi(\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ which takes a CFG, $\mathcal{G}'$, generating an arbitrary nonempty CFL, and an unparseable string, $\err{\sigma}$, and which returns element(s) of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
 
-Let $g: (\err{\sigma}: \Sigma^*, q: \mathbb{N}^+) \mapsto \mathbb{G}$ be a function accepting a string, $\err{\sigma}$, and an edit distance, $q$, that returns a grammar, $\mathcal{G}$, generating the language of all strings within Levenshtein radius $q$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit, we must find the least $q$ such that $\mathcal{L}^\cap_q$ is nonempty, where $\mathcal{L}^\cap_q$ is defined as $\mathcal{L}(g(\err\sigma, q)) \cap \mathcal{L}(\mathcal{G}')$. In other words, we seek $\tilde{\sigma}$ and $q^*$ satisfying the following three criteria: (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq q^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}(g(\err{\sigma}, q^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < q^*]$. To satisfy these criteria, it suffices to check $q \in (0, \max(|\err{\sigma}|, \min\{|\sigma| \mid \sigma \in \mathcal{L}(\mathcal{G}')\})]$ by encoding the Levenshtein automata into SAT, asserting UNSAT, then gradually increasing $q$ until SAT is obtained. This procedure, we shall name $\varphi$, is guaranteed to terminate in at most either (1) the number of steps required to overwrite every symbol in $\err{\sigma}$, or (2) the length of the shortest string in $\mathcal{L}(\mathcal{G}')$. $\varphi$ is a realizer of $\Phi$.
+Let $G(\err{\sigma}: \Sigma^*, d: \mathbb{N}^+) \mapsto \mathbb{G}$ be the specific construction described in Sec.~\ref{sec:levenshtein} which accepts a string, $\err{\sigma}$, and an edit distance, $d$, and returns a grammar representing the NFA that recognizes the language of all strings within Levenshtein radius $d$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit, we must find the smallest $d$ such that $\mathcal{L}^\cap_d$ is nonempty, where $\mathcal{L}^\cap_d$ is defined as $\mathcal{L}(G(\err\sigma, d)) \cap \mathcal{L}(\mathcal{G}')$. In other words, we seek $\tilde{\sigma}$ and $d^*$ under which three criteria are equisatisfiable:\linebreak (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq d^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}(G(\err{\sigma}, d^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < d^*]$.
+To satisfy these criteria, it suffices to check $d \in (1, d_{\max}]$ by encoding the Levenshtein automata and the original grammar as a single SAT formula, call it, $\varphi_d(\cdot)$ and gradually admitting new acceptance states at increasing radii. If $\varphi_d(\cdot)$ returns UNSAT, $d$ is increased until either (1) a satisfying assignment is found or (2) $d_{\max}$ is attained. This procedure is guaranteed to terminate in at most either (1) the number of steps required to overwrite every symbol in $\err{\sigma}$, or (2) the length of the shortest string in $\mathcal{L}(\mathcal{G}')$, whichever is greater. More precisely:
+
+\begin{equation}
+\varphi_{d+1}(\mathcal{G}', \err{\sigma}) := \begin{cases}
+\varphi[\tilde{\sigma}\in\mathcal{L}(G(\err\sigma, d)) \land \tilde{\sigma}\in \mathcal{L}(\mathcal{G}')] & \text{if $d=1$ or SAT}.\\
+\varphi_{d} \oplus \bigoplus_{\{q \in Q \mid \delta(q, q_{n,0}) = d+1\}}\varphi[S \rightarrow q] & \text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(\mathcal{G}')}|\sigma|)$}.
+\end{cases}
+\end{equation}
+
+\noindent The function $\varphi_{d+1}(\mathcal{G}', \err{\sigma})$ is a realizer of $\Phi$.
 
 %By intersection with a CFG, $\mathcal{G}'$, Bar-Hillel ensures the resulting language will remain context-free.
 %
@@ -900,32 +966,7 @@ Using the technique from Sec.~\ref{sec:levenshtein}, we can also compute languag
 
 We can also build a set of grammars of increasing granularity, like a lattice structure. Basically, we can build up a lattice (in the order theoretic sense), consisting of grammars of increasing granularity. All programming languages require balanced parentheses, but some have additional constraints. So we can combine grammars, count and do bounded linear integer arithmetic.
 
-\section{Coarsening and simplification of subexpressions}
 
-Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified? This transformation is admissible and indeed desirable when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. Returning to Fig. 4, under what circumstances is the following reduction admissible?
-
-\begin{figure}[H]
- \[
-    \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-       \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-       \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-            &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-            &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-            &             &                    &                   &                        & \ddd & \\
-            &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-       \vno & \cdd        &                    &                   &                        &      & \vno
-    \end{pNiceArray} \equiv
-    \begin{pNiceArray}{>{\strut}ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-       \vno & \rcr\mathcal{L}_{1,3} & \rcw\mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-       \vdd & \ddd                  & \mathcal{V}_{2,4}     &      & \vdd \\
-            &                       &                       & \ddd & \\
-            &                       &                       &      & \mathcal{V}_{n,n} \\
-       \vno & \cdd                  &                       &      & \vno
-    \end{pNiceArray}
- \]
-\end{figure}
-
-For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. How can we formalize this argument to work on arbitrary (e.g., potentially ambiguous) grammars? This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation?
 
 %\section{Realtime Error Correction}\label{sec:holes}
 %

@@ -409,3 +409,134 @@
 
 \usetikzlibrary{decorations.pathreplacing,automata,calc,positioning}
 \usepackage{wrapfig}
+
+
+\newcommand{\mkTrellis}[1]{
+  \begin{tikzpicture}
+    \def\dx{20pt}
+    \def\dy{30pt}
+    \newcounter{i}
+    \stepcounter{i}
+    \node[circle, draw, fill=black!30] (\arabic{i}) at (0,0){};
+    \foreach [count=\i] \x in {2,...,#1}{
+      \pgfmathsetmacro{\lox}{\x-1}%
+      \pgfmathsetmacro{\loxt}{\x-3}%
+      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+        \pgfmathsetmacro{\jj}{\j-1}%
+        \stepcounter{i}
+        \pgfmathsetmacro{\kk}{\xx-2}%
+        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+        \ifnum\x<\kk
+        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \else
+        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \fi
+      }
+    }
+    \newcounter{z}
+    \newcounter{xn}
+    \newcounter{xnn}
+    \pgfmathsetmacro{\maxx}{#1 - 1}
+    \foreach \x in {1,...,\maxx}{
+      \foreach \xx in {1,...,\x}{
+        \stepcounter{z}
+        \setcounter{xn}{\arabic{z}}
+        \addtocounter{xn}{\x}
+        \setcounter{xnn}{\arabic{xn}}
+        \stepcounter{xnn}
+        \draw [<-] (\arabic{z}) -- (\arabic{xn});
+        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
+      }
+    }
+  \end{tikzpicture}
+}
+
+\newcommand{\dx}{20pt}
+\newcommand{\dy}{30pt}
+\newcounter{i}
+\newcounter{z}
+\newcounter{xn}
+\newcounter{xnn}
+\newcommand{\mkTrellisAppend}[1]{
+  \begin{tikzpicture}
+    \setcounter{i}{0}
+    \setcounter{z}{0}
+    \setcounter{xn}{0}
+    \setcounter{xnn}{0}
+    \stepcounter{i}
+    \node[circle, draw] (\arabic{i}) at (0,0){};
+    \foreach [count=\i] \x in {2,...,#1}{
+      \pgfmathsetmacro{\lox}{\x-1}%
+      \pgfmathsetmacro{\loxt}{\x-3}%
+      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+        \pgfmathsetmacro{\jj}{\j-1}%
+        \stepcounter{i}
+        \pgfmathsetmacro{\kk}{\xx+2}%
+        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+        \ifnum\x>\kk
+        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \else
+        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \fi
+      }
+    }
+    \pgfmathsetmacro{\maxx}{#1 - 1}
+    \foreach \x in {1,...,\maxx}{
+      \foreach \xx in {1,...,\x}{
+        \stepcounter{z}
+        \setcounter{xn}{\arabic{z}}
+        \addtocounter{xn}{\x}
+        \setcounter{xnn}{\arabic{xn}}
+        \stepcounter{xnn}
+        \draw [<-] (\arabic{z}) -- (\arabic{xn});
+        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
+      }
+    }
+  \end{tikzpicture}
+}
+
+\newcommand{\mkTrellisInsert}[1]{
+  \begin{tikzpicture}
+    \setcounter{i}{0}
+    \setcounter{z}{0}
+    \setcounter{xn}{0}
+    \setcounter{xnn}{0}
+    \stepcounter{i}
+    \node[circle, draw] (\arabic{i}) at (0,0){};
+    \foreach [count=\i] \x in {2,...,#1}{
+      \pgfmathsetmacro{\lox}{\x-1}%
+      \pgfmathsetmacro{\loxt}{\x-3}%
+      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+        \pgfmathsetmacro{\jj}{\j-1}%
+        \stepcounter{i}
+        \pgfmathsetmacro{\mp}{\xx+#1}%
+        \pgfmathsetmacro{\mq}{\xx+\x}%
+        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+        \ifnum\x>\mp
+        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \else
+        \ifnum#1<\mq
+        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \else
+        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+        \fi
+        \fi
+
+      }
+    }
+    \pgfmathsetmacro{\maxx}{#1 - 1}
+    \foreach \x in {1,...,\maxx}{
+      \foreach \xx in {1,...,\x}{
+        \stepcounter{z}
+        \setcounter{xn}{\arabic{z}}
+        \addtocounter{xn}{\x}
+        \setcounter{xnn}{\arabic{xn}}
+        \stepcounter{xnn}
+        \draw [<-] (\arabic{z}) -- (\arabic{xn});
+        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
+      }
+    }
+  \end{tikzpicture}
+}
+
+\usetikzlibrary{automata, positioning, arrows}
