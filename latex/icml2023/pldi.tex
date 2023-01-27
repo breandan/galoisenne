@@ -124,7 +124,7 @@ $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightar
 \end{tabular}
 \end{table}\vspace{-8pt}
 
-\noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+\noindent Given a CFG, $\mathcal{G}' : \mathbb{G} = \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathbb{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
 \begin{align}
 X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
@@ -418,13 +418,13 @@ Valiant's $\otimes$-operator, which yields the set of productions unifying known
   \adjustbox{center}{%
   \begin{tabular}{ccccc}
     Valiant's $\otimes$-operator && Left Quotient && Right Quotient \\\\
-    $x \otimes y := \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&
-    $\frac{\partial}{\partial \cev{x}} := \big\{\;z \mid (w \rightarrow x z)\in P\;\big\}$ &&
-    $\frac{\partial}{\partial \vec{z}} := \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
+    $x \otimes z := \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&
+    $\frac{\partial w}{\partial \cev{x}} := \big\{\;z \mid (w \rightarrow x z)\in P\;\big\}$ &&
+    $\frac{\partial w}{\partial \vec{z}} := \big\{\;x \mid (w \rightarrow x z)\in P\;\big\}$ \\\\
     \begin{tabular}{|c|c|}
       \hline
-      \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \cellcolor{black!15}\hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
-      \multicolumn{1}{c|}{~} & \hspace{-0.95mm}$z$\hspace{-0.95mm} \\
+      \cellcolor{black!15}\hspace{-0.5mm}$x$\hspace{-0.5mm} & \hspace{-0.95mm}$w$\hspace{-0.95mm} \\ \hline
+      \multicolumn{1}{c|}{~} & \cellcolor{black!15}\hspace{-0.95mm}$z$\hspace{-0.95mm} \\
       \cline{2-2}
     \end{tabular} &&
     \begin{tabular}{|c|c|}
@@ -597,10 +597,10 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
 
 \section{String Repair}
 
-Given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^c$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. In other words, we seek:
+Given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^\complement$, where should we put holes to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. In other words, we seek:
 
 \begin{align}
-  \bigcup_{\bm{\sigma}\sim\Delta_{k}(\sigma)} \{\sigma' \in \bm{\sigma} \mid S \in \Lambda_{\sigma'}^*\}
+  \bigcup_{\bm{\sigma}\sim\Delta_{k}(\sigma)} \{\tilde{\sigma} \in \bm{\sigma} \mid S \in \Lambda_{\tilde{\sigma}}^*\}
 \end{align}
 
 Let us consider (2). Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
@@ -620,13 +620,13 @@ U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
 
 \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$.
 
-\noindent For example, in order to sample $\mathbf\sigma' \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
+\noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
 
 \begin{align}
 \begin{array}{cccccccccccccc}
   i              & 0          & 1          & 2          & 3          & 4    & 5          & 6    & 7          & 8          & 9     & 10   & 11   \\
   \mathbf{S}_i   & 1000       & 0100       & 0010       & 1001       & 1100 & 0110       & 1011 & 0101       & 1010       & 1101  & 1011 & 0101 \\
-  \mathbf\sigma' & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &      & \text{B B} & \text{C C} &       &      &
+  \mathbf\sigma & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &      & \text{B B} & \text{C C} &       &      &
 \end{array}
 \end{align}
 
@@ -644,7 +644,7 @@ Next, to admit deletion, we augment $P$ with $(\varepsilon^+ \rightarrow \vareps
   \DisplayProof
 \end{center}
 
-Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hole configurations $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has at least one solution, each edit in each $\sigma' \in \bm\sigma$ will match exactly one of seven patterns:\vspace{-10pt}
+Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hole configurations $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has at least one solution, each edit in each $\tilde{\sigma} \in \bm\sigma$ will match exactly one of seven patterns:\vspace{-10pt}
 
 \begin{align*}
   \text{Deletion}&=\begin{cases}
@@ -676,7 +676,7 @@ Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hol
 
 \section{Levenshtein reachability}\label{sec:levenshtein}
 
-Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. By intersection with a CFG and $\Sigma^n$, Bar-Hillel ensures the resulting language will remain context-free. The structure of this space can characterized as an acyclic NFA, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
+Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space can characterized as an acyclic NFA, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
 
 \begin{figure}[H]
 \begin{minipage}[c]{0.5\textwidth}
@@ -819,6 +819,43 @@ S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 \caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG. These representations are equivalent, and can be used to both recognize or generate by reversing the arrows.}
 \end{figure}
 
+\section{ECP Reachability}
+
+\begin{wrapfigure}{r}{0.3\textwidth}
+\begin{minipage}[c]{0.3\textwidth}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
+node contents={}}
+]
+%\filldraw[fill=white] (-5,-3) rectangle (5,3);
+
+\def\firstcircle{(-1.2,0) coordinate (a) circle (2cm)}
+\def\secondcircle{(1.2,0) coordinate (b)  circle (2cm)}
+\begin{scope}
+\clip \secondcircle;
+\fill[black!15] \firstcircle;
+\end{scope}
+\draw \firstcircle  node[dot,label=$\err{\sigma}$](z0);
+\draw[-stealth] (-1.2,0) -- (-3.2, 0) node[midway,below]{$q$};
+\draw \secondcircle;
+\node (c) [above] at (current bounding box.north -| a) {$\mathcal{L}(\mathcal{G}(\err\sigma, q))$};
+\node at (c -| b) {$\mathcal{L}(\mathcal{G})$};
+\end{tikzpicture}
+}
+\end{minipage}
+\caption{Language intersection.}
+\end{wrapfigure}
+
+Let $\Phi: (\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ be some hypothetical function that takes an arbitrary grammar, $\mathcal{G}'$, and an unparseable string according to that grammar, $\err{\sigma}$, and which returns elements of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
+
+Let $g: (\err{\sigma}: \Sigma^*, q: \mathbb{N}^+) \mapsto \mathbb{G}$ be a function accepting a string, $\err{\sigma}$, and a fixed edit distance, $q$, that returns a grammar, $\mathcal{G}$, generating the language consisting of all strings within Levenshtein radius $q$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit, we must find the least $q$ such that $\mathcal{L}^\cap_q$ is nonempty, where $\mathcal{L}^\cap_q$ is defined as $\mathcal{L}(g(\err\sigma, q)) \cap \mathcal{L}(\mathcal{G}')$. In other words, we seek $\tilde{\sigma}$ and $q^*$ satisfying the following three criteria: (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$ and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) = q^* \Leftrightarrow \tilde{\sigma} \in \mathcal{L}(g(\err{\sigma}, q^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < q^*]$. To satisfy these criteria, it suffices to check $q \in \{1\ldots \max(|\err{\sigma}|, \min\{|\sigma| \mid \sigma \in \mathcal{L}(\mathcal{G}')\})\}$ by encoding the Levenshtein automata into SAT and checking for UNSAT, call this routine $\varphi$. The function $\varphi$ is a realizer of $\Phi$.
+
+By intersection with a CFG, $\mathcal{G}'$, Bar-Hillel ensures the resulting language will remain context-free.
+
+We then intersect that language with $\Sigma^n$ and $\mathcal{L}(\mathcal{G})$, the original grammar, to obtain a finite set.
+
 \section{Context-sensitive reachability}
 
 It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
@@ -960,7 +997,6 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 %There are some more examples too.
 %
 %The line between parsing and computation is blurry.
-
 
 \section{Evaluation}
 
