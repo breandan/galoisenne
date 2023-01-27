@@ -819,42 +819,50 @@ S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 \caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG. These representations are equivalent, and can be used to both recognize or generate by reversing the arrows.}
 \end{figure}
 
-\section{ECP Reachability}
+\section{Language Edit Reachability}
 
-\begin{wrapfigure}{r}{0.3\textwidth}
-\begin{minipage}[c]{0.3\textwidth}
+\begin{wrapfigure}{r}{0.33\textwidth}
+\begin{minipage}[c]{0.33\textwidth}
 \centering
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}[
 dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
 node contents={}}
 ]
-%\filldraw[fill=white] (-5,-3) rectangle (5,3);
-
-\def\firstcircle{(-1.2,0) coordinate (a) circle (2cm)}
-\def\secondcircle{(1.2,0) coordinate (b)  circle (2cm)}
+\def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
+\def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
+\def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
+\def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
+\def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
 \begin{scope}
 \clip \secondcircle;
 \fill[black!15] \firstcircle;
 \end{scope}
-\draw \firstcircle  node[dot,label=$\err{\sigma}$](z0);
-\draw[-stealth] (-1.2,0) -- (-3.2, 0) node[midway,below]{$q$};
+\draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
+\draw [dashed] \firstcirclea;
+\draw [dashed] \firstcircleb;
+\draw [dashed] \firstcirclec;
+\draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$q_1$};
+\draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$q_2$};
+\draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\ldots$};
+\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$q^*$};
+\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
 \draw \secondcircle;
-\node (c) [above] at (current bounding box.north -| a) {$\mathcal{L}(\mathcal{G}(\err\sigma, q))$};
-\node at (c -| b) {$\mathcal{L}(\mathcal{G})$};
+\node [above] at (current bounding box.north -| a) {$\mathcal{L}(g(\err\sigma, q^*))$};
+\node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
 \end{tikzpicture}
 }
 \end{minipage}
-\caption{Language intersection.}
+\caption{LED is computed gradually by incrementing $q$ until $\mathcal{L}^\cap_{q}\neq \varnothing$.}
 \end{wrapfigure}
 
-Let $\Phi: (\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ be some hypothetical function that takes an arbitrary grammar, $\mathcal{G}'$, and an unparseable string according to that grammar, $\err{\sigma}$, and which returns elements of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
+Let $\Phi: (\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ be a hypothetical function taking an arbitrary nonempty context-free grammar, $\mathcal{G}'$, and an unparseable string, $\err{\sigma}$, which returns elements of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
 
-Let $g: (\err{\sigma}: \Sigma^*, q: \mathbb{N}^+) \mapsto \mathbb{G}$ be a function accepting a string, $\err{\sigma}$, and a fixed edit distance, $q$, that returns a grammar, $\mathcal{G}$, generating the language consisting of all strings within Levenshtein radius $q$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit, we must find the least $q$ such that $\mathcal{L}^\cap_q$ is nonempty, where $\mathcal{L}^\cap_q$ is defined as $\mathcal{L}(g(\err\sigma, q)) \cap \mathcal{L}(\mathcal{G}')$. In other words, we seek $\tilde{\sigma}$ and $q^*$ satisfying the following three criteria: (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$ and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) = q^* \Leftrightarrow \tilde{\sigma} \in \mathcal{L}(g(\err{\sigma}, q^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < q^*]$. To satisfy these criteria, it suffices to check $q \in \{1\ldots \max(|\err{\sigma}|, \min\{|\sigma| \mid \sigma \in \mathcal{L}(\mathcal{G}')\})\}$ by encoding the Levenshtein automata into SAT and checking for UNSAT, call this routine $\varphi$. The function $\varphi$ is a realizer of $\Phi$.
+Let $g: (\err{\sigma}: \Sigma^*, q: \mathbb{N}^+) \mapsto \mathbb{G}$ be a function accepting a string, $\err{\sigma}$, and an edit distance, $q$, that returns a grammar, $\mathcal{G}$, generating the language of all strings within Levenshtein radius $q$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit, we must find the least $q$ such that $\mathcal{L}^\cap_q$ is nonempty, where $\mathcal{L}^\cap_q$ is defined as $\mathcal{L}(g(\err\sigma, q)) \cap \mathcal{L}(\mathcal{G}')$. In other words, we seek $\tilde{\sigma}$ and $q^*$ satisfying the following three criteria: (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq q^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}(g(\err{\sigma}, q^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < q^*]$. To satisfy these criteria, it suffices to check $q \in (0, \max(|\err{\sigma}|, \min\{|\sigma| \mid \sigma \in \mathcal{L}(\mathcal{G}')\})]$ by encoding the Levenshtein automata into SAT, asserting UNSAT, then gradually increasing $q$ until SAT is obtained. This procedure, we shall name $\varphi$, is guaranteed to terminate in at most either (1) the number of steps required to overwrite every symbol in $\err{\sigma}$, or (2) the length of the shortest string in $\mathcal{L}(\mathcal{G}')$. $\varphi$ is a realizer of $\Phi$.
 
-By intersection with a CFG, $\mathcal{G}'$, Bar-Hillel ensures the resulting language will remain context-free.
-
-We then intersect that language with $\Sigma^n$ and $\mathcal{L}(\mathcal{G})$, the original grammar, to obtain a finite set.
+%By intersection with a CFG, $\mathcal{G}'$, Bar-Hillel ensures the resulting language will remain context-free.
+%
+%We then intersect that language with $\Sigma^n$ and $\mathcal{L}(\mathcal{G})$, the original grammar, to obtain a finite set.
 
 \section{Context-sensitive reachability}
 
