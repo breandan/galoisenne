@@ -140,6 +140,13 @@ M^0:=
                &                &             &        & \varnothing\\
                &                &             &        & \sigma_n^\shup \\
    \varnothing & \Cdots         &             &        & \varnothing
+\end{pNiceMatrix} &\Rightarrow
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+  \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \varnothing \\
+  \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+              &                &         &        & \Lambda\\
+              &                &         &        & \sigma_n^\shup \\
+  \varnothing & \Cdots         &         &        & \varnothing
 \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
 \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
    \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
@@ -152,11 +159,11 @@ M^0:=
 
 \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. Note that any encoding which respects linearity $\varphi(\Lambda \circledast \Lambda') \equiv \varphi(\Lambda) \circledast \varphi(\Lambda')$ is suitable. This particular representation shares the same algebraic structure, but is more widely studied in coding theory, and easily translated into circuits for hardware acceleration. Furthermore, it enjoys the benefit of complexity-theoretic speedups to matrix multiplication.
+Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. Note that any encoding which respects linearity $\varphi(\Lambda \circledast \Lambda') \equiv \varphi(\Lambda) \circledast \varphi(\Lambda')$ is suitable -- this particular representation shares the same algebraic structure, but is more widely studied in error correction, and readily compiled into circuits and BLAS primitives. Furthermore, it enjoys the benefit of complexity-theoretic speedups to matrix multiplication.
 
-Details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who first realized its time complexity was subcubic $\mathcal{O}(n^\omega)$ where $\omega$ is the matrix multiplication bound ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to CFL parsing are also realizable by Boolean matrix multiplication algorithms. Assuming sparsity, this technique is typically linearithmic, and is believed to be the most efficient general procedure for CFL recognition.
+Details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general}, who first realized its time complexity was subcubic $\mathcal{O}(n^\omega)$ where $\omega$ is the asymptotic lower bound for Boolean matrix multiplication ($\omega < 2.77$), and Lee~\cite{lee2002fast}, who shows that speedups to CFL parsing were realizable by Boolean matrix multiplication algorithms. While more efficient specialized parsers are known to exist for restricted CFGs, this technique is typically lineararithmic under sparsity and believed to be the most efficient general procedure for CFL parsing.
 
-Valiant's decision procedure can be abstracted by lifting into the domain of bitvector variables, i.e., linear equations over finite fields, producing an algebraic expression for each nonterminal inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. This yields us a novel interpretation of Valiant's algorithm as an equational theory over finite fields, allowing us to solve for admissible hole inhabitants and parse forests. In particular, the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to denote types and functions defined over strings and binary constants only.}
+Valiant's decision procedure can be abstracted by lifting into the domain of bitvector variables, i.e., linear equations over finite fields. This produces an algebraic expression for each nonterminal inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. This yields a novel interpretation of Valiant's algorithm as an equational theory over finite fields, allowing us to solve for admissible completions and their parse forests. In particular, $\boxplus$ and $\boxtimes$ are defined so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to denote types and functions defined over strings and binary constants only.}
 
 \begin{figure}[H]
   \adjustbox{scale=0.82,center}{%
@@ -169,9 +176,9 @@ Valiant's decision procedure can be abstracted by lifting into the domain of bit
   }
 \end{figure}
 
-\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$.
+\noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$. In practice, this means that a language equation can be unsatisfiable or underconstrained, however if a solution exists, it can always be decoded into a valid sentence and parse forest in the language.
 
-So far, we have only considered bounded context free languages with holes, however, we can extend this construction to the family of CFLs closed under conjunction, allowing us to incorporate more semantic properties and solve for variables in weakly context-sensitive languages. This extension will be covered in further depth in Sec.~\ref{sec:lclreach}.
+So far, we have only considered the syntactic theory of breadth-bounded CFLs with holes, however, our construction can be easily extended to handle the family of CFLs closed under conjunction. As we show in Sec.~\ref{sec:lclreach}, the additional expressivity afforded by the language conjunction operator is indispensable when considering practical program repair scenarios, which may require extra-grammatical constraints such as indentation-sensitivity or Levenshtein-bounded reachability.
 
 \pagebreak\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
@@ -1160,6 +1167,8 @@ Tidyparse accepts a CFG and a string to parse. If the string is valid, it return
 
 From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. %Further examples can be found at our GitHub repository: \url{https://github.com/breandan/tidyparse} (needs anonymiziation)
 
+Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with LL and LR-style parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$ and handles arbitrary context-free langauges. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
+
 %\begin{itemize}
 %\item Error correction.
 %\item Program repair.
@@ -1171,7 +1180,7 @@ From a practical standpoint, we have implemented our approach as an IDE plugin a
 %\item GPU acceleration.
 %\end{itemize}
 
-\bibliography{../bib/acmart}
+\pagebreak\bibliography{../bib/acmart}
 
 \appendix
 
