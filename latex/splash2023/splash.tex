@@ -1218,7 +1218,7 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 
 \subsection{Conjunctive Grammars}
 
-Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:lclreach}:
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL intersection, allowing it to detect and correct errors in a more expressive family of languages than would ordinarily be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:lclreach}:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1228,8 +1228,7 @@ underlay unbroken and first={%
 \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
 \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
-S -> L R    L -> a b | a L b    R -> c | c R
-&&&
+S -> L R    L -> a b | a L b    R -> c | c R    &&&
 S -> L R    R -> b c | b R c    L -> a | a L
 ---
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
@@ -1254,18 +1253,16 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
 
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n different types of balanced parentheses.
 
-\begin{figure}[H]
 \begin{wholetidyinput}
 Dyck-1 -> ( ) | ( Dyck-1 ) | Dyck-1 Dyck-1
 Dyck-2 -> Dyck-1 | [ ] | ( Dyck-2 ) | [ Dyck-2 ] | Dyck-2 Dyck-2
 Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
 \end{wholetidyinput}
-\end{figure}
 
-\noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number tokens with holes and measure the average time taken to decode ten syntactically-admissible repairs across 100 trial runs.
+\noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number of tokens with holes and measure the average time required to decode ten syntactically-admissible repairs across 100 trial runs.
 
 \begin{figure}[H]
-\hspace{-0.25cm}\begin{tikzpicture}
+\hspace{-0.25cm}\begin{tikzpicture}[scale=0.8]
 \begin{axis}[
 width=8.3cm,
 height=6cm,
@@ -1292,12 +1289,7 @@ error bars/y explicit
 \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
 \end{axis}
 \end{tikzpicture}
-\end{figure}
-
-\noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the the logarithmic scale on the y-axis.
-
-\begin{figure}[H]
-\hspace{-0.25cm}\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.8]
 \begin{axis}[
 width=8.3cm,
 height=6cm,
@@ -1326,15 +1318,16 @@ error bars/y explicit
 \end{tikzpicture}
 \end{figure}
 
-\section{Accuracy Benchmark}
+\noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the the logarithmic scale on the y-axis.
+
+\pagebreak\section{Accuracy Benchmark}
 
 In the following benchmark, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub. For Java, we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, repair using Tidyparse\footnote{Using the Dyck-n grammar augmented with \texttt{D1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{D1}. Contiguous non-bracket tokens are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser.
 
 \begin{figure}[H]
-\centering{\textbf{Synthetic error correction accuracy}}\\
 \vspace{0.25cm}
 %\adjustbox{scale=0.48,center}{%
-\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.8]
 \begin{axis}[
 width=8.3cm,
 height=6.6cm,
@@ -1343,6 +1336,7 @@ ybar,
 bar width=10pt,
 xlabel={$|\Sigma^*|$},
 ylabel={Parser acceptance},
+title={\hspace{-1cm}\textbf{Synthetic error correction accuracy}},
 xtick=data,
 axis x line*=bottom,
 axis y line*=left,
@@ -1361,42 +1355,7 @@ error bars/y explicit
 \legend{10s, 30s, 60s}
 \end{axis}
 \end{tikzpicture}
-
-%\begin{tikzpicture}
-%  \begin{axis}[
-%    width=8.3cm,
-%    height=6.6cm,
-%    title={\hspace{-1cm}\textbf{Kotlin Brackets}},
-%    ybar,
-%    bar width=10pt,
-%    xlabel={$|\Sigma|$},
-%%    ylabel={Compiler acceptance},
-%    xtick=data,
-%    axis x line*=bottom,
-%    axis y line*=left,
-%    enlarge x limits={abs=0.5},
-%    ymode=log,
-%    ytick pos=left,
-%    xticklabels from table={\naturalerrors}{time},
-%    ymajorgrids,
-%    legend pos=north west,
-%    legend columns=3,
-%    error bars/y dir=both,
-%    error bars/y explicit
-%  ]
-%    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
-%    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
-%    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
-%    \legend{1s, 10s, 20s}
-%  \end{axis}
-%\end{tikzpicture}
-%}
-\end{figure}
-
-\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse\textsuperscript{\footnotemark[\ref{note1}]}, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
-
-\begin{figure}[H]
-\hspace{-0.25cm}\begin{tikzpicture}
+\begin{tikzpicture}[scale=0.8]
 \begin{axis}[
 width=8.3cm,
 height=6.6cm,
@@ -1429,6 +1388,8 @@ error bars/y explicit
 \end{tikzpicture}
 \end{figure}
 
+\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse\textsuperscript{\footnotemark[\ref{note1}]}, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
+
 %As expected, accuracy on organic errors in Python is lower.
 %
 %\subsection{Task Difficulty}
@@ -1454,7 +1415,7 @@ error bars/y explicit
 %Incoder
 %CarperAI?
 
-\section{Discussion}\label{sec:discussion}
+\pagebreak\section{Discussion}\label{sec:discussion}
 
 While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are localized to the beginning or end of a string, then latency is typically below 500ms. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control.
 
