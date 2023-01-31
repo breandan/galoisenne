@@ -858,8 +858,8 @@ It is well-known that the family of CFLs is not closed under intersection. For e
 
 \begin{table}[H]
 \begin{tabular}{llll}
-  $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt}\\
-  $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+  $P_1 := \big\{\;S \rightarrow L\:R,$ & $\:L \rightarrow a\:b \mid a\:L\:b,$ & $R \rightarrow c \mid c \:R\;\big\}$\vspace{5pt}\\
+  $P_2 := \big\{\;S \rightarrow L\:R,$ & $\:R \rightarrow b\:c \mid b\:R\:c,$ & $L \rightarrow a \mid a \:L\;\big\}$
 \end{tabular}
 \end{table}
 
@@ -1252,14 +1252,14 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
 
 \section{Latency Benchmark}\label{sec:latency}
 
-In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.
+In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n different types of balanced parentheses.
 
 \begin{figure}[H]
-\begin{tidyinput}
-D1 -> ( ) | ( D1 ) | D1 D1
-D2 -> D1 | [ ] | ( D2 ) | [ D2 ] | D2 D2
-D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
-\end{tidyinput}
+\begin{wholetidyinput}
+Dyck-1 -> ( ) | ( Dyck-1 ) | Dyck-1 Dyck-1
+Dyck-2 -> Dyck-1 | [ ] | ( Dyck-2 ) | [ Dyck-2 ] | Dyck-2 Dyck-2
+Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
+\end{wholetidyinput}
 \end{figure}
 
 \noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number tokens with holes and measure the average time taken to decode ten syntactically-admissible repairs across 100 trial runs.
