@@ -252,6 +252,27 @@
   }
 }
 
+\newtcblisting{wholetidyinput}[1][]{%
+  left skip=0.7cm,
+  top=0.1cm,
+  middle=0mm,
+  boxsep=0mm,
+  listing options={
+    language=tidy,
+    basicstyle=\ttfamily\small,
+%numberstyle=\footnotesize,
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  },
+  underlay unbroken and first={%
+      \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+  }
+}
 
 \definecolor{A}{RGB}{6,150,104}
 \definecolor{B}{RGB}{196,74,137}
@@ -410,7 +431,6 @@
 \usetikzlibrary{decorations.pathreplacing,automata,calc,positioning}
 \usepackage{wrapfig}
 
-
 \newcommand{\mkTrellis}[1]{
   \begin{tikzpicture}
     \def\dx{20pt}
@@ -540,3 +560,9 @@
 }
 
 \usetikzlibrary{automata, positioning, arrows}
+
+\newcommand{\nobarfrac}{\genfrac{}{}{0pt}{}}
+\pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
+\pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings
+\pgfplotstableread[col sep=comma,]{natural_errors.csv}\naturalerrors
+\pgfplotstableread[col sep=comma,]{synthetic_errors.csv}\syntheticerrors

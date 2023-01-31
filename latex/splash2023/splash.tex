@@ -51,17 +51,15 @@ Modern research on error correction can be traced back to the early days of codi
 
 In programming, most such errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant challenge for novice programmers. The ECC problem may be refined by introducing a language, $\mathcal{L} \subset \Sigma^*$ and considering admissible edits transforming an arbitrary string, $s \in \Sigma^*$ into a string, $s'\in\mathcal{L}$. Known as \textit{error-correcting parsing} (ECP), this problem was well-studied in the early parsing literature by Aho and Peterson~\cite{aho1972minimum}, but fell out of favor for many years, perhaps due to its perceived complexity. By considering only minimal-length edits, ECP can be reduced to the so-called \textit{language edit distance} (LED) problem, recently shown to be subcubic~\cite{bringmann2019truly}, suggesting its tractability. Previous LED results were primarily of a theoretical nature, but now, thanks to our contributions, we have finally realized a practical prototype.
 
-%String constraints
-%
-%Word equations
+In our work, we recast the problem of ECP as a special case of tensor completion with an logical semiring, and lay the foundation for a new approach to program repair grounded in formal language theory, unifying \textit{code completion}, \textit{error correction} and \textit{incremental parsing}. We provide exact and approximate algorithms for solving these problems in the real-world setting, and implement them in a real-time editor called Tidyparse, demonstrating their  practical programming scenarios. Given a well-formed grammar, our tool can be used to complete partial code, parse incomplete code and repair arbitrary fragments in context-free and linear conjunctive languages.
 
 \section{Toy Example}
 
 Suppose we are given the following context-free grammar:
 
-\begin{tidyinput}
+\begin{wholetidyinput}
 S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
-\end{tidyinput}
+\end{wholetidyinput}
 
 \noindent For reasons that will become clear in \S\ref{sec:matrix}, this is automatically rewritten into the grammar:
 
@@ -79,9 +77,15 @@ S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 %    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
 %\end{figure}
 
-\noindent Given a string containing holes such as the one below, Tidyparse will return several completions in a few milliseconds:
+\noindent Given a string containing holes such as the one below, Tidyparse will return several completions:
 
-\begin{tcolorbox}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
   \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
   \end{lstlisting}
@@ -97,8 +101,13 @@ true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> 
 
 \noindent Similarly, if provided with a string containing various errors, Tidyparse will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
-
-\begin{tcolorbox}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
 \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 true and ( false or and true false(*@\caret{ }@*)
 \end{lstlisting}
@@ -178,7 +187,7 @@ Valiant's decision procedure can be abstracted by lifting into the domain of bit
 
 \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$. In practice, this means that a language equation can be unsatisfiable or underconstrained, however if a solution exists, it can always be decoded into a valid sentence and parse forest in the language.
 
-So far, we have only considered the syntactic theory of breadth-bounded CFLs with holes, however, our construction can be easily extended to handle the family of CFLs closed under conjunction. As we show in Sec.~\ref{sec:lclreach}, the additional expressivity afforded by the language conjunction operator is indispensable when considering practical program repair scenarios, which may require extra-grammatical constraints such as indentation-sensitivity or Levenshtein-bounded reachability.
+So far, we have only considered the syntactic theory of breadth-bounded CFLs with holes, however, our construction can be easily extended to handle the family of CFLs closed under conjunction. The additional expressivity afforded by the language conjunction operator will be indispensable when considering practical program repair scenarios, which may require extra-grammatical constraints such as indentation-sensitivity or Levenshtein-bounded reachability. That extension, and the resulting theory of breadth-bounded CFLs with holes and conjunction, we will explore in Sec.~\ref{sec:lclreach}.
 
 \pagebreak\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
 
@@ -404,7 +413,13 @@ Occasionally, it is not possible to decode a full tree. In a typical parser, err
 % https://www.ling.upenn.edu/advice/latex/qtree/qtreenotes.pdf
 % https://cpb-us-w2.wpmucdn.com/campuspress.yale.edu/dist/0/119/files/2014/12/sec-10.17-drawing-arrows-2ek9r2b.pdf
 
-Our parser emits a binary forest consisting of parse trees for the candidate string according to the CNF grammar, however this forest contains many so-called \textit{Krummholz}, or \textit{flag trees}, often found clinging to windy ridges and mountainsides.
+Our parser emits a binary forest consisting of parse trees for the candidate string according to the CNF grammar, however this forest is misshapen.
+
+\begin{align}
+                  X\:\hat{\otimes}\:Z := \big\{\;w\hphantom{.}^{\nearrow}_{\searrow}\nobarfrac{x}{z} \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+\end{align}
+
+\noindent We first construct the parse forests bottom-up using $\hat{\otimes}$, which simply stores backpointers, then if $S \notin \Lambda^*_\sigma$, we traverse the peaks by decreasing elevation to recover parse branches.
 
 \begin{figure}[H]
   \begin{minipage}{.45\linewidth}
@@ -470,7 +485,68 @@ Clearly, the solving process is polynomial in the size of the string. For the sa
 \]
 \end{figure}
 
-For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. How can we formalize this argument to work on arbitrary (e.g., potentially ambiguous) grammars? This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation? To answer this question, we must introduce the concept of a context-free language language derivative.
+For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation? To answer this question, we must introduce the concept of a context-free language language derivative.
+
+\section{Nonterminal Stubs}
+
+\noindent As a notational conveinience, non-recursive nonterminal stubs are permitted inside the CFG definition. To support this feature, we introduce a simple substitution rule that replaces all productions containing parameterized nonterminals, $\langle\alpha\rangle$, with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$:
+
+\begin{figure}[H]
+    \begin{prooftree}
+        \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
+        \AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
+        \RightLabel{$\alpha\textsc{-sub}$}
+        \BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
+    \end{prooftree}
+\end{figure}
+
+\noindent This rule enables adding a placeholder for typed expressions, which will take the form:
+
+\begin{tidyinput}
+E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
+X -> Int | Bool
+\end{tidyinput}
+
+\begin{tidyinput}
+E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
+E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
+\end{tidyinput}
+
+When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$:
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash v \in V$}
+    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
+\end{prooftree}
+
+Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
+
+\begin{tidyinput}
+    false or ! true or <(*@\caret{S}@*)> and <S> or <S>
+\end{tidyinput}
+
+\begin{tidyoutput}
+1.) false or ! true or (*@\hlorange{true}@*) and <S> or <S>
+2.) false or ! true or (*@\hlorange{false}@*) and <S> or <S>
+3.) false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+4.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+5.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+...
+\end{tidyoutput}
+
+\noindent This functionality can also be used inside a completion:
+
+\begin{tidyinput}
+if <Vexp> _ _ _ _ _(*@\caret{ }@*)
+\end{tidyinput}
+
+\begin{tidyoutput}
+1.) if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
+2.) if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
+3.) if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
+...
+\end{tidyoutput}
 
 \pagebreak\section{Backpropagation of error}
 
@@ -659,74 +735,111 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
 %We also need the constraint that no two conflicting nonterminals may be active at any given time... TODO: describe uniqueness constraint
 %  \noindent Depicted above is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be grown). Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-\pagebreak\section{String Repair}
+\pagebreak
+\subsection{Gradient estimation}\label{sec:dsi}
 
-Given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}(\mathcal{G})^\complement$, where should we put holes to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$? To estimate the effect of perturbing $\sigma$ on $\Lambda_\sigma^*$, one can either (1) backpropagate $\nabla S$ across upper-triangular entries of $\mathcal{M}^*$, or (2) stochastically sample \textit{minibatches} $\bm{\sigma}:\Sigma^{n\pm q}\sim\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. In other words, we seek:
+Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}_\mathcal{G}$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation. To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+    \RightLabel{$\varepsilon\textsc{-dup}$}
+    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
+\end{prooftree}
+
+\begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+    \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
+
+\noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
 
 \begin{align}
-  \bigcup_{\bm{\sigma}\sim\Delta_{k}(\sigma)} \{\tilde{\sigma} \in \bm{\sigma} \mid S \in \Lambda_{\tilde{\sigma}}^*\}
+    U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+               C_1    & \cdd  &       &       & C_m \\
+               \top   & \circ & \cdd  &       & \circ \\
+               \circ  & \ddd  & \ddd  &       & \vdd \\
+               \vdd   & \ddd  &       &       & \\
+               \circ  & \cdd  & \circ & \top  & \circ
+    \end{pNiceMatrix}^t
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+        V_1 \\
+        \vdd\\
+        \\
+        \\
+        V_m
+    \end{pNiceMatrix}\label{eq:lfsr}
 \end{align}
 
-Let us consider (2). Suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:
+\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{Where $\stirlingii{n}{d}$ is used to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
 
-\begin{align}
-U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-  C_1    & \cdd  &       &       & C_m \\
-  \top   & \circ & \cdd  &       & \circ \\
-  \circ  & \ddd  & \ddd  &       & \vdd \\
-  \vdd   & \ddd  &       &       & \\
-  \circ  & \cdd  & \circ & \top  & \circ
-\end{pNiceMatrix}^t
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-  V_1 \\ \vdd\\ \\ \\ V_m
-\end{pNiceMatrix}\label{eq:lfsr}
-\end{align}
-
-\noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, $\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j$. To uniformly sample $\bm\sigma \sim \Sigma^d$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\Sigma^d$, cycle over $\mathbf{S}$, then discard samples which index any nonexistent element(s) of $\Sigma$. This method will reject $(1 - |\Sigma|2^{-\lceil\log_2|\Sigma|\rceil})^d$ samples overall, and requires $\mathcal{O}(1)$ per sample and $\mathcal{O}(|\Sigma|^d)$ to cover $\Sigma^d$.
-
-%\noindent For example, in order to sample $\mathbf\sigma \sim \Sigma^2 = \{A, B, C\}^2$, we could use the polynomial $x^4 + x^3 +1$:
-%
-%\begin{align}
-%\begin{array}{cccccccccccccc}
-%  i              & 0          & 1          & 2          & 3          & 4    & 5          & 6    & 7          & 8          & 9     & 10   & 11   \\
-%  \mathbf{S}_i   & 1000       & 0100       & 0010       & 1001       & 1100 & 0110       & 1011 & 0101       & 1010       & 1101  & 1011 & 0101 \\
-%  \mathbf\sigma & \text{C A} & \text{B A} & \text{A C} & \text{C B} &      & \text{B C} &      & \text{B B} & \text{C C} &       &      &
-%\end{array}
-%\end{align}
-
-Next, to admit deletion, we augment $P$ with $(\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+)$ and replace each production $(w \rightarrow t)$ with $(w \rightarrow t\:\varepsilon^+ \mid \varepsilon^+\:t \mid t)$.
-
-\begin{center}
-  \AxiomC{$\Gamma \vdash \varepsilon \in \Sigma$}
-  \RightLabel{$\varepsilon\textsc{-dup}$}
-  \UnaryInfC{$\Gamma \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
-  \DisplayProof
-  \hskip 1.5em
-  \AxiomC{$\Gamma \vdash (A \rightarrow B) \in P$}
-  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\Gamma \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-  \DisplayProof
-\end{center}
-
-Finally, to generate $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate hole configurations $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has at least one solution, each edit in each $\tilde{\sigma} \in \bm\sigma$ will match exactly one of seven patterns:\vspace{-10pt}
+Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
 
 \begin{align*}
-  \text{Deletion}&=\begin{cases}
-  \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
-  \end{cases}\\
-  \text{Substitution}&=\begin{cases}
-  \sigma_{1}\:\ldots\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-  \sigma_{1}\:\ldots\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-  \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
-  \end{cases}\\
-  \text{Insertion}&=\begin{cases}
-  \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-  \sigma_{1}\:\ldots\: \text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-  \sigma_{1}\:\ldots\: \text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\ldots\:\sigma_n\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
-  \end{cases}
+    \text{Deletion}&=\begin{cases}
+                         \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \end{cases}\\
+    \text{Substitution}&=\begin{cases}
+                             \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+                             \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+                             \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+    \end{cases}\\
+    \text{Insertion}&=\begin{cases}
+                          \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                          \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                          \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \end{cases}
 \end{align*}
 
-\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator. In the following section, we will give a more efficient construction for generating and accepting $\Delta_{q}(\err{\sigma})$ that does not require enumerating hole configurations.%As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
+\noindent This approach is tractable for $n \lesssim 100, q \lesssim 3$, however more complex repairs require a more efficient gradient estimator.
+
+\pagebreak\section{Adaptive Sampling}\label{sec:holes}
+
+Since there are $\Sigma_{d=1}^q{n \choose d}$ total sketch templates, each with $(|\Sigma| + 1)^{2d}$ individual edits to check, if $n$ and $q$ are large, this space can be intractable to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ is likely to produce unnatural edits. To provide rapid and relevant suggestions, we prioritize likely repairs according to the following six-step procedure:
+
+\begin{enumerate}
+    \item Retrieve the most recent $\mathcal{G}$ and $\err{\sigma}$ from the editor.
+    \item Enumerate $i_{1\ldots d} \in \stirlingii{n}{d}$ for increasing values of $d \geq 1$.
+    \item Rerank edit locations according to $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
+    \item Draw $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ sans replacement using~\ref{sec:dsi}.
+    \item Decode and rerank repairs by the cost model, $C(\err{\sigma}, \sigma')$.
+    \item Display the top-k repairs in p-seconds to the user.
+\end{enumerate}
+
+For example, given an erroneous string, $\err{\sigma}: \Sigma^{90}$, suppose we have $\mathcal{F}_\theta$, a distribution over possible edits provided by a probabilistic or neural language model, which can be used to localize admissible repairs. By marginalizing onto $\err{\sigma}$, the distribution $\mathcal{F}_\theta$ could take the following form:
+
+\begin{figure}[H]
+    \hspace{-0.3cm}\begin{tikzpicture}[scale=0.4]
+        \begin{axis}[x=2cm, y=2cm, every axis plot post/.append style={mark=none,domain=-2:7.5,samples=50,smooth},
+            axis x line*=bottom, % no box around the plot, only x and y axis
+            ticks=none,
+            y axis line style={draw=none},
+            xticklabels={,,},
+            enlargelimits=upper] % extend the axes a bit to the right and top
+            \addplot[name path=F] {gauss(0.0,0.4)};
+            \addplot[name path=G] {gauss(3.0,0.5)};
+            \addplot[name path=H] {gauss(6.0,0.3)};
+            \addplot[name path=N] {nil(0)};
+            \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=F and N, soft clip={domain=-3:1}];
+            \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=G and N, soft clip={domain=1:5}];
+            \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=H and N, soft clip={domain=4:7.5}];
+        \end{axis}
+        \node [xshift=4.1cm, yshift=-7pt] {\footnotesize $\sigma_1\hspace{0.5cm}\sigma_{10}\err{\hspace{0.5cm}\sigma_{20}}\hspace{0.5cm}\sigma_{30}\hspace{0.5cm}\err{\sigma_{40}\hspace{0.5cm}\sigma_{50}}\hspace{0.5cm}\sigma_{60}\hspace{0.5cm}\err{\sigma_{70}\hspace{0.3cm}}\hspace{0.2cm}\sigma_{80}\hspace{0.5cm}\sigma_{90}$};
+%  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
+%  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
+    \end{tikzpicture}
+    \caption{The distribution $\int\mathcal{F}_{\theta}(\cdot \mid i_{1\ldots d})d\theta$, projected onto the invalid string, suggests edit locations most likely to yield admissible repairs, from which we draw subsets of size $d$.}
+\end{figure}
+
+Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
+
+\begin{align}
+    \delta_{\textsc{KR}}(\mu, \nu) := \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+\end{align}
+
+More specifically in our setting, $\Omega$ is a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard in the case of typo correction, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \sigma')$, subject to the given grammar and latency constraints.
+
+In the following section, we will give a more efficient construction for generating and accepting $\Delta_{q}(\err{\sigma})$ that does not require enumerating hole configurations.%As SAT encoding incurs a fixed penalty, for small repairs, we have observed it is more efficient to enumerate all sketch templates and solve for admissible repairs outside the SAT solver.
 
 %  This constitutes to a top-down inference procedure, in which, following the tradition of Bird and Meertens, we define the exponential of a forest as a nested datatype called a \textit{taiga}:
 %
@@ -1021,6 +1134,22 @@ let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
 \end{tidyoutput}
 
+\noindent We can also handle the untyped \lambda-calculus, as shown below:
+
+\begin{tidyinput}
+sxp -> λ var . sxp | sxp sxp | var | ( sxp ) | const
+const -> 1 | 2 | 3 | 4 | 5 | 6
+var -> a | b | c | f | x | y | z
+---
+( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x x ) (*@\caret{ }@*)
+\end{tidyinput}
+\begin{tidyoutput}
+1.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{)}@*) λ x . f ( x x )
+2.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) λ x . f ( x x )
+3.) ( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
+...
+\end{tidyoutput}
+
 \subsection{Grammar Assistance}
 
 Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG does not parse, it will suggest possible fixes. In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
@@ -1037,13 +1166,11 @@ B -> true | false | (*@\hlgreen{<RHS>}@*)
 
 \subsection{Interactive Nonterminal Expansion}
 
-Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand,
+Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
 
 \begin{tidyinput}
 if <(*@\caret{V}@*)exp> X then <Vexp> else <Vexp>
 \end{tidyinput}
-
-\noindent then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}, to receive a list of expressions consistient with the grammar:
 
 \begin{tidyoutput}
 if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
@@ -1052,77 +1179,211 @@ if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 ...
 \end{tidyoutput}
 
+\subsection{Conjunctive Grammars}
+
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
+
+\begin{tidyinput}
+S -> L R    L -> a b | a L b    R -> c | c R
+&&&
+S -> L R    R -> b c | b R c    L -> a | a L
+---
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
+\end{tidyinput}
+\begin{tidyoutput}
+1.) a b c
+2.) a a b b c c
+3.) a a a b b b c c c
+4.) a a a a b b b b c c c c
+...
+\end{tidyoutput}
+
+\noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are also possible, although undocumented at present.
+
 %There are some more examples too.
 %
 %The line between parsing and computation is blurry.
 
-\section{Evaluation}
+\section{Latency Benchmark}\label{sec:latency}
 
 In the following benchmarks, we measure the wall clock time required to synthesize solutions to length-50 strings sampled from various Dyck languages, where Dyck-n is the Dyck language containing n types of balanced parentheses.
 
+\begin{figure}[H]
 \begin{tidyinput}
-D1 -> () | ( D1 ) | D1 D1
+D1 -> ( ) | ( D1 ) | D1 D1
 D2 -> D1 | [ ] | ( D2 ) | [ D2 ] | D2 D2
 D3 -> D2 | { } | ( D3 ) | [ D3 ] | { D3 } | D3 D3
 \end{tidyinput}
+\end{figure}
 
 \noindent In the first experiment, we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number tokens with holes and measure the average time taken to decode ten syntactically-admissible repairs across 100 trial runs.
 
-\begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        title={\hspace{-1cm}\textbf{Error correction time with known locations}},
-        ybar,
-        bar width=4pt,
-        xlabel={Number of holes},
-        ylabel={ms to synthesize 10 repairs},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        ytick pos=left,
-        xticklabels from table={\loctimings}{holes},
-        ymajorgrids,
-        legend pos=north west,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-    \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
-    \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
-    \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
-    \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
-    \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
-    \end{axis}
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
+\begin{axis}[
+width=8.3cm,
+height=6cm,
+title={\hspace{-1cm}\textbf{Latency with known locations}},
+ybar,
+bar width=6pt,
+xlabel={Number of holes},
+ylabel={ms to synthesize 10 repairs},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+ytick pos=left,
+xticklabels from table={\loctimings}{holes},
+ymajorgrids,
+legend pos=north west,
+legend columns=2,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
+\legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
+\end{axis}
 \end{tikzpicture}
+\end{figure}
 
 \noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the the logarithmic scale on the y-axis.
 
-\begin{tikzpicture}
-    \begin{axis}[
-        width=8.3cm,
-        height=6.6cm,
-        title={\hspace{-1cm}\textbf{Error correction time with unknown locations}},
-        ybar,
-        bar width=20pt,
-        xlabel={Number of errors},
-        ylabel={ms to synthesize 1 repair},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\unloctimings}{errors},
-        ymajorgrids,
-        legend pos=north west,
-        error bars/y dir=both,
-        error bars/y explicit
-    ]
-    \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-    \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-    \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-    \legend{Dyck-1, Dyck-2, Dyck-3}
-    \end{axis}
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
+\begin{axis}[
+width=8.3cm,
+height=6cm,
+title={\hspace{-1cm}\textbf{Latency with unknown locations}},
+ybar,
+bar width=20pt,
+xlabel={Number of errors},
+ylabel={ms to synthesize 1 repair},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+enlarge x limits={abs=0.5},
+ymode=log,
+ytick pos=left,
+xticklabels from table={\unloctimings}{errors},
+ymajorgrids,
+legend pos=north west,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+\addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+\addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+\legend{Dyck-1, Dyck-2, Dyck-3}
+\end{axis}
 \end{tikzpicture}
+\end{figure}
+
+\section{Accuracy Benchmark}
+
+In the following benchmark, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub. For Java, we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, repair using Tidyparse\footnote{Using the Dyck-n grammar augmented with \texttt{D1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{D1}. Contiguous non-bracket tokens are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser.
+
+\begin{figure}[H]
+\centering{\textbf{Synthetic error correction accuracy}}\\
+\vspace{0.25cm}
+%\adjustbox{scale=0.48,center}{%
+\begin{tikzpicture}
+\begin{axis}[
+width=8.3cm,
+height=6.6cm,
+%    title={\hspace{-1cm}\textbf{Java Brackets}},
+ybar,
+bar width=10pt,
+xlabel={$|\Sigma^*|$},
+ylabel={Parser acceptance},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+enlarge x limits={abs=0.5},
+ytick pos=left,
+xticklabels from table={\syntheticerrors}{len},
+ymajorgrids,
+legend pos=north east,
+legend columns=3,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
+\addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
+\addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
+\legend{10s, 30s, 60s}
+\end{axis}
+\end{tikzpicture}
+
+%\begin{tikzpicture}
+%  \begin{axis}[
+%    width=8.3cm,
+%    height=6.6cm,
+%    title={\hspace{-1cm}\textbf{Kotlin Brackets}},
+%    ybar,
+%    bar width=10pt,
+%    xlabel={$|\Sigma|$},
+%%    ylabel={Compiler acceptance},
+%    xtick=data,
+%    axis x line*=bottom,
+%    axis y line*=left,
+%    enlarge x limits={abs=0.5},
+%    ymode=log,
+%    ytick pos=left,
+%    xticklabels from table={\naturalerrors}{time},
+%    ymajorgrids,
+%    legend pos=north west,
+%    legend columns=3,
+%    error bars/y dir=both,
+%    error bars/y explicit
+%  ]
+%    \addplot table [x expr=\coordindex, y=d1]{\naturalerrors};
+%    \addplot table [x expr=\coordindex, y=d2]{\naturalerrors};
+%    \addplot table [x expr=\coordindex, y=d3]{\naturalerrors};
+%    \legend{1s, 10s, 20s}
+%  \end{axis}
+%\end{tikzpicture}
+%}
+\end{figure}
+
+\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse\textsuperscript{\footnotemark[\ref{note1}]}, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
+
+\begin{figure}[H]
+\hspace{-0.25cm}\begin{tikzpicture}
+\begin{axis}[
+width=8.3cm,
+height=6.6cm,
+title={\hspace{-1cm}\textbf{Organic error correction accuracy}},
+ybar,
+bar width=10pt,
+xlabel={$|\Sigma^*|$},
+ylabel={Parser acceptance},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+enlarge x limits={abs=0.5},
+ytick pos=left,
+xticklabels from table={\naturalerrors}{len},
+ymajorgrids,
+y tick label style={/pgf/number format/.cd,%
+scaled y ticks = false,
+set thousands separator={},
+fixed},
+legend pos=north east,
+legend columns=3,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
+\addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
+\addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
+\legend{10s, 30s, 60s}
+\end{axis}
+\end{tikzpicture}
+\end{figure}
+
+As expected, accuracy on organic errors in Python is lower.
 
 \subsection{Task Difficulty}
 
@@ -1146,6 +1407,19 @@ GraphCodeBERT
 RobertA
 Incoder
 CarperAI?
+
+\section{Discussion}\label{sec:discussion}
+
+While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are known to be concentrated in specific locations, such as the beginning or end of a string, then latency is typically below 500ms. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control.
+
+Tidyparse in its current form has a number of technical shortcomings: firstly it does not incorporate any neural language modeling technology at present, an omission we hope to address in the near future. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs.
+
+Secondly, our current method generates sketch templates using a na\"ive enumerative search, feeding them individually to the SAT solver, which has the tendency to duplicate prior work and introduces unnecessary thrashing. Considering recent extensions of Boolean matrix-based parsing to linear context-free rewriting systems (LCFRS)~\cite{cohen2016parsing}, it may be feasible to search through these edits within the SAT solver, leading to yet unrealized and possibly significant speedups.
+
+Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs while syntactically admissible, are not guaranteed to be semantically valid. We note however, that it is possible to encode type-based semantic constraints into the solver and intend to explore this direction more fully in future work.
+
+We envision three primary use cases: (1) helping novice programmers become more quickly familiar with a new programming language (2) autocorrecting common typos among proficient but forgetful programmers and (3) as a prototyping tool for PL designers and educators. Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for testing. %Although the algorithm may seem esoteric at first glance, in our experience it is much more interpretable than classical parsers, which exhibit poor error-recovery and diagnostics.
+
 
 \section{Discussion}
 
