@@ -211,47 +211,6 @@
   }
 }
 
-\newtcblisting{tidyinput}[1][]{%
-  left skip=1cm,
-%  width=8.5cm,
-%  left=10pt,
-%  top=1pt,
-  hbox,
-  listing options={
-    language=tidy,
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  },
-  underlay unbroken and first={%
-      \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
-  }
-}
-
-\newtcblisting{tidyoutput}[1][]{%
-  left skip=0.7cm,
-  width=8.5cm,
-  left=10pt,
-  top=1pt,
-  listing options={
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  }
-}
-
 \newtcblisting{wholetidyinput}[1][]{%
   left skip=0.7cm,
   top=0.1cm,

@@ -15,7 +15,7 @@
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
 %% use defaults for review submission.
-\acmConference[PLDI'23]{ACM SIGPLAN Conference on Programming Language Design and Implementation}{June 21, 2023}{Orlando, FL, USA}
+\acmConference[SPLASH'23]{ACM SIGPLAN conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 22-27, 2023}{Cascais, Portugal}
 %\acmYear{2018}
 %\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
 %\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
@@ -51,7 +51,7 @@ Modern research on error correction can be traced back to the early days of codi
 
 In programming, most such errors initially manifest as syntax errors, and though often cosmetic, manual repair can present a significant challenge for novice programmers. The ECC problem may be refined by introducing a language, $\mathcal{L} \subset \Sigma^*$ and considering admissible edits transforming an arbitrary string, $s \in \Sigma^*$ into a string, $s'\in\mathcal{L}$. Known as \textit{error-correcting parsing} (ECP), this problem was well-studied in the early parsing literature by Aho and Peterson~\cite{aho1972minimum}, but fell out of favor for many years, perhaps due to its perceived complexity. By considering only minimal-length edits, ECP can be reduced to the so-called \textit{language edit distance} (LED) problem, recently shown to be subcubic~\cite{bringmann2019truly}, suggesting its tractability. Previous LED results were primarily of a theoretical nature, but now, thanks to our contributions, we have finally realized a practical prototype.
 
-In our work, we recast the problem of ECP as a special case of tensor completion with an logical semiring, and lay the foundation for a new approach to program repair grounded in formal language theory, unifying \textit{code completion}, \textit{error correction} and \textit{incremental parsing}. We provide exact and approximate algorithms for solving these problems in the real-world setting, and implement them in a real-time editor called Tidyparse, demonstrating their  practical programming scenarios. Given a well-formed grammar, our tool can be used to complete partial code, parse incomplete code and repair arbitrary fragments in context-free and linear conjunctive languages.
+In our work, we recast the problem of ECP as a special case of tensor completion with an logical semiring, and lay the foundation for a new approach to program repair grounded in formal language theory, unifying \textit{code completion}, \textit{error correction} and \textit{incremental parsing}. We provide exact and approximate algorithms for solving these problems in the real-world setting, and implement them in a real-time editor called Tidyparse, demonstrating their practical utility. Given a well-formed grammar, our tool can be used to complete unfinished code, parse incomplete code and repair broken fragments in arbitrary context-free and linear conjunctive languages.
 
 \section{Toy Example}
 
@@ -61,7 +61,7 @@ Suppose we are given the following context-free grammar:
 S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{wholetidyinput}
 
-\noindent For reasons that will become clear in \S\ref{sec:matrix}, this is automatically rewritten into the grammar:
+\noindent For reasons that will become clear in Sec.~\ref{sec:matrix}, this will automatically be rewritten into the grammar:
 
 \begin{verbatim}
  F.! → !     S.) → S F.)  and.S → F.and S   S → F.! S     S → false    S → S ε+
@@ -77,7 +77,7 @@ S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 %    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
 %\end{figure}
 
-\noindent Given a string containing holes such as the one below, Tidyparse will return several completions:
+\noindent Given a string containing holes, our tool will return several completions in a few milliseconds:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -99,7 +99,7 @@ true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( <S> 
   \end{lstlisting}
 \end{tcolorbox}
 
-\noindent Similarly, if provided with a string containing various errors, Tidyparse will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
+\noindent Similarly, if provided with a string containing various errors, it will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -175,7 +175,7 @@ Details of the bisimilarity between parsing and matrix multiplication can be fou
 Valiant's decision procedure can be abstracted by lifting into the domain of bitvector variables, i.e., linear equations over finite fields. This produces an algebraic expression for each nonterminal inhabitant of the northeasternmost bitvector $\mathcal{T}$, whose solutions correspond to valid parse forests for an incomplete string on the superdiagonal. This yields a novel interpretation of Valiant's algorithm as an equational theory over finite fields, allowing us to solve for admissible completions and their parse forests. In particular, $\boxplus$ and $\boxtimes$ are defined so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to denote types and functions defined over strings and binary constants only.}
 
 \begin{figure}[H]
-  \adjustbox{scale=0.82,center}{%
+  \adjustbox{center}{%
     \[\begin{tikzcd}[row sep=large, column sep=huge]
         \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\stackrel{\text{(Parsing)}}{\text{Set}} \arrow[d, phantom] & \stackrel{\text{(Recognition)}}{\text{Bit}} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \stackrel{\text{(Synthesis)}}{\text{SAT}} \arrow[d, phantom]\\[-30pt]
         \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-13.4pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-9pt}+\:\:\:*"] \\
@@ -187,23 +187,23 @@ Valiant's decision procedure can be abstracted by lifting into the domain of bit
 
 \noindent where $\mathcal{V}$ is a function $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2$. Note that while always possible to encode $\mathbb{Z}_2^{|V|} \rightarrow \mathcal{V}$ using the identity function, an arbitrary $\mathcal{V}$ might have zero, one, or in general, multiple solutions in $\mathbb{Z}_2^{|V|}$. In practice, this means that a language equation can be unsatisfiable or underconstrained, however if a solution exists, it can always be decoded into a valid sentence and parse forest in the language.
 
-So far, we have only considered the syntactic theory of breadth-bounded CFLs with holes, however, our construction can be easily extended to handle the family of CFLs closed under conjunction. The additional expressivity afforded by the language conjunction operator will be indispensable when considering practical program repair scenarios, which may require extra-grammatical constraints such as indentation-sensitivity or Levenshtein-bounded reachability. That extension, and the resulting theory of breadth-bounded CFLs with holes and conjunction, we will explore in Sec.~\ref{sec:lclreach}.
+So far, we have only considered the syntactic theory of breadth-bounded CFLs with holes, however, our construction can be easily extended to handle the family of CFLs closed under conjunction. The additional expressivity afforded by the language conjunction operator will be indispensable when considering practical program repair scenarios, which may require extra-grammatical constraints such as indentation-sensitivity or Levenshtein-bounded reachability. That extension, and the resulting theory of breadth-bounded CJLs with holes, will be explored in Sec.~\ref{sec:lclreach}.
 
-\pagebreak\subsection{Encoding CFG parsing as SAT solving}\label{sec:sat}
+\pagebreak\subsection{From CFG parsing to SAT solving}\label{sec:sat}
 
 \begin{figure}[H]
 \adjustbox{scale=0.75,center}{%
 \[\begin{tikzcd}[row sep=large, col sep=huge]
 \text{String} && \text{Grammar} && \err{\text{String}} \\
-[-20pt] \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[u, dashed, no head, color=gray] \arrow[dl]\arrow[ddl, bend left] \arrow[ddd, dashed, no head, color=gray] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
-& V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
+[-20pt] \highlight{\Sigma}^{n} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[u, dashed, no head, color=gray] \arrow[dl]\arrow[ddl, bend left] \arrow[ddd, dashed, no head, color=gray] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n}} \arrow[dl] \\
+& V^{n} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
 & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
 & CST & \phantom{.} & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
 \end{tikzcd}\]
 }
 \end{figure}
 
-Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
+Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string is invalid, the algorithm generates a set of admissible corrections, alongside their CSTs.
 
 %\noindent The compactness of this representation can be improved via a combinatorial number system without loss of generality, although $\mathds{1}$ is a convenient encoding for SAT.
 
@@ -261,165 +261,23 @@ Should only need to recompute submatrices affected by individual edits. In the w
 \begin{tabular}{ c c c c c }
 \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
 Append                               & & Delete                                       & & Insert                                       \\
-$\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
+$\mathcal{O}(n+1)$                   & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
 \end{tabular}
 \end{center}
 Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
 
-\pagebreak\section{Error Recovery}\label{sec:error}
-
-Unlike classical parsers which need special care to recover from errors, if the input string does not parse, Tidyparse can return partial subtrees. If no solution exists, the upper triangular entries will appear as a jagged-shaped ridge whose peaks represent the roots of parsable ASTs. These provide a natural debugging environment to aid the repair process.
-
-The matrix $\mathcal{M}^*$ encodes a superposition of all labeled binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees, with labels omitted to emphasize their structure:
-
-\begin{figure}[H]
-  \resizebox{0.99\textwidth}{!}{
-    \[
-      \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-         \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
-                 \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
-                 \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
-                      &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
-                      &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
-                      &               &              &              &              & \tikzmark{v} &              \\
-                 \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
-      \end{pNiceArray}
-      \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
-        \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
-        \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
-        \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
-        \draw [blubr] ({pic cs:a}) to ({pic cs:b});
-        \draw [blubr] ({pic cs:e}) to ({pic cs:b});
-        \draw [blubr] ({pic cs:h}) to ({pic cs:c});
-        \draw [blubr] ({pic cs:b}) to ({pic cs:c});
-        \draw [blubr] ({pic cs:c}) to ({pic cs:d});
-        \draw [redbr] ({pic cs:h}) to ({pic cs:i});
-        \draw [redbr] ({pic cs:j}) to ({pic cs:i});
-        \draw [redbr] ({pic cs:e}) to ({pic cs:g});
-        \draw [redbr] ({pic cs:i}) to ({pic cs:g});
-        \draw [redbr] ({pic cs:g}) to ({pic cs:d});
-      \end{tikzpicture}\Rightarrow
-      \left\{\begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-        \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
-        \vno          & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
-        \vdd          & \ddd           & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
-                      &                &               & \tikzmark{p1} &               & \tikzmark{t1} & \tikzmark{x1} \\
-                      &                &               &               & \tikzmark{h1} & \tikzmark{u1} & \tikzmark{i1} \\
-                      &                &               &               &               & \tikzmark{v1} &              \\
-        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j1}
-      \end{pNiceArray}
-      \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
-        \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
-        \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
-        \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
-        \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
-        \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
-        \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
-      \end{tikzpicture}_{\textstyle,}
-      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-        \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
-        \vno          & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
-        \vdd          & \ddd           & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
-                      &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
-                      &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
-                      &                &               &               &               & \tikzmark{v2} &              \\
-        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j2}
-      \end{pNiceArray}
-      \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
-        \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
-        \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
-        \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
-        \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
-        \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
-        \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
-      \end{tikzpicture}_{\textstyle,}
-      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-        \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
-        \vno          & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
-        \vdd          & \ddd           & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
-                      &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
-                      &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
-                      &                &               &               &               & \tikzmark{v3} &              \\
-        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j3}
-      \end{pNiceArray}
-      \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
-        \draw [grnbr] ({pic cs:l3}) to ({pic cs:r3});
-        \draw [grnbr] ({pic cs:n3}) to ({pic cs:p3});
-        \draw [grnbr] ({pic cs:v3}) to ({pic cs:r3});
-        \draw [grnbr] ({pic cs:r3}) to ({pic cs:w3});
-        \draw [grnbr] ({pic cs:j3}) to ({pic cs:d3});
-        \draw [grnbr] ({pic cs:a3}) to ({pic cs:d3});
-      \end{tikzpicture}\ldots\right\}
-    \]
-  }
-\end{figure}
-
-Occasionally, it is not possible to decode a full tree. In a typical parser, error recovery requires special tricks. Here, we simply analyze the structure of the matrix $\mathbf{M}$ to decode the parseable subtrees:
-
-\begin{figure}[H]
-  \hspace{-0.5cm}\begin{minipage}[l]{6cm}
-      \[
-        \begin{NiceMatrix}
-          \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
-                     &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
-      \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
-                \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
-                \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-                     &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
-                     &      &      &      &      &      & \pcd & \cdd &      & C    \\
-                     &      &      &      &      &      &      &      & T_C  & \vdd \\
-                     &      &      &      &      &      &      &      &      & \\
-                     &      &      &      &      &      &      &      &      & \\
-                     &      &      &      &      &      &      &      &      & \\
-                     &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
-                \vno & \cdd &      &      &      &      &      &      & \vno &
-        \end{NiceMatrix}
-    \]
-  \end{minipage}
-  \hspace{1cm}
-  \begin{minipage}[l]{6cm}
-      \begin{halftidyinput}
-      (*@\err{\texttt{⊤ and ⊤ ! and ⊥ xor ⊤ ! ⊤ and ⊥}}\caret{ }@*)
-      \end{halftidyinput}
-
-      \begin{verbatim}
-    Recovered 3 parseable leaves:
-      \end{verbatim}
-      \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
-      \begin{verbatim}
-    └── ! [3]   └── and [4]   └── xor [6]
-      \end{verbatim}
-
-      \begin{verbatim}
-    Recovered 2 parseable branches:
-      \end{verbatim}
-    \hspace{0.63cm}\emoji{herb}\hspace{2.48cm}\emoji{herb}\vspace{-5pt}
-      \begin{verbatim}
-    └── S [0..2]     └── S [8..11]
-        ├── ⊤ [0]        ├── S [8..9]
-        ├── and [1]      │   ├── ! [8]
-        └── ⊤ [2]        │   └── ⊤ [9]
-                         ├── and [10]
-                         └── ⊥ [11]
-      \end{verbatim}
-    \end{minipage}
-  \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
-\end{figure}
-
-\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
-
-\section{Tree Denormalization}
+\pagebreak\section{Tree Denormalization}
 
 % https://www.ling.upenn.edu/advice/latex/qtree/qtreenotes.pdf
 % https://cpb-us-w2.wpmucdn.com/campuspress.yale.edu/dist/0/119/files/2014/12/sec-10.17-drawing-arrows-2ek9r2b.pdf
 
-Our parser emits a binary forest consisting of parse trees for the candidate string according to the CNF grammar, however this forest is misshapen.
+Our parser emits a binary forest consisting of parse trees for the candidate string constructed bottom-up using $\hat{\otimes}$, which simply stores backpointers, however due to Chomsky normalization this forest is full of trees that are crooked and unnatural.
 
 \begin{align}
-                  X\:\hat{\otimes}\:Z := \big\{\;w\hphantom{.}^{\nearrow}_{\searrow}\nobarfrac{x}{z} \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+   X\:\hat{\otimes}\:Z := \big\{\;w\hphantom{.}^{\nearrow}_{\searrow}\nobarfrac{x}{z} \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
 \end{align}
 
-\noindent We first construct the parse forests bottom-up using $\hat{\otimes}$, which simply stores backpointers, then if $S \notin \Lambda^*_\sigma$, we traverse the peaks by decreasing elevation to recover parse branches.
+\noindent To restore the natural shape of the tree, we first construct the parse forests, then prune away synthetic nonterminals by recursively grafting denormalized grandchildren onto the root.
 
 \begin{figure}[H]
   \begin{minipage}{.45\linewidth}
@@ -462,91 +320,31 @@ Our parser emits a binary forest consisting of parse trees for the candidate str
 
 \section{Coarsening and simplification of subexpressions}
 
-Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified? This transformation is admissible and indeed desirable when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. Returning to Fig. 4, under what circumstances is the following reduction admissible?
+Clearly, the solving process is polynomial in the size of the string. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified, i.e., under what circumstances is the following reduction admissible?
 
 \begin{figure}[H]
 \[
 \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
 \vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
 \vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-&             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-&             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-&             &                    &                   &                        & \ddd & \\
-&             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
+     &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
+     &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
+     &             &                    &                   &                        & \ddd & \\
+     &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
 \vno & \cdd        &                    &                   &                        &      & \vno
 \end{pNiceArray} \equiv
 \begin{pNiceArray}{>{\strut}ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
 \vno & \rcr\mathcal{L}_{1,3} & \rcw\mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
 \vdd & \ddd                  & \mathcal{V}_{2,4}     &      & \vdd \\
-&                       &                       & \ddd & \\
-&                       &                       &      & \mathcal{V}_{n,n} \\
+     &                       &                       & \ddd & \\
+     &                       &                       &      & \mathcal{V}_{n,n} \\
 \vno & \cdd                  &                       &      & \vno
 \end{pNiceArray}
 \]
 \end{figure}
 
-For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. This question can be reduced to a quotient: Does there exist another nonterminal, when joined with the substring in question, that will ``strip away'' any of its tokens, leading to another derivation? To answer this question, we must introduce the concept of a context-free language language derivative.
+This transformation is admissible when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g. \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. This question can be reduced to a quotient: Does there exist another nonterminal, when so adjoined that will ``strip away'' any tokens, leading to another derivation? To resolve this question, we require the concept of a language derivative.
 
-\section{Nonterminal Stubs}
-
-\noindent As a notational conveinience, non-recursive nonterminal stubs are permitted inside the CFG definition. To support this feature, we introduce a simple substitution rule that replaces all productions containing parameterized nonterminals, $\langle\alpha\rangle$, with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$:
-
-\begin{figure}[H]
-    \begin{prooftree}
-        \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
-        \AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
-        \RightLabel{$\alpha\textsc{-sub}$}
-        \BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
-    \end{prooftree}
-\end{figure}
-
-\noindent This rule enables adding a placeholder for typed expressions, which will take the form:
-
-\begin{tidyinput}
-E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
-X -> Int | Bool
-\end{tidyinput}
-
-\begin{tidyinput}
-E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
-E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
-\end{tidyinput}
-
-When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$:
-
-\begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash v \in V$}
-    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
-    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
-\end{prooftree}
-
-Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
-
-\begin{tidyinput}
-    false or ! true or <(*@\caret{S}@*)> and <S> or <S>
-\end{tidyinput}
-
-\begin{tidyoutput}
-1.) false or ! true or (*@\hlorange{true}@*) and <S> or <S>
-2.) false or ! true or (*@\hlorange{false}@*) and <S> or <S>
-3.) false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
-4.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
-5.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
-...
-\end{tidyoutput}
-
-\noindent This functionality can also be used inside a completion:
-
-\begin{tidyinput}
-if <Vexp> _ _ _ _ _(*@\caret{ }@*)
-\end{tidyinput}
-
-\begin{tidyoutput}
-1.) if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
-2.) if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
-3.) if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
-...
-\end{tidyoutput}
 
 \pagebreak\section{Backpropagation of error}
 
@@ -555,7 +353,7 @@ if <Vexp> _ _ _ _ _(*@\caret{ }@*)
 Valiant's $\otimes$-operator, which yields the set of productions unifying known factors in a binary CFG, naturally implies the existence of a left- and right-quotient, which yield the set of nonterminals that may appear the right or left side of a known factor and its corresponding root. In other words, a known factor not only implicates subsequent expressions that can be derived from it, but also adjacent factors that may be composed with it to form a given derivation.
 
 \begin{table}[H]
-\resizebox{0.8\textwidth}{!}{
+\resizebox{\textwidth}{!}{
   \begin{tabular}{ccccc}
     Valiant's $\otimes$-operator && Left Quotient && Right Quotient \\\\
     $x \otimes z := \big\{\;w \mid (w \rightarrow x z)\in P\;\big\}$ &&
@@ -705,7 +503,7 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
   \caption{CFGs are witnessed by a rank-3 tensor, whose inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
 \end{figure}
 
-\noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$. In the follow case, $\mathcal{M}^*$ is left-constrained, although the holes may (in general) appear anywhere in $\sigma$:
+\noindent By allowing the matrix $\mathcal{M}^*$ to contain bitvector variables representing holes in $\sigma$, we obtain a set of multilinear equations whose solutions exactly correspond to the set of admissible repairs and their corresponding parse forests. Specifically, the repairs coincide with holes in the superdiagonal $\mathcal{M}^*_{r+1 = c}$, and the parse forests occur along upper-triangular entries $\mathcal{M}^*_{r + 1 < c}$.
 %
 %%We precompute the shadow of fully-resolved substrings before feeding it to the SAT solver. If the substring is known, we can simply compute this directly outside the SAT solver. Shaded regions are bitvector literals and light regions correspond to bitvector variables.
 %
@@ -1090,113 +888,361 @@ Using the technique from Sec.~\ref{sec:levenshtein}, we can also compute languag
 
 We can also build a set of grammars of increasing granularity, like a lattice structure. Basically, we can build up a lattice (in the order theoretic sense), consisting of grammars of increasing granularity. All programming languages require balanced parentheses, but some have additional constraints. So we can combine grammars, count and do bounded linear integer arithmetic.
 
-%\section{Realtime Error Correction}\label{sec:holes}
-%
-%Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given an input string, $\Sigma^n$, where should we put the holes? Assuming $k$ holes, there are ${n \choose k}$ possible hole configurations (HCs), each with $(|\Sigma| + 1)^{2k}$ possible repairs (before parsing, cf. Eqs.~\ref{eq:del}-\ref{eq:ins2}). In practice, depending on $n$ and $k$, this space can be intractable to search through exhaustively, so to facilitate real-time assistance we prioritize likely repairs according to an eight-step procedure:
-%
-%\begin{enumerate}
-%    \item Fetch the most recent CFG and string from the editor.
-%    \item Exclude parsable substrings from hollowing.
-%    \item Lazily enumerate all HCs of increasing length.
-%    \item Sample HCs without replacement using Eq.~\ref{eq:ergo}.
-%    \item Prioritize HCs first by distance to caret index, then by Earthmover's distance to a set of suspicious indices.$^*$
-%    \item Translate HCs to sketch templates using~\S\ref{sec:dsi}.
-%    \item Feed sketch templates to an incremental SAT solver.
-%    \item Decode and rerank models by Levenshtein distance.
-%\end{enumerate}
-%
-%\noindent $^*$ These locations can be supplied by local edit history or using tokenwise perplexity from a neural language model. Once a new repair is discovered, it is immediately displayed. Incoming keystrokes interrupt and reset the solving process.
+\pagebreak\section{Error Recovery}\label{sec:error}
+
+The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary trees of a fixed breadth. Consider the string \texttt{\_ ... \_}, which might generate various parse trees:
+
+\begin{figure}[H]
+  \resizebox{0.99\textwidth}{!}{
+    \[
+      \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+         \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
+                 \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
+                 \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
+                      &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
+                      &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
+                      &               &              &              &              & \tikzmark{v} &              \\
+                 \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
+      \end{pNiceArray}
+      \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
+        \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
+        \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
+        \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
+        \draw [blubr] ({pic cs:a}) to ({pic cs:b});
+        \draw [blubr] ({pic cs:e}) to ({pic cs:b});
+        \draw [blubr] ({pic cs:h}) to ({pic cs:c});
+        \draw [blubr] ({pic cs:b}) to ({pic cs:c});
+        \draw [blubr] ({pic cs:c}) to ({pic cs:d});
+        \draw [redbr] ({pic cs:h}) to ({pic cs:i});
+        \draw [redbr] ({pic cs:j}) to ({pic cs:i});
+        \draw [redbr] ({pic cs:e}) to ({pic cs:g});
+        \draw [redbr] ({pic cs:i}) to ({pic cs:g});
+        \draw [redbr] ({pic cs:g}) to ({pic cs:d});
+      \end{tikzpicture}\Rightarrow
+      \left\{\begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+        \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
+        \vno          & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
+        \vdd          & \ddd           & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
+                      &                &               & \tikzmark{p1} &               & \tikzmark{t1} & \tikzmark{x1} \\
+                      &                &               &               & \tikzmark{h1} & \tikzmark{u1} & \tikzmark{i1} \\
+                      &                &               &               &               & \tikzmark{v1} &              \\
+        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j1}
+      \end{pNiceArray}
+      \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
+        \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
+        \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
+        \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
+        \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
+        \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
+        \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
+      \end{tikzpicture}_{\textstyle,}
+      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+        \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
+        \vno          & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
+        \vdd          & \ddd           & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
+                      &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
+                      &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
+                      &                &               &               &               & \tikzmark{v2} &              \\
+        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j2}
+      \end{pNiceArray}
+      \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
+        \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
+        \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
+        \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
+        \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
+        \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
+        \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
+      \end{tikzpicture}_{\textstyle,}
+      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+        \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
+        \vno          & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
+        \vdd          & \ddd           & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
+                      &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
+                      &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
+                      &                &               &               &               & \tikzmark{v3} &              \\
+        \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j3}
+      \end{pNiceArray}
+      \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
+        \draw [grnbr] ({pic cs:l3}) to ({pic cs:r3});
+        \draw [grnbr] ({pic cs:n3}) to ({pic cs:p3});
+        \draw [grnbr] ({pic cs:v3}) to ({pic cs:r3});
+        \draw [grnbr] ({pic cs:r3}) to ({pic cs:w3});
+        \draw [grnbr] ({pic cs:j3}) to ({pic cs:d3});
+        \draw [grnbr] ({pic cs:a3}) to ({pic cs:d3});
+      \end{tikzpicture}\ldots\right\}
+    \]
+  }
+\end{figure}
+
+\noindent Not only is Tidyparse capable of suggesting repairs to invalid strings, it can also return partial trees for those same strings, which is often helpful for debugging purposes. Unlike LL- and LR-style parsers which require special rules for error recovery, Tidyparse can simply analyze the structure of $M^*$ to recover parse branches. If $S \notin  \Lambda^*_\sigma$, the upper triangular entries of $M^*$ will take the form of a jagged-shaped ridge whose peaks signify the roots of maximally-parsable substrings $\hat{\sigma}_{i, j}$.
+
+\begin{figure}[H]
+  \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+      \[
+        \begin{NiceMatrix}
+          \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+                     &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+      \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+                \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+                \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+                     &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+                     &      &      &      &      &      & \pcd & \cdd &      & C    \\
+                     &      &      &      &      &      &      &      & T_C  & \vdd \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      &      & \\
+                     &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+                \vno & \cdd &      &      &      &      &      &      & \vno &
+        \end{NiceMatrix}
+    \]
+  \end{minipage}
+  \hspace{1cm}
+  \begin{minipage}[l]{6cm}
+      \begin{halftidyinput}
+      (*@\err{\texttt{⊤ and ⊤ ! and ⊥ xor ⊤ ! ⊤ and ⊥}}\caret{ }@*)
+      \end{halftidyinput}
+
+      \begin{verbatim}
+    Recovered 3 parseable leaves:
+      \end{verbatim}
+      \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
+      \begin{verbatim}
+    └── ! [3]   └── and [4]   └── xor [6]
+      \end{verbatim}
+
+      \begin{verbatim}
+    Recovered 2 parseable branches:
+      \end{verbatim}
+    \hspace{0.63cm}\emoji{herb}\hspace{2.48cm}\emoji{herb}\vspace{-5pt}
+      \begin{verbatim}
+    └── S [0..2]     └── S [8..11]
+        ├── ⊤ [0]        ├── S [8..9]
+        ├── and [1]      │   ├── ! [8]
+        └── ⊤ [2]        │   └── ⊤ [9]
+                         ├── and [10]
+                         └── ⊥ [11]
+      \end{verbatim}
+    \end{minipage}
+  \caption{Peaks along the UT matrix ridge correspond to maximally parseable substrings. By recursing over upper diagonals of decreasing elevation and discarding all subtrees that fall under the shadow of another's canopy, we can recover the partial subtrees. The example depicted above contains three such branches, rooted at nonterminals $C, B, A$.}\label{fig:peaks}
+\end{figure}
+
+\noindent These branches correspond to peaks on the upper triangular (UT) matrix ridge. As depicted in Fig.~\ref{fig:peaks}, we traverse the peaks by decreasing elevation to collect partial AST branches.
+
+\pagebreak\section{Nonterminal Stubs}
+
+\noindent As a notational conveinience, non-recursive nonterminal stubs are permitted inside the CFG definition. To support this feature, we introduce a simple substitution rule that replaces all productions containing parameterized nonterminals, $\langle\alpha\rangle$, with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$:
+
+\begin{figure}[H]
+\begin{prooftree}
+\AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
+\AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
+\RightLabel{$\alpha\textsc{-sub}$}
+\BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
+\DisplayProof
+\hskip 1.5em
+\AxiomC{$\mathcal{G} \vdash v \in V$}
+\RightLabel{$\langle\cdot\rangle\textsc{-int}$}
+\UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
+\end{prooftree}
+\end{figure}
+
+\noindent Some dependently typed programming languages can do parsing in the type checker. Our parser can do some type checking too. Tidyparse enables adding a placeholder for typed expressions, which will be expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule:
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
+X -> Int | Bool
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
+E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
+\end{lstlisting}
+\end{tcolorbox}
+
+When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$ using the $\langle\cdot\rangle\textsc{-int}$ rule. Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+false or ! true or <(*@\caret{S}@*)> and <S> or <S>
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1.) false or ! true or (*@\hlorange{true}@*) and <S> or <S>
+2.) false or ! true or (*@\hlorange{false}@*) and <S> or <S>
+3.) false or ! true or (*@\hlorange{!}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+4.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+5.) false or ! true or (*@\hlorange{<S>}@*) (*@\hlorange{or}@*) (*@\hlorange{<S>}@*) and <S> or <S>
+...
+\end{lstlisting}
+\end{tcolorbox}
+
+\noindent This functionality can also be used inside a completion:
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+if <Vexp> _ _ _ _ _(*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1.) if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
+2.) if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
+3.) if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
+...
+\end{lstlisting}
+\end{tcolorbox}
 
 
 \section{Practical Example}
 
 Tidyparse requires a grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to resemble a more realistic use case:
 
-\begin{tidyinput}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 S -> A | V | ( X , X ) | X X | ( X )
 A -> Fun | F | L | L in X
 Fun -> fun V (*@`@*)->(*@`@*) X
 F -> if X then X else X
 L -> let V = X | let rec V = X
 V -> Vexp | ( Vexp ) | Vexp Vexp
-Vexp -> VarName | FunName | Vexp VO Vexp
-Vexp -> ( VarName , VarName ) | Vexp Vexp
+Vexp -> VarName | FunName | Vexp VO Vexp | ( VarName , VarName ) | Vexp Vexp
 VarName -> a | b | c | d | e | ... | z
 FunName -> foldright | map | filter
 VO ->  + | - | * | / | > | = | < | (*@`@*)||(*@`@*) | &&
 ---
 let curry f = ( fun x y -> f ( _ _ _(*@\caret{ }@*)) )
-\end{tidyinput}
-\begin{tidyoutput}
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 let curry f = ( fun x y -> f ( (*@\hlorange{<X>}@*) ) )
 let curry f = ( fun x y -> f ( (*@\hlorange{<FunName>}@*) ) )
 let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 ...
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
 \noindent We can also handle the untyped \lambda-calculus, as shown below:
 
-\begin{tidyinput}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 sxp -> λ var . sxp | sxp sxp | var | ( sxp ) | const
 const -> 1 | 2 | 3 | 4 | 5 | 6
 var -> a | b | c | f | x | y | z
 ---
 ( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x x ) (*@\caret{ }@*)
-\end{tidyinput}
-\begin{tidyoutput}
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 1.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{)}@*) λ x . f ( x x )
 2.) ( λ f . ( λ x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) λ x . f ( x x )
 3.) ( λ f . ( λ x . f ( x x ) ) ( λ x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 ...
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
-\subsection{Grammar Assistance}
+\pagebreak\subsection{Grammar Assistance}
 
 Tidyparse uses a CFG to parse the CFG, so it can provide assistance while the user is designing the CFG. For example, if the CFG does not parse, it will suggest possible fixes. In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
 
-\begin{tidyinput}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 B -> true | false | (*@\caret{ }@*)
-\end{tidyinput}
-\begin{tidyoutput}
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 B -> true | false (*@\hlred{ }@*)
 B -> true | false (*@\hlorange{<RHS>}@*)
 B -> true | false | (*@\hlgreen{<RHS>}@*)
 ...
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
 \subsection{Interactive Nonterminal Expansion}
 
 Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
 
-\begin{tidyinput}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 if <(*@\caret{V}@*)exp> X then <Vexp> else <Vexp>
-\end{tidyinput}
-
-\begin{tidyoutput}
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 if (*@\hlorange{map}@*) X then <Vexp> else <Vexp>
 if (*@\hlorange{uncurry}@*) X then <Vexp> else <Vexp>
 if (*@\hlorange{foldright}@*) X then <Vexp> else <Vexp>
 ...
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
 \subsection{Conjunctive Grammars}
 
-Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:cslr}:
+Many natural and programming languages exhibit context-sensitivity, such as Python indentation. Unlike traditional parser-generators, Tidyparse can encode CFL-intersection, allowing it to detect and correct errors in a broader family of languages than would normally be possible using CFGs alone. For example, consider the grammar from Sec.~\ref{sec:lclreach}:
 
-\begin{tidyinput}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+\path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 S -> L R    L -> a b | a L b    R -> c | c R
 &&&
 S -> L R    R -> b c | b R c    L -> a | a L
 ---
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _(*@\caret{ }@*)
-\end{tidyinput}
-\begin{tidyoutput}
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
 1.) a b c
 2.) a a b b c c
 3.) a a a b b b c c c
 4.) a a a a b b b b c c c c
 ...
-\end{tidyoutput}
+\end{lstlisting}
+\end{tcolorbox}
 
 \noindent Tidyparse uses the notation \texttt{G1} {\color{blue}\texttt{\&\&\&}} \texttt{G2} and \texttt{G1} {\color{blue}\texttt{|||}} \texttt{G2} to signify $\mathcal{L}_{\mathcal{G}_1}\cap\mathcal{L}_{\mathcal{G}_2}$ and $\mathcal{L}_{\mathcal{G}_1}\cup\mathcal{L}_{\mathcal{G}_2}$ respectively, i.e., the intersection or union of two or more grammars' languages. {Composition}, complementation and other operations on finite languages are also possible, although undocumented at present.
 
@@ -1383,65 +1429,50 @@ error bars/y explicit
 \end{tikzpicture}
 \end{figure}
 
-As expected, accuracy on organic errors in Python is lower.
-
-\subsection{Task Difficulty}
-
-\noindent\textbf{Level \textonehalf} - Incomplete code (all missing tokens at end)
-
-\noindent\textbf{Level 1} - Known number of errors at known locations
-
-\noindent\textbf{Level 2} - Known number of errors at unknown locations
-
-\noindent\textbf{Level 3} - Unknown number of errors at unknown locations
-
-\subsection{Repair Datasets}
-Synthetic - Synthetic errors in natural code snippets\\
-Natural - Natural errors and fixes mined from Git history
-\subsection{Evaluation Metrics}
-Syntactic validity - Only considers whether the repair parses\\
-Repair alignment - Measures string distance to true fix
-\subsection{Model configurations}
-Model configurations - LLM, ECP, ECP + LLM
-GraphCodeBERT
-RobertA
-Incoder
-CarperAI?
+%As expected, accuracy on organic errors in Python is lower.
+%
+%\subsection{Task Difficulty}
+%
+%\noindent\textbf{Level \textonehalf} - Incomplete code (all missing tokens at end)
+%
+%\noindent\textbf{Level 1} - Known number of errors at known locations
+%
+%\noindent\textbf{Level 2} - Known number of errors at unknown locations
+%
+%\noindent\textbf{Level 3} - Unknown number of errors at unknown locations
+%
+%\subsection{Repair Datasets}
+%Synthetic - Synthetic errors in natural code snippets\\
+%Natural - Natural errors and fixes mined from Git history
+%\subsection{Evaluation Metrics}
+%Syntactic validity - Only considers whether the repair parses\\
+%Repair alignment - Measures string distance to true fix
+%\subsection{Model configurations}
+%Model configurations - LLM, ECP, ECP + LLM
+%GraphCodeBERT
+%RobertA
+%Incoder
+%CarperAI?
 
 \section{Discussion}\label{sec:discussion}
 
-While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are known to be concentrated in specific locations, such as the beginning or end of a string, then latency is typically below 500ms. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control.
+While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are localized to the beginning or end of a string, then latency is typically below 500ms. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control.
 
 Tidyparse in its current form has a number of technical shortcomings: firstly it does not incorporate any neural language modeling technology at present, an omission we hope to address in the near future. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs.
 
 Secondly, our current method generates sketch templates using a na\"ive enumerative search, feeding them individually to the SAT solver, which has the tendency to duplicate prior work and introduces unnecessary thrashing. Considering recent extensions of Boolean matrix-based parsing to linear context-free rewriting systems (LCFRS)~\cite{cohen2016parsing}, it may be feasible to search through these edits within the SAT solver, leading to yet unrealized and possibly significant speedups.
 
 Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs while syntactically admissible, are not guaranteed to be semantically valid. We note however, that it is possible to encode type-based semantic constraints into the solver and intend to explore this direction more fully in future work.
+
+Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with LL and LR-style parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$ and handles arbitrary context-free langauges. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
 
 We envision three primary use cases: (1) helping novice programmers become more quickly familiar with a new programming language (2) autocorrecting common typos among proficient but forgetful programmers and (3) as a prototyping tool for PL designers and educators. Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for testing. %Although the algorithm may seem esoteric at first glance, in our experience it is much more interpretable than classical parsers, which exhibit poor error-recovery and diagnostics.
-
-
-\section{Discussion}
-
-While error correction with a few errors is tolerable, latency can vary depending on many factors including string length and grammar size. If errors are known to be concentrated in specific locations, such as the beginning or end of a string, then latency is typically below 500ms. Should errors occur uniformly at random, admissible repairs can take longer to discover, however these scenarios are unusual in our experience. We observe that errors are typically concentrated nearby historical edit locations, which can be retrieved from the IDE or version control. Further optimizations that reduce the total number of repairs checked are possible by eliminating improbable sketch templates.
-
-Tidyparse in its current form has a number of technical shortcomings: firstly it does not incorporate any neural language modeling technology at present, an omission we hope to address in the near future. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs.
-
-Secondly, our current method generates sketch templates using a na\"ive enumerative search, feeding them individually to the SAT solver, which has the tendency to duplicate prior work and introduces unnecessary thrashing. Considering recent extensions of Boolean matrix-based parsing to linear context-free rewriting systems (LCFRS)~\cite{cohen2016parsing}, it may be feasible to search through these edits within the SAT solver, leading to yet unrealized and possibly significant speedups.
-
-Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs while syntactically admissible, are not guaranteed to be semantically valid. We note however, that it is possible to encode type-based semantic constraints into the solver and intend to explore this direction more fully in future work.
-
-Although not intended to be a dedicated parser and we make no attempt to rigorously compare parsing latency, parsing valid strings with Tidyparse is typically competitive with classical parsing methods. Our primary motivation is to facilitate the usability and explainability of parsing with errors. We envision three primary use cases: (1) helping novice programmers become more quickly familiar with a new programming language (2) autocorrecting common typos among proficient but forgetful programmers and (3) as a prototyping tool for PL educators and designers.
-
-Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for testing. Although the algorithm may seem esoteric at first glance, in our experience it is much more interpretable than classical parsers, which exhibit poor error-recovery and diagnostics.
 
 \section{Conclusion}
 
 Tidyparse accepts a CFG and a string to parse. If the string is valid, it returns the parse forest, otherwise, it returns a set of repairs, ordered by their Levenshtein edit distance to the invalid string. Our method compiles each CFG and candidate string onto a matrix dynamical system using an extended version of Valiant's construction and solves for its fixedpoints using an incremental SAT solver. This approach to parsing has many advantages, enabling us to repair syntax errors, correct typos and generate parse trees for incomplete strings. By allowing the string to contain holes, repairs can contain either concrete tokens or nonterminals, which can be manually expanded by the user or a neural-guided search procedure. From a theoretical standpoint, this technique is particularly amenable to neural program synthesis and repair, naturally integrating with the masked-language-modeling task (MLM) used by transformer-based neural language models.
 
 From a practical standpoint, we have implemented our approach as an IDE plugin and demonstrated its viability as a tool for live programming. Tidyparse is capable of generating repairs for invalid code in a range of toy languages. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in the near future. %Further examples can be found at our GitHub repository: \url{https://github.com/breandan/tidyparse} (needs anonymiziation)
-
-Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with LL and LR-style parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$ and handles arbitrary context-free langauges. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
 
 %\begin{itemize}
 %\item Error correction.
