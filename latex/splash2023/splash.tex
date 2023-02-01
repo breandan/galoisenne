@@ -243,7 +243,7 @@ Due to Chomsky normalization however, the resulting forests are full of trees th
 
 \section{Parser incrementalization}\label{sec:incrementalization}
 
-When the string is altered, we can reuse prior work by only recomputing affected submatrices. In this case, parsing complexity will be location-dependent, at worst quadratic in terms of $|\Sigma^*|$ assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$. Borrowing the notation from probabilistic graphical models, where shaded nodes denote bound variables and unshaded nodes are unobserved:
+When the string is altered, we can reuse prior work by only recomputing affected submatrices, yielding a parser whose complexity is location-dependent, i.e., at worst quadratic in terms of $|\Sigma^*|$ assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $V_1'\otimes V_2'$. Borrowing the notation from probabilistic graphical models, where shaded nodes denote bound variables and unshaded nodes are unobserved:
 
 \begin{center}
 \begin{tabular}{ c c c c c }
@@ -255,7 +255,9 @@ $\mathcal{O}(n+1)$                   & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\ri
 
 The problem of incremental parsing is closely related to \textit{dynamic matrix inverse} in the linear algebra setting, and \textit{incremental transitive closure} with vertex updates in the graph setting. By carefully encoding the matrix relation from Sec.~\ref{sec:matrix} and employing an incremental SAT solver, we can gradually update SAT constraints as new keystrokes are received to eliminate redundancy.
 
-\pagebreak\subsection{From CFG parsing to SAT solving}\label{sec:sat}
+\pagebreak\section{From CFG parsing to SAT solving}\label{sec:sat}
+
+Parsing can be viewed as a special case of repair, however for the sake of efficiency, we first attempt to parse, then resort to repair. Repair can be solved analytically as constraint satisfaction problem using SAT, which allows us to easily combine constraints and solve them incrementally.
 
 \begin{figure}[H]
 \adjustbox{scale=0.75,center}{%
@@ -308,7 +310,7 @@ Our algorithm produces set of concrete syntax trees (CSTs) for a given valid str
 
 Depicted below is a SAT tensor representing \hlgray{$\sigma_1\:\sigma_2\:\sigma_3$}$\:\_\:\ldots\:\_$ where shaded regions demarcate known bitvector literals $\mathcal{L}_{r,c}$ (i.e., representing established nonterminal forests) and unshaded regions correspond to bitvector variables $\mathcal{V}_{r,c}$ (i.e., representing seeded nonterminal forests to be solved) for an incomplete string. Since $\mathcal{L}_{r,c}$ are fixed, we precompute them outside the SAT solver.
 
-Clearly, solving complexity is highly dependent on the the string length. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified, i.e., under what circumstances is the following reduction admissible?
+Clearly, solving complexity is highly dependent on the string length. For the sake of complexity, it would be convenient if well-formed subexpressions could be collapsed into a single nonterminal, or multiple nonterminals (in case of ambiguity). Naturally, this raises the question of when can partial derivations be simplified, i.e., under what circumstances is the following reduction admissible?
 
 \begin{figure}[H]
 \[
@@ -331,7 +333,7 @@ Clearly, solving complexity is highly dependent on the the string length. For th
 \]
 \end{figure}
 
-This transformation is admissible when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g., \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. This question can be reduced to a quotient: Does there exist another nonterminal, when so adjoined that will ``strip away'' any tokens, leading to another derivation? To resolve this question, we require the concept of a language derivative.
+This transformation is admissible when the subexpression is ``complete'', i.e., its derivation cannot be altered by appending or prepending text. For example, the string \texttt{( - b )} is morally \textit{complete} in the sense that inserting adjacent text should not alter the interior derivation, while \texttt{- b} is not, as introducing adjacent text (e.g., \texttt{a - b}) may alter the derivation of its contents depending on the structure of the CFG. This question can be reduced to a quotient: Does there exist another nonterminal, when so adjoined that will ``strip away'' any tokens, leading to another derivation? To address this question, we require the concept of a language derivative.
 
 
 \pagebreak\section{Backpropagation of error}
@@ -537,7 +539,7 @@ Now that we have a reliable method to fix \textit{localized} errors, $S: \mathca
     \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
 \end{prooftree}
 
-\noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
+\noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land, \top := 1, \circ:=0$.\vspace{-5pt}
 
 \begin{align}
     U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -586,7 +588,7 @@ Since there are $\Sigma_{d=1}^q{n \choose d}$ total sketch templates, each with 
     \item Retrieve the most recent grammar, $\mathcal{G}$, and string, $\err{\sigma}$, from the editor.
     \item Lazily enumerate edit templates, $i_{1\ldots d} \in \stirlingii{n}{d}$, for increasing values of $d \geq 1$.
     \item Rerank edit templates according to the distribution $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
-    \item Sample completions for each template from $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ without replacement.
+    \item Sample completions for each template from $\bm{\sigma}_i\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ WoR using Eq.~\ref{eq:lfsr}.
     \item Filter completions by admissibility with respect to the grammar, $\bm{\sigma}_i \cap \mathcal{L}_{\mathcal{G}}$.
     \item Rerank admissible repairs by the edit cost model, $C(\err{\sigma}, \sigma')$.
     \item Display the top-k repairs by edit cost found within p-seconds to the user.
@@ -851,7 +853,7 @@ It is well-known that the family of CFLs is not closed under intersection. For e
 \end{tabular}
 \end{table}
 
-\noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together:\vspace{-5pt}
+\noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together using conjunction:\vspace{-5pt}
 
 \begin{align}
   \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
@@ -1018,7 +1020,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
 
 \pagebreak\section{Nonterminal Stubs}
 
-\noindent As a notational conveinience, non-recursive nonterminal stubs are permitted inside the CFG definition. To support this feature, we introduce a simple substitution rule that replaces all productions containing parameterized nonterminals, $\langle\alpha\rangle$, with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$:
+Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-sub}$, allows the user to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG representing some finite type and its inhabitants. $\alpha\textsc{-sub}$ replaces all productions containing $\langle\alpha\rangle$ with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$. The second rule, $\alpha\textsc{-int}$, introduces homonymous terminals for each user-defined nonterminal.
 
 \begin{figure}[H]
 \begin{prooftree}
@@ -1034,7 +1036,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
 \end{prooftree}
 \end{figure}
 
-\noindent Some dependently typed programming languages can do parsing in the type checker. Our parser can do some type checking too. Tidyparse enables adding a placeholder for typed expressions, which will be expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule:
+\noindent Some dependently typed programming languages can do parsing in the type checker -- our parser can also perform some form of type checking. Tidyparse automatically expands typed expressions into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule, for example when parsing an expression of the form $x + y$, the grammar will recognize \texttt{true + false} and \texttt{1 + 2}, but not \texttt{1 + true}.
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1054,7 +1056,7 @@ E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
 \end{lstlisting}
 \end{tcolorbox}
 
-When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$ using the $\langle\cdot\rangle\textsc{-int}$ rule. Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
+When completing a bounded-width string, one finds it is often convenient to admit nonterminal stubs, representing unexpanded subexpressions. To enable this functionality, we introduce a synthetic production for each $v \in V$ using the $\langle\cdot\rangle\textsc{-int}$ rule. Users can interactively build up a complex expression by placing the caret over a stub, then pressing \keys{\ctrl + \SPACE}:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1077,7 +1079,7 @@ false or ! true or <(*@\caret{S}@*)> and <S> or <S>
 \end{lstlisting}
 \end{tcolorbox}
 
-\noindent This functionality can also be used inside a completion:
+\noindent This functionality can also be useful inside a completion, which might be expanded as follows:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1098,10 +1100,9 @@ if <Vexp> _ _ _ _ _(*@\caret{ }@*)
 \end{lstlisting}
 \end{tcolorbox}
 
+\pagebreak\section{Practical Example}
 
-\section{Practical Example}
-
-Tidyparse requires a grammar -- this can be either provided by the user or ingested from a BNF-like specification. The following is a slightly more complex grammar, designed to resemble a more realistic use case:
+Tidyparse requires a grammar, which can either be provided by the user or ingested from a BNF specification. The following grammar represents a slightly more realistic programming language:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1119,7 +1120,7 @@ L -> let V = X | let rec V = X
 V -> Vexp | ( Vexp ) | Vexp Vexp
 Vexp -> VarName | FunName | Vexp VO Vexp | ( VarName , VarName ) | Vexp Vexp
 VarName -> a | b | c | d | e | ... | z
-FunName -> foldright | map | filter
+FunName -> foldright | map | filter | curry | uncurry
 VO ->  + | - | * | / | > | = | < | (*@`@*)||(*@`@*) | &&
 ---
 let curry f = ( fun x y -> f ( _ _ _(*@\caret{ }@*)) )
@@ -1133,7 +1134,7 @@ let curry f = ( fun x y -> f ( (*@\hlorange{curry}@*) (*@\hlorange{<X>}@*) ) )
 \end{lstlisting}
 \end{tcolorbox}
 
-\noindent We can also handle the untyped \lambda-calculus, as shown below:
+\noindent We can also handle error correction and completion in the untyped \lambda-calculus, as shown below:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1183,7 +1184,7 @@ B -> true | false | (*@\hlgreen{<RHS>}@*)
 
 \subsection{Interactive Nonterminal Expansion}
 
-Users can interactively build up a complex expression by placing the caret over a placeholder they wish to expand, then invoking Tidyparse by pressing \keys{\ctrl + \SPACE}:
+Users can interactively build up a complex expression by placing the caret over a stub they wish to expand, then pressing \keys{\ctrl + \SPACE}:
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
@@ -1306,7 +1307,7 @@ error bars/y explicit
 \end{tikzpicture}
 \end{figure}
 
-\noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the the logarithmic scale on the y-axis.
+\noindent In the second experiment, we sample a random valid string as before, but delete p tokens at random and rather than provide the location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the logarithmic scale on the y-axis.
 
 \pagebreak\section{Accuracy Benchmark}
 
@@ -1376,7 +1377,7 @@ error bars/y explicit
 \end{tikzpicture}
 \end{figure}
 
-\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse\textsuperscript{\footnotemark[\ref{note1}]}, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
+\noindent For Python, we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, repair using Tidyparse, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method.
 
 %As expected, accuracy on organic errors in Python is lower.
 %
