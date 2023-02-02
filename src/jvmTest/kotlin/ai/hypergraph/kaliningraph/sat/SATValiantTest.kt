@@ -655,10 +655,16 @@ class SATValiantTest {
       START -> S
       O -> +
       S -> S O S | N
-      N -> N1 | N2 | N3 | N N
+      N -> N1 | N2 | N3 | N4 | N5 | N6 | N7 | N8 | N9
       N1 -> 1 
       N2 -> 2 
       N3 -> 3
+      N4 -> 4
+      N5 -> 5
+      N6 -> 6
+      N7 -> 7
+      N8 -> 8
+      N9 -> 9
     """.trimIndent().parseCFG().noNonterminalStubs
 
   /*
@@ -686,12 +692,13 @@ class SATValiantTest {
   */
   @Test
   fun testLevensheteinCompleteness() {
-    val strWithParseErr = "1 + 1 + 3 + + 1 + 2 + 4"
+    val strWithParseErr = "1 + 2 + 3 + + 4 + 5 + 6 + 7"
+//                          "1 + 2 + 3 + 2 + 5 + 5"
     val tokens = strWithParseErr.tokenizeByWhitespace()
 
     val sampleSize = 50
     var time = System.currentTimeMillis()
-    val levenshteinRadius = 2
+    val levenshteinRadius = 1
     val levRepairs = sumCFG.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
       .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
       .take(sampleSize).toSet()

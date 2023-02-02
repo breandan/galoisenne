@@ -294,10 +294,9 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(toke
 // TODO: As new keystrokes are received, we should incrementally update
 //  existing constraints rather than creating a fresh SAT instance.
 fun CJL.synthesize(
-  strs: List<Σᐩ>,
+  tokens: List<Σᐩ>,
   takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted }
 ): Sequence<Σᐩ> {
-  val tokens = strs
   check(tokens.all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
   { "All tokens passed into synthesize() must be contained in all CFGs" }
   return when {
