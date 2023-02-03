@@ -44,3 +44,5 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
   return (this intersect levCFG).solver(List(unparseable.size + maxDist) { "_" })
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }
+
+// TODO: http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf

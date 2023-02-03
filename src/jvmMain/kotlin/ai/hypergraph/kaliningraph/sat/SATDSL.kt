@@ -140,10 +140,14 @@ fun Model.areFresh() =
 
 /** See [org.logicng.io.parsers.PropositionalParser] */
 infix fun Formula.and(that: Formula): Formula = ff.and(this, that)
+//        .also { println("&&: $this && $that == $it") }
 infix fun Formula.or(that: Formula): Formula = ff.or(this, that)
+//        .also { println("||: $this || $that == $it") }
 infix fun Formula.xor(that: Formula): Formula = eq(that).negate()
+//        .also { println("XR: $this xr $that == $it") }
 infix fun Formula.neq(that: Formula): Formula = xor(that)
 infix fun Formula.eq(that: Formula): Formula = ff.equivalence(this, that)
+//        .also { println("EQ: $this eq $that == $it") }
 val T: Formula get() = ff.verum()
 val F: Formula get() = ff.falsum()
 

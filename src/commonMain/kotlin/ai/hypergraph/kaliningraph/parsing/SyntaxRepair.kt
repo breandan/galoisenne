@@ -56,6 +56,7 @@ fun repair(
 fun repairLazily(
   prompt: Σᐩ,
   cfg: CFG,
+  edits: Int = 3,
   coarsen: Σᐩ.() -> Σᐩ = { this },
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
@@ -69,7 +70,7 @@ fun repairLazily(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val variations: List<Mutator> =
-    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b)})
+    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = edits, exclusions = b)})
   var totalSamples = 0
   return sanitized.synthesizeWithVariations(
     cfg = cfg,

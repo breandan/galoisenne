@@ -129,7 +129,7 @@ Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminal
 
 \begin{table}[H]
 \begin{tabular}{llll}
-$\mathcal{G}:=\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \mathcal{G}'=\big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow L\:S\;\big\}$
+$\mathcal{G}:=\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \mathcal{G}'=\big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
 \end{tabular}
 \end{table}\vspace{-8pt}
 
@@ -314,16 +314,16 @@ Clearly, solving complexity is highly dependent on the string length. For the sa
 
 \begin{figure}[H]
 \[
-\mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
-\vno & \rcr \vs{1} &  \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
-\vdd & \ddd        &  \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
-     &             &                    & \rcr\vs{3}        & \rcw                   &      & \\
-     &             &                    &                   & \mathcal{V}_{4,4}      &      & \\
-     &             &                    &                   &                        & \ddd & \\
-     &             &                    &                   &                        &      & \mathcal{V}_{n,n} \\
-\vno & \cdd        &                    &                   &                        &      & \vno
+\mathbf{M}^* = \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+\vno & \rcr \vs{1} & \mathcal{L}_{1,3} & \mathcal{L}_{1,3} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
+\vdd & \ddd        & \rcr\vs{2}        & \mathcal{L}_{2,3} & \rcw\vdd               &      & \vdd \\
+     &             &                   & \rcr\vs{3}        & \rcw                   &      & \\
+     &             &                   &                   & \mathcal{V}_{4,4}      &      & \\
+     &             &                   &                   &                        & \ddd & \\
+     &             &                   &                   &                        &      & \mathcal{V}_{n,n} \\
+\vno & \cdd        &                   &                   &                        &      & \vno
 \end{pNiceArray} \equiv
-\begin{pNiceArray}{>{\strut}ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+\begin{pNiceArray}{ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
 \vno & \rcr\mathcal{L}_{1,3} & \rcw\mathcal{V}_{1,4} & \cdd & \mathcal{V}_{1,n} \\
 \vdd & \ddd                  & \mathcal{V}_{2,4}     &      & \vdd \\
      &                       &                       & \ddd & \\
@@ -508,7 +508,7 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
 %
 %  \begin{figure}[H]
 %    \[
-%      \mathcal{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+%      \mathcal{M}^* = \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
 %          \vno & \rcr \shup x_1 &  \Cdots      & \mathcal{V}_{1,|x|} & \rcw \mathcal{V}_{1,4} & \cdd & \mathcal{V}^* \\
 %          \vdd & \ddd           &  \Ddots      & \rcr\Vdots          & \rcw\vdd               &      & \vdd \\
 %               &                &              & \rcr\shup x_{|x|}   & \rcw                   &      & \\
@@ -844,7 +844,7 @@ To satisfy these criteria, it suffices to check $d \in (1, d_{\max}]$ by encodin
 
 \section{Linear conjunctive reachability}\label{sec:lclreach}
 
-It is well-known that the family of CFLs is not closed under intersection. For example, let us consider the traditional example, $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$:
+It is well-known that the family of CFLs is not closed under intersection. Let us consider the traditional example, $\mathcal{L}_\cap := \mathcal{L}(\mathcal{G}_1) \cap \mathcal{L}(\mathcal{G}_2)$ defined as follows:
 
 \begin{table}[H]
 \begin{tabular}{llll}
@@ -885,7 +885,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
 \begin{figure}[H]
   \resizebox{0.99\textwidth}{!}{
     \[
-      \mathbf{M}^* = \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \mathbf{M}^* = \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
          \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
                  \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
                  \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
@@ -909,7 +909,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
         \draw [redbr] ({pic cs:i}) to ({pic cs:g});
         \draw [redbr] ({pic cs:g}) to ({pic cs:d});
       \end{tikzpicture}\Rightarrow
-      \left\{\begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \left\{\begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
         \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
         \vno          & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
         \vdd          & \ddd           & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
@@ -926,7 +926,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
         \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
         \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
       \end{tikzpicture}_{\textstyle,}
-      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
         \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
         \vno          & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
         \vdd          & \ddd           & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
@@ -943,7 +943,7 @@ The matrix $\mathcal{M}^*$ encodes a superposition of all admissible binary tree
         \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
         \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
       \end{tikzpicture}_{\textstyle,}
-      \begin{pNiceArray}{>{\strut}ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+      \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
         \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
         \vno          & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
         \vdd          & \ddd           & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
