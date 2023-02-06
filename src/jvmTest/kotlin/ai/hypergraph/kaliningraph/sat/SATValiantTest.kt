@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 import prettyPrint
 import kotlin.test.*
@@ -654,7 +656,7 @@ class SATValiantTest {
   val sumCFG = """
       START -> S
       O -> +
-      S -> S O S | N | ( S )
+      S -> S O S | N | - N | ( S )
       N -> N1 | N2 | N3 | N4 | N5 | N6 | N7 | N8 | N9
       N1 -> 1 
       N2 -> 2 
@@ -665,25 +667,26 @@ class SATValiantTest {
       N7 -> 7
       N8 -> 8
       N9 -> 9
-    """.trimIndent().parseCFG().noNonterminalStubs
+    """.trimIndent().parseCFG()
 
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
   */
   @Test
   fun testLevensheteinIntersection() {
+    val cfg = sumCFG.noNonterminalStubs
     val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
     val dist = 2
-    val levCFG = constructLevenshteinCFG(strWithParseErr, dist, sumCFG.terminals + "ε").parseCFG().noNonterminalStubs
+    val levCFG = constructLevenshteinCFG(strWithParseErr, dist, cfg.terminals + "ε").parseCFG().noNonterminalStubs
 
     val template = "_ _ _ _ _ _ _"
     val allL5 = template.synthesizeIncrementally(levCFG).toSet()//.also { println("L5: $it") }
-    val allA5 = template.synthesizeIncrementally(sumCFG).toSet()//.also { println("A5: $it") }
+    val allA5 = template.synthesizeIncrementally(cfg).toSet()//.also { println("A5: $it") }
 
     val setIntersect = (allA5 intersect allL5).also { println("A5 ∩ L5: $it") }
     assertNotEquals(setIntersect, emptySet())
 
-    val cflIntersect = sumCFG.levenshteinRepair(dist, strWithParseErr, solver = { synthesize(it) }).toSet()
+    val cflIntersect = cfg.levenshteinRepair(dist, strWithParseErr, solver = { synthesize(it) }).toSet()
     assertNotEquals(cflIntersect, emptySet())
     assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
   }
@@ -693,6 +696,7 @@ class SATValiantTest {
   */
   @Test
   fun testLevensheteinCompleteness() {
+    val cfg = sumCFG.noNonterminalStubs
     val strWithParseErr = "1 + 2 + 3 + + 4 + 5 + 6 + 7"
 //                          "1 + 2 + 3 + 2 + 5 + 5"
     val tokens = strWithParseErr.tokenizeByWhitespace()
@@ -700,14 +704,14 @@ class SATValiantTest {
     val sampleSize = 50
     var time = System.currentTimeMillis()
     val levenshteinRadius = 2
-    val levRepairs = sumCFG.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
+    val levRepairs = cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
       .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
       .take(sampleSize).toSet()
 
     println("Lev repairs (total time = ${System.currentTimeMillis() - time}ms): $levRepairs")
 
     time = System.currentTimeMillis()
-    val scnRepairs= repairLazily(strWithParseErr, sumCFG, synthesizer = { synthesize(it) }, edits = levenshteinRadius)
+    val scnRepairs= repairLazily(strWithParseErr, cfg, synthesizer = { synthesize(it) }, edits = levenshteinRadius)
       .filter { levenshtein(it.tokenizeByWhitespace(), strWithParseErr.tokenizeByWhitespace()) <= levenshteinRadius }
       .distinct().mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - time}, $it"); it  }
       .take(sampleSize).toSet()
@@ -716,4 +720,14 @@ class SATValiantTest {
 
 //    assertTrue(scnRepairs in levRepairs, "scnRepairs ⊈ levRepairs: ${scnRepairs - levRepairs}")
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCoarsening"
+*/
+    @Test
+    fun testCoarsening() {
+        println(sumCFG.prettyPrint())
+        println(sumCFG.parseTable("1 + ( 3 + - 2 ) + 4").toHtmlPage().show())
+        println(sumCFG.parseTable("1 + <S> + 4").toHtmlPage().show())
+    }
 }

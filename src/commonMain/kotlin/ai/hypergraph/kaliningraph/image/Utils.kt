@@ -21,7 +21,7 @@ fun <T> FreeMatrix<T>.toHtmlTable(): String {
   for (row in rows) {
     html += "\t<tr >\n"
     for (col in this[0].indices) html +=
-      """<td style="vertical-align:top"><pre><code>${row[col]}</code></pre></td><td></td>"""
+      """<td style="vertical-align:top"><pre><code>${row[col]}</code></pre></td>"""
     html += "\t</tr>\n"
   }
   html += "</table>"

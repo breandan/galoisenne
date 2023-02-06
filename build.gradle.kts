@@ -7,8 +7,8 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.0"
-  kotlin("jupyter.api") version "0.11.0-221"
+  kotlin("multiplatform") version "1.8.10"
+  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.45.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -192,7 +192,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.6.1" }
+        val tinkerpopVersion by extra { "3.6.2" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")

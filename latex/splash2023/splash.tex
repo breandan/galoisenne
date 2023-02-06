@@ -212,7 +212,7 @@ Due to Chomsky normalization however, the resulting forests are full of trees th
           \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
             \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
           \Else%\Comment{Graft the denormalized children on root.}
-            \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+            \State \textbf{return } $\{\:\texttt{Tree(t.root, stems)}\:\}$
           \EndIf
         \EndProcedure
       \end{algorithmic}
