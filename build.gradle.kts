@@ -7,8 +7,8 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.10"
-  kotlin("jupyter.api") version "0.11.0-225"
+  kotlin("multiplatform") version "1.8.20-Beta"
+//  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.45.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
@@ -196,8 +196,8 @@ kotlin {
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
-        implementation("org.eclipse.collections:eclipse-collections-api:11.1.0")
-        implementation("org.eclipse.collections:eclipse-collections:11.1.0")
+        implementation("org.eclipse.collections:eclipse-collections-api:12.0.0.M1")
+        implementation("org.eclipse.collections:eclipse-collections:12.0.0.M1")
 
         implementation(kotlin("scripting-jsr223"))
       }
@@ -282,9 +282,9 @@ tasks {
     if (project.hasProperty("leaseExcludeBenchmarks")) exclude("**/**Benchmarks.class")
   }
 
-  processJupyterApiResources {
-    libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
-  }
+//  processJupyterApiResources {
+//    libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
+//  }
 
   listOf(
     "Rewriter", "PrefAttach",
