@@ -44,6 +44,30 @@ val CFG.noNonterminalStubs: CFG by cache {
     .also { it.blocked.addAll(blocked) }
 }
 
+fun CFG.toClass(): CCFG = CCFG(this)
+
+class CCFG(val cfg: CFG): CFG by cfg {
+  val language: CFL = cfg.language
+  val delimiters: Array<Σᐩ> = cfg.delimiters
+  val nonterminals: Set<Σᐩ> = cfg.nonterminals
+  val symbols: Set<Σᐩ>  = cfg.symbols
+  val terminals: Set<Σᐩ>  = cfg.terminals
+  val terminalUnitProductions: Set<Production> = cfg.terminalUnitProductions
+  val unitProductions: Set<Production> = cfg.unitProductions
+  val nonterminalProductions: Set<Production> = cfg.nonterminalProductions
+  val bimap: BiMap = cfg.bimap
+  val tmap = cfg.tmap
+  val bindex: Bindex = cfg.bindex
+  val joinMap: JoinMap by lazy { cfg.joinMap }
+  val graph: LabeledGraph = cfg.graph
+  val normalForm: CFG by lazy { cfg.normalForm }
+  val originalForm: CFG by lazy { cfg.originalForm }
+  val nonparametricForm: CFG by lazy { cfg.nonparametricForm }
+  val reachability by lazy { cfg.reachability }
+  val unitReachability by lazy { cfg.unitReachability }
+  val noNonterminalStubs: CFG by lazy { cfg.noNonterminalStubs }
+}
+
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
   val precomputedJoins: MutableMap<Π2A<Set<Σᐩ>>, Set<Π3A<Σᐩ>>> =
@@ -68,8 +92,8 @@ class JoinMap(val CFG: CFG) {
 }
 // Maps indices to nonterminals and nonterminals to indices
 class Bindex(CFG: CFG) {
-  val indexedNTs: Array<Σᐩ> by cache { CFG.nonterminals.toTypedArray() }
-  val ntIndices: Map<Σᐩ, Int> by cache { indexedNTs.zip(indexedNTs.indices).toMap() }
+  val indexedNTs: Array<Σᐩ> = CFG.nonterminals.toTypedArray()
+  val ntIndices: Map<Σᐩ, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
   operator fun get(i: Int) = indexedNTs[i]
   operator fun get(s: Σᐩ) = ntIndices[s]!!
 }

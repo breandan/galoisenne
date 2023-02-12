@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.toDoubleMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.*
+import kotlin.time.*
 
 fun randomMatrix(rows: Int, cols: Int = rows, rand: () -> Double = { Random.Default.nextDouble() }) =
   Array(rows) { Array(cols) { rand() }.toDoubleArray() }.toDoubleMatrix()
@@ -168,6 +169,7 @@ val generator = mapOf(
 // than our set cardinality until it emits a value in range: "Hasty Pudding trick"
 // All values will be unique.
 
+@OptIn(ExperimentalTime::class)
 fun LFSR(
   degree: Int = 16,
   primitivePolynomial: List<Int> = generator[degree]!!.random().toString(2)
@@ -193,7 +195,7 @@ fun randomSequenceWithoutRepetition(range: IntRange): Sequence<Int> =
 private fun RandomVector(
   degree: Int,
   initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
-  initialState: List<Boolean> = initialValue.toBitList(degree),
+  initialState: List<Boolean> = initialValue.toBitList2(degree),
 ) = FreeMatrix(XOR_ALGEBRA, degree, 1) { r, _ -> initialState[r] }
 
 // https://en.wikipedia.org/wiki/Linear-feedback_shift_register#Matrix_forms
@@ -220,37 +222,82 @@ fun LFSRM(
 fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1): Sequence<List<T>> =
   MDSamplerWithoutReplacement(List(dimension) { set })
 
+@OptIn(ExperimentalTime::class)
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
   cardinalities: List<Int> = dimensions.map { it.size },
   // Shuffle coordinates to increase entropy of sampling
   shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
-  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens(),
+  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens2(),
   degree: Int = bitLens.sum()
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
   else if (degree !in generator) throw Exception("Space is too large! ($degree)")
-  else LFSR(degree).map { it.toBitList(degree) }
+  else LFSR(degree).map { it.toBitList2(degree) }
     .hastyPuddingTrick(cardinalities)
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
 
 private fun List<Int>.toBitLens(): List<Int> = map { ceil(log2(it.toDouble())).toInt() }
+//MUCH faster version of above function:
+private fun List<Int>.toBitLens2(): List<Int> {
+  val bits = mutableListOf<Int>()
+  for (i in this) {
+    var j = i
+    var b = 0
+    while (j > 0) {
+      j = j shr 1
+      b++
+    }
+    bits.add(b)
+  }
+  return bits
+}
+
 private fun List<Boolean>.toInt() = joinToString("") { if (it) "1" else "0" }.toInt(2)
+// Above function rewritten much faster:
+private fun List<Boolean>.toIntFast(): Int {
+  var i = 0
+  for (b in this) {
+    i = (i shl 1) or if (b) 1 else 0
+  }
+  return i
+}
 private fun List<Boolean>.toUInt() = joinToString("") { if (it) "1" else "0" }.toUInt(2)
+
 private fun UInt.toBitList(len: Int): List<Boolean> =
   toString(2).padStart(len, '0').map { it == '1' }
+// Much faster version of above function:
+private fun UInt.toBitList2(len: Int): List<Boolean> {
+  val bits = mutableListOf<Boolean>()
+  var i = this
+  for (j in 0 until len) {
+    bits.add(i and 1u == 1u)
+    i = i shr 1
+  }
+  return bits
+}
 
 // Takes a list of bits and chunk lengths and returns a list of Ints, e.g.,
 // (1010101100, [3, 2, 3, 2]) -> [101, 01, 011, 00] -> [4, 1, 3, 0]
 private fun List<Boolean>.toIndexes(bitLens: List<Int>): List<Int> =
   bitLens.fold(listOf<List<Boolean>>() to this) { (a, b), i ->
     (a + listOf(b.take(i))) to b.drop(i)
-  }.first.map { it.toInt() }
+  }.first.map { it.toIntFast() }
+// Above function rewritten much faster:
+private fun List<Boolean>.toIndexes2(bitLens: List<Int>): List<Int> {
+  val indexes = mutableListOf<Int>()
+  var i = 0
+  for (len in bitLens) {
+    indexes.add(subList(i, i + len).toIntFast())
+    i += len
+  }
+  return indexes
+}
 
 // Discards samples representing an integer exceeding set cardinality in any dimension
 private fun Sequence<List<Boolean>>.hastyPuddingTrick(cardinalities: List<Int>): Sequence<List<Int>> =
-  map { it.toIndexes(cardinalities.toBitLens()) }
+  map { it.toIndexes2(cardinalities.toBitLens2()) }
     .filter { it.zip(cardinalities).all { (a, b) -> a < b } }
 
 // Samples from unnormalized counts with normalized frequency

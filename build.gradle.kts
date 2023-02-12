@@ -112,8 +112,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        // Cannot update?
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
       }
     }
 
@@ -158,6 +157,7 @@ kotlin {
         implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
 
         // TODO: Replace LogicNG with KoSAT?
+        // https://github.com/UnitTestBot/kosat
         implementation("org.logicng:logicng:2.4.1")
       }
     }
@@ -165,7 +165,7 @@ kotlin {
     val jvmTest by getting {
       dependencies {
         // Property-based testing
-        val kotestVersion = "5.4.2" // Unable to update?
+        val kotestVersion = "5.5.5" // Unable to update?
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")

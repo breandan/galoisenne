@@ -122,7 +122,7 @@ class SATValiantTest {
         println("A:" + toBitVec(a).toList())
         println("B:" + toBitVec(b).toList())
 
-        println("BV join:" + join(toBitVec(a), toBitVec(b)))
+        println("BV join:" + join(toBitVec(a), toBitVec(b)).toList())
         println("Set join:" + toNTSet(join(toBitVec(a), toBitVec(b))))
 
         assertContentEquals(toBitVec(setJoin(a, b)), join(toBitVec(a), toBitVec(b)))
