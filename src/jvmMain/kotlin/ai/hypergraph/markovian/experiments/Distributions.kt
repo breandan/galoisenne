@@ -5,7 +5,7 @@ package ai.hypergraph.markovian.experiments
 import umontreal.ssj.probdist.*
 import kotlin.math.pow
 
-/* TODO: re-enable pending https://youtrack.jetbrains.com/issue/KT-56646
+// TODO: re-enable pending https://youtrack.jetbrains.com/issue/KT-56646
 class Uniform(
   override val name: String = "",
   val lo: Double = 0.0,
@@ -50,4 +50,4 @@ tailrec fun <D: Dist<D>> Dist<D>.invcdf(
   cdf(mid) < y -> invcdf(y, mid, hi)
   else -> invcdf(y, lo, mid)
 }
- */
+// */
