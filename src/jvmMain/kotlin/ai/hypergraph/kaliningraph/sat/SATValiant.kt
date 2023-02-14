@@ -1,13 +1,10 @@
 package ai.hypergraph.kaliningraph.sat
 
-import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.visualization.*
 import org.logicng.formulas.Formula
 import kotlin.collections.filter
-import kotlin.time.*
 
 typealias SATVector = Array<Formula>
 typealias SATRubix = UTMatrix<SATVector>

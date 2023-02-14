@@ -1,11 +1,9 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
-import kotlin.math.*
 
 // SetValiant interface
 //=====================================================================================
@@ -211,7 +209,6 @@ fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Se
       if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
     }.first.replace("ε ", "")
   }
-
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
 fun CFG.nonterminals(bitvec: List<Boolean>): Set<Σᐩ> =

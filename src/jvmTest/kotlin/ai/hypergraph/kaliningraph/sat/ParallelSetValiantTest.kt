@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.sat
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import org.junit.jupiter.api.Test
-import prettyPrint
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.streams.*
