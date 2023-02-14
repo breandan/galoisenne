@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
-import prettyPrint
 import kotlin.test.*
 
 /*
@@ -641,7 +640,7 @@ class SATValiantTest {
 
     // This language should recognize {aⁿbⁿcⁿ | n > 0}
     val csl = (cfgA intersect cfgB)
-    println("CSL:\n" + csl.prettyPrint())
+//    println("CSL:\n" + csl.prettyPrint())
     csl.synthesize(List(20) { "_" })
       .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
       .map {

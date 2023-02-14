@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
-import pretty
 import kotlin.jvm.JvmName
 
 @Suppress("NonAsciiCharacters")

@@ -7,7 +7,6 @@ import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
 import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
-import prettyPrint
 import kotlin.math.pow
 import kotlin.time.*
 

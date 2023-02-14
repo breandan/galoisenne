@@ -7,6 +7,7 @@ import kotlin.math.*
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
+/* TODO: re-enable pending https://youtrack.jetbrains.com/issue/KT-56646
 // TODO: https://en.wikipedia.org/wiki/Plate_notation
 // cf. https://github.com/todesking/platebuilder
 
@@ -226,3 +227,4 @@ fun main() {
 //class Ctx {
 //  fun given()
 //}
+ */

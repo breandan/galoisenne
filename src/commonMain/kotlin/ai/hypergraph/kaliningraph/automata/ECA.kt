@@ -64,14 +64,14 @@ fun <A> kernelPlus(a: PKernel<A>, b: PKernel<A>): PKernel<A> =
   when (a.nullity() to b.nullity()) {
     (2 to 2 to 2) to (2 to 2 to 2) -> null // null + null
     (2 to 2 to 2) to (0 to 1 to 0) -> (b!!.π2 to null to null) // null to !null
-    a!! -> throw Exception("Ruled out cases where a is nullable")
+    a!! to a!! -> throw Exception("Ruled out cases where a is nullable")
     (0 to 1 to 0) to (2 to 2 to 2) -> (null to null to a.π2) // 010 + null => 001
     (1 to 0 to 0) to (2 to 2 to 2) -> (null to null to a.π1)
     (1 to 1 to 0) to (2 to 2 to 2) -> (null to a.π1 to a.π2)
     (1 to 1 to 1) to (2 to 2 to 2) -> a // 111 + null => 111
     (0 to 1 to 1) to (2 to 2 to 2) -> a // 011 + null => 111
     (0 to 0 to 1) to (2 to 2 to 2) -> a // 001 + null => 111
-    b!! -> throw Exception("Ruled out cases where b is nullable")
+    b!! to b!! -> throw Exception("Ruled out cases where b is nullable")
     (0 to 0 to 0) to (0 to 1 to 0) -> (b.π2 to null to null) // 000 + 010 => 100
     (0 to 1 to 0) to (0 to 1 to 0) -> (a.π2 to b.π2 to null) // 010 + 010 => 110
     (0 to 0 to 1) to (0 to 1 to 0) -> (b.π2 to null to a.π3) // 001 + 010 => 101

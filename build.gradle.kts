@@ -95,6 +95,11 @@ kotlin {
   }
 
   sourceSets {
+//    all {
+//      languageSettings.apply {
+//        languageVersion = "2.0"
+//      }
+//    }
     val commonMain by getting {
       dependencies {
         implementation(kotlin("stdlib-common"))
