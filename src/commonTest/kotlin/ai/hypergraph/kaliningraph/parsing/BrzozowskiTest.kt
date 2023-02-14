@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.powerset
-import prettyPrint
 import kotlin.test.*
 
 /*
