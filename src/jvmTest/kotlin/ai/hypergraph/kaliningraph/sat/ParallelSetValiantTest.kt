@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import org.junit.jupiter.api.Test
 import java.util.stream.Collectors
-import java.util.stream.Stream
 import kotlin.streams.*
 import kotlin.test.*
 import kotlin.time.*
@@ -191,5 +190,28 @@ class ParallelSetValiantTest {
           else it
         }.filter { it.isNotBlank() }.joinToString(" ")
       }
+  }
+
+fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime().availableProcessors()) =
+  (0 until cores).toSet().parallelStream().flatMap { i -> this(cores, i).asStream() }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelPRNG"
+*/
+  @Test
+  fun testParallelPRNG() {
+    // How many samples can we draw in n seconds?
+    val timeoutMS = 10_000
+
+    fun genSeq(skip: Int = 1, shift: Int = 0) =
+      MDSamplerWithoutReplacement(('a'..'f').toSet(), 10, skip, shift)
+
+    var startTime = System.currentTimeMillis()
+    genSeq().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+      .also { println("Drew ${it.size} serial samples in ${timeoutMS}ms") }
+
+    startTime = System.currentTimeMillis()
+    ::genSeq.parallelize().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+      .also { println("Drew ${it.size} parallel samples in ${timeoutMS}ms") }
   }
 }

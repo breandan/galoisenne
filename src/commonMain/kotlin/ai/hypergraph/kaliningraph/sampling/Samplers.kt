@@ -169,22 +169,21 @@ val generator = mapOf(
 // than our set cardinality until it emits a value in range: "Hasty Pudding trick"
 // All values will be unique.
 
-@OptIn(ExperimentalTime::class)
 fun LFSR(
   degree: Int = 16,
   primitivePolynomial: List<Int> = generator[degree]!!.random().toString(2)
     .mapIndexedNotNull { i, c -> if (c == '1') i else null }
 ): Sequence<UInt> = // LFSRM(degree)
   if (degree == 0) sequenceOf() else sequence {
-    val vec0 = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt()
+    val max = 1 shl degree
+    val vec0 = Random.nextInt(1 ..max).toUInt()
     var vec = vec0
     var i = 0
     do {
-      val bit = primitivePolynomial.map { vec shr it }
-        .fold(0u) { a, c -> a xor c } and 1u
+      val bit = primitivePolynomial.fold(0u) { a, c -> a xor (vec shr c) } and 1u
       vec = (vec shr 1) or (bit shl (degree - 1))
       yield(vec)
-    } while (++i < 2.0.pow(degree).toInt() - 1)
+    } while (++i < max - 1)
   }
 
 fun randomSequenceWithoutRepetition(range: IntRange): Sequence<Int> =
@@ -219,13 +218,14 @@ fun LFSRM(
   } while (++i < 2.0.pow(degree).toInt() - 1)
 }
 
-fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1): Sequence<List<T>> =
-  MDSamplerWithoutReplacement(List(dimension) { set })
+fun <T> MDSamplerWithoutReplacement(set: Set<T>, dimension: Int = 1, skip: Int = 1, shift: Int = 0): Sequence<List<T>> =
+  MDSamplerWithoutReplacement(List(dimension) { set }, skip = skip, shift = shift)
 
-@OptIn(ExperimentalTime::class)
 fun <T> MDSamplerWithoutReplacement(
   dimensions: List<Set<T>>,
   cardinalities: List<Int> = dimensions.map { it.size },
+  skip: Int = 1,
+  shift: Int = 0,
   // Shuffle coordinates to increase entropy of sampling
   shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
   bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens2(),
@@ -233,7 +233,9 @@ fun <T> MDSamplerWithoutReplacement(
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
   else if (degree !in generator) throw Exception("Space is too large! ($degree)")
-  else LFSR(degree).map { it.toBitList2(degree) }
+  else LFSR(degree)
+    .let { if (skip == 1) it else it.filterIndexed { i, _ -> i % skip == shift } }
+    .map { it.toBitList2(degree) }
     .hastyPuddingTrick(cardinalities)
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
