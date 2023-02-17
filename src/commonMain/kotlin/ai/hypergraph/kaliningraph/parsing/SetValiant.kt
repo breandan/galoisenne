@@ -9,6 +9,7 @@ import kotlin.jvm.JvmName
 //=====================================================================================
 fun Σᐩ.matches(cfg: Σᐩ): Boolean = matches(cfg.validate().parseCFG())
 fun Σᐩ.matches(CFG: CFG): Boolean = CFG.isValid(tokenizeByWhitespace())
+fun Σᐩ.matches(CJL: CJL): Boolean = CJL.cfgs.all { matches(it) }
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: Σᐩ): Tree? =
   try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }
@@ -207,7 +208,7 @@ fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Se
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
       if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
-    }.first.replace("ε ", "")
+    }.first.replace("ε ", "").trim()
   }
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719

@@ -78,7 +78,7 @@ fun repairLazily(
     variations = variations,
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
-    .let { if(filter != null) it.filter(filter) else it }
+    .let { if (filter != null) it.filter(filter) else it }
 }
 
 // Use distance from the matching token as a heuristic (downrank edits far away from source)?
@@ -90,7 +90,7 @@ private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
 
 var MAX_SAMPLE = 20
 var MAX_TOKENS = 80
-var TIMEOUT_MS = 90000
+var TIMEOUT_MS = 90_000
 
 fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
     none { it.isNonterminalStubIn(cfg) } &&
