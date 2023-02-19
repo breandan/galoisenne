@@ -71,4 +71,25 @@ class SamplingTest {
       )
     }
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testSzudzikBijection"
+*/
+  @Test
+  fun testSzudzikBijection() {
+    (0..27).map { it.unpair(3) }.forEach { println(it) }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testMDSamplerNK"
+*/
+  @Test
+  fun testMDSamplerNK() {
+    val alphabet = setOf("x", "o", "y")
+    val totalKCombinations= 6 choose 3
+    val totalTuples= alphabet.size.toDouble().pow(3).toInt()
+    MDSamplerWithoutReplacementNK(alphabet, 6, 3).toList()
+      .also { assertEquals(totalKCombinations * totalTuples, it.size) }
+//      .forEach { println("(${it.first.joinToString(",")}) / [${it.second.joinToString(",")}]") }
+  }
 }

@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
+import ai.hypergraph.kaliningraph.sampling.*
 import org.junit.jupiter.api.Test
-import java.util.stream.Collectors
+import java.util.stream.*
 import kotlin.streams.*
 import kotlin.test.*
 import kotlin.time.*
@@ -99,17 +99,52 @@ class ParallelSetValiantTest {
     val levenshteinRadius = 2
     var startTime = System.currentTimeMillis()
 
-    // TODO: make this ergodic over both edit locations and hole tokens? Bad assignments will handicap the search
     repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> println("Hmm: " + a.joinToString(" ")); a.solve(this) })
-      .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - startTime}, $it"); it }
+      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
       .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
       .also { println("Enumerative repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
 
     startTime = System.currentTimeMillis()
     cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
-      .mapIndexed { i, it -> println("$i, ${System.currentTimeMillis() - startTime}, $it"); it }
+      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
       .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
       .also { println("Levenshtein repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testNewRepair"
+*/
+  @Test
+  fun testNewRepair() {
+    TIMEOUT_MS = 30_000
+    val cfg = sumCFG.noNonterminalStubs
+    val strWithParseErr = "1 + 2 + 2 + 3 + + 4 + 7"
+    val tokens = strWithParseErr.tokenizeByWhitespace()
+
+    val levenshteinRadius = 3
+    var startTime = System.currentTimeMillis()
+
+    fun genSeq(skip: Int = 1, shift: Int = 0) =
+      newRepair(strWithParseErr, cfg, levenshteinRadius, skip, shift)
+        .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
+
+//    ::genSeq.parallelize()
+        genSeq()
+      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
+      .also { println("New repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+  }
+
+  fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> {
+    val promptTokens = prompt.tokenizeByWhitespace()
+
+    return MDSamplerWithoutReplacementNK(cfg.terminals, n=promptTokens.size, k=edits, skip, shift)
+      .map { (editLocs, tokens) ->
+        val toReplaceWith = tokens.toMutableList()
+        val newTokens = promptTokens.mapIndexed { i, t -> if (i in editLocs) toReplaceWith.removeFirst() else t }
+        newTokens.joinToString(" ")
+      }
+      .map { it.replace("ε ", "").trim() }
+      .filter { it.matches(cfg) }
   }
 
   fun repairInParallel(

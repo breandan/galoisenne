@@ -1,8 +1,7 @@
 package ai.hypergraph.kaliningraph.sampling
 
-import ai.hypergraph.kaliningraph.choose
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.toDoubleMatrix
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.random.*
@@ -186,6 +185,7 @@ fun LFSR(
     } while (++i < max - 1)
   }
 
+// Generates a random sequence of unique values in range
 fun randomSequenceWithoutRepetition(range: IntRange): Sequence<Int> =
   LFSR(ceil(log2((range.last - range.first + 1).toDouble())).toInt())
     .filter { it.toInt() <= range.last - range.first }
@@ -240,21 +240,46 @@ fun <T> MDSamplerWithoutReplacement(
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
 
-private fun List<Int>.toBitLens(): List<Int> = map { ceil(log2(it.toDouble())).toInt() }
-//MUCH faster version of above function:
-private fun List<Int>.toBitLens2(): List<Int> {
-  val bits = mutableListOf<Int>()
-  for (i in this) {
-    var j = i
-    var b = 0
-    while (j > 0) {
-      j = j shr 1
-      b++
-    }
-    bits.add(b)
+fun <T> MDSamplerWithoutReplacementNK(set: Set<T>, n: Int, k: Int, skip: Int = 1, shift: Int = 0)=
+  MDSamplerWithoutReplacementNK(List(k) { set }, n=n, skip = skip, shift = shift)
+
+fun <T> MDSamplerWithoutReplacementNK(
+  dimensions: List<Set<T>>,
+  cardinalities: List<Int> = dimensions.map { it.size },
+  n: Int,
+  k: Int = dimensions.size,
+  skip: Int = 1,
+  shift: Int = 0,
+  // Shuffle coordinates to increase entropy of sampling
+  shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
+  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens2(),
+  choices: Int = (n choose k),
+  kComboBits: Int = log_2(choices),
+  degree: Int = bitLens.sum() + kComboBits
+): Sequence<Pair<Set<Int>, List<T>>> =
+  if (degree < 4) throw Exception("Space is too small! ($degree)")
+  else if (degree !in generator) throw Exception("Space is too large! ($degree)")
+  else LFSR(degree)
+    .let { if (skip == 1) it else it.filterIndexed { i, _ -> i % skip == shift } }
+    .map { it.toBitList2(degree) }
+    .hastyPuddingTrick(cardinalities + choices)
+    .map {
+      it.last().decodeCombo(k) to shuffledDims.zip(it).map { (dims, idx) -> dims[idx] }
+    } +
+      sequenceOf(0.decodeCombo(k) to shuffledDims.map { it[0] }) // LFSR will never generate all 0s
+
+
+fun log_2(x: Int): Int {
+  var i = 0
+  var j = x
+  while (j > 0) {
+    j = j shr 1
+    i++
   }
-  return bits
+  return i
 }
+
+private fun List<Int>.toBitLens2(): List<Int> = map { log_2(it) }
 
 private fun List<Boolean>.toInt() = joinToString("") { if (it) "1" else "0" }.toInt(2)
 // Above function rewritten much faster:
@@ -333,6 +358,9 @@ inline fun <reified T> Set<T>.choose(
   if (size <= k) sequenceOf(this)
   else order.map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
+// TODO: implement choice with Cartesian product (n choose k) x {...}^k
+fun <T, Y> Set<T>.chooseWith(k: IntRange, g: Set<Y>): Sequence<Π2<Set<T>, List<Y>>> = TODO()
+
 // Enumerate k-combinations in order provided
 inline fun <reified T> List<T>.choose(
   k: Int,
@@ -342,6 +370,7 @@ inline fun <reified T> List<T>.choose(
   if (size <= k) sequenceOf(toSet())
   else (0 until numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
+// Bijection between k-combinations and integers
 // https://en.wikipedia.org/wiki/Combinatorial_number_system
 fun Set<Int>.encode(): Int {
   var (k, i, total) = size to 0 to 0
@@ -362,13 +391,54 @@ fun Int.decodeCombo(k: Int): Set<Int> {
   while (choice choose k < this) choice++
 
   var N = this
-  var k = k
+  var kk = k
   val result = mutableSetOf<Int>()
-  (choice downTo 0).forEach { choice ->
-    if (choice choose k <= N) {
-      N -= choice choose k--
-      result.add(choice)
+  (choice downTo 0).forEach { ch ->
+    if (ch choose kk <= N) {
+      N -= ch choose kk--
+      result.add(ch)
     }
   }
   return result
+}
+
+/**
+ * Constructs a bijection between n-tuples and integers \mathbb{N} <-> \mathbb{N}^k
+ * using Szudzik's pairing function. n.b. optimally compact for n=2, but not for
+ * n>2 because hypercube shells are blended. TODO: implement a compact [un]tupling function
+ */
+
+fun Int.unpair(dim: Int = 2): List<Int> {
+  val n1 = if (this - floor(sqrt(toDouble())).pow(2) < floor(sqrt(toDouble()))) {
+    this - floor(sqrt(toDouble())).pow(2)
+  } else {
+    floor(sqrt(toDouble()))
+  }.toInt()
+  val n2 = if (this - floor(sqrt(toDouble())).pow(2) < floor(sqrt(toDouble()))) {
+    floor(sqrt(toDouble()))
+  } else {
+    this - floor(sqrt(toDouble())).pow(2) - floor(sqrt(toDouble()))
+  }.toInt()
+  return if (dim > 2) {
+    n1.unpair(dim - 1) + n2
+  } else {
+    listOf(n1, n2)
+  }
+}
+
+fun List<Int>.pair(): Int {
+  if (size < 2) throw IllegalArgumentException("Szudzik pairing function needs at least 2 numbers as input")
+  if (any { it < 0 }) throw IllegalArgumentException("Szudzik pairing function maps only non-negative integers")
+  val n1 = this[0]
+  val n2 = this[1]
+  val mapping = if (n1 != max(n1, n2)) {
+    n2.toDouble().pow(2) + n1
+  } else {
+    n1.toDouble().pow(2) + n1 + n2
+  }
+  return if (this.size == 2) {
+    mapping.toInt()
+  } else {
+    (drop(2) + mapping.toInt()).pair()
+  }
 }
