@@ -77,7 +77,7 @@ class SamplingTest {
 */
   @Test
   fun testSzudzikBijection() {
-    (0..27).map { it.unpair(3) }.forEach { println(it) }
+    (0..27).map { it.untupled(3) }.forEach { println(it) }
   }
 
 /*
@@ -85,11 +85,12 @@ class SamplingTest {
 */
   @Test
   fun testMDSamplerNK() {
-    val alphabet = setOf("x", "o", "y")
+    val alphabet = setOf("x", "o")
     val totalKCombinations= 6 choose 3
     val totalTuples= alphabet.size.toDouble().pow(3).toInt()
-    MDSamplerWithoutReplacementNK(alphabet, 6, 3).toList()
+    MDSamplerWithoutReplacementNK(alphabet, 6, 3)
+      .map { println("(${it.first.joinToString(",")}) / [${it.second.joinToString(",")}]"); it }.toList()
       .also { assertEquals(totalKCombinations * totalTuples, it.size) }
-//      .forEach { println("(${it.first.joinToString(",")}) / [${it.second.joinToString(",")}]") }
+      .also { assertEquals(it, it.distinct()) }
   }
 }

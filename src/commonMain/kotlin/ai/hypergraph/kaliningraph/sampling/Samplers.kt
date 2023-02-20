@@ -240,35 +240,31 @@ fun <T> MDSamplerWithoutReplacement(
     .map { shuffledDims.zip(it).map { (dims, idx) -> dims[idx] } } +
     sequenceOf(shuffledDims.map { it[0] }) // LFSR will never generate all 0s
 
-fun <T> MDSamplerWithoutReplacementNK(set: Set<T>, n: Int, k: Int, skip: Int = 1, shift: Int = 0)=
-  MDSamplerWithoutReplacementNK(List(k) { set }, n=n, skip = skip, shift = shift)
+// Samples without replacement from the joint distribution of ordered k-combinations of n elements crossed with Σ^k
+fun <T> MDSamplerWithoutReplacementNK(Σ: Set<T>, n: Int, k: Int, skip: Int = 1, shift: Int = 0)=
+  MDSamplerWithoutReplacementNKF(Σ, n=n, k=k, skip = skip, shift = shift)
 
-fun <T> MDSamplerWithoutReplacementNK(
-  dimensions: List<Set<T>>,
-  cardinalities: List<Int> = dimensions.map { it.size },
+fun <T> MDSamplerWithoutReplacementNKF(
+  dimensions: Set<T>,
   n: Int,
-  k: Int = dimensions.size,
+  k: Int,
   skip: Int = 1,
   shift: Int = 0,
   // Shuffle coordinates to increase entropy of sampling
-  shuffledDims: List<List<T>> = dimensions.map { it.shuffled() },
-  bitLens: List<Int> = dimensions.map(Set<T>::size).toBitLens2(),
-  choices: Int = (n choose k),
-  kComboBits: Int = log_2(choices),
-  degree: Int = bitLens.sum() + kComboBits
+  shuffledDims: List<T> = dimensions.shuffled(),
+  cardinality: Int = dimensions.size.pow(k),
+  choices: Int = n choose k,
+  degree: Int = log_2(choices) + log_2(cardinality)
 ): Sequence<Pair<Set<Int>, List<T>>> =
   if (degree < 4) throw Exception("Space is too small! ($degree)")
   else if (degree !in generator) throw Exception("Space is too large! ($degree)")
   else LFSR(degree)
     .let { if (skip == 1) it else it.filterIndexed { i, _ -> i % skip == shift } }
-    .map { it.toBitList2(degree) }
-    .hastyPuddingTrick(cardinalities + choices)
-    .map {
-      it.last().decodeCombo(k) to shuffledDims.zip(it).map { (dims, idx) -> dims[idx] }
-    } +
-      sequenceOf(0.decodeCombo(k) to shuffledDims.map { it[0] }) // LFSR will never generate all 0s
+    .map { it.toBitList2(degree) }.hastyPuddingTrick(listOf(choices, cardinality))
+    .map { it.first().decodeCombo(k) to it.last().untupled(k).map { shuffledDims[it] } } +
+      sequenceOf(0.decodeCombo(k) to 0.untupled(k).map { shuffledDims[it] }) // LFSR will never generate all 0s
 
-
+// ceil(log_2(x)) but faster than converting to double and back
 fun log_2(x: Int): Int {
   var i = 0
   var j = x
@@ -369,76 +365,3 @@ inline fun <reified T> List<T>.choose(
 ): Sequence<Set<T>> =
   if (size <= k) sequenceOf(toSet())
   else (0 until numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
-
-// Bijection between k-combinations and integers
-// https://en.wikipedia.org/wiki/Combinatorial_number_system
-fun Set<Int>.encode(): Int {
-  var (k, i, total) = size to 0 to 0
-  val asArray = toIntArray()
-
-  while (i < size) {
-    val result = asArray[i] choose k
-    total += result
-    k -= 1
-    i += 1
-  }
-
-  return total
-}
-
-fun Int.decodeCombo(k: Int): Set<Int> {
-  var choice: Int = k - 1
-  while (choice choose k < this) choice++
-
-  var N = this
-  var kk = k
-  val result = mutableSetOf<Int>()
-  (choice downTo 0).forEach { ch ->
-    if (ch choose kk <= N) {
-      N -= ch choose kk--
-      result.add(ch)
-    }
-  }
-  return result
-}
-
-/**
- * Constructs a bijection between n-tuples and integers \mathbb{N} <-> \mathbb{N}^k
- * using Szudzik's pairing function. n.b. optimally compact for n=2, but not for
- * n>2 because hypercube shells are blended. TODO: implement a compact [un]tupling function
- */
-
-fun Int.unpair(dim: Int = 2): List<Int> {
-  val n1 = if (this - floor(sqrt(toDouble())).pow(2) < floor(sqrt(toDouble()))) {
-    this - floor(sqrt(toDouble())).pow(2)
-  } else {
-    floor(sqrt(toDouble()))
-  }.toInt()
-  val n2 = if (this - floor(sqrt(toDouble())).pow(2) < floor(sqrt(toDouble()))) {
-    floor(sqrt(toDouble()))
-  } else {
-    this - floor(sqrt(toDouble())).pow(2) - floor(sqrt(toDouble()))
-  }.toInt()
-  return if (dim > 2) {
-    n1.unpair(dim - 1) + n2
-  } else {
-    listOf(n1, n2)
-  }
-}
-
-fun List<Int>.pair(): Int {
-  if (size < 2) throw IllegalArgumentException("Szudzik pairing function needs at least 2 numbers as input")
-  if (any { it < 0 }) throw IllegalArgumentException("Szudzik pairing function maps only non-negative integers")
-  val n1 = this[0]
-  val n2 = this[1]
-  val mapping = if (n1 != max(n1, n2)) {
-    n2.toDouble().pow(2) + n1
-  } else {
-    n1.toDouble().pow(2) + n1 + n2
-  }
-  return if (this.size == 2) {
-    mapping.toInt()
-  } else {
-    (drop(2) + mapping.toInt()).pair()
-  }
-}

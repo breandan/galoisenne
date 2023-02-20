@@ -1,7 +1,7 @@
 package ai.hypergraph.markovian.mcmc
 
 import ai.hypergraph.kaliningraph.cache.LRUCache
-import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
 import org.apache.datasketches.frequencies.*
