@@ -236,10 +236,17 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime(
   @Test
   fun testParallelPRNG() {
     // How many samples can we draw in n seconds?
+    //  Drew 1403305 serial samples in 10000ms
+    //  Drew 544936 parallel samples in 10000ms
+    //  Drew 246240 bijective samples in 10000ms
+
     val timeoutMS = 10_000
 
     fun genSeq(skip: Int = 1, shift: Int = 0) =
       MDSamplerWithoutReplacement(('a'..'f').toSet(), 10, skip, shift)
+
+    fun genSeqNK(skip: Int = 1, shift: Int = 0) =
+      MDSamplerWithoutReplacementNK(('a'..'f').toSet(), 20, 3, skip, shift)
 
     var startTime = System.currentTimeMillis()
     genSeq().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
@@ -248,5 +255,9 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime(
     startTime = System.currentTimeMillis()
     ::genSeq.parallelize().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
       .also { println("Drew ${it.size} parallel samples in ${timeoutMS}ms") }
+
+    startTime = System.currentTimeMillis()
+    genSeqNK().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+      .also { println("Drew ${it.size} bijective samples in ${timeoutMS}ms") }
   }
 }
