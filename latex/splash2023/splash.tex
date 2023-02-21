@@ -53,7 +53,7 @@ Most existing work on program synthesis focus on general $\lambda$-calculi, or v
 
 The second great compromise in program synthesis is that of reusability versus specialization. In programming, as in human affairs, there is a vast constellation of languages, each requiring specialized generators and interpreters. Are these languages truly irreconcilable? Or, as Noam Chomsky argues, are these merely dialects of a universal language? \textit{Synthesis} then, might be a misnomer, and more aptly called \textit{recognition}, in the analytic tradition.
 
-In our work, we argue these two compromises are not mutually exclusive, but complementary and reciprocal. Programs and the languages they inhabit are indeed synthetic, but can be analyzed and reused in the metalanguage of context-free grammars closed under conjunction. Not only does this admit an efficient synthesis algorithm, but allows users to introduce additional constraints without breaking compositionality, one of the sacred tenets of programming language design.
+In our work, we argue these two compromises are not mutually exclusive, but complementary and reciprocal. Programs and the languages they inhabit are indeed synthetic, but can be analyzed and reused in the metalanguage of context-free grammars closed under conjunction. Not only does this admit an efficient synthesis algorithm, but allows users to introduce additional constraints without breaking compositionality, one of the most sacred tenets in programming language design.
 
 Furthermore, we argue it is possible to improve the efficiency of human programmers without sacrificing expressiveness by considering latency to synthesize an acceptable completion. In contrast with program synthesizers that require intermediate programs to be well-formed, our synthesizer is provably sound and complete up to a Levenshtein distance bound, and attempts to minimize total edits, but does not impose any constraints on the code itself being written.
 
@@ -609,30 +609,17 @@ If the root itself is unknown, we can define an operator, $\mathcal{H}_{\mathcal
 \pagebreak
 \subsection{Gradient estimation}\label{sec:dsi}
 
-Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, how can we use $S$ to repair some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$? In other words, we focus on three questions: how many holes are needed, where should we put holes, and how ought we fill them to obtain a parseable $\sigma \in \mathcal{L}_\mathcal{G}$?
+Now that we have a reliable method to synthesize admissible completions for strings containing holes, i.e., fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\_}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, how can we use $S$ to repair some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$ where the location of the holes are unknown? Three questions are evident: how many holes are needed, where should we put those holes, and how ought we fill them to obtain a parseable $\tilde{\sigma} \in \mathcal{L}_\mathcal{G}$?
 
-One strategy would be to draw samples with a PCFG, minimizing tree-edit distance (TED). However, TEDs are computationally expensive metrics and approximations may converge poorly. Another strategy is to sample repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$, from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation.
+One plausible approach would be to draw samples with a PCFG, minimizing tree-edit distance, however these are computationally expensive metrics and approximations may converge poorly. Another strategy is to sample perturbations, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$, from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$, loosely analogous to a finite difference approximation.
 
-To make this approach feasible, we propose a combinatorial indexing scheme which involves putting Levenshtein edits in correspondence with positive integers, sampling integers in a fixed range, then decoding the integers as repairs. We find this approach to be computationally more tractable and yields a steady stream of admissible edits throughout the solving process, regardless of the grammar or the string being repaired.
+To implement this strategy, we carefully construct a bijection between Levenshtein edits and the integers, sample integer vectors without replacement from a characteristic polynomial over a finite field, then decode vectors into repairs using a combinatorial indexing scheme that puts integer vectors into one-to-one correspondence with Levenshtein edits. We find this approach computationally more tractable while yielding a steady stream of admissible edits throughout the solving process, regardless of the grammar or string under repair.
 
-More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which satisfy three criteria: (1) bijective (2) maximally compact (this will minimize rejection) (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$-combinations via the Maculay representation. $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function courtesy of Szudzik~\cite{szudzik2006elegant} that suffices, which enumerates concentric square shells and can be generalized to hypercubic shells $\mathbb{N}^k$.
+More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which are (1) bijective (2) maximally compact (this will minimize rejection) (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$-combinations via the Maculay representation. $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function courtesy of Szudzik~\cite{szudzik2006elegant}, which enumerates concentric square shells over the plane $\mathbb{N}^2$ and can be generalized to hypercubic shells in $\mathbb{N}^k$. For our purposes, this generalization will suffice.
 
-Although $\langle\kappa, \rho\rangle$ could be used directly to sample without replacement from the Levenshtein hypersphere, while exhaustive, they are temporally biased samplers. Rather, we would prefer a path that uniformly visits every subspace of the Levenshtein hypersphere over time regardless of the grammar or string in question: subsequences of $\langle\kappa, \rho\rangle$ should generate admissible edits with frequency proportional to the ratio of admissible edits over all possible edits in the Levenshtein hypersphere. This additional constraint gives rise to a fourth criteria: ergodicity.
+Although $\langle\kappa, \rho\rangle$ could be used directly to exhaustively search the Levenshtein hypersphere, they are temporally biased samplers. Rather, we would prefer a path that uniformly visits every subspace of the Levenshtein hypersphere over time regardless of the grammar or string in question: subsequences of $\langle\kappa, \rho\rangle$ should generate repairs with frequency roughly proportional to the ratio of admissible edits over all possible edits within a fixed distance from the original string. These additional constraints give rise to two more criteria: (1) ergodicity and (2) periodicity.
 
-To admit variable-length edits, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production:\vspace{5pt}
-
-\begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
-    \RightLabel{$\varepsilon\textsc{-dup}$}
-    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
-    \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-\end{prooftree}
-
-\noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land, \top := 1, \circ:=0$.\vspace{-5pt}
+To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times|\Sigma|^k$ using a finite field with a characteristic polynomial $C$ of degree $\lceil \log_p {n \choose k}|\Sigma|^k \rceil$. By choosing $C$ to be some irreducible polynomial, one ensures the path is fully periodic while preserving the mixing properties we desire, i.e., suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land, \top := 1, \circ:=0$.\vspace{-5pt}
 
 \begin{align}
     U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -652,6 +639,19 @@ To admit variable-length edits, we first define a $\varepsilon^+$-production and
 \end{align}
 
 \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\footnote[2]{\text{We use the notation $\stirlingii{n}{d}$ to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
+
+To admit variable-length edits, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production:\vspace{5pt}
+
+\begin{prooftree}
+  \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+  \RightLabel{$\varepsilon\textsc{-dup}$}
+  \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
 
 Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following seven patterns:\vspace{-10pt}
 
