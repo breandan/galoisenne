@@ -101,8 +101,7 @@ class ParallelSetValiantTest {
     repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> a.solve(this) })
       .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
       .distinctBy { cfg.forestHash(it) }
-      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
-      .toList()
+      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }.toList()
       .also { println("Enumerative repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
 
     startTime = System.currentTimeMillis()
@@ -118,11 +117,11 @@ class ParallelSetValiantTest {
       newRepair(strWithParseErr, cfg, levenshteinRadius * 2, skip, shift)
         .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
         .distinctBy { cfg.forestHash(it) }
-        .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
+        .mapIndexed { i, it -> println("#$i, PID=$shift, ${System.currentTimeMillis() - startTime}ms, $it"); it }
 
-//    ::genSeq.parallelize()
-        genSeq().toList()
-      .also { println("Bijective repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+    ::genSeq.parallelize().toList()
+      .also { println("Bijective repair generated ${it.distinctBy { cfg.forestHash(it) }.size}" +
+          " models in ${System.currentTimeMillis() - startTime}ms") }
   }
 
   fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> {
