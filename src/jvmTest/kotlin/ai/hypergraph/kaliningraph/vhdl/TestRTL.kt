@@ -161,7 +161,7 @@ class TestRTL {
       B = malloc(4)
       S = 0.w
       for (i in 0..3) { // 4 iterations
-        S = S + A[i] * B[i]
+        S += A[i] * B[i]
       }
     }
     .also { it.compileAndRun() }

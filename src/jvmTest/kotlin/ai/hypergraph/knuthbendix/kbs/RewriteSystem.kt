@@ -53,12 +53,10 @@ class RewriteSystem<T>(rules: Map<List<T>, List<T>>, val comparator: Comparator<
    */
   private fun rewriteWith(pInput: List<T>, ruleSet: Set<Rule<T>>): List<T> {
     val input = LinkedList(pInput)
-    var doneSomething = false
+    var doneSomething: Boolean
     do {
       doneSomething = false
-      for (rule in ruleSet!!) {
-        doneSomething = rule.apply(input) || doneSomething
-      }
+      for (rule in ruleSet) { doneSomething = rule.apply(input) || doneSomething }
     } while (doneSomething)
     return input
   }
@@ -71,7 +69,7 @@ class RewriteSystem<T>(rules: Map<List<T>, List<T>>, val comparator: Comparator<
    * @param list the list to rewrite
    */
   private fun changeToUniqueNF(list: LinkedList<T>) {
-    var doneSomething = false
+    var doneSomething: Boolean
     do {
       doneSomething = false
       for (rule in completeRules!!) {

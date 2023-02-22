@@ -1,4 +1,4 @@
-@file:Suppress("FunctionName")
+@file:Suppress("FunctionName", "UNUSED_PARAMETER", "unused")
 
 package ai.hypergraph.reasoning
 

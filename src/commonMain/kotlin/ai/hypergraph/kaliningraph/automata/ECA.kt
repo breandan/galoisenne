@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_PARAMETER")
+
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
