@@ -18,6 +18,9 @@ class Tree constructor(
   override fun hashCode() = root.hashCode()
   override fun equals(other: Any?) = hashCode() == other.hashCode()
 
+  fun structureEncode(): Σᐩ = if (children.isEmpty()) "()"
+    else children.joinToString(prefix = "(", postfix = ")") { it.structureEncode() }
+
   fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +
       children.foldIndexed(
@@ -60,6 +63,7 @@ class Tree constructor(
   }
 
   fun contents(): Σᐩ =
-    if (children.isEmpty()) "$terminal"
-    else children.joinToString(" ") { it.contents() }
+    if (children.isEmpty()) "$terminal" else children.joinToString(" ") { it.contents() }
 }
+
+fun Forest.structureEncode() = map { it.structureEncode() }.hashCode()

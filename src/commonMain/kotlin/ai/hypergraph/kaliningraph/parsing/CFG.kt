@@ -80,6 +80,10 @@ class BiMap(CFG: CFG) {
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
 
+fun CFG.forestHash(s: String) = parseForest(s).structureEncode()
+fun CFG.nonterminalHash(s: String) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
+fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
+
 fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
 
 //=====================================================================================

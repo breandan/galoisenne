@@ -58,7 +58,6 @@ class ParallelSetValiantTest {
     cores: Int = Runtime.getRuntime().availableProcessors().also { println("Cores: $it") }
   ) =
     (0 until cores).toSet().parallelStream().flatMap { i ->
-      println("Thread: $i")
       MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER })
         .filterIndexed { index, _ -> index % cores == i }
         .asStream()
@@ -87,10 +86,10 @@ class ParallelSetValiantTest {
     """.trimIndent().parseCFG()
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelRepairWithFixedTimeout"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.benchmarkRepairsWithFixedTimeout"
 */
   @Test
-  fun testParallelRepairWithFixedTimeout() {
+  fun benchmarkRepairsWithFixedTimeout() {
     TIMEOUT_MS = 30_000
     val cfg = sumCFG.noNonterminalStubs
     val strWithParseErr = "1 + 2 + 3 + + 4 + 7"
@@ -99,39 +98,31 @@ class ParallelSetValiantTest {
     val levenshteinRadius = 2
     var startTime = System.currentTimeMillis()
 
-    repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> println("Hmm: " + a.joinToString(" ")); a.solve(this) })
+    repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> a.solve(this) })
+      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+      .distinctBy { cfg.forestHash(it) }
       .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
-      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
+      .toList()
       .also { println("Enumerative repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
 
     startTime = System.currentTimeMillis()
     cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
-      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
-      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
+      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+      .distinctBy { cfg.forestHash(it) }
+      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }.toList()
       .also { println("Levenshtein repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
-  }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testNewRepair"
-*/
-  @Test
-  fun testNewRepair() {
-    TIMEOUT_MS = 30_000
-    val cfg = sumCFG.noNonterminalStubs
-    val strWithParseErr = "1 + 2 + 2 + 3 + + 4 + 7"
-    val tokens = strWithParseErr.tokenizeByWhitespace()
-
-    val levenshteinRadius = 3
-    var startTime = System.currentTimeMillis()
+    startTime = System.currentTimeMillis()
 
     fun genSeq(skip: Int = 1, shift: Int = 0) =
-      newRepair(strWithParseErr, cfg, levenshteinRadius, skip, shift)
+      newRepair(strWithParseErr, cfg, levenshteinRadius * 2, skip, shift)
+        .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+        .distinctBy { cfg.forestHash(it) }
         .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }
 
 //    ::genSeq.parallelize()
-        genSeq()
-      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }.toList()
-      .also { println("New repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+        genSeq().toList()
+      .also { println("Bijective repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
   }
 
   fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> {
@@ -140,10 +131,13 @@ class ParallelSetValiantTest {
     return MDSamplerWithoutReplacementNK(cfg.terminals, n=promptTokens.size, k=edits, skip, shift)
       .map { (editLocs, tokens) ->
         val toReplaceWith = tokens.toMutableList()
-        val newTokens = promptTokens.mapIndexed { i, t -> if (i in editLocs) toReplaceWith.removeFirst() else t }
+        val newTokens = promptTokens.mapIndexed { i, ot ->
+          if (i !in editLocs || cfg.preimage(ot) == cfg.preimage(toReplaceWith.first())) ot
+          else toReplaceWith.removeFirst()
+        }
         newTokens.joinToString(" ")
       }
-      .map { it.replace("ε ", "").trim() }
+      .map { it.replace("ε", "").replace(Regex("\\s+"), " ").trim() }
       .filter { it.matches(cfg) }
   }
 
