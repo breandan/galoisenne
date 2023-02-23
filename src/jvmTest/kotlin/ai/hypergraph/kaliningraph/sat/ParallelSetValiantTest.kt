@@ -124,21 +124,6 @@ class ParallelSetValiantTest {
           " models in ${System.currentTimeMillis() - startTime}ms") }
   }
 
-  fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> {
-    val promptTokens = prompt.tokenizeByWhitespace()
-
-    return MDSamplerWithoutReplacementNK(cfg.terminals, n=promptTokens.size, k=edits, skip, shift)
-      .map { (editLocs, tokens) ->
-        val toReplaceWith = tokens.toMutableList()
-        val newTokens = promptTokens.mapIndexed { i, ot ->
-          if (i !in editLocs || cfg.preimage(ot) == cfg.preimage(toReplaceWith.first())) ot
-          else toReplaceWith.removeFirst()
-        }
-        newTokens.joinToString(" ")
-      }
-      .map { it.replace("ε", "").replace(Regex("\\s+"), " ").trim() }
-      .filter { it.matches(cfg) }
-  }
 
   fun repairInParallel(
     prompt: Σᐩ,
