@@ -258,8 +258,7 @@ fun Σᐩ.synthesizeIncrementally(
     if (it.isSetValiantOptimalFor(this))
       it.also { println("Synthesizing with SetValiant: ${it.joinToString(" ")}") }
       .solve(this, takeMoreWhile = takeMoreWhile)
-    else
-      asCJL.synthesize(it, takeMoreWhile = takeMoreWhile)
+    else asCJL.synthesize(it, takeMoreWhile = takeMoreWhile)
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,

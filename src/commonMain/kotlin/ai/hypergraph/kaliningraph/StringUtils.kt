@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.parsing.HOLE_MARKER
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
