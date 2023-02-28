@@ -63,6 +63,8 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
     }
   }
 
+fun levenshtein(s1: String, s2: String): Int = levenshtein(s1.toList(), s2.toList())
+
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)
   for (j in 0 until o2.size + 1) prev[j] = j

@@ -25,6 +25,7 @@ fun repair(
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
   updateProgress: (Σᐩ) -> Unit = {},
   filter: (Σᐩ.() -> Boolean)? = null,
+  score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
 ): List<Σᐩ> {
   println("Repairing: $prompt")
   val coarsened = prompt.coarsen()
@@ -45,7 +46,9 @@ fun repair(
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
     .let { if(filter != null) it.filter(filter) else it }
-    .take(MAX_SAMPLE).toList().sortedWith(tokens.ranker())
+    .map { it to score(it) }.take(MAX_SAMPLE).toList().sortedBy { it.second }
+    .also { println("Best score: (${it.firstOrNull()?.second})") }
+    .map { it.first }
 
   if (filter != null) println("Filtered out ${totalSamples - repairs.size}/${totalSamples} invalid samples!")
 
@@ -80,13 +83,6 @@ fun repairLazily(
     .map { totalSamples++; it.uncoarsen(prompt) }
     .let { if (filter != null) it.filter(filter) else it }
 }
-
-// Use distance from the matching token as a heuristic (downrank edits far away from source)?
-fun List<Σᐩ>.ranker(): Comparator<Σᐩ> =
-  compareBy(tokenwiseEdits(this)).thenBy { it.length }
-
-private fun tokenwiseEdits(tokens: List<Σᐩ>): (Σᐩ) -> Comparable<*> =
-  { levenshtein(tokens.filterNot { it.containsHole() }, it.tokenizeByWhitespace()) }
 
 var MAX_SAMPLE = 20
 var MAX_TOKENS = 80
