@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.graphs.Ops
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
@@ -25,10 +26,12 @@ fun repair(
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
   updateProgress: (Σᐩ) -> Unit = {},
   filter: (Σᐩ.() -> Boolean)? = null,
+  diagnostic: ((String) -> Unit)? = null,
   score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
 ): List<Σᐩ> {
-  println("Repairing: $prompt")
   val coarsened = prompt.coarsen()
+  println("Repairing: $prompt" + if (coarsened != prompt) "\nCoarsened: $coarsened" else "" )
+
 //  if (cfg.parse(coarsened) != null) return emptyList()
   val tokens = coarsened.tokenizeByWhitespace()
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else HOLE_MARKER }
@@ -45,8 +48,10 @@ fun repair(
     variations = variations,
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
-    .let { if(filter != null) it.filter(filter) else it }
-    .map { it to score(it) }.take(MAX_SAMPLE).toList().sortedBy { it.second }
+    .let { if (filter != null) it.filter(filter) else it }
+    .let { if (diagnostic != null) it.map { diagnostic(it); it } else it }
+    .map { it to score(it) }
+    .take(MAX_SAMPLE).toList().sortedBy { it.second }
     .also { println("Best score: (${it.firstOrNull()?.second})") }
     .map { it.first }
 
