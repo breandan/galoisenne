@@ -159,7 +159,7 @@ kotlin {
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:com.microsoft.z3@jar")
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3@so")
         // implementation("org.sosy-lab:javasmt-solver-z3:$libZ3Version:libz3java@so")
-        implementation("org.sosy-lab:javasmt-solver-mathsat5:5.6.5")
+        runtimeOnly("org.sosy-lab:javasmt-solver-mathsat5:5.6.8:libmathsat5j@so")
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
