@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.20-Beta"
+  kotlin("multiplatform") version "1.8.20-RC"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.46.0"
   id("io.github.gradle-nexus.publish-plugin") version "1.2.0"
@@ -132,7 +132,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.3.1")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-Beta")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.2.0")
