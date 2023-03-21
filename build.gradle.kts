@@ -37,11 +37,11 @@ if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
   configure<NexusPublishExtension> {
     repositories {
       sonatype {
-        nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-        snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-        username.set(sonatypeApiUser)
-        password.set(sonatypeApiKey)
-        useStaging.set(true)
+        nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
+        snapshotRepositoryUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        username = sonatypeApiUser
+        password = sonatypeApiKey
+        useStaging = true
       }
     }
   }
@@ -77,7 +77,7 @@ repositories {
   }
 }
 
-val javadocJar by tasks.registering(Jar::class) { archiveClassifier.set("javadoc") }
+val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
 
 rootProject.plugins.withType<NodeJsRootPlugin> {
   rootProject.the<NodeJsRootExtension>().nodeVersion = "16.0.0"
@@ -135,7 +135,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-Beta")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.2.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.3.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -234,26 +234,26 @@ kotlin {
       withType<MavenPublication> {
         artifact(javadocJar.get())
         pom {
-          url.set("https://github.com/breandan/kaliningraph")
-          name.set("Kaliningraph")
-          description.set("A purely functional algebraic graph library")
+          url = "https://github.com/breandan/kaliningraph"
+          name = "Kaliningraph"
+          description = "A purely functional algebraic graph library"
           licenses {
             license {
-              name.set("The Apache Software License, Version 2.0")
-              url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-              distribution.set("repo")
+              name = "The Apache Software License, Version 2.0"
+              url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+              distribution = "repo"
             }
           }
           developers {
             developer {
-              id.set("Breandan Considine")
-              name.set("Breandan Considine")
-              email.set("bre@ndan.co")
-              organization.set("McGill University")
+              id = "Breandan Considine"
+              name = "Breandan Considine"
+              email = "bre@ndan.co"
+              organization = "McGill University"
             }
           }
           scm {
-            url.set("https://github.com/breandan/kaliningraph")
+            url = "https://github.com/breandan/kaliningraph"
           }
         }
       }
@@ -296,7 +296,7 @@ tasks {
     "rewriting.CipherSolver", "RegexDemo", "smt.TestSMT",
   ).forEach { fileName ->
     register(fileName, org.gradle.api.tasks.JavaExec::class) {
-      mainClass.set("ai.hypergraph.kaliningraph.${fileName}Kt")
+      mainClass = "ai.hypergraph.kaliningraph.${fileName}Kt"
       classpath += objects.fileCollection().from(configurations.named("jvmTestCompileClasspath"))
     }
   }
