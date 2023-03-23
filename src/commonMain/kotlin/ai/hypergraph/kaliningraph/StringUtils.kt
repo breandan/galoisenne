@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
 import kotlin.math.min
+import ai.hypergraph.kaliningraph.types.*
 
 infix fun Char.closes(that: Char) =
   if (this == ')' && that == '(') true
@@ -13,10 +14,10 @@ infix fun Char.closes(that: Char) =
   else if (this == '}' && that == '{') true
   else this == '>' && that == '<'
 
-fun String.hasBalancedBrackets(): Boolean =
-  filter { it in "()[]{}<>" }.fold(Stack<Char>()) { stack, c ->
+fun String.hasBalancedBrackets(brackets: String = "()[]{}<>"): Boolean =
+  filter { it in brackets }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
-  }.isEmpty() && "()[]{}<>".any { it in this }
+  }.isEmpty() && brackets.any { it in this }
 
 fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   fun String.tok() = split(" -> ")
@@ -62,6 +63,9 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
         .joinToString("→").drop(4).dropLast(3)
     }
   }
+
+fun allPairsLevenshtein(s1: Set<String>, s2: Set<String>) =
+  (s1 * s2).sumOf { (a, b) -> levenshtein(a, b) }
 
 fun levenshtein(s1: String, s2: String): Int = levenshtein(s1.toList(), s2.toList())
 
