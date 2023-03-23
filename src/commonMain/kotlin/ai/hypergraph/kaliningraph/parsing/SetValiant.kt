@@ -201,7 +201,8 @@ fun List<Σᐩ>.solve(
   fillers: Set<Σᐩ> = CFG.terminals,
   takeMoreWhile: () -> Boolean = { true },
 ): Sequence<Σᐩ> =
-  genCandidates(CFG, (fillers - CFG.blocked)/*.also { println("Allowed hole fillers: $it") }*/)
+  genCandidates(CFG, (fillers - CFG.blocked)
+  /*.also { println("Allowed hole fillers: $it") }*/)
     .takeWhile { takeMoreWhile() }.filter { it.matches(CFG) }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
