@@ -198,11 +198,11 @@ fun Σᐩ.validate(
 
 fun List<Σᐩ>.solve(
   CFG: CFG,
-  fillers: Set<Σᐩ> = CFG.terminals,
+  fillers: Set<Σᐩ> = CFG.terminals - CFG.blocked,
   takeMoreWhile: () -> Boolean = { true },
 ): Sequence<Σᐩ> =
-  genCandidates(CFG, (fillers - CFG.blocked)
-  /*.also { println("Allowed hole fillers: $it") }*/)
+  genCandidates(CFG, fillers)
+//    .also { println("Solving (Complexity: ${fillers.size.pow(count { it == "_" })}): ${joinToString(" ")}") }
     .takeWhile { takeMoreWhile() }.filter { it.matches(CFG) }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =

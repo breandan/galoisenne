@@ -282,9 +282,9 @@ fun Σᐩ.randomSubstitutions(
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf(),
 ): Sequence<Σᐩ> =
-  (padded.indices.toSet() - exclusions.map { it + 1 }.toSet())
+  (padded.indices.toSet())//.also { println("Exclusions: $exclusions") })// - exclusions.map { it + 1 }.toSet())
     .let { sortedIndices -> (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
-    .map { idxs -> padded.substitute(idxs) { "_ _" } }
+    .map { idxs -> padded.substitute(idxs) { it, i -> if (i in exclusions) "_ $it _" else "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
@@ -295,7 +295,7 @@ fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   fishyLocations: List<Int> = listOf(tokens.size)
 ): Sequence<Σᐩ> =
   allSubstitutions(padded.indices.toSet() - exclusions.map { it + 1 }.toSet(), numberOfEdits, fishyLocations)
-    .map { idxs -> padded.substitute(idxs) { "_ _" } }
+    .map { idxs -> padded.substitute(idxs) { _, _ -> "_ _" } }
 //    .apply {
 //      println("Exclusions: ${tokens.mapIndexed { i, it -> if (i !in exclusions) HOLE_MARKER.padEnd(it.length) else it }.joinToString(" ")}")
 //      println("Fishy toks: ${tokens.mapIndexed { i, it -> if (i in fishyLocations) HOLE_MARKER.padEnd(it.length) else it }.joinToString(" ")}")
@@ -319,8 +319,8 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 //        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
 //    ).map { it.toSet() }
 
-private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ) -> Σᐩ): Σᐩ =
-  mapIndexed { i, it -> if (i !in idxs) it else sub(it) }.joinToString(" ").trim()
+private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): Σᐩ =
+  mapIndexed { i, it -> if (i !in idxs) it else sub(it, i) }.joinToString(" ").trim()
 
 fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
 

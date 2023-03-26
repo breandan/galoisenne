@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import org.logicng.formulas.Formula
@@ -285,7 +286,10 @@ Lowers Valiant matrix onto SAT. Steps:
   https://www.ps.uni-saarland.de/courses/seminar-ws06/papers/07_franziska_ebert.pdf#page=6
 */
 
-fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> = asCJL.synthesize(tokens)
+fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+  asCJL
+//    .also { println("Solving (Complexity: ${(terminals - blocked).size.pow(tokens.count { it == "_" })}): ${tokens.joinToString(" ")}") }
+    .synthesize(tokens)
 
 // TODO: As new keystrokes are received, we should incrementally update
 //  existing constraints rather than creating a fresh SAT instance.
