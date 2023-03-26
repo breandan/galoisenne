@@ -38,4 +38,3 @@ fun List<Σᐩ>.parallelSolve(
       }.filter { it.matches(CFG) }
       .map { println("Thread ($i): $it"); it }
   }.collect(Collectors.toSet())
-
