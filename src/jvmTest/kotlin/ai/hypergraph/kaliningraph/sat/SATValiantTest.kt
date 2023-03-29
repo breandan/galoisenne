@@ -134,7 +134,7 @@ class SATValiantTest {
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testSingleStepMultiplication"
   */
   @Test
-  fun testSingleStepMultiplication()  {
+  fun testSingleStepMultiplication() {
     xujieGrammar.trimIndent().parseCFG(normalize = false).let { cfg ->
       (setOf("T1", "S", "L2") to setOf("T2", "S", "R1", "R2")).let { (a, b) ->
         val trueJoin = cfg.setJoin(a, b)
@@ -643,7 +643,7 @@ class SATValiantTest {
 //    println("CSL:\n" + csl.prettyPrint())
     csl.synthesize(List(20) { "_" })
       .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
-      .map {
+     .map {
         println(it)
         val (a, b, c) = it.count { it == 'a' } to it.count { it == 'b' } to it.count { it == 'c' }
         assertEquals(a, b)
