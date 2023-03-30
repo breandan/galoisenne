@@ -298,6 +298,8 @@ A regex to NFA compiler is provided. To run the demo, run `./gradlew RegexDemo`.
 
 ### Circuits
 
+- [Reductions between Families of Polynomials in
+  Theory and in Practice](https://www.math.toronto.edu/dburbani/work/algreductions.pdf), Valiant, Hyafil et al.
 - [Efficient parallel evaluation of straight-line code and arithmetic circuits](http://www.cs.cmu.edu/~glmiller/Publications/MRK86b.pdf), Miller (1986)
 - [Algebraic Decision Diagrams and Their Applications](https://link.springer.com/content/pdf/10.1023/A:1008699807402.pdf), Bahar et al. (1997)
 - [Arithmetic Circuit Verification Based on Word-Level Decision Diagrams](https://apps.dtic.mil/dtic/tr/fulltext/u2/a350486.pdf), Chen (1998)
