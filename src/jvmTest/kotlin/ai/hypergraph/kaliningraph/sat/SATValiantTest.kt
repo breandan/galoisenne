@@ -720,6 +720,46 @@ class SATValiantTest {
 //    assertTrue(scnRepairs in levRepairs, "scnRepairs ⊈ levRepairs: ${scnRepairs - levRepairs}")
   }
 
+  val arithCFG: CFG = """
+      START -> S
+      S -> BS | IS
+      
+      IO -> + | - | * | /
+      IS -> N | - N | IS IO IS | ( IS ) | BS
+      N -> N1 | N2 | N3 | N4 | N5 | N6 | N7 | N8 | N9
+      N1 -> 1 
+      N2 -> 2 
+      N3 -> 3
+      N4 -> 4
+      N5 -> 5
+      N6 -> 6
+      N7 -> 7
+      N8 -> 8
+      N9 -> 9
+      
+      B -> true | false
+      BO -> and | or | =
+      ISC -> IS < IS | IS > IS | IS == IS | IS != IS | if ( BS ) then { BS } else { BS } | if ( BS ) then { IS } else { IS }
+      BS -> B | BS BO BS | ( ISC )
+    """.trimIndent().parseCFG()
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTreelikePruning"
+*/
+
+  @Test
+  fun testTreelikePruning() {
+    val cfg = arithCFG
+      .also { println("Before pruning (${it.size}):\n${it.prettyPrint()}") }
+      .pruneTreelikeNonterminals
+      .also { println("After pruning (${it.size}):\n${it.prettyPrint()}") }
+    "_ _ _ _ _ _".synthesizeIncrementally(cfg)
+      .map { println(it); it }
+      .take(10)
+      .toList()
+      .also { println("All: $it") }
+  }
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCoarsening"
 */

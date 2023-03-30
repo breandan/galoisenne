@@ -9,7 +9,7 @@ import kotlin.streams.asStream
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(
   CJL: CJL,
-  fillers: Set<Σᐩ> = CJL.cfgs.map { it.terminals }.flatten().toSet() - CJL.cfgs.map { it.blocked}.flatten().toSet()
+  fillers: Set<Σᐩ> = CJL.cfgs.map { it.terminals }.flatten().toSet() - CJL.cfgs.map { it.blocked }.flatten().toSet()
 ) =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).asStream().parallel()
     .map {

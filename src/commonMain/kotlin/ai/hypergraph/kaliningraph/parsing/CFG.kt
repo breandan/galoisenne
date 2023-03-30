@@ -43,6 +43,42 @@ val CFG.noNonterminalStubs: CFG by cache {
     .also { it.blocked.addAll(blocked) }
 }
 
+// Prunes all nonterminals that represent a finite set of terminals down to the root
+// Usually this is a tree-like structure, but it can also be a DAG of nonterminals
+val CFG.pruneTreelikeNonterminals: CFG by cache {
+  println("Pruning treelike nonterminals!")
+  filter { it.RHS.any { !it.isTreelikeNonterminalIn(this) } || "ε" in it.LHS }.toSet()
+    .let {
+      val brokenReferences = it.terminals
+      it +
+          // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
+          brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
+          it.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
+          // Restore old nonterminal stubs for unreferenced unit productions
+          brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
+            .map { l -> filter { it.LHS == l }.map { l to it.RHS } }
+            .flatten()
+//            .first()
+            .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
+    }
+    .let { it.transformIntoCNF() }
+    .also { rewriteHistory.put(it, listOf(rewriteHistory[this]!![0]) + listOf(this)) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+// Returns true iff the receiver is a nonterminal whose descendants
+// are themselves either (1) treelike nonterminals or (2) terminals
+private fun Σᐩ.isTreelikeNonterminalIn(
+  cfg: CFG,
+  reachables: Set<Σᐩ> = cfg.reachableSymbols(this) - this,
+  nonTreeLike: Set<Σᐩ> = setOf(this)
+): Boolean = when {
+  "ε" in this -> true
+  (reachables intersect nonTreeLike).isNotEmpty() -> false
+  else -> reachables.all { it in cfg.terminals ||
+      it.isTreelikeNonterminalIn(cfg, nonTreeLike = nonTreeLike + reachables) }
+}
+
 class JoinMap(val CFG: CFG) {
   // TODO: Doesn't appear to confer any significant speedup? :/
   val precomputedJoins: MutableMap<Π2A<Set<Σᐩ>>, Set<Π3A<Σᐩ>>> =
@@ -66,22 +102,22 @@ class JoinMap(val CFG: CFG) {
       }.toSet()
 }
 // Maps indices to nonterminals and nonterminals to indices
-class Bindex(CFG: CFG) {
-  val indexedNTs: Array<Σᐩ> = CFG.nonterminals.toTypedArray()
+class Bindex(cfg: CFG) {
+  val indexedNTs: Array<Σᐩ> = cfg.nonterminals.toTypedArray()
   val ntIndices: Map<Σᐩ, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
   operator fun get(i: Int) = indexedNTs[i]
-  operator fun get(s: Σᐩ) = ntIndices[s]!!
+  operator fun get(s: Σᐩ) = ntIndices[s] ?: 1.also{ println(s); null!! }
 }
 // Maps variables to expansions and expansions to variables in a grammar
-class BiMap(CFG: CFG) {
-  val L2RHS = CFG.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
-  val R2LHS = CFG.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
+class BiMap(cfg: CFG) {
+  val L2RHS = cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
+  val R2LHS = cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.forestHash(s: String) = parseForest(s).structureEncode()
-fun CFG.nonterminalHash(s: String) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
+fun CFG.forestHash(s: Σᐩ) = parseForest(s).structureEncode()
+fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
 fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
 
 fun CFG.toGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
@@ -158,8 +194,13 @@ fun CFG.eliminateParametricityFromLHS(
   }
 
 fun CFG.generateNonterminalStubs(): CFG =
-  this + (filter { it.LHS.split(".").size == 1 && "ε" !in it.LHS && it.LHS != "START" }
+  this + (filter { it.LHS.isOrganicNonterminal()  }
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()).addEpsilonProduction()
+
+fun Σᐩ.isSyntheticNonterminal() =
+  split(".").size != 1 || "ε" in this || this == "START"
+fun Σᐩ.isOrganicNonterminal() =
+  split(".").size == 1 && "ε" !in this && this != "START"
 
 // Add start symbol if none are present (e.g., in case the user forgets)
 private fun CFG.addGlobalStartSymbol(): CFG =

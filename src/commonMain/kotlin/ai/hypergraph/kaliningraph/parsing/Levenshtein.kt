@@ -41,7 +41,9 @@ fun constructLevenshteinCFG(symbols: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ
 fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(List<Σᐩ>) -> Sequence<Σᐩ>): Sequence<Σᐩ> {
   val alphabet =  terminals + unparseable + "ε"
   val levCFG = constructLevenshteinCFG(unparseable, maxDist, alphabet).parseCFG().noNonterminalStubs
-  return (this intersect levCFG).solver(List(unparseable.size + maxDist) { "_" })
+//  println("Levenshtein CFG: ${levCFG.prettyPrint()}")
+  val template = List(unparseable.size + maxDist) { "_" }
+  return (this intersect levCFG).solver(template)
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }
 

@@ -293,6 +293,7 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
 
 // TODO: As new keystrokes are received, we should incrementally update
 //  existing constraints rather than creating a fresh SAT instance.
+/** [generateConstraints] */
 fun CJL.synthesize(
   tokens: List<Σᐩ>,
   takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted }
