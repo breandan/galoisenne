@@ -34,7 +34,7 @@
 
   \title{Linear Conjunctive Reachability as Tensor Completion}
   \begin{abstract}
-    Brzozowski (1964) defines a regular expression derivative as the suffixes which complete a known prefix. In this work, we establish a Galois connection with Valiant's (1975) fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection, i.e. conjunctive languages. We illustrate how to lower conjunctive language recognition onto a system of multilinear equations over finite fields. In addition to its theoretical value, this connection has yielded surprisingly useful applications in incremental parsing, code completion and program repair.% For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries.
+    Brzozowski (1964) defines a regular expression derivative as the suffixes which complete a known prefix. In this work, we establish a Galois connection with Valiant's (1975) fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection, i.e., conjunctive languages, illustrating how to lower conjunctive language recognition onto a system of multilinear equations over finite fields. In addition to its theoretical value, this connection has yielded a number of useful applications in incremental parsing, code completion and program repair.% For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries.
   \end{abstract}
 
   \author{Breandan Mark Considine}
@@ -49,13 +49,7 @@
 
   \section{Introduction}
 
-  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
-
-  \begin{table}[H]
-    \begin{tabular}{llll}
-      $P'=\big\{\;S\rightarrow QR \mid SS \mid LR,$ & $L \rightarrow (,$ & $R \rightarrow ),$ & $Q\rightarrow LS\;\big\}$
-    \end{tabular}
-  \end{table}\vspace{-8pt}
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. All CFGs are reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production has either the form $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$.
 
   \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
@@ -84,9 +78,26 @@
 
   \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
+  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}. %, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
 
-  \pagebreak\section{Method}
+%  When the string is altered, we can reuse prior work by only recomputing affected submatrices, at worst quadratic in terms of $|\Sigma^*|$ assuming $\mathcal{O}(1)$ for each nonterminal subset join, $V_1'\otimes V_2'$. Visualized as a trellis automata:
+
+  Incrementalizing the fixpoint solver allows us to handle Levenshtein edits with quadratic cost in $|\Sigma^*|$ assuming $\mathcal{O}(1)$ for each vector dot product. Visualized as a trellis automata:
+
+  \begin{figure}[H]
+  \resizebox{0.47\textwidth}{!}{
+  \begin{center}
+    \begin{tabular}{ c c c c c }
+      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
+      Append: $\mathcal{O}(n+1)$                               & & Delete: $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$                                       & & Insert: $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$
+    \end{tabular}
+  \end{center}
+  }
+  \end{figure}
+
+  Incremental parsing is closely related to \textit{dynamic matrix inverse} in the linear algebra setting, and \textit{incremental transitive closure} with vertex updates in the graphical setting.
+
+  \pagebreak\section{Galois Representation}
 
   Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
@@ -303,13 +314,13 @@
 
   \section{Levenshtein Reachability}
 
-  Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space is representable as an acyclic NFA~\cite{schulz2002fast}, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
+  Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space is approximated by an acyclic NFA~\cite{schulz2002fast}, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
 
   \begin{figure}[H]
     \begin{minipage}[c]{0.45\textwidth}
       \centering
-      \underline{NFA}\vspace{10pt}
-      \resizebox{\textwidth}{!}{
+%      \underline{NFA}\vspace{10pt}
+      \resizebox{0.8\textwidth}{!}{
       \begin{tikzpicture}[
 %->, % makes the edges directed
       >=stealth',
@@ -448,42 +459,42 @@
 %\caption{Levenshtein reachability from $\Sigma^n$ can be described as either an acyclic $\epsilon$-free NFA, or a left-linear CFG.}
 \end{figure}
 
-\noindent By intersection with a conjunctive language, we obtain a language $\mathcal{L}(\mathcal{G})$ that is both a subset of $\Sigma^n$ and accepted by $\mathcal{G}$. We can then define the Levenshtein reachability problem as follows: given a string $\sigma \in \Sigma^n$, find the smallest $k$ such that $\sigma \in \mathcal{L}(\mathcal{G})$.
+%\noindent By intersection with a conjunctive language, we obtain a language $\mathcal{L}(\mathcal{G})$ that is both a subset of $\Sigma^n$ and accepted by $\mathcal{G}$. We can then define the Levenshtein reachability problem as follows: given a string $\sigma \in \Sigma^n$, find the smallest $k$ such that $\sigma \in \mathcal{L}(\mathcal{G})$.
 
-\begin{figure}[H]
-\begin{minipage}[c]{0.23\textwidth}
-\centering
-\resizebox{\textwidth}{!}{
-\begin{tikzpicture}[
-dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
-node contents={}}
-]
-\def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
-\def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
-\def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
-\def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
-\def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
-\begin{scope}
-\clip \secondcircle;
-\fill[black!15] \firstcircle;
-\end{scope}
-\draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
-\draw [dashed] \firstcirclea;
-\draw [dashed] \firstcircleb;
-\draw [dashed] \firstcirclec;
-\draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
-\draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
-\draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\vphantom{d}\ldots$};
-\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^*$};
-\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
-\draw \secondcircle;
-\node [above] at (current bounding box.north -| a) {$\mathcal{L}(G(\err\sigma, d^*))$};
-\node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
-\end{tikzpicture}
-}
-\end{minipage}
-\caption{LED is computed gradually by incrementing $d$ until $\mathcal{L}^\cap_{d}\neq \varnothing$.}
-\end{figure}
+%\begin{figure}[H]
+%\begin{minipage}[c]{0.23\textwidth}
+%\centering
+%\resizebox{\textwidth}{!}{
+%\begin{tikzpicture}[
+%dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
+%node contents={}}
+%]
+%\def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
+%\def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
+%\def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
+%\def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
+%\def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
+%\begin{scope}
+%\clip \secondcircle;
+%\fill[black!15] \firstcircle;
+%\end{scope}
+%\draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
+%\draw [dashed] \firstcirclea;
+%\draw [dashed] \firstcircleb;
+%\draw [dashed] \firstcirclec;
+%\draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
+%\draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
+%\draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\vphantom{d}\ldots$};
+%\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^*$};
+%\draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
+%\draw \secondcircle;
+%\node [above] at (current bounding box.north -| a) {$\mathcal{L}(G(\err\sigma, d^*))$};
+%\node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
+%\end{tikzpicture}
+%}
+%\end{minipage}
+%\caption{LED is computed gradually by incrementing $d$ until $\mathcal{L}^\cap_{d}\neq \varnothing$.}
+%\end{figure}
 
 %  \subsection{Gradient estimation}
 %
@@ -553,9 +564,24 @@ node contents={}}
 
 %  Although emptiness for CSLs is, in general, undecidable, unsatisfiability corresponds to emptiness of bounded CSLs. Anyhow, since we are working with bounded-width CSLs, everything collapses down to finite languages, which are always closed. Thus, Bar-Hillel and other elegant constructions become trivial when so restricted. So we can use it to decide impossible substrings and other decision problems which are typically intractable in more general settings.
 
- \section{Conclusion}
+%Assume a hypothetical $\Phi(\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ which takes a CFG, $\mathcal{G}'$, generating an arbitrary nonempty CFL, and an unparseable string, $\err{\sigma}$, and which returns element(s) of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
 
-  Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with LL and LR-style parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
+Let $G(\err{\sigma}: \Sigma^*, d: \mathbb{N}^+) \mapsto \mathbb{G}$ be the construction described above accepting a string, $\err{\sigma}$, an edit distance, $d$, and returning a grammar that accepts the language of all strings within Levenshtein radius $d$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit(s), we must find the least $d$ such that $\mathcal{L}^\cap_d := \mathcal{L}(G(\err\sigma, d)) \cap \mathcal{L}(\mathcal{G}')$ is nonempty, i.e.: \linebreak (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq d^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}(G(\err{\sigma}, d^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < d^*]$.
+To satisfy these criteria, it suffices to check $d \in (1, d_{\max}]$ by encoding the Levenshtein automata and the original grammar as a single SAT formula, call it $\varphi_d(\cdot)$, and gradually admitting new acceptance states at increasing radii until either (1) a satisfying assignment is found or (2) $d_{\max}$ is attained. More precisely:
+
+\begin{equation*}
+\varphi_{d+1} := \begin{cases}
+\varphi[\tilde{\sigma}\in\mathcal{L}(G(\err\sigma, d)) \land \tilde{\sigma}\in \mathcal{L}(\mathcal{G}')] & \text{if $d=1$ or SAT}.\\
+\varphi_{d} \oplus \bigoplus_{\{q \in Q \mid \delta(q, q_{n,0}) = d+1\}}\varphi[S \rightarrow q] & \text{Otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(\mathcal{G}')}|\sigma|)$}.
+\end{cases}
+\end{equation*}
+
+This procedure will terminate in either the number of steps required to overwrite every symbol in $\err{\sigma}$, or the length of the shortest string in $\mathcal{L}(\mathcal{G}')$, whichever is greater.
+%\noindent The function $\varphi_{d+1}(\mathcal{G}', \err{\sigma})$ is a realizer of $\Phi$.
+
+\section{Conclusion}
+
+  Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with traditional parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
 
   \bibliography{../bib/acmart}
 \end{document}
