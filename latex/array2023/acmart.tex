@@ -29,12 +29,14 @@
 %\setcopyright{rightsretained}
 %\copyrightyear{2018}           %% If different from \acmYear
 
+\bibstyle{acmart}
 \input{preamble.tex}
+
 \begin{document}
 
   \title{Linear Conjunctive Reachability as Tensor Completion}
   \begin{abstract}
-    Brzozowski (1964) defines a regular expression derivative as the suffixes which complete a known prefix. In this work, we establish a Galois connection with Valiant's (1975) fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection, i.e., conjunctive languages, illustrating how to lower conjunctive language recognition onto a system of multilinear equations over finite fields. In addition to its theoretical value, this connection has yielded a number of useful applications in incremental parsing, code completion and program repair.% For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries.
+    Brzozowski (1964) defines a regular expression derivative as the suffixes which complete a known prefix. In this work, we establish a Galois connection with Valiant's (1975) fixpoint construction in the context-free setting, and further extend their work into the hierarchy of bounded context-sensitive languages realizable by finite CFL intersection. We then show how to decide various language recognition, intersection and membership queries using multilinear systems of equations over finite fields. In addition to its theoretical value, this connection demonstrates a number of practical applications in incremental parsing, code completion and program repair.% For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries.
   \end{abstract}
 
   \author{Breandan Mark Considine}
@@ -57,7 +59,7 @@
     X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-5pt}
 
   \begin{align*}
       M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -78,26 +80,27 @@
 
   \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$
 
-  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}. %, who shows its time complexity to be $\mathcal{O}(n^\omega)$ where $\omega$ is the least matrix multiplication upper bound (currently, $\omega < 2.77$).
+  \noindent Full details of the bisimilarity between parsing and matrix multiplication can be found in Valiant~\cite{valiant1975general} and Lee~\cite{lee2002fast}, who shows its complexity to be $\mathcal{O}(n^\omega)$ where $\omega < 2.77$.
 
 %  When the string is altered, we can reuse prior work by only recomputing affected submatrices, at worst quadratic in terms of $|\Sigma^*|$ assuming $\mathcal{O}(1)$ for each nonterminal subset join, $V_1'\otimes V_2'$. Visualized as a trellis automata:
 
-  Incrementalizing the fixpoint solver allows us to handle Levenshtein edits with quadratic cost in $|\Sigma^*|$ assuming $\mathcal{O}(1)$ for each vector dot product. Visualized as a trellis automata:
+  Further optimizations, e.g., incremental Levenshtein edits with quadratic cost in terms of $|\Sigma^*|$ are possible under mild sparsity assumptions. Depicted below as trellis automata~\cite{okhotin2004equivalence},
 
   \begin{figure}[H]
   \resizebox{0.47\textwidth}{!}{
   \begin{center}
     \begin{tabular}{ c c c c c }
-      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
+      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\\\
       Append: $\mathcal{O}(n+1)$                               & & Delete: $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$                                       & & Insert: $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$
     \end{tabular}
   \end{center}
   }
   \end{figure}
 
-  Incremental parsing is closely related to \textit{dynamic matrix inverse} in the linear algebra setting, and \textit{incremental transitive closure} with vertex updates in the graphical setting.
+  \vspace{-10pt}
+  \noindent incremental parsing is also closely related to \textit{dynamic matrix inversion}~\cite{sankowski2004dynamic} in the linear algebraic setting, and \textit{incremental transitive closure} in the literature on dynamic graphs~\cite{hanauer2021recent}.
 
-  \pagebreak\section{Galois Representation}
+  \pagebreak\section{Galois representation}
 
   Note that $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$ and is thus representable as a fixed-length vector using the characteristic function, $\mathds{1}$. In particular, $\oplus, \otimes$ are redefined as $\boxplus, \boxtimes$ over bitvectors so the following diagram commutes,\footnote{Hereinafter, we use gray highlighting to distinguish between expressions containing only \highlight{\text{constants}} from those which may contain free variables.}
 
@@ -297,7 +300,7 @@
     \end{tabular}
   \end{table}
 
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together:\vspace{-5pt}
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. We can encode $\bigcap_{i=1}^c \mathcal{L}(\mathcal{G}_i)$ as a polygonal prism with upper-triangular matrices adjoined to each rectangular face. More precisely, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ and bind them together.\vspace{-5pt}
 
   \begin{align}
     \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
@@ -312,9 +315,9 @@
     \caption{Orientations of a $\bigcap_{i = 1}^4 \mathcal{L}(\mathcal{G}_i) \cap \Sigma ^6$ configuration. As $c \rightarrow \infty$, this shape approximates a circular cone whose symmetric axis joins $\sigma_i$ with orthonormal unit productions $w_i \rightarrow t_\cap$, and $S_i \in \Lambda^*_{\sigma}?$ represented by the outermost bitvector inhabitants. Equations of this form are equiexpressive with the family of CSLs realizable by finite CFL intersection.}
   \end{figure}
 
-  \section{Levenshtein Reachability}
+  \section{Levenshtein reachability}
 
-  Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space is approximated by an acyclic NFA~\cite{schulz2002fast}, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions finitely instantiate the transition dynamics:
+  Levenshtein reachability is recognized by the nondeterministic infinite automaton (NIA) whose topology $\mathcal{L} = \knightkingarrow$ can be factored into a product of (a) the monotone Chebyshev topology $\kingarrow$, equipped with horizontal transitions accepting $\sigma_{i}$ and vertical transitions accepting Kleene stars, and (b) the monotone knight's topology $\knightarrow$, equipped with transitions accepting $\sigma_{i+2}$. The structure of this space can be finitely approximated by an acyclic NFA~\cite{schulz2002fast}, populated by accept states within radius $k$ of $q_{n,0}$, or equivalently, a left-linear CFG whose productions bisimulate the transition dynamics:
 
   \begin{figure}[H]
     \begin{minipage}[c]{0.45\textwidth}
@@ -566,22 +569,22 @@
 
 %Assume a hypothetical $\Phi(\mathcal{G}': \mathbb{G}, \err{\sigma}: \Sigma^*)\mapsto \tilde{\sigma}: \mathcal{L}(\mathcal{G}')$ which takes a CFG, $\mathcal{G}'$, generating an arbitrary nonempty CFL, and an unparseable string, $\err{\sigma}$, and which returns element(s) of $\mathcal{L}(\mathcal{G}')$ most similar to $\err{\sigma}$ according to their Levenshtein distance $\Delta(\err{\sigma}, \cdot)$.
 
-Let $G(\err{\sigma}: \Sigma^*, d: \mathbb{N}^+) \mapsto \mathbb{G}$ be the construction described above accepting a string, $\err{\sigma}$, an edit distance, $d$, and returning a grammar that accepts the language of all strings within Levenshtein radius $d$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit(s), we must find the least $d$ such that $\mathcal{L}^\cap_d := \mathcal{L}(G(\err\sigma, d)) \cap \mathcal{L}(\mathcal{G}')$ is nonempty, i.e.: \linebreak (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq d^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}(G(\err{\sigma}, d^*))$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < d^*]$.
-To satisfy these criteria, it suffices to check $d \in (1, d_{\max}]$ by encoding the Levenshtein automata and the original grammar as a single SAT formula, call it $\varphi_d(\cdot)$, and gradually admitting new acceptance states at increasing radii until either (1) a satisfying assignment is found or (2) $d_{\max}$ is attained. More precisely:
+Let $G(\err{\sigma}: \Sigma^*, d: \mathbb{N}^+) \mapsto \mathbb{G}$ be the construction described above accepting a string, $\err{\sigma}$, an edit distance, $d$, and returning a grammar that accepts the language of all strings within Levenshtein radius $d$ of $\err{\sigma}$. To find the language edit distance and corresponding least-distance edit(s), we must find the least $d$ such that $\mathcal{L}^\cap_d := \mathcal{L}\big(G(\err\sigma, d)\big) \cap \mathcal{L}(\mathcal{G}')$ is nonempty, i.e.: \linebreak (1) $\tilde{\sigma}\in\mathcal{L}(\mathcal{G}')$, and (2) $\Delta(\err{\sigma}, \tilde{\sigma}) \leq d^* \Longleftrightarrow \tilde{\sigma} \in \mathcal{L}\big(G(\err{\sigma}, d^*)\big)$, and (3) $\not\exists \sigma' \in \mathcal{L}(\mathcal{G}').[\Delta(\err{\sigma}, \sigma') < d^*]$.
+To satisfy these criteria, it suffices to check $d \in (0, d_{\max}]$ by encoding the Levenshtein automata and the original grammar as a single polynomial, call it $\varphi_d[\cdot]$, then gradually introduce new accepting states at increasing radii until either (1) a satisfying assignment is found or (2) $d_{\max}$ is attained. Defined recursively,
 
 \begin{equation*}
 \varphi_{d+1} := \begin{cases}
-\varphi[\tilde{\sigma}\in\mathcal{L}(G(\err\sigma, d)) \land \tilde{\sigma}\in \mathcal{L}(\mathcal{G}')] & \text{if $d=1$ or SAT}.\\
-\varphi_{d} \oplus \bigoplus_{\{q \in Q \mid \delta(q, q_{n,0}) = d+1\}}\varphi[S \rightarrow q] & \text{Otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(\mathcal{G}')}|\sigma|)$}.
+\varphi\big[q_{\{i, j \mid n-i+j\leq 1\}} \subset \Lambda_{\tilde{\sigma}}^*\big(G(\err\sigma, d_{\max})\big)\big] & \text{if $d=1$, or}\\
+\varphi_{d} \oplus \varphi\big[q_{\{i,j \mid n-i+j=d+1\}} \subset \Lambda_{\tilde{\sigma}}^*\big(G(\cdot, \cdot)\big)\big] & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(\mathcal{G}')}|\sigma|)$}.
 \end{cases}
 \end{equation*}
 
-This procedure will terminate in either the number of steps required to overwrite every symbol in $\err{\sigma}$, or the length of the shortest string in $\mathcal{L}(\mathcal{G}')$, whichever is greater.
+\noindent $\varphi$ will surely terminate in at most either the number of steps required to overwrite every symbol in $\err{\sigma}$, or the length of the shortest string in $\mathcal{L}(\mathcal{G}')$, whichever is greater.
 %\noindent The function $\varphi_{d+1}(\mathcal{G}', \err{\sigma})$ is a realizer of $\Phi$.
 
 \section{Conclusion}
 
-  Not only is linear algebra over finite fields an expressive language for inference, but also an efficient framework for inference on languages themselves. We illustrate a few of its applications for parsing incomplete strings and repairing syntax errors in context- free and sensitive languages. In contrast with traditional parsers, our technique can recover partial forests from invalid strings by examining the structure of $M^*$. In future work, we hope to extend our method to more natural grammars like PCFG and LCFRS.
+  Not only is multilinear algebra over finite fields an expressive language for inference, but also a natural one for studying decision problems on formal languages themselves. Galois fields enjoy rich connections to algebraic complexity theory, and are particularly amenable to both SAT encoding and GPU acceleration. In this work, we illustrate a few applications for code completion and syntax repair in context-free and linear conjunctive languages. In the future, we plan to extend our method to stochastic grammars like PCFGs and HMMs.
 
-  \bibliography{../bib/acmart}
+\bibliography{../bib/acmart}
 \end{document}
