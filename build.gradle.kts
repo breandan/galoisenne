@@ -7,10 +7,10 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.8.20-RC2"
+  kotlin("multiplatform") version "1.8.20"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.46.0"
-  id("io.github.gradle-nexus.publish-plugin") version "1.2.0"
+  id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
@@ -117,7 +117,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
       }
     }
 
@@ -178,7 +178,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.0.1")
-        implementation("org.slf4j:slf4j-simple:2.0.6")
+        implementation("org.slf4j:slf4j-simple:2.0.7")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
