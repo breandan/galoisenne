@@ -351,12 +351,16 @@ fun CJL.synthesize(
       } catch (ie: InterruptedException) {
         ff.clear()
         throw ie
-      } catch (e: NullPointerException) {
+      } catch (npe: NullPointerException) {
+        System.err.println("NPE when solving: ${tokens.joinToString(" ")}")
+        npe.printStackTrace()
         ff.clear()
-        break
-      } catch (e: OutOfMemoryError) { // Does this really work?
+        return@sequence
+      } catch (oom: OutOfMemoryError) { // Does this really work?
+        System.err.println("OOM when solving: ${tokens.joinToString(" ")}")
+        oom.printStackTrace()
         ff.clear()
-        break
+        return@sequence
       }
     }
   }

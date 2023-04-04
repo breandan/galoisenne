@@ -28,6 +28,21 @@ class CJL(vararg cfls: CFL) {
   private fun <T> intersect(item: CFG.() -> Set<T>): Set<T> = cfgs.map { it.item() }.intersect()
 }
 
+fun CJL.upwardClosure(terminals: Set<Σᐩ>): CJL =
+  CJL(*cfgs.map { CFL(it.upwardClosure(terminals)) }.toTypedArray())
+
+// Given a set of tokens from a string, find the upward closure of the CFG w.r.t. the tokens.
+fun CFG.upwardClosure(tokens: Set<Σᐩ>): CFG =
+  tokens.intersect(terminals).let {
+    if (it.isEmpty()) this
+    else (graph.reversed().transitiveClosure(tokens) - terminals)
+      .let { closure -> filter { it.LHS in closure } }
+  }
+
+fun pruneInactiveRules(cfg: CFG): CFG =
+  TODO("Identify and prune all nonterminals t generating" +
+    "a finite language rooted at t and disjoint from the upward closure.")
+
 // REL ⊂ CFL ⊂ CJL
 operator fun REL.contains(s: Σᐩ): Boolean = s in reg.asCFG.language
 operator fun CFL.contains(s: Σᐩ): Boolean = cfg.parse(s) != null
