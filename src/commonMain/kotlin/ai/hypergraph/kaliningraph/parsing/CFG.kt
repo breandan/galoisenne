@@ -43,17 +43,50 @@ val CFG.noNonterminalStubs: CFG by cache {
     .also { it.blocked.addAll(blocked) }
 }
 
+val CFG.nonterminalFormulas: Map<Σᐩ, String> by cache {
+  nonterminals.associateWith { nt -> toFormula(nt) }
+}
+
+/**
+ * Maps each nonterminal to terminals that can be reached from it. At least one of
+ * each of these terminals must be present in the input string for the nonterminal
+ * to be matched. If a string does not contain any of these terminals, we know the
+ * nonterminal is not contained in the parse tree, and can prune it from the CFG.
+ *
+ *       Γ |- A -> a
+ *       -----------------------
+ *       Γ |- φ[A] = a
+ *
+ *       Γ |- A -> B C
+ *       -----------------------
+ *       Γ |- φ[A] = φ[B] ʌ φ[C]
+ *
+ *       Γ |- A -> B | C
+ *       -----------------------
+ *       Γ |- φ[A] = φ[B] v φ[C]
+ */
+
+fun CFG.toFormula(nt: Σᐩ): String =
+  when {
+    nt in terminals -> nt
+    nt !in nonterminals -> "false"
+    else -> bimap[nt].joinToString(" or ", "( ", " )") {
+      it.joinToString(" and ", "( ", " )") { toFormula(it) }
+    }
+  } // TODO: fix stack blowup when there is a cycle in the CFG
+
+
 // Prunes all nonterminals that represent a finite set of terminals down to the root
 // Usually this is a tree-like structure, but it can also be a DAG of nonterminals
 val CFG.pruneTreelikeNonterminals: CFG by cache {
   println("Pruning treelike nonterminals!")
   filter { it.RHS.any { !it.isTreelikeNonterminalIn(this) } || "ε" in it.LHS }.toSet()
-    .let {
-      val brokenReferences = it.terminals
-      it +
+    .let { cfg ->
+      val brokenReferences = cfg.terminals
+      cfg +
           // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
           brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
-          it.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
+          cfg.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
           // Restore old nonterminal stubs for unreferenced unit productions
           brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
             .map { l -> filter { it.LHS == l }.map { l to it.RHS } }

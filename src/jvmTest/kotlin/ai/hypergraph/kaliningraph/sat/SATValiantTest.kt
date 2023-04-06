@@ -769,4 +769,13 @@ class SATValiantTest {
         println(sumCFG.parseTable("1 + ( 3 + - 2 ) + 4").toHtmlPage().show())
         println(sumCFG.parseTable("1 + <S> + 4").toHtmlPage().show())
     }
+
+  /*
+ ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testBoolFormula"
+ */
+  @Test
+  fun testBoolFormula() {
+    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
+//    println(sumCFG.nonterminalFormulas["S"])
+  }
 }
