@@ -6,6 +6,14 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
+import org.logicng.handlers.TimeoutOptimizationHandler
+import org.logicng.transformations.BDDNormalFormTransformation
+import org.logicng.transformations.cnf.*
+import org.logicng.transformations.simplification.AdvancedSimplifier
+import org.logicng.transformations.simplification.AdvancedSimplifierConfig
+import org.logicng.transformations.simplification.DefaultRatingFunction
+import kotlin.system.measureTimeMillis
 import kotlin.test.*
 
 /*
@@ -691,6 +699,30 @@ class SATValiantTest {
   }
 
   /*
+  SATValiantTest[jvm] > testLevensheteinIntersection()[jvm] STANDARD_OUT
+    Disabling nonterminal stubs!
+    Disabling nonterminal stubs!
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 62667 constraints in 228ms
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 18100 constraints in 22ms
+    A5 ∩ L5: [1 + 2 + 7, 1 + 2 + 8, 1 + 2 + 6, 1 + 2 + 1, 1 + 2 + 5, 1 + 2 + 2, 1 + 2 + 9, 1 + 2 + 4, 1 + 2 + 3, 1 + 2 + - 3, 1 + 2 + - 7, 1 + 2 + - 5, 1 + 2 + - 4, 1 + 2 + - 8, 1 + 2 + - 2, 1 + 2 + - 1, 1 + 2 + - 9, 1 + 2 + - 6, 1 + 2 + 7 + 6, 1 + 2 + 8 + 6, 1 + 2 + 5 + 6, 1 + 2 + 6 + 6, 1 + 2 + 4 + 6, 1 + 2 + 4 + 2, 1 + 2 + 4 + 1, 1 + 2 + 4 + 9, 1 + 2 + 4 + 3, 1 + 2 + 4 + 7, 1 + 2 + 4 + 5, 1 + 2 + 4 + 8, 1 + 2 + 4 + 4, 1 + 2 + 6 + 9, 1 + 2 + 8 + 9, 1 + 2 + 8 + 2, 1 + 2 + 6 + 2, 1 + 2 + 6 + 1, 1 + 2 + 8 + 1, 1 + 2 + 5 + 1, 1 + 2 + 3 + 1, 1 + 2 + 1 + 1, 1 + 2 + 2 + 1, 1 + 2 + 9 + 1, 1 + 2 + 7 + 1, 1 + 2 + 3 + 6, 1 + 2 + 6 + 7, 1 + 2 + 1 + 7, 1 + 2 + 2 + 7, 1 + 2 + 9 + 7, 1 + 2 + 7 + 7, 1 + 2 + 8 + 7, 1 + 2 + 5 + 7, 1 + 2 + 3 + 7, 1 + 2 + 5 + 5, 1 + 2 + 5 + 8, 1 + 2 + 5 + 4, 1 + 2 + 5 + 3, 1 + 2 + 5 + 2, 1 + 2 + 5 + 9, 1 + 2 + 3 + 5, 1 + 2 + 3 + 8, 1 + 2 + 3 + 4, 1 + 2 + 3 + 3, 1 + 2 + 3 + 2, 1 + 2 + 3 + 9, 1 + 2 + 8 + 5, 1 + 2 + 8 + 8, 1 + 2 + 8 + 4, 1 + 2 + 6 + 5, 1 + 2 + 6 + 8, 1 + 2 + 6 + 4, 1 + 2 + 6 + 3, 1 + 2 + 8 + 3, 1 + 2 + 7 + 3, 1 + 2 + 7 + 2, 1 + 2 + 7 + 9, 1 + 2 + 7 + 4, 1 + 2 + 7 + 5, 1 + 2 + 7 + 8, 1 + 2 + 2 + 8, 1 + 2 + 1 + 8, 1 + 2 + 9 + 8, 1 + 2 + 2 + 5, 1 + 2 + 2 + 6, 1 + 2 + 2 + 4, 1 + 2 + 2 + 2, 1 + 2 + 2 + 9, 1 + 2 + 2 + 3, 1 + 2 + 1 + 5, 1 + 2 + 1 + 6, 1 + 2 + 1 + 4, 1 + 2 + 1 + 2, 1 + 2 + 1 + 9, 1 + 2 + 1 + 3, 1 + 2 + 9 + 5, 1 + 2 + 9 + 6, 1 + 2 + 9 + 4, 1 + 2 + 9 + 2, 1 + 2 + 9 + 9, 1 + 2 + 9 + 3]
+    Synthesizing (8): _ _ _ _ _ _ _ _
+    Solver formed 118663 constraints in 272ms
+
+      Disabling nonterminal stubs!
+    Disabling nonterminal stubs!
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 282832 constraints in 854ms
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 80766 constraints in 121ms
+    A5 ∩ L5: [1 + 2 + 3, 1 + 2 + 4, 1 + 2 + 6, 1 + 2 + 5, 1 + 2 + 8, 1 + 2 + 9, 1 + 2 + 2, 1 + 2 + 1, 1 + 2 + 7, 1 + 2 + - 3, 1 + 2 + - 7, 1 + 2 + - 8, 1 + 2 + - 5, 1 + 2 + - 6, 1 + 2 + - 4, 1 + 2 + - 2, 1 + 2 + - 9, 1 + 2 + - 1, 1 + 2 + 7 + 8, 1 + 2 + 4 + 8, 1 + 2 + 8 + 8, 1 + 2 + 6 + 8, 1 + 2 + 5 + 8, 1 + 2 + 1 + 8, 1 + 2 + 3 + 8, 1 + 2 + 9 + 8, 1 + 2 + 2 + 8, 1 + 2 + 4 + 6, 1 + 2 + 4 + 4, 1 + 2 + 4 + 3, 1 + 2 + 4 + 5, 1 + 2 + 4 + 1, 1 + 2 + 4 + 2, 1 + 2 + 4 + 9, 1 + 2 + 4 + 7, 1 + 2 + 5 + 1, 1 + 2 + 5 + 6, 1 + 2 + 5 + 5, 1 + 2 + 5 + 7, 1 + 2 + 5 + 2, 1 + 2 + 5 + 9, 1 + 2 + 5 + 3, 1 + 2 + 5 + 4, 1 + 2 + 3 + 9, 1 + 2 + 7 + 9, 1 + 2 + 8 + 9, 1 + 2 + 6 + 9, 1 + 2 + 9 + 9, 1 + 2 + 1 + 9, 1 + 2 + 2 + 9, 1 + 2 + 2 + 3, 1 + 2 + 2 + 4, 1 + 2 + 2 + 1, 1 + 2 + 2 + 2, 1 + 2 + 2 + 6, 1 + 2 + 2 + 7, 1 + 2 + 2 + 5, 1 + 2 + 3 + 7, 1 + 2 + 7 + 7, 1 + 2 + 8 + 7, 1 + 2 + 6 + 7, 1 + 2 + 9 + 7, 1 + 2 + 1 + 7, 1 + 2 + 9 + 5, 1 + 2 + 9 + 6, 1 + 2 + 9 + 3, 1 + 2 + 9 + 4, 1 + 2 + 9 + 2, 1 + 2 + 9 + 1, 1 + 2 + 1 + 3, 1 + 2 + 1 + 4, 1 + 2 + 1 + 2, 1 + 2 + 1 + 1, 1 + 2 + 1 + 5, 1 + 2 + 1 + 6, 1 + 2 + 3 + 3, 1 + 2 + 3 + 4, 1 + 2 + 3 + 2, 1 + 2 + 3 + 1, 1 + 2 + 6 + 3, 1 + 2 + 6 + 4, 1 + 2 + 6 + 2, 1 + 2 + 6 + 1, 1 + 2 + 7 + 3, 1 + 2 + 8 + 3, 1 + 2 + 7 + 4, 1 + 2 + 8 + 4, 1 + 2 + 7 + 2, 1 + 2 + 7 + 1, 1 + 2 + 8 + 2, 1 + 2 + 8 + 1, 1 + 2 + 8 + 5, 1 + 2 + 8 + 6, 1 + 2 + 7 + 5, 1 + 2 + 7 + 6, 1 + 2 + 3 + 5, 1 + 2 + 6 + 5, 1 + 2 + 3 + 6, 1 + 2 + 6 + 6]
+    Synthesizing (8): _ _ _ _ _ _ _ _
+    Solver formed 541139 constraints in 1689ms
+
+   */
+
+  /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinCompleteness"
   */
   @Test
@@ -775,7 +807,17 @@ class SATValiantTest {
  */
   @Test
   fun testBoolFormula() {
-    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
+//    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
 //    println(sumCFG.nonterminalFormulas["S"])
+    measureTimeMillis {
+      val ops = listOf("&", "|")
+      val px = (0..10).joinToString(" ", "(") { "x$it ${ops.random()}" }.dropLast(2) + ")"
+      println(px)
+      val py = (0..10).joinToString(" ", "(") { "y$it ${ops.random()}" }.dropLast(2) + ")"
+      println(py)
+      val (x, y) = ff.parse(px) to ff.parse(py)
+      println((x eq y).transform(TseitinTransformation())
+      )
+    }.also { println("Time: ${it}ms") }
   }
 }

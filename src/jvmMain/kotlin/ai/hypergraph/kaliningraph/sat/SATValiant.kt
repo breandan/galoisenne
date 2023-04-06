@@ -228,10 +228,10 @@ fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
   rubix: SATRubix = constructRubix(tokens.size)
 ): Pair<Formula, SATRubix> =
-  isInGrammar(rubix) and
-    encodeTokens(rubix, tokens) and
-    uniquenessConstraints(rubix, tokens) and
-    reachabilityConstraints(tokens, rubix) to rubix
+  isInGrammar(rubix).also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")} and
+    encodeTokens(rubix, tokens).also { print("encodeTokens: ${it.numberOfNodes()},")} and
+    uniquenessConstraints(rubix, tokens).also { print("uniquenessConstraints: ${it.numberOfNodes()},")} and
+    reachabilityConstraints(tokens, rubix).also { println("reachabilityConstraints: ${it.numberOfNodes()}}")} to rubix
 
 // TODO: incrementalize
 fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
