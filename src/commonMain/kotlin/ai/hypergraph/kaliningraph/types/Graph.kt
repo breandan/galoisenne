@@ -116,13 +116,13 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
       }
     }
 
-  fun reachSequence(from: Set<V>, terminateOnFixpoint: Boolean = false): Sequence<Set<V>> =
+  fun reachSequence(from: Set<V>, ADJ: BooleanMatrix = A_AUG, terminateOnFixpoint: Boolean = false): Sequence<Set<V>> =
     sequence {
       var B = BooleanMatrix(vertices.size, 1, vertices.map { it in from })
       while (true) {
         // Check if fixpoint reached
         val OLD_B = B
-        B = A_AUG * B
+        B = ADJ * B
         val toYield = B.data.mapIndexed { i, b -> if (b) index[i] else null }.filterNotNull().toSet()
         val same = B == OLD_B
         if (same && terminateOnFixpoint) break

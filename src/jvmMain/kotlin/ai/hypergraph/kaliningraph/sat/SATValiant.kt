@@ -43,21 +43,36 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
+fun CFG.downwardsReachabilitySeq() = graph
+  .let { it.reachSequence(it.vertices.filter { it.label in startSymbols }.toSet()) }
+  .map { it.map { it.label }.toSet() }
+
+fun CFG.upwardsReachabilitySeq() = graph
+  .let { it.reachSequence(it.vertices.filter { it.label in terminals }.toSet(), it.A_AUG.transpose) }
+  .drop(2).map { it.map { it.label }.toSet() }
+
 fun SATRubix.valiantMatEq(cfg: CFG, that: SATRubix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
   else {
-    val reachSeq = cfg.graph
-      .let { it.reachSequence(it.vertices.filter { it.label in cfg.startSymbols }.toSet()) }
-      .map { it.map { it.label }.filter { it in cfg.nonterminals }.map { cfg.bindex[it] }.toSet() }.iterator()
+// Only compare nonterminals that are reachable in 1-step from the start symbol at the second-to-top level,
+// and the nonterminals that are reachable in 2-steps from the start symbol at the third-to-top level, etc.
+    val downReachSeq = cfg.downwardsReachabilitySeq().take(diagonals.size - 2).toList()
+    val upReachSeq = cfg.upwardsReachabilitySeq().take(diagonals.size - 2).toList().reversed()
 
-    diagonals.drop(1).dropLast(1).flatten().zip(that.diagonals.drop(1).dropLast(1).flatten()).reversed()
-      .map { (a, b) -> vecsEqAtIndices(a, b, reachSeq.next()) }.reduce { acc, satf -> acc and satf } and
-        cfg.startSymbols.map {
-          diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
-        }.reduce { acc, satf -> acc and satf }
+    val reachSeq = downReachSeq.zip(upReachSeq)
+      .map { (a, b) -> a intersect b intersect cfg.nonterminals }
+      .map { it.map { cfg.bindex[it] }.toSet() }
+
+    // Only compare nonterminals at locations that are bidirectionally reachable, i.e.,
+    // whcih could possibly participate in any parse forest at each level in the lattice.
+    diagonals.zip(that.diagonals).drop(1).dropLast(1).reversed()
+      .mapIndexed { i, (va, vb) ->
+        va.zip(vb).map { (a, b) -> vecsEqAtIndices(a, b, reachSeq[i]) }.reduce { acc, satf -> acc and satf } and
+          cfg.startSymbols.map {
+            diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
+          }.reduce { acc, satf -> acc and satf }
+      }.reduce { acc, satf -> acc and satf }
   }
-// TODO: Only compare nonterminals that are reachable in 1-step from the start symbol at the second-to-last level,
-//       and the nonterminals that are reachable in 2-steps from the start symbol at the third-to-last level, etc.
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
