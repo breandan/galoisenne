@@ -139,7 +139,7 @@ class Bindex(cfg: CFG) {
   val indexedNTs: Array<Σᐩ> = cfg.nonterminals.toTypedArray()
   val ntIndices: Map<Σᐩ, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
   operator fun get(i: Int) = indexedNTs[i]
-  operator fun get(s: Σᐩ) = ntIndices[s] ?: 1.also { println(s); null!! }
+  operator fun get(s: Σᐩ) = ntIndices[s] ?: 1.also { println("Unknown nonterminal: $s"); null!! }
 }
 // Maps variables to expansions and expansions to variables in a grammar
 class BiMap(cfg: CFG) {

@@ -699,19 +699,7 @@ class SATValiantTest {
   }
 
   /*
-  SATValiantTest[jvm] > testLevensheteinIntersection()[jvm] STANDARD_OUT
-    Disabling nonterminal stubs!
-    Disabling nonterminal stubs!
-    Synthesizing (7): _ _ _ _ _ _ _
-    Solver formed 62667 constraints in 228ms
-    Synthesizing (7): _ _ _ _ _ _ _
-    Solver formed 18100 constraints in 22ms
-    A5 ∩ L5: [1 + 2 + 7, 1 + 2 + 8, 1 + 2 + 6, 1 + 2 + 1, 1 + 2 + 5, 1 + 2 + 2, 1 + 2 + 9, 1 + 2 + 4, 1 + 2 + 3, 1 + 2 + - 3, 1 + 2 + - 7, 1 + 2 + - 5, 1 + 2 + - 4, 1 + 2 + - 8, 1 + 2 + - 2, 1 + 2 + - 1, 1 + 2 + - 9, 1 + 2 + - 6, 1 + 2 + 7 + 6, 1 + 2 + 8 + 6, 1 + 2 + 5 + 6, 1 + 2 + 6 + 6, 1 + 2 + 4 + 6, 1 + 2 + 4 + 2, 1 + 2 + 4 + 1, 1 + 2 + 4 + 9, 1 + 2 + 4 + 3, 1 + 2 + 4 + 7, 1 + 2 + 4 + 5, 1 + 2 + 4 + 8, 1 + 2 + 4 + 4, 1 + 2 + 6 + 9, 1 + 2 + 8 + 9, 1 + 2 + 8 + 2, 1 + 2 + 6 + 2, 1 + 2 + 6 + 1, 1 + 2 + 8 + 1, 1 + 2 + 5 + 1, 1 + 2 + 3 + 1, 1 + 2 + 1 + 1, 1 + 2 + 2 + 1, 1 + 2 + 9 + 1, 1 + 2 + 7 + 1, 1 + 2 + 3 + 6, 1 + 2 + 6 + 7, 1 + 2 + 1 + 7, 1 + 2 + 2 + 7, 1 + 2 + 9 + 7, 1 + 2 + 7 + 7, 1 + 2 + 8 + 7, 1 + 2 + 5 + 7, 1 + 2 + 3 + 7, 1 + 2 + 5 + 5, 1 + 2 + 5 + 8, 1 + 2 + 5 + 4, 1 + 2 + 5 + 3, 1 + 2 + 5 + 2, 1 + 2 + 5 + 9, 1 + 2 + 3 + 5, 1 + 2 + 3 + 8, 1 + 2 + 3 + 4, 1 + 2 + 3 + 3, 1 + 2 + 3 + 2, 1 + 2 + 3 + 9, 1 + 2 + 8 + 5, 1 + 2 + 8 + 8, 1 + 2 + 8 + 4, 1 + 2 + 6 + 5, 1 + 2 + 6 + 8, 1 + 2 + 6 + 4, 1 + 2 + 6 + 3, 1 + 2 + 8 + 3, 1 + 2 + 7 + 3, 1 + 2 + 7 + 2, 1 + 2 + 7 + 9, 1 + 2 + 7 + 4, 1 + 2 + 7 + 5, 1 + 2 + 7 + 8, 1 + 2 + 2 + 8, 1 + 2 + 1 + 8, 1 + 2 + 9 + 8, 1 + 2 + 2 + 5, 1 + 2 + 2 + 6, 1 + 2 + 2 + 4, 1 + 2 + 2 + 2, 1 + 2 + 2 + 9, 1 + 2 + 2 + 3, 1 + 2 + 1 + 5, 1 + 2 + 1 + 6, 1 + 2 + 1 + 4, 1 + 2 + 1 + 2, 1 + 2 + 1 + 9, 1 + 2 + 1 + 3, 1 + 2 + 9 + 5, 1 + 2 + 9 + 6, 1 + 2 + 9 + 4, 1 + 2 + 9 + 2, 1 + 2 + 9 + 9, 1 + 2 + 9 + 3]
-    Synthesizing (8): _ _ _ _ _ _ _ _
-    Solver formed 118663 constraints in 272ms
-
-      Disabling nonterminal stubs!
-    Disabling nonterminal stubs!
+// Original constraint system:
     Synthesizing (7): _ _ _ _ _ _ _
     Solver formed 282832 constraints in 854ms
     Synthesizing (7): _ _ _ _ _ _ _
@@ -720,6 +708,24 @@ class SATValiantTest {
     Synthesizing (8): _ _ _ _ _ _ _ _
     Solver formed 541139 constraints in 1689ms
 
+// With start symbols fixpoint constraint optimization:
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 62667 constraints in 228ms
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 18100 constraints in 22ms
+    A5 ∩ L5: [1 + 2 + 7, 1 + 2 + 8, 1 + 2 + 6, 1 + 2 + 1, 1 + 2 + 5, 1 + 2 + 2, 1 + 2 + 9, 1 + 2 + 4, 1 + 2 + 3, 1 + 2 + - 3, 1 + 2 + - 7, 1 + 2 + - 5, 1 + 2 + - 4, 1 + 2 + - 8, 1 + 2 + - 2, 1 + 2 + - 1, 1 + 2 + - 9, 1 + 2 + - 6, 1 + 2 + 7 + 6, 1 + 2 + 8 + 6, 1 + 2 + 5 + 6, 1 + 2 + 6 + 6, 1 + 2 + 4 + 6, 1 + 2 + 4 + 2, 1 + 2 + 4 + 1, 1 + 2 + 4 + 9, 1 + 2 + 4 + 3, 1 + 2 + 4 + 7, 1 + 2 + 4 + 5, 1 + 2 + 4 + 8, 1 + 2 + 4 + 4, 1 + 2 + 6 + 9, 1 + 2 + 8 + 9, 1 + 2 + 8 + 2, 1 + 2 + 6 + 2, 1 + 2 + 6 + 1, 1 + 2 + 8 + 1, 1 + 2 + 5 + 1, 1 + 2 + 3 + 1, 1 + 2 + 1 + 1, 1 + 2 + 2 + 1, 1 + 2 + 9 + 1, 1 + 2 + 7 + 1, 1 + 2 + 3 + 6, 1 + 2 + 6 + 7, 1 + 2 + 1 + 7, 1 + 2 + 2 + 7, 1 + 2 + 9 + 7, 1 + 2 + 7 + 7, 1 + 2 + 8 + 7, 1 + 2 + 5 + 7, 1 + 2 + 3 + 7, 1 + 2 + 5 + 5, 1 + 2 + 5 + 8, 1 + 2 + 5 + 4, 1 + 2 + 5 + 3, 1 + 2 + 5 + 2, 1 + 2 + 5 + 9, 1 + 2 + 3 + 5, 1 + 2 + 3 + 8, 1 + 2 + 3 + 4, 1 + 2 + 3 + 3, 1 + 2 + 3 + 2, 1 + 2 + 3 + 9, 1 + 2 + 8 + 5, 1 + 2 + 8 + 8, 1 + 2 + 8 + 4, 1 + 2 + 6 + 5, 1 + 2 + 6 + 8, 1 + 2 + 6 + 4, 1 + 2 + 6 + 3, 1 + 2 + 8 + 3, 1 + 2 + 7 + 3, 1 + 2 + 7 + 2, 1 + 2 + 7 + 9, 1 + 2 + 7 + 4, 1 + 2 + 7 + 5, 1 + 2 + 7 + 8, 1 + 2 + 2 + 8, 1 + 2 + 1 + 8, 1 + 2 + 9 + 8, 1 + 2 + 2 + 5, 1 + 2 + 2 + 6, 1 + 2 + 2 + 4, 1 + 2 + 2 + 2, 1 + 2 + 2 + 9, 1 + 2 + 2 + 3, 1 + 2 + 1 + 5, 1 + 2 + 1 + 6, 1 + 2 + 1 + 4, 1 + 2 + 1 + 2, 1 + 2 + 1 + 9, 1 + 2 + 1 + 3, 1 + 2 + 9 + 5, 1 + 2 + 9 + 6, 1 + 2 + 9 + 4, 1 + 2 + 9 + 2, 1 + 2 + 9 + 9, 1 + 2 + 9 + 3]
+    Synthesizing (8): _ _ _ _ _ _ _ _
+    Solver formed 118663 constraints in 272ms
+
+// With n-reachability fixpoint constraint optimization:
+
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 52508 constraints in 245ms
+    Synthesizing (7): _ _ _ _ _ _ _
+    Solver formed 16829 constraints in 30ms
+    A5 ∩ L5: [1 + 2 + 5, 1 + 2 + 4, 1 + 2 + 8, 1 + 2 + 9, 1 + 2 + 3, 1 + 2 + 1, 1 + 2 + 6, 1 + 2 + 7, 1 + 2 + 2, 1 + 2 + - 8, 1 + 2 + - 4, 1 + 2 + - 9, 1 + 2 + - 2, 1 + 2 + - 1, 1 + 2 + - 3, 1 + 2 + - 5, 1 + 2 + - 7, 1 + 2 + - 6, 1 + 2 + 9 + 5, 1 + 2 + 3 + 5, 1 + 2 + 1 + 5, 1 + 2 + 8 + 5, 1 + 2 + 7 + 5, 1 + 2 + 4 + 5, 1 + 2 + 5 + 5, 1 + 2 + 6 + 5, 1 + 2 + 2 + 5, 1 + 2 + 5 + 3, 1 + 2 + 1 + 3, 1 + 2 + 9 + 3, 1 + 2 + 2 + 3, 1 + 2 + 3 + 3, 1 + 2 + 4 + 3, 1 + 2 + 8 + 3, 1 + 2 + 6 + 3, 1 + 2 + 7 + 3, 1 + 2 + 1 + 2, 1 + 2 + 9 + 2, 1 + 2 + 2 + 2, 1 + 2 + 6 + 2, 1 + 2 + 5 + 2, 1 + 2 + 8 + 2, 1 + 2 + 7 + 2, 1 + 2 + 4 + 2, 1 + 2 + 3 + 2, 1 + 2 + 4 + 1, 1 + 2 + 3 + 1, 1 + 2 + 2 + 1, 1 + 2 + 9 + 1, 1 + 2 + 1 + 1, 1 + 2 + 5 + 1, 1 + 2 + 6 + 1, 1 + 2 + 8 + 1, 1 + 2 + 7 + 1, 1 + 2 + 9 + 6, 1 + 2 + 3 + 6, 1 + 2 + 8 + 6, 1 + 2 + 7 + 6, 1 + 2 + 4 + 6, 1 + 2 + 5 + 6, 1 + 2 + 6 + 6, 1 + 2 + 2 + 6, 1 + 2 + 1 + 6, 1 + 2 + 2 + 7, 1 + 2 + 9 + 7, 1 + 2 + 1 + 7, 1 + 2 + 8 + 7, 1 + 2 + 6 + 7, 1 + 2 + 5 + 7, 1 + 2 + 4 + 7, 1 + 2 + 3 + 7, 1 + 2 + 7 + 7, 1 + 2 + 4 + 9, 1 + 2 + 4 + 4, 1 + 2 + 4 + 8, 1 + 2 + 6 + 4, 1 + 2 + 7 + 4, 1 + 2 + 8 + 4, 1 + 2 + 5 + 4, 1 + 2 + 3 + 4, 1 + 2 + 2 + 4, 1 + 2 + 1 + 4, 1 + 2 + 9 + 4, 1 + 2 + 9 + 8, 1 + 2 + 2 + 8, 1 + 2 + 1 + 8, 1 + 2 + 3 + 8, 1 + 2 + 5 + 8, 1 + 2 + 6 + 8, 1 + 2 + 7 + 8, 1 + 2 + 8 + 8, 1 + 2 + 2 + 9, 1 + 2 + 1 + 9, 1 + 2 + 9 + 9, 1 + 2 + 6 + 9, 1 + 2 + 7 + 9, 1 + 2 + 8 + 9, 1 + 2 + 5 + 9, 1 + 2 + 3 + 9]
+    Synthesizing (8): _ _ _ _ _ _ _ _
+    Solver formed 105229 constraints in 316ms
    */
 
   /*
@@ -809,15 +815,21 @@ class SATValiantTest {
   fun testBoolFormula() {
 //    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
 //    println(sumCFG.nonterminalFormulas["S"])
-    measureTimeMillis {
-      val ops = listOf("&", "|")
-      val px = (0..10).joinToString(" ", "(") { "x$it ${ops.random()}" }.dropLast(2) + ")"
-      println(px)
-      val py = (0..10).joinToString(" ", "(") { "y$it ${ops.random()}" }.dropLast(2) + ")"
-      println(py)
-      val (x, y) = ff.parse(px) to ff.parse(py)
-      println((x eq y).transform(TseitinTransformation())
-      )
-    }.also { println("Time: ${it}ms") }
+//    measureTimeMillis {
+//      val ops = listOf("&", "|")
+//      val px = (0..10).joinToString(" ", "(") { "x$it ${ops.random()}" }.dropLast(2) + ")"
+//      println(px)
+//      val py = (0..10).joinToString(" ", "(") { "y$it ${ops.random()}" }.dropLast(2) + ")"
+//      println(py)
+//      val (x, y) = ff.parse(px) to ff.parse(py)
+//      println((x eq y).transform(TseitinTransformation())
+//      )
+//    }.also { println("Time: ${it}ms") }
+
+    println(arithCFG.originalForm.prettyPrint())
+    arithCFG.originalForm.graph.let{
+      val start = it.vertices.first { it.label == "START" }
+      println(it.reachability(setOf(start), 1))
+    }
   }
 }

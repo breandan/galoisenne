@@ -32,6 +32,10 @@ infix fun SATVector.union(that: SATVector): SATVector =
 
 fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
+fun vecsEqAtIndices(a: SATVector, b: SATVector, indices: Set<Int>): Formula =
+  if (a.isEmpty() || b.isEmpty() || a.size != b.size) throw Exception("Shape mismatch! (${a.size}, ${b.size})")
+  else indices.map { i -> a[i] eq b[i] }.reduce { acc, satf -> acc and satf }
+
 infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch! ($size, ${that.size})")
   else if (contentEquals(that)) T
@@ -41,11 +45,17 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
 
 fun SATRubix.valiantMatEq(cfg: CFG, that: SATRubix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
-  else diagonals.drop(1).dropLast(1).flatten().zip(that.diagonals.drop(1).dropLast(1).flatten())
-    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf } and
-      cfg.startSymbols.map {
-        diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
-      }.reduce { acc, satf -> acc and satf }
+  else {
+    val reachSeq = cfg.graph
+      .let { it.reachSequence(it.vertices.filter { it.label in cfg.startSymbols }.toSet()) }
+      .map { it.map { it.label }.filter { it in cfg.nonterminals }.map { cfg.bindex[it] }.toSet() }.iterator()
+
+    diagonals.drop(1).dropLast(1).flatten().zip(that.diagonals.drop(1).dropLast(1).flatten()).reversed()
+      .map { (a, b) -> vecsEqAtIndices(a, b, reachSeq.next()) }.reduce { acc, satf -> acc and satf } and
+        cfg.startSymbols.map {
+          diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
+        }.reduce { acc, satf -> acc and satf }
+  }
 // TODO: Only compare nonterminals that are reachable in 1-step from the start symbol at the second-to-last level,
 //       and the nonterminals that are reachable in 2-steps from the start symbol at the third-to-last level, etc.
 

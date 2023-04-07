@@ -74,6 +74,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
     val map: Map<V, Int> = array.mapIndexed { index, a -> a to index }.toMap()
     //    operator fun get(it: IVertex<G, E, V>): Int? = map[it]
     operator fun get(it: Int): V = array[it]
+    operator fun get(v: V): Int = map[v] ?: -1
   }
 //  operator fun SpsMat.get(n0: V, n1: V) = this[index[n0]!!, index[n1]!!]
 //  operator fun SpsMat.set(n0: V, n1: V, value: Double) {
@@ -114,6 +115,25 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
         if (n in v.neighbors) lf(v, n) else 0.0
       }
     }
+
+  fun reachSequence(from: Set<V>, terminateOnFixpoint: Boolean = false): Sequence<Set<V>> =
+    sequence {
+      var B = BooleanMatrix(vertices.size, 1, vertices.map { it in from })
+      while (true) {
+        // Check if fixpoint reached
+        val OLD_B = B
+        B = A_AUG * B
+        val toYield = B.data.mapIndexed { i, b -> if (b) index[i] else null }.filterNotNull().toSet()
+        val same = B == OLD_B
+        if (same && terminateOnFixpoint) break
+        else if(same) while(true) { yield(toYield) }
+        else yield(toYield)
+      }
+    }
+
+  fun reachability(from: Set<V>, steps: Int): Set<V> =
+    (A_AUG.pow(steps - 1) * BooleanMatrix(vertices.size, 1, vertices.map { it in from }).also { println("v: ${it.shape()}") }).data
+      .mapIndexed { i, b -> if (b) index[i] else null }.filterNotNull().toSet()
 
   fun transitiveClosure(vtxs: Set<V>): Set<V>  =
     // edges.filter { it.source in vtxs }.map { it.target }
