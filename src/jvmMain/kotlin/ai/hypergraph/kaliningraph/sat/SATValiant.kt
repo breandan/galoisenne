@@ -39,10 +39,15 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
-infix fun SATRubix.valiantMatEq(that: SATRubix): Formula =
+fun SATRubix.valiantMatEq(cfg: CFG, that: SATRubix): Formula =
   if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
-  else diagonals.drop(1).flatten().zip(that.diagonals.drop(1).flatten())
-    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf }
+  else diagonals.drop(1).dropLast(1).flatten().zip(that.diagonals.drop(1).dropLast(1).flatten())
+    .map { (a, b) -> a vecEq b }.reduce { acc, satf -> acc and satf } and
+      cfg.startSymbols.map {
+        diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
+      }.reduce { acc, satf -> acc and satf }
+// TODO: Only compare nonterminals that are reachable in 1-step from the start symbol at the second-to-last level,
+//       and the nonterminals that are reachable in 2-steps from the start symbol at the third-to-last level, etc.
 
 // Encodes the constraint that bit-vectors representing a unary production
 // should not contain mixed NT symbols, e.g., given A->(, B->(, C->), D->)
@@ -214,7 +219,7 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
 fun CFG.isInGrammar(mat: SATRubix): Formula =
   startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
     // TODO: Cache this to speedup computation?
-    (mat valiantMatEq mat * mat)//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
+    (mat.valiantMatEq(this, mat * mat))//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 fun CFG.constructRubix(numTokens: Int): SATRubix =
   FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
@@ -228,10 +233,10 @@ fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
   rubix: SATRubix = constructRubix(tokens.size)
 ): Pair<Formula, SATRubix> =
-  isInGrammar(rubix).also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")} and
-    encodeTokens(rubix, tokens).also { print("encodeTokens: ${it.numberOfNodes()},")} and
-    uniquenessConstraints(rubix, tokens).also { print("uniquenessConstraints: ${it.numberOfNodes()},")} and
-    reachabilityConstraints(tokens, rubix).also { println("reachabilityConstraints: ${it.numberOfNodes()}}")} to rubix
+  isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
+    encodeTokens(rubix, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
+    uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
+    reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
 
 // TODO: incrementalize
 fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
