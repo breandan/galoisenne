@@ -1,10 +1,9 @@
 package ai.hypergraph.kaliningraph.sat
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import org.logicng.formulas.Formula
+import org.logicng.formulas.*
 import kotlin.collections.filter
 
 typealias SATVector = Array<Formula>
@@ -43,6 +42,13 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
     .second.map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
+fun CFG.valiantMatEq(l: SATRubix, r: SATRubix): Formula =
+  if (l.shape() != r.shape()) throw Exception("Shape mismatch! (${l.shape()}, ${r.shape()})")
+  else sandwichConstraints(l, r) and startFormula(l.diagonals.last().first(), r.diagonals.last().first())
+
+fun CFG.startFormula(ltop: SATVector, rtop: SATVector) =
+  startSymbols.map { bindex[it] }.map { ltop[it] eq rtop[it] }.reduce { acc, satf -> acc and satf }
+
 fun CFG.downwardsReachabilitySeq() = graph
   .let { it.reachSequence(it.vertices.filter { it.label in startSymbols }.toSet()) }
   .map { it.map { it.label }.toSet() }
@@ -51,26 +57,27 @@ fun CFG.upwardsReachabilitySeq() = graph
   .let { it.reachSequence(it.vertices.filter { it.label in terminals }.toSet(), it.A_AUG.transpose) }
   .drop(2).map { it.map { it.label }.toSet() }
 
-fun SATRubix.valiantMatEq(cfg: CFG, that: SATRubix): Formula =
-  if (shape() != that.shape()) throw Exception("Shape mismatch! (${shape()}, ${that.shape()})")
-  else {
-// Only compare nonterminals that are reachable in 1-step from the start symbol at the second-to-top level,
-// and the nonterminals that are reachable in 2-steps from the start symbol at the third-to-top level, etc.
-    val downReachSeq = cfg.downwardsReachabilitySeq().take(diagonals.size - 2).toList()
-    val upReachSeq = cfg.upwardsReachabilitySeq().take(diagonals.size - 2).toList().reversed()
+val CFG.possibleNonterminalsAtEachLevel: MutableMap<Int, List<Set<Int>>> by cache { mutableMapOf() }
+fun CFG.possibleNonterminalsAtEachLevel(levels: Int): List<Set<Int>> =
+  possibleNonterminalsAtEachLevel.getOrPut(levels) {
+    downwardsReachabilitySeq().take(levels).toList()
+      .zip(upwardsReachabilitySeq().take(levels).toList().reversed())
+      .map { (a, b) -> a intersect b intersect nonterminals }
+      .map { it.map { bindex[it] }.toSet() }.also { possibleNonterminalsAtEachLevel[levels] = it }
+  }
 
-    val reachSeq = downReachSeq.zip(upReachSeq)
-      .map { (a, b) -> a intersect b intersect cfg.nonterminals }
-      .map { it.map { cfg.bindex[it] }.toSet() }
-
-    // Only compare nonterminals at locations that are bidirectionally reachable, i.e.,
-    // whcih could possibly participate in any parse forest at each level in the lattice.
-    diagonals.zip(that.diagonals).drop(1).dropLast(1).reversed()
+/**
+ * Only compare nonterminals at locations that are bidirectionally reachable, i.e., which
+ * could possibly participate in any parse forest at each level in the trellis automaton.
+ * This is like a sandwich, where the bottom and topmost layers are the most constrained
+ * and the middle layers have the most degrees of freedom.
+ */
+fun CFG.sandwichConstraints(l: SATRubix, r: SATRubix): Formula =
+  possibleNonterminalsAtEachLevel(l.diagonals.size - 2).let { reachSeq ->
+    l.diagonals.zip(r.diagonals).drop(1).dropLast(1).reversed()
       .mapIndexed { i, (va, vb) ->
-        va.zip(vb).map { (a, b) -> vecsEqAtIndices(a, b, reachSeq[i]) }.reduce { acc, satf -> acc and satf } and
-          cfg.startSymbols.map {
-            diagonals.last().first()[cfg.bindex[it]] eq that.diagonals.last().first()[cfg.bindex[it]]
-          }.reduce { acc, satf -> acc and satf }
+        va.zip(vb).map { (a, b) -> vecsEqAtIndices(a, b, reachSeq[i]) }
+          .reduce { acc, satf -> acc and satf }
       }.reduce { acc, satf -> acc and satf }
   }
 
@@ -244,7 +251,7 @@ fun CFG.encodeTokens(rubix: SATRubix, strings: List<Σᐩ>): Formula =
 fun CFG.isInGrammar(mat: SATRubix): Formula =
   startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
     // TODO: Cache this to speedup computation?
-    (mat.valiantMatEq(this, mat * mat))//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
+    (valiantMatEq(mat, mat * mat))//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 fun CFG.constructRubix(numTokens: Int): SATRubix =
   FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
