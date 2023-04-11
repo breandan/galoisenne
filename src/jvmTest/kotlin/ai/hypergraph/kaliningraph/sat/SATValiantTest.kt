@@ -823,19 +823,48 @@ class SATValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCoarsening"
 */
-    @Test
-    fun testCoarsening() {
-        println(sumCFG.prettyPrint())
-        println(sumCFG.parseTable("1 + ( 3 + - 2 ) + 4").toHtmlPage().show())
-        println(sumCFG.parseTable("1 + <S> + 4").toHtmlPage().show())
+  @Test
+  fun testCoarsening() {
+      println(sumCFG.prettyPrint())
+      println(sumCFG.parseTable("1 + ( 3 + - 2 ) + 4").toHtmlPage().show())
+      println(sumCFG.parseTable("1 + <S> + 4").toHtmlPage().show())
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevenshteinRepair"
+*/
+  @Test
+  fun testLevenshteinRepair() {
+    val cfg = sumCFG.noNonterminalStubs
+    val strings = "3 _ _ + _ _ _ _ 4".synthesizeIncrementally(cfg)
+      .map { println(it); it }
+
+   // Deletes two random characters from each string
+    val corruptedStrings =
+      strings.map { val tokens = it.split(" ")
+        val toDelete = tokens.indices.shuffled().take(1)
+        tokens.filterIndexed { i, _ -> i !in toDelete }.joinToString(" ")
+      }
+        .filter { it !in cfg.language }
+        .take(10).toList()
+
+
+    val repairs = corruptedStrings.map {
+      println("Corrupted: $it")
+      println("Repairs:")
+      cfg.levenshteinRepair(2, it.tokenizeByWhitespace(), solver = { synthesize(it) })
+        .take(5).toList().also { println(it.joinToString("\n")) }
     }
+
+    repairs.flatten().also { assert(it.isNotEmpty()) }.forEach { assertTrue { it in arithCFG.language } }
+  }
 
   /*
  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testBoolFormula"
  */
   @Test
   fun testBoolFormula() {
-//    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
+    println(booleanFormulaCFG.parse("( ( true ) $LOR ( true $LOR ( false ) ) ) $AND ( true )")!!.evalToBool()!!)
 //    println(sumCFG.nonterminalFormulas["S"])
 //    measureTimeMillis {
 //      val ops = listOf("&", "|")
