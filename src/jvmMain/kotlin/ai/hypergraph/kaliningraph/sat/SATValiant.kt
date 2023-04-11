@@ -311,6 +311,8 @@ fun CFG.generateConstraints(
     to possibly derive the nonterminal. Then, block all nonterminals that do not have at least the
     required number of terminals, accounting for the number of available holes. For example, if a
     nonterminal has 1/5 required terminals and there are 2 available holes, then it can be blocked.
+  - Use Parikh's theorem to construct a language formula for each nonterminal at each layer, then
+    use SAT solver to determine reachable nonterminals based on the preimage of the Parik vector.
   - For downward constraints, e.g., start symbols, compute minimum and maximum distance to the NE
     corner, then block all nonterminals that are unreachable within that number of join operations.
     For example, suppose we have productions S -> B C, B -> D E, D -> F G, and F -> H I, and we
