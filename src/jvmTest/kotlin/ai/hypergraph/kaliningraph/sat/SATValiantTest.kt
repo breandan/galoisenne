@@ -842,18 +842,19 @@ class SATValiantTest {
    // Deletes two random characters from each string
     val corruptedStrings =
       strings.map { val tokens = it.split(" ")
-        val toDelete = tokens.indices.shuffled().take(1)
+        val toDelete = tokens.indices.shuffled().take(2)
         tokens.filterIndexed { i, _ -> i !in toDelete }.joinToString(" ")
       }
         .filter { it !in cfg.language }
         .take(10).toList()
 
 
-    val repairs = corruptedStrings.map {
-      println("Corrupted: $it")
+    val repairs = corruptedStrings.map { os ->
+      println("Corrupted: $os")
       println("Repairs:")
-      cfg.levenshteinRepair(2, it.tokenizeByWhitespace(), solver = { synthesize(it) })
-        .take(5).toList().also { println(it.joinToString("\n")) }
+      cfg.levenshteinRepair(2, os.tokenizeByWhitespace(), solver = { synthesize(it) })
+        .distinct().take(20).toList().sortedBy { levenshtein(os, it) }
+        .also { println(it.joinToString("\n")) }
     }
 
     repairs.flatten().also { assert(it.isNotEmpty()) }.forEach { assertTrue { it in arithCFG.language } }

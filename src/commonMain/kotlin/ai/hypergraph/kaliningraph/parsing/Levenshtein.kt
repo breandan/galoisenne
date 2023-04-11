@@ -42,7 +42,7 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
   val alphabet =  terminals + unparseable + "ε"
   val levCFG = constructLevenshteinCFG(unparseable, maxDist, alphabet).parseCFG().noNonterminalStubs
 //  println("Levenshtein CFG: ${levCFG.prettyPrint()}")
-  val template = List(unparseable.size + maxDist + 1) { "_" }
+  val template = List(unparseable.size + maxDist) { "_" }
   return (this intersect levCFG).solver(template)
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }
