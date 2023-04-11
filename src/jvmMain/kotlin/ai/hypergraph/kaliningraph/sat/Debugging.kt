@@ -34,9 +34,10 @@ fun FreeMatrix<SATVector>.summarize(cfg: CFG): String =
     when {
       it.isEmpty() -> ""
       it.all { it is Variable } -> "V[${it.size}]"
-      it.all { it is Constant } -> "C[${cfg.toNTSet(it.map { it == T }.toBooleanArray())}]"
+      it.all { it is Constant } -> "C${cfg.toNTSet(it.map { it == T }.toBooleanArray())}"
 //      it.all { it is Constant } -> "C[${it.count { it == T }}/${it.size}]"
-      it.any { it is Variable } -> "M"
+      it.any { it is Constant } -> "C[${it.count { it is Constant }}/${it.size}]"
+      it.any { it is Variable } -> "V[${it.count { it is Variable }}/${it.size}]"
       else -> "F[${it.sumOf(Formula::numberOfAtoms)}]"
     }
   }.toString()

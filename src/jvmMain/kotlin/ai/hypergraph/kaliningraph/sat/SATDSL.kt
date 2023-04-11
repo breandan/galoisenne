@@ -5,11 +5,9 @@ import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.Matrix
 import ai.hypergraph.kaliningraph.types.Ring
 import org.kosat.*
-import org.kosat.solveCnf
 import org.logicng.formulas.*
 import org.logicng.formulas.FormulaFactoryConfig.FormulaMergeStrategy.IMPORT
 import org.logicng.handlers.SATHandler
-import org.logicng.io.writers.FormulaDimacsFileWriter
 import org.logicng.solvers.MiniSat
 import org.logicng.solvers.SATSolver
 import java.util.*

@@ -122,6 +122,9 @@ fun CFG.toNTSet(nts: BooleanArray): Set<Σᐩ> =
 fun BooleanArray.decodeWith(cfg: CFG): Set<Σᐩ> =
   mapIndexed { i, it -> if (it) cfg.bindex[i] else null }.filterNotNull().toSet()
 
+fun CFG.toBooleanArray(nts: Set<Σᐩ>): BooleanArray =
+  BooleanArray(nonterminals.size) { i -> bindex[i] in nts }
+
 //=====================================================================================
 
 val HOLE_MARKER = "_"

@@ -763,9 +763,22 @@ class SATValiantTest {
       .take(sampleSize).toSet()
 
     println("Scn repairs (total time = ${System.currentTimeMillis() - time}ms): $scnRepairs")
+    println("Both: ${levRepairs intersect scnRepairs}")
+    println("Lev - Scn: ${levRepairs - scnRepairs}")
+    println("Scn - Lev: ${scnRepairs - levRepairs}")
 
 //    assertTrue(scnRepairs in levRepairs, "scnRepairs ⊈ levRepairs: ${scnRepairs - levRepairs}")
   }
+
+  /*
+  No constraints:
+  - Lev repairs (total time = 23334ms)
+  - Scn repairs (total time = 7892ms)
+
+  With constraints:
+  - Lev repairs (total time = 15656ms)
+  - Scn repairs (total time = 6415ms)
+   */
 
   val arithCFG: CFG = """
       START -> S
