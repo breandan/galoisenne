@@ -266,7 +266,7 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
 //  }
   FreeMatrix(satAlgebra, numTokens + 1) { r, c ->
     // Strictly upper triangular matrix entries
-    if (r + 1 <= c) BVecVar(nonterminals.size) { i -> "HV_r::${r}_c::${c}_cfgHash::${hashCode()}" }
+    if (r + 1 <= c) BVecVar(nonterminals.size) { "HV_r::${r}_c::${c}_cfgHash::${hashCode()}" }
     // Diagonal and subdiagonal
     else arrayOf()
   }.toUTMatrix()
@@ -300,6 +300,8 @@ fun CFG.generateConstraints(
 //    succ = { (it * it + it).also { println("Consts: " + it.numConsts + "\n${it.toFullMatrix().summarize(this)}") } })
 //    .also { it.toFullMatrix().summarize(this) }
 ): Pair<Formula, SATRubix> =
+  // TODO: check if solving time is sensitive to constraint ordering
+  parikhConstraints(rubix, tokens) and
   isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
     encodeTokens(rubix, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
     uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
@@ -339,6 +341,33 @@ fun CFG.generateConstraints(
   - Use a mixture of M = M * M and M' = M * M + M fixpoints with layerwise propagation to eliminate
     redundant constraints between SAT instances.
  */
+
+// Naming convention: HV_r::${r}_c::${c}..._f::${idx}
+fun Variable.toRowColNT(cfg: CFG): Triple<Int, Int, String> {
+  val (r, c, idx) = name().split("_").let { it[1].substringAfter("r::").toInt() to
+      it[2].substringAfter("c::").toInt() to it.last().substringAfter("f::").toInt() }
+  return Π(r, c, cfg.bindex[idx])
+}
+
+fun CFG.parikhConstraints(rubix: SATRubix, tokens: List<Σᐩ>): Formula {
+  val numHoleTokens = tokens.count { it.isHoleTokenIn(this) }
+
+  if (numHoleTokens == tokens.size) return T
+
+  fun Variable.makeFormula(cfg: CFG): Formula? {
+    val (i, j, nt) = toRowColNT(cfg)
+    val parikhSet= tokens.subList(i, j).filter { !it.isHoleTokenIn(cfg) }.toSet()
+    val terminalClosure = reachableSymbols(nt) intersect terminals
+    return if (parikhSet.isEmpty() || parikhSet in terminalClosure) null else (this eq F)
+//      .also { println("NT: $nt, Parikh set: $parikhSet, terminal closure: $terminalClosure") }
+  }
+
+  val variables = rubix.data.asSequence().map { it.map { it.variables() } }.flatten().flatten().toSet()
+
+  return variables.mapNotNull { v -> v.makeFormula(this) }
+    .also { println("Blocking ${it.size} nonterminal variables in UT matrix") }
+    .fold(T) { a, b -> a and b }
+}
 
 val SATRubix.numConsts by cache { data.map { it.toList() }.flatten().count { it is Constant } }
 

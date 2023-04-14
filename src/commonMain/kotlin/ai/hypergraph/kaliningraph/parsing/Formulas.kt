@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.types.*
+
 val LOR = "%OR%"
 val AND = "%AND%"
 
@@ -21,3 +23,19 @@ fun Tree.evalToBool(
   terminal in listOf("(", ")") -> null
   else -> children.asSequence().map { it.evalToBool() }.firstNotNullOfOrNull { it }
 }
+
+fun List<Boolean>.includes(other: List<Boolean>): Boolean =
+  if (size != other.size) throw IllegalArgumentException("Lists must be of equal size")
+  else zip(other).all { (a, b) -> a == b || (a && !b) }
+
+fun List<Boolean>.includesDistance(other: List<Boolean>): Int =
+  if (size != other.size) throw IllegalArgumentException("Lists must be of equal size")
+  else zip(other).count { (a, b) -> a != b && (a && !b) }
+
+typealias BitvecPosetInterval = Π2A<List<Boolean>>
+val BitvecPosetInterval.lower get() = first
+val BitvecPosetInterval.upper get() = second
+
+operator fun BitvecPosetInterval.contains(query: List<Boolean>) =
+  if (first.size != query.size) throw IllegalArgumentException("Lists must be of equal size")
+  else query.includes(lower) && upper.includes(query)

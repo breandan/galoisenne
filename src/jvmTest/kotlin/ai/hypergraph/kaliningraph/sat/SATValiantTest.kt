@@ -848,7 +848,6 @@ class SATValiantTest {
         .filter { it !in cfg.language }
         .take(10).toList()
 
-
     val repairs = corruptedStrings.map { os ->
       println("Corrupted: $os")
       println("Repairs:")
@@ -879,9 +878,9 @@ class SATValiantTest {
 //    }.also { println("Time: ${it}ms") }
 
     println(arithCFG.originalForm.prettyPrint())
-    arithCFG.originalForm.graph.let{
+    arithCFG.originalForm.graph.let {
       val start = it.vertices.first { it.label == "START" }
-      println(it.reachability(setOf(start), 1))
+      println(it.reachability(setOf(start), 2))
     }
   }
 }
