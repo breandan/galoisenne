@@ -5,6 +5,8 @@ import ai.hypergraph.kaliningraph.types.*
 // https://en.wikipedia.org/wiki/Regular_grammar
 typealias REG = Set<Π2A<Σᐩ>>
 val REG.language: REL by cache { REL(this) }
+
+// Subsumption holds a fortiori: REG <: CFG <: CJL
 val REG.asCFG: CFG by cache { map { (a, b) -> a to listOf(b) }.toSet() }
 val CFG.asCJL: CJL by cache { CJL(language) }
 

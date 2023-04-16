@@ -27,7 +27,7 @@ val ff: FormulaFactory =
  * n.b.: Variables in the SAT solver are label-sensitive, so we must be careful to avoid
  *       unintended collisions when assigning a name to a variable during construction.
  */
-fun BVar(name: String): Formula = ff.variable(name)
+fun BVar(name: String): Variable = ff.variable(name)
 //  (if(name.startsWith("HV"))
 //  ffCache.getOrPut(name.substringAfter("cfgHash::").substringBefore("_")) {
 //    ffCache.keys.forEach { ffCache.remove(it)?.clear() }

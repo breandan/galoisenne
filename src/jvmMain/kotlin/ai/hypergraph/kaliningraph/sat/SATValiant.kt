@@ -191,53 +191,6 @@ fun CFG.encodeTokens(rubix: SATRubix, tokens: List<Σᐩ>): Formula =
     acc and v.vecEq(if (b.isHoleTokenIn(cfg = this)) v else encodeTokenAsSATVec(b))
   }
 
-// Since Valiant matrix multiplication procedure takes a long time, and we use
-// the same base matrix each time, we precompute a large matrix template and
-// reuse submatrices for each individual sketch.
-//val CFG.parseMatrix: Π2A<SATRubix> by cache {
-//  constructRubix(MAX_TOKENS).let { it to (it * it) }.let { (a, b) ->
-//    a to (a matEq b)
-//  }
-//}
-
-//fun CFG.matrix(dim: Int): SATRubix = parseMatrix.first.submatrix(dim, this)
-//fun CFG.matrixFPEq(dim: Int): SATRubix = parseMatrix.second.submatrix(dim, this)
-
-//fun SATRubix.submatrix(dim: Int): SATRubix =
-//   UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }, algebra)
-
-//fun SATRubix.submatrix(dim: Int, cfg: CFG): SATRubix =
-//  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
-//    .map { it.map { it.map { ff.importFormula(it) }.toTypedArray() } }, cfg.satAlgebra)
-
-//fun UTMatrix<Array<String>?>.submatrix(dim: Int, cfg: CFG): SATRubix =
-//  UTMatrix((0 until dim).mapIndexed { i, d -> diagonals[i].subList(0, dim - i) }
-//    .map { it.map { it!!.map { ff.parse(it) }.toTypedArray() } }, cfg.satAlgebra)
-
-
-//infix fun SATRubix.matEq(other: SATRubix) =
-//  UTMatrix(diagonals.zip(other.diagonals).map { (c, d) ->
-//    c.zip(d).map { (e, f) -> e.zip(f).map { (g, h) -> g eq h }.toTypedArray() } }, algebra)
-
-//@OptIn(ExperimentalTime::class)
-//fun CFG.isInGrammar(i: Int): Pair<Formula, SATRubix> =
-//  measureTimedValue {
-//  constructRubix(i).let { it to (it matEq it * it) }
-////    (matrix(i) to matrixFPEq(i))
-//    .let { (s, t ) ->
-//      startSymbols.fold(F) { acc, it -> acc or s.diagonals.last().first()[bindex[it]] } and
-//      t.data.map { it.toList() }.flatten().fold(T) { a, b -> a and b } to s
-//    }
-//  }.also { println("Formed grammar constraints in ${it.duration.inWholeMilliseconds}ms") }.value
-//
-//fun CFG.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
-//  val (t, q) = isInGrammar(tokens.size)
-//  return t and
-//    encodeTokens(q, tokens) and
-//    uniquenessConstraints(q, tokens) and
-//    reachabilityConstraints(tokens, q) to q
-//}
-
 //@OptIn(ExperimentalTime::class)
 fun CFG.isInGrammar(mat: SATRubix): Formula =
   startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
@@ -273,7 +226,12 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
 
 fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens.size),
+  rubix: SATRubix = constructRubix(tokens.size)
+    .let {
+    it.map { it.map {
+      if ((it as Variable).isPossibleDerivation(this, tokens)) it else F
+    }.toTypedArray() }
+  },
 // Precomputes constants (permanent upper right triangular submatrices) in
 // the fixpoint to avoid solving for invariant entries that are fixed.
 //  litUDM: UTMatrix<BooleanArray?> =
@@ -301,8 +259,8 @@ fun CFG.generateConstraints(
 //    .also { it.toFullMatrix().summarize(this) }
 ): Pair<Formula, SATRubix> =
   // TODO: check if solving time is sensitive to constraint ordering
-  parikhConstraints(rubix, tokens) and
-  isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
+//  parikhConstraints(rubix, tokens) and
+    isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
     encodeTokens(rubix, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
     uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
     reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
@@ -349,22 +307,23 @@ fun Variable.toRowColNT(cfg: CFG): Triple<Int, Int, String> {
   return Π(r, c, cfg.bindex[idx])
 }
 
+fun Variable.isPossibleDerivation(cfg: CFG, tokens: List<Σᐩ>): Boolean {
+  val (i, j, nt) = toRowColNT(cfg)
+  val parikhSet= tokens.subList(i, j).filter { !it.isHoleTokenIn(cfg) }.toSet()
+  val terminalClosure = cfg.reachableSymbols(nt) intersect cfg.terminals
+  return parikhSet.isEmpty() || parikhSet in terminalClosure
+//      .also { println("NT: $nt, Parikh set: $parikhSet, terminal closure: $terminalClosure") }
+}
+
 fun CFG.parikhConstraints(rubix: SATRubix, tokens: List<Σᐩ>): Formula {
   val numHoleTokens = tokens.count { it.isHoleTokenIn(this) }
 
   if (numHoleTokens == tokens.size) return T
 
-  fun Variable.makeFormula(cfg: CFG): Formula? {
-    val (i, j, nt) = toRowColNT(cfg)
-    val parikhSet= tokens.subList(i, j).filter { !it.isHoleTokenIn(cfg) }.toSet()
-    val terminalClosure = reachableSymbols(nt) intersect terminals
-    return if (parikhSet.isEmpty() || parikhSet in terminalClosure) null else (this eq F)
-//      .also { println("NT: $nt, Parikh set: $parikhSet, terminal closure: $terminalClosure") }
-  }
+  val variables = rubix.data.asSequence()
+    .map { entry -> entry.map { it.variables() } }.flatten().flatten().toSet()
 
-  val variables = rubix.data.asSequence().map { it.map { it.variables() } }.flatten().flatten().toSet()
-
-  return variables.mapNotNull { v -> v.makeFormula(this) }
+  return variables.mapNotNull { v -> if (v.isPossibleDerivation(this, tokens)) null else v eq F }
     .also { println("Blocking ${it.size} nonterminal variables in UT matrix") }
     .fold(T) { a, b -> a and b }
 }

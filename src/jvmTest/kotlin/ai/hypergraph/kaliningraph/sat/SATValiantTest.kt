@@ -771,13 +771,13 @@ class SATValiantTest {
   }
 
   /*
-  No constraints:
+  Before constraints:
   - Lev repairs (total time = 23334ms)
   - Scn repairs (total time = 7892ms)
 
-  With constraints:
-  - Lev repairs (total time = 15656ms)
-  - Scn repairs (total time = 6415ms)
+  With Parikh constraints:
+  - Lev repairs (total time = 24120ms)
+  - Scn repairs (total time = 2418ms)
    */
 
   val arithCFG: CFG = """
@@ -882,5 +882,13 @@ class SATValiantTest {
       val start = it.vertices.first { it.label == "START" }
       println(it.reachability(setOf(start), 2))
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLongTerminals"
+ */
+  @Test
+  fun testLongTerminals() {
+    println("START -> A B C D E F G H I".parseCFG().prettyPrint())
   }
 }

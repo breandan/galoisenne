@@ -396,6 +396,9 @@ class UTMatrix<T> constructor(
 
   override fun new(rows: Int, cols: Int, data: List<T>, alg: Ring<T>): UTMatrix<T> =
     UTMatrix(rows, cols, data, alg)
+
+  fun map(f: (T) -> T): UTMatrix<T> =
+    UTMatrix(diagonals = diagonals.map { it.map(f) }, algebra = algebra)
 }
 
 fun <T, A : Ring<T>> Matrix<T, A, *>.toUTMatrix() = UTMatrix(numRows, numCols, data, algebra)
