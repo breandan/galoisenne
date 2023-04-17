@@ -10,10 +10,10 @@ import ai.hypergraph.kaliningraph.types.Π2A
 import kotlin.math.pow
 import kotlin.time.*
 
-var MAX_SAMPLE = 20
-var MAX_TOKENS = 80
-var TIMEOUT_MS = 20_000
-var MAX_REPAIR = 2
+var MAX_SAMPLE = 20 // Maximum number of repairs to sample
+var MAX_TOKENS = 80 // Maximum number of tokens per repair
+var TIMEOUT_MS = 20_000 // Timeout for each repair attempt
+var MAX_REPAIR = 2 // Maximum number of edits per repair
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 // Takes a string and a set of invariant indices and returns mutated strings
