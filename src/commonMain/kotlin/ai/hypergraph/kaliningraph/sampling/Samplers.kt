@@ -232,7 +232,7 @@ fun <T> MDSamplerWithoutReplacement(
   degree: Int = bitLens.sum()
 ): Sequence<List<T>> =
   if (degree < 4) findAll(dimensions).shuffled()
-  else if (degree !in generator) throw Exception("Space is too large! ($degree)")
+  else if (degree !in generator) throw Exception("Space is too large! ($degree) dim=${dimensions.map { it.size }.joinToString("x", "[", "]")}")
   else LFSR(degree)
     .let { if (skip == 1) it else it.filterIndexed { i, _ -> i % skip == shift } }
     .map { it.toBitList2(degree) }

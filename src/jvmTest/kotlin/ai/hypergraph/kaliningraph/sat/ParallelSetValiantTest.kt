@@ -142,7 +142,7 @@ class ParallelSetValiantTest {
     val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
     val variations: List<Mutator> =
-      listOf({ a, b -> a.randomSubstitutions(numberOfEdits = edits, exclusions = b)})
+      listOf({ a, b -> a.randomDoubleSubstitutions(numberOfEdits = edits, exclusions = b)})
     var totalSamples = 0
     return sanitized.synthesizeWithVariationsInParallel( // <<<<<<<<<< Parallelization happens here
       cfg = cfg,

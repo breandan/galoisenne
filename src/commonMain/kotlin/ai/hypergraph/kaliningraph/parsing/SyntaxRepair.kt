@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.graphs.Ops
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
@@ -11,11 +10,16 @@ import ai.hypergraph.kaliningraph.types.Π2A
 import kotlin.math.pow
 import kotlin.time.*
 
+var MAX_SAMPLE = 20
+var MAX_TOKENS = 80
+var TIMEOUT_MS = 20_000
+var MAX_REPAIR = 2
+
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 // Takes a string and a set of invariant indices and returns mutated strings
 typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 
-// Terminals which are blocked from synthesis
+// Terminals which are blocked from being synthesized by a solver
 val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
 
 fun repair(
@@ -38,7 +42,11 @@ fun repair(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val variations: List<Mutator> =
-    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = 3, exclusions = b) })
+    listOf(
+      { a, b -> a.randomInsertions() },
+//      { a, b -> a.randomSingleSubtitutions(exclusions = b) },
+      { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
+    )
   var totalSamples = 0
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
     cfg = cfg,
@@ -77,7 +85,7 @@ fun repairLazily(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   val variations: List<Mutator> =
-    listOf({ a, b -> a.randomSubstitutions(numberOfEdits = edits, exclusions = b)})
+    listOf({ a, b -> a.randomDoubleSubstitutions(numberOfEdits = edits, exclusions = b)})
   var totalSamples = 0
   return sanitized.synthesizeWithVariations(
     cfg = cfg,
@@ -88,10 +96,6 @@ fun repairLazily(
     .map { totalSamples++; it.uncoarsen(prompt) }
     .let { if (filter != null) it.filter(filter) else it }
 }
-
-var MAX_SAMPLE = 20
-var MAX_TOKENS = 80
-var TIMEOUT_MS = 90_000
 
 fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
     none { it.isNonterminalStubIn(cfg) } &&
@@ -130,14 +134,14 @@ fun Σᐩ.synthesizeWithVariations(
 
   return allVariants
     .filter { s -> s.tokenizeByWhitespace().any { it.isHoleTokenIn(cfg) } }
-    .takeWhile { t.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
     .map { updateProgress(it); it }
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }
 //        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
 //        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
-    }.distinct().map {
+    }.takeWhile { t.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
+    .distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
         if ("ε" in it) ""
@@ -276,15 +280,33 @@ fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
 fun Σᐩ.singleTokenSubtitutionsAndInsertions(): Sequence<Σᐩ> =
   multiTokenSubstitutionsAndInsertions(numberOfEdits = 1)
 
-fun Σᐩ.randomSubstitutions(
+fun Σᐩ.randomInsertions(
+  tokens: List<Σᐩ> = tokenizeByWhitespace() + "",
+  numberOfEdits: Int = 1,
+): Sequence<Σᐩ> =
+  tokens.indices.toSet().let { sortedIndices ->
+    (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) }
+  }.map { idxs -> tokens.substitute(idxs) { it, _ -> "_ $it" } }
+
+fun Σᐩ.randomSingleSubtitutions(
+  tokens: List<Σᐩ> = tokenizeByWhitespace(),
+  numberOfEdits: Int = 1,
+  exclusions: Set<Int> = setOf(),
+): Sequence<Σᐩ> =
+  tokens.indices.toSet().let { sortedIndices ->
+    (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) }
+  }.map { idxs -> tokens.substitute(idxs) { it, i -> if(i in exclusions) "$i _" else "_" } }
+
+fun Σᐩ.randomDoubleSubstitutions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
   padded: List<Σᐩ> = listOf("", *tokens.toTypedArray(), ""),
   numberOfEdits: Int = minOf(2, tokens.size),
   exclusions: Set<Int> = setOf(),
+  shiftedExclusions: Set<Int> = exclusions.map { it + 1 }.toSet(),
 ): Sequence<Σᐩ> =
   (padded.indices.toSet())//.also { println("Exclusions: $exclusions") })// - exclusions.map { it + 1 }.toSet())
     .let { sortedIndices -> (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) } }
-    .map { idxs -> padded.substitute(idxs) { it, i -> if (i in exclusions) "_ $it _" else "_ _" } }
+    .map { idxs -> padded.substitute(idxs) { it, i -> if (i in shiftedExclusions) "_ $it _" else "_ _" } }
 
 fun Σᐩ.multiTokenSubstitutionsAndInsertions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
