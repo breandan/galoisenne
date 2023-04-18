@@ -893,4 +893,16 @@ class SATValiantTest {
   fun testLongTerminals() {
     println("START -> A B C D E F G H I".parseCFG().prettyPrint())
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testConstantFormulaPropagation"
+*/
+  @Test
+  fun testConstantFormulaPropagation() {
+    // How quickly can we decide whether a string s is a substring of no string in CFL ∩ Σⁿ?
+    val cfg = """S -> S + S | S * S | ( S ) | x""".parseCFG()
+
+    "x + x + _ _ _ _ x ) + x".synthesizeIncrementally(cfg).toList()
+      .forEach { println(it) }
+  }
 }

@@ -224,9 +224,25 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
     else arrayOf()
   }.toUTMatrix()
 
+// TODO: incrementalize
+fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
+  ff.clear()
+  println("Synthesizing (${tokens.size}): ${tokens.joinToString(" ")}")
+  val timeToFormConstraints = System.currentTimeMillis()
+  val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
+  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
+
+  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
+  print("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms, and ")
+
+  return parsingConstraints to q.first()
+}
+
 fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens.size).eliminateImpossibleDerivations(this, tokens)
+  rubix: SATRubix = constructRubix(tokens.size)
+    .eliminateImpossibleDerivations(this, tokens)
+//    .propagateConstantFormulae(this)
 ): Pair<Formula, SATRubix> =
   // TODO: check if solving time is sensitive to constraint ordering
 //  parikhConstraints(rubix, tokens) and
@@ -234,6 +250,21 @@ fun CFG.generateConstraints(
 //    encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
     uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
     reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
+
+// Propagates constants through the matrix
+private fun SATRubix.propagateConstantFormulae(cfg: CFG): SATRubix {
+  val init = toFullMatrix().summarize(cfg)
+  println("INIT: \n${init}")
+  val sf = seekFixpoint(succ= { (it * it) + it },
+    stop = { i, a, b -> a.toFullMatrix().summarize(cfg) == b.toFullMatrix().summarize(cfg) })
+  val ps = sf.toFullMatrix().summarize(cfg)
+  println("PS: \n$ps")
+  val ss = (sf * sf) + sf
+  val pss = ss.toFullMatrix().summarize(cfg)
+  println("PSS: \n$pss")
+  println("Equal: ${ps == pss}")
+  return sf
+}
 
 fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATRubix {
   val parikRubix = map { it.map { v ->
@@ -345,20 +376,6 @@ fun CFG.parikhConstraints(rubix: SATRubix, tokens: List<Σᐩ>): Formula {
 }
 
 val SATRubix.numConsts by cache { data.map { it.toList() }.flatten().count { it is Constant } }
-
-// TODO: incrementalize
-fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
-  ff.clear()
-  println("Synthesizing (${tokens.size}): ${tokens.joinToString(" ")}")
-  val timeToFormConstraints = System.currentTimeMillis()
-  val (t, q) = cfgs.map { it.generateConstraints(tokens) }.unzip()
-  val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
-
-  val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-  print("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms, and ")
-
-  return parsingConstraints to q.first()
-}
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
@@ -474,6 +491,11 @@ fun CJL.synthesize(
       } catch (oom: OutOfMemoryError) { // Does this really work?
         System.err.println("OOM when solving: ${tokens.joinToString(" ")}")
         oom.printStackTrace()
+        ff.clear()
+        return@sequence
+      } catch (e: Exception) {
+        System.err.println("Exception when solving: ${tokens.joinToString(" ")}")
+        e.printStackTrace()
         ff.clear()
         return@sequence
       }
