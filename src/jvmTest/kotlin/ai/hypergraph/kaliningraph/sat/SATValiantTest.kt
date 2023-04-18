@@ -684,6 +684,7 @@ class SATValiantTest {
     val cfg = sumCFG.noNonterminalStubs
     val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
     val dist = 2
+    MAX_REPAIR = 3
     val levCFG = constructLevenshteinCFG(strWithParseErr, dist, cfg.terminals + "ε").parseCFG().noNonterminalStubs
 
     val template = "_ _ _ _ _ _ _"
@@ -695,7 +696,8 @@ class SATValiantTest {
 
     val cflIntersect = cfg.levenshteinRepair(dist, strWithParseErr, solver = { synthesize(it) }).toSet()
     assertNotEquals(cflIntersect, emptySet())
-    assertEquals(setIntersect, cflIntersect) /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit */
+    /**TODO: If this fails, [CJL.alignNonterminals] is probably the culprit (also maybe [MAX_REPAIR] or [TIMEOUT_MS]) */
+    assertEquals(setIntersect, cflIntersect)
   }
 
   /*

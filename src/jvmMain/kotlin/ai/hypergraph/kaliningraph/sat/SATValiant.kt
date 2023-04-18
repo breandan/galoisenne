@@ -228,23 +228,33 @@ fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
   rubix: SATRubix = constructRubix(tokens.size)
     .let {
-    it.map { it.map {
-      if ((it as Variable).isPossibleDerivation(this, tokens)) it else F
-    }.toTypedArray() }
-  },
+      it.map { it.map {
+        if ((it as Variable).isPossibleDerivation(this, tokens)) it else F
+      }.toTypedArray() }
+    },
 // Precomputes constants (permanent upper right triangular submatrices) in
 // the fixpoint to avoid solving for invariant entries that are fixed.
-//  litUDM: UTMatrix<BooleanArray?> =
-//    UTMatrix(
-//      ts = tokens.also { println("Tokens: $it") }.map { it ->
-//        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
-//        // shadow of bitvector variables on UTMatrix, which we represent as nulls
-//        if (it.isHoleTokenIn(cfg = this)) null
-//        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-//        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
-//      }.toTypedArray().also { println("Array: ${it.joinToString(" :: ") { it.contentToString()}}") },
-//      algebra = satLitAlgebra
-//    ).seekFixpoint(),
+  litUDM: UTMatrix<BooleanArray?> =
+    UTMatrix(
+      ts = tokens.map { it ->
+        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+        // shadow of bitvector variables on UTMatrix, which we represent as nulls
+        if (it.isHoleTokenIn(cfg = this)) null
+        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
+        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+      }.toTypedArray(),//.also { println("Array: ${it.joinToString(" :: ") { it.contentToString()}}") },
+      algebra = satLitAlgebra
+    ).seekFixpoint(),//.also { println("After: \n" + it.toFullMatrix().summarize()) },
+  litRbx: SATRubix =
+    FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
+      // Strictly upper triangular matrix entries
+      if (r + 1 <= c) {
+        if (tokens.subList(r, c).any { it.isHoleTokenIn(this) }) rubix[r, c]
+        else litUDM[r, c]!!.toLitVec()
+      }
+      // Diagonal and subdiagonal
+      else arrayOf()
+    }.toUTMatrix()
 // Tries to propagate upper right triangular permanent entries as far as possible
 //  fxbix: SATRubix? =
 //    if ((terminals intersect tokens.toSet()).isEmpty()) null
@@ -260,10 +270,10 @@ fun CFG.generateConstraints(
 ): Pair<Formula, SATRubix> =
   // TODO: check if solving time is sensitive to constraint ordering
 //  parikhConstraints(rubix, tokens) and
-    isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
-    encodeTokens(rubix, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
-    uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
-    reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
+    isInGrammar(litRbx)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
+//    encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
+    uniquenessConstraints(litRbx, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
+    reachabilityConstraints(tokens, litRbx)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
 /**
   TODO: Ideas to reduce number of constraints:
 
@@ -339,7 +349,7 @@ fun CJL.generateConstraints(tokens: List<Σᐩ>): Pair<Formula, SATRubix> {
   val parsingConstraints = t.fold(T) { a, b -> a and b } and alignNonterminals(q)
 
   val timeElapsed = System.currentTimeMillis() - timeToFormConstraints
-  println("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms")
+  print("Solver formed ${parsingConstraints.numberOfNodes()} constraints in ${timeElapsed}ms, and ")
 
   return parsingConstraints to q.first()
 }
@@ -393,7 +403,7 @@ fun CFG.synthesize(tokens: List<Σᐩ>): Sequence<Σᐩ> =
 /** [generateConstraints] */
 fun CJL.synthesize(
   tokens: List<Σᐩ>,
-  takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted }
+  takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted },
 ): Sequence<Σᐩ> {
   check(tokens.all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
   { "All tokens passed into synthesize() must be contained in all CFGs" }
@@ -413,12 +423,13 @@ fun CJL.synthesize(
       // println("Reduction: ${parsingConstraints.numberOfNodes()}")
       // println(parsingConstraints.cnf().toPython())
 
+      val startTime: Long = System.currentTimeMillis()
       var (solver, model) = parsingConstraints.solveIncrementally(takeMoreWhile = takeMoreWhile)
       // LogicNG's Formula datatype is not monoidal/threadsafe, so we cannot run it in parallel.
       // Instead we want an immutable Formula datatype that can be combined without affecting solver.
       // This would enable incremental editing, rollbacks, reset to initial state, etc.
       // TODO: var (solver, model) = parsingConstraints.solveUsingKosat()
-      model.ifEmpty { ff.clear(); return@sequence }
+      model.ifEmpty { ff.clear(); println("no solutions were found after ${System.currentTimeMillis() - startTime}ms"); return@sequence }
 
       //  var totalFreshnessConstraints = 0L
       // Tries to enumerate all strings that satisfy the constraints, adding a freshness constraint after each one.
@@ -444,9 +455,10 @@ fun CJL.synthesize(
 
         model = solver.addConstraintAndSolve(isFresh, takeMoreWhile)
         // If model is empty or we receive an error, assume that all models have been exhausted.
-        .ifEmpty { ff.clear(); return@sequence }
+        .ifEmpty { ff.clear(); println("exhausted all solutions after ${System.currentTimeMillis() - startTime}ms"); return@sequence }
       } catch (ie: InterruptedException) {
         ff.clear()
+        println("Interrupted after ${System.currentTimeMillis() - startTime} ms")
         throw ie
       } catch (npe: NullPointerException) {
         System.err.println("NPE when solving: ${tokens.joinToString(" ")}")

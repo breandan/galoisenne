@@ -28,6 +28,9 @@ fun FreeMatrix<List<Boolean>?>.summarize(cfg: CFG): String =
     }
   }.toString()
 
+fun FreeMatrix<BooleanArray?>.summarize(): String =
+  map { if(it?.any { it } == true) "T" else " " }.toString()
+
 @JvmName("summarizeFormulaMatrix")
 fun FreeMatrix<SATVector>.summarize(cfg: CFG): String =
   map {
