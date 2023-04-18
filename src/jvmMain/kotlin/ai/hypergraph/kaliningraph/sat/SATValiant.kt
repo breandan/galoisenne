@@ -195,14 +195,14 @@ fun CFG.encodeTokens(rubix: SATRubix, tokens: List<Σᐩ>): Formula =
 fun CFG.isInGrammar(mat: SATRubix): Formula =
   startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
     // TODO: Cache this to speedup computation?
-      // n.b. there is a tradeoff here between the number of constraints and message passing!
-      // Encoding the fixpoint M = M * M where M is populated by variables is simpler to encode,
-      // but does not pass any messages between the formulas that would reduce the formula size.
-      // By encoding M' = (M * M) + M, we can eliminate impossible nonterminals, but may increase
-      // the overall formula size. This can be desirable when the string contains a mixture of
-      // variables and constants, as the constants can be used to eliminate certain nonterminals.
-      // https://github.com/breandan/galoisenne/pull/6
-    (valiantMatEq(mat, mat * mat))//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
+    // n.b. there is a tradeoff here between the number of constraints and message passing!
+    // Encoding the fixpoint M = M * M where M is populated by variables is simpler to encode,
+    // but does not pass any messages between the formulas that would reduce the formula size.
+    // By encoding M' = (M * M) + M, we can eliminate impossible nonterminals, but may increase
+    // the overall formula size. This can be desirable when the string contains a mixture of
+    // variables and constants, as the constants can be used to eliminate certain nonterminals.
+    // https://github.com/breandan/galoisenne/pull/6
+    valiantMatEq(mat, mat * mat)//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 fun CFG.constructRubix(numTokens: Int): SATRubix =
 //  possibleNonterminalsAtEachLevel(numTokens).reversed().let { pnts ->
@@ -226,35 +226,44 @@ fun CFG.constructRubix(numTokens: Int): SATRubix =
 
 fun CFG.generateConstraints(
   tokens: List<Σᐩ>,
-  rubix: SATRubix = constructRubix(tokens.size)
-    .let {
-      it.map { it.map {
-        if ((it as Variable).isPossibleDerivation(this, tokens)) it else F
-      }.toTypedArray() }
-    },
+  rubix: SATRubix = constructRubix(tokens.size).eliminateImpossibleDerivations(this, tokens)
+): Pair<Formula, SATRubix> =
+  // TODO: check if solving time is sensitive to constraint ordering
+//  parikhConstraints(rubix, tokens) and
+    isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
+//    encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
+    uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
+    reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
+
+fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATRubix {
+  val parikRubix = map { it.map { v ->
+    if ((v as Variable).isPossibleDerivation(cfg, tokens)) v else F
+  }.toTypedArray() }
+
 // Precomputes constants (permanent upper right triangular submatrices) in
 // the fixpoint to avoid solving for invariant entries that are fixed.
-  litUDM: UTMatrix<BooleanArray?> =
-    UTMatrix(
-      ts = tokens.map { it ->
-        // Nulls on the superdiagonal will cast either a rectangular or pentagonal
-        // shadow of bitvector variables on UTMatrix, which we represent as nulls
-        if (it.isHoleTokenIn(cfg = this)) null
-        // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
-        else bimap[listOf(it)].let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
-      }.toTypedArray(),//.also { println("Array: ${it.joinToString(" :: ") { it.contentToString()}}") },
-      algebra = satLitAlgebra
-    ).seekFixpoint(),//.also { println("After: \n" + it.toFullMatrix().summarize()) },
-  litRbx: SATRubix =
-    FreeMatrix(satAlgebra, tokens.size + 1) { r, c ->
-      // Strictly upper triangular matrix entries
-      if (r + 1 <= c) {
-        if (tokens.subList(r, c).any { it.isHoleTokenIn(this) }) rubix[r, c]
-        else litUDM[r, c]!!.toLitVec()
-      }
-      // Diagonal and subdiagonal
-      else arrayOf()
-    }.toUTMatrix()
+  val litUDM: UTMatrix<BooleanArray?> = UTMatrix(
+    ts = tokens.map { it ->
+      // Nulls on the superdiagonal will cast either a rectangular or pentagonal
+      // shadow of bitvector variables on UTMatrix, which we represent as nulls
+      if (it.isHoleTokenIn(cfg = cfg)) null
+      // Terminals will cast a triangular shadow of bitvector literals on UTMatrix
+      else cfg.bimap[listOf(it)].let { nts -> cfg.nonterminals.map { it in nts } }.toBooleanArray()
+    }.toTypedArray(),//.also { println("Array: ${it.joinToString(" :: ") { it.contentToString()}}") },
+    algebra = cfg.satLitAlgebra
+  ).seekFixpoint()//.also { println("After: \n" + it.toFullMatrix().summarize()) },
+
+  val holeIndices: Set<Int> = tokens.indices.filter { tokens[it].isHoleTokenIn(cfg = cfg) }.toSet()
+  val litRbx: SATRubix = FreeMatrix(cfg.satAlgebra, tokens.size + 1) { r, c ->
+    // Strictly upper triangular matrix entries
+    if (r + 1 <= c) {
+      if (holeIndices.any { it in r until c }) parikRubix[r, c]
+      else litUDM[r, c]!!.toLitVec()
+    }
+    // Diagonal and subdiagonal
+    else arrayOf()
+  }.toUTMatrix()
+
 // Tries to propagate upper right triangular permanent entries as far as possible
 //  fxbix: SATRubix? =
 //    if ((terminals intersect tokens.toSet()).isEmpty()) null
@@ -267,13 +276,10 @@ fun CFG.generateConstraints(
 //  .seekFixpoint(stop = { i, _, _ -> 5 < i },//, tt -> t.numConsts == tt.numConsts },
 //    succ = { (it * it + it).also { println("Consts: " + it.numConsts + "\n${it.toFullMatrix().summarize(this)}") } })
 //    .also { it.toFullMatrix().summarize(this) }
-): Pair<Formula, SATRubix> =
-  // TODO: check if solving time is sensitive to constraint ordering
-//  parikhConstraints(rubix, tokens) and
-    isInGrammar(litRbx)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
-//    encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
-    uniquenessConstraints(litRbx, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
-    reachabilityConstraints(tokens, litRbx)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
+
+  return litRbx
+}
+
 /**
   TODO: Ideas to reduce number of constraints:
 
@@ -296,9 +302,9 @@ fun CFG.generateConstraints(
     "must not contain":=⊥, then propagate until a matrix fixpoint is reached. For all indeterminates
     use a SAT variable, for all determinates use a SAT literal. For example, suppose we have:
 
-     {A}       |  A -> B C    D -> d    G -> g    |
-  {F} ? {!B}   |  B -> D E    E -> e              | => ? = C
-     {G}       |  C -> F G    F -> f              |
+       {A}       |  A -> B C    D -> d    G -> g    |
+    {F} ? {!B}   |  B -> D E    E -> e              | => ? = C
+       {G}       |  C -> F G    F -> f              |
 
   If I am ?, and I know the directly adjacenct sets of nonterminals ∂V/∂A∂? in my context, then I
   can compute the set of nonterminals that I must contain, must not contain, and may contain:
