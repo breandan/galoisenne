@@ -465,11 +465,14 @@ fun CJL.synthesize(
             // If the token is not a hole token, use the original token.
             if (cfgs.none { token.isHoleTokenIn(it) }) token
             // Otherwise, use the model to decode the bits into a terminal.
-            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]
+            // Since tmap is a many-to-many relation, any representative of the set is valid.
+            // TODO: work out a more principled way to choose a representative
+            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]!!.random()
           }
 
         val completion: Σᐩ = fillers.joinToString(" ")
 
+        // YIELD happens here:
         if (completion.trim().isNotBlank()) yield(completion)
 
         val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()

@@ -25,7 +25,13 @@ val CFG.terminalUnitProductions: Set<Production>
 val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 } }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.bimap: BiMap by cache { BiMap(this) }
-val CFG.tmap by cache { terminals.associateBy { bimap[listOf(it)] } }
+// Maps nonterminal sets to their terminals, n.b., each terminal can be generated
+// by multiple nonterminals, and each nonterminal can generate multiple terminals
+val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
+  terminals.map { bimap[listOf(it)] to it }
+    .groupBy { it.first }
+    .mapValues { it.value.map { it.second }.toSet() }
+}
 val CFG.bindex: Bindex by cache { Bindex(this) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.graph: LabeledGraph by cache { dependencyGraph() }
@@ -99,15 +105,15 @@ val CFG.pruneTreelikeNonterminals: CFG by cache {
     .let { cfg ->
       val brokenReferences = cfg.terminals
       cfg +
-          // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
-          brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
-          cfg.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
-          // Restore old nonterminal stubs for unreferenced unit productions
-          brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
-            .map { l -> filter { it.LHS == l }.map { l to it.RHS } }
-            .flatten()
-//            .first()
-            .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
+        // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
+        brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
+        cfg.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
+        // Restore old nonterminal stubs for unreferenced unit productions
+        brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
+          .map { l -> filter { it.LHS == l }.map { l to it.RHS } }
+          .flatten()
+//          .first()
+          .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
     }
     .let { it.transformIntoCNF() }
     .also { rewriteHistory.put(it, listOf(rewriteHistory[this]!![0]) + listOf(this)) }
