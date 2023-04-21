@@ -110,6 +110,7 @@ fun Σᐩ.synthesizeWithVariations(
   allowNTs: Boolean = true,
   enablePruning: Boolean = false,
   variations: List<Mutator> = listOf({ a, b -> sequenceOf() }),
+  takeMoreWhile: () -> Boolean = { true },
   updateProgress: (Σᐩ) -> Unit = {},
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
@@ -141,7 +142,7 @@ fun Σᐩ.synthesizeWithVariations(
       cfg_.run { synthesizer(variantTokens) }
 //        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
 //        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
-    }.takeWhile { t.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
+    }.takeWhile { takeMoreWhile() }
     .distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->

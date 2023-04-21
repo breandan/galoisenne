@@ -397,6 +397,7 @@ fun Σᐩ.synthesizeIncrementally(
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
+  takeMoreWhile = takeMoreWhile,
   synthesizer = synthesizer
 )
 
@@ -483,8 +484,8 @@ fun CJL.synthesize(
         // If model is empty or we receive an error, assume that all models have been exhausted.
         .ifEmpty { ff.clear(); println("exhausted all solutions after ${System.currentTimeMillis() - startTime}ms"); return@sequence }
       } catch (ie: InterruptedException) {
-        ff.clear()
         println("Interrupted after ${System.currentTimeMillis() - startTime} ms")
+        ff.clear()
         throw ie
       } catch (npe: NullPointerException) {
         System.err.println("NPE when solving: ${tokens.joinToString(" ")}")
