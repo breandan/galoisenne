@@ -9,11 +9,19 @@ import kotlin.jvm.JvmName
 @Suppress("NonAsciiCharacters")
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
+// TODO: make this immutable
 typealias CFG = Set<Production>
 
 val Production.LHS: Σᐩ get() = first
 val Production.RHS: List<Σᐩ> get() =
   second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
+
+fun CFG.wrap(): CFG = this//CFGWrapper(this)
+//class CFGWrapper(val cfg: CFG): CFG by cfg {
+//  init { rewriteHistory[cfg]?.let { rewriteHistory.put(this, it) } }
+//  val hashCodePerm = cfg.hashCode()
+//  override fun hashCode(): Int = hashCodePerm
+//}
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf(HOLE_MARKER, " ")).toTypedArray() }

@@ -11,16 +11,28 @@ typealias SATRubix = UTMatrix<SATVector>
 
 val SATRubix.stringVariables by cache { diagonals.first() }
 
+//@JvmName("joinFormula")
+//fun CFG.join(left: SATVector, right: SATVector): SATVector =
+//  if (left.isEmpty() || right.isEmpty()) arrayOf()
+//  else Array(left.size) { i ->
+//    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+//      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+//      .fold(F) { acc, satf -> acc or satf }
+////      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
+////      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
+//  }
+
 @JvmName("joinFormula")
-fun CFG.join(left: SATVector, right: SATVector): SATVector =
+fun join(left: SATVector, right: SATVector, bindex: Bindex, bimap: BiMap): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
-  else Array(left.size) { i ->
-    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-      .fold(F) { acc, satf -> acc or satf }
+  else
+    Array(left.size) { i ->
+      bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+        .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+        .fold(F) { acc, satf -> acc or satf }
 //      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
 //      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
-  }
+    }
 
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
@@ -178,7 +190,7 @@ val CFG.satAlgebra by cache {
     nil = arrayOf(),
     one = Array(nonterminals.size) { T },
     plus = { a, b -> a union b },
-    times = { a, b -> join(a, b) }
+    times = { a, b -> join(a, b, bindex, bimap) }
   )
 }
 
@@ -247,7 +259,7 @@ fun CFG.generateConstraints(
   // TODO: check if solving time is sensitive to constraint ordering
 //  parikhConstraints(rubix, tokens) and
     isInGrammar(rubix)/*.also { print("FormulaSize={isInGrammar: ${it.numberOfNodes()},")}*/ and
-//    encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
+//  encodeTokens(litRbx, tokens)/*.also { print("encodeTokens: ${it.numberOfNodes()},")}*/ and
     uniquenessConstraints(rubix, tokens)/*.also { print("uniquenessConstraints: ${it.numberOfNodes()},")}*/ and
     reachabilityConstraints(tokens, rubix)/*.also { println("reachabilityConstraints: ${it.numberOfNodes()}}")}*/ to rubix
 
@@ -393,7 +405,6 @@ fun Σᐩ.synthesizeIncrementally(
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
-  allowNTs = allowNTs,
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,

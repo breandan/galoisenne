@@ -22,6 +22,7 @@ typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 // Terminals which are blocked from being synthesized by a solver
 val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
 
+@OptIn(ExperimentalTime::class)
 fun repair(
   prompt: Σᐩ,
   cfg: CFG,
@@ -49,11 +50,14 @@ fun repair(
       { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
     )
   var totalSamples = 0
+
+  val t = TimeSource.Monotonic.markNow()
   val repairs: List<Σᐩ> = sanitized.synthesizeWithVariations(
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,
     updateProgress = updateProgress,
+    takeMoreWhile = { t.elapsedNow().inWholeMilliseconds < TIMEOUT_MS },
     variations = variations,
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
@@ -104,7 +108,6 @@ fun List<Σᐩ>.isSetValiantOptimalFor(cfg: CFG): Boolean =
 
 // Generates a lazy sequence of mutations for a broken string
 // and feeds them to the synthesizer for completion.
-@OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariations(
   cfg: CFG,
   allowNTs: Boolean = true,
@@ -115,8 +118,6 @@ fun Σᐩ.synthesizeWithVariations(
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
   val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
-
-  val t = TimeSource.Monotonic.markNow()
 
   val (stringToSolve, reconstructor) =
     if (enablePruning) cfg_.prune(this) else this to mutableListOf()
@@ -142,8 +143,7 @@ fun Σᐩ.synthesizeWithVariations(
       cfg_.run { synthesizer(variantTokens) }
 //        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
 //        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
-    }.takeWhile { takeMoreWhile() }
-    .distinct().map {
+    }.takeWhile { takeMoreWhile() }.distinct().map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
         if ("ε" in it) ""
