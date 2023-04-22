@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
@@ -16,12 +15,21 @@ val Production.LHS: Σᐩ get() = first
 val Production.RHS: List<Σᐩ> get() =
   second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
 
-fun CFG.wrap(): CFG = this//CFGWrapper(this)
-//class CFGWrapper(val cfg: CFG): CFG by cfg {
-//  init { rewriteHistory[cfg]?.let { rewriteHistory.put(this, it) } }
-//  val hashCodePerm = cfg.hashCode()
-//  override fun hashCode(): Int = hashCodePerm
-//}
+/**
+ * "Freezes" the enclosed CFG, making it immutable and caching its hashCode for
+ * much faster equality checks unlike the default LinkedHashSet implementation,
+ * which must recompute hashCode(), incurring O(n) cost in the size of the CFG.
+ * This is only necessary because we are using the cache { ... } pattern, which
+ * will be slow to compute the first time, but much faster on subsequent calls.
+ * Storing the hashCode() in a field avoids recomputing it on every read.
+ */
+fun CFG.freeze(): CFG = FrozenCFG(this)
+private class FrozenCFG(val cfg: CFG): CFG by cfg {
+  val cfgId = cfg.hashCode()
+  override fun equals(other: Any?) =
+    ((other as? FrozenCFG)?.cfgId == cfgId) || (other as? CFG) == cfg
+  override fun hashCode(): Int = cfgId
+}
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf(HOLE_MARKER, " ")).toTypedArray() }

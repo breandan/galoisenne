@@ -11,28 +11,16 @@ typealias SATRubix = UTMatrix<SATVector>
 
 val SATRubix.stringVariables by cache { diagonals.first() }
 
-//@JvmName("joinFormula")
-//fun CFG.join(left: SATVector, right: SATVector): SATVector =
-//  if (left.isEmpty() || right.isEmpty()) arrayOf()
-//  else Array(left.size) { i ->
-//    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-//      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-//      .fold(F) { acc, satf -> acc or satf }
-////      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
-////      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
-//  }
-
 @JvmName("joinFormula")
-fun join(left: SATVector, right: SATVector, bindex: Bindex, bimap: BiMap): SATVector =
+fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
-  else
-    Array(left.size) { i ->
-      bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-        .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-        .fold(F) { acc, satf -> acc or satf }
+  else Array(left.size) { i ->
+    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+      .fold(F) { acc, satf -> acc or satf }
 //      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
 //      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
-    }
+  }
 
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
@@ -190,7 +178,7 @@ val CFG.satAlgebra by cache {
     nil = arrayOf(),
     one = Array(nonterminals.size) { T },
     plus = { a, b -> a union b },
-    times = { a, b -> join(a, b, bindex, bimap) }
+    times = { a, b -> join(a, b) }
   )
 }
 

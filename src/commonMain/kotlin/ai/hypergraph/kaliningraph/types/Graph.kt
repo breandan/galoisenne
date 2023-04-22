@@ -201,7 +201,8 @@ fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
-    val csg = "${y!!::class.simpleName}${id}$caller"
+    val csg = "$id$caller"
+//    val csg = "${y!!::class.simpleName}${id}$caller"
     cache.getOrPut(csg) { y.fn() as Any } as T
   }
 

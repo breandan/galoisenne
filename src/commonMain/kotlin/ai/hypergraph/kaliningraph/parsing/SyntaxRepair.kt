@@ -44,7 +44,7 @@ fun repair(
 
   val variations: List<Mutator> =
     listOf(
-      { a, b -> a.randomInsertions() },
+//      { a, b -> a.randomInsertions() },
       { a, b -> a.randomDeletions() },
 //      { a, b -> a.randomSingleSubtitutions(exclusions = b) },
       { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
@@ -117,7 +117,7 @@ fun Σᐩ.synthesizeWithVariations(
   updateProgress: (Σᐩ) -> Unit = {},
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>
 ): Sequence<Σᐩ> {
-  val cfg_ = if (!allowNTs) cfg.noNonterminalStubs else cfg
+  val cfg_ = (if (!allowNTs) cfg.noNonterminalStubs else cfg).freeze()
 
   val (stringToSolve, reconstructor) =
     if (enablePruning) cfg_.prune(this) else this to mutableListOf()
