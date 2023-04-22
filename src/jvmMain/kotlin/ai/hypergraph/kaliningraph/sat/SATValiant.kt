@@ -393,6 +393,7 @@ fun Σᐩ.synthesizeIncrementally(
   }
 ): Sequence<Σᐩ> = synthesizeWithVariations(
   cfg = cfg,
+  allowNTs = allowNTs,
   variations = variations,
   enablePruning = enablePruning,
   updateProgress = updateProgress,
