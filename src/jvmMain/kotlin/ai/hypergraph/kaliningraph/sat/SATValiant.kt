@@ -267,9 +267,11 @@ private fun SATRubix.propagateConstantFormulae(cfg: CFG): SATRubix {
 }
 
 fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATRubix {
-  val parikRubix = map { it.map { v ->
-    if ((v as Variable).isPossibleDerivation(cfg, tokens)) v else F
-  }.toTypedArray() }
+  val parikhRubix = map {
+    val (i, j) = (it.first() as Variable).toRowColNT(cfg)
+    val parikhSet= tokens.subList(i, j).filter { !it.isHoleTokenIn(cfg) }.toSet()
+    it.map { v -> if ((v as Variable).isPossibleDerivation(cfg, parikhSet)) v else F }.toTypedArray()
+  }
 
 // Precomputes constants (permanent upper right triangular submatrices) in
 // the fixpoint to avoid solving for invariant entries that are fixed.
@@ -288,7 +290,7 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
   val litRbx: SATRubix = FreeMatrix(cfg.satAlgebra, tokens.size + 1) { r, c ->
     // Strictly upper triangular matrix entries
     if (r + 1 <= c) {
-      if (holeIndices.any { it in r until c }) parikRubix[r, c]
+      if (holeIndices.any { it in r until c }) parikhRubix[r, c]
       else litUDM[r, c]!!.toLitVec()
     }
     // Diagonal and subdiagonal
@@ -354,28 +356,12 @@ fun Variable.toRowColNT(cfg: CFG): Triple<Int, Int, String> {
   return Π(r, c, cfg.bindex[idx])
 }
 
-fun Variable.isPossibleDerivation(cfg: CFG, tokens: List<Σᐩ>): Boolean {
-  val (i, j, nt) = toRowColNT(cfg)
-  val parikhSet= tokens.subList(i, j).filter { !it.isHoleTokenIn(cfg) }.toSet()
+fun Variable.isPossibleDerivation(cfg: CFG, parikhSet: Set<Σᐩ>): Boolean {
+  val (_, _, nt) = toRowColNT(cfg)
   val terminalClosure = cfg.reachableSymbols(nt) intersect cfg.terminals
   return parikhSet.isEmpty() || parikhSet in terminalClosure
 //      .also { println("NT: $nt, Parikh set: $parikhSet, terminal closure: $terminalClosure") }
 }
-
-fun CFG.parikhConstraints(rubix: SATRubix, tokens: List<Σᐩ>): Formula {
-  val numHoleTokens = tokens.count { it.isHoleTokenIn(this) }
-
-  if (numHoleTokens == tokens.size) return T
-
-  val variables = rubix.data.asSequence()
-    .map { entry -> entry.map { it.variables() } }.flatten().flatten().toSet()
-
-  return variables.mapNotNull { v -> if (v.isPossibleDerivation(this, tokens)) null else v eq F }
-    .also { println("Blocking ${it.size} nonterminal variables in UT matrix") }
-    .fold(T) { a, b -> a and b }
-}
-
-val SATRubix.numConsts by cache { data.map { it.toList() }.flatten().count { it is Constant } }
 
 /** Currently just a JVM wrapper around the multiplatform [synthesizeWithVariations] */
 fun Σᐩ.synthesizeIncrementally(
