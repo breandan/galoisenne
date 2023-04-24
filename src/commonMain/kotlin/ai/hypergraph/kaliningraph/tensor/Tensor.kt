@@ -372,8 +372,16 @@ class UTMatrix<T> constructor(
     //    (3) column beneath an element (inclusive)
     carry: List<Triple<T, List<T>, List<T>>> =
       diagonals.last().map { it to listOf(it) to listOf(it) },
+    iteration: Int = 0,
+    maxIterations: Int = diagonals.first().size
   ): UTMatrix<T> =
-    if (diagonals.last().size <= 1) this
+    if (diagonals.last().size == 1) this
+    // Populate the remaining diagonals with nils
+    else if (iteration == maxIterations)
+      UTMatrix(
+        diagonals = diagonals + ((diagonals.last().size - 1) downTo 1).map { i -> List(i) { algebra.nil } },
+        algebra = algebra
+      )
     else carry.windowed(2, 1).map { window ->
         window[0].second.zip(window[1].third)
           .map { (l, r) -> with(algebra) { l * r } }
@@ -383,7 +391,7 @@ class UTMatrix<T> constructor(
         UTMatrix(
           diagonals = diagonals + listOf(next.map { it.first }),
           algebra = algebra
-        ).seekFixpoint(next)
+        ).seekFixpoint(next, iteration + 1, maxIterations)
       }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)

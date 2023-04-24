@@ -266,6 +266,13 @@ private fun SATRubix.propagateConstantFormulae(cfg: CFG): SATRubix {
   return sf
 }
 
+// Returns the length of the maximum-length terminal subsequence
+fun List<Σᐩ>.lengthOfLongestLiteralSubsequence(cfg: CFG): Int =
+  fold(0 to 0) { (max, curr), it ->
+    if (it.isHoleTokenIn(cfg)) max to 0
+    else maxOf(max, curr + 1) to curr + 1
+  }.first
+
 fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATRubix {
   val parikhRubix = map {
     val (i, j) = (it.first() as Variable).toRowColNT(cfg)
@@ -284,7 +291,8 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
       else cfg.bimap[listOf(it)].let { nts -> cfg.nonterminals.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),//.also { println("Array: ${it.joinToString(" :: ") { it.contentToString()}}") },
     algebra = cfg.satLitAlgebra
-  ).seekFixpoint()//.also { println("After: \n" + it.toFullMatrix().summarize()) },
+  ).seekFixpoint(maxIterations = tokens.lengthOfLongestLiteralSubsequence(cfg) - 1)
+//  .also { println("After: \n" + it.toFullMatrix().summarize()) }
 
   val holeIndices: Set<Int> = tokens.indices.filter { tokens[it].isHoleTokenIn(cfg = cfg) }.toSet()
   val litRbx: SATRubix = FreeMatrix(cfg.satAlgebra, tokens.size + 1) { r, c ->
