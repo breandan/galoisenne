@@ -455,20 +455,17 @@ fun CJL.synthesize(
         // In the case of intersections, which CFG is used to generate the string does not matter.
         val cfg = cfgs.first()
         // Decode model from SAT solver into the corresponding string
-        val fillers = rubix.stringVariables.zip(tokens)
+        rubix.stringVariables.zip(tokens)
           .map { (bits, token) ->
             // If the token is not a hole token, use the original token.
-            if (cfgs.none { token.isHoleTokenIn(it) }) token
+            if (cfgs.none { token.isHoleTokenIn(it) }) setOf(token)
             // Otherwise, use the model to decode the bits into a terminal.
             // Since tmap is a many-to-many relation, any representative of the set is valid.
-            // TODO: work out a more principled way to choose a representative
-            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]!!.random()
-          }
-
-        val completion: Σᐩ = fillers.joinToString(" ")
-
-        // YIELD happens here:
-        if (completion.trim().isNotBlank()) yield(completion)
+            else cfg.tmap[cfg.nonterminals(bits.map { model[it]!! })]!!
+          }.cartesianProduct()
+          .map { it.joinToString(" ").trim() }
+          .filter { it.isNotBlank() }
+          .forEach { yield(it) }
 
         val isFresh = model.filter { (k, v) -> k in strVars && v }.areFresh()
         // freshnessConstraints += isFresh.numberOfAtoms()

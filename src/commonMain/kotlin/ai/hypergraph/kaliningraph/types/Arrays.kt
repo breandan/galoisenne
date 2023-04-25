@@ -62,6 +62,15 @@ fun <T> Collection<T>.powerset(): Sequence<Set<T>> = sequence {
   }
 }
 
+fun <T> List<Set<T>>.cartesianProduct(): Sequence<List<T>> {
+  fun product(sets: List<Set<T>>, current: List<T>): Sequence<List<T>> =
+    sequence {
+      if (sets.isEmpty()) yield(current)
+      else sets.first().forEach { yieldAll(product(sets.drop(1), current + it)) }
+    }
+  return product(this, emptyList())
+}
+
 infix fun IntRange.isSubsetOf(ir: IntRange) = ir.first <= first && last <= ir.last
 infix fun IntRange.isStrictSubsetOf(ir: IntRange) =
   ir.first <= first && last <= ir.last && this != ir
