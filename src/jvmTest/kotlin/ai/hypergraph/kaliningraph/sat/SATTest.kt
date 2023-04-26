@@ -232,4 +232,15 @@ class SATTest {
 
     println((a xor b).solve())
   }
+
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATTest.testConstantPropagation"
+*/
+  @Test
+  fun testConstantPropagation() {
+    val v = ff.variable("asdf")
+    val t = ((v eq F) or (v eq F)) and (v eq T)
+    assertEquals(t, F)
+  }
 }

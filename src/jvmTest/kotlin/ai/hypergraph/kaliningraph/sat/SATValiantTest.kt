@@ -6,14 +6,6 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
-import org.logicng.handlers.TimeoutOptimizationHandler
-import org.logicng.transformations.BDDNormalFormTransformation
-import org.logicng.transformations.cnf.*
-import org.logicng.transformations.simplification.AdvancedSimplifier
-import org.logicng.transformations.simplification.AdvancedSimplifierConfig
-import org.logicng.transformations.simplification.DefaultRatingFunction
-import kotlin.system.measureTimeMillis
 import kotlin.test.*
 
 /*

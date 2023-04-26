@@ -34,12 +34,16 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   // Squares an upper-triangular matrix whose diagonal and lower-triangular elements are zero
   fun squareUpperTriangular(): M =
-    transpose.let { tt ->
-      safeJoin(tt, criteria = numCols == numRows) { i, j ->
-        if (j <= i) algebra.nil
-        else this@Matrix[i].drop(i + 1).take(j) dot tt[j].drop(i + 1).take(j)
-      }
-    }
+    new(numRows, numCols, allPairs(numRows, numCols).map { (i, j) ->
+      if (j <= i) algebra.nil
+      else this@Matrix[i].drop(i + 1).take(j) dot this@Matrix.cols[j].drop(i + 1).take(j)
+    })
+//  transpose.let { tt ->
+//    safeJoin(tt, criteria = numCols == numRows) { i, j ->
+//      if (j <= i) algebra.nil
+//      else this@Matrix[i].drop(i + 1).take(j) dot tt[j].drop(i + 1).take(j)
+//    }
+//  }
 
   fun <Y> map(f: (T) -> Y): M = new(numRows, numCols, data.map(f) as List<T>)
 
@@ -48,8 +52,8 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 
   infix fun List<T>.dot(es: List<T>): T =
     require(size == es.size) { "Length mismatch: $size . ${es.size}" }
-      .run { with(algebra) { mapIndexed { i, a -> a * es[i] }.reduce { a, b -> a + b } } }
-//    .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
+//      .run { with(algebra) { mapIndexed { i, a -> a * es[i] }.reduce { a, b -> a + b } } }
+    .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
 
   // Constructs a new instance with the same concrete matrix type
   fun new(rows: Int = numRows, cols: Int = numCols, data: List<T>, alg: A = algebra): M
@@ -176,14 +180,16 @@ abstract class AbstractMatrix<T, A: Ring<T>, M: AbstractMatrix<T, A, M>> constru
     return true
   }
 
-  override fun hashCode(): Int {
-    var result = 1
+  val hash by lazy {
+    var result = super.hashCode()
     result = 31 * result + numRows
     result = 31 * result + numCols
     result = 31 * result + data.hashCode()
     result = 31 * result + algebra.hashCode()
-    return result
+    result
   }
+
+  override fun hashCode(): Int = hash
 }
 
 // A free matrix has no associated algebra by default. If you try to do math

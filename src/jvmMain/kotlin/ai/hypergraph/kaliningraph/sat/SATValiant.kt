@@ -15,8 +15,7 @@ val SATRubix.stringVariables by cache { diagonals.first() }
 fun CFG.join(left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
   else Array(left.size) { i ->
-    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+    vindex[i]!!.map { (B, C) -> left[B] and right[C] }
       .fold(F) { acc, satf -> acc or satf }
 //      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
 //      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
@@ -38,8 +37,10 @@ fun vecsEqAtIndices(a: SATVector, b: SATVector, indices: Set<Int>): Formula =
 infix fun SATVector.vecEq(that: SATVector): Formula =
   if (isEmpty() || that.isEmpty() || size != that.size) throw Exception("Shape mismatch! ($size, ${that.size})")
   else if (contentEquals(that)) T
-  else zip(that).partition { (l, r) -> l == r }
-    .second.map { (a, b) -> a eq b }
+  else zip(that)
+    // Only consider elements which are not trivially equal
+    .partition { (l, r) -> l == r }.second
+    .map { (a, b) -> a eq b }
     .let { if (it.isEmpty()) T else it.reduce { acc, satf -> acc and satf } }
 
 fun CFG.valiantMatEq(l: SATRubix, r: SATRubix): Formula =

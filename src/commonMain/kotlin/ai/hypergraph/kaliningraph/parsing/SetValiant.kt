@@ -108,6 +108,7 @@ fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   else if (left.isNotEmpty() && right.isEmpty()) left
   else left.zip(right) { l, r -> l or r }.toBooleanArray()
 
+// Like satAlgebra, but with nullable bitvector literals instead of SAT literals
 val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
   Ring.of(
     nil = BooleanArray(nonterminals.size) { false },

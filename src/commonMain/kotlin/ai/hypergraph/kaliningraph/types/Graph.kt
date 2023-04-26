@@ -198,6 +198,8 @@ fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
 // after which said value will be reevaluated and cached if it is needed
 // again. If you believe there may be a bug here, it is really important
 // to first check hashCode() / deepHashCode - we expect it to be unique!
+// We use this to materialize properties that are expensive to compute,
+// and that we expect to be used multiple times once computed.
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
