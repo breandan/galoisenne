@@ -44,9 +44,9 @@ infix fun SATVector.vecEq(that: SATVector): Formula =
 
 fun CFG.valiantMatEq(l: SATRubix, r: SATRubix): Formula =
   if (l.shape() != r.shape()) throw Exception("Shape mismatch! (${l.shape()}, ${r.shape()})")
-  else (l eq r) and startFormula(l.diagonals.last().first(), r.diagonals.last().first())
+  else (l valEq r) and startFormula(l.diagonals.last().first(), r.diagonals.last().first())
 
-infix fun SATRubix.eq(that: SATRubix): Formula =
+infix fun SATRubix.valEq(that: SATRubix): Formula =
   diagonals.drop(1).dropLast(1).flatten().zip(that.diagonals.drop(1).dropLast(1).flatten())
     .map { (va, vb) -> va vecEq vb }.reduce { acc, satf -> acc and satf }
 
@@ -202,7 +202,7 @@ fun CFG.isInGrammar(mat: SATRubix): Formula =
     // the overall formula size. This can be desirable when the string contains a mixture of
     // variables and constants, as the constants can be used to eliminate certain nonterminals.
     // https://github.com/breandan/galoisenne/pull/6
-    valiantMatEq(mat, mat * mat)//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
+    valiantMatEq(mat, mat.squared())//measureTimedValue{ mat * mat }.also { println("Matmul took: ${it.duration}") }.value)
 
 fun CFG.constructRubix(numTokens: Int): SATRubix =
 //  possibleNonterminalsAtEachLevel(numTokens).reversed().let { pnts ->

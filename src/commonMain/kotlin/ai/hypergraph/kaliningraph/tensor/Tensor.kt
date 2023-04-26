@@ -32,6 +32,15 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   operator fun times(t: M): M =
     t.transpose.let { tt -> safeJoin(t, criteria = numCols == t.numRows) { i, j -> this@Matrix[i] dot tt[j] } }
 
+  // Squares an upper-triangular matrix whose diagonal and lower-triangular elements are zero
+  fun squareUpperTriangular(): M =
+    transpose.let { tt ->
+      safeJoin(tt, criteria = numCols == numRows) { i, j ->
+        if (j <= i) algebra.nil
+        else this@Matrix[i].drop(i + 1).take(j) dot tt[j].drop(i + 1).take(j)
+      }
+    }
+
   fun <Y> map(f: (T) -> Y): M = new(numRows, numCols, data.map(f) as List<T>)
 
   fun getElements(filterBy: (Int, Int) -> Boolean) =
@@ -364,6 +373,8 @@ class UTMatrix<T> constructor(
   override fun times(t: UTMatrix<T>): UTMatrix<T> =
     (toFullMatrix() * t.toFullMatrix()).toUTMatrix()
     // diagonals.zip(diagonals.flip()).map { (l, r) -> l dot r }
+
+  fun squared() = toFullMatrix().squareUpperTriangular().toUTMatrix()
 
   fun seekFixpoint(
     // Carries a triple of:
