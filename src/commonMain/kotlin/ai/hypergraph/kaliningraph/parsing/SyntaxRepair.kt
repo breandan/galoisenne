@@ -119,7 +119,7 @@ fun Σᐩ.synthesizeWithVariations(
 ): Sequence<Σᐩ> {
   val cfg_ = (if (!allowNTs) cfg.noNonterminalStubs else cfg).freeze()
 
-  val (stringToSolve, reconstructor) =
+  val (stringToSolve, reconstructor: Reconstructor) =
     if (enablePruning) cfg_.prune(this) else this to mutableListOf()
   if (this != stringToSolve) println("Before pruning: $this\nAfter pruning: $stringToSolve")
 
@@ -143,7 +143,9 @@ fun Σᐩ.synthesizeWithVariations(
       cfg_.run { synthesizer(variantTokens) }
 //        .ifEmpty { cfg_.rememberBigramPolarity(variantTokens, synthesizer) }
 //        .map { cfg_.rememberPossibleBigrams(variantTokens); it }
-    }.takeWhile { takeMoreWhile() }.distinct().map {
+    }.takeWhile { takeMoreWhile() }.distinct()
+//    .distinctBy(levenshteinFingerprint)
+    .map {
       val rec: Reconstructor = reconstructor.toList().toMutableList()
       it.tokenizeByWhitespace().mapIndexed { i, it ->
         if ("ε" in it) ""

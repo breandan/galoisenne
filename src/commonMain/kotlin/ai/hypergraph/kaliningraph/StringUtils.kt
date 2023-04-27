@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
@@ -14,10 +13,11 @@ infix fun Char.closes(that: Char) =
   else if (this == '}' && that == '{') true
   else this == '>' && that == '<'
 
-fun String.hasBalancedBrackets(brackets: String = "()[]{}<>"): Boolean =
-  filter { it in brackets }.fold(Stack<Char>()) { stack, c ->
+val BRACKETS = "()[]{}<>".toCharArray().toSet()
+fun String.hasBalancedBrackets(): Boolean =
+  filter { it in BRACKETS }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
-  }.isEmpty() && brackets.any { it in this }
+  }.isEmpty() && BRACKETS.any { it in this }
 
 fun String.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
 
