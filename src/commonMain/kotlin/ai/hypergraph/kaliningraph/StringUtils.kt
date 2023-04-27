@@ -19,8 +19,10 @@ fun String.hasBalancedBrackets(brackets: String = "()[]{}<>"): Boolean =
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
   }.isEmpty() && brackets.any { it in this }
 
+fun String.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
+
 fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
-  fun String.tok() = split(" -> ")
+  fun String.tok() = splitProd()
   fun String.LHS() = tok()[0]
   fun String.RHS() = tok()[1]
   val groups = groupBy { it.LHS() }
@@ -39,7 +41,7 @@ fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
   }.let { up ->
     FreeMatrix(up.numRows, up.numCols) { r, c ->
       if (up[r, c].isEmpty()) return@FreeMatrix ""
-      val (lhs, rhs) = up[r, c].split(" -> ").let { it[0] to it[1] }
+      val (lhs, rhs) = up[r, c].splitProd().let { it[0] to it[1] }
       val lp = lhs.padStart(up.transpose[c].maxOf { it.substringBefore(" -> ").length })
       val rp = rhs.padEnd(up.transpose[c].maxOf { it.substringAfter(" -> ").length })
       "$lp → $rp"

@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.sampling.*
+import ai.hypergraph.kaliningraph.splitProd
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
@@ -170,7 +171,7 @@ fun Σᐩ.parseCFG(
   validate: Boolean = false
 ): CFG =
   (if (validate) validate() else this).lines().filter { "->" in it }.map { line ->
-    val prod = line.split(" -> ").map { it.trim() }
+    val prod = line.splitProd()
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].tokenizeByWhitespace()
     else throw Exception("Invalid production ${prod.size}: $line")
   }.toSet().let { if (normalize) it.normalForm else it }
