@@ -9,7 +9,7 @@ class LRUCache<K, V>(
   private var size: Int = 0
 
   fun getOrPut(key: K, value: () -> V): V =
-    if (key in map) map[key]!! else value().also { put(key, it) }
+    map[key] ?: value().also { put(key, it) }
 
   operator fun get(key: K) = map[key]
 
