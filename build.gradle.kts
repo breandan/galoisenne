@@ -62,7 +62,7 @@ signing {
 }
 
 group = "ai.hypergraph"
-version = "0.2.1"
+version = "0.2.2"
 
 repositories {
   mavenCentral {
@@ -129,7 +129,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.3.1")
+        implementation("org.graalvm.js:js:22.3.2")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
@@ -174,7 +174,7 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.9.2")
+        implementation("org.junit.jupiter:junit-jupiter:5.9.3")
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.0.1")

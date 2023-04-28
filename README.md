@@ -2,7 +2,6 @@
 
 [![Kotlin 1.6.20](https://img.shields.io/badge/Kotlin-1.6.20-blue.svg?style=flat&logo=kotlin)](http://kotlinlang.org)
 [![Maven Central](https://img.shields.io/maven-central/v/ai.hypergraph/kaliningraph.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22ai.hypergraph%22)
-[![](https://jitpack.io/v/breandan/kaliningraph.svg)](https://jitpack.io/#breandan/kaliningraph)
 [![CI](https://github.com/breandan/kaliningraph/workflows/CI/badge.svg)](https://github.com/breandan/kaliningraph/actions)
 
 This library implements a new computational model which we call [graph computation](http://breandan.net/2020/06/30/graph-computation/). In contrast with prior work, e.g., Turing's machine and Church's λ-calculus, the advantage of this model is that it can be directly translated to iterated matrix multiplication on GPUs and has many desirable algebraic properties. Furthermore, it offers a natural way to express algebraic circuits, neural networks, factor graphs, proof networks, and enjoys many connections to programming language theory, automata theory and category theory.

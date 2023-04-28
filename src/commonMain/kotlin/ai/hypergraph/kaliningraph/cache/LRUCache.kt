@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.cache
 
 // TODO: LFU Cache
 class LRUCache<K, V>(
-  private val maxSize: Int = 10_000,
+  private val maxSize: Int = 1_000,
   private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }
 ) {
   private val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
