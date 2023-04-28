@@ -92,16 +92,19 @@ fun CFG.toBitVec(nts: Set<Σᐩ>): BooleanArray =
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
 @JvmName("joinBitVector")
-fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray =
+fun join(vindex: List<Set<Π2A<Int>>>, left: BooleanArray, right: BooleanArray): BooleanArray =
   if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
-  else BooleanArray(left.size) { i ->
-    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-      .fold(false) { acc, satf -> acc or satf }
-  }
+  else vindex.map {
+      it.fold(false) { acc, (B, C) -> acc or (left[B] and right[C]) }
+//    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
+//      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
+//      .fold(false) { acc, satf -> acc or satf }
+  }.toBooleanArray()
 
-fun CFG.maybeJoin(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
-  if (left == null || right == null) null else join(left, right)
+fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray = join(vindex, left, right)
+
+fun maybeJoin(vindex: List<Set<Π2A<Int>>>, left: BooleanArray?, right: BooleanArray?): BooleanArray? =
+  if (left == null || right == null) null else join(vindex, left, right)
 
 fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   if (left == null || right == null) { left ?: right }
@@ -111,11 +114,13 @@ fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
 
 // Like satAlgebra, but with nullable bitvector literals instead of SAT literals
 val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
-  Ring.of(
-    nil = BooleanArray(nonterminals.size) { false },
-    plus = { x, y -> maybeUnion(x, y) },
-    times = { x, y -> maybeJoin(x, y) }
-  )
+  vindex.let {
+    Ring.of(
+      nil = BooleanArray(nonterminals.size) { false },
+      plus = { x, y -> maybeUnion(x, y) },
+      times = { x, y -> maybeJoin(it, x, y) }
+    )
+  }
 }
 
 fun CFG.toNTSet(nts: BooleanArray): Set<Σᐩ> =

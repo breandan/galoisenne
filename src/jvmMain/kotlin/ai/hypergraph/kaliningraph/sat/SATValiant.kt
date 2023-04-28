@@ -12,14 +12,15 @@ typealias SATRubix = UTMatrix<SATVector>
 val SATRubix.stringVariables by cache { diagonals.first() }
 
 @JvmName("joinFormula")
-fun CFG.join(left: SATVector, right: SATVector): SATVector =
+fun join(vindex: List<Set<Π2A<Int>>>, left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
-  else Array(left.size) { i ->
-    vindex[i]!!.map { (B, C) -> left[B] and right[C] }
-      .fold(F) { acc, satf -> acc or satf }
+  else vindex.map {
+    it.fold(F) { acc, (B, C) -> acc or (left[B] and right[C]) }
 //      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
 //      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
-  }
+  }.toTypedArray()
+
+fun CFG.join(left: SATVector, right: SATVector): SATVector = join(vindex, left, right)
 
 @JvmName("satFormulaUnion")
 infix fun SATVector.union(that: SATVector): SATVector =
@@ -175,12 +176,14 @@ fun CJL.alignNonterminals(rubices: List<SATRubix>): Formula {
 }
 
 val CFG.satAlgebra by cache {
-  Ring.of(
-    nil = arrayOf(),
-    one = Array(nonterminals.size) { T },
-    plus = { a, b -> a union b },
-    times = { a, b -> join(a, b) }
-  )
+  vindex.let {
+    Ring.of(
+      nil = arrayOf(),
+      one = Array(nonterminals.size) { T },
+      plus = { a, b -> a union b },
+      times = { a, b -> join(it, a, b) }
+    )
+  }
 }
 
 fun CFG.encodeTokenAsSATVec(token: Σᐩ): SATVector =
@@ -359,7 +362,7 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
  */
 
 // Naming convention: HV_r::${r}_c::${c}..._f::${idx}
-fun Variable.toRowColNT(cfg: CFG): Triple<Int, Int, String> {
+fun Variable.toRowColNT(cfg: CFG): Π3<Int, Int, String> {
   val (r, c, idx) = name().split("_").let { it[1].substringAfter("r::").toInt() to
       it[2].substringAfter("c::").toInt() to it.last().substringAfter("f::").toInt() }
   return Π(r, c, cfg.bindex[idx])

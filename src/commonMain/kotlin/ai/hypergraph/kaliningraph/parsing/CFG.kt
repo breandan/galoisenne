@@ -48,11 +48,12 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
     .groupBy { it.first }
     .mapValues { it.value.map { it.second }.toSet() }
 }
-val CFG.vindex: Map<Int, Set<Π2A<Int>>> by cache {
+
+val CFG.vindex by cache {
   bindex.indexedNTs.indices.associateWith { i ->
     bimap[bindex[i]].filter { 1 < it.size }
       .map { bindex[it[0]] to bindex[it[1]] }.toSet()
-  }
+  }.let { vindex -> List(nonterminals.size) { vindex[it]!! } }
 }
 
 val CFG.bindex: Bindex by cache { Bindex(this) }
