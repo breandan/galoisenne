@@ -424,8 +424,10 @@ fun CJL.synthesize(
   tokens: List<Σᐩ>,
   takeMoreWhile: () -> Boolean = { !Thread.currentThread().isInterrupted },
 ): Sequence<Σᐩ> {
-  check(tokens.all { it in symbols || it == HOLE_MARKER || it.isNonterminalStub() })
-  { "All tokens passed into synthesize() must be contained in all CFGs" }
+  tokens.firstOrNull { it !in symbols && it != HOLE_MARKER && !it.isNonterminalStub() }.let {
+    check(it == null) { "All tokens passed into synthesize() must be either hole tokens, " +
+        "or [non]terminals contained in the CFG, but \"${it}\" was neither.\n${cfgs.joinToString("\n") { it.prettyPrint() }}" }
+  }
   return when {
     tokens.none { it.isHoleTokenIn(cfg = cfgs.first()) } -> emptySequence<Σᐩ>().also { println("No holes!") }
     tokens.size == 1 -> cfgs.map { it.handleSingleton(tokens.first()) }.intersect().asSequence()
