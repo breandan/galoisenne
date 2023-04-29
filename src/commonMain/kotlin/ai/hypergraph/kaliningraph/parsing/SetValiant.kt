@@ -51,6 +51,11 @@ fun CFG.parseWithStubs(s: Σᐩ): Pair<Forest, List<Tree>> =
       it.flatten().flatten().map { it.denormalize() }
   }
 
+fun CFG.parseInvalidWithMaximalFragments(s: Σᐩ): List<Tree> =
+  parseWithStubs(s).second.fold(setOf<Tree>()) { acc, t ->
+    if (acc.any { t.span isStrictSubsetOf it.span }) acc else acc + t
+  }.sortedBy { it.span.first }
+
 //=====================================================================================
 /* Algebraic operations
  *

@@ -174,10 +174,7 @@ fun CFG.prune(
       .map { it to it }.toMutableList()
 ): Pair<Σᐩ, Reconstructor> {
   val tokens = string.tokenizeByWhitespace()
-  val stubs = parseWithStubs(string).second
-    .fold(setOf<Tree>()) { acc, t ->
-      if (acc.any { t.span isStrictSubsetOf it.span }) acc else acc + t
-    }.sortedBy { it.span.first }
+  val stubs = parseInvalidWithMaximalFragments(string)
 
   val treesToBeChopped =
     stubs.filter { "START" in equivalenceClass(it.root) }
