@@ -45,7 +45,7 @@ fun repair(
   val variations: List<Mutator> =
     listOf(
 //      { a, b -> a.randomInsertions() },
-      { a, b -> a.randomDeletions() },
+      { a, b -> a.randomDeletions(b) },
 //      { a, b -> a.randomSingleSubtitutions(exclusions = b) },
       { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
     )
@@ -290,10 +290,11 @@ fun Σᐩ.randomInsertions(
   }.map { idxs -> tokens.substitute(idxs) { it, _ -> "_ $it" } }
 
 fun Σᐩ.randomDeletions(
+  exclusions: Set<Int>,
   tokens: List<Σᐩ> = tokenizeByWhitespace() + "",
   numberOfEdits: Int = 1,
 ): Sequence<Σᐩ> =
-  tokens.indices.toSet().let { sortedIndices ->
+  tokens.indices.toSet().filterNot { it in exclusions }.let { sortedIndices ->
     (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) }
   }.map { idxs -> tokens.substitute(idxs) { it, _ -> "_" } }
 
