@@ -453,7 +453,7 @@ fun CJL.synthesize(
       // Instead we want an immutable Formula datatype that can be combined without affecting solver.
       // This would enable incremental editing, rollbacks, reset to initial state, etc.
       // TODO: var (solver, model) = parsingConstraints.solveUsingKosat()
-      model.ifEmpty { ff.clear(); println("no solutions were found after ${System.currentTimeMillis() - startTime}ms"); return@sequence }
+      model.ifEmpty { ff.clear(); println("UNSAT found after ${System.currentTimeMillis() - startTime}ms"); return@sequence }
 
       //  var totalFreshnessConstraints = 0L
       // Tries to enumerate all strings that satisfy the constraints, adding a freshness constraint after each one.
