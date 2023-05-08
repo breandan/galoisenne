@@ -132,7 +132,7 @@ kotlin {
         implementation("org.graalvm.js:js:22.3.2")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.3.0")
