@@ -1,3 +1,4 @@
+import ai.hypergraph.kaliningraph.levenshtein
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import kotlin.streams.*
@@ -5,6 +6,23 @@ import kotlin.time.*
 
 fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime().availableProcessors()) =
   (0 until cores).toSet().parallelStream().flatMap { i -> this(cores, i).asStream() }
+
+@OptIn(ExperimentalTime::class)
+// TODO: add parameters like repairInParallel, should be much faster
+fun bijectiveRepair(
+  strWithParseError: Σᐩ, cfg: CFG, edits: Int = 3,
+  clock: TimeSource.Monotonic.ValueTimeMark,
+  takeMoreWhile: () -> Boolean = { true },
+  filter: Σᐩ.() -> Boolean = { true },
+): List<String>? {
+  fun genSeq(skip: Int = 1, shift: Int = 0) =
+    generateLevenshteinEdits(cfg.terminals - cfg.blocked, strWithParseError.tokenizeByWhitespace(), edits, skip, shift)
+      .takeWhile { takeMoreWhile() }
+      .mapIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }
+      .filter { it.filter() }
+
+  return ::genSeq.parallelize().toList()
+}
 
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =
@@ -16,9 +34,7 @@ fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =
     }
 //      .filter { measureTimedValue { it.fastMatch(CFG) }.also { println("Decided ${it.value} in ${it.duration}") }.value }
 
-// This is much faster
-
-// This is fairly slow, but it's a good baseline for comparison
+// This is fairly slow compared to bijective repair, but it's a good baseline for comparison
 fun repairInParallel(
   prompt: Σᐩ,
   cfg: CFG,
@@ -27,6 +43,8 @@ fun repairInParallel(
   uncoarsen: Σᐩ.(Σᐩ) -> Σᐩ = { this },
   synthesizer: CFG.(List<Σᐩ>) -> Sequence<Σᐩ>,
   filter: (Σᐩ.() -> Boolean)? = null,
+  diagnostic: ((String) -> Unit)? = null,
+  score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
   variations: List<Mutator> =
     listOf(
       { a, b -> a.randomInsertions() },
@@ -34,7 +52,7 @@ fun repairInParallel(
       { a, b -> a.randomSingleSubtitutions(exclusions = b) },
       { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
     )
-): Sequence<Σᐩ> {
+): List<Σᐩ> {
   println("Repairing: $prompt")
   val coarsened = prompt.coarsen()
 //  if (cfg.parse(coarsened) != null) return emptyList()
@@ -43,7 +61,7 @@ fun repairInParallel(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   var totalSamples = 0
-  return sanitized.synthesizeWithVariationsInParallel( // <<<<<<<<<< Parallelization happens here
+  val repairs = sanitized.synthesizeWithVariationsInParallel( // <<<<<<<<<< Parallelization happens here
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,
@@ -51,6 +69,16 @@ fun repairInParallel(
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
     .let { if (filter != null) it.filter(filter) else it }
+    .let { if (diagnostic != null) it.map { diagnostic(it); it } else it }
+    .map { it to score(it) }
+    .take(MAX_SAMPLE).toList().sortedBy { it.second }
+    .also { println("Best score: (${it.firstOrNull()?.second})") }
+    .map { it.first.trim() }
+//    .map { totalSamples++; it.uncoarsen(prompt) }
+//    .let { if (filter != null) it.filter(filter) else it }
+
+  if (filter != null) println("Filtered out ${totalSamples - repairs.size}/${totalSamples} invalid samples!")
+  return repairs
 }
 
 // Generates a lazy sequence of mutations for a broken string

@@ -8,7 +8,7 @@ fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int
   generateLevenshteinEdits(cfg.terminals - cfg.blocked, prompt.tokenizeByWhitespace(), edits, skip, shift)
     .filter { it.matches(cfg) }
 
-private fun generateLevenshteinEdits(
+fun generateLevenshteinEdits(
   tokens: Set<Σᐩ>,
   promptTokens: List<Σᐩ>,
   edits: Int,

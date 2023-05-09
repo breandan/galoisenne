@@ -66,7 +66,7 @@ fun repair(
     .map { it to score(it) }
     .take(MAX_SAMPLE).toList().sortedBy { it.second }
     .also { println("Best score: (${it.firstOrNull()?.second})") }
-    .map { it.first }
+    .map { it.first.trim() }
 
   if (filter != null) println("Filtered out ${totalSamples - repairs.size}/${totalSamples} invalid samples!")
 

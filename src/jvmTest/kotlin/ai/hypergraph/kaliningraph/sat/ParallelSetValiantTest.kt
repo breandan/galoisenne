@@ -94,6 +94,7 @@ class ParallelSetValiantTest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.benchmarkRepairsWithFixedTimeout"
 */
   @Test
+  @OptIn(ExperimentalTime::class)
   fun benchmarkRepairsWithFixedTimeout() {
     TIMEOUT_MS = 30_000
     val cfg = sumCFG.noNonterminalStubs
@@ -101,38 +102,40 @@ class ParallelSetValiantTest {
     val tokens = strWithParseErr.tokenizeByWhitespace()
 
     val levenshteinRadius = 2
-    var startTime = System.currentTimeMillis()
 
-    repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> a.solve(this) })
-      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+    var clock = TimeSource.Monotonic.markNow()
+    val timeRemains = { clock.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
+
+    repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> a.solve(this, takeMoreWhile = timeRemains) })
+      .takeWhile { timeRemains() }
       .distinctBy { cfg.forestHash(it) }
-      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }.toList()
-      .also { println("Enumerative repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+      .mapIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }.toList()
+      .also { println("Enumerative repair generated ${it.size} models in ${clock.elapsedNow().inWholeMilliseconds}ms") }
 
-    startTime = System.currentTimeMillis()
-    cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it) })
-      .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+    clock = TimeSource.Monotonic.markNow()
+    cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it, takeMoreWhile = timeRemains) })
+      .takeWhile { timeRemains() }
       .distinctBy { cfg.forestHash(it) }
-      .mapIndexed { i, it -> println("#$i, ${System.currentTimeMillis() - startTime}ms, $it"); it }.toList()
-      .also { println("Levenshtein repair generated ${it.size} models in ${System.currentTimeMillis() - startTime}ms") }
+      .mapIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }.toList()
+      .also { println("Levenshtein repair generated ${it.size} models in ${clock.elapsedNow().inWholeMilliseconds}ms") }
 
-    startTime = System.currentTimeMillis()
-
+    clock = TimeSource.Monotonic.markNow()
     fun genSeq(skip: Int = 1, shift: Int = 0) =
       newRepair(strWithParseErr, cfg, levenshteinRadius * 2, skip, shift)
-        .takeWhile { System.currentTimeMillis() - startTime < TIMEOUT_MS }
+        .takeWhile { timeRemains() }
         .distinctBy { cfg.forestHash(it) }
-        .mapIndexed { i, it -> println("#$i, PID=$shift, ${System.currentTimeMillis() - startTime}ms, $it"); it }
+        .mapIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }
 
     ::genSeq.parallelize().toList()
       .also { println("Bijective repair generated ${it.distinctBy { cfg.forestHash(it) }.size}" +
-          " models in ${System.currentTimeMillis() - startTime}ms") }
+          " models in ${clock.elapsedNow().inWholeMilliseconds}ms") }
   }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelPRNG"
 */
   @Test
+  @OptIn(ExperimentalTime::class)
   fun testParallelPRNG() {
     // How many samples can we draw in n seconds?
     //  Drew 1403305 serial samples in 10000ms
@@ -141,22 +144,24 @@ class ParallelSetValiantTest {
 
     val timeoutMS = 10_000
 
+    var clock = TimeSource.Monotonic.markNow()
+    val timeRemains = { clock.elapsedNow().inWholeMilliseconds < TIMEOUT_MS }
+
     fun genSeq(skip: Int = 1, shift: Int = 0) =
       MDSamplerWithoutReplacement(('a'..'f').toSet(), 10, skip, shift)
 
     fun genSeqNK(skip: Int = 1, shift: Int = 0) =
       MDSamplerWithoutReplacementNK(('a'..'f').toSet(), 20, 3, skip, shift)
 
-    var startTime = System.currentTimeMillis()
-    genSeq().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+    genSeq().takeWhile { timeRemains() }.toList()
       .also { println("Drew ${it.size} serial samples in ${timeoutMS}ms") }
 
-    startTime = System.currentTimeMillis()
-    ::genSeq.parallelize().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+    clock = TimeSource.Monotonic.markNow()
+    ::genSeq.parallelize().takeWhile { timeRemains() }.toList()
       .also { println("Drew ${it.size} parallel samples in ${timeoutMS}ms") }
 
-    startTime = System.currentTimeMillis()
-    genSeqNK().takeWhile { System.currentTimeMillis() - startTime < timeoutMS }.toList()
+    clock = TimeSource.Monotonic.markNow()
+    genSeqNK().takeWhile { timeRemains() }.toList()
       .also { println("Drew ${it.size} bijective samples in ${timeoutMS}ms") }
   }
 }
