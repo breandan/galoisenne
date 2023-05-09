@@ -3,19 +3,19 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacementNK
 
 
-// Fully Parallelizable version of the Valiant algorithm for CFL repair
+// Fully-parallelizable version of the Valiant repair algorithm, just append a .parallelize() call
 fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> =
-  generateLevenshteinEdits(cfg, prompt.tokenizeByWhitespace(), edits, skip, shift)
+  generateLevenshteinEdits(cfg.terminals - cfg.blocked, prompt.tokenizeByWhitespace(), edits, skip, shift)
     .filter { it.matches(cfg) }
 
 private fun generateLevenshteinEdits(
-  cfg: CFG,
+  tokens: Set<Σᐩ>,
   promptTokens: List<Σᐩ>,
   edits: Int,
-  skip: Int,
-  shift: Int
+  skip: Int = 1,
+  shift: Int = 0
 ) =
-  MDSamplerWithoutReplacementNK(cfg.terminals, n = promptTokens.size, k = edits, skip, shift)
+  MDSamplerWithoutReplacementNK(tokens, n = promptTokens.size, k = edits, skip, shift)
     .map { (editLocs, tokens) ->
       val toReplaceWith = tokens.toMutableList()
       val newTokens = promptTokens.mapIndexed { i, ot ->

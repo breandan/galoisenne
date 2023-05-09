@@ -33,6 +33,13 @@ fun repair(
   filter: (Σᐩ.() -> Boolean)? = null,
   diagnostic: ((String) -> Unit)? = null,
   score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
+  variations: List<Mutator> =
+    listOf(
+      { a, b -> a.randomInsertions() },
+      { a, b -> a.randomDeletions(b) },
+      { a, b -> a.randomSingleSubtitutions(exclusions = b) },
+      { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
+    )
 ): List<Σᐩ> {
   val coarsened = prompt.coarsen()
   println("Repairing: $prompt" + if (coarsened != prompt) "\nCoarsened: $coarsened" else "" )
@@ -42,13 +49,6 @@ fun repair(
   val tokensWithHoles = tokens.map { if (it in cfg.terminals) it else HOLE_MARKER }
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
-  val variations: List<Mutator> =
-    listOf(
-//      { a, b -> a.randomInsertions() },
-      { a, b -> a.randomDeletions(b) },
-//      { a, b -> a.randomSingleSubtitutions(exclusions = b) },
-      { a, b -> a.randomDoubleSubstitutions(numberOfEdits = MAX_REPAIR, exclusions = b) }
-    )
   var totalSamples = 0
 
   val t = TimeSource.Monotonic.markNow()
@@ -305,7 +305,7 @@ fun Σᐩ.randomSingleSubtitutions(
 ): Sequence<Σᐩ> =
   tokens.indices.toSet().let { sortedIndices ->
     (1..numberOfEdits).asSequence().flatMap { sortedIndices.choose(it) }
-  }.map { idxs -> tokens.substitute(idxs) { it, i -> if(i in exclusions) "$i _" else "_" } }
+  }.map { idxs -> tokens.substitute(idxs) { it, i -> if (i in exclusions) "$it _" else "_" } }
 
 fun Σᐩ.randomDoubleSubstitutions(
   tokens: List<Σᐩ> = tokenizeByWhitespace(),
