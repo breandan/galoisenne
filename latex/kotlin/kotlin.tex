@@ -1,0 +1,77 @@
+%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,10pt,review,anonymous]{acmart}
+%\settopmatter{printfolios=false,printccs=false,printacmref=false}
+%% For double-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For single-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission, w/ required CCS and ACM Reference
+%\documentclass[sigplan,nonacm]{acmart}
+\documentclass[sigplan,review,anonymous,acmsmall]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+\acmConference[SPLASH'23]{ACM SIGPLAN conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 22-27, 2023}{Cascais, Portugal}
+%\acmYear{2018}
+%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2018}           %% If different from \acmYear
+
+%% Bibliography style
+\bibliographystyle{acmart}
+
+\input{preamble.tex}
+\begin{document}
+
+%% Title information
+\title{Syntax Error Correction}
+\begin{abstract}
+In this work, we illustrate how to lower context-free language recognition onto a tensor algebra over finite fields. In addition to its theoretical value, this connection has yielded surprisingly useful applications in incremental parsing, code completion and program repair. For example, we use it to repair syntax errors, perform sketch-based program synthesis, and decide various language induction and membership queries. This line of research provides an elegant unification of context-free program repair, code completion and sketch-based program synthesis. To accelerate code completion, we design and implement a novel incremental parser-synthesizer that transforms CFGs onto a dynamical system over finite field arithmetic, enabling us to suggest syntax repairs in-between keystrokes.
+\end{abstract}
+
+\maketitle
+
+  The tool accepts a sequence of lexical tokens and suggests a set of possible syntax repairs.
+
+  For example, consider the following text:
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+ Original:  val splitTokens : MutableList < String > = ArrayList ( )
+Corrupted:  (*@\hlred{var}@*) splitTokens : MutableList < String > = ArrayList ( )
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+D=1 repair: (*@\hlgreen{var}@*) splitTokens : MutableList < String > = ArrayList ( )
+D=1 repair: (*@\hlgreen{val}@*) splitTokens : MutableList < String > = ArrayList ( )
+D=2 repair: (*@\hlorange{var}@*) (*@\hlgreen{protected}@*) : MutableList < String > = ArrayList ( )
+D=2 repair: (*@\hlgreen{var}@*) splitTokens : MutableList < (*@\hlorange{tailrec}@*) > = ArrayList ( )
+D=2 repair: (*@\hlgreen{var}@*) splitTokens : MutableList < String > = (*@\hlorange{inline}@*) ( )
+D=2 repair: (*@\hlgreen{val}@*) splitTokens : MutableList < (*@\hlorange{override}@*) > = ArrayList ( )
+
+Found 426 valid repairs in 13062ms, or roughly ~32.61 repairs per second.
+Original string was #1 in repair proposals!
+\end{lstlisting}
+\end{tcolorbox}
+
+\end{document}

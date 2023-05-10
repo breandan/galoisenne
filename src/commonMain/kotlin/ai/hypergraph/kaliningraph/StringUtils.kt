@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.parsing.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
@@ -69,7 +70,8 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
 fun allPairsLevenshtein(s1: Set<String>, s2: Set<String>) =
   (s1 * s2).sumOf { (a, b) -> levenshtein(a, b) }
 
-fun levenshtein(s1: String, s2: String): Int = levenshtein(s1.toList(), s2.toList())
+fun levenshtein(s1: String, s2: String): Int =
+  levenshtein(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
 
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)
