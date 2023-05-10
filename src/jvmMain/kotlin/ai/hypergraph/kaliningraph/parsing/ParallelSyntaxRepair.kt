@@ -5,29 +5,44 @@ import kotlin.streams.*
 import kotlin.time.*
 
 fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime().availableProcessors()) =
-  (0 until cores).toSet().parallelStream().flatMap { i -> this(cores, i).asStream() }
+  (0 until cores).toSet().parallelStream()
+    .flatMap { i -> this(cores, i).asStream() }
 
 @OptIn(ExperimentalTime::class)
-// TODO: add parameters like repairInParallel, should be much faster
 fun bijectiveRepair(
-  strWithParseError: Σᐩ, cfg: CFG, edits: Int = 3,
-  clock: TimeSource.Monotonic.ValueTimeMark,
+  prompt: Σᐩ,
+  fillers: Set<Σᐩ>,
+  edits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   filter: Σᐩ.() -> Boolean = { true },
-): List<String>? {
-  fun genSeq(skip: Int = 1, shift: Int = 0) =
-    generateLevenshteinEdits(cfg.terminals - cfg.blocked, strWithParseError.tokenizeByWhitespace(), edits, skip, shift)
-      .takeWhile { takeMoreWhile() }
-      .mapIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }
-      .filter { it.filter() }
+  diagnostic: ((String) -> Unit)? = null,
+  score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
+): List<String> {
+  println("Repairing: $prompt")
 
-  return ::genSeq.parallelize().toList()
+  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+  fun genSeq(skip: Int = 1, shift: Int = 0) =
+    generateLevenshteinEditsUpTo(fillers, prompt.tokenizeByWhitespace(), edits, skip, shift)
+      .takeWhile { takeMoreWhile() }
+      .filter { it.filter() }
+      .mapIndexed { i, it ->
+        if (diagnostic != null) {
+          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
+          diagnostic(it); it } else it
+      }.map { it to score(it) }
+
+  return ::genSeq.parallelize().distinct()
+//    .limit(MAX_SAMPLE.toLong())
+    .toList().sortedBy { it.second }
+//    .also { println("Best score: (${it.firstOrNull()?.second})") }
+    .map { it.first.trim() }
+    .toList()
 }
 
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =
-  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).asStream().parallel()
-    .map {
+  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER })
+    .asStream().parallel().map {
       fold("" to it) { (a, b), c ->
         if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
       }.first.replace("ε ", "").trim()
