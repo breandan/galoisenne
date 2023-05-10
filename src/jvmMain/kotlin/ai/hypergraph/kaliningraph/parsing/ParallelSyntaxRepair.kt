@@ -5,38 +5,49 @@ import kotlin.streams.*
 import kotlin.time.*
 
 fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime().availableProcessors()) =
-  (0 until cores).toSet().parallelStream()
-    .flatMap { i -> this(cores, i).asStream() }
+  (0 until cores).toSet().parallelStream().flatMap { i -> this(cores, i).asStream() }
 
 @OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
-  prompt: Σᐩ,
+  toRepair: Σᐩ,
   fillers: Set<Σᐩ>,
   edits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   filter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((String) -> Unit)? = null,
-  score: (Σᐩ) -> Float = { levenshtein(it, prompt).toFloat() },
+  score: (Σᐩ) -> Float = { levenshtein(it, toRepair).toFloat() },
 ): List<String> {
-  println("Repairing: $prompt")
+//  println("Repairing: $toRepair")
+//  println("Fillers: $fillers")
+  val promptTokens = listOf("") + toRepair.tokenizeByWhitespace() + listOf("")
+  val deck = (fillers + promptTokens).shuffled().toSet()
 
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+  var (pass, fail) = 0 to 0
   fun genSeq(skip: Int = 1, shift: Int = 0) =
-    generateLevenshteinEditsUpTo(fillers, prompt.tokenizeByWhitespace(), edits, skip, shift)
+    generateLevenshteinEdits(deck, promptTokens, edits, skip, shift)
       .takeWhile { takeMoreWhile() }
-      .filter { it.filter() }
+      .filter {
+        it.filter()
+//          .also { result ->
+//            if (result) pass++ else fail++
+//            if (pass + fail % 20000 == 0)
+//              println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
+//          }
+      }
       .mapIndexed { i, it ->
         if (diagnostic != null) {
-          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
-          diagnostic(it); it } else it
-      }.map { it to score(it) }
+//          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
+          diagnostic(it); it
+        } else it
+      }
+      .map { it to score(it) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
     .toList().sortedBy { it.second }
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
-    .map { it.first.trim() }
-    .toList()
+    .map { it.first.trim() }.toList()
 }
 
 // This experiment essentially tries every possible combination of fillers in parallel
