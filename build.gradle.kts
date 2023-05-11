@@ -135,7 +135,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.3.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -192,12 +192,12 @@ kotlin {
         implementation("com.redislabs:jredisgraph:2.6.0-RC2")
         implementation("io.lacuna:bifurcan:0.2.0-alpha6")
 
-        val jgraphtVersion by extra { "1.5.1" }
+        val jgraphtVersion by extra { "1.5.2" }
         implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.6.2" }
+        val tinkerpopVersion by extra { "3.6.3" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
