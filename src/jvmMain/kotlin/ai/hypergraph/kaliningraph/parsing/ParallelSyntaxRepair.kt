@@ -10,7 +10,7 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
-@OptIn(ExperimentalTime::class)
+//@OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
   toRepair: Σᐩ,
   fillers: Set<Σᐩ>,
@@ -18,6 +18,7 @@ fun bijectiveRepair(
   takeMoreWhile: () -> Boolean = { true },
   filter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((String) -> Unit)? = null,
+  scoreEdit: ((Edit) -> Float)? = null,
   score: (Σᐩ) -> Float = { levenshtein(it, toRepair).toFloat() },
 ): List<String> {
 //  println("Repairing: $toRepair")
@@ -28,7 +29,7 @@ fun bijectiveRepair(
 //  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
   fun genSeq(skip: Int = 1, shift: Int = 0) =
-    generateLevenshteinEdits(deck, promptTokens, edits, skip, shift)
+    generateLevenshteinEdits(deck, promptTokens, edits, skip, shift, scoreEdit)
       .takeWhile { takeMoreWhile() }
       .filter {
         it.filter()
