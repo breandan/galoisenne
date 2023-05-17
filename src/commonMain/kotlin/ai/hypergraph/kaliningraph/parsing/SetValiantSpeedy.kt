@@ -31,6 +31,7 @@ fun generateLevenshteinEdits(
         if (i in editLocs) toReplaceWith.removeFirst() else ot
       }
       newTokens.filter { it != "ε" }.joinToString(" ")
+        .replace(Regex("\\s+"), " ")
     }
 
 fun Sequence<Edit>.reservoirSample(size: Int = 1000, scoreEdit: (Edit) -> Float): Sequence<Edit> {
