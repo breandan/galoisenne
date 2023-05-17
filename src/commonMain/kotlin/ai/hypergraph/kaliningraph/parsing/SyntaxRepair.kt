@@ -62,7 +62,7 @@ fun repair(
   )
     .map { totalSamples++; it.uncoarsen(prompt) }
     .let { if (filter != null) it.filter(filter) else it }
-    .let { if (diagnostic != null) it.map { diagnostic(it); it } else it }
+    .let { if (diagnostic != null) it.onEach { diagnostic(it) } else it }
     .map { it to score(it) }
     .take(MAX_SAMPLE).toList().sortedBy { it.second }
     .also { println("Best score: (${it.firstOrNull()?.second})") }
@@ -137,7 +137,7 @@ fun Σᐩ.synthesizeWithVariations(
 
   return allVariants
     .filter { s -> s.tokenizeByWhitespace().any { it.isHoleTokenIn(cfg) } }
-    .map { updateProgress(it); it }
+    .onEach { updateProgress(it) }
     .flatMap { variant ->
       val variantTokens = variant.tokenizeByWhitespace()
       cfg_.run { synthesizer(variantTokens) }

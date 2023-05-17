@@ -109,14 +109,14 @@ class ParallelSetValiantTest {
     repairInParallel(strWithParseErr, cfg, levenshteinRadius, synthesizer = { a -> a.solve(this, takeMoreWhile = timeRemains) })
       .takeWhile { timeRemains() }
       .distinctBy { cfg.forestHash(it) }
-      .mapIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }.toList()
+      .onEachIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it") }.toList()
       .also { println("Enumerative repair generated ${it.size} models in ${clock.elapsedNow().inWholeMilliseconds}ms") }
 
     clock = TimeSource.Monotonic.markNow()
     cfg.levenshteinRepair(levenshteinRadius, tokens, solver = { synthesize(it, takeMoreWhile = timeRemains) })
       .takeWhile { timeRemains() }
       .distinctBy { cfg.forestHash(it) }
-      .mapIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }.toList()
+      .onEachIndexed { i, it -> println("#$i, ${clock.elapsedNow().inWholeMilliseconds}ms, $it") }.toList()
       .also { println("Levenshtein repair generated ${it.size} models in ${clock.elapsedNow().inWholeMilliseconds}ms") }
 
     clock = TimeSource.Monotonic.markNow()
@@ -124,7 +124,7 @@ class ParallelSetValiantTest {
       newRepair(strWithParseErr, cfg, levenshteinRadius * 2, skip, shift)
         .takeWhile { timeRemains() }
         .distinctBy { cfg.forestHash(it) }
-        .mapIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it"); it }
+        .onEachIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it") }
 
     ::genSeq.parallelize().toList()
       .also { println("Bijective repair generated ${it.distinctBy { cfg.forestHash(it) }.size}" +

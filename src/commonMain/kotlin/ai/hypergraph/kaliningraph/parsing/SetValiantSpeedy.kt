@@ -33,15 +33,23 @@ fun generateLevenshteinEdits(
       newTokens.filter { it != "ε" }.joinToString(" ")
         .replace(Regex("\\s+"), " ")
     }
+    .distinct()
 
+//@OptIn(ExperimentalTime::class)
 fun Sequence<Edit>.reservoirSample(size: Int = 1000, scoreEdit: (Edit) -> Float): Sequence<Edit> {
   val pq = PriorityQueue()
+//  val t = TimeSource.Monotonic.markNow()
   return map { edit ->
     val score = scoreEdit(edit)
     val r = Random.nextFloat().pow(1f / score)
-    pq.insert(edit, -r)
+    pq.insert(edit, r)
     if (pq.count() > size) pq.extractMin() else null
-  }.filterNotNull() + generateSequence { pq.extractMin() }
+  }.filterNotNull() +
+  // Measure time till first sample
+//    .onEachIndexed { i, _ -> if (i == 0)
+//      println("Time to fill reservoir: ${t.elapsedNow().inWholeMilliseconds}ms")
+//    } +
+  generateSequence { pq.extractMin() }
 }
 
 // Maintains a sorted list of edits, sorted by score

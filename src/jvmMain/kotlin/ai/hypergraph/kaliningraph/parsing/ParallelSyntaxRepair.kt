@@ -19,11 +19,11 @@ fun bijectiveRepair(
   filter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((String) -> Unit)? = null,
   scoreEdit: ((Edit) -> Float)? = null,
-  score: (Σᐩ) -> Float = { levenshtein(it, toRepair).toFloat() },
+  scoreRepair: (Σᐩ) -> Float = { levenshtein(it, toRepair).toFloat() },
 ): List<String> {
 //  println("Repairing: $toRepair")
 //  println("Fillers: $fillers")
-  val promptTokens = listOf("") + toRepair.tokenizeByWhitespace() + listOf("")
+  val promptTokens = listOf("") + toRepair.tokenizeByWhitespace().intersperse() + listOf("")
   val deck = (fillers + promptTokens).shuffled().toSet()
 
 //  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
@@ -39,13 +39,13 @@ fun bijectiveRepair(
 //              println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
 //          }
       }
-      .mapIndexed { i, it ->
+      .onEachIndexed { i, it ->
         if (diagnostic != null) {
 //          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
-          diagnostic(it); it
-        } else it
+          diagnostic(it)
+        }
       }
-      .map { it to score(it) }
+      .map { it to scoreRepair(it) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
@@ -53,6 +53,9 @@ fun bijectiveRepair(
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
     .map { it.first.trim() }.toList()
 }
+
+// Intersperses "" in between every token in a list of tokens
+fun List<Σᐩ>.intersperse(): List<Σᐩ> = fold(listOf<Σᐩ>()) { acc, s -> acc + listOf("", s) }.drop(1)
 
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =

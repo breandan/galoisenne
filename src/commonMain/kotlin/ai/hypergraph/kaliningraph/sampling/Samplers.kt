@@ -248,6 +248,7 @@ fun <T> MDSamplerWithoutReplacementNKF(
   dimensions: Set<T>,
   n: Int,
   k: Int,
+  // Controls the start index and stride of each core's sampler (for parallelization)
   skip: Int = 1,
   shift: Int = 0,
   // Shuffle coordinates to increase entropy of sampling

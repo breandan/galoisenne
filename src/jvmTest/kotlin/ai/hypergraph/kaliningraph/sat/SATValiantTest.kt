@@ -808,7 +808,7 @@ class SATValiantTest {
       .pruneTreelikeNonterminals
       .also { println("After pruning (${it.size}):\n${it.prettyPrint()}") }
     "_ _ _ _ _ _".synthesizeIncrementally(cfg)
-      .map { println(it); it }
+      .onEach { println(it) }
       .take(10)
       .toList()
       .also { println("All: $it") }
@@ -831,7 +831,7 @@ class SATValiantTest {
   fun testLevenshteinRepair() {
     val cfg = sumCFG.noNonterminalStubs
     val strings = "3 _ _ + _ _ _ _ 4".synthesizeIncrementally(cfg)
-      .map { println(it); it }
+      .onEach { println(it) }
 
    // Deletes two random characters from each string
     val corruptedStrings =

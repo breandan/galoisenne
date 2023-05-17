@@ -177,7 +177,7 @@ class SetValiantTest {
         var totalChecked = 0
         val sols = template
           .genCandidates(cfg, cfg.terminals)
-          .map { totalChecked++; it }
+          .onEach { totalChecked++ }
           .filter { it.matches(cfg) }.distinct()
           .takeWhile { now() - startTime < 20000 }.toList()
 
