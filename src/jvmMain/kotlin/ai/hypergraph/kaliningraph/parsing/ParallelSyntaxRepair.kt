@@ -4,8 +4,11 @@ import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
 import kotlin.streams.*
 import kotlin.time.*
 
-fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = Runtime.getRuntime().availableProcessors()) =
-  (0 until cores).toSet().parallelStream().flatMap { i -> this(cores, i).asStream() }
+fun <E> ((Int, Int) -> Sequence<E>).parallelize(
+  cores: Int = Runtime.getRuntime().availableProcessors()
+) =
+  (0 until cores).toSet().parallelStream()
+  .flatMap { i -> this(cores, i).asStream() }
 
 @OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
@@ -22,7 +25,7 @@ fun bijectiveRepair(
   val promptTokens = listOf("") + toRepair.tokenizeByWhitespace() + listOf("")
   val deck = (fillers + promptTokens).shuffled().toSet()
 
-  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+//  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
   fun genSeq(skip: Int = 1, shift: Int = 0) =
     generateLevenshteinEdits(deck, promptTokens, edits, skip, shift)
