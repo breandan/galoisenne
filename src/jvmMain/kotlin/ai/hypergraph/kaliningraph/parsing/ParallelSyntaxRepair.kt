@@ -1,6 +1,6 @@
 import ai.hypergraph.kaliningraph.levenshtein
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacement
+import ai.hypergraph.kaliningraph.sampling.*
 import kotlin.streams.*
 import kotlin.time.*
 
@@ -9,6 +9,7 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
 ) =
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
+
 
 //@OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
@@ -31,6 +32,7 @@ fun bijectiveRepair(
   fun genSeq(skip: Int = 1, shift: Int = 0) =
     generateLevenshteinEdits(deck, promptTokens, edits, skip, shift, scoreEdit)
       .takeWhile { takeMoreWhile() }
+      .map { promptTokens.apply(it) }
       .filter {
         it.filter()
 //          .also { result ->

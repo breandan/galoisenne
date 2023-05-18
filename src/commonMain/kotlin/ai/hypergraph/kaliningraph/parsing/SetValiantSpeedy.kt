@@ -1,16 +1,27 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.sampling.MDSamplerWithoutReplacementNK
+import ai.hypergraph.kaliningraph.sampling.*
 import kotlin.math.pow
 import kotlin.random.Random
 
 
 // Fully-parallelizable version of the Valiant repair algorithm, just append a .parallelize() call
-fun newRepair(prompt: Σᐩ, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> =
-  generateLevenshteinEdits(cfg.terminals - cfg.blocked, prompt.tokenizeByWhitespace(), edits, skip, shift)
+fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shift: Int = 0): Sequence<String> =
+  generateLevenshteinEdits(cfg.terminals - cfg.blocked, prompt, edits, skip, shift)
+    .map { prompt.apply(it) }
     .filter { it.matches(cfg) }
 
-typealias Edit = Pair<Set<Int>, List<Σᐩ>>
+// Indices of the prompt tokens to be replaced and the tokens to replace them with
+typealias Edit = Map<Int, Σᐩ>
+
+// Enumerates the powerset from the bottom up, skipping the empty set
+fun Edit.subedits(): Sequence<Edit> = (1..size).asSequence()
+  .flatMap { keys.choose(it).map { it.associateWith { this[it]!! } } }
+
+fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
+  mapIndexed { i, ot -> if (i in edit) edit[i]!! else ot }
+    .filter { it != "ε" && it.isNotBlank() }.joinToString(" ")
+
 // If this fails, it's probably because the sample space is too large.
 // Short of migrating to a 64-bit LFSR, the solution is to reduce the
 // number of tokens^edits to be less than ~2^31, i.e. 2,147,483,647.
@@ -24,16 +35,6 @@ fun generateLevenshteinEdits(
 ) =
   MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
     .let { if (scoreEdit != null) it.reservoirSample(scoreEdit = scoreEdit) else it }
-    .mapIndexed { i, (editLocs, tokens) ->
-//      if (i % 100 == 0) println("$i-edit: $tokens, $editLocs")
-      val toReplaceWith = tokens.toMutableList()
-      val newTokens = promptTokens.mapIndexed { i, ot ->
-        if (i in editLocs) toReplaceWith.removeFirst() else ot
-      }
-      newTokens.filter { it != "ε" }.joinToString(" ")
-        .replace(Regex("\\s+"), " ")
-    }
-    .distinct()
 
 //@OptIn(ExperimentalTime::class)
 fun Sequence<Edit>.reservoirSample(size: Int = 1000, scoreEdit: (Edit) -> Float): Sequence<Edit> {

@@ -121,7 +121,7 @@ class ParallelSetValiantTest {
 
     clock = TimeSource.Monotonic.markNow()
     fun genSeq(skip: Int = 1, shift: Int = 0) =
-      newRepair(strWithParseErr, cfg, levenshteinRadius * 2, skip, shift)
+      newRepair(strWithParseErr.tokenizeByWhitespace(), cfg, levenshteinRadius * 2, skip, shift)
         .takeWhile { timeRemains() }
         .distinctBy { cfg.forestHash(it) }
         .onEachIndexed { i, it -> println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it") }
@@ -138,8 +138,8 @@ class ParallelSetValiantTest {
   @OptIn(ExperimentalTime::class)
   fun testParallelPRNG() {
     // How many samples can we draw in n seconds?
-    //  Drew 1403305 serial samples in 10000ms
-    //  Drew 544936 parallel samples in 10000ms
+    //  Drew 4210472 serial samples in 10000ms
+    //  Drew 1405941 parallel samples in 10000ms
     //  Drew 246240 bijective samples in 10000ms
 
     val timeoutMS = 10_000

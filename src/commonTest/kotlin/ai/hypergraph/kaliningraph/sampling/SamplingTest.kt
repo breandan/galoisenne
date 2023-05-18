@@ -89,7 +89,7 @@ class SamplingTest {
     val totalKCombinations= 6 choose 3
     val totalTuples= alphabet.size.toDouble().pow(3).toInt()
     MDSamplerWithoutReplacementNK(alphabet, 6, 3)
-      .onEach { println("(${it.first.joinToString(",")}) / [${it.second.joinToString(",")}]") }
+      .onEach { println("(${it.keys.joinToString(",")}) / [${it.values.joinToString(",")}]") }
       .toList()
       .also { assertEquals(totalKCombinations * totalTuples, it.size) }
       .also { assertEquals(it, it.distinct()) }
