@@ -117,7 +117,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
       }
     }
 
@@ -132,9 +132,9 @@ kotlin {
         implementation("org.graalvm.js:js:22.3.2")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.0") // TODO: why?
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.1") // TODO: why?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.1")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
@@ -142,7 +142,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:3.3.0")
+        implementation("org.apache.datasketches:datasketches-java:4.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -197,7 +197,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.6.3" }
+        val tinkerpopVersion by extra { "3.6.4" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
