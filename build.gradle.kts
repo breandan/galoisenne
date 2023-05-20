@@ -111,13 +111,14 @@ kotlin {
       }
     }
 
+    val kotlinxVersion = "0.8.0" // Do not update to 0.8.1
     val jsMain by getting {
       dependencies {
         implementation(kotlin("stdlib-js"))
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html:0.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxVersion")
       }
     }
 
@@ -134,7 +135,7 @@ kotlin {
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
 
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.8.1") // TODO: why?
+        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.1")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
