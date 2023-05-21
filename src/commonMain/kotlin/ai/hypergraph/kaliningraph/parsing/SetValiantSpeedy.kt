@@ -31,43 +31,8 @@ fun generateLevenshteinEdits(
   edits: Int,
   skip: Int = 1,
   shift: Int = 0,
-  scoreEdit: ((Edit) -> Float)? = null
 ) =
   MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
-    .let { if (scoreEdit != null) it.reservoirSample(scoreEdit = scoreEdit) else it }
-
-//@OptIn(ExperimentalTime::class)
-fun Sequence<Edit>.reservoirSample(size: Int = 1000, scoreEdit: (Edit) -> Float): Sequence<Edit> {
-  val pq = PriorityQueue()
-//  val t = TimeSource.Monotonic.markNow()
-  return map { edit ->
-    val score = scoreEdit(edit)
-    val r = Random.nextFloat().pow(1f / score)
-    pq.insert(edit, r)
-    if (pq.count() > size) pq.extractMin() else null
-  }.filterNotNull() +
-  // Measure time till first sample
-//    .onEachIndexed { i, _ -> if (i == 0)
-//      println("Time to fill reservoir: ${t.elapsedNow().inWholeMilliseconds}ms")
-//    } +
-  generateSequence { pq.extractMin() }
-}
-
-// Maintains a sorted list of edits, sorted by score
-private class PriorityQueue {
-  val edits = mutableListOf<Pair<Edit, Float>>()
-
-  fun insert(edit: Edit, score: Float) {
-    edits.binarySearch { it.second.compareTo(score) }.let { idx ->
-      if (idx < 0) edits.add(-idx - 1, edit to score)
-      else edits.add(idx, edit to score)
-    }
-  }
-
-  fun extractMin(): Edit? = edits.removeFirstOrNull()?.first
-
-  fun count() = edits.size
-}
 
 fun generateLevenshteinEditsUpTo(
   deck: Set<Σᐩ>,

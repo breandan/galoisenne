@@ -1,4 +1,4 @@
-import ai.hypergraph.kaliningraph.levenshtein
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.*
 import kotlin.streams.*
@@ -18,10 +18,10 @@ fun bijectiveRepair(
   edits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   filter: Σᐩ.() -> Boolean = { true },
-  diagnostic: ((String) -> Unit)? = null,
-  scoreEdit: ((Edit) -> Float)? = null,
-  scoreRepair: (Σᐩ) -> Float = { levenshtein(it, toRepair).toFloat() },
-): List<String> {
+  diagnostic: ((Σᐩ) -> Unit)? = null,
+  scoreString: ((Σᐩ) -> Double)? = null,
+  scoreRepair: (Σᐩ) -> Double = { levenshtein(it, toRepair).toDouble() },
+): List<Σᐩ> {
 //  println("Repairing: $toRepair")
 //  println("Fillers: $fillers")
   val promptTokens = listOf("") + toRepair.tokenizeByWhitespace().intersperse() + listOf("")
@@ -30,16 +30,17 @@ fun bijectiveRepair(
 //  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
   fun genSeq(skip: Int = 1, shift: Int = 0) =
-    generateLevenshteinEdits(deck, promptTokens, edits, skip, shift, scoreEdit)
+    MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
       .takeWhile { takeMoreWhile() }
       .map { promptTokens.apply(it) }
+      .let { if (scoreString != null) it.reservoirSample(score = scoreString) else it }
       .filter {
-        it.filter()
-//          .also { result ->
-//            if (result) pass++ else fail++
-//            if (pass + fail % 20000 == 0)
-//              println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
-//          }
+         it.filter()
+//         .also { result ->
+//           if (result) pass++ else fail++
+//           if (pass + fail % 20000 == 0)
+//             println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
+//         }
       }
       .onEachIndexed { i, it ->
         if (diagnostic != null) {
@@ -47,17 +48,16 @@ fun bijectiveRepair(
           diagnostic(it)
         }
       }
-      .map { it to scoreRepair(it) }
+      .map { Triple(it, scoreRepair(it), scoreString!!(it)) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
-    .toList().sortedBy { it.second }
+    .toList()
+    // Sort with it.second then by it.third
+    .sortedWith(compareBy({ it.second }, { it.third }))
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
     .map { it.first.trim() }.toList()
 }
-
-// Intersperses "" in between every token in a list of tokens
-fun List<Σᐩ>.intersperse(): List<Σᐩ> = fold(listOf<Σᐩ>()) { acc, s -> acc + listOf("", s) }.drop(1)
 
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =

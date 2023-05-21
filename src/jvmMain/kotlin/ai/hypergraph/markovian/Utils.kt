@@ -1,5 +1,6 @@
 package ai.hypergraph.markovian
 
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.types.cc
 import kotlinx.coroutines.*
 import kotlin.math.pow

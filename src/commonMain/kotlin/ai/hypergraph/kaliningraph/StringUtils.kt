@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.parsing.tokenizeByWhitespace
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
 import kotlin.math.ceil
@@ -15,20 +15,20 @@ infix fun Char.closes(that: Char) =
   else this == '>' && that == '<'
 
 val BRACKETS = "()[]{}<>".toCharArray().toSet()
-fun String.hasBalancedBrackets(): Boolean =
+fun Σᐩ.hasBalancedBrackets(): Boolean =
   filter { it in BRACKETS }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
   }.isEmpty() && BRACKETS.any { it in this }
 
-fun String.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
+fun Σᐩ.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
 
-fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
-  fun String.tok() = splitProd()
-  fun String.LHS() = tok()[0]
-  fun String.RHS() = tok()[1]
+fun List<Σᐩ>.formatAsGrid(cols: Int = -1): FreeMatrix<Σᐩ> {
+  fun Σᐩ.tok() = splitProd()
+  fun Σᐩ.LHS() = tok()[0]
+  fun Σᐩ.RHS() = tok()[1]
   val groups = groupBy { it.LHS() }
 
-  fun List<String>.rec() = if (cols == -1) // Minimize whitespace over all grids with a predefined number of columns
+  fun List<Σᐩ>.rec() = if (cols == -1) // Minimize whitespace over all grids with a predefined number of columns
     (3..5).map { formatAsGrid(it) }.minBy { it.toString().length }
   else sortedWith(compareBy(
     { groups[it.LHS()]!!.maxOf { it.length } }, // Shortest longest pretty-printed production comes first
@@ -55,7 +55,7 @@ fun List<String>.formatAsGrid(cols: Int = -1): FreeMatrix<String> {
 private fun <T> List<List<T>>.col(i: Int) = map { it[i] }
 
 // https://en.wikipedia.org/wiki/Seam_carving
-fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
+fun Σᐩ.carveSeams(toRemove: Regex = Regex("\\s{2,}")): Σᐩ =
   replace("  |  ", "    ")
     .lines().filter { it.isNotBlank() }.map { it.split("→") }.let { toMerge ->
     val minCols = toMerge.minOf { it.size }
@@ -67,10 +67,10 @@ fun String.carveSeams(toRemove: Regex = Regex("\\s{2,}")): String =
     }
   }
 
-fun allPairsLevenshtein(s1: Set<String>, s2: Set<String>) =
+fun allPairsLevenshtein(s1: Set<Σᐩ>, s2: Set<Σᐩ>) =
   (s1 * s2).sumOf { (a, b) -> levenshtein(a, b) }
 
-fun levenshtein(s1: String, s2: String): Int =
+fun levenshtein(s1: Σᐩ, s2: Σᐩ): Int =
   levenshtein(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
 
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
@@ -90,3 +90,6 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   }
   return prev[o2.size]
 }
+
+// Intersperses "" in between every token in a list of tokens
+fun List<Σᐩ>.intersperse(): List<Σᐩ> = fold(listOf<Σᐩ>()) { acc, s -> acc + listOf("", s) }.drop(1)

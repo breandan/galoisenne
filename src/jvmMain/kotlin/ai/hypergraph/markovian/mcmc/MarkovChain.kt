@@ -4,13 +4,13 @@ import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
-import org.apache.datasketches.frequencies.*
+import org.apache.datasketches.frequencies.ItemsSketch
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.abs
+import kotlin.math.*
 import kotlin.random.Random
 
 /**
@@ -56,6 +56,7 @@ val maxUniques: Int = 2000
 
 // TODO: Support continuous state spaces?
 // https://www.colorado.edu/amath/sites/default/files/attached-files/2_28_2018.pdf
+// https://en.wikipedia.org/wiki/Variable-order_Markov_model
 open class MarkovChain<T>(
   train: Sequence<T> = sequenceOf(),
   val memory: Int = 3,
@@ -100,9 +101,18 @@ open class MarkovChain<T>(
     // https://en.wikipedia.org/wiki/Copula_(probability_theory)
   }
 
+  fun topK(k: Int = 10): List<T> =
+    counter.rawCounts.getFrequentItems(NO_FALSE_POSITIVES).take(k).map { it.item }
+
   // TODO: mergeable cache?
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
   val dists: LRUCache<List<Int>, Dist> = LRUCache()
+
+  // Computes perplexity of a sequence normalized by sequence length
+  fun score(seq: List<T>): Double =
+    seq.windowed(memory)
+      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray()).coerceAtLeast(0.00001) }
+      .sumOf { ln(it) } / seq.size
 
   operator fun get(vararg variables: T?): Double =
     get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
@@ -183,7 +193,7 @@ open class MarkovChain<T>(
      * Precomputes the normalizing constants for all multivariate
      * marginals of a length-[memory] sequence, e.g., for the
      * sequence 'abc', we need to increment the normalizing
-     * constants for all of the following eight marginals:
+     * constants for all the following eight marginals:
      *
      *  P[a * *] += 1    P[a b *] += 1    P[a b c] += 1
      *  P[* b *] += 1    P[* b c] += 1    P[* * *] += 1
