@@ -48,7 +48,7 @@ fun bijectiveRepair(
           diagnostic(it)
         }
       }
-      .map { Triple(it, scoreRepair(it), scoreString!!(it)) }
+      .map { Triple(it, scoreRepair(it), if(scoreString != null) scoreString(it) else 0.0) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
