@@ -111,8 +111,8 @@ open class MarkovChain<T>(
   // Computes perplexity of a sequence normalized by sequence length
   fun score(seq: List<T>): Double =
     seq.windowed(memory)
-      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray()).coerceAtLeast(0.00001) }
-      .sumOf { ln(it) } / seq.size
+      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray()).coerceAtLeast(0.00000001) }
+      .sumOf { -ln(it) }
 
   operator fun get(vararg variables: T?): Double =
     get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
