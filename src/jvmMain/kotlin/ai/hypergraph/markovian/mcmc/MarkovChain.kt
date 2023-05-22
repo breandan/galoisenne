@@ -101,8 +101,11 @@ open class MarkovChain<T>(
     // https://en.wikipedia.org/wiki/Copula_(probability_theory)
   }
 
-  fun topK(k: Int = 10): List<T> =
-    counter.rawCounts.getFrequentItems(NO_FALSE_POSITIVES).take(k).map { it.item }
+  fun topK(k: Int = 10): List<Pair<T, Long>> =
+    counter.rawCounts.getFrequentItems(NO_FALSE_POSITIVES).take(k).map { it.item to it.estimate }
+
+  fun topTuples(k: Int = 10): List<Pair<List<T>, Long>> =
+    counter.memCounts.getFrequentItems(NO_FALSE_POSITIVES).take(k).map { it.item to it.estimate }
 
   // TODO: mergeable cache?
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
@@ -112,7 +115,9 @@ open class MarkovChain<T>(
   fun score(seq: List<T>): Double =
     seq.windowed(memory)
       .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray()).coerceAtLeast(0.00000001) }
-      .sumOf { -ln(it) }
+//      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray())
+//        .let { q -> if(q == 0.0) 0.00000001.also { l -> println("Seq empty: $it") } else q } }
+      .sumOf { -ln(it) } / seq.size
 
   operator fun get(vararg variables: T?): Double =
     get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
@@ -120,7 +125,11 @@ open class MarkovChain<T>(
   operator fun get(vararg variables: Pair<Int, T?>): Double =
     variables.associate { (a, b) -> a to b }
       .let { map -> (0 until memory).map { map[it] } }.let {
-        counter.nrmCounts.getEstimate(it).toDouble() / counter.total.toDouble()
+//        val n = counter.nrmCounts.getEstimate(it).toDouble()
+        val m = counter.memCounts.getEstimate(it.map { it!! }).toDouble()
+        val d = counter.total.toDouble()
+//        println("Numerator: $n, MemCounts: $m, Denominator: $d")
+        m / d
       }
 
   // https://www.cs.utah.edu/~jeffp/papers/merge-summ.pdf
@@ -201,9 +210,9 @@ open class MarkovChain<T>(
      *
      *  In general, requires O(2ⁿ) ops for a length-n sequence.
      */
-    val nrmCounts: ItemsSketch<List<T?>> = ItemsSketch(nrmUniques),
+    val nrmCounts: ItemsSketch<List<T?>> = ItemsSketch(nrmUniques), // Does not work?
     // Counts unique subsequences of Ts up to length memory
-    val memCounts: ItemsSketch<List<T>> = ItemsSketch<List<T>>(memUniques)
+    val memCounts: ItemsSketch<List<T>> = ItemsSketch(memUniques)
   ) {
     // Walks [toCount] counting Hamming subspaces of sequences up to length [memory]
     init {
