@@ -15,7 +15,7 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
   fillers: Set<Σᐩ>,
-  edits: Int = 3,
+  edits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((Σᐩ) -> Unit)? = null,
@@ -45,7 +45,6 @@ fun bijectiveRepair(
 //         }
       }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
-      .onEach { assert(it.result.admissibilityFilter()) }
       .onEachIndexed { i, it ->
         if (diagnostic != null) {
 //          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")

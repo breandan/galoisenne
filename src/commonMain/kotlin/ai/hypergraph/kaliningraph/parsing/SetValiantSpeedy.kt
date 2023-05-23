@@ -24,9 +24,8 @@ fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
 class Repair(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
   fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
     edit.subedits()
-      // Get first nonempty level of the Hasse diagram and its siblings
-      .firstOrNull { it.filter { filter(orig.apply(it)) }.iterator().hasNext() }
-      ?.map { subedit ->
+      .map { it.filter { filter(orig.apply(it)) } }
+      .firstOrNull { it.any() }?.map { subedit ->
         val result = orig.apply(subedit)
         Repair(orig, subedit, result, score(result))
       } ?: sequenceOf(this)
