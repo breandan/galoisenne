@@ -59,25 +59,12 @@ fun DoubleMatrix.meanNorm() =
     VT(a + e / data.size.toDouble(), min(b, e), max(c, e))
   }.let { (μ, min, max) -> elwise { e -> (e - μ) / (max - min) } }
 
-infix fun Int.oldChoose(k: Int): Int =
-  require(0 <= k && 0 <= this) { "Bad (k, n) = ($k, $this)!" }.let {
-    when {
-      k > this -> 0
-      this == k -> 1
-      k == 0 -> 1
-      else -> ((this - 1) choose (k - 1)) + ((this - 1) choose k)
-    }
-  }
-
-// MUCH faster version of the above
 infix fun Int.choose(k: Int): Int {
   require(0 <= k && 0 <= this) { "Bad (k, n) = ($k, $this)!" }
   if (k > this || k < 0) return 0
   if (k > this / 2) return this choose this - k
   var result = 1
-  for (i in 1..k) {
-    result = result * (this - i + 1) / i
-  }
+  for (i in 1..k) result = result * (this - i + 1) / i
   return result
 }
 
