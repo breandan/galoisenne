@@ -13,18 +13,17 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
 
 //@OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
-  toRepair: Σᐩ,
+  promptTokens: List<Σᐩ>,
   fillers: Set<Σᐩ>,
-  edits: Int = 2,
+  edits: Int = 3,
   takeMoreWhile: () -> Boolean = { true },
-  filter: Σᐩ.() -> Boolean = { true },
+  admissibilityFilter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((Σᐩ) -> Unit)? = null,
-  scoreString: ((Σᐩ) -> Double)? = null,
-  scoreRepair: (Σᐩ) -> Double = { levenshtein(it, toRepair).toDouble() },
+  scoreEdit: (Σᐩ) -> Double = { 0.0 },
+  scoreRepair: (Σᐩ) -> Double = { levenshtein(it.tokenizeByWhitespace(), promptTokens).toDouble() },
 ): List<Σᐩ> {
 //  println("Repairing: $toRepair")
 //  println("Fillers: $fillers")
-  val promptTokens = listOf("") + toRepair.tokenizeByWhitespace().intersperse() + listOf("")
   val deck = (fillers + promptTokens).shuffled().toSet()
 
 //  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
@@ -32,23 +31,28 @@ fun bijectiveRepair(
   fun genSeq(skip: Int = 1, shift: Int = 0) =
     MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
       .takeWhile { takeMoreWhile() }
-      .map { promptTokens.apply(it) }
-      .let { if (scoreString != null) it.reservoirSample(score = scoreString) else it }
+      .map {
+        val result = promptTokens.apply(it)
+        Repair(promptTokens, it, result, scoreEdit(result))
+      }
+      .let { it.reservoirSample(score = { it.score }) }
       .filter {
-         it.filter()
+         it.result.admissibilityFilter()
 //         .also { result ->
 //           if (result) pass++ else fail++
 //           if (pass + fail % 20000 == 0)
 //             println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
 //         }
       }
+      .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
+      .onEach { assert(it.result.admissibilityFilter()) }
       .onEachIndexed { i, it ->
         if (diagnostic != null) {
 //          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
-          diagnostic(it)
+          diagnostic(it.result)
         }
       }
-      .map { Triple(it, scoreRepair(it), if(scoreString != null) scoreString(it) else 0.0) }
+      .map { Triple(it.result, scoreRepair(it.result), it.score) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())

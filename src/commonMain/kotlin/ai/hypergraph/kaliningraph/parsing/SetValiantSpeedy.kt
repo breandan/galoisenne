@@ -1,8 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.sampling.*
-import kotlin.math.pow
-import kotlin.random.Random
 
 
 // Fully-parallelizable version of the Valiant repair algorithm, just append a .parallelize() call
@@ -15,12 +13,24 @@ fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shif
 typealias Edit = Map<Int, Σᐩ>
 
 // Enumerates the powerset from the bottom up, skipping the empty set
-fun Edit.subedits(): Sequence<Edit> = (1..size).asSequence()
-  .flatMap { keys.choose(it).map { it.associateWith { this[it]!! } } }
+private fun Edit.subedits() =
+  (1..size).asSequence()
+  .map { keys.choose(it).map { it.associateWith { this[it]!! } } }
 
 fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
   mapIndexed { i, ot -> if (i in edit) edit[i]!! else ot }
     .filter { it != "ε" && it.isNotBlank() }.joinToString(" ")
+
+class Repair(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
+  fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
+    edit.subedits()
+      // Get first nonempty level of the Hasse diagram and its siblings
+      .firstOrNull { it.filter { filter(orig.apply(it)) }.iterator().hasNext() }
+      ?.map { subedit ->
+        val result = orig.apply(subedit)
+        Repair(orig, subedit, result, score(result))
+      } ?: sequenceOf(this)
+}
 
 // If this fails, it's probably because the sample space is too large.
 // Short of migrating to a 64-bit LFSR, the solution is to reduce the

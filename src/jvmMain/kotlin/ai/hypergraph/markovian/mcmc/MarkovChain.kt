@@ -114,22 +114,29 @@ open class MarkovChain<T>(
   // Computes perplexity of a sequence normalized by sequence length
   fun score(seq: List<T>): Double =
     seq.windowed(memory)
-      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray()).coerceAtLeast(0.00000001) }
+      .map { getAtLeastOne(it.mapIndexed { i, t -> i to t }) }
 //      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray())
 //        .let { q -> if(q == 0.0) 0.00000001.also { l -> println("Seq empty: $it") } else q } }
       .sumOf { -ln(it) } / seq.size
 
   operator fun get(vararg variables: T?): Double =
-    get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
+    if (variables.size == 1) counter.rawCounts.getEstimate(variables[0]) / counter.total.toDouble()
+    else get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
+
+  private fun getAtLeastOne(variables: List<Pair<Int, T?>>): Double =
+    variables.associate { (a, b) -> a to b }
+      .let { map -> (0 until memory).map { map[it] } }.let {
+        val n = counter.nrmCounts.getEstimate(it).coerceAtLeast(1).toDouble()
+        val d = counter.total.toDouble()
+        n / d
+      }
 
   operator fun get(vararg variables: Pair<Int, T?>): Double =
     variables.associate { (a, b) -> a to b }
       .let { map -> (0 until memory).map { map[it] } }.let {
-//        val n = counter.nrmCounts.getEstimate(it).toDouble()
-        val m = counter.memCounts.getEstimate(it.map { it!! }).toDouble()
+        val n = counter.nrmCounts.getEstimate(it).toDouble()
         val d = counter.total.toDouble()
-//        println("Numerator: $n, MemCounts: $m, Denominator: $d")
-        m / d
+        n / d
       }
 
   // https://www.cs.utah.edu/~jeffp/papers/merge-summ.pdf
@@ -210,7 +217,7 @@ open class MarkovChain<T>(
      *
      *  In general, requires O(2ⁿ) ops for a length-n sequence.
      */
-    val nrmCounts: ItemsSketch<List<T?>> = ItemsSketch(nrmUniques), // Does not work?
+    val nrmCounts: ItemsSketch<List<T?>> = ItemsSketch(nrmUniques),
     // Counts unique subsequences of Ts up to length memory
     val memCounts: ItemsSketch<List<T>> = ItemsSketch(memUniques)
   ) {
@@ -218,7 +225,7 @@ open class MarkovChain<T>(
     init {
       toCount.windowed(memory, 1).forEach { buffer: List<T> ->
         total.incrementAndGet()
-        buffer.let { memCounts.update(it) }
+        buffer.let { memCounts.update(it); nrmCounts.update(it) }
         buffer.forEach { rawCounts.update(it) }
         buffer.allMasks().forEach { nrmCounts.update(it) }
       }

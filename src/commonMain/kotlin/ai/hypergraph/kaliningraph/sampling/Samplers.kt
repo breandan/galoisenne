@@ -42,6 +42,50 @@ fun all(i: List<Int>, l: List<Int> = emptyList()): Sequence<List<Int>> =
   if (i.isEmpty()) sequenceOf(l)
   else (0 until i[0]).asSequence().flatMap { all(i.drop(1), l + it) }
 
+// Does not pass empirical tests?
+val lecuyerGenerator =
+  listOf(1, 3, 7, 11, 13, 19, 25, 37, 59,
+    47, 61, 55, 41, 67, 97, 91, 109, 103,
+    115, 131, 193, 137, 145, 143, 241, 157, 185,
+    167, 229, 171, 213, 191, 253, 203, 211, 239,
+    247, 285, 369, 299, 425, 301, 361, 333, 357,
+    351, 501, 355, 397, 391, 451, 463, 487, 529,
+    545, 539, 865, 557, 721, 563, 817, 601, 617,
+    607, 1001, 623, 985, 631, 953, 637, 761, 647,
+    901, 661, 677, 675, 789, 687, 981, 695, 949,
+    701, 757, 719, 973, 731, 877, 787, 803, 799,
+    995, 827, 883, 847, 971, 859, 875, 895, 1019,
+    911, 967, 1033, 1153, 1051, 1729, 1063, 1825, 1069,
+    1441, 1125, 1329, 1135, 1969, 1163, 1673, 1221, 1305,
+    1239, 1881, 1255, 1849, 1267, 1657, 1279, 2041, 1293,
+    1413, 1315, 1573, 1341, 1509, 1347, 1557, 1367, 1877,
+    1387, 1717, 1423, 1933, 1431, 1869, 1479, 1821, 1527,
+    1917, 1531, 1789, 1555, 1603, 1591, 1891, 1615, 1939,
+    1627, 1747, 1663, 2035, 1759, 2011, 1815, 1863, 2053,
+    2561, 2071, 3713, 2091, 3393, 2093, 2881, 2119, 3617,
+    2147, 3169, 2149, 2657, 2161, 2273, 2171, 3553, 2189,
+    2833, 2197, 2705, 2207, 3985, 2217, 2385, 2225, 2257,
+    2255, 3889, 2279, 3697, 2283, 3441, 2293, 2801, 2317,
+    2825, 2323, 3209, 2341, 2633, 2345, 2377, 2363, 3529,
+    2365, 3017, 2373, 2601, 2395, 3497, 2419, 3305, 2421,
+    2793, 2431, 4073, 2435, 3097, 2447, 3865, 2475, 3417,
+    2477, 2905, 2489, 2521, 2503, 3641, 2533, 2681, 2551,
+    3833, 2567, 3589, 2579, 3205, 2581, 2693, 2669, 2917,
+    2687, 4069, 2717, 2965, 2727, 3669, 2731, 3413, 2739,
+    3285, 2741, 2773, 2783, 4021, 2799, 3957, 2811, 3573,
+    2819, 3085, 2867, 3277, 2879, 4045, 2891, 3373, 2911,
+    4013, 2927, 3949, 2941, 3053, 2951, 3613, 2955, 3357,
+    2963, 3229, 2991, 3933, 2999, 3805, 3005, 3037, 3035,
+    3517, 3047, 3709, 3083, 3331, 3103, 3971, 3159, 3747,
+    3179, 3427, 3187, 3299, 3223, 3731, 3227, 3475, 3251,
+    3283, 3263, 4051, 3271, 3635, 3319, 3827, 3343, 3851,
+    3367, 3659, 3399, 3627, 3439, 3947, 3487, 3995, 3515,
+    3547, 3543, 3771, 3559, 3707, 3623, 3655, 3679, 4007,
+    3743, 3991, 3791, 3895, 4179, 6465, 4201, 4801, 4219,
+    7105, 4221, 6081, 4249, 4897, 4305, 4449, 4331, 6881,
+    4359, 7185, 4383, 7953, 4387, 6289, 4411, 7057, 4431)
+    .mapIndexed { i, it -> i to listOf(it) }.toMap()
+
 // TODO: Compute minimal elements of GF(p^e) dynamically
 // http://www.seanerikoconnor.freeservers.com/Mathematics/AbstractAlgebra/PrimitivePolynomials/theory.html
 // https://math.stackexchange.com/questions/2232179/how-to-find-minimal-polynomial-for-an-element-in-mboxgf2m
@@ -172,14 +216,14 @@ fun LFSR(
   degree: Int = 16,
   primitivePolynomial: List<Int> = generator[degree]!!.random().toString(2)
     .mapIndexedNotNull { i, c -> if (c == '1') i else null }
-): Sequence<UInt> = // LFSRM(degree)
+): Sequence<ULong> = // LFSRM(degree)
   if (degree == 0) sequenceOf() else sequence {
-    val max = 1 shl degree
-    val vec0 = Random.nextInt(1 ..max).toUInt()
+    val max = 1L shl degree
+    val vec0 = Random.nextULong(1UL ..max.toULong())
     var vec = vec0
     var i = 0
     do {
-      val bit = primitivePolynomial.fold(0u) { a, c -> a xor (vec shr c) } and 1u
+      val bit = primitivePolynomial.fold(0UL) { a, c -> a xor (vec shr c) } and 1UL
       vec = (vec shr 1) or (bit shl (degree - 1))
       yield(vec)
     } while (++i < max - 1)
@@ -193,7 +237,7 @@ fun randomSequenceWithoutRepetition(range: IntRange): Sequence<Int> =
 
 private fun RandomVector(
   degree: Int,
-  initialValue: UInt = Random.nextInt(1..(2.0.pow(degree).toInt())).toUInt(),
+  initialValue: ULong = Random.nextULong(1UL..(2.0.pow(degree).toULong())),
   initialState: List<Boolean> = initialValue.toBitList2(degree),
 ) = FreeMatrix(XOR_ALGEBRA, degree, 1) { r, _ -> initialState[r] }
 
@@ -293,11 +337,11 @@ private fun List<Boolean>.toUInt() = joinToString("") { if (it) "1" else "0" }.t
 private fun UInt.toBitList(len: Int): List<Boolean> =
   toString(2).padStart(len, '0').map { it == '1' }
 // Much faster version of above function:
-private fun UInt.toBitList2(len: Int): List<Boolean> {
+private fun ULong.toBitList2(len: Int): List<Boolean> {
   val bits = mutableListOf<Boolean>()
   var i = this
   for (j in 0 until len) {
-    bits.add(i and 1u == 1u)
+    bits.add(i and 1UL == 1UL)
     i = i shr 1
   }
   return bits
