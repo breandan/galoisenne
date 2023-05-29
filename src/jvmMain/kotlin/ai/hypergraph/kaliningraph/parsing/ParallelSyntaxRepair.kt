@@ -16,21 +16,24 @@ fun bijectiveRepair(
   edits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: Σᐩ.() -> Boolean = { true },
-  diagnostic: ((Σᐩ) -> Unit)? = null,
+  diagnostic: ((Repair) -> Unit)? = null,
   scoreEdit: (Σᐩ) -> Double = { 0.0 },
-  scoreRepair: (Σᐩ) -> Double = { levenshtein(it.tokenizeByWhitespace(), promptTokens).toDouble() },
-): List<Σᐩ> {
-//  println("Repairing: $toRepair")
+): List<Repair> {
+//  println("Repairing: $promptTokens")
 //  println("Fillers: $fillers")
   val deck = (fillers + promptTokens).shuffled().toSet() - "\""
+//  println("Using deck: $deck")
 
-//  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
+
   fun genSeq(skip: Int = 1, shift: Int = 0) =
     MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
       .takeWhile { takeMoreWhile() }
+//      .toList().also { println("Total elements found: ${it.size}") }.asSequence()
       .map {
         val result = promptTokens.apply(it)
+//        if (it[1] == "val" && "ε" in it.values) println("Special: $result")
         Repair(promptTokens, it, result, scoreEdit(result))
       }
       .let { it.reservoirSample(score = { it.score }) }
@@ -42,22 +45,23 @@ fun bijectiveRepair(
 //             println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
 //         }
       }
+//      .onEach { println("Valid: $it") }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
       .onEachIndexed { i, it ->
+        it.time = clock.elapsedNow().inWholeMilliseconds
         if (diagnostic != null) {
 //          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
-          diagnostic(it.result)
+          diagnostic(it)
         }
       }
-      .map { Triple(it.result, scoreRepair(it.result), it.score) }
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
     .toList()
     // Sort with it.second then by it.third
-    .sortedWith(compareBy({ it.second }, { it.third }))
+    .sortedWith(compareBy({ it.edit.size }, { it.score }))
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
-    .map { it.first.trim() }.toList()
+    .toList()
 }
 
 // This experiment essentially tries every possible combination of fillers in parallel

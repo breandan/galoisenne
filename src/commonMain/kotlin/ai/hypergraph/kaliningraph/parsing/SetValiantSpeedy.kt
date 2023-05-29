@@ -19,9 +19,17 @@ private fun Edit.subedits() =
 
 fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
   mapIndexed { i, ot -> if (i in edit) edit[i]!! else ot }
-    .filter { it != "ε" && it.isNotBlank() }.joinToString(" ")
+    .filter { it != "ε" && it.isNotBlank() }.joinToString(" ").trim()
 
 class Repair(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
+  var time: Long = -1
+  override fun hashCode(): Int = result.hashCode()
+  override fun equals(other: Any?): Boolean =
+    if (other is Repair) result == other.result else false
+
+  fun elapsed(): String = (if (time == -1L) "N/A" else "${time / 1000.0}").take(4) + "s"
+  fun scoreStr(): String = "$score".take(5)
+
   fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
     edit.subedits()
       .map { it.filter { filter(orig.apply(it)) } }

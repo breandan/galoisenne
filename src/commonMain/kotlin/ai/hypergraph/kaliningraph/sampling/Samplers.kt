@@ -304,7 +304,8 @@ fun <T> MDSamplerWithoutReplacementNKF(
 ): Sequence<Pair<Set<Int>, List<T>>> =
   if (degree < 4) throw Exception("Space is too small! ($degree)")
   else if (degree !in generator) throw Exception("Space is too large! ($degree)")
-  else LFSR(degree)//.also { println("Degree: $degree") }
+  else LFSR(degree)
+    //.also { println("Params: n=$n, k=$k, skip=$skip, shift=$shift, cardinality=$cardinality, choices=$choices, degree=$degree") }
     .let { if (skip == 1) it else it.filterIndexed { i, _ -> i % skip == shift } }
     .map { it.toBitList2(degree) }.hastyPuddingTrick(listOf(choices, cardinality))
     .map { it.first().decodeCombo(k) to it.last().untupled(k).map { shuffledDims[it] } } +
