@@ -20,7 +20,6 @@ class ParallelSetValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelSetValiant"
 */
-  @OptIn(ExperimentalTime::class)
   @Test
   fun testParallelSetValiant() {
     println(Runtime.getRuntime().availableProcessors())
@@ -94,7 +93,7 @@ class ParallelSetValiantTest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.benchmarkRepairsWithFixedTimeout"
 */
   @Test
-  @OptIn(ExperimentalTime::class)
+
   fun benchmarkRepairsWithFixedTimeout() {
     TIMEOUT_MS = 30_000
     val cfg = sumCFG.noNonterminalStubs
@@ -135,7 +134,7 @@ class ParallelSetValiantTest {
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelPRNG"
 */
   @Test
-  @OptIn(ExperimentalTime::class)
+
   fun testParallelPRNG() {
     // How many samples can we draw in n seconds?
     //  Drew 4210472 serial samples in 10000ms

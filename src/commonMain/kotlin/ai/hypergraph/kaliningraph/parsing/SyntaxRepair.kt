@@ -22,7 +22,6 @@ typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
 // Terminals which are blocked from being synthesized by a solver
 val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
 
-@OptIn(ExperimentalTime::class)
 fun repair(
   prompt: Σᐩ,
   cfg: CFG,

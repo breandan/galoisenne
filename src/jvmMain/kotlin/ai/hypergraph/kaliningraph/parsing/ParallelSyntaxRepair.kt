@@ -10,8 +10,6 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
-
-//@OptIn(ExperimentalTime::class)
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
   fillers: Set<Σᐩ>,
@@ -24,7 +22,7 @@ fun bijectiveRepair(
 ): List<Σᐩ> {
 //  println("Repairing: $toRepair")
 //  println("Fillers: $fillers")
-  val deck = (fillers + promptTokens).shuffled().toSet()
+  val deck = (fillers + promptTokens).shuffled().toSet() - "\""
 
 //  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
@@ -121,7 +119,6 @@ fun repairInParallel(
 
 // Generates a lazy sequence of mutations for a broken string
 // and feeds them to the synthesizer for completion.
-@OptIn(ExperimentalTime::class)
 fun Σᐩ.synthesizeWithVariationsInParallel(
   cfg: CFG,
   allowNTs: Boolean = true,

@@ -195,7 +195,6 @@ fun CFG.encodeTokens(rubix: SATRubix, tokens: List<Σᐩ>): Formula =
     acc and v.vecEq(if (b.isHoleTokenIn(cfg = this)) v else encodeTokenAsSATVec(b))
   }
 
-//@OptIn(ExperimentalTime::class)
 fun CFG.isInGrammar(mat: SATRubix): Formula =
   startSymbols.fold(F) { acc, it -> acc or mat.diagonals.last().first()[bindex[it]] } and
     // TODO: Cache this to speedup computation?

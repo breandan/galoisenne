@@ -3,8 +3,6 @@ package ai.hypergraph.kaliningraph.sampling
 import kotlin.math.pow
 import kotlin.random.Random
 
-
-//@OptIn(ExperimentalTime::class)
 fun <T> Sequence<T>.reservoirSample(size: Int = 1000, score: (T) -> Double): Sequence<T> {
   // Maintains a sorted list of edits, sorted by score
   class PriorityQueue {
