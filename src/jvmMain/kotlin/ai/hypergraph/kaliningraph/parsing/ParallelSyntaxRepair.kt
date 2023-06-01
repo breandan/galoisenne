@@ -18,7 +18,7 @@ fun bijectiveRepair(
   admissibilityFilter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((Repair) -> Unit)? = null,
   scoreEdit: (Σᐩ) -> Double = { 0.0 },
-): List<Repair> {
+): Sequence<Repair> {
 //  println("Repairing: $promptTokens")
 //  println("Fillers: $fillers")
   val deck = (fillers + promptTokens).shuffled().toSet() - "\""
@@ -57,11 +57,10 @@ fun bijectiveRepair(
 
   return ::genSeq.parallelize().distinct()
 //    .limit(MAX_SAMPLE.toLong())
-    .toList()
+    .asSequence()
     // Sort with it.second then by it.third
     .sortedWith(compareBy({ it.edit.size }, { it.score }))
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
-    .toList()
 }
 
 // This experiment essentially tries every possible combination of fillers in parallel
