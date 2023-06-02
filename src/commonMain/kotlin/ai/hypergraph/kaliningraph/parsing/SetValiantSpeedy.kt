@@ -29,15 +29,19 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
     orig.mapIndexed { i, ot -> ot to if (i in edit) edit[i]!! else ot }
       .map { (ot, nt) ->
         when {
-          ot == nt -> "E"
-          ot != "" && nt == "ε" -> "D"
-          ot != "" && nt != "ε" -> "C.${nt.cfgType()}"
-          ot == "" && nt == "ε" -> ""
-          ot == "" && nt != "ε" -> "I.${nt.cfgType()}"
+          ot == nt -> "E" // Same token
+          ot != "" && nt == "ε" -> "D" // Deletion
+          ot != "" && nt != "ε" -> "C.${nt.cfgType()}" // Substitution
+          ot == "" && nt == "ε" -> "" // No-op
+          ot == "" && nt != "ε" -> "I.${nt.cfgType()}" // Insertion
           else -> throw Exception("Unreachable")
         }
       }.filter { it.isNotBlank() }.joinToString(" ")
 
+  // Computes a "fingerprint" of the repair to avoid redundant results
+  // Each fingerprint can be lazily expanded to a sequence of repairs
+  // formed by the Cartesian product of tokens at each change position
+  // e.g., "C + C" -> "1 + 2", "1 + 3", "2 + 1", "2 + 3", "3 + 1", "3 + 2"... etc.
   override fun hashCode(): Int = editSignature.hashCode()
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
