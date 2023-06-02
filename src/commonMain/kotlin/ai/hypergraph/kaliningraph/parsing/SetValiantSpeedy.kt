@@ -13,8 +13,8 @@ fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shif
 // Indices of the prompt tokens to be replaced and the tokens to replace them with
 typealias Edit = Map<Int, Σᐩ>
 
-// Enumerates the powerset from the bottom up, skipping the empty set
-private fun Edit.subedits() =
+// Enumerates powerset levels from the bottom up, skipping the empty set
+private fun Edit.subedits(): Sequence<Sequence<Map<Int, Σᐩ>>> =
   (1..size).asSequence()
   .map { keys.choose(it).map { it.associateWith { this[it]!! } } }
 
@@ -31,9 +31,9 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
         when {
           ot == nt -> "E"
           ot != "" && nt == "ε" -> "D"
-          ot != "" && nt != "ε" -> "C.${nt.type()}"
+          ot != "" && nt != "ε" -> "C.${nt.cfgType()}"
           ot == "" && nt == "ε" -> ""
-          ot == "" && nt != "ε" -> "I.${nt.type()}"
+          ot == "" && nt != "ε" -> "I.${nt.cfgType()}"
           else -> throw Exception("Unreachable")
         }
       }.filter { it.isNotBlank() }.joinToString(" ")
@@ -41,14 +41,6 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
   override fun hashCode(): Int = editSignature.hashCode()
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
-
-  fun String.type() = when {
-    isNonterminalStub() -> "NT/$this"
-    // Is a Java or Kotlin identifier character in Kotlin common library (no isJavaIdentifierPart)
-    Regex("[a-zA-Z0-9_]+").matches(this) -> "ID/$this"
-    any { it in BRACKETS } -> "BK/$this"
-    else -> "OT"
-  }
 
   fun elapsed(): String = (if (time == -1L) "N/A" else "${time / 1000.0}").take(4) + "s"
   fun scoreStr(): String = "$score".take(5)

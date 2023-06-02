@@ -93,3 +93,11 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
 
 // Intersperses "" in between every token in a list of tokens
 fun List<Σᐩ>.intersperse(): List<Σᐩ> = fold(listOf<Σᐩ>()) { acc, s -> acc + listOf("", s) }.drop(1)
+
+fun String.cfgType() = when {
+  isNonterminalStub() -> "NT/$this"
+  // Is a Java or Kotlin identifier character in Kotlin common library (no isJavaIdentifierPart)
+  Regex("[a-zA-Z0-9_]+").matches(this) -> "ID/$this"
+  any { it in BRACKETS } -> "BK/$this"
+  else -> "OT"
+}
