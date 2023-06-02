@@ -143,7 +143,7 @@ val HOLE_MARKER = "_"
 fun Σᐩ.containsHole(): Boolean = HOLE_MARKER in this
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
-fun Σᐩ.isNonterminalStub() = first() == '<' && last() == '>'
+fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
 fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
 fun Σᐩ.isNonterminalStubIn(CJL: CJL): Boolean = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
 fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this

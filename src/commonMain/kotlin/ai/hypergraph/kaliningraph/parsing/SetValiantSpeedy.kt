@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.*
 
 
@@ -21,11 +22,33 @@ fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
   mapIndexed { i, ot -> if (i in edit) edit[i]!! else ot }
     .filter { it != "ε" && it.isNotBlank() }.joinToString(" ").trim()
 
-class Repair(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
+class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
   var time: Long = -1
-  override fun hashCode(): Int = result.hashCode()
+
+  val editSignature: String =
+    orig.mapIndexed { i, ot -> ot to if (i in edit) edit[i]!! else ot }
+      .map { (ot, nt) ->
+        when {
+          ot == nt -> "E"
+          ot != "" && nt == "ε" -> "D"
+          ot != "" && nt != "ε" -> "C.${nt.type()}"
+          ot == "" && nt == "ε" -> ""
+          ot == "" && nt != "ε" -> "I.${nt.type()}"
+          else -> throw Exception("Unreachable")
+        }
+      }.filter { it.isNotBlank() }.joinToString(" ")
+
+  override fun hashCode(): Int = editSignature.hashCode()
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
+
+  fun String.type() = when {
+    isNonterminalStub() -> "NT/$this"
+    // Is a Java or Kotlin identifier character in Kotlin common library (no isJavaIdentifierPart)
+    Regex("[a-zA-Z0-9_]+").matches(this) -> "ID/$this"
+    any { it in BRACKETS } -> "BK/$this"
+    else -> "OT"
+  }
 
   fun elapsed(): String = (if (time == -1L) "N/A" else "${time / 1000.0}").take(4) + "s"
   fun scoreStr(): String = "$score".take(5)

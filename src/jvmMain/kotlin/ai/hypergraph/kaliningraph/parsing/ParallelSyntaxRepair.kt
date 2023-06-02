@@ -27,7 +27,7 @@ fun bijectiveRepair(
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
 
-  fun genSeq(skip: Int = 1, shift: Int = 0) =
+  fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
     MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
       .takeWhile { takeMoreWhile() }
 //      .toList().also { println("Total elements found: ${it.size}") }.asSequence()
@@ -55,11 +55,9 @@ fun bijectiveRepair(
         }
       }
 
-  return ::genSeq.parallelize().distinct()
-//    .limit(MAX_SAMPLE.toLong())
-    .asSequence()
+  return ::genSeq.parallelize().distinct().asSequence()
     // Sort with it.second then by it.third
-    .sortedWith(compareBy({ it.edit.size }, { it.score }))
+//    .sortedWith(compareBy({ it.edit.size }, { it.score }))
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }
 }
 
