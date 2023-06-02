@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.*
+import ai.hypergraph.kaliningraph.types.*
 
 
 // Fully-parallelizable version of the Valiant repair algorithm, just append a .parallelize() call
@@ -48,6 +49,18 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
 
   fun elapsed(): String = (if (time == -1L) "N/A" else "${time / 1000.0}").take(4) + "s"
   fun scoreStr(): String = "$score".take(5)
+
+  /**
+   * This can be used to generate a sequence of repairs with the same edit fingerprint but alternate
+   * tokens at each change location. This method may optionally be called on any Repair, but for the
+   * sake of specificity, should only be called on repairs minimized by [minimalAdmissibleSubrepairs].
+   */
+  fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
+    sequenceOf(this) +
+    edit.values.map { tokens }.cartesianProduct()
+      .map { orig.apply(edit.keys.zip(it).toMap()) }
+      .filter { filter(it) }
+      .map { Repair(orig, edit, it, score(it)) }
 
   fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
     edit.subedits()

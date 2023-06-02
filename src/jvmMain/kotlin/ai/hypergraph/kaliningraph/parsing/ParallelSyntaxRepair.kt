@@ -55,10 +55,8 @@ fun bijectiveRepair(
         }
       }
 
-  return ::genSeq.parallelize()
-    /** Selects distinct repairs according to [Repair.hashCode] */
-    .distinct()
-    .asSequence()
+  /** Selects distinct repairs according to [Repair.hashCode] */
+  return ::genSeq.parallelize().distinct().asSequence()
     // Sort with it.second then by it.third
 //    .sortedWith(compareBy({ it.edit.size }, { it.score }))
 //    .also { println("Best score: (${it.firstOrNull()?.second})") }

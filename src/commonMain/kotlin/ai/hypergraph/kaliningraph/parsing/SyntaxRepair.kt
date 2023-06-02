@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
 import ai.hypergraph.kaliningraph.types.cache
-import ai.hypergraph.kaliningraph.types.isStrictSubsetOf
 import ai.hypergraph.kaliningraph.types.Π2A
 import kotlin.math.pow
 import kotlin.time.*
