@@ -13,7 +13,7 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
   fillers: Set<Σᐩ>,
-  edits: Int = 2,
+  maxEdits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: Σᐩ.() -> Boolean = { true },
   diagnostic: ((Repair) -> Unit)? = null,
@@ -28,7 +28,7 @@ fun bijectiveRepair(
   var (pass, fail) = 0 to 0
 
   fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
-    MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = edits, skip, shift)
+    MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = maxEdits, skip, shift)
       .takeWhile { takeMoreWhile() }
 //      .toList().also { println("Total elements found: ${it.size}") }.asSequence()
       .map {

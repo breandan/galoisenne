@@ -92,7 +92,8 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
 }
 
 // Intersperses "" in between every token in a list of tokens
-fun List<Σᐩ>.intersperse(): List<Σᐩ> = fold(listOf<Σᐩ>()) { acc, s -> acc + listOf("", s) }.drop(1)
+fun List<Σᐩ>.intersperse(i: Int = 1): List<Σᐩ> =
+  fold(listOf<Σᐩ>()) { acc, s -> acc + List(i) { "" } + s } + List(i) { "" }
 
 fun String.cfgType() = when {
   isNonterminalStub() -> "NT/$this"

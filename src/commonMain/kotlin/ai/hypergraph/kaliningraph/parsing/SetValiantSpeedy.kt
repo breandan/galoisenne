@@ -55,13 +55,29 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
    * tokens at each change location. This method may optionally be called on any Repair, but for the
    * sake of specificity, should only be called on repairs minimized by [minimalAdmissibleSubrepairs].
    */
-  fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
-    sequenceOf(this) +
-    edit.values.map { tokens }.cartesianProduct()
-      .map { orig.apply(edit.keys.zip(it).toMap()) }
-      .filter { filter(it) }
-      .map { Repair(orig, edit, it, score(it)) }
+  fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Repair =
+    (sequenceOf(this) + edit.values.map { tokens }.cartesianProduct()
+      .map {
+        val edt = edit.keys.zip(it).toMap()
+        val res = orig.apply(edt)
+        edt to res
+      }
+      .filter { filter(it.second) }
+      .map { (edt, res) -> Repair(orig, edt, res, score(res)) }
+      ).let {
+        val esec = it.toList().sortedBy { it.score }
+        // Take lowest-scoring repair as representative of the equivalence class
+        esec.first().also { it.equivalenceClass = esec.drop(1) }
+      }
 
+  var equivalenceClass: List<Repair> = listOf()
+
+  /**
+   * Collapses a large repair (which may contain many extraneous edits) into a
+   * minimal repair that is still admissible (i.e., still matches the grammar).
+   * This is done by locating the smallest admissible edit, and then enumerating
+   * all other subedits of the same size.
+   */
   fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
     edit.subedits()
       .map { it.filter { filter(orig.apply(it)) } }
