@@ -39,11 +39,11 @@ fun bijectiveRepair(
       .let { it.reservoirSample(score = { it.score }) }
       .filter {
          it.result.admissibilityFilter()
-//         .also { result ->
-//           if (result) pass++ else fail++
-//           if (pass + fail % 20000 == 0)
-//             println("$it\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
-//         }
+         .also { result ->
+           if (result) pass++ else fail++
+           if (pass + fail % 20000 == 0)
+             println("${it.result}\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
+         }
       }
 //      .onEach { println("Valid: $it") }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }

@@ -84,7 +84,7 @@ val lecuyerGenerator =
     3743, 3991, 3791, 3895, 4179, 6465, 4201, 4801, 4219,
     7105, 4221, 6081, 4249, 4897, 4305, 4449, 4331, 6881,
     4359, 7185, 4383, 7953, 4387, 6289, 4411, 7057, 4431)
-    .mapIndexed { i, it -> i to listOf(it) }.toMap()
+    .mapIndexed { i, it -> i to listOf(it.toLong()) }.toMap()
 
 // TODO: Compute minimal elements of GF(p^e) dynamically
 // http://www.seanerikoconnor.freeservers.com/Mathematics/AbstractAlgebra/PrimitivePolynomials/theory.html
@@ -201,7 +201,7 @@ val generator = mapOf(
   30 to listOf(1073741907L),
   31 to listOf(2147483657L),
   32 to listOf(4294967493L),
-)
+) + (33..64).associateWith { lecuyerGenerator[it]!! }
 
 // https://dl.acm.org/doi/pdf/10.1145/321765.321777
 // http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/ARTICLES/tgfsr3.pdf
