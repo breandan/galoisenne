@@ -12,6 +12,12 @@ import ai.hypergraph.kaliningraph.types.*
 
 val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
+/**
+ * n.b. Normalization may destroy organic nonterminals!
+ * In order to preserve every organic nonterminal, you
+ * must first generateNonterminalStubs() for all V ∈ G
+ * ensure that ∃v.(v->*) ∈ G => (v-><v>) ∈ G holds.
+ */
 fun CFG.normalize(): CFG =
   mutableListOf<CFG>().let { rewrites ->
     addGlobalStartSymbol()
@@ -155,8 +161,19 @@ fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
 
 private fun CFG.removeUselessSymbols(
   generating: Set<Σᐩ> = generatingSymbols(),
-  reachable: Set<Σᐩ> = reachableSymbols(),
-): CFG = filter { (s, _) -> s in generating && s in reachable }
+  reachable: Set<Σᐩ> = reachableSymbols()
+): CFG = partition { (s, _) -> s in generating intersect reachable }
+//  .also {
+//    println(
+//      it.second.joinToString("\n") { (l, r) ->
+//        "Removed ($l -> ${r.joinToString(" ")}) because it was" +
+//            if (l !in generating && l !in reachable) "non-generating/unreachable."
+//            else if (l !in generating) "non-generating."
+//            else "unreachable."
+//      }
+//    )
+//  }
+  .first.toSet()
 
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
@@ -177,9 +194,11 @@ fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
     }.filter { it in nonterminals }
   }
 
+// All symbols that are reachable from START_SYMBOL
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) { graph.transitiveClosure(setOf(from)) }
 
+// All symbols that are either terminals or generate terminals
 fun CFG.generatingSymbols(
   from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
   revGraph: LabeledGraph = graph.reversed()
