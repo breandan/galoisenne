@@ -96,7 +96,7 @@ private fun CFG.addGlobalStartSymbol(): CFG =
   else nonterminals.map { START_SYMBOL to listOf(it) }
 
 // Expands RHS `|` productions, e.g., (A -> B | C) -> (A -> B, A -> C)
-private fun CFG.expandOr(): CFG =
+fun CFG.expandOr(): CFG =
   flatMap { prod ->
     prod.RHS.fold(listOf(listOf<Σᐩ>())) { acc, s ->
       if (s == "|") (acc + listOf(listOf()))
