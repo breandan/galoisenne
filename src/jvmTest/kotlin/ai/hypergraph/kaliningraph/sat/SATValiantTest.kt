@@ -436,8 +436,11 @@ class SATValiantTest {
 
     println("Synthesizing a counterexample:")
     "_ _ _ _ _ _ _ _ ( ) _ _ _ _ _ _ _ _"
-      .synthesizeIncrementally(cfg).take(10)
-      .forEach { println(it); assertNotNull(cfg.parse(it)) }
+      .synthesizeIncrementally(cfg, synthesizer = { it.solve(cfg) }).take(10)
+      .forEach { println(it)
+
+        cfg.parseWithStubs(it).second.onEach { println(it.prettyPrint()) }
+        assertNotNull(cfg.parse(it), "Got: $it") }
   }
 
   /*
