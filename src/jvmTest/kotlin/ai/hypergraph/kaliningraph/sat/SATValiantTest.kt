@@ -853,7 +853,7 @@ class SATValiantTest {
     repairs.flatten().also { assert(it.isNotEmpty()) }.forEach { assertTrue { it in arithCFG.language } }
   }
 
-  /*
+ /*
  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testBoolFormula"
  */
   @Test

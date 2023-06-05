@@ -22,12 +22,17 @@ fun CFG.parse(s: Σᐩ): Tree? =
  * is empty, the string is invalid. If the entry is S, it parses.
  */
 
+private fun List<Σᐩ>.pad3(): List<Σᐩ> =
+  if (isEmpty()) listOf("ε", "ε", "ε")
+  else if (size == 1) listOf("ε", first(), "ε")
+  else this
+
+fun CFG.isValid(str: Σᐩ): Boolean = isValid(str.tokenizeByWhitespace())
 fun CFG.isValid(str: List<Σᐩ>): Boolean =
-  START_SYMBOL in parse(str.run {
-    if (isEmpty()) listOf("ε", "ε", "ε")
-    else if (size == 1) listOf("ε", first(), "ε")
-    else this
-  }).map { it.root }
+  initialUTBMat(str.pad3()).seekFixpoint().diagonals
+//    .also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
+    .last().first()//.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
+    .let { corner -> corner[bindex[START_SYMBOL]] }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
@@ -71,7 +76,7 @@ fun CFG.parseInvalidWithMaximalFragments(s: Σᐩ): List<Tree> =
  * TODO: Other algebras? https://aclanthology.org/J99-4004.pdf#page=8
  */
 
-fun CFG.makeAlgebra(): Ring<Forest> =
+fun CFG.makeForestAlgebra(): Ring<Forest> =
   Ring.of(// Not a proper ring, but close enough.
     // 0 = ∅
     nil = setOf(),
@@ -117,7 +122,20 @@ fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   else if (left.isNotEmpty() && right.isEmpty()) left
   else left.zip(right) { l, r -> l or r }.toBooleanArray()
 
-// Like satAlgebra, but with nullable bitvector literals instead of SAT literals
+fun union(left: BooleanArray, right: BooleanArray): BooleanArray =
+  left.zip(right) { l, r -> l or r }.toBooleanArray()
+
+val CFG.bitwiseAlgebra: Ring<BooleanArray> by cache {
+  vindex.let {
+    Ring.of(
+      nil = BooleanArray(nonterminals.size) { false },
+      plus = { x, y -> union(x, y) },
+      times = { x, y -> join(it, x, y) }
+    )
+  }
+}
+
+// Like bitwiseAlgebra, but with nullable bitvector literals for free variables
 val CFG.satLitAlgebra: Ring<BooleanArray?> by cache {
   vindex.let {
     Ring.of(
@@ -150,25 +168,37 @@ fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
-  FreeMatrix(makeAlgebra(), str.size + 1) { i, j ->
+  FreeMatrix(makeForestAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
     else bimap[listOf(str[j - 1])].map {
       Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
     }.toSet()
   }
 
+fun CFG.initialUTBMat(tokens: List<Σᐩ>): UTMatrix<BooleanArray> =
+  UTMatrix(
+    ts = tokens.map { it ->
+      bimap[listOf(it)].let { nts ->
+        if (tokens.none { it.isNonterminalStubIn(this) }) nts
+        // We use the original form because A -> B -> C can be normalized
+        // to A -> C, and we want B to be included in the equivalence class
+        else nts.map { originalForm.equivalenceClass(it) }.flatten().toSet()
+      }.let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+    }.toTypedArray(),
+    algebra = bitwiseAlgebra
+  )
+
 fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bimap[listOf(terminal)].let { representatives ->
-        (if (!terminal.isNonterminalStubIn(this)) representatives
+      bimap[listOf(terminal)].let { nts ->
+        if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else representatives.map { originalForm.equivalenceClass(it) }.flatten().toSet())
-//          .also { println("Equivalence class: $terminal -> $representatives -> $it") }
+        else nts.map { originalForm.equivalenceClass(it) }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
-    algebra = makeAlgebra()
+    algebra = makeForestAlgebra()
   )
 
 private val freshNames: Sequence<Σᐩ> =

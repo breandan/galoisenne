@@ -43,7 +43,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
   // Each fingerprint can be lazily expanded to a sequence of repairs
   // formed by the Cartesian product of tokens at each change position
   // e.g., "C + C" -> "1 + 2", "1 + 3", "2 + 1", "2 + 3", "3 + 1", "3 + 2"... etc.
-  override fun hashCode(): Int = editSignature.hashCode()
+  override fun hashCode(): Int = result.hashCode()
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
 
