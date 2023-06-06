@@ -44,8 +44,7 @@ val CFG.bimap: BiMap by cache { BiMap(this) }
 // Maps nonterminal sets to their terminals, n.b., each terminal can be generated
 // by multiple nonterminals, and each nonterminal can generate multiple terminals
 val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
-  terminals.map { bimap[listOf(it)] to it }
-    .groupBy { it.first }
+  terminals.map { bimap[listOf(it)] to it }.groupBy { it.first }
     .mapValues { it.value.map { it.second }.toSet() }
 }
 
@@ -90,7 +89,7 @@ val CFG.unitReachability by cache {
 val CFG.noNonterminalStubs: CFG by cache {
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
-    .also { rewriteHistory.put(it, rewriteHistory[this]!! + listOf(this)) }
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
     .also { it.blocked.addAll(blocked) }
 }
 
@@ -154,7 +153,7 @@ val CFG.pruneTreelikeNonterminals: CFG by cache {
           .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
     }
     .let { it.transformIntoCNF() }
-    .also { rewriteHistory.put(it, listOf(rewriteHistory[this]!![0]) + listOf(this)) }
+    .also { rewriteHistory.put(it, freeze().let { listOf(rewriteHistory[it]!![0]) + listOf(it)}) }
     .also { it.blocked.addAll(blocked) }
 }
 

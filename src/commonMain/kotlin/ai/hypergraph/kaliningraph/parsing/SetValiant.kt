@@ -27,11 +27,17 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
   else this
 
 fun CFG.isValid(str: Σᐩ): Boolean = isValid(str.tokenizeByWhitespace())
-fun CFG.isValid(str: List<Σᐩ>): Boolean =
-  initialUTBMat(str.pad3()).seekFixpoint().diagonals
-//    .also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
-    .last().first()//.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
-    .let { corner -> corner[bindex[START_SYMBOL]] }
+fun CFG.isValid(
+  str: List<Σᐩ>,
+  nts: Set<Σᐩ> = nonterminals,
+  biMap: BiMap = bimap,
+  ur: Map<Σᐩ, Set<Σᐩ>> = unitReachability,
+  alg: Ring<BooleanArray> = bitwiseAlgebra,
+  bindx: Int = bindex[START_SYMBOL]
+): Boolean =
+  initialUTBMat(str.pad3(), nts, biMap, ur, alg)
+    .seekFixpoint().diagonals.last().first()
+    .let { corner -> corner[bindx] }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
@@ -178,6 +184,7 @@ fun Σᐩ.containsHole(): Boolean = HOLE_MARKER in this
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
 fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
+fun Σᐩ.isNonterminalStubInNTs(nts: Set<Σᐩ>): Boolean = isNonterminalStub() && drop(1).dropLast(1) in nts
 fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
 fun Σᐩ.isNonterminalStubIn(CJL: CJL): Boolean = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
 fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
@@ -193,10 +200,10 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
 
 fun CFG.initialUTBMat(
   tokens: List<Σᐩ>,
-  origCFG: CFG = originalForm,
-  allNTs: Set<Σᐩ> = nonterminals,
+  ntrs: Set<Σᐩ> = nonterminals,
   bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+  ur: Map<Σᐩ, Set<Σᐩ>> = unitReachability,
+  alg: Ring<BooleanArray> = bitwiseAlgebra,
 ): UTMatrix<BooleanArray> =
   UTMatrix(
     ts = tokens.map { it ->
@@ -204,25 +211,20 @@ fun CFG.initialUTBMat(
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()
-      }.let { nts -> allNTs.map { it in nts } }.toBooleanArray()
+        else nts.map { ur[it] ?: emptySet() }.flatten().toSet()
+      }.let { nts -> ntrs.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
-    algebra = bitwiseAlgebra
+    algebra = alg
   )
 
-fun CFG.initialUTMatrix(
-  tokens: List<Σᐩ>,
-  origCFG: CFG = originalForm,
-  bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
-): UTMatrix<Forest> =
+fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bmp[listOf(terminal)].let { nts ->
+      bimap[listOf(terminal)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()
+        else nts.map { unitReachability[it] ?: emptySet() }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()
@@ -241,7 +243,7 @@ fun Σᐩ.parseCFG(
     val prod = line.splitProd()
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].tokenizeByWhitespace()
     else throw Exception("Invalid production ${prod.size}: $line")
-  }.toSet().let { if (normalize) it.normalForm else it }
+  }.toSet().let { if (normalize) it.normalForm else it }.freeze()
 
 fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
 

@@ -382,7 +382,7 @@ class UTMatrix<T> constructor(
 
   fun squared() = toFullMatrix().squareUpperTriangular().toUTMatrix()
 
-  fun seekFixpointSlow(
+  fun seekFixpoint(
     // Carries a triple of:
     //    (1) the element itself,
     //    (2) row to an element's left (inclusive)
@@ -408,41 +408,8 @@ class UTMatrix<T> constructor(
       UTMatrix(
         diagonals = diagonals + listOf(next.map { it.first }),
         algebra = algebra
-      ).seekFixpointSlow(next, iteration + 1, maxIterations)
+      ).seekFixpoint(next, iteration + 1, maxIterations)
     }
-
-  fun seekFixpoint(maxIterations: Int = diagonals.first().size): UTMatrix<T> {
-    var iteration = 0
-
-    val diagonalsMutable = diagonals.toMutableList()
-    val carry = diagonals.last().map { it to mutableListOf(it) to mutableListOf(it) }.toMutableList()
-
-    while (iteration < maxIterations && diagonalsMutable.last().size != 1) {
-      val next = mutableListOf<Triple<T, MutableList<T>, MutableList<T>>>()
-
-      for (i in 1 until carry.size) {
-        var acc = algebra.nil
-        for (j in carry[i - 1].second.indices) {
-          acc = with(algebra) { acc + (carry[i - 1].second[j] * carry[i].third[j]) }
-        }
-
-        val left = carry[i - 1].second.apply { add(acc) }
-        val right = carry[i].third.apply { add(0, acc) }
-
-        next.add(Triple(acc, left, right))
-      }
-
-      diagonalsMutable += next.map { it.first }
-      carry.clear()
-      carry.addAll(next)
-      iteration++
-    }
-
-    return UTMatrix(
-      diagonals = diagonalsMutable,
-      algebra = algebra
-    )
-  }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =

@@ -42,7 +42,7 @@ fun bijectiveRepair(
 //         .also { result ->
 //           if (result) pass++ else fail++
 //           if (pass + fail % 1000 == 0)
-//             println("${it.result}\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms")
+//             println("${it.result}\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms, average: ${(pass + fail) / clock.elapsedNow().inWholeSeconds.toDouble()}ms")
 //         }
       }
 //      .onEach { println("Valid: $it") }
