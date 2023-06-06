@@ -104,15 +104,14 @@ fun fastJoin(vindex: Array<IntArray>, left: BooleanArray, right: BooleanArray): 
   if (left.isEmpty() || right.isEmpty()) return booleanArrayOf()
 
   val result = BooleanArray(vindex.size)
-  for (i in vindex.indices) {
-    val indexArray = vindex[i]
-    for (j in indexArray.indices step 2) {
-      val B = indexArray[j]
-      val C = indexArray[j + 1]
-      if (left[B] && right[C]) {
+  for ((i, indexArray) in vindex.withIndex()) {
+    var j = 0
+    while (j < indexArray.size) {
+      if (left[indexArray[j]] && right[indexArray[j + 1]]) {
         result[i] = true
         break
       }
+      j += 2
     }
   }
   return result
@@ -130,11 +129,15 @@ fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   if (left == null || right == null) { left ?: right }
   else if (left.isEmpty() && right.isNotEmpty()) right
   else if (left.isNotEmpty() && right.isEmpty()) left
-  else left.zip(right) { l, r -> l or r }.toBooleanArray()
+  else union(left, right)
 
 fun union(left: BooleanArray, right: BooleanArray): BooleanArray {
   val result = BooleanArray(left.size)
-  for (i in left.indices) result[i] = left[i] or right[i]
+  for (i in left.indices) {
+    result[i] = left[i]
+    if (result[i]) continue
+    result[i] = right[i]
+  }
   return result
 }
 

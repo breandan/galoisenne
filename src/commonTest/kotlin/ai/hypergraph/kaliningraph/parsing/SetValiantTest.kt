@@ -457,11 +457,11 @@ class SetValiantTest {
     val size = ocamlCFG.nonterminals.size
     val vidx = ocamlCFG.vindex
     val pairs =
-      (0..1_000_000).map { randomBitVector(size) to randomBitVector(size) }
+      (0..10_000_000).map { randomBitVector(size) to randomBitVector(size) }
 
     measureTime {
       pairs.map { (a, b) -> fastJoin(vidx, a, b) }
         .reduce { a, b -> union(a, b) }
-    }.also { println("Merged a 10^6 bitvecs in ${it.inWholeMilliseconds}ms.") } // Should be ~500ms
+    }.also { println("Merged a 10^6 bitvecs in ${it.inWholeMilliseconds}ms.") } // Should be ~5000ms
   }
 }
