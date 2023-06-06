@@ -131,7 +131,7 @@ fun CFG.reachabilityConstraints(tokens: List<Σᐩ>, rubix: SATRubix): Formula =
     .filter { (word, _) -> word.isNonterminalStubIn(cfg = this) }
     .map { (nonterminalStub, hf) ->
       val nt = nonterminalStub.drop(1).dropLast(1)
-      nonparametricForm.equivalenceClass(nt)
+      nonparametricForm.unitReachability[nt]!!
         .map { hf eq BVecLit(toBitVec(setOf(it))) }
         .fold(F) { a, b -> a xor b }
     }.flatten().fold(T) { a, b -> a and b }

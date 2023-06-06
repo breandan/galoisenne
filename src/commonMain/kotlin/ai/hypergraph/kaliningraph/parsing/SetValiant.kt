@@ -188,27 +188,38 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
     }.toSet()
   }
 
-fun CFG.initialUTBMat(tokens: List<Σᐩ>): UTMatrix<BooleanArray> =
+fun CFG.initialUTBMat(
+  tokens: List<Σᐩ>,
+  origCFG: CFG = originalForm,
+  allNTs: Set<Σᐩ> = nonterminals,
+  bmp: BiMap = bimap,
+  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+): UTMatrix<BooleanArray> =
   UTMatrix(
     ts = tokens.map { it ->
-      bimap[listOf(it)].let { nts ->
+      bmp[listOf(it)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { originalForm.equivalenceClass(it) }.flatten().toSet()
-      }.let { nts -> nonterminals.map { it in nts } }.toBooleanArray()
+        else nts.map { unitReach[it]!! }.flatten().toSet()
+      }.let { nts -> allNTs.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
     algebra = bitwiseAlgebra
   )
 
-fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
+fun CFG.initialUTMatrix(
+  tokens: List<Σᐩ>,
+  origCFG: CFG = originalForm,
+  bmp: BiMap = bimap,
+  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bimap[listOf(terminal)].let { nts ->
+      bmp[listOf(terminal)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { nt -> originalForm.equivalenceClass(nt).also { println("$nt = $it") } }.flatten().toSet()
+        else nts.map { unitReach[it]!! }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()

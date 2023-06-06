@@ -175,24 +175,10 @@ private fun CFG.removeUselessSymbols(
 //  }
   .first.toSet()
 
-// Equivalence class of an NT B are all NTs, A ->* B ->* C
-// reachable via unit productions (in forward or reverse)
-fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = reachableSymbolsViaUnitProds(from)
+fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = unitReachability[from] ?: setOf(from)
 
 fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
   transitiveClosure(filter { it.label in from }).map { it.label }.toSet()
-
-fun CFG.reachableSymbolsViaUnitProds(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
-  unitReachability.getOrPut(from) {
-    LabeledGraph {
-      unitProductions.map { it.LHS to it.RHS.first() }
-//      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
-        .forEach { (a, b) -> a - b }
-    }.let {
-      setOf(from) + (it.transitiveClosure(setOf(from)) +
-        it.reversed().transitiveClosure(setOf(from)))
-    }.filter { it in nonterminals }
-  }
 
 // All symbols that are reachable from START_SYMBOL
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =

@@ -175,7 +175,7 @@ fun CFG.prune(
   val stubs = parseInvalidWithMaximalFragments(string)
 
   val treesToBeChopped =
-    stubs.filter { "START" in equivalenceClass(it.root) }
+    stubs.filter { "START" in unitReachability[it.root]!! }
       .map { it.span to it }.let {
         val (spans, trees) = it.unzip()
         // Find trees corresponding to ranges which have an unambiguous parse tree

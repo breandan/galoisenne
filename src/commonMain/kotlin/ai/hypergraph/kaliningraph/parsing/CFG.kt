@@ -71,7 +71,21 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
           - Cons: immutable fields follow convention, easier to reason about
  */
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
-val CFG.unitReachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
+
+// Equivalence class of an NT B are all NTs, A ->* B ->* C
+// reachable via unit productions (in forward or reverse)
+val CFG.unitReachability by cache {
+  symbols.associateWith { from ->
+    LabeledGraph {
+      unitProductions.map { it.LHS to it.RHS.first() }
+//      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
+        .forEach { (a, b) -> a - b }
+    }.let {
+      setOf(from) + (it.transitiveClosure(setOf(from)) +
+        it.reversed().transitiveClosure(setOf(from)))
+    }.filter { it in nonterminals }
+  }
+}
 
 val CFG.noNonterminalStubs: CFG by cache {
   println("Disabling nonterminal stubs!")
