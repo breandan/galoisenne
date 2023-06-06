@@ -12,13 +12,20 @@ typealias SATRubix = UTMatrix<SATVector>
 val SATRubix.stringVariables by cache { diagonals.first() }
 
 @JvmName("joinFormula")
-fun join(vindex: List<Set<Π2A<Int>>>, left: SATVector, right: SATVector): SATVector =
+fun join(vindex: Array<IntArray>, left: SATVector, right: SATVector): SATVector =
   if (left.isEmpty() || right.isEmpty()) arrayOf()
-  else vindex.map {
-    it.fold(F) { acc, (B, C) -> acc or (left[B] and right[C]) }
-//      .map { (B, C) -> left[bindex[B]].let{ it.factory().and(it, right[bindex[C]])} }
-//      .fold(left.first().factory().falsum() as Formula) { acc, satf -> acc.factory().or(acc, satf) }
-  }.toTypedArray()
+  else {
+    val result = Array(vindex.size) { F }
+    for (i in vindex.indices) {
+      val indexArray = vindex[i]
+      for (j in indexArray.indices step 2) {
+        val B = indexArray[j]
+        val C = indexArray[j + 1]
+        result[i] = result[i] or (left[B] and right[C])
+      }
+    }
+    result
+  }
 
 fun CFG.join(left: SATVector, right: SATVector): SATVector = join(vindex, left, right)
 

@@ -4,9 +4,9 @@ import ai.hypergraph.kaliningraph.hasBalancedBrackets
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
+import kotlin.random.Random
 import kotlin.test.*
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
+import kotlin.time.*
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest"
@@ -322,12 +322,7 @@ class SetValiantTest {
     assertEquals(cfg3, cfg4)
   }
 
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
-*/
-  @Test
-  fun testOCaml() {
-    val cfg = """
+  val ocamlCFG = """
       S -> X
       X -> A | V | ( X , X ) | X X | ( X )
       A -> FUN | F | LI | M | L
@@ -353,7 +348,13 @@ class SetValiantTest {
       I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       B ->  true | false
     """.trimIndent().parseCFG()
-    cfg.parse("1 + <I> + 2").also { println(it!!.prettyPrint()) }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
+*/
+  @Test
+  fun testOCaml() {
+    ocamlCFG.parse("1 + <I> + 2").also { println(it!!.prettyPrint()) }
   }
 
 /*
@@ -443,5 +444,24 @@ class SetValiantTest {
     assertNotNull(cfg.parse("f l e e s x"))
     assertNotNull(cfg.parse("f e e l s"))
     assertNull(cfg.parse("f e e l s s")?.prettyPrint())
+  }
+
+  fun randomBitVector(size: Int) =
+    (0 until size).map { Random.nextBoolean() }.toBooleanArray()
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.benchmarkBitwiseJoin"
+*/
+  @Test
+  fun benchmarkBitwiseJoin() {
+    val size = ocamlCFG.nonterminals.size
+    val vidx = ocamlCFG.vindex
+    val pairs =
+      (0..1_000_000).map { randomBitVector(size) to randomBitVector(size) }
+
+    measureTime {
+      pairs.map { (a, b) -> fastJoin(vidx, a, b) }
+        .reduce { a, b -> union(a, b) }
+    }.also { println("Merged a 10^6 bitvecs in ${it.inWholeMilliseconds}ms.") } // Should be ~500ms
   }
 }

@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.splitProd
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.jvm.JvmName
 
 // SetValiant interface
 //=====================================================================================
@@ -101,20 +100,31 @@ fun CFG.toBitVec(nts: Set<Σᐩ>): BooleanArray =
   else BooleanArray(nonterminals.size) { false }
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
-@JvmName("joinBitVector")
-fun join(vindex: List<Set<Π2A<Int>>>, left: BooleanArray, right: BooleanArray): BooleanArray =
-  if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
-  else vindex.map {
-      it.fold(false) { acc, (B, C) -> acc or (left[B] and right[C]) }
-//    bimap[bindex[i]].filter { 1 < it.size }.map { it[0] to it[1] }
-//      .map { (B, C) -> left[bindex[B]] and right[bindex[C]] }
-//      .fold(false) { acc, satf -> acc or satf }
-  }.toBooleanArray()
+fun fastJoin(vindex: Array<IntArray>, left: BooleanArray, right: BooleanArray): BooleanArray {
+  if (left.isEmpty() || right.isEmpty()) return booleanArrayOf()
 
-fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray = join(vindex, left, right)
+  val result = BooleanArray(vindex.size)
+  for (i in vindex.indices) {
+    val indexArray = vindex[i]
+    for (j in indexArray.indices step 2) {
+      val B = indexArray[j]
+      val C = indexArray[j + 1]
+      if (left[B] && right[C]) {
+        result[i] = true
+        break
+      }
+    }
+  }
+  return result
+}
 
-fun maybeJoin(vindex: List<Set<Π2A<Int>>>, left: BooleanArray?, right: BooleanArray?): BooleanArray? =
-  if (left == null || right == null) null else join(vindex, left, right)
+//  if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
+//  else vindex.map { it.any { (B, C) -> left[B] and right[C] } }.toBooleanArray()
+
+fun CFG.join(left: BooleanArray, right: BooleanArray): BooleanArray = fastJoin(vindex, left, right)
+
+fun maybeJoin(vindexFast: Array<IntArray>, left: BooleanArray?, right: BooleanArray?): BooleanArray? =
+  if (left == null || right == null) null else fastJoin(vindexFast, left, right)
 
 fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   if (left == null || right == null) { left ?: right }
@@ -122,15 +132,18 @@ fun maybeUnion(left: BooleanArray?, right: BooleanArray?): BooleanArray? =
   else if (left.isNotEmpty() && right.isEmpty()) left
   else left.zip(right) { l, r -> l or r }.toBooleanArray()
 
-fun union(left: BooleanArray, right: BooleanArray): BooleanArray =
-  left.zip(right) { l, r -> l or r }.toBooleanArray()
+fun union(left: BooleanArray, right: BooleanArray): BooleanArray {
+  val result = BooleanArray(left.size)
+  for (i in left.indices) result[i] = left[i] or right[i]
+  return result
+}
 
 val CFG.bitwiseAlgebra: Ring<BooleanArray> by cache {
   vindex.let {
     Ring.of(
       nil = BooleanArray(nonterminals.size) { false },
       plus = { x, y -> union(x, y) },
-      times = { x, y -> join(it, x, y) }
+      times = { x, y -> fastJoin(it, x, y) }
     )
   }
 }
@@ -195,7 +208,7 @@ fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { originalForm.equivalenceClass(it) }.flatten().toSet()
+        else nts.map { nt -> originalForm.equivalenceClass(nt).also { println("$nt = $it") } }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()

@@ -444,10 +444,10 @@ class SATValiantTest {
   }
 
   /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testIfThen"
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testIfThenLang"
   */
   @Test
-  fun testIfThen() {
+  fun testIfThenLang() {
     val cfg = """
       START -> X
       X -> I | F | P

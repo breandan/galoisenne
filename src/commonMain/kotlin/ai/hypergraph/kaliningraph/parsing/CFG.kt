@@ -49,11 +49,11 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
     .mapValues { it.value.map { it.second }.toSet() }
 }
 
-val CFG.vindex by cache {
-  bindex.indexedNTs.indices.associateWith { i ->
-    bimap[bindex[i]].filter { 1 < it.size }
-      .map { bindex[it[0]] to bindex[it[1]] }.toSet()
-  }.let { vindex -> List(nonterminals.size) { vindex[it]!! } }
+val CFG.vindex: Array<IntArray> by cache {
+  Array(bindex.indexedNTs.size) { i ->
+    bimap[bindex[i]].filter { it.size > 1 }
+      .flatMap { listOf(bindex[it[0]], bindex[it[1]]) }.toIntArray()
+  }
 }
 
 val CFG.bindex: Bindex by cache { Bindex(this) }
