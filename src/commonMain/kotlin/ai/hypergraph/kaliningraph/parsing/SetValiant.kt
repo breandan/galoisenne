@@ -27,17 +27,11 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
   else this
 
 fun CFG.isValid(str: Σᐩ): Boolean = isValid(str.tokenizeByWhitespace())
-fun CFG.isValid(
-  str: List<Σᐩ>,
-  nts: Set<Σᐩ> = nonterminals,
-  biMap: BiMap = bimap,
-  ur: Map<Σᐩ, Set<Σᐩ>> = unitReachability,
-  alg: Ring<BooleanArray> = bitwiseAlgebra,
-  bindx: Int = bindex[START_SYMBOL]
-): Boolean =
-  initialUTBMat(str.pad3(), nts, biMap, ur, alg)
-    .seekFixpoint().diagonals.last().first()
-    .let { corner -> corner[bindx] }
+fun CFG.isValid(str: List<Σᐩ>): Boolean =
+  initialUTBMatrix(str.pad3()).seekFixpoint().diagonals
+//    .also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
+    .last().first()//.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
+    .let { corner -> corner[bindex[START_SYMBOL]] }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
@@ -198,33 +192,37 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
     }.toSet()
   }
 
-fun CFG.initialUTBMat(
+fun CFG.initialUTBMatrix(
   tokens: List<Σᐩ>,
-  ntrs: Set<Σᐩ> = nonterminals,
+  allNTs: Set<Σᐩ> = nonterminals,
   bmp: BiMap = bimap,
-  ur: Map<Σᐩ, Set<Σᐩ>> = unitReachability,
-  alg: Ring<BooleanArray> = bitwiseAlgebra,
+  unitReach: Map<Σᐩ, Set<String>> = originalForm.unitReachability
 ): UTMatrix<BooleanArray> =
   UTMatrix(
     ts = tokens.map { it ->
       bmp[listOf(it)].let { nts ->
-        if (tokens.none { it.isNonterminalStubIn(this) }) nts
+        if (tokens.none { it.isNonterminalStubInNTs(allNTs) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { ur[it] ?: emptySet() }.flatten().toSet()
-      }.let { nts -> ntrs.map { it in nts } }.toBooleanArray()
+        else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()
+      }.let { nts -> allNTs.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
-    algebra = alg
+    algebra = bitwiseAlgebra
   )
 
-fun CFG.initialUTMatrix(tokens: List<Σᐩ>): UTMatrix<Forest> =
+fun CFG.initialUTMatrix(
+  tokens: List<Σᐩ>,
+  origCFG: CFG = originalForm,
+  bmp: BiMap = bimap,
+  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bimap[listOf(terminal)].let { nts ->
+      bmp[listOf(terminal)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { unitReachability[it] ?: emptySet() }.flatten().toSet()
+        else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()
@@ -243,7 +241,7 @@ fun Σᐩ.parseCFG(
     val prod = line.splitProd()
     if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].tokenizeByWhitespace()
     else throw Exception("Invalid production ${prod.size}: $line")
-  }.toSet().let { if (normalize) it.normalForm else it }.freeze()
+  }.toSet().let { if (normalize) it.normalForm else it }
 
 fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
 
