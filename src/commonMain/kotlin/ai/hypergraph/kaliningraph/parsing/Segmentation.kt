@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
+
 data class Segmentation(
   val valid: List<Int> = emptyList(),
   val invalid: List<Int> = emptyList(),
@@ -34,18 +36,13 @@ data class Segmentation(
   val unparseableRegions = invalid.filter { it !in illegal }.map { it..it }.mergeContiguousRanges().map { it.charIndicesOfWordsInString(line) }
   val illegalRegions = illegal.map { it..it }.map { it.charIndicesOfWordsInString(line) }
 
-  // Prints the string with parseable regions in green, illegal regions in red, and unparseable regions in yellow.
-  fun printToConsoleWithANSIColors() {
-    val ANSI_RESET = "\u001B[0m"
-    val ANSI_GREEN = "\u001B[32m"
-    val ANSI_YELLOW = "\u001B[33m"
-    val ANSI_RED = "\u001B[31m"
-
+  fun toColorfulString(): String {
     val coloredLine = StringBuilder()
 
-    val regions = parseableRegions.map { it to ANSI_GREEN } +
-        unparseableRegions.map { it to ANSI_YELLOW } +
-        illegalRegions.map { it to ANSI_RED }
+    val regions =
+      parseableRegions.map { it to ANSI_GREEN } +
+      unparseableRegions.map { it to ANSI_YELLOW } +
+      illegalRegions.map { it to ANSI_RED }
 
     for (i in line.indices) {
       val color = regions.find { i in it.first }?.second ?: ANSI_RESET
@@ -53,7 +50,7 @@ data class Segmentation(
     }
 
     coloredLine.append(ANSI_RESET)
-    println(coloredLine.toString())
+    return coloredLine.toString()
   }
 
   fun List<IntRange>.mergeContiguousRanges(): List<IntRange> =
