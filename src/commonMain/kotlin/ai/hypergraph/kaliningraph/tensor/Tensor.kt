@@ -382,7 +382,7 @@ class UTMatrix<T> constructor(
 
   fun squared() = toFullMatrix().squareUpperTriangular().toUTMatrix()
 
-  fun seekFixpointSlow(
+  fun seekFixpoint(
     // Carries a triple of:
     //    (1) the element itself,
     //    (2) row to an element's left (inclusive)
@@ -408,10 +408,10 @@ class UTMatrix<T> constructor(
       UTMatrix(
         diagonals = diagonals + listOf(next.map { it.first }),
         algebra = algebra
-      ).seekFixpointSlow(next, iteration + 1, maxIterations)
+      ).seekFixpoint(next, iteration + 1, maxIterations)
     }
 
-  fun seekFixpoint(maxIterations: Int = diagonals.first().size): UTMatrix<T> {
+  fun seekFixpointFast(maxIterations: Int = diagonals.first().size): UTMatrix<T> {
     var iteration = 0
 
     val diagonalsMutable = diagonals.toMutableList()

@@ -222,7 +222,7 @@ fun CFG.initialUTMatrix(
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()
+        else nts.map { nt -> (unitReach[nt] ?: setOf(nt)) }.flatten().toSet()
       }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()
