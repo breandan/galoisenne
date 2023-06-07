@@ -28,7 +28,7 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
 
 fun CFG.isValid(str: Σᐩ): Boolean = isValid(str.tokenizeByWhitespace())
 fun CFG.isValid(str: List<Σᐩ>): Boolean =
-  initialUTBMat(str.pad3()).seekFixpoint().diagonals
+  initialUTBMatrix(str.pad3()).seekFixpoint().diagonals
 //    .also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
     .last().first()//.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
     .let { corner -> corner[bindex[START_SYMBOL]] }
@@ -178,6 +178,7 @@ fun Σᐩ.containsHole(): Boolean = HOLE_MARKER in this
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
 fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
+fun Σᐩ.isNonterminalStubInNTs(nts: Set<Σᐩ>): Boolean = isNonterminalStub() && drop(1).dropLast(1) in nts
 fun Σᐩ.isNonterminalStubIn(cfg: CFG): Boolean = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
 fun Σᐩ.isNonterminalStubIn(CJL: CJL): Boolean = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
 fun String.containsNonterminal(): Boolean = Regex("<[^\\s>]*>") in this
@@ -191,17 +192,16 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
     }.toSet()
   }
 
-fun CFG.initialUTBMat(
+fun CFG.initialUTBMatrix(
   tokens: List<Σᐩ>,
-  origCFG: CFG = originalForm,
   allNTs: Set<Σᐩ> = nonterminals,
   bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+  unitReach: Map<Σᐩ, Set<String>> = originalForm.unitReachability
 ): UTMatrix<BooleanArray> =
   UTMatrix(
     ts = tokens.map { it ->
       bmp[listOf(it)].let { nts ->
-        if (tokens.none { it.isNonterminalStubIn(this) }) nts
+        if (tokens.none { it.isNonterminalStubInNTs(allNTs) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class
         else nts.map { unitReach[it] ?: emptySet() }.flatten().toSet()

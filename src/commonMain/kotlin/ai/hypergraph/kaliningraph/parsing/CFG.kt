@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
+import kotlin.time.*
 
 @Suppress("NonAsciiCharacters")
 typealias Σᐩ = String
@@ -24,7 +25,7 @@ val Production.RHS: List<Σᐩ> get() =
  * Storing the hashCode() in a field avoids recomputing it on every read.
  */
 fun CFG.freeze(): CFG = FrozenCFG(this)
-private class FrozenCFG(val cfg: CFG): CFG by cfg {
+internal class FrozenCFG(val cfg: CFG): CFG by cfg {
   val cfgId = cfg.hashCode()
   override fun equals(other: Any?) =
     ((other as? FrozenCFG)?.cfgId == cfgId) || (other as? CFG) == cfg
@@ -75,6 +76,7 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
 val CFG.unitReachability by cache {
+  println("Computing unit reachability time now since last epoch: ${TimeSource.Monotonic.markNow()}")
   symbols.associateWith { from ->
     LabeledGraph {
       unitProductions.map { it.LHS to it.RHS.first() }

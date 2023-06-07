@@ -22,18 +22,22 @@ val <A, B, C> Π3<A, B, C>.π2: B get() = second
 val <A, B, C> Π3<A, B, C>.π3: C get() = third
 
 data class Π4<A, B, C, D>(val π1: A, val π2: B, val π3: C, val π4: D)
+data class Π5<A, B, C, D, E>(val π1: A, val π2: B, val π3: C, val π4: D, val π5: E)
 
 fun <A: T, B: T, T> Π2<A, B>.toVT(): V2<T> = VT(π1, π2)
 fun <A: T, B: T, C: T, T> Π3<A, B, C>.toVT(): V3<T> = VT(π1, π2, π3)
 fun <A: T, B: T, C: T, D: T, T> Π4<A, B, C, D>.toVT(): V4<T> = VT(π1, π2, π3, π4)
+fun <A: T, B: T, C: T, D: T, E: T, T> Π5<A, B, C, D, E>.toVT(): V5<T> = VT(π1, π2, π3, π4, π5)
 
 fun <A, B> Π(π1: A, π2: B) = Π2(π1, π2)
 fun <A, B, C> Π(π1: A, π2: B, π3: C) = Π3(π1, π2, π3)
 fun <A, B, C, D> Π(π1: A, π2: B, π3: C, π4: D) = Π4(π1, π2, π3, π4)
+fun <A, B, C, D, E> Π(π1: A, π2: B, π3: C, π4: D, π5: E) = Π5(π1, π2, π3, π4, π5)
 
 infix fun <A, B, Z> Π2<A, B>.to(that: Z) = Π(π1, π2, that)
 infix fun <A, B, C, D> Π2<A, B>.to(that: Π2<C, D>): Π2<Π2<A, B>, Π2<C, D>> = Π(this, that)
 infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
+infix fun <A, B, C, D, Z> Π4<A, B, C, D>.to(that: Z) = Π(π1, π2, π3, π4, that)
 
 fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
   (0 until numRows) * (0 until numCols)

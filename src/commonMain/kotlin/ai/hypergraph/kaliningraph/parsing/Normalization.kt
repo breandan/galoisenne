@@ -29,6 +29,8 @@ fun CFG.normalize(): CFG =
       // This should occur after CNF transform otherwise it causes issues
       // during nonterminal-constrained synthesis, e.g., _ _ _ <NT> _ _ _
       // because we do not use equivalence class during bitvector encoding
+      // Must remember to run the unit test if order changes in the future
+      // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
       .generateNonterminalStubs()
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
