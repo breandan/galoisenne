@@ -75,7 +75,6 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
 val CFG.unitReachability by cache {
-  println("Computing unit reachability time now since last epoch: ${TimeSource.Monotonic.markNow()}")
   symbols.associateWith { from ->
     LabeledGraph {
       unitProductions.map { it.LHS to it.RHS.first() }

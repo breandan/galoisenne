@@ -4,9 +4,8 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
-import kotlin.math.ceil
-import kotlin.math.min
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.*
 
 infix fun Char.closes(that: Char) =
   if (this == ')' && that == '(') true
@@ -91,9 +90,13 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   return prev[o2.size]
 }
 
-fun <T> jaccardDistance(l1: List<T>, l2: List<T>): Double {
-  val (s1, s2) = l1.toSet() to l2.toSet()
-  return 1 - s1.intersect(s2).size.toDouble() / s1.union(s2).size
+fun <T> multisetManhattanDistance(q1: List<T>, q2: List<T>): Int {
+  val (s1, s2) = listOf(q1, q2).map { it.groupingBy { it }.eachCount() }
+
+  val totalDiff = s1.keys.union(s2.keys)
+    .sumOf { t -> (s1.getOrElse(t) { 0 } - s2.getOrElse(t) { 0 }).absoluteValue }
+
+  return totalDiff
 }
 
 // Intersperses "" in between every token in a list of tokens
