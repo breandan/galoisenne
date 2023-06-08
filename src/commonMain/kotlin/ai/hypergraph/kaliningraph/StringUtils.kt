@@ -91,6 +91,11 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   return prev[o2.size]
 }
 
+fun <T> jaccardDistance(l1: List<T>, l2: List<T>): Double {
+  val (s1, s2) = l1.toSet() to l2.toSet()
+  return 1 - s1.intersect(s2).size.toDouble() / s1.union(s2).size
+}
+
 // Intersperses "" in between every token in a list of tokens
 fun List<Σᐩ>.intersperse(i: Int = 1, spacer: List<Σᐩ> = List(i) { "" }): List<Σᐩ> =
   fold(spacer) { acc, s -> acc + spacer + s } + spacer
