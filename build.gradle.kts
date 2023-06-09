@@ -154,7 +154,7 @@ kotlin {
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:4.0.0")
+        implementation("org.sosy-lab:java-smt:4.0.2")
 
         // val z3Version = "4.12.2-glibc_2.27"
         // runtimeOnly("org.sosy-lab:javasmt-solver-z3:$z3Version:com.microsoft.z3@jar")
