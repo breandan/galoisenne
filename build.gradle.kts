@@ -9,8 +9,8 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "1.9.0-Beta"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.46.0"
-  id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
+  id("com.github.ben-manes.versions") version "0.47.0"
+  id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
