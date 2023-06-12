@@ -56,7 +56,7 @@ val CFG.vindex: Array<IntArray> by cache {
   }
 }
 
-val CFG.bindex: Bindex by cache { Bindex(this) }
+val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.graph: LabeledGraph by cache { dependencyGraph() }
 
@@ -196,11 +196,16 @@ class JoinMap(val CFG: CFG) {
 }
 
 // Maps indices to nonterminals and nonterminals to indices
-class Bindex(cfg: CFG) {
-  val indexedNTs: Array<Σᐩ> = cfg.nonterminals.toTypedArray()
-  val ntIndices: Map<Σᐩ, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
+class Bindex<T>(
+  val set: Set<T>,
+  val indexedNTs: List<T> = set.toList(),
+  val ntIndices: Map<T, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
+) {
+  constructor(map: Map<Int, T>) : this(map.values.toSet(), map.values.toList(), map.entries.associate { it.value to it.key })
   operator fun get(i: Int) = indexedNTs[i]
-  operator fun get(s: Σᐩ) = ntIndices[s] ?: 1.also { println("Unknown nonterminal: $s"); null!! }
+  operator fun get(s: T): Int = ntIndices[s] ?: 1.also { println("Unknown nonterminal: $s"); null!! }
+  fun getUnsafe(s: T): Int? = ntIndices[s]
+  override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
 }
 // Maps variables to expansions and expansions to variables in a grammar
 class BiMap(cfg: CFG) {
