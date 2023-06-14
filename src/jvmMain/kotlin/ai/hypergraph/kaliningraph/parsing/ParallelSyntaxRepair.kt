@@ -4,9 +4,9 @@ import ai.hypergraph.kaliningraph.sampling.*
 import kotlin.streams.*
 import kotlin.time.*
 
-fun <E> ((Int, Int) -> Sequence<E>).parallelize(
-  cores: Int = Runtime.getRuntime().availableProcessors()
-) =
+val NUM_CORES = Runtime.getRuntime().availableProcessors()
+
+fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
