@@ -72,7 +72,7 @@
 \newcommand\pcp{\phantom\cdot}
 \newcommand\ppp{\phantom{\nse}}
 
-\title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction}
+\title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction and the Bounded Levenshtein Reachability Problem}
 \titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo.png}}
 \author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
 \institute[McGill]{
@@ -96,10 +96,10 @@
 \begin{frame}[fragile]{Our Contribution}
   Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
 
-  Given a linear conjunctive language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a metric $\Delta$, under hard realtime constraints.
+  Given a linear conjunctive language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a probability metric $\Delta$, under hard realtime constraints.
 
   \begin{center}
-    \resizebox{0.4\textwidth}{!}{
+    \resizebox{0.42\textwidth}{!}{
       \begin{tikzpicture}[
         dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
         node contents={}}
@@ -127,10 +127,11 @@
         \node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G})$};
       \end{tikzpicture}
     }
+    \scalebox{7}{\large$^+$\Huge\fontspec{Arial Unicode MS}^^^^231b}
   \end{center}
 
   \textbf{Natural language:}
-  \textit{Finds syntactically valid strings within a small edit distance, ranked by tokenwise similarity and statistical likliehood.}
+  \textit{Rapidly finds syntactically valid edits within a small neighborhood, ranked by tokenwise similarity and statistical likliehood.}
 \end{frame}
 
 
@@ -149,6 +150,18 @@
 
   In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
     \end{proof}
+\end{frame}
+
+\begin{frame}[fragile]{From CFL Reachability to Real World Program Repair}
+  To fix real code, we had to overcome a variety of interesting challenges:\vspace{10pt}
+
+  \begin{itemize}
+    \item \textbf{Syntax mismatch}: The syntax of real-world programming languages does not exactly correspond to the theory of formal languages.
+    \item \textbf{Source code $\approx$ PL}: Most of the time, source code in the wild is incomplete or only loosely approximates a programming language.
+    \item \textbf{Responsiveness}: The usefulness of synthetic repairs is inversely proportional to the amount of time required to generate them.
+    \item \textbf{Edit generation}: How do we generate edits that are (1) syntactically admissible (2) statistically plausible and (3) semantically meaningful?
+    \item \textbf{Evaluation}: Big code and version control is too coarse-grained, contains irrelevant edits, not representative of small errors/fixes.
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{Precision on Python StackOverflow Human Error Corpus}
@@ -570,6 +583,153 @@
     \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
     \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
   \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Levenshtein reachability and monotone infinite automata}
+  \begin{figure}[H]
+    \begin{minipage}[c]{0.5\textwidth}
+      \centering
+      \underline{MAIA}\vspace{10pt}
+      \resizebox{\textwidth}{!}{
+      \begin{tikzpicture}[
+%->, % makes the edges directed
+      >=stealth',
+      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+      initial text=$ $, % sets the text that appears on the start arrow
+      ]
+      \node[state, initial]                (00) {$q_{0,0}$};
+      \node[state, right of=00]            (10) {$q_{1,0}$};
+      \node[state, right of=10]            (20) {$q_{2,0}$};
+      \node[state, right of=20]            (30) {$q_{3,0}$};
+      \node[right of=30]                   (40) {$\vphantom{\vdots}\cdots$};
+      \node[accepting, state, right of=40] (n0) {$q_{n,0}$};
+
+      \node[state, above of=00]            (01) {$q_{0,1}$};
+      \node[state, right of=01]            (11) {$q_{1,1}$};
+      \node[state, right of=11]            (21) {$q_{2,1}$};
+      \node[state, right of=21]            (31) {$q_{3,1}$};
+      \node[right of=31]                   (41) {$\vphantom{\vdots}\cdots$};
+      \node[accepting, state, right of=41] (n1) {$q_{n,1}$};
+
+      \node[above of=01]                   (0j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=0j]                   (1j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=1j]                   (2j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=2j]                   (3j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[right of=3j]                   (4j) {$\iddots$};
+\node[accepting, right of=4j]        (nj) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+
+\node[state, above of=0j]            (0k) {$q_{0,k}$};
+\node[state, right of=0k]            (1k) {$q_{1,k}$};
+\node[state, right of=1k]            (2k) {$q_{2,k}$};
+\node[state, right of=2k]            (3k) {$q_{3,k}$};
+\node[right of=3k]                   (4k) {$\vphantom{\vdots}\cdots$};
+\node[accepting, state, right of=4k] (nk) {$q_{n,k}$};
+
+\draw [->] (00) edge[below] node{$\sigma_1$} (10);
+\draw [->] (10) edge[below] node{$\sigma_2$} (20);
+\draw [->] (20) edge[below] node{$\sigma_3$} (30);
+\draw [->] (30) edge[below] node{$\sigma_4$} (40);
+\draw [->] (40) edge[below] node{$\sigma_n$} (n0);
+
+\draw [->] (01) edge[below] node{$\sigma_1$} (11);
+\draw [->] (11) edge[below] node{$\sigma_2$} (21);
+\draw [->] (21) edge[below] node{$\sigma_3$} (31);
+\draw [->] (31) edge[below] node{$\sigma_4$} (41);
+\draw [->] (41) edge[below] node{$\sigma_n$} (n1);
+
+\draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
+\draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
+\draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
+\draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
+\draw [->] (4j) edge[below] node{$\sigma_n$} (nj);
+
+\draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
+\draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
+\draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
+\draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
+\draw [->] (4k) edge[below] node{$\sigma_n$} (nk);
+
+\draw [->] (00) edge[left] node{$*$}         (11);
+\draw [->] (10) edge[left] node{$*$}         (21);
+\draw [->] (20) edge[left] node{$*$}         (31);
+\draw [->] (30) edge[left] node{$*$}         (41);
+\draw [->] (30) edge[bend right, below] node{$\sigma_5$} (41);
+\draw [->] (40) edge[           right] node{$\sigma_n$}  (n1);
+\draw [->] (40) edge[bend right, left] node{$*$}         (n1);
+
+\draw [->] (01) edge[left] node{$*$}                     (1j);
+\draw [->] (11) edge[left] node{$*$}                     (2j);
+\draw [->] (21) edge[left] node{$*$}                     (3j);
+\draw [->] (31) edge[left] node{$*$}                     (4j);
+\draw [->] (31) edge[bend right, below] node{$\sigma_5$} (4j);
+\draw [->] (41) edge[           right] node{$\sigma_n$}  (nj);
+\draw [->] (41) edge[bend right, left] node{$*$}         (nj);
+
+\draw [->] (0j) edge[left] node{$*$}                     (1k);
+\draw [->] (1j) edge[left] node{$*$}                     (2k);
+\draw [->] (2j) edge[left] node{$*$}                     (3k);
+\draw [->] (3j) edge[left] node{$*$}                     (4k);
+\draw [->] (3j) edge[bend right, below] node{$\sigma_5$} (4k);
+\draw [->] (4j) edge[           right] node{$\sigma_n$}  (nk);
+\draw [->] (4j) edge[bend right, left] node{$*$}         (nk);
+
+\draw [->] (00) edge[bend left, left] node{$*$}   (01);
+\draw [->] (10) edge[bend left, left] node{$*$}   (11);
+\draw [->] (20) edge[bend left, left] node{$*$}   (21);
+\draw [->] (30) edge[bend left, left] node{$*$}   (31);
+\draw [->] (40) edge[right] node{$*$}             (41);
+\draw [->] (n0) edge[bend right, right] node{$*$} (n1);
+
+\draw [->] (01) edge[bend left, left] node{$*$}   (0j);
+\draw [->] (11) edge[bend left, left] node{$*$}   (1j);
+\draw [->] (21) edge[bend left, left] node{$*$}   (2j);
+\draw [->] (31) edge[bend left, left] node{$*$}   (3j);
+\draw [->] (41) edge[right] node{$*$}             (4j);
+\draw [->] (n1) edge[bend right, right] node{$*$} (nj);
+
+\draw [->] (0j) edge[bend left, left] node{$*$}   (0k);
+\draw [->] (1j) edge[bend left, left] node{$*$}   (1k);
+\draw [->] (2j) edge[bend left, left] node{$*$}   (2k);
+\draw [->] (3j) edge[bend left, left] node{$*$}   (3k);
+\draw [->] (4j) edge[right] node{$*$}             (4k);
+\draw [->] (nj) edge[bend right, right] node{$*$} (nk);
+
+\draw [->] (00) edge[below] node{$\sigma_2$}    (21);
+\draw [->] (10) edge[below] node{$\sigma_3$}    (31);
+\draw [->] (20) edge[below] node{$\sigma_4$}    (41);
+
+\draw [->] (01) edge[below] node{$\sigma_2$}    (2j);
+\draw [->] (11) edge[below] node{$\sigma_3$}    (3j);
+\draw [->] (21) edge[below] node{$\sigma_4$}    (4j);
+
+\draw [->] (0j) edge[below] node{$\sigma_2$}    (2k);
+\draw [->] (1j) edge[below] node{$\sigma_3$}    (3k);
+\draw [->] (2j) edge[below] node{$\sigma_4$}    (4k);
+
+%https://tex.stackexchange.com/a/20986/139648
+\draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (n0.south east) node[midway,yshift=-3em]{\textbf{String length}};
+\draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-40pt,rotate=90]{\textbf{Levenshtein edit distance}};
+\end{tikzpicture}
+}
+\end{minipage}
+\hfill
+\begin{minipage}[l]{5 cm}
+\centering
+\underline{CFG}\vspace{14.5pt}
+{\footnotesize
+\begin{align*}
+S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
+* &\Rightarrow \{\cdot \in \Sigma\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i, j-1}*\} \mid i, j \in [1, n]\times[1, k]\big\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i-1, j-1}*\}\mid i, j\in[1, n]\times [1, k]\big\}\\
+\big\{q_{i, j} &\Rightarrow \{q_{i-1, j} \sigma_i \}\mid i, j \in [1, n]\times[0, k]\big\} \\
+\big\{q_{i, j} &\Rightarrow \{q_{i-2, j-1} \sigma_i\} \mid i, j \in [2, n]\times[1, k] \big\}\\
+\end{align*}
+}%
+\end{minipage}
+\caption{Bounded Levenshtein reachability from $\sigma: \Sigma^n$ is expressible as either a monotone acyclic infinite automata (MAIA) populated by accept states within radius $k$ of $S=q_{n,0}$ (left), or equivalently, a left-linear CFG whose productions bisimulate the transition dynamics up to a fixed horizon (right), accepting only strings within Levenshtein radius $k$ of $\sigma$.}
+\end{figure}
 \end{frame}
 
 \begin{frame}[fragile]{A birds eye view of the algorithm}
