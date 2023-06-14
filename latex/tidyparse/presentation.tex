@@ -1,0 +1,1409 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\beamertemplatenavigationsymbolsempty
+
+\input{preamble.tex}
+
+\usepackage{pgf-soroban}
+\usetikzlibrary{shapes.geometric,calc,decorations.text,bayesnet,arrows,backgrounds}
+\usepackage{circledsteps}
+\usepackage{epigraph}
+\usepackage{array}
+\setmonofont{JetBrains Mono}[
+  Contextuals = Alternate,
+  Ligatures = TeX,
+]
+\lstset{
+  basicstyle = \ttfamily,
+  columns = flexible,
+}
+\makeatletter
+\renewcommand*\verbatim@nolig@list{}
+\makeatother
+\usepackage{pmboxdraw}
+\usetikzlibrary{cd}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.25\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+      \usebeamerfont{author in head/foot}\insertshortauthor{}{~~(\insertshortinstitute)}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+      \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+      \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+\makeatletter
+\let\HL\hl
+\renewcommand\hl{%
+  \let\set@color\beamerorig@set@color
+  \let\reset@color\beamerorig@reset@color
+  \HL}
+\makeatother
+
+\newcommand\ddd{\Ddots}
+\newcommand\vdd{\Vdots}
+\newcommand\cdd{\Cdots}
+\newcommand\lds{\ldots}
+\newcommand\vno{\varnothing}
+\newcommand{\ts}[1]{\textsuperscript{#1}}
+\newcommand\non{1\ts{st}}
+\newcommand\ntw{2\ts{nd}}
+\newcommand\nth{3\ts{rd}}
+\newcommand\nfo{4\ts{th}}
+\newcommand\nfi{5\ts{th}}
+\newcommand\nsi{6\ts{th}}
+\newcommand\nse{7\ts{th}}
+\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
+\newcommand\rcr{\rowcolor{black!15}}
+\newcommand\rcw{\rowcolor{white}}
+\newcommand\pcd{\cdot}
+\newcommand\pcp{\phantom\cdot}
+\newcommand\ppp{\phantom{\nse}}
+
+\title[Tidyparse: Real-Time Context-free Error Correction]{Tidyparse: Real-Time Context-free Error Correction}
+\titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo.png}}
+\author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
+\institute[McGill]{
+  McGill University, Mila IQIA\\
+  \medskip
+  \textit{bre@ndan.co}
+}
+\date{\today}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Overview}
+  \tableofcontents
+\end{frame}
+
+\section{Our Contribution}\label{sec:contribution}
+
+\begin{frame}[fragile]{Our Contribution}
+  Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
+
+  Given a linear conjunctive language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a metric $\Delta$, under hard realtime constraints.
+
+  \begin{center}
+    \resizebox{0.4\textwidth}{!}{
+      \begin{tikzpicture}[
+        dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
+        node contents={}}
+      ]
+        \def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
+        \def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
+        \def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
+        \def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
+        \def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
+        \begin{scope}
+          \clip \secondcircle;
+          \fill[black!15] \firstcircle;
+        \end{scope}
+        \draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
+        \draw [dashed] \firstcirclea;
+        \draw [dashed] \firstcircleb;
+        \draw [dashed] \firstcirclec;
+        \draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
+        \draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
+        \draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\vphantom{d}\ldots$};
+        \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^*$};
+        \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
+        \draw \secondcircle;
+        \node [above] at (current bounding box.north -| a) {$\mathcal{L}(G(\err\sigma, r^*))$};
+        \node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G})$};
+      \end{tikzpicture}
+    }
+  \end{center}
+
+  \textbf{Natural language:}
+  \textit{Finds syntactically valid strings within a small edit distance, ranked by tokenwise similarity and statistical likliehood.}
+\end{frame}
+
+
+\begin{frame}[fragile]{An Simple Existience Proof}
+  \begin{lemma}
+    For any nonempty language $\ell: \mathcal{L}(\mathcal{G})$ and invalid string $\err{\sigma}: \Sigma^n$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$, where $\Delta$ denotes the Levenshtein edit distance.\\
+  \end{lemma}
+
+  \begin{proof}
+  Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid string, by definition it must be that $|\tilde{\sigma}|<\infty$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. We must now consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$.
+
+  \begin{itemize}
+    \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full deletion on $\err{\sigma}$, or
+    \item If $0 < m$, then we have $\Delta(\err{\sigma}, \tilde{\sigma}) \in (0, \max(m, n)]$.
+  \end{itemize}
+
+  In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+    \end{proof}
+\end{frame}
+
+\begin{frame}[fragile]{Precision on Python StackOverflow Human Error Corpus}
+  \begin{center}
+    \resizebox{0.85\textwidth}{!}{\input{histogram.pgf}}
+  \end{center}
+\end{frame}
+
+\section{Formal Language Theory}\label{sec:fltheory}
+
+%------------------------------------------------------------------------------------------------
+
+\begin{frame}[fragile]{Background: Regular grammars}
+  A regular grammar (RG) is a quadruple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ are nonterminals, $\Sigma$ are terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). E.g., the following RG and NFA correspond to the language defined by the \textit{regex} \tinline{(a(ab)*)*(ba)*}:
+
+  % https://www3.nd.edu/~kogge/courses/cse30151-fa17/Public/other/tikz_tutorial.pdf
+  % Glushkov's algorithm: https://www.irif.fr/~jep/PDF/MPRI/MPRI.pdf#subsection.3.5.2
+  \begin{figure}
+    \hspace{-1cm}
+    \begin{minipage}[t]{0.25\linewidth}
+      \vspace{-2.4cm}\scalebox{0.6}{
+        \begin{aligned}[t]
+          S &\rightarrow Q_0 \mid Q_2 \mid Q_3 \mid Q_5\\
+          Q_0 &\rightarrow \varepsilon \\
+          Q_1 &\rightarrow Q_0 b \mid Q_2 b\\
+          Q_2 &\rightarrow Q_1 a \\
+          Q_3 &\rightarrow Q_0 a \mid Q_3 a \mid Q_5 a \\
+          Q_4 &\rightarrow Q_3 a \mid Q_5 a \\
+          Q_5 &\rightarrow Q_4 b \\
+        \end{aligned}}
+    \end{minipage}
+    \hspace{0.5cm}
+    \begin{minipage}[t]{0.48\linewidth}
+      \scalebox{0.5}{
+        \begin{tikzpicture}
+          [->, >=stealth,]
+          \node[state, initial above, accepting] (Q0) {$Q_0$};
+          \node[state, left of=Q0] (Q1) {$Q_1$};
+          \node[state, accepting, left of=Q1] (Q2) {$Q_2$};
+          \node[state, accepting, right of=Q0] (Q3) {$Q_3$};
+          \node[state, above right of=Q3] (Q4) {$Q_4$};
+          \node[state, accepting, below right of=Q3] (Q5) {$Q_5$};
+          \draw
+          %        (Q0) edge[loop above] (Q0)
+          (Q0) edge node{\ttinline b} (Q1)
+          (Q0) edge node{\ttinline a} (Q3)
+          (Q1) edge[bend right] node{\ttinline a} (Q2)
+          (Q2) edge[bend right] node{\ttinline b} (Q1)
+          (Q3) edge[loop above] node{\ttinline a} (Q3)
+          (Q3) edge node{\ttinline a} (Q4)
+          (Q5) edge node{\ttinline a} (Q3)
+          (Q4) edge[bend left] node{\ttinline b} (Q5)
+          (Q5) edge[bend left] node{\ttinline a} (Q4)
+        \end{tikzpicture}
+      }
+    \end{minipage}
+  \end{figure}
+
+  \begin{center}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+        \fi
+        }
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt] (F-\Y){};
+        \fi}
+      \end{tikzpicture}
+    }
+  \end{center}
+\end{frame}
+
+\begin{frame}{Background: Context-free grammars}
+  In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $n^\omega$, n.b. CFLs are \textbf{not} closed under intersection!\newline\\
+  %
+  For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
+  %
+  Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\{S \rightarrow S S \mid ( S ) \mid ()\}\Leftrightarrow^*\{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS\}$
+
+  \begin{center}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+        \fi
+        }
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free,conjunctive}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt] (F-\Y){};
+        \fi}
+      \end{tikzpicture}
+    }
+  \end{center}
+\end{frame}
+
+\begin{frame}{Background: Conjunctive grammars}
+  Conjunctive grammars naturally extend CFGs with CFL union and intersection, respecting closure under those operations. Equivalent to trellis automata, which are like contractive elementary cellular automata. Language inclusion is decidable in P.\\
+
+  \begin{prooftree}
+    \AxiomC{$\Gamma \vdash \mathcal{G}_1, \mathcal{G}_2 : \texttt{CG}$}
+    \RightLabel{$\cap$}
+    \UnaryInfC{$\Gamma \vdash \exists \:\mathcal{G}_3: \texttt{CG}\:.\:\mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_1} \leftrightarrow \mathcal{G}_3$}
+  \end{prooftree}
+
+  \begin{center}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free,conjunctive}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+        \fi
+        }
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free,conjunctive,context sensitive}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt] (F-\Y){};
+        \fi}
+      \end{tikzpicture}
+    }
+  \end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]{Background: Closure properties of formal languages}
+  Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $\star$ be Kleene star, and $\complement$ be complementation:\\
+  \begin{table}
+    \begin{tabular}{c|ccccc}
+      & $\cup$ & $\cap$ & $\cdot$ & $\star$ & $\complement$ \\
+      \hline
+      Finite$^1$                 & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
+      Regular$^1$                & \cmark & \cmark & \cmark  & \cmark  & \cmark        \\
+      Context-free$^1$           & \cmark & \xmark & \cmark  & \cmark  & \xmark        \\
+      \rowcolor{slightgray} Conjunctive$^{1,2}$    & \cmark & \cmark & \cmark  & \cmark  & ?             \\
+      Context-sensitive$^2$      & \cmark & \cmark & \cmark  & +       & \cmark        \\
+      Recursively Enumerable$^2$ & \cmark & \cmark & \cmark  & \cmark  & \xmark        \\
+    \end{tabular}
+  \end{table}
+  We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.
+\end{frame}
+
+\section{Algebraic Parsing}\label{sec:algebraic-parsing}
+
+\begin{frame}[fragile]{Context-free parsing, distilled}
+  Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
+
+  \vspace{-7pt}
+  \[
+    s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
+    \text{e.g.},
+    \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
+  \]
+  \vspace{-20pt}
+
+  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+
+  \begin{align*}
+    M^0:=
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+      \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                  &                &             &        & \varnothing\\
+                  &                &             &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &             &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+      \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                  &                &         &        & \Lambda\\
+                  &                &         &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &         &        & \varnothing
+    \end{pNiceMatrix}
+  \end{align*}
+
+  \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}_{\mathcal{G}}$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}_\mathcal{G}}(\sigma)$.
+\end{frame}
+
+\begin{frame}[fragile]{Lattices, Matrices and Trellises}
+  The art of treillage has been practiced from ancient through modern times.
+  \begin{center}
+    \begin{tabular}{ c c c c c }
+      \includegraphics[width=0.17\textwidth]{../figures/trellis.png} & & \includegraphics[width=0.12\textwidth]{../figures/grid_topiary.jpeg} & & \includegraphics[width=0.23\textwidth]{../figures/tree_pyramid.jpeg} \\\\
+      \includegraphics[width=0.17\textwidth]{../figures/jiaxian_triangle.png} & &
+      \rotatebox{37}{\scalebox{0.9}{$
+      \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted,delimiters-color=gray]
+        \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+                       & \Ddots  & \Ddots & \Vdots\\
+                       &         &        & \Lambda\\
+                       &         &        & \sigma_n^\shup \\
+      \end{pNiceMatrix}$}} & & \scalebox{0.23}{\mkTrellis{9}}\\
+      Jia Xian Triangle & & CYK Parsing & & Trellis Automaton\\
+      Jia, $\sim$1030 A.D. & & Sakai, 1961 A.D. & & Dyer, 1980 A.D.\\
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{A few observations on algebraic parsing}
+  \begin{itemize}
+    \item The matrix $\mathbf M^*$ is strictly upper triangular, i.e., nilpotent of degree $n$
+    \item Recognizer can be translated into a parser by storing backpointers\\\\
+  \end{itemize}\vspace{0.2cm}
+  \begin{tabular}{ c c c }
+    \small{$\mathbf{M}_1 = \mathbf{M}_0 + \mathbf{M}_0^2$} & \small{$\mathbf{M}_2 = \mathbf{M}_1 + \mathbf{M}_1^2$} & \small{$\mathbf{M}_3 = \mathbf{M}_2 + \mathbf{M}_2^2 = \mathbf{M}_4$} \\
+    \includegraphics[trim=420 288 0 0,clip, width=3.6cm]{../figures/parse2.png} &
+    \includegraphics[trim=420 285 0 0,clip, width=3.6cm]{../figures/parse3.png} &
+    \includegraphics[trim=420 287 0 0,clip, width=3.63cm]{../figures/parse4.png}
+  \end{tabular}
+  \begin{itemize}
+    \item The $\otimes$ operator is \textit{not} associative: $S \otimes (S \otimes S) \neq (S \otimes S) \otimes S$
+    \item Built-in error recovery: nonempty submatrices = parsable fragments
+    \item \texttt{seekFixpoint \{ it + it * it \}} is sufficient but unnecessary
+    \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary, could solve for $\mathbf{M = M}^2$ above superdiagonal
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Satisfiability + holes (our contribution)}
+  \begin{itemize}
+    \item Can be lowered onto a Boolean tensor $\mathbb{B}_2^{n\times n \times |V|}$ (Valiant, 1975)
+    \item Binarized CYK parser can be efficiently compiled to a SAT solver
+    \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables!
+    \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{Z}_2^{|V|}$
+    \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+    \[\begin{tikzcd}
+        2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+        & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+        \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+        & \mathbb{Z}_2^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+    \end{tikzcd}\]
+    \item These operators can be lifted into matrices/tensors in the usual way
+    \item In most cases, only a few nonterminals are active at any given time
+    \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
+    \item If density is desired, possible to use the Maculay representation
+%            \item Set joins are an active topic of research in SQL query optimization
+    \item If you know of a more efficient encoding, please let us know!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Chomsky Denormalization}
+  Chomksy normalization is needed for matrix-based parsing, however produces lopsided parse trees. We can denormalize them using a simple recusive procedure to restore the natural shape of the original CFG:\vspace{0.5cm}\\
+
+  \begin{minipage}[l]{6cm}
+    \vspace{0.3cm}\resizebox{\textwidth}{!}{
+      \begin{tabular}{ll}
+        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
+%    \Tree [.S [.NP John ] [.VP [.\tikz\node(v1){V}; sleeps ] ] ]
+        \hspace{-2cm}
+        &
+        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\
+%    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
+        \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
+      \end{tabular}
+      \begin{tikzpicture}[overlay]
+%    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
+        \draw [red,dashed,-stealth] (v3) to[bend left] (v4);
+%    \draw [red,dashed,-stealth] (v5) to[bend left] (v6);
+        \draw [red,dashed,-stealth] (v7) to[bend left] (v8);
+%    \draw [red,dashed,-stealth] (v9) to[bend right] (v10);
+        \draw [red,dashed,-stealth] (v11) to[bend right] (v12);
+      \end{tikzpicture}
+    }
+%    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
+  \end{minipage}
+  \hspace{-0.7cm}\scalebox{0.6}{
+    \begin{minipage}[l]{10cm}
+  \begin{algorithm}[H]
+    \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
+    \begin{algorithmic}
+      \Procedure{Denormalize}{\texttt{t: Tree}}
+        \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+        \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
+          \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
+        \Else\Comment{Graft the denormalized children on root.}
+        \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+        \EndIf
+      \EndProcedure
+    \end{algorithmic}
+  \end{algorithm}
+  \end{minipage}
+}
+
+\vspace{1cm}All synthetic nonterminals are excised during Chomsky denormalization. Rewriting improves legibility but does not alter the underlying semantics.
+\end{frame}
+
+\begin{frame}[fragile]{Incremental parsing}
+  Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
+  \begin{center}
+    \begin{tabular}{ c c c c c }
+      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
+      Append                               & & Delete                                       & & Insert                                       \\
+      $\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
+    \end{tabular}
+  \end{center}
+  Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
+\end{frame}
+
+%\begin{frame}{Error Recovery}
+%  \begin{figure}[H]
+%    \adjustbox{scale=0.75,center}{%
+%    \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+%      \[
+%        \begin{NiceMatrix}
+%              \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+%                         &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+%          \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+%                    \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+%                    \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+%                         &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+%                         &      &      &      &      &      & \pcd & \cdd &      & C    \\
+%                         &      &      &      &      &      &      &      & T_C  & \vdd \\
+%                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
+%                         &      &      &      &      &      &      &      &      & \\
+%                         &      &      &      &      &      &      &      &      & \\
+%                         &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+%                    \vno & \cdd &      &      &      &      &      &      & \vno &
+%        \end{NiceMatrix}
+%      \]
+%    \end{minipage}
+%    }
+%    \hspace{1cm}
+%
+%    \caption{By recursing over upper diagonals of decreasing elevation and discarding subtrees that fall under the shadow of another's canopy, we can recover parseable subtrees.}
+%  \end{figure}
+%\end{frame}
+
+\begin{frame}[fragile]{Conjunctive parsing}
+  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_2}$:
+
+  \begin{table}[H]
+    \begin{tabular}{llll}
+      $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt} \\
+      $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+    \end{tabular}
+  \end{table}
+
+  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. To encode $\mathcal{L}_\cap$, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ as follows:\vspace{-5pt}
+
+  \begin{align}
+    \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
+  \end{align}
+  % Generated by cfl4_intersection.vox, open with https://voxelator.com/
+  \begin{figure}[H]
+    \includegraphics[height=0.093\textwidth]{../figures/angle1.png}\hspace{-5pt}
+    \includegraphics[height=0.093\textwidth]{../figures/angle2.png}\hspace{-5pt}
+    \includegraphics[height=0.093\textwidth]{../figures/angle5.png}\hspace{-5pt}
+    \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
+    \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{A birds eye view of the algorithm}
+  We can lower Valiant's algorithm onto a polynomial system of equations over finite fields, allowing us to solve for holes and parse trees.
+  \begin{figure}[H]
+    \adjustbox{scale=0.75,center}{%
+      \[\begin{tikzcd}[row sep=large, column sep=huge]
+          \langle\mathcal{G}', \highlight{\Sigma}^{n-1}\rangle \arrow[leftrightarrow, drrr, shorten=-1mm] & & [-135pt] & \vspace{20pt}\text{Set} \arrow[d, phantom] & \text{Bit} \arrow[d, phantom] & [-90pt] & \langle\mathcal{G}', \Sigma^{n-1}\rangle \arrow[drr, shorten=-2mm] & [-90pt] & \text{SAT} \arrow[d, phantom]\\[-30pt]
+          \text{Rubix}  \arrow[rr, phantom] & & [-135pt] & M \times M \arrow[r, "\mathds{1}^{2^{n\times n}}", labels=above] \arrow[d, "\hspace{-13.9pt}\bigoplus\:\bigotimes"] & \mathbb{Z}_2^{|V|^{n\times n}} \times \mathbb{Z}_2^{|V|^{n\times n}} \arrow[d, "\hspace{-16.3pt}\highlight{+}\:\highlight{*}"] \arrow[l, "\mathds{1}^{-2^{n\times n}}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^{2^{n\times n}}", labels=above] & [-90pt] & & [-90pt] & \mathcal{M} \times \mathcal{M} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2^{n\times n}}", labels=below] \arrow[d, "\hspace{-12pt}+\:\:\:*"] \\
+          \text{Matrix} \arrow[rr, phantom] & & [-135pt] & 2^V \times 2^V \arrow[r, "\mathds{1}^{2}", labels=above] \arrow[d, "\hspace{-10pt}\oplus\:\otimes"] & \mathbb{Z}_2^{|V|} \times \mathbb{Z}_2^{|V|} \arrow[d, "\hspace{-15.8pt}\highlight{\boxplus}\:\highlight{\boxtimes}"] \arrow[l, "\mathds{1}^{-2}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi^2", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \times \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-2}", labels=below] \arrow[d, "\hspace{-9.7pt}\boxplus\:\boxtimes"] \arrow[u] \\
+          \text{Vector} \arrow[rr, phantom] & & [-135pt] & 2^V \arrow[r, "\mathds{1}", labels=above] & \mathbb{Z}_2^{|V|} \arrow[l, "\mathds{1}^{-1}", labels=below] \arrow[rrrr, rightarrowtail, "\varphi", labels=above] & [-90pt] & & [-90pt] & \mathcal{V} \arrow[llll, rightharpoonup, shorten=1mm, "\varphi^{-1}", labels=below] \arrow[u]
+      \end{tikzcd}\]
+    }
+  \end{figure}
+  So far, we only consider Cartesian closed categories, however, we can also consider other categories, such as the category of CFLs under conjunction, which allows us to encode the intersection of two CFGs.
+\end{frame}
+
+\begin{frame}[fragile]{A birds eye view of the algorithm}
+  \begin{figure}[H]
+    \adjustbox{scale=0.75,center}{%
+      \[\begin{tikzcd}[row sep=large, col sep=huge]
+          \text{String} && \text{Grammar} && \err{\text{String}} \\
+          [-20pt] \highlight{\Sigma}^{n-1} \arrow[dr] & \text{\underline{Parsing}} & \mathcal{G}_\varepsilon \arrow[u, dashed, no head, color=gray] \arrow[dl]\arrow[ddl, bend left] \arrow[ddd, dashed, no head, color=gray] \arrow[dr]\arrow[ddr, bend right] & \text{\underline{Repair}} & \err{\Sigma^{n-1}} \arrow[dl] \\
+          & V^{n-1} \arrow[d] & & (V_\varepsilon \cup \{\texttt{\_}\})^{n+q} \arrow[d, shift left]\arrow[d, shift right] & \\
+          & \mathbb{Z}_2^{n\times n \times |V|} \arrow[d, shift left] \arrow[d, shift right] & & \mathbb{Z}^{(n+q)^2 \times |V_\varepsilon|}_2 \rightarrow \mathbb{Z}_2^{|V_{\varepsilon}|} \arrow[d, shift left]\arrow[d, shift right] & \\
+          & CST & \phantom{.} & \left\langle (\highlight{\Sigma} \setminus \{\varepsilon\})^*, CST \right\rangle &
+      \end{tikzcd}\]
+    }
+  \end{figure}
+  Our algorithm produces set of concrete syntax trees (CSTs) for a given valid string. Otherwise, if the string contains an error, the algorithm generates a set of admissible corrections, alongside their CSTs.
+\end{frame}
+
+\section{Error Correction}\label{sec:error-correction}
+
+\begin{frame}[fragile]{Error Correction: Levenshtein q-Balls}
+  Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\texttt{\_}}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}_\mathcal{G}$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$ (this is loosely analogous to a finite difference approximation). To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
+
+  \begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+    \RightLabel{$\varepsilon\textsc{-dup}$}
+    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon^+\:\varepsilon^+) \in P$}
+  \end{prooftree}
+
+  \begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+    \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+  \end{prooftree}
+\end{frame}
+
+\begin{frame}[fragile]{Error Correction: d-Subset Sampling}
+  \noindent Next, suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is shown in Eq.~\ref{eq:lfsr}, wherein $C$ is a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus := \veebar, \otimes := \land$:\vspace{-5pt}
+
+  \begin{align}
+    U^tV = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+             C_1    & \cdd  &       &       & C_m \\
+             \top   & \circ & \cdd  &       & \circ \\
+             \circ  & \ddd  & \ddd  &       & \vdd \\
+             \vdd   & \ddd  &       &       & \\
+             \circ  & \cdd  & \circ & \top  & \circ
+    \end{pNiceMatrix}^t
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      V_1 \\
+      \vdd\\
+      \\
+      \\
+      V_m
+    \end{pNiceMatrix}\label{eq:lfsr}
+  \end{align}
+
+  \noindent Since $C$ is primitive, the sequence $\mathbf{S} = (U^{0 \ldots 2^m-1}V)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{S}_i = \mathbf{S}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we first form an injection $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$ using a combinatorial number system, cycle over $\mathbf{S}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$. This method requires $\widetilde{\mathcal O}(1)$ per sample and $\widetilde{\mathcal O}\left({n \choose d}|\Sigma + 1|^{2d}\right)$ to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{2d}$.
+\end{frame}
+
+\begin{frame}[fragile]{Error Correction: Sketch Templates}
+  Finally, to sample $\bm{\sigma}\sim\Delta_{q}(\err{\sigma})$, we enumerate a series of sketch templates $H(\sigma, i) = \sigma_{1\ldots i-1}\:\text{\texttt{\_} \texttt{\_}}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\mathcal{M}_{\bm\sigma}^*$. If $S \in \Lambda^*_{\bm\sigma}?$ has a solution, each edit in each $\sigma' \in \bm\sigma$ will match exactly one of the following seven edit patterns:\vspace{-10pt}
+
+  \begin{align*}
+    \text{Deletion}&=\begin{cases}
+                       \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \end{cases}\\
+    \text{Substitution}&=\begin{cases}
+                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+                           \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+    \end{cases}\\
+    \text{Insertion}&=\begin{cases}
+                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                        \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \end{cases}
+  \end{align*}
+\end{frame}
+
+%\begin{frame}[fragile]{Level I: Known Error Locations}
+%  \begin{figure}[H]
+%    \hspace{-0.25cm}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        width=8.3cm,
+%        height=6cm,
+%        title={\hspace{-1cm}\textbf{Latency with known locations}},
+%        ybar,
+%        bar width=6pt,
+%        xlabel={Number of holes},
+%        ylabel={ms to synthesize 10 repairs},
+%        xtick=data,
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        ytick pos=left,
+%        xticklabels from table={\loctimings}{holes},
+%        ymajorgrids,
+%        legend pos=north west,
+%        legend columns=2,
+%        error bars/y dir=both,
+%        error bars/y explicit
+%      ]
+%        \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
+%        \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
+%        \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
+%        \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
+%        \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
+%      \end{axis}
+%    \end{tikzpicture}
+%  \end{figure}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Level II: Unknown Locations, Fixed Error Count}
+%  \begin{figure}[H]
+%    \hspace{-0.25cm}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        width=8.3cm,
+%        height=6cm,
+%        title={\hspace{-1cm}\textbf{Latency with unknown locations}},
+%        ybar,
+%        bar width=20pt,
+%        xlabel={Number of errors},
+%        ylabel={ms to synthesize 1 repair},
+%        xtick=data,
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        enlarge x limits={abs=0.5},
+%        ymode=log,
+%        ytick pos=left,
+%        xticklabels from table={\unloctimings}{errors},
+%        ymajorgrids,
+%        legend pos=north west,
+%        error bars/y dir=both,
+%        error bars/y explicit
+%      ]
+%        \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+%        \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+%        \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+%        \legend{Dyck-1, Dyck-2, Dyck-3}
+%      \end{axis}
+%    \end{tikzpicture}
+%  \end{figure}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Level III: MiniGithub, Unknown Count, Synthetic Errors}
+%  \begin{figure}[H]
+%    \centering{\textbf{Synthetic error correction accuracy}}\\
+%    \vspace{0.25cm}
+%%\adjustbox{scale=0.48,center}{%
+%    \begin{tikzpicture}
+%      \begin{axis}
+%        [
+%        width=8.3cm,
+%        height=6.6cm,
+%%    title={\hspace{-1cm}\textbf{Java Brackets}},
+%        ybar,
+%        bar width=10pt,
+%        xlabel={$|\Sigma^*|$},
+%        ylabel={Parser acceptance},
+%        xtick=data,
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        enlarge x limits={abs=0.5},
+%        ytick pos=left,
+%        xticklabels from table={\syntheticerrors}{len},
+%        ymajorgrids,
+%        legend pos=north east,
+%        legend columns=3,
+%        error bars/y dir=both,
+%        error bars/y explicit
+%        ]
+%        \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
+%        \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
+%        \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
+%        \legend{10s, 30s, 60s}
+%      \end{axis}
+%    \end{tikzpicture}
+%  \end{figure}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Level IV: BIFI Dataset, Unknown Count, Real Errors}
+%  \begin{figure}[H]
+%    \hspace{-0.25cm}
+%    \begin{tikzpicture}
+%      \begin{axis}
+%        [
+%        width=8.3cm,
+%        height=6.6cm,
+%        title={\hspace{-1cm}\textbf{Organic error correction accuracy}},
+%        ybar,
+%        bar width=10pt,
+%        xlabel={$|\Sigma^*|$},
+%        ylabel={Parser acceptance},
+%        xtick=data,
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        enlarge x limits={abs=0.5},
+%        ytick pos=left,
+%        xticklabels from table={\naturalerrors}{len},
+%        ymajorgrids,
+%        y tick label style={/pgf/number format/.cd,%
+%        scaled y ticks = false,
+%        set thousands separator={},
+%        fixed},
+%        legend pos=north east,
+%        legend columns=3,
+%        error bars/y dir=both,
+%        error bars/y explicit
+%        ]
+%        \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
+%        \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
+%        \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
+%        \legend{10s, 30s, 60s}
+%      \end{axis}
+%    \end{tikzpicture}
+%  \end{figure}
+%\end{frame}
+
+\begin{frame}{Abbreviated history of algebraic parsing}
+  \begin{itemize}
+    \item \href{http://www-igm.univ-mlv.fr/~berstel/Mps/Travaux/A/1963-7ChomskyAlgebraic.pdf}{Chomsky \& Sch\"utzenberger (1959) - The algebraic theory of CFLs}
+    \item Cocke–Younger–Kasami (1961) - Bottom-up matrix-based parsing
+    \item \href{https://dl.acm.org/doi/10.1145/321239.321249}{Brzozowski (1964) - Derivatives of regular expressions}
+    \item \href{https://dl.acm.org/doi/10.1145/362007.362035}{Earley (1968) - top-down dynamic programming (no CNF needed)}
+    \item \href{http://theory.stanford.edu/~virgi/cs367/papers/valiantcfg.pdf}{Valiant (1975) - first realizes the Boolean matrix correspondence}
+    \begin{itemize}
+      \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$, $\omega < 2.763$
+    \end{itemize}
+    \item \href{https://www.cs.cornell.edu/home/llee/papers/bmmcfl-jacm.pdf}{Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction}
+    \item \href{https://matt.might.net/papers/might2011derivatives.pdf}{Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)}
+    \item \href{https://users.math-cs.spbu.ru/~okhotin/papers/formal_languages_gf2.pdf}{Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)}
+    \item \href{https://arxiv.org/pdf/1601.07724.pdf}{Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda}
+    \item \href{https://arxiv.org/pdf/1504.08342.pdf}{Cohen \& Gildea (2016) - Generalizes Valiant (1975) to parse and recognize mildly context sensitive languages, e.g. LCFRS, TAG, CCG}
+    \item \textbf{Considine, Guo \& Si (2022) - SAT + Valiant (1975) + holes}
+  \end{itemize}
+\end{frame}
+
+\section{Graph Programming}
+
+\begin{frame}[fragile]{Classical programs are graphs}
+  Programs can be compiled into DFGs and represented using a big matrix.
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{lcc}
+      \textbf{Program} & \textbf{Dataflow Graph} & \textbf{Matrix} \\
+%            \begin{tabular}[c]{@{}l@{}} $\hat y = θx + b$\\ $l = ||\hat y - y||_2$\end{tabular}
+%              &
+      \begin{adjustbox}{minipage={.25\textwidth}, height=0.14\textwidth, margin*=-0.8cm 0cm 0cm 0.1cm}
+        \begin{lstlisting}[basicstyle=\ttfamily\tiny]
+sum = 0
+l = [0, 0, 0, 0]
+for i in range(0, 4):
+  l[i] += θ[i] * x[i]
+for i in range(0, 4):
+  l[i] -= y[i] - b
+for i in range(0, 4):
+  l[i] *= l[i]
+for i in range(0, 4):
+  sum += l[i]
+l = sqrt(sum)
+        \end{lstlisting}
+      \end{adjustbox}
+      & \begin{adjustbox}{minipage={.25\textwidth}, height=0.14\textwidth, margin*=0cm 0cm 0cm 0.1cm}
+          \digraph[scale=0.1]{prograph}{
+            node[ fontname="Helvetica" fontsize=20 shape=Mrecord ];
+            edge[ fontname="Helvetica" fontsize=18 ];
+
+            graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
+            "eeba8" ["label"="+"]
+            "a8416" ["label"="+"]
+            "4500f" ["label"="pow"]
+            "a67f9" ["label"="*"]
+            "0.5" ["label"="0.5"]
+            "f14a3" ["label"="*"]
+            "9c49d" ["label"="*"]
+            "59c48" ["label"="+"]
+            "980bd" ["label"="+"]
+            "8f532" ["label"="+"]
+            "1a609" ["label"="+"]
+            "e58c4" ["label"="+"]
+            "23f5b" ["label"="+"]
+            "d829b" ["label"="+"]
+            "y₀" ["label"="y₀"]
+            "2783d" ["label"="+"]
+            "8bd47" ["label"="+"]
+            "y₂" ["label"="y₂"]
+            "517e6" ["label"="+"]
+            "8caa0" ["label"="+"]
+            "y₁" ["label"="y₁"]
+            "7da0d" ["label"="+"]
+            "b12cb" ["label"="+"]
+            "b" ["label"="b"]
+            "f8941" ["label"="+"]
+            "3eecd" ["label"="+"]
+            "2e83a" ["label"="+"]
+            "b59fd" ["label"="+"]
+            "dae83" ["label"="+"]
+            "b11ba" ["label"="*"]
+            "3bb89" ["label"="*"]
+            "b2454" ["label"="*"]
+            "7bed4" ["label"="*"]
+            "39644" ["label"="*"]
+            "12c32" ["label"="*"]
+            "d58d1" ["label"="*"]
+            "6c64d" ["label"="*"]
+            "fb0f0" ["label"="*"]
+            "6c2be" ["label"="*"]
+            "57fd4" ["label"="*"]
+            "a9bc3" ["label"="*"]
+            "x₀" ["label"="x₀"]
+            "θ₀" ["label"="θ₀"]
+            "x₂" ["label"="x₂"]
+            "θ₁" ["label"="θ₁"]
+            "x₂" ["label"="x₂"]
+            "x₄" ["label"="x₄"]
+            "x₁" ["label"="x₁"]
+            "x₃" ["label"="x₃"]
+            "eeba8" -> "a8416"
+            "a8416" -> "4500f"
+            "a67f9" -> "a8416"
+            "0.5" -> "4500f"
+            "f14a3" -> "eeba8"
+            "9c49d" -> "eeba8"
+            "59c48" -> "a67f9"
+            "980bd" -> "a67f9"
+            "8f532" -> "f14a3"
+            "1a609" -> "f14a3"
+            "e58c4" -> "9c49d"
+            "23f5b" -> "9c49d"
+            "d829b" -> "59c48"
+            "y₀" -> "59c48"
+            "y₀" -> "980bd"
+            "2783d" -> "980bd"
+            "8bd47" -> "8f532"
+            "y₂" -> "8f532"
+            "y₂" -> "1a609"
+            "517e6" -> "1a609"
+            "8caa0" -> "e58c4"
+            "y₁" -> "e58c4"
+            "y₁" -> "23f5b"
+            "7da0d" -> "23f5b"
+            "b12cb" -> "d829b"
+            "b" -> "d829b"
+            "b" -> "2783d"
+            "b" -> "8bd47"
+            "b" -> "517e6"
+            "b" -> "8caa0"
+            "b" -> "7da0d"
+            "f8941" -> "2783d"
+            "3eecd" -> "8bd47"
+            "2e83a" -> "517e6"
+            "b59fd" -> "8caa0"
+            "dae83" -> "7da0d"
+            "b11ba" -> "b12cb"
+            "3bb89" -> "b12cb"
+            "b2454" -> "f8941"
+            "7bed4" -> "f8941"
+            "39644" -> "3eecd"
+            "12c32" -> "3eecd"
+            "d58d1" -> "2e83a"
+            "6c64d" -> "2e83a"
+            "fb0f0" -> "b59fd"
+            "6c2be" -> "b59fd"
+            "57fd4" -> "dae83"
+            "a9bc3" -> "dae83"
+            "x₀" -> "b11ba"
+            "x₀" -> "b2454"
+            "θ₀" -> "b11ba"
+            "θ₀" -> "b2454"
+            "θ₀" -> "39644"
+            "θ₀" -> "d58d1"
+            "θ₀" -> "fb0f0"
+            "θ₀" -> "57fd4"
+            "x₂" -> "3bb89"
+            "x₂" -> "7bed4"
+            "θ₁" -> "3bb89"
+            "θ₁" -> "7bed4"
+            "θ₁" -> "12c32"
+            "θ₁" -> "6c64d"
+            "θ₁" -> "6c2be"
+            "θ₁" -> "a9bc3"
+            "x₂" -> "39644"
+            "x₂" -> "d58d1"
+            "x₄" -> "12c32"
+            "x₄" -> "6c64d"
+            "x₁" -> "fb0f0"
+            "x₁" -> "57fd4"
+            "x₃" -> "6c2be"
+            "x₃" -> "a9bc3"
+          }
+      \end{adjustbox} &
+      \begin{adjustbox}{minipage={.15\textwidth}, height=0.14\textwidth, margin*=-0.2cm 0cm 0cm 0.5cm}
+        \includegraphics[scale=0.15]{../figures/adj_prog.png}
+      \end{adjustbox}
+    \end{tabular}
+  \end{table}
+  This representation allows us to solve for their fixedpoints as eigenvectors.
+\end{frame}
+
+\begin{frame}[fragile]{Probabilistic programs are also graphs}
+  A Bayesian Belief Network (BN) is an acyclic DGM of the following form:
+
+  \tikzset{latent/.append style={minimum size=14pt, inner sep=1pt, node distance=10pt, draw,circle, inner sep=1pt}, obs/.append style={minimum size=14pt, inner sep=1pt, node distance=10pt, draw,circle, inner sep=1pt}}
+  \makeatletter
+  \newcommand\ccirc[1]{%
+    \mathpalette\@ccirc{#1}%
+  }
+  \newcommand\@ccirc[2]{%
+    \tikz[baseline=(math.base)] \node (math) {$\m@th#1#2$};%
+  }
+  \newcommand\gcirc[1]{%
+    \mathpalette\@gcirc{#1}%
+  }
+  \newcommand\@gcirc[2]{%
+    \tikz[baseline=(math.base)] \node[fill=gray!30] (math) {$\m@th#1#2$};%
+  }
+  \makeatother
+% https://maximustann.github.io/mach/2015/07/06/belief-network-2/
+% https://frnsys.com/notes/ai/foundations/probabilistic_graphical_models.html
+  \begin{prooftree}
+    \AxiomC{$X \cancel\perp Y \mid Z$}
+    \RightLabel{\textsc{V}}
+    \UnaryInfC{
+      \begin{tikzpicture}
+        \node[obs] (z) {$Z$};%
+        \node[latent,above=of z,xshift=-1cm,fill] (x) {$X$}; %
+        \node[latent,above=of z,xshift=1cm] (y) {$Y$}; %
+        \edge {x,y} {z}
+      \end{tikzpicture}
+    }
+    \DisplayProof
+    \AxiomC{$X \perp Y \mid Z$}
+    \RightLabel{\textsc{Fork}}
+    \UnaryInfC{
+      \begin{tikzpicture}
+        \node[obs] (z) {$Z$};%
+        \node[latent,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+        \node[latent,below=of z,xshift=1cm] (y) {$Y$}; %
+        \edge {z} {x,y}
+      \end{tikzpicture}
+    }
+    \DisplayProof
+    \AxiomC{$X \perp Y \mid Z$}
+    \RightLabel{\textsc{Ch}}
+    \UnaryInfC{
+      \begin{tikzpicture}
+        \node[obs] (z) {$Z$};%
+        \node[latent,above=of z,yshift=-11pt, xshift=-32pt,fill] (x) {$X$}; %
+        \node[latent,below=of z,yshift=11pt, xshift=32pt] (y) {$Y$}; %
+        \edge {x} {z}
+        \edge {z} {y}
+      \end{tikzpicture}
+    }
+  \end{prooftree}
+
+%  \begin{equation*}
+%    P(x_1,\ldots,x_D)=\prod_{i=1}^D P(x_i \mid \texttt{parents}(x_i))
+%  \end{equation*}
+
+  Translatable to a probabilistic circuit a.k.a. Sum Product Network (SPN):
+
+  \begin{tabular}{cc}
+    \hspace{-1.8cm}
+    \begin{minipage}[c]{0.5\textwidth}
+      \centering
+      \begin{tabular}{l}
+        $PC \rightarrow v \sim \mathcal{D}$ \\
+        $PC \rightarrow PC \oplus PC$       \\
+        $PC \rightarrow PC \otimes PC$
+      \end{tabular}
+    \end{minipage}
+    &
+    \begin{minipage}[c]{0.5\textwidth}
+      \centering
+      \digraph[scale=0.4]{spn1}{
+        margin=0
+        compound=true
+        rankdir=LR
+        node [shape=Mrecord,fontname="JetBrains Mono"]
+        edge [fontsize=8,fontcolor=indigo]
+        bgcolor=transparent
+        nslimit=20
+
+        g0 [label="{{μ|σ}|Normal|{<Out0>g0}}"]
+        g1 [label="{{μ|σ}|Normal|{<Out0>g1}}"]
+        g2 [label="{{μ|σ}|Normal|{<Out0>g2}}"]
+        g3 [label="{{μ|σ}|Normal|{<Out0>g3}}"]
+
+        f4 [label="{{<In0>g0|<In1>g1|<In2>g2}|Σ|{<Out0>f4}}"]
+        f5 [label="{{<In0>f4|<In1>g3}|Π|{<Out0>f5}}"]
+
+        g0:Out0 -> f4:In0
+        g1:Out0 -> f4:In1
+        g2:Out0 -> f4:In2
+        g3:Out0 -> f5:In1
+        f4:Out0 -> f5:In0
+
+
+        out1 [style=invis,shape=point]
+        out2 [style=invis,shape=point]
+
+        f5 -> out1
+      }
+    \end{minipage}
+  \end{tabular}
+\end{frame}
+
+\begin{frame}[fragile]{Message passing \& path algebras}
+  A semiring algebra, denoted $(S, \oplus, \otimes, \circled{0}, \circled{1})$, is a set together with two binary operators $\oplus, \otimes: S \times S \rightarrow S$ such that $(S, \oplus, \circled{0})$ is a commutative monoid and $(S, \otimes, \circled{1})$ is a monoid. Furthermore, we have distributivity:
+
+  \begin{prooftree}
+    \bottomAlignProof
+    \AxiomC{$a \cdot (b \cdot c)$}
+    \RightLabel{\small\textsc{Assoc}}
+    \UnaryInfC{$(a \cdot b) \cdot c$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \cdot \circled 1$}
+    \RightLabel{\small\textsc{Neutral}}
+    \UnaryInfC{$a$\vphantom{$()$}}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \cdot b$}
+    \RightLabel{\small\textsc{Comm}}
+    \UnaryInfC{$b \cdot a$\vphantom{$()$}}
+  \end{prooftree}
+
+  \begin{prooftree}
+    \bottomAlignProof
+    \AxiomC{$a \otimes (b \oplus c)$}
+    \UnaryInfC{$(a \otimes b) \oplus (a \otimes c)$}
+    \AxiomC{$(a \oplus b) \otimes c$}
+    \RightLabel{\small\textsc{Dist}}
+    \UnaryInfC{$(a \otimes c) \oplus (b \otimes c)$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \otimes \circled 0$}
+    \RightLabel{\small\textsc{Annhil}}
+    \UnaryInfC{$\circled 0$\vphantom{$()$}}
+  \end{prooftree}
+  \vspace{2pt}
+  These operators can be lifted to matrices to form \textit{path algebras}:
+  \begin{center}
+    \begin{tabular}{lcr}
+      $\delta_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & &
+      \bgroup
+      \def\arraystretch{1.2}
+      \begin{tabular}{c{1cm}c{1cm}|c{1cm}c{1cm}|c}
+        $\oplus$         & $\otimes$ & $\circled{0}$ & $\circled{1}$ & Path     \\\hline
+        min              & +         & $\infty$      & 0             & Shortest \\
+        max              & +         & $-\infty$     & 0             & Longest  \\
+        max              & min       & 0             & $\infty$      & Widest   \\
+        $\underline\vee$ & $\land$   & $\circ$       & $\top$        & Random   \\
+      \end{tabular}
+      \egroup
+    \end{tabular}
+%        \begin{tabular}{lc|cr}
+%            $δ_{st} = \overbrace{\underset{P\in P_{st}^*}{\bigoplus}\underbrace{\underset{e\in P}{\bigotimes}W_{e}}_{\text{Aggregate}}}^{\text{Update}}$ & & &
+%            \bgroup
+%            \def\arraystretch{1.2}
+%            \begin{tabular}{c|c{1cm}c{1cm}|c{1cm}c{1cm}|c}
+%                S                           & $\oplus$ & $\otimes$ & $\circled{0}$ & $\circled{1}$ & Path     \\\hline
+%                $\mathbb R \cup \{\infty\}$ & min      & +         &   $\infty$    &      0        & Shortest \\
+%                $\mathbb R \cup \{\infty\}$ & max      & +         &   $-\infty$   &      0        & Longest  \\
+%                $\mathbb R \cup \{\infty\}$ & max      & min       &       0       &   $\infty$    & Widest   \\
+%            \end{tabular}
+%            \egroup
+%        \end{tabular}
+  \end{center}
+\end{frame}
+
+
+\section{Finite Fields}\label{sec:finite-fields}
+
+\begin{frame}{Recap: Classical logic in a nutshell}
+  \begin{prooftree}
+    \bottomAlignProof
+    \AxiomC{$a \veebar b$}
+    \RightLabel{XOR}
+    \UnaryInfC{$(p \vee q)\land \neg (p\land q)\phantom{()}$}
+    \DisplayProof
+    \hskip 1.5em
+    \bottomAlignProof
+    \AxiomC{$a \to b$}
+    \RightLabel{Impl}
+    \UnaryInfC{$\neg a \vee b$}
+    \DisplayProof
+    \hskip 1.5em
+    \bottomAlignProof
+    \AxiomC{$a \leftrightarrow b$}
+    \RightLabel{Iff}
+    \UnaryInfC{$(\neg a \vee b)\land (\neg b\vee a)$}
+    \DisplayProof
+    \vskip 2.5em
+
+    \bottomAlignProof
+    \AxiomC{$\neg\neg a\phantom{()}$}
+    \RightLabel{2Neg}
+    \UnaryInfC{$a\phantom{()}$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \cdot (b \cdot c)$}
+    \RightLabel{Assoc$_{\land\vee}$}
+    \UnaryInfC{$(a \cdot b) \cdot c$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \cdot b$}
+    \RightLabel{Comm$_{\land\vee}$}
+    \UnaryInfC{$b \cdot a$}
+    \DisplayProof
+    \vskip 2.5em
+
+    \bottomAlignProof
+    \AxiomC{$a \land (b \vee c)$}
+    \RightLabel{Dist$_\land$}
+    \UnaryInfC{$(a \land b) \vee (a \land c)$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$a \vee (b \land c)$}
+    \RightLabel{Dist$_\vee$}
+    \UnaryInfC{$(a \vee b) \land (a \vee c)$}
+    \DisplayProof
+    \vskip 2.5em
+
+    \bottomAlignProof
+    \AxiomC{$\neg (a \vee b)$}
+    \RightLabel{DeMorgan$_\vee$}
+    \UnaryInfC{$\neg a \land \neg b$}
+    \DisplayProof
+    \hskip 2.5em
+    \bottomAlignProof
+    \AxiomC{$\neg (a \land b)$}
+    \RightLabel{DeMorgan$_\land$}
+    \UnaryInfC{$\neg a \vee \neg b$}
+  \end{prooftree}
+\end{frame}
+
+\begin{frame}{Normalization in classical logic}
+  \begin{columns}[t]
+    \begin{column}{0.55\textwidth}
+      \begin{center}
+        \textbf{Conjunctive Normal Form}
+        \phantom{()}\\
+        \begin{align*}
+          \textsc{Conj} &\rightarrow (\textsc{Disj}) \mid \textsc{Conj} \land (\textsc{Disj})\\
+          \textsc{Unit} &\rightarrow \textsc{Var} \mid \neg \textsc{Var} \mid \bot \mid \top \\
+          \textsc{Disj} &\rightarrow \textsc{Unit} \mid \textsc{Disj} \vee \textsc{Disj}
+        \end{align*}
+        \begin{prooftree}
+          \AxiomC{$\neg (x\vee \neg y)\vee \neg \neg z$}
+          \RightLabel{2Neg}
+          \UnaryInfC{$\neg (x\vee \neg y)\vee z$}
+          \RightLabel{DeMorgan}
+          \UnaryInfC{$(\neg x\land  \neg \neg y)\vee z$}
+          \RightLabel{2Neg}
+          \UnaryInfC{$(\neg x\land  y)\vee z$}
+          \RightLabel{Dist}
+          \UnaryInfC{$(\neg x\vee z)\land  (y\vee z)$}
+        \end{prooftree}\\
+        \phantom{()}\\
+        \phantom{Solved with SAT (e.g., DPLL/CDCL/Survey Prop).}\\
+      \end{center}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{center}
+        \textbf{Zhegalkin Normal Form}
+        \phantom{()}\\
+        \[
+          f(x_1, \ldots x_n) = \bigoplus_{i\subseteq\{1,\ldots, n\}}a_i x^i
+        \]
+        i.e., $a_i$'s filter the powerset.
+        \phantom{()}\\
+        \begin{prooftree}
+          \AxiomC{$x + (y \land \neg z)$}
+          \RightLabel{}
+          \UnaryInfC{$x + y(1 \oplus z)$}
+          \RightLabel{}
+          \UnaryInfC{$x + (y \oplus yz)$}
+          \RightLabel{}
+          \UnaryInfC{$x \oplus (y \oplus yz) \oplus x(y \oplus yz)$}
+          \RightLabel{}
+          \UnaryInfC{$x \oplus y \oplus xy \oplus yz \oplus xyz$}
+        \end{prooftree}
+      \end{center}\\
+      \phantom{()}\\
+      \phantom{Solved with rootfinding (e.g., power iteration, Gr\"obner basis).}\\
+      \phantom{()}\\
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Some common algebraic and logical forms}
+  \begingroup
+  \setlength{\tabcolsep}{7.5pt} % Default value: 6pt
+  \begin{tabular}{c|c|c|c|c|c|c}
+    a_1 & a_2 & a_3 & a_4 & ZNF            & Logical                    & CNF                                     \\
+    \hline
+    0   & 0   & 0   & 0   & 0              & $\bot                      $                     & $x \land \neg x                       $                        \\
+    1   & 0   & 0   & 0   & 1              & $\top                      $                     & $x \vee \neg x                        $                         \\
+    0   & 1   & 0   & 0   & x              & $x                         $                        & $x                                    $                                     \\
+    1   & 1   & 0   & 0   & 1 + x          & $\neg x                    $                   & $\neg x                               $                                \\
+    0   & 0   & 1   & 0   & y              & $y                         $                        & $y                                    $                                     \\
+    1   & 0   & 1   & 0   & 1 + y          & $\neg y                    $                   & $\neg y                               $                                \\
+    0   & 1   & 1   & 0   & x + y          & $x \oplus y                $               & $(x \vee y) \land (\neg x \vee \neg y)$ \\
+    1   & 1   & 1   & 0   & 1 + x + y      & $ x \Longleftrightarrow y  $ & $(x \vee \neg y) \land (\neg x \vee y)$ \\
+    0   & 0   & 0   & 1   & xy             & $x \land y                 $                & $x \land y                            $                             \\
+    1   & 0   & 0   & 1   & 1 + xy         & $\neg(x \land y)           $          & $(\neg x) \vee (\neg y)               $                \\
+    0   & 1   & 0   & 1   & x + xy         & $x \land (\neg y)          $         & $x \land (\neg y)                     $                      \\
+    1   & 1   & 0   & 1   & 1 + x + xy     & $x \Longrightarrow y       $      & $(\neg x) \vee y                      $                       \\
+    0   & 0   & 1   & 1   & y + xy         & $(\neg x) \land y          $         & $(\neg x) \land y                     $                      \\
+    1   & 0   & 1   & 1   & 1 + y + xy     & $x \Longleftarrow y        $       & $x \vee (\neg y)                      $                       \\
+    0   & 1   & 1   & 1   & x + y + xy     & $x \vee y                  $                 & $x \vee y                             $                              \\
+    1   & 1   & 1   & 1   & 1 + x + y + xy & $\neg(x \vee y)            $           & $(\neg x) \land (\neg y)              $               \\
+  \end{tabular}
+  \endgroup
+\end{frame}
+
+\begin{frame}{Facts about finite fields}
+  \begin{itemize}
+    \item For every prime number p and positive integer n, there exists a finite field with $p^n$ elements, denoted $GF(p^n)$, $\mathbb{Z}/p^n$ or $\mathbb{F}_p^n$.
+    \item The following instruction sets have identical expressivity:
+    \begin{itemize}
+      \item Pairs: $\{\vee, \neg\}, \{\wedge, \neg\}, \{\to, \neg\}, \{\to, \bot\}, \{\to, \veebar\}, \{\land, \veebar\}, \ldots$
+      \item Triples: $\{\lor, =, \veebar\}, \{\lor, \veebar, \top\}, \{\land, =, \bot\}, \{\land, =, \veebar\}, \{\land, \veebar, \top\}, \ldots$
+    \end{itemize}
+    \item In other words, we can compute any Boolean function $\mathbb{B}^n\rightarrow\mathbb{B}$ by composing any one of the above operator sets in an orderly fashion.
+    \item $\mathbb{F}_2$ corresponds to arithmetic modulo 2, i.e., $\oplus := \veebar, \otimes := \land$.
+    \item There are (at least) two schools of thought about Boolean circuits:
+    \begin{itemize}
+      \item Logical: Conjunctive Normal Form (CNF). May not be unique.
+      \item Algebra: Zhegalkin Normal Form (ZNF). Always unique.
+    \end{itemize}
+    \item The type $\mathbb{F}_2^n\rightarrow\mathbb{F}_2$ possesses $2^{2^{n}}$ inhabitants.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Preface to “Two Memoirs on Pure Analysis”}
+  \setlength{\epigraphwidth}{0.97\textwidth}
+  \epigraph{``\textit{Long algebraic calculations were at first hardly necessary for mathematical progress... It was only since Euler that concision has become indispensable to continuing the work this great geometer has given to science. Since Euler, calculation has become more and more necessary and... the algorithms so complicated that progress would be nearly impossible without the elegance that modern geometers have brought to bear on their research, and by which means the mind can promptly and with a glance grasp a large number of operations.}\\
+
+  \vspace{5pt}
+  \ldots\\
+  \vspace{5pt}
+
+  \textit{It is clear that elegance, so admirably and aptly named, has no other purpose.}\\
+
+  \vspace{5pt}
+  \ldots\\
+  \vspace{5pt}
+
+  \textit{Jump headlong into the calculations! Group the operations, classify them by their difficulties and not their appearances. This, I believe, is the mission of future geometers. This is the road on which I am embarking in this work.}''}{\'Evariste Galois, 1811-1832}
+\end{frame}
+
+
+\section{Future Work}
+
+\begin{frame}{What's the point?}
+  \begin{itemize}
+    \item Algebraists have developed a powerful language for rootfinding
+    \item Tradition handed down from Fermat, Euler, Galois, Kleene, Chomsky
+    \item We have closed forms for exponentials of structured matrices
+%   \item Characteristic polynomials, companion matrices, eigenvalues
+    \item Solving these forms can be much faster than power iteration
+    \item Unifies many problems in PL, probability and graph theory
+    \item Context-free parsing is just rootfinding on a semiring algebra
+    \item Unification/simplification a form of lazy hypergraph search
+    \item Bounded program synthesis is matrix factorization/completion
+    \item By doing so, we can leverage well-known algebraic techniques
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Future work}
+  Parsing
+  \begin{itemize}
+    \item Error propagation in discrete dynamical systems and TRS
+    \item Dynamic matrix inverse and incremental transitive closure
+    \item Language Edit Distance with metrizable Boolean semirings
+    \item Unify parser-lexer for scannerless ECP on a real language
+    \item Investigate the feasibility of grammar induction and repair
+    \item Strengthen the connection to Leibnizian differentiability
+%    \item What is the meaning of abstract algebraic eigenvalues?
+  \end{itemize}
+  \phantom{space}\\
+  Probability
+  \begin{itemize}
+    \item Look into Markov chains (detailed balance, stationarity, reversibility)
+    \item Fuse Valiant parser and probabilistic context-free grammar
+    \item Contextualize belief propagation and graph diffusion processes
+    \item Look into constrained optimization (e.g., L/QP) to rank feasible set
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Special thanks}
+  \begin{center}
+    \LARGE{
+      Nghi D. Q. Bui\\
+      Zhixin Xiong\\
+      Brigitte Pientka\\
+      David Yu-Tung Hui\\
+      Ori Roth\\
+      Justine Gehring\\
+      \phantom{}\\
+    }
+    \href{https://cs.mcgill.ca}{\includegraphics[scale=0.06]{../figures/mcgill_logo.png}}
+    \href{https://www.fpt-software.com}{\includegraphics[scale=0.15]{../figures/fpt_logo.png}}
+    \href{https://mila.quebec}{\includegraphics[scale=0.1]{../figures/mila_logo.png}}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \huge{Learn more at: \\~\\
+    \href{https://tidyparse.github.io}{\color{blue}{https://tidyparse.github.io}}}
+  \end{center}
+\end{frame}
+\end{document}
