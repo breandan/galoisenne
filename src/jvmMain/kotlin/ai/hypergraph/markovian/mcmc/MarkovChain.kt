@@ -287,3 +287,22 @@ class Dist(
     i: Int = rng.nextInt(K.size)
   ): Int = if (rng.nextDouble() < U[i]) i else K[i]
 }
+
+fun <T> Sequence<T>.shuffleOnline(initBufferMS: Int = 10_000): Sequence<T> =
+  sequence {
+    mutableListOf<T>().run {
+      val startTime = System.currentTimeMillis()
+      var init = false
+
+      for (item in this@shuffleOnline)
+        if (System.currentTimeMillis() - startTime >= initBufferMS) {
+          if (!init) println("Buffer size: $size").also { init = true }
+          if (isNotEmpty()) yield(removeAt(Random.nextInt(size)))
+          add(if (isEmpty()) 0 else Random.nextInt(size), item)
+        } else {
+          add(item)
+        }
+
+      while (isNotEmpty()) yield(removeAt(Random.nextInt(size)))
+    }
+  }
