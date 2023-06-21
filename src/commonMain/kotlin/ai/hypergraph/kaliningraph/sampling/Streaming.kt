@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.sampling
 import kotlin.math.pow
 import kotlin.random.Random
 
-fun <T> Sequence<T>.reservoirSample(size: Int = 1000, score: (T) -> Double): Sequence<T> {
+fun <T> Sequence<T>.reservoirSample(size: Int = 5000, score: (T) -> Double): Sequence<T> {
   // Maintains a sorted list of edits, sorted by score
   class PriorityQueue {
     val edits = mutableListOf<Pair<T, Double>>()

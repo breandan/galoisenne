@@ -10,6 +10,7 @@ import ai.hypergraph.kaliningraph.types.*
 fun Σᐩ.matches(cfg: Σᐩ): Boolean = matches(cfg.validate().parseCFG())
 fun Σᐩ.matches(CFG: CFG): Boolean = CFG.isValid(tokenizeByWhitespace())
 fun Σᐩ.matches(CJL: CJL): Boolean = CJL.cfgs.all { matches(it) }
+fun List<Σᐩ>.matches(CFG: CFG): Boolean = CFG.isValid(this)
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: Σᐩ): Tree? =
   try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }

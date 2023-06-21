@@ -10,6 +10,7 @@ fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shif
   generateLevenshteinEdits(cfg.terminals - cfg.blocked, prompt, edits, skip, shift)
     .map { prompt.apply(it) }
     .filter { it.matches(cfg) }
+    .map { it.joinToString(" ") }
 
 // Indices of the prompt tokens to be replaced and the tokens to replace them with
 typealias Edit = Map<Int, Σᐩ>
@@ -19,14 +20,18 @@ private fun Edit.subedits(): Sequence<Sequence<Map<Int, Σᐩ>>> =
   (1..size).asSequence()
   .map { keys.choose(it).map { it.associateWith { this[it]!! } } }
 
-fun List<Σᐩ>.apply(edit: Edit): Σᐩ =
-  mapIndexed { i, ot -> if (i in edit) edit[i]!! else ot }
-    .filter { it != "ε" && it.isNotBlank() }.joinToString(" ").trim()
+fun List<Σᐩ>.apply(edit: Edit): List<Σᐩ> {
+  val res = toMutableList()
+  edit.forEach { (i, nt) -> res[i] = nt }
+  return res.filter { it != "ε" && it.isNotBlank() }
+}
 
-class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σᐩ, val score: Double) {
-  var time: Long = -1
+class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List<Σᐩ>, val score: Double) {
+  var timeMS: Long = -1
 
-  val editSignature: String =
+  fun resToStr() = result.joinToString(" ")
+
+  val editSignature: String by lazy {
     orig.mapIndexed { i, ot -> ot to if (i in edit) edit[i]!! else ot }
       .map { (ot, nt) ->
         when {
@@ -38,6 +43,9 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
           else -> throw Exception("Unreachable")
         }
       }.filter { it.isNotBlank() }.joinToString(" ")
+  }
+
+  fun matches(groundTruth: String): Boolean = resToStr() == groundTruth
 
   // Computes a "fingerprint" of the repair to avoid redundant results
   // Each fingerprint can be lazily expanded to a sequence of repairs
@@ -47,7 +55,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
 
-  fun elapsed(): String = (if (time == -1L) "N/A" else "${time / 1000.0}").take(4) + "s"
+  fun elapsed(): String = (if (timeMS == -1L) "N/A" else "${timeMS / 1000.0}").take(4) + "s"
   fun scoreStr(): String = "$score".take(5)
 
   /**
@@ -55,7 +63,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
    * tokens at each change location. This method may optionally be called on any Repair, but for the
    * sake of specificity, should only be called on repairs minimized by [minimalAdmissibleSubrepairs].
    */
-  fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Repair =
+  fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (List<Σᐩ>) -> Boolean, score: (List<Σᐩ>) -> Double): Repair =
     (sequenceOf(this) + edit.values.map { tokens }.cartesianProduct()
       .map {
         val edt = edit.keys.zip(it).toMap()
@@ -78,7 +86,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: Σ�
    * This is done by locating the smallest admissible edit, and then enumerating
    * all other subedits of the same size.
    */
-  fun minimalAdmissibleSubrepairs(filter: (Σᐩ) -> Boolean, score: (Σᐩ) -> Double): Sequence<Repair> =
+  fun minimalAdmissibleSubrepairs(filter: (List<Σᐩ>) -> Boolean, score: (List<Σᐩ>) -> Double): Sequence<Repair> =
     edit.subedits()
       .map { it.filter { filter(orig.apply(it)) } }
       .firstOrNull { it.any() }?.map { subedit ->

@@ -15,9 +15,9 @@ fun bijectiveRepair(
   fillers: Set<Σᐩ>,
   maxEdits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
-  admissibilityFilter: Σᐩ.() -> Boolean = { true },
+  admissibilityFilter: List<Σᐩ>.() -> Boolean = { true },
   diagnostic: ((Repair) -> Unit)? = null,
-  scoreEdit: (Σᐩ) -> Double = { 0.0 },
+  scoreEdit: (List<Σᐩ>) -> Double = { 0.0 },
 ): Sequence<Repair> {
 //  println("Repairing: $promptTokens")
 //  println("Fillers: $fillers")
@@ -48,7 +48,7 @@ fun bijectiveRepair(
 //      .onEach { println("Valid: $it") }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
       .onEachIndexed { i, it ->
-        it.time = clock.elapsedNow().inWholeMilliseconds
+        it.timeMS = clock.elapsedNow().inWholeMilliseconds
         if (diagnostic != null) {
 //          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
           diagnostic(it)
