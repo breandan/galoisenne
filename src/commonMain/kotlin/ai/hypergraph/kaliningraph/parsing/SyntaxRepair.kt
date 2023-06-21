@@ -11,7 +11,7 @@ import kotlin.time.*
 
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 80 // Maximum number of tokens per repair
-var TIMEOUT_MS = 240_000 // Timeout for each repair attempt
+var TIMEOUT_MS = 300_000 // Timeout for each repair attempt
 var MAX_REPAIR = 2 // Maximum number of edits per repair
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
