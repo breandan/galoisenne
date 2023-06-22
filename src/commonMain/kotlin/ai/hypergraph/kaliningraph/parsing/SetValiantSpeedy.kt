@@ -3,6 +3,8 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.*
+import kotlin.random.Random
 
 
 // Fully-parallelizable version of the Valiant repair algorithm, just append a .parallelize() call
@@ -13,12 +15,50 @@ fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shif
     .map { it.joinToString(" ") }
 
 // Indices of the prompt tokens to be replaced and the tokens to replace them with
-typealias Edit = Map<Int, Σᐩ>
+typealias Edit = List<Pair<Int, Σᐩ>>
+
+fun Edit.intIdentifier(): Int = hashCode()
+
+private fun Int.newEditLoc(range: IntRange): Int {
+  val lambda = 1.0  // Mean of exponential distribution
+  var newLoc: Int
+  do {
+    val randomExponential = -lambda * ln(Random.nextDouble())
+    val offset = randomExponential.roundToInt()
+    val direction = if (Random.nextBoolean()) 1 else -1  // Randomly choose direction of offset
+    newLoc = this + direction * offset
+  } while (newLoc !in range)  // Continue until the new location is within the range
+
+  return newLoc
+}
+
+// Samples toTake random edits whose indices are a small distance from this edit
+fun Edit?.randomNearbyEdits(toTake: Int, strLen: Int, alphabet: Set<Σᐩ>, seen: Set<Int>): List<Edit> {
+  if (this == null) return emptyList()
+  val edits = mutableListOf<Edit>()
+
+  while (edits.size < toTake) {
+    val locationsToEdit = Random.nextInt(1, size + 1)
+    val newEdit = toMutableList()
+    repeat(locationsToEdit) {
+      val idx = Random.nextInt(0, size)
+      // Generates a peaky distribution of edits whose mode is the original edit location
+      // and extrema are [0, strLen)
+      val originalEditLocation = newEdit[idx].first
+      val newEditLocation: Int = originalEditLocation.newEditLoc(0 until strLen)
+      newEdit[idx] = newEditLocation to alphabet.random()
+    }
+
+    if (newEdit.hashCode() !in seen) edits.add(newEdit)
+  }
+
+  return edits
+}
 
 // Enumerates powerset levels from the bottom up, skipping the empty set
-private fun Edit.subedits(): Sequence<Sequence<Map<Int, Σᐩ>>> =
+private fun Edit.subedits(): Sequence<Sequence<List<Pair<Int, Σᐩ>>>> =
   (1..size).asSequence()
-  .map { keys.choose(it).map { it.associateWith { this[it]!! } } }
+  .map { choose(it).map { it.toList() } }
 
 fun List<Σᐩ>.apply(edit: Edit): List<Σᐩ> {
   val res = toMutableList()
@@ -32,7 +72,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List
   fun resToStr() = result.joinToString(" ")
 
   val editSignature: String by lazy {
-    orig.mapIndexed { i, ot -> ot to if (i in edit) edit[i]!! else ot }
+    orig.mapIndexed { i, ot -> ot to (edit.firstOrNull { i == it.first }?.second ?: ot) }
       .map { (ot, nt) ->
         when {
           ot == nt -> "E" // Same token
@@ -64,9 +104,9 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List
    * sake of specificity, should only be called on repairs minimized by [minimalAdmissibleSubrepairs].
    */
   fun editSignatureEquivalenceClass(tokens: Set<Σᐩ>, filter: (List<Σᐩ>) -> Boolean, score: (List<Σᐩ>) -> Double): Repair =
-    (sequenceOf(this) + edit.values.map { tokens }.cartesianProduct()
+    (sequenceOf(this) + edit.map { tokens }.cartesianProduct()
       .map {
-        val edt = edit.keys.zip(it).toMap()
+        val edt = edit.mapIndexed { i, l -> l.first to it[i] }
         val res = orig.apply(edt)
         edt to res
       }
@@ -92,7 +132,7 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List
       .firstOrNull { it.any() }?.map { subedit ->
         val result = orig.apply(subedit)
         Repair(orig, subedit, result, score(result))
-      } ?: sequenceOf(this)
+      } ?: sequenceOf(Repair(orig, edit, result, score(result)))
 }
 
 // If this fails, it's probably because the sample space is too large.

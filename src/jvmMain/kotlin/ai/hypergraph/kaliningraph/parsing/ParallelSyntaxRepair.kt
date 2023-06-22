@@ -1,6 +1,9 @@
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.*
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 import kotlin.streams.*
 import kotlin.time.*
 
@@ -9,6 +12,22 @@ val NUM_CORES = Runtime.getRuntime().availableProcessors()
 fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
+
+class ConcurrentIndexableSet<T> {
+  private val keys = ConcurrentHashMap.newKeySet<T>()
+  private val indexable = ConcurrentHashMap<Int, T>()
+  val size: AtomicInteger = AtomicInteger(-1)
+
+  fun add(element: T) {
+    if (keys.add(element)) indexable[size.incrementAndGet()] = element
+  }
+
+  fun contains(element: T): Boolean = element in keys
+
+  fun getByIndex(index: Int): T? = indexable[index]
+
+  fun randomOrNull(): T? = getByIndex(Random.nextInt(0, size.get().coerceAtLeast(1)))
+}
 
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
@@ -26,40 +45,34 @@ fun bijectiveRepair(
 
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
+  val seen = ConcurrentSkipListSet<Int>()
+  val goodEdits = ConcurrentIndexableSet<Edit>()
 
   fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
+    // This samples edits uniformly at random without replacement (extremely fast)
     MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = maxEdits, skip, shift)
       .takeWhile { takeMoreWhile() }
-//      .toList().also { println("Total elements found: ${it.size}") }.asSequence()
-      .map {
+      .flatMap {
+        val elapsed = (clock.elapsedNow().inWholeSeconds.toInt() / 20)
+        listOf(it) + goodEdits.randomOrNull().randomNearbyEdits(1 + elapsed, promptTokens.size, deck, seen)
+      }
+      .map { it: Edit ->
         val result = promptTokens.apply(it)
-//        if (it[1] == "val" && "ε" in it.values) println("Special: $result")
-        Repair(promptTokens, it, result, scoreEdit(result))
+        Repair(promptTokens, it, result, 0.0)
       }
-      .let { it.reservoirSample(score = { it.score }) }
-      .filter {
-         it.result.admissibilityFilter()
-//         .also { result ->
-//           if (result) pass++ else fail++
-//           if (pass + fail % 1000 == 0)
-//             println("${it.result}\nPass: $pass, Fail: $fail, ${clock.elapsedNow().inWholeMilliseconds}ms, average: ${(pass + fail) / clock.elapsedNow().inWholeSeconds.toDouble()}ms")
-//         }
-      }
-//      .onEach { println("Valid: $it") }
+// This is slow, so let's rerank by score only after filtering
+//      .let { it.reservoirSample(score = { it.score }) }
+      .onEach { seen.add(it.hashCode()) }
+      .filter { it.result.admissibilityFilter() }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
-      .onEachIndexed { i, it ->
+      .onEach {
+        goodEdits.add(it.edit)
         it.timeMS = clock.elapsedNow().inWholeMilliseconds
-        if (diagnostic != null) {
-//          println("#$i, PID=$shift, ${clock.elapsedNow().inWholeMilliseconds}ms, $it")
-          diagnostic(it)
-        }
+        if (diagnostic != null) { diagnostic(it) }
       }
 
   /** Selects distinct repairs according to [Repair.hashCode] */
   return ::genSeq.parallelize().distinct().asSequence()
-    // Sort with it.second then by it.third
-//    .sortedWith(compareBy({ it.edit.size }, { it.score }))
-//    .also { println("Best score: (${it.firstOrNull()?.second})") }
 }
 
 // This experiment essentially tries every possible combination of fillers in parallel
