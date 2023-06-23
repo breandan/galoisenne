@@ -3,9 +3,11 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.ln
 import kotlin.random.Random
 import kotlin.streams.*
 import kotlin.time.*
+
 
 val NUM_CORES = Runtime.getRuntime().availableProcessors()
 
@@ -13,25 +15,41 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
-class ConcurrentIndexableSet<T> {
-  private val keys = ConcurrentHashMap.newKeySet<T>()
-  private val indexable = ConcurrentHashMap<Int, T>()
-  val size: AtomicInteger = AtomicInteger(-1)
+class ConcurrentRankedProbabilisticSet<T>(
+  private val keys: MutableSet<T> = ConcurrentHashMap.newKeySet()
+) : Set<T> by keys, FastRandomSet<T> {
 
-  fun add(element: T) {
-    if (keys.add(element)) indexable[size.incrementAndGet()] = element
+  val atomicSize: AtomicInteger = AtomicInteger(-1)
+  val mostLikely: ConcurrentSkipListMap<Double, T> = ConcurrentSkipListMap<Double, T>()
+
+  fun add(element: T, perplexity: Double) {
+    if (keys.add(element)) {
+      atomicSize.incrementAndGet()
+      mostLikely[perplexity] = element
+    }
   }
 
-  fun contains(element: T): Boolean = element in keys
+  override fun contains(element: T): Boolean = element in keys
 
-  fun getByIndex(index: Int): T? = indexable[index]
-
-  fun randomOrNull(): T? = getByIndex(Random.nextInt(0, size.get().coerceAtLeast(1)))
+  // Samples sorted elements with probability proportional the harmonic series of their ranked index
+  override fun randomOrNull(): T? {
+    val size = mostLikely.size
+    if (size <= 0) return null
+    val totalWeight = ln(size.toDouble())
+    val randValue = Random.nextDouble() * totalWeight
+    var cumulativeWeight = 0.0
+    for ((index, item) in mostLikely.values.withIndex()) {
+      cumulativeWeight += 1.0 / (index + 1)
+      if (cumulativeWeight >= randValue) return item
+    }
+    return null
+  }
 }
 
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
-  fillers: Set<Σᐩ>,
+  // A list of tokens to be used as fillers (may contain repeats for higher probability of sampling)
+  deck: List<Σᐩ>,
   maxEdits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: List<Σᐩ>.() -> Boolean = { true },
@@ -40,21 +58,28 @@ fun bijectiveRepair(
 ): Sequence<Repair> {
 //  println("Repairing: $promptTokens")
 //  println("Fillers: $fillers")
-  val deck = (fillers + promptTokens).shuffled().toSet() - "\""
 //  println("Using deck: $deck")
+  val deckUnique = deck.toSet()
 
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
   val seen = ConcurrentSkipListSet<Int>()
-  val goodEdits = ConcurrentIndexableSet<Edit>()
+  val goodEdits = ConcurrentRankedProbabilisticSet<Edit>()
 
   fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
     // This samples edits uniformly at random without replacement (extremely fast)
-    MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = maxEdits, skip, shift)
+    MDSamplerWithoutReplacementNK(deckUnique, n = promptTokens.size, k = maxEdits, skip, shift)
       .takeWhile { takeMoreWhile() }
       .flatMap {
-        val elapsed = (clock.elapsedNow().inWholeSeconds.toInt() / 20)
-        listOf(it) + goodEdits.randomOrNull().randomNearbyEdits(1 + elapsed, promptTokens.size, deck, seen)
+        val elapsed = (clock.elapsedNow().inWholeMilliseconds / 200)
+          .toInt().coerceAtMost(10)
+        // 1 to 3 is one "explore" (uniform random) to five exploit (resampled good edits)
+        listOf(it) + goodEdits.resample(
+          maxTake = 1 + elapsed, // This controls the growth rate of the resampling ratio
+          strLen = promptTokens.size,
+          deck = deck,
+          seen = seen
+        )
       }
       .map { it: Edit ->
         val result = promptTokens.apply(it)
@@ -66,7 +91,7 @@ fun bijectiveRepair(
       .filter { it.result.admissibilityFilter() }
       .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
       .onEach {
-        goodEdits.add(it.edit)
+        goodEdits.add(it.edit, it.score)
         it.timeMS = clock.elapsedNow().inWholeMilliseconds
         if (diagnostic != null) { diagnostic(it) }
       }
@@ -112,7 +137,8 @@ fun repairInParallel(
   val sanitized: Σᐩ = tokensWithHoles.joinToString(" ")
 
   var totalSamples = 0
-  val repairs = sanitized.synthesizeWithVariationsInParallel( // <<<<<<<<<< Parallelization happens here
+  val repairs = sanitized.synthesizeWithVariationsInParallel(
+    // <<<<<<<<<< Parallelization happens here
     cfg = cfg,
     synthesizer = synthesizer,
     allowNTs = false,

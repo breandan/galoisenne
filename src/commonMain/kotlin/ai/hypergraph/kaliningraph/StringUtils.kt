@@ -14,10 +14,11 @@ infix fun Char.closes(that: Char) =
   else this == '>' && that == '<'
 
 val BRACKETS = "()[]{}<>".toCharArray().toSet()
-fun Σᐩ.hasBalancedBrackets(): Boolean =
-  filter { it in BRACKETS }.fold(Stack<Char>()) { stack, c ->
+val JUST_PARENS = "()[]{}".toCharArray().toSet()
+fun Σᐩ.hasBalancedBrackets(brackets: Set<Char> = BRACKETS): Boolean =
+  filter { it in brackets }.fold(Stack<Char>()) { stack, c ->
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
-  }.isEmpty() && BRACKETS.any { it in this }
+  }.isEmpty() && brackets.any { it in this }
 
 fun Σᐩ.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
 

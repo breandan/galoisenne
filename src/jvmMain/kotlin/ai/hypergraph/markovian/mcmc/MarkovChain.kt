@@ -9,7 +9,8 @@ import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.*
+import java.util.stream.Stream
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -306,3 +307,46 @@ fun <T> Sequence<T>.shuffleOnline(initBufferMS: Int = 10_000): Sequence<T> =
       while (isNotEmpty()) yield(removeAt(Random.nextInt(size)))
     }
   }
+
+fun Stream<List<Int>>.computeCooccurrenceProbs(maxIdx: Int): List<List<Double>> {
+  // Initialize frequency arrays
+  val wordFrequency = AtomicIntegerArray(maxIdx + 1)
+  val coOccurrenceFrequency = Array(maxIdx + 1) { AtomicIntegerArray(maxIdx + 1) }
+
+  // Count word and co-occurrence frequencies
+  parallel().forEach { sentence ->
+    val uniqueWords = sentence.toSet()
+    uniqueWords.forEach { word ->
+      wordFrequency.incrementAndGet(word)
+
+      uniqueWords.minus(word).forEach { otherWord ->
+        // Increment pair frequency, ensuring only unique pairs are counted
+        if (word < otherWord) {
+          coOccurrenceFrequency[word].incrementAndGet(otherWord)
+        } else {
+          coOccurrenceFrequency[otherWord].incrementAndGet(word)
+        }
+      }
+    }
+  }
+
+  // Compute probabilities and build co-occurrence matrix
+  return List(maxIdx + 1) { i ->
+    List(maxIdx + 1) { j ->
+      if (wordFrequency[i] != 0 && wordFrequency[j] != 0) {
+        coOccurrenceFrequency[i].get(j).toDouble() / (wordFrequency[i] * wordFrequency[j])
+      } else {
+        0.0
+      }
+    }
+  }
+}
+
+fun <T> List<Pair<T, Int>>.expandByFrequency(
+  maxExpansion: Int = 20,
+  range: IntRange = 1..maxExpansion,
+  extras: List<T> = emptyList(),
+  normalizingConstant: Int = sumOf { it.second },
+  scale: Double = (maxExpansion * size).toDouble() / normalizingConstant.toDouble()
+): List<T> = (this + (extras - map { it.first }.toSet()).map { it to 1 })
+  .flatMap { (t, count) -> List((count * scale).toInt().coerceIn(range)) { t } }

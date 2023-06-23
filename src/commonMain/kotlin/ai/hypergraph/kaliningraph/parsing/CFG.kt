@@ -200,9 +200,8 @@ class Bindex<T>(
   val set: Set<T>,
   val indexedNTs: List<T> = set.toList(),
   val ntIndices: Map<T, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
-) {
+): List<T> by indexedNTs {
   constructor(map: Map<Int, T>) : this(map.values.toSet(), map.values.toList(), map.entries.associate { it.value to it.key })
-  operator fun get(i: Int) = indexedNTs[i]
   operator fun get(s: T): Int = ntIndices[s] ?: 1.also { println("Unknown nonterminal: $s"); null!! }
   fun getUnsafe(s: T): Int? = ntIndices[s]
   override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
