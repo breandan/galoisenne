@@ -1,6 +1,7 @@
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.*
+import ai.hypergraph.markovian.mcmc.Dist
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -13,25 +14,29 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
   (0 until cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
-class ConcurrentIndexableSet<T> {
-  private val keys = ConcurrentHashMap.newKeySet<T>()
+class ConcurrentIndexableSet<T>(
+  private val keys: MutableSet<T> = ConcurrentHashMap.newKeySet()
+) : Set<T> by keys, FastRandomSet<T> {
+
   private val indexable = ConcurrentHashMap<Int, T>()
-  val size: AtomicInteger = AtomicInteger(-1)
+  val atomicSize: AtomicInteger = AtomicInteger(-1)
 
   fun add(element: T) {
-    if (keys.add(element)) indexable[size.incrementAndGet()] = element
+    if (keys.add(element)) indexable[atomicSize.incrementAndGet()] = element
   }
 
-  fun contains(element: T): Boolean = element in keys
+  override fun contains(element: T): Boolean = element in keys
 
-  fun getByIndex(index: Int): T? = indexable[index]
+  private fun getByIndex(index: Int): T? = indexable[index]
 
-  fun randomOrNull(): T? = getByIndex(Random.nextInt(0, size.get().coerceAtLeast(1)))
+  override fun randomOrNull(): T? =
+    getByIndex(Random.nextInt(0, atomicSize.get().coerceAtLeast(1)))
 }
 
 fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
-  fillers: Set<Σᐩ>,
+  // A list of tokens to be used as fillers (may contain repeats for higher probability of sampling)
+  deck: List<Σᐩ>,
   maxEdits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: List<Σᐩ>.() -> Boolean = { true },
@@ -40,8 +45,8 @@ fun bijectiveRepair(
 ): Sequence<Repair> {
 //  println("Repairing: $promptTokens")
 //  println("Fillers: $fillers")
-  val deck = (fillers + promptTokens).shuffled().toSet() - "\""
 //  println("Using deck: $deck")
+  val deckUnique = deck.toSet()
 
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
@@ -50,11 +55,17 @@ fun bijectiveRepair(
 
   fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
     // This samples edits uniformly at random without replacement (extremely fast)
-    MDSamplerWithoutReplacementNK(deck, n = promptTokens.size, k = maxEdits, skip, shift)
+    MDSamplerWithoutReplacementNK(deckUnique, n = promptTokens.size, k = maxEdits, skip, shift)
       .takeWhile { takeMoreWhile() }
       .flatMap {
-        val elapsed = (clock.elapsedNow().inWholeSeconds.toInt() / 20)
-        listOf(it) + goodEdits.randomOrNull().randomNearbyEdits(1 + elapsed, promptTokens.size, deck, seen)
+        val elapsed = (clock.elapsedNow().inWholeMilliseconds / 200).toInt().coerceAtMost(10)
+        // 1 to 3 is one "explore" (uniform random) to five exploit (resampled good edits)
+        listOf(it) + goodEdits.resample(
+          maxTake = 1 + elapsed, // This controls the growth rate of the resampling ratio
+          strLen = promptTokens.size,
+          deck = deck,
+          seen = seen
+        )
       }
       .map { it: Edit ->
         val result = promptTokens.apply(it)

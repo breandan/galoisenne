@@ -32,22 +32,32 @@ private fun Int.newEditLoc(range: IntRange): Int {
   return newLoc
 }
 
+interface FastRandomSet<T>: Set<T> { fun randomOrNull(): T? }
+
 // Samples toTake random edits whose indices are a small distance from this edit
-fun Edit?.randomNearbyEdits(toTake: Int, strLen: Int, alphabet: Set<Σᐩ>, seen: Set<Int>): List<Edit> {
-  if (this == null) return emptyList()
+fun FastRandomSet<Edit>.resample(maxTake: Int,
+                                 strLen: Int,
+                                 deck: List<Σᐩ>,
+                                 seen: Set<Int>): List<Edit> {
   val edits = mutableListOf<Edit>()
 
-  while (edits.size < toTake) {
-    val locationsToEdit = Random.nextInt(1, size + 1)
-    val newEdit = toMutableList()
+  while (edits.size < maxTake) {
+    val edit = randomOrNull() ?: return emptyList()
+    val locationsToEdit = Random.nextInt(1, edit.size + 1)
+    // Bias the edits towards the original edit location
+    val newEdit = edit.toMutableList()
     repeat(locationsToEdit) {
-      val idx = Random.nextInt(0, size)
+      val idx = Random.nextInt(0, edit.size)
       // Generates a peaky distribution of edits whose mode is the original edit location
       // and extrema are [0, strLen)
       val originalEditLocation = newEdit[idx].first
-      val newEditLocation: Int = originalEditLocation.newEditLoc(0 until strLen)
-      newEdit[idx] = newEditLocation to alphabet.random()
+      val newEditLocation: Int =
+        originalEditLocation.newEditLoc(0 until strLen)
+      newEdit[idx] = newEditLocation to deck.random()
     }
+
+//    if (Random.nextBoolean())
+//      newEdit += newEdit.random().first.newEditLoc(0 until strLen) to deck.random()
 
     if (newEdit.hashCode() !in seen) edits.add(newEdit)
   }
