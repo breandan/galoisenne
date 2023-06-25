@@ -115,7 +115,7 @@ open class MarkovChain<T>(
   // Computes perplexity of a sequence normalized by sequence length
   fun score(seq: List<T>): Double =
     seq.windowed(memory)
-      .map { getAtLeastOne(it.mapIndexed { i, t -> i to t }) }
+      .map { getAtLeastOne(it) }
 //      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray())
 //        .let { q -> if(q == 0.0) 0.00000001.also { l -> println("Seq empty: $it") } else q } }
       .sumOf { -ln(it) } / seq.size
@@ -124,13 +124,10 @@ open class MarkovChain<T>(
     if (variables.size == 1) counter.rawCounts.getEstimate(variables[0]) / counter.total.toDouble()
     else get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
 
-  private fun getAtLeastOne(variables: List<Pair<Int, T?>>): Double =
-    variables.associate { (a, b) -> a to b }
-      .let { map -> (0 until memory).map { map[it] } }.let {
-        val n = counter.nrmCounts.getEstimate(it).coerceAtLeast(1).toDouble()
-        val d = counter.total.toDouble()
-        n / d
-      }
+  private fun getAtLeastOne(variables: List<T>): Double =
+//    variables.allMasks().sumOf { mask ->
+      counter.nrmCounts.getEstimate(variables).coerceAtLeast(1).toDouble() / counter.total.toDouble()
+//    } / counter.total.toDouble()
 
   operator fun get(vararg variables: Pair<Int, T?>): Double =
     variables.associate { (a, b) -> a to b }
