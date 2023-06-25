@@ -29,6 +29,8 @@ class ConcurrentRankedProbabilisticSet<T>(
     }
   }
 
+  override fun isEmpty(): Boolean = atomicSize.get() == 0
+
   override fun contains(element: T): Boolean = element in keys
 
   // Samples sorted elements with probability proportional the harmonic series of their ranked index
@@ -50,6 +52,8 @@ fun bijectiveRepair(
   promptTokens: List<Σᐩ>,
   // A list of tokens to be used as fillers (may contain repeats for higher probability of sampling)
   deck: List<Σᐩ>,
+  // Optional parameter that gives sampler hints about which locations contain errors
+  hints: List<Int> = emptyList(),
   maxEdits: Int = 2,
   takeMoreWhile: () -> Boolean = { true },
   admissibilityFilter: List<Σᐩ>.() -> Boolean = { true },
@@ -60,9 +64,9 @@ fun bijectiveRepair(
 //  println("Fillers: $fillers")
 //  println("Using deck: $deck")
   val deckUnique = deck.toSet()
-
   val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
   var (pass, fail) = 0 to 0
+
   val seen = ConcurrentSkipListSet<Int>()
   val goodEdits = ConcurrentRankedProbabilisticSet<Edit>()
 
@@ -71,14 +75,19 @@ fun bijectiveRepair(
     MDSamplerWithoutReplacementNK(deckUnique, n = promptTokens.size, k = maxEdits, skip, shift)
       .takeWhile { takeMoreWhile() }
       .flatMap {
-        val elapsed = (clock.elapsedNow().inWholeMilliseconds / 200)
-          .toInt().coerceAtMost(10)
+        val schedule = (clock.elapsedNow().inWholeMilliseconds / 200)
+          .toInt().coerceAtMost(3)
         // 1 to 3 is one "explore" (uniform random) to five exploit (resampled good edits)
-        listOf(it) + goodEdits.resample(
-          maxTake = 1 + elapsed, // This controls the growth rate of the resampling ratio
-          strLen = promptTokens.size,
-          deck = deck,
-          seen = seen
+        listOf(it) + (
+          if (hints.isEmpty() && goodEdits.isEmpty()) emptyList()
+          else if (hints.isNotEmpty() && goodEdits.isEmpty())
+            genDefaultEdits(hints, maxEdits, deck, seen).take(10).toList()
+          else goodEdits.resample(
+            maxTake = 1 + schedule, // This controls the growth rate of the resampling ratio
+            strLen = promptTokens.size,
+            deck = deck,
+            seen = seen
+          )
         )
       }
       .map { it: Edit ->

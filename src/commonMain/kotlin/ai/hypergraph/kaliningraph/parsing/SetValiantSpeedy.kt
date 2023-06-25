@@ -34,6 +34,15 @@ private fun Int.newEditLoc(range: IntRange): Int {
 
 interface FastRandomSet<T>: Set<T> { fun randomOrNull(): T? }
 
+fun genDefaultEdits(hints: List<Int>, maxEdits: Int, deck: List<Σᐩ>, seen: Set<Int>): Sequence<Edit> =
+  generateSequence {
+    val editSize = (1.. maxEdits).random()
+    generateSequence { hints.random() }
+      .zip(generateSequence { deck.random() })
+      .filter { it.hashCode() !in seen }
+      .take(editSize).toList()
+  }
+
 // Samples toTake random edits whose indices are a small distance from this edit
 fun FastRandomSet<Edit>.resample(maxTake: Int,
                                  strLen: Int,
