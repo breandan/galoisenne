@@ -225,7 +225,7 @@ open class MarkovChain<T>(
         total.incrementAndGet()
         buffer.let { memCounts.update(it); nrmCounts.update(it) }
         buffer.forEach { rawCounts.update(it) }
-        buffer.allMasks().forEach { nrmCounts.update(it) }
+//        buffer.allMasks().forEach { nrmCounts.update(it) }
       }
     }
 
