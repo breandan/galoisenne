@@ -114,19 +114,17 @@ open class MarkovChain<T>(
 
   // Computes perplexity of a sequence normalized by sequence length
   fun score(seq: List<T>): Double =
-    seq.windowed(memory)
-      .map { getAtLeastOne(it) }
-//      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray())
-//        .let { q -> if(q == 0.0) 0.00000001.also { l -> println("Seq empty: $it") } else q } }
-      .sumOf { -ln(it) } / seq.size
+    -seq.windowed(memory)
+      .map { (getAtLeastOne(it) + 1) / (getAtLeastOne(it.dropLast(1) + null) + dictionary.size) }
+      .sumOf { ln(it) } / seq.size
 
   operator fun get(vararg variables: T?): Double =
     if (variables.size == 1) counter.rawCounts.getEstimate(variables[0]) / counter.total.toDouble()
     else get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
 
-  private fun getAtLeastOne(variables: List<T>): Double =
+  private fun getAtLeastOne(variables: List<T?>): Double =
 //    variables.allMasks().sumOf { mask ->
-      counter.nrmCounts.getEstimate(variables).coerceAtLeast(1).toDouble() / counter.total.toDouble()
+    (counter.nrmCounts.getEstimate(variables) + 1).toDouble() / counter.total.toDouble()
 //    } / counter.total.toDouble()
 
   operator fun get(vararg variables: Pair<Int, T?>): Double =
@@ -225,7 +223,7 @@ open class MarkovChain<T>(
         total.incrementAndGet()
         buffer.let { memCounts.update(it); nrmCounts.update(it) }
         buffer.forEach { rawCounts.update(it) }
-//        buffer.allMasks().forEach { nrmCounts.update(it) }
+        buffer.allMasks().forEach { nrmCounts.update(it) }
       }
     }
 
