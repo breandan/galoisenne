@@ -49,6 +49,7 @@ fun pruneInactiveRules(cfg: CFG): CFG =
 operator fun REL.contains(s: Σᐩ): Boolean = s in reg.asCFG.language
 operator fun CFL.contains(s: Σᐩ): Boolean = cfg.isValid(s)
 operator fun CJL.contains(s: Σᐩ): Boolean = cfls.all { s in it }
+operator fun CFL.contains(s: List<Σᐩ>): Boolean = cfg.isValid(s)
 
 // https://arxiv.org/pdf/2209.06809.pdf
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf

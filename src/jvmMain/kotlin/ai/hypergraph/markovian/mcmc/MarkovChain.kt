@@ -9,7 +9,8 @@ import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.*
+import java.util.stream.Stream
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -113,23 +114,18 @@ open class MarkovChain<T>(
 
   // Computes perplexity of a sequence normalized by sequence length
   fun score(seq: List<T>): Double =
-    seq.windowed(memory)
-      .map { getAtLeastOne(it.mapIndexed { i, t -> i to t }) }
-//      .map { get(*it.mapIndexed { i, t -> i to t }.toTypedArray())
-//        .let { q -> if(q == 0.0) 0.00000001.also { l -> println("Seq empty: $it") } else q } }
-      .sumOf { -ln(it) } / seq.size
+    -seq.windowed(memory)
+      .map { (getAtLeastOne(it) + 1) / (getAtLeastOne(it.dropLast(1) + null) + dictionary.size) }
+      .sumOf { ln(it) } / seq.size
 
   operator fun get(vararg variables: T?): Double =
     if (variables.size == 1) counter.rawCounts.getEstimate(variables[0]) / counter.total.toDouble()
     else get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
 
-  private fun getAtLeastOne(variables: List<Pair<Int, T?>>): Double =
-    variables.associate { (a, b) -> a to b }
-      .let { map -> (0 until memory).map { map[it] } }.let {
-        val n = counter.nrmCounts.getEstimate(it).coerceAtLeast(1).toDouble()
-        val d = counter.total.toDouble()
-        n / d
-      }
+  private fun getAtLeastOne(variables: List<T?>): Double =
+//    variables.allMasks().sumOf { mask ->
+    (counter.nrmCounts.getEstimate(variables) + 1).toDouble() / counter.total.toDouble()
+//    } / counter.total.toDouble()
 
   operator fun get(vararg variables: Pair<Int, T?>): Double =
     variables.associate { (a, b) -> a to b }
@@ -306,3 +302,46 @@ fun <T> Sequence<T>.shuffleOnline(initBufferMS: Int = 10_000): Sequence<T> =
       while (isNotEmpty()) yield(removeAt(Random.nextInt(size)))
     }
   }
+
+fun Stream<List<Int>>.computeCooccurrenceProbs(maxIdx: Int): List<List<Double>> {
+  // Initialize frequency arrays
+  val wordFrequency = AtomicIntegerArray(maxIdx + 1)
+  val coOccurrenceFrequency = Array(maxIdx + 1) { AtomicIntegerArray(maxIdx + 1) }
+
+  // Count word and co-occurrence frequencies
+  parallel().forEach { sentence ->
+    val uniqueWords = sentence.toSet()
+    uniqueWords.forEach { word ->
+      wordFrequency.incrementAndGet(word)
+
+      uniqueWords.minus(word).forEach { otherWord ->
+        // Increment pair frequency, ensuring only unique pairs are counted
+        if (word < otherWord) {
+          coOccurrenceFrequency[word].incrementAndGet(otherWord)
+        } else {
+          coOccurrenceFrequency[otherWord].incrementAndGet(word)
+        }
+      }
+    }
+  }
+
+  // Compute probabilities and build co-occurrence matrix
+  return List(maxIdx + 1) { i ->
+    List(maxIdx + 1) { j ->
+      if (wordFrequency[i] != 0 && wordFrequency[j] != 0) {
+        coOccurrenceFrequency[i].get(j).toDouble() / (wordFrequency[i] * wordFrequency[j])
+      } else {
+        0.0
+      }
+    }
+  }
+}
+
+fun <T> List<Pair<T, Int>>.expandByFrequency(
+  maxExpansion: Int = 20,
+  range: IntRange = 1..maxExpansion,
+  extras: List<T> = emptyList(),
+  normalizingConstant: Int = sumOf { it.second },
+  scale: Double = (maxExpansion * size).toDouble() / normalizingConstant.toDouble()
+): List<T> = (this + (extras - map { it.first }.toSet()).map { it to 1 })
+  .flatMap { (t, count) -> List((count * scale).toInt().coerceIn(range)) { t } }

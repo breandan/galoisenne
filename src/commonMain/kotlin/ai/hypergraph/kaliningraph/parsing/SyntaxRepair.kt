@@ -11,7 +11,7 @@ import kotlin.time.*
 
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 80 // Maximum number of tokens per repair
-var TIMEOUT_MS = 240_000 // Timeout for each repair attempt
+var TIMEOUT_MS = 9_000 // Timeout for each repair attempt
 var MAX_REPAIR = 2 // Maximum number of edits per repair
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
@@ -353,6 +353,21 @@ private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): 
   mapIndexed { i, it -> if (i !in idxs) it else sub(it, i) }.joinToString(" ").trim()
 
 fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
+
+// MUCH faster than above (but incorrect)
+//fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =
+//  mutableListOf<Σᐩ>().also { list ->
+//    var start = 0
+//    var end = 0
+//    while (end < length) {
+//      while (end < length && this[end].isWhitespace()) end++
+//      if (end > start) list.add(substring(start, end))
+//      start = end
+//      while (end < length && !this[end].isWhitespace()) end++
+//      if (end > start) list.add(substring(start, end))
+//      start = end
+//    }
+//  }
 
 /*
  * Treats contiguous underscores as a single hole and lazily enumerates every

@@ -287,7 +287,7 @@ fun <T> MDSamplerWithoutReplacement(
 // Samples without replacement from the joint distribution of ordered k-combinations of n elements crossed with Σ^k
 fun <T> MDSamplerWithoutReplacementNK(Σ: Set<T>, n: Int, k: Int, skip: Int = 1, shift: Int = 0)=
   MDSamplerWithoutReplacementNKF(Σ, n=n, k=k, skip=skip, shift=shift)
-    .map { (a, b) -> a.zip(b).toMap() }
+    .map { (a, b) -> a.zip(b) }
 
 fun <T> MDSamplerWithoutReplacementNKF(
   dimensions: Set<T>,
