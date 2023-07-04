@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.9.0-Beta"
+  kotlin("multiplatform") version "1.9.0-RC"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.47.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
@@ -130,7 +130,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:22.3.2")
+        implementation("org.graalvm.js:js:23.0.0")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
@@ -143,7 +143,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:4.0.0")
+        implementation("org.apache.datasketches:datasketches-java:4.1.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
