@@ -109,6 +109,67 @@ fun bijectiveRepair(
   return ::genSeq.parallelize().distinct().asSequence()
 }
 
+fun bijectiveRepairST(
+  promptTokens: List<Σᐩ>,
+  // A list of tokens to be used as fillers (may contain repeats for higher probability of sampling)
+  deck: List<Σᐩ>,
+  // Optional parameter that gives sampler hints about which locations contain errors
+  hints: List<Int> = emptyList(),
+  maxEdits: Int = 2,
+  takeMoreWhile: () -> Boolean = { true },
+  admissibilityFilter: List<Σᐩ>.() -> Boolean = { true },
+  diagnostic: ((Repair) -> Unit)? = null,
+  scoreEdit: (List<Σᐩ>) -> Double = { 0.0 },
+): Sequence<Repair> {
+//  println("Repairing: $promptTokens")
+//  println("Fillers: $fillers")
+//  println("Using deck: $deck")
+  val deckUnique = deck.toSet()
+  val clock: TimeSource.Monotonic.ValueTimeMark = TimeSource.Monotonic.markNow()
+  var (pass, fail) = 0 to 0
+
+  val seen = ConcurrentSkipListSet<Int>()
+  val goodEdits = ConcurrentRankedProbabilisticSet<Edit>()
+
+  fun genSeq(skip: Int = 1, shift: Int = 0): Sequence<Repair> =
+    // This samples edits uniformly at random without replacement (extremely fast)
+    MDSamplerWithoutReplacementNK(deckUnique, n = promptTokens.size, k = maxEdits, skip, shift)
+      .takeWhile { takeMoreWhile() }
+      .flatMap {
+        val schedule = (clock.elapsedNow().inWholeMilliseconds / 200)
+          .toInt().coerceAtMost(3)
+        // 1 to 3 is one "explore" (uniform random) to five exploit (resampled good edits)
+        listOf(it) + (
+            if (hints.isEmpty() && goodEdits.isEmpty()) emptyList()
+            else if (hints.isNotEmpty() && goodEdits.isEmpty())
+              genDefaultEdits(hints, maxEdits, deck, seen).take(10).toList()
+            else goodEdits.resample(
+              maxTake = 1 + schedule, // This controls the growth rate of the resampling ratio
+              strLen = promptTokens.size,
+              deck = deck,
+              seen = seen
+            )
+          )
+      }
+      .map { it: Edit ->
+        val result = promptTokens.apply(it)
+        Repair(promptTokens, it, result, 0.0)
+      }
+// This is slow, so let's rerank by score only after filtering
+//      .let { it.reservoirSample(score = { it.score }) }
+      .onEach { seen.add(it.hashCode()) }
+      .filter { it.result.admissibilityFilter() }
+      .flatMap { it.minimalAdmissibleSubrepairs(admissibilityFilter, scoreEdit) }
+      .onEach {
+        goodEdits.add(it.edit, it.score)
+        it.timeMS = clock.elapsedNow().inWholeMilliseconds
+        if (diagnostic != null) { diagnostic(it) }
+      }
+
+  /** Selects distinct repairs according to [Repair.hashCode] */
+  return genSeq().distinct()
+}
+
 // This experiment essentially tries every possible combination of fillers in parallel
 fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER })
