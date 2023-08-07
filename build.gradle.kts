@@ -130,10 +130,10 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:23.0.0")
+        implementation("org.graalvm.js:js:23.0.1")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.1")
@@ -175,7 +175,7 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.10.0-RC1")
+        implementation("org.junit.jupiter:junit-jupiter:5.10.0")
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.0.1")
@@ -198,12 +198,12 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.6.4" }
+        val tinkerpopVersion by extra { "3.7.0" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
-        implementation("org.eclipse.collections:eclipse-collections-api:12.0.0.M1")
-        implementation("org.eclipse.collections:eclipse-collections:12.0.0.M1")
+        implementation("org.eclipse.collections:eclipse-collections-api:12.0.0.M2")
+        implementation("org.eclipse.collections:eclipse-collections:12.0.0.M2")
 
         implementation(kotlin("scripting-jsr223"))
       }

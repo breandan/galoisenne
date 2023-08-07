@@ -101,11 +101,11 @@ fun CFG.toBitVec(nts: Set<Σᐩ>): BooleanArray =
   else BooleanArray(nonterminals.size) { false }
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
-fun fastJoin(vindex: Array<IntArray>, left: BooleanArray, right: BooleanArray): BooleanArray {
+fun fastJoin(/**[vindex]*/vidx: Array<IntArray>, left: BooleanArray, right: BooleanArray): BooleanArray {
   if (left.isEmpty() || right.isEmpty()) return booleanArrayOf()
 
-  val result = BooleanArray(vindex.size)
-  for ((i, indexArray) in vindex.withIndex()) {
+  val result = BooleanArray(vidx.size)
+  for ((i, indexArray) in vidx.withIndex()) {
     var j = 0
     while (j < indexArray.size) {
       if (left[indexArray[j]] && right[indexArray[j + 1]]) {

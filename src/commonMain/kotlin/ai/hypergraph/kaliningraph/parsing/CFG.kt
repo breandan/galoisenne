@@ -49,6 +49,7 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
     .mapValues { it.value.map { it.second }.toSet() }
 }
 
+// Maps each nonterminal to the set of nonterminals that can generate it
 val CFG.vindex: Array<IntArray> by cache {
   Array(bindex.indexedNTs.size) { i ->
     bimap[bindex[i]].filter { it.size > 1 }
