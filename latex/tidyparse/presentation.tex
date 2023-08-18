@@ -134,6 +134,29 @@
   \textit{Rapidly finds syntactically valid edits within a small neighborhood, ranked by tokenwise similarity and statistical likliehood.}
 \end{frame}
 
+\begin{frame}[fragile]{Syntax repair as a Gricean language game}
+
+  Imagine a game between two players, Player A and Player B.
+
+  They both see the same grammar, $\mathcal{G}$ and an invalid string, $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
+
+  % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
+
+  Player A moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$, and,
+
+  Player B moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
+
+  As soon as Player A repairs $\err\sigma$, the game immediately ends.
+
+  Neither player sees the other's move(s) before making their own.
+
+  \begin{itemize}
+    \item If Player B anticipates Player's A's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
+    \item If Player A takes a move B did not anticipate, i.e., $\sigma \notin \tilde{\bm\sigma}$, A wins.
+  \end{itemize}
+
+  Furthermore, Player B wins in proportion to the time taken to anticipate Player A's move.
+\end{frame}
 
 \begin{frame}[fragile]{An Simple Reachability Proof}
   \begin{lemma}
