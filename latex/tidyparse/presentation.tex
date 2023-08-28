@@ -814,14 +814,14 @@ Let $A$ be a complicated space we do not know how to sample from.
 \node[ele,,label=right:$4$] (b4) at (4,1) {};
 
 \node[draw,fit= (a1) (a2) (a3),minimum width=2.5cm,label=below:$A$] {} ;
-\node[draw,fit= (b1) (b2) (b3) (b4),minimum width=2.5cm,label=below:$\mathbb{Z}$] {} ;
+\node[draw,fit= (b1) (b2) (b3) (b4),minimum width=2.5cm,label=below:$\mathbb{N}$] {} ;
 \draw[->,shorten <=2pt,shorten >=2pt] (a1) -- (b4);
 \draw[->,shorten <=2pt,shorten >=2] (a2) -- (b2);
 \draw[->,shorten <=2pt,shorten >=2] (a3) -- (b1);
 %\draw[->,shorten <=2pt,shorten >=2] (a4) -- (b3);
 \end{tikzpicture}
 \end{figure}
-We want a permutation mapping $f: A \rightarrow \mathbb{Z} \mid \forall a \in A \exists i \in \mathbb{Z}.f^{-1}(i) = a$. Then we can just sample $i \sim \mathbb{Z}$ without replacement and apply $f^{-1}(i)$.
+We want a permutation mapping $f: A \rightarrow \mathbb{N} \mid \forall a \in A \exists i \in \mathbb{N}.f^{-1}(i) = a$. Then we can just sample $i \sim \mathbb{N}$ without replacement and apply $f^{-1}(i)$.
 \end{frame}
 
 \begin{frame}[fragile]{Error Correction: Levenshtein q-Balls}
