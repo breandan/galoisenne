@@ -136,7 +136,9 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.1")
+
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.0.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.2")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
