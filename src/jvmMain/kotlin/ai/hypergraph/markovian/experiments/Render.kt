@@ -2,12 +2,13 @@ package ai.hypergraph.markovian.experiments
 
 import ai.hypergraph.kaliningraph.visualization.browserCmd
 import ai.hypergraph.markovian.pmap
-import jetbrains.datalore.base.geometry.DoubleVector
-import jetbrains.datalore.plot.PlotSvgExportPortable
+import org.jetbrains.letsPlot.commons.geometry.DoubleVector
 import org.jetbrains.letsPlot.geom.geomDensity
 import org.jetbrains.letsPlot.ggsize
 import org.jetbrains.letsPlot.intern.Plot
 import org.jetbrains.letsPlot.intern.toSpec
+
+import org.jetbrains.letsPlot.awt.plot.PlotSvgExport
 import org.jetbrains.letsPlot.letsPlot
 import java.io.File
 import kotlin.random.Random
@@ -15,7 +16,7 @@ import kotlin.random.Random
 fun Plot.display() =
   File.createTempFile("test", ".svg").also {
     val plotSize = DoubleVector(1000.0, 500.0)
-    val plot = PlotSvgExportPortable.buildSvgImageFromRawSpecs( this@display.toSpec(), plotSize)
+    val plot = PlotSvgExport.buildSvgImageFromRawSpecs( this@display.toSpec(), plotSize)
     it.writeText(plot)
   }.also { ProcessBuilder(browserCmd, it.path).start() }
 
