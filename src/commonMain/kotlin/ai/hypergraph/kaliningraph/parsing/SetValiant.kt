@@ -224,15 +224,10 @@ fun CFG.initialUTMatrix(
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
       if (terminal == HOLE_MARKER)
-//        unitReach.values.flatten().toSet().map { root ->
-//          unitReach[root]?.filter { it in origCFG.terminals }
-//            ?.map { Tree(root = root, terminal = it, span = i until (i + 1)) }
-//            ?.toSet() ?: setOf()
-//        }.flatten().toSet().also { println("Terminals: ${it.size}") }
         unitReachability.values.flatten().toSet().map { root ->
           bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
             .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
-        }.flatten().toSet().also { println("Trees: ${it.size} Terminals: ${terminals.size}") }
+        }.flatten().toSet()
       else bmp[listOf(terminal)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
