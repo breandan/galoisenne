@@ -14,8 +14,9 @@ class Tree constructor(
   val span: IntRange = children.fold(Int.MAX_VALUE to Int.MIN_VALUE) { (a, b), t ->
     minOf(a, t.span.first) to maxOf(b, t.span.last)}.let { it.first..it.second }
 ) {
+  val hash by lazy { root.hashCode() + terminal.hashCode() + contents().hashCode() }
   override fun toString() = root
-  override fun hashCode() = root.hashCode()
+  override fun hashCode() = hash
   override fun equals(other: Any?) = hashCode() == other.hashCode()
 
   fun structureEncode(): Σᐩ = if (children.isEmpty()) "()"
