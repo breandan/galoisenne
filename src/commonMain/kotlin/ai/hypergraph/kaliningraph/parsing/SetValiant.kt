@@ -16,6 +16,10 @@ fun CFG.parse(s: Σᐩ): Tree? =
   try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }
   catch (e: Exception) { null }
 
+fun CFG.parseAll(s: Σᐩ): Forest =
+  try { parseForest(s).filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() }
+  catch (e: Exception) { setOf() }
+
 /**
  * Checks whether a given string is valid by computing the transitive closure
  * of the matrix constructed by [initialMatrix]. If the upper-right corner entry
@@ -215,11 +219,16 @@ fun CFG.initialUTMatrix(
   tokens: List<Σᐩ>,
   origCFG: CFG = originalForm,
   bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<String>> = origCFG.unitReachability
+  unitReach: Map<Σᐩ, Set<Σᐩ>> = origCFG.unitReachability
 ): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
-      bmp[listOf(terminal)].let { nts ->
+      if (terminal == HOLE_MARKER)
+        unitReachability.values.flatten().toSet().map { root ->
+          bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
+            .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
+        }.flatten().toSet()
+      else bmp[listOf(terminal)].let { nts ->
         if (tokens.none { it.isNonterminalStubIn(this) }) nts
         // We use the original form because A -> B -> C can be normalized
         // to A -> C, and we want B to be included in the equivalence class

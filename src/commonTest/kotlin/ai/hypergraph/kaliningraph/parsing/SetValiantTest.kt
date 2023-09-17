@@ -354,7 +354,16 @@ class SetValiantTest {
 */
   @Test
   fun testOCaml() {
-    ocamlCFG.parse("1 + <I> + 2").also { println(it!!.prettyPrint()) }
+    val expr = "1 + <I> + 2"
+    val tree = ocamlCFG.parse(expr)!!
+    println(tree.prettyPrint())
+    val leaves = tree.contents()
+    assertEquals(expr, leaves)
+
+    val holExpr = "1 + _ + _ + 1"
+    val trees = ocamlCFG.parseAll(holExpr)
+    println("Found: ${trees.size} unique trees")
+    trees.map { it.contents() }.forEach { assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
   }
 
 /*
