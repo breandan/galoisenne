@@ -1,4 +1,4 @@
-@file:Suppress("FunctionName", "UNUSED_PARAMETER", "unused")
+@file:Suppress("FunctionName", "UNUSED_PARAMETER", "unused", "NonAsciiCharacters")
 
 package ai.hypergraph.reasoning
 
@@ -158,9 +158,9 @@ fun BVecVar(size: Int, prefix: String = "", pfx: (Int) -> String = { prefix }): 
   Array(size) { k -> BVar("${pfx(k)}_f::$k") }
 fun RMatVar(name: String, algebra: Ring<CNF>, rows: Int, cols: Int = rows) =
   FreeMatrix(algebra, rows, cols) { i, j -> BVar("$name$i$j") }
-fun BLit(b: Boolean): CNF = b.toCNF()
-fun BVecLit(l: BooleanArray): SATVector = l.map { it.toCNF() }.toTypedArray()
-fun BVecLit(l: List<Boolean>): SATVector = BVecLit(l.toBooleanArray())
+fun BLit(b: 𝔹): CNF = b.toCNF()
+fun BVecLit(l: 𝔹ⁿ): SATVector = l.map { it.toCNF() }.toTypedArray()
+fun BVecLit(l: List<𝔹>): SATVector = BVecLit(l.toBooleanArray())
 fun BVecLit(size: Int, f: (Int) -> CNF): SATVector = Array(size) { f(it) }
 
 infix fun SATVector.eq(that: SATVector): CNF =

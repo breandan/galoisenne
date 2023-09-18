@@ -7,9 +7,9 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.9.10"
+  kotlin("multiplatform") version "1.9.20-Beta"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.47.0"
+  id("com.github.ben-manes.versions") version "0.48.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
 }
 
@@ -137,15 +137,15 @@ kotlin {
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.0.0")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.2")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.0.1")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.3")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:4.1.0")
+        implementation("org.apache.datasketches:datasketches-java:4.2.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -181,7 +181,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.0.1")
-        implementation("org.slf4j:slf4j-simple:2.0.7")
+        implementation("org.slf4j:slf4j-simple:2.0.9")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
@@ -204,8 +204,9 @@ kotlin {
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
-        implementation("org.eclipse.collections:eclipse-collections-api:12.0.0.M2")
-        implementation("org.eclipse.collections:eclipse-collections:12.0.0.M2")
+        val eccVersion = "12.0.0.M3"
+        implementation("org.eclipse.collections:eclipse-collections-api:$eccVersion")
+        implementation("org.eclipse.collections:eclipse-collections:$eccVersion")
 
         implementation(kotlin("scripting-jsr223"))
       }
@@ -216,7 +217,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
       }
     }
   }

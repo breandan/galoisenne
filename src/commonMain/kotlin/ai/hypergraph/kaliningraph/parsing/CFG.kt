@@ -1,3 +1,4 @@
+@file:Suppress("NonAsciiCharacters")
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
@@ -6,7 +7,6 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.time.*
 
-@Suppress("NonAsciiCharacters")
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
 // TODO: make this immutable
@@ -165,7 +165,7 @@ private fun Σᐩ.isTreelikeNonterminalIn(
   cfg: CFG,
   reachables: Set<Σᐩ> = cfg.reachableSymbols(this) - this,
   nonTreeLike: Set<Σᐩ> = setOf(this)
-): Boolean = when {
+): 𝔹 = when {
   "ε" in this -> true
   (reachables intersect nonTreeLike).isNotEmpty() -> false
   else -> reachables.all { it in cfg.terminals ||
@@ -180,7 +180,7 @@ class JoinMap(val CFG: CFG) {
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
       .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
 
-  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Boolean = false): Set<Π3A<Σᐩ>> =
+  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: 𝔹 = false): Set<Π3A<Σᐩ>> =
     if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
     else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
 
