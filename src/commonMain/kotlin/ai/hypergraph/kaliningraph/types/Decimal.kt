@@ -1,8 +1,10 @@
-@file:Suppress("unused", "ObjectPropertyName", "ClassName", "PropertyName")
+@file:Suppress("unused", "ObjectPropertyName", "ClassName", "PropertyName", "NonAsciiCharacters")
 
 package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
+
+typealias ℤⁿ = IntArray
 
 @Suppress("UNCHECKED_CAST")
 sealed class D<X, T: D<X, T>>(open val x: X? = null) {

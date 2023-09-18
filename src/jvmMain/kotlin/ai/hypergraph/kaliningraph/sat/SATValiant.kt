@@ -36,7 +36,7 @@ infix fun SATVector.union(that: SATVector): SATVector =
 //  if (isEmpty()) that else if (that.isEmpty()) this
 //  else Array(size) { i -> this[i].let { it.factory().or(it, that[i]) } }
 
-fun BooleanArray.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
+fun 𝔹ⁿ.toLitVec(): SATVector = map { BLit(it) }.toTypedArray()
 
 fun vecsEqAtIndices(a: SATVector, b: SATVector, indices: Set<Int>): Formula =
   if (a.isEmpty() || b.isEmpty() || a.size != b.size) throw Exception("Shape mismatch! (${a.size}, ${b.size})")
@@ -292,7 +292,7 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
 
 // Precomputes constants (permanent upper right triangular submatrices) in
 // the fixpoint to avoid solving for invariant entries that are fixed.
-  val litUDM: UTMatrix<BooleanArray?> = UTMatrix(
+  val litUDM: UTMatrix<𝔹ⁿ?> = UTMatrix(
     ts = tokens.map { it ->
       // Nulls on the superdiagonal will cast either a rectangular or pentagonal
       // shadow of bitvector variables on UTMatrix, which we represent as nulls

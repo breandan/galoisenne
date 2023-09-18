@@ -360,10 +360,15 @@ class SetValiantTest {
     val leaves = tree.contents()
     assertEquals(expr, leaves)
 
-    val holExpr = "1 + _ + _ + 1"
-    val trees = ocamlCFG.parseAll(holExpr)
-    println("Found: ${trees.size} unique trees")
-    trees.map { it.contents() }.forEach { assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
+  val holExpr = "1 + _ + _ + 1"
+
+//  val trees = ocamlCFG.parseAll(holExpr)
+//  println("Found: ${trees.size} unique trees")
+//  trees.map { it.contents() }.forEach { assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
+
+    val solutions = ocamlCFG.sortAll(holExpr)
+    println("Found: ${solutions.size} unique solutions")
+    solutions.forEach { println(it); assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
   }
 
 /*

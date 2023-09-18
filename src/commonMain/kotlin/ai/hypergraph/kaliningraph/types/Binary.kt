@@ -1,7 +1,10 @@
-@file:Suppress("UNUSED_PARAMETER", "UNCHECKED_CAST")
+@file:Suppress("UNUSED_PARAMETER", "UNCHECKED_CAST", "NonAsciiCharacters")
 package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
+
+typealias 𝔹 = Boolean
+typealias 𝔹ⁿ = BooleanArray
 
 sealed class B<X, P : B<X, P>>(open val x: X? = null) {
   val T: T<P> get() = T(this as P)

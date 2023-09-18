@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.image
 
 import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
+import ai.hypergraph.kaliningraph.types.ℤⁿ
 import kotlin.math.roundToInt
 
 fun String.escapeHTML() =
@@ -49,20 +50,20 @@ fun <T> FreeMatrix<T>.toHtmlPage(): String =
 
 fun Matrix<*, *, *>.matToBase64Img(
   pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
-  arr: Array<IntArray> = when (this) {
+  arr: Array<ℤⁿ> = when (this) {
     is BooleanMatrix -> data.map { if (it) 255 else 0 }
     is DoubleMatrix -> minMaxNorm().data.map { (it * 255).roundToInt() }
     else -> TODO("Renderer is undefined")
   }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry),
 ): String = "data:image/bmp;base64," + BMP().saveBMP(arr).encodeBase64ToString()
 
-fun Array<IntArray>.enlarge(factor: Int = 2): Array<IntArray> =
+fun Array<ℤⁿ>.enlarge(factor: Int = 2): Array<ℤⁿ> =
   map { row -> row.flatMap { col -> (0 until factor).map { col } }
     .let { r -> (0 until factor).map { r.toIntArray() } } }.flatten().toTypedArray()
 
 class BMP {
   lateinit var bytes: ByteArray
-  fun saveBMP(rgbValues: Array<IntArray>): ByteArray {
+  fun saveBMP(rgbValues: Array<ℤⁿ>): ByteArray {
     bytes = ByteArray(54 + 3 * rgbValues.size * rgbValues[0].size +
       getPadding(rgbValues[0].size) * rgbValues.size)
     saveFileHeader()
@@ -101,11 +102,11 @@ class BMP {
     bytes[28] = 24
   }
 
-  private fun saveBitmapData(rgbValues: Array<IntArray>) {
+  private fun saveBitmapData(rgbValues: Array<ℤⁿ>) {
     for (i in rgbValues.indices) writeLine(i, rgbValues)
   }
 
-  private fun writeLine(row: Int, rgbValues: Array<IntArray>) {
+  private fun writeLine(row: Int, rgbValues: Array<ℤⁿ>) {
     val offset = 54
     val rowLength: Int = rgbValues[row].size
     val padding = getPadding(rgbValues[0].size)
