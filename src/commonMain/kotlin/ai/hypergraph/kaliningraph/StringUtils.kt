@@ -91,6 +91,9 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   return prev[o2.size]
 }
 
+fun multisetManhattanDistance(s1: Σᐩ, s2: Σᐩ): Int =
+  multisetManhattanDistance(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
+
 fun <T> multisetManhattanDistance(q1: List<T>, q2: List<T>): Int {
   val (s1, s2) = listOf(q1, q2).map { it.groupingBy { it }.eachCount() }
 
