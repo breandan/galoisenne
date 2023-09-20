@@ -360,11 +360,13 @@ class SetValiantTest {
     val leaves = tree.contents()
     assertEquals(expr, leaves)
 
-    val holExpr = "_ _ _ _ _ _ _ _"
+    val holExpr = "_ _ _ _ _ _ _ _ _ _"
 
-    val solutions = ocamlCFG.sortAll(holExpr, withRespectTo = "( false curry )")
-    println("Found: ${solutions.size} unique solutions")
-    solutions.forEach { println(it); assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
+    measureTime {
+      val solutions = ocamlCFG.sortAll(holExpr, withRespectTo = "( false curry )")
+      println("Found: ${solutions.size} unique solutions")
+      solutions.forEach { println(it); assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
+    }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }
 
 /*

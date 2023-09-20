@@ -211,6 +211,10 @@ class Bindex<T>(
 class BiMap(cfg: CFG) {
   val L2RHS = cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
   val R2LHS = cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
+  val TRIPL = R2LHS.filter { it.key.size == 2 }
+    .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
+  val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> = TRIPL.groupBy { it.second }
+    .mapValues { it.value.map { it.first to it.second to it.third } }
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
