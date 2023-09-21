@@ -19,7 +19,7 @@ fun CFG.solveSortedFP(
   utMatrix: UTMatrix<Sort> =
     initialUTSMatrix(tokens,
       sortwiseAlgebra(metric = {
-        levenshtein(it.first.filterNot { "ε" in it }, withRespectTo)
+        levenshtein(it.first.filterNot { "ε" in it }, withRespectTo).toFloat()
       })
     ),
 ) = utMatrix.seekFixpoint().toFullMatrix()[0].last()[START_SYMBOL]
@@ -38,15 +38,15 @@ fun CFG.initialUTSMatrix(
       .associateWith {
         if (token == HOLE_MARKER)
           bimap[it].filter { it.size == 1 && it.first() in terminals && !it.first().isNonterminalStub() }
-          .map { it.first() }.map { listOf(it) to if ("ε" in token) 0 else 1 }.toSet()
-        else setOf(listOf(token) to if ("ε" in token) 0 else 1)
+          .map { it.first() }.map { listOf(it) to if ("ε" in token) 0f else 1f }.toSet()
+        else setOf(listOf(token) to if ("ε" in token) 0f else 1f)
       }
     }.toTypedArray(),
     algebra = algebra
   )
 
 // Maintains a sorted list of nonterminal roots and their leaves
-fun CFG.sortwiseAlgebra(metric: (SRec) -> Int): Ring<Sort> =
+fun CFG.sortwiseAlgebra(metric: (SRec) -> Float): Ring<Sort> =
   Ring.of(
     nil = mapOf(),
     plus = { x, y -> union(x, y) },
@@ -55,18 +55,14 @@ fun CFG.sortwiseAlgebra(metric: (SRec) -> Int): Ring<Sort> =
 
 operator fun SRec.plus(s2: SRec): SRec = (π1 + s2.π1) to (π2 + s2.π2)
 
+const val MAX_CAPACITY = 100
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
-fun CFG.join(s1: Sort, s2: Sort, metric: (SRec) -> Int = { it.second }): Sort =
+fun CFG.join(s1: Sort, s2: Sort, metric: (SRec) -> Float = { it.second }): Sort =
   bimap.TRIPL.filter { (_, x, z) -> x in s1 && z in s2 }
   .map { (w, x, z) ->
     ((s1[x] ?: setOf()) * (s2[z] ?: setOf()))
       .map { (q, r) -> w to (q + r) }
-  }.flatten()
-  .groupingBy { it.first }
-//  .aggregate { _, acc, it, _ ->
-//    val toInsert = it.second.let { it.first to metric(it) }
-//    ((acc ?: setOf()) + toInsert).sortedBy { it.second }.take(20).toSet()
-//  }
+  }.flatten().groupingBy { it.first }
   .aggregate<Pair<Σᐩ, SRec>, Σᐩ, MutableList<SRec>> { _, acc, it, _ ->
     val toInsert = it.second.let { it.first to metric(it) }
     val list = (acc ?: mutableListOf())
@@ -76,7 +72,7 @@ fun CFG.join(s1: Sort, s2: Sort, metric: (SRec) -> Int = { it.second }): Sort =
     )
     list.add(if (idx < 0) -idx - 1 else idx, toInsert)
 //    if (idx < 0) list.add(-idx - 1, toInsert)
-    list.apply { if (100 < size) removeLast() }
+    list.apply { if (MAX_CAPACITY < size) removeLast() }
   }
   .mapValues { it.value.toSet() }
 
@@ -85,8 +81,6 @@ fun union(s1: Sort, s2: Sort): Sort =
     ((s1[k] ?: setOf()) + (s2[k] ?: setOf()))
 //      .sortedBy { it.second }.take(100).toSet()
   }
-
-// Mutable list that maintains a sorted order and has a fixed capacity.
 
 // Map of root to the possible sets of leaves
 // This is like a tree where we do not store the internal nodes
@@ -98,4 +92,4 @@ typealias Sort = Map<Σᐩ, Set<SRec>>
 //       but for now just the number of terminals. For example,
 //       we could use perplexity of a Markov chain or the length
 //       of the longest common substring with the original string.
-typealias SRec = Π2<List<Σᐩ>, Int>
+typealias SRec = Π2<List<Σᐩ>, Float>
