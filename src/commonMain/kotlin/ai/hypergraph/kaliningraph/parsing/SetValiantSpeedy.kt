@@ -106,16 +106,18 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List
 
   fun matches(groundTruth: String): Boolean = resToStr() == groundTruth
 
-  // Computes a "fingerprint" of the repair to avoid redundant results
-  // Each fingerprint can be lazily expanded to a sequence of repairs
-  // formed by the Cartesian product of tokens at each change position
-  // e.g., "C + C" -> "1 + 2", "1 + 3", "2 + 1", "2 + 3", "3 + 1", "3 + 2"... etc.
+
   override fun hashCode(): Int = result.hashCode()
   override fun equals(other: Any?): Boolean =
     if (other is Repair) result == other.result else false
 
   fun elapsed(): String = (if (timeMS == -1L) "N/A" else "${timeMS / 1000.0}").take(4) + "s"
   fun scoreStr(): String = "$score".take(5)
+
+  // TODO: Computes a "fingerprint" of the repair to avoid redundant results
+  //  Each fingerprint can be lazily expanded to a sequence of repairs
+  //  formed by the Cartesian product of tokens at each change position
+  //  e.g., "C + C" -> "1 + 2", "1 + 3", "2 + 1", "2 + 3", "3 + 1", "3 + 2"... etc.
 
   /**
    * This can be used to generate a sequence of repairs with the same edit fingerprint but alternate

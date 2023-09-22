@@ -347,14 +347,14 @@ class SetValiantTest {
       VO -> = | < | `||` | `&&`
       I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
       B ->  true | false
-    """.trimIndent().parseCFG()
+    """.trimIndent().parseCFG().noNonterminalStubs
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
 */
   @Test
   fun testOCaml() {
-    val expr = "1 + <I> + 2"
+    val expr = "1 + 2 + 3"
     val tree = ocamlCFG.parse(expr)!!
     println(tree.prettyPrint())
     val leaves = tree.contents()
@@ -363,7 +363,7 @@ class SetValiantTest {
     val holExpr = "_ _ _ _ _ _ _ _ _ _"
 
     measureTime {
-      val solutions = ocamlCFG.sortAll(holExpr, withRespectTo = "( false curry )")
+      val solutions = ocamlCFG.sortAll(holExpr, levMetric("( false curry )"))
       println("Found: ${solutions.size} unique solutions")
       solutions.forEach { println(it); assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }

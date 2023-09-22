@@ -41,6 +41,7 @@ val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
 val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 } }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
+val CFG.unitNonterminals: Set<Σᐩ> by cache { terminalUnitProductions.map { it.LHS }.toSet() }
 val CFG.bimap: BiMap by cache { BiMap(this) }
 // Maps nonterminal sets to their terminals, n.b., each terminal can be generated
 // by multiple nonterminals, and each nonterminal can generate multiple terminals
@@ -78,7 +79,7 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.unitReachability by cache {
   symbols.associateWith { from ->
     LabeledGraph {
-      unitProductions.map { it.LHS to it.RHS.first() }
+      unitProductions.map { it.LHS to it.RHS[0] }
 //      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
         .forEach { (a, b) -> a - b }
     }.let {
@@ -215,6 +216,9 @@ class BiMap(cfg: CFG) {
     .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
   val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> = TRIPL.groupBy { it.second }
     .mapValues { it.value.map { it.first to it.second to it.third } }
+  val UNITS =
+    cfg.filter { it.RHS.size == 1 && it.RHS[0] !in cfg.nonterminals }
+      .groupBy({ it.LHS }, { it.RHS[0] }).mapValues { it.value.toSet() }
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
