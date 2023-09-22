@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.hasBalancedBrackets
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
@@ -363,7 +363,7 @@ class SetValiantTest {
     val holExpr = "_ _ _ _ _ _ _ _ _ _"
 
     measureTime {
-      val solutions = ocamlCFG.sortAll(holExpr, levMetric("( false curry )"))
+      val solutions = ocamlCFG.solve(holExpr, levMetric("( false curry )"))
       println("Found: ${solutions.size} unique solutions")
       solutions.forEach { println(it); assertTrue("$it was invalid!") { ocamlCFG.isValid(it) } }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
@@ -569,11 +569,12 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 */
   @Test
   fun testPythonRepairs() {
-    val reference = "NAME = ( NAME"
-    val template = "_ _ _ _ _ _ _"//List(it.size + 2) { "_" }.joinToString(" ")
+    val refStr = "NAME = ( NAME"
+    val refLst = refStr.tokenizeByWhitespace()
+    val template = List(refLst.size + 3) { "_" }.joinToString(" ")
     measureTime {
-      seq2parsePythonCFG.sortAll(template, levMetric(reference))
-        .onEach { println(it) }
+      seq2parsePythonCFG.solve(template, levMetric(refStr))
+        .onEach { println("Δ=${levenshtein(it, refStr)}: $it") }
         .also { println("Found ${it.size} solutions!") }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }

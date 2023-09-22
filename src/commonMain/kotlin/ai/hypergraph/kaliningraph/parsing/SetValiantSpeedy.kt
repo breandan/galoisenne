@@ -76,8 +76,7 @@ fun FastRandomSet<Edit>.resample(maxTake: Int,
 
 // Enumerates powerset levels from the bottom up, skipping the empty set
 private fun Edit.subedits(): Sequence<Sequence<List<Pair<Int, Σᐩ>>>> =
-  (1..size).asSequence()
-  .map { choose(it).map { it.toList() } }
+  (1..size).asSequence().map { choose(it).map { it.toList() } }
 
 fun List<Σᐩ>.apply(edit: Edit): List<Σᐩ> {
   val res = toMutableList()

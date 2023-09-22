@@ -7,10 +7,12 @@ import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 
 // Returns all syntactically strings ordered by distance to withRespect
-fun CFG.sortAll(s: Σᐩ, metric: ChoiceMetric): Set<Σᐩ> =
-  try { solveSortedFP(s.tokenizeByWhitespace(), metric)?.sorted()
-    ?.map { it.asString }?.toSet() ?: setOf() }
-  catch (e: Exception) { e.printStackTrace(); setOf() }
+fun CFG.solve(s: Σᐩ, metric: ChoiceMetric): Set<Σᐩ> =
+  solve(s.tokenizeByWhitespace(), metric)
+
+fun CFG.solve(s: List<Σᐩ>, metric: ChoiceMetric): Set<Σᐩ> =
+  try { solveSortedFP(s, metric)?.sorted()?.map { it.asString }?.toSet() }
+  catch (e: Exception) { e.printStackTrace(); null } ?: setOf()
 
 fun CFG.solveSortedFP(
   tokens: List<Σᐩ>,
@@ -43,6 +45,7 @@ fun CFG.sortwiseAlgebra(metric: ChoiceMetric): Ring<Sort> =
 
 const val MAX_CAPACITY = 100
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
+// Greedily selects candidate string fragments according to ChoiceMetric
 fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
   bimap.TRIPL.filter { (_, x, z) -> x in X && z in Z }
   .map { (w, x, z) ->

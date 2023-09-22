@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
+import kotlin.reflect.KProperty
 import kotlin.time.*
 
 typealias Σᐩ = String
