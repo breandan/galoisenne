@@ -8,9 +8,8 @@ import ai.hypergraph.kaliningraph.types.*
 
 // Returns all syntactically strings ordered by distance to withRespect
 fun CFG.sortAll(s: Σᐩ, metric: ChoiceMetric): Set<Σᐩ> =
-  try { solveSortedFP(s.tokenizeByWhitespace(), metric)
-    ?.sortedBy { it.weight }
-    ?.map { it.sanitize().joinToString(" ") }?.toSet() ?: setOf() }
+  try { solveSortedFP(s.tokenizeByWhitespace(), metric)?.sorted()
+    ?.map { it.asString }?.toSet() ?: setOf() }
   catch (e: Exception) { e.printStackTrace(); setOf() }
 
 fun CFG.solveSortedFP(
@@ -56,8 +55,7 @@ fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
     val idx = list.binarySearch(choice, Choice.comparator)
     if (idx < 0) list.add(-idx - 1, choice) // Only if not already present
     list.apply { if (MAX_CAPACITY < size) removeLast() }
-  }
-  .mapValues { it.value.toSet() }
+  }.mapValues { it.value.toSet() }
 
 fun union(l: Sort, r: Sort): Sort =
   (l.keys + r.keys).associateWith { k -> (l[k] ?: setOf()) + (r[k] ?: setOf()) }
@@ -78,18 +76,19 @@ data class Choice(val tokens: List<Σᐩ>, val weight: Float): Comparable<Choice
 
   companion object {
     val comparator: Comparator<Choice> =
-      compareBy<Choice> { it.weight }.thenBy { it.tokens.hashCode() }
+      compareBy<Choice> { it.weight }.thenBy { it.sanitized.size }.thenBy { it.asString }
   }
 
   override fun compareTo(other: Choice): Int = comparator.compare(this, other)
 
   operator fun plus(other: Choice) =
     Choice(tokens + other.tokens, weight + other.weight)
-  
-  fun sanitize() = tokens.filterNot { "ε" in it }
+
+  val sanitized by lazy { tokens.filter { "ε" !in it } }
+  val asString by lazy { sanitized.joinToString(" ") }
 }
 
 // Returns a metric measuring Levenshtein distance w.r.t. some reference string
 fun levMetric(withRespectTo: Σᐩ): ChoiceMetric =
   withRespectTo.tokenizeByWhitespace()
-    .let { wrt -> { levenshtein(it.sanitize(), wrt).toFloat() } }
+    .let { wrt -> { levenshtein(it.sanitized, wrt).toFloat() } }
