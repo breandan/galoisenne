@@ -6,6 +6,12 @@ import ai.hypergraph.kaliningraph.levenshtein
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 
+// The main issue with SortValiant is we eagerly compute the Cartesian product
+// and this blows up very quickly, so we need to sort and prune aggressively.
+// We can instead use a lazy Cartesian product, which is what SeqValiant does.
+// The downside is that we lose the ability to sort the results while parsing,
+// but we can still use a metric to sort the results after the fact.
+
 // Returns all syntactically strings ordered by distance to withRespect
 fun CFG.solve(s: Σᐩ, metric: ChoiceMetric): Set<Σᐩ> =
   solve(s.tokenizeByWhitespace(), metric)
@@ -49,6 +55,9 @@ const val MAX_CAPACITY = 100
 fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
   bimap.TRIPL.filter { (_, x, z) -> x in X && z in Z }
   .map { (w, x, z) ->
+    // This Cartesian product becomes expensive quickly so MAX_CAPACITY is used
+    // to limit the number of elements in the product. This is a greedy approach
+    // and we always take the top MAX_CAPACITY-elements by the provided metric.
     ((X[x] ?: setOf()) * (Z[z] ?: setOf()))
       .map { (q, r) -> w to (q + r) }
   }.flatten().groupingBy { it.first }

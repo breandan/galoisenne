@@ -369,6 +369,16 @@ class SetValiantTest {
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testSeqValiant"
+*/
+  @Test
+  fun testSeqValiant() {
+    val allSols = seq2parsePythonCFG.solveSeq("_ _ _ _ _").sortedBy { it.length }.toList()
+    allSols.forEach { println(it); assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
+    println("Found ${allSols.size} solutions, all were valid!")
+  }
+
   val seq2parsePythonCFG: CFG =
     """
 START -> Stmts_Or_Newlines Endmarker
