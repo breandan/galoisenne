@@ -36,9 +36,9 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
 
 fun CFG.isValid(str: Σᐩ): 𝔹 = isValid(str.tokenizeByWhitespace())
 fun CFG.isValid(str: List<Σᐩ>): 𝔹 =
-  initialUTBMatrix(str.pad3()).seekFixpoint().diagonals
-//    .also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
-    .last().first()//.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
+  initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0]
+    //.also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
+    //.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
     .let { corner -> corner[bindex[START_SYMBOL]] }
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
@@ -59,7 +59,7 @@ fun CFG.solveFixedpoint(
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
 fun CFG.parseWithStubs(s: Σᐩ): Pair<Forest, List<Tree>> =
   solveFixedpoint(s.tokenizeByWhitespace()).toUTMatrix().diagonals.asReversed().let {
-    it.first()[0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
+    it[0][0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
       it.flatten().flatten().map { it.denormalize() }
   }
 
@@ -295,7 +295,7 @@ fun List<Σᐩ>.solve(
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->
-      if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
+      if (c == HOLE_MARKER) (a + " " + b[0]) to b.drop(1) else ("$a $c") to b
     }.first.replace("ε ", "").trim()
   }
 
