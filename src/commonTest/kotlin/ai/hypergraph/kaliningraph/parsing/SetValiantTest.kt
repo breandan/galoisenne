@@ -583,8 +583,13 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val refLst = refStr.tokenizeByWhitespace()
     val template = List(refLst.size + 3) { "_" }.joinToString(" ")
     measureTime {
-      seq2parsePythonCFG.solve(template, levMetric(refStr))
-        .onEach { println("Δ=${levenshtein(it, refStr)}: $it") }
+//      seq2parsePythonCFG.solve(template, levMetric(refStr))
+      seq2parsePythonCFG.solveSeq(template)
+        .map { it to levenshtein(it, refStr) }
+        .filter { it.second < 4 }.distinct()
+        .sortedWith(compareBy({ it.second }, { it.first.length })).toList()
+        .also { it.take(1000).forEach { println("Δ=${it.second}: ${it.first}") } }
+//        .onEach { println("Δ=${levenshtein(it, refStr)}: $it") }
         .also { println("Found ${it.size} solutions!") }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }
