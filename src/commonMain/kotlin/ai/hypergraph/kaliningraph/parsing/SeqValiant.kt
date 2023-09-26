@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 
-typealias PForest = Map<String, PTree>
 fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
@@ -40,6 +39,7 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
     )
   )
 
+typealias PForest = Map<String, PTree>
 fun merge(X: PForest, Z: PForest): PForest =
   (X.keys + Z.keys).associateWith { k ->
     PTree(k, (X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf()))
@@ -48,7 +48,9 @@ fun merge(X: PForest, Z: PForest): PForest =
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
 fun CFG.joinSeq(X: PForest, Z: PForest): PForest =
   bimap.TRIPL.filter { (_, x, z) -> x in X && z in Z }
-    .groupingBy { it.first }.aggregate { _, acc: List<Π2A<PTree>>?, it, _->
-      val pair = X[it.second]!! to Z[it.third]!!
-      if (acc == null) listOf(pair) else acc + pair
-    }.map { (k, v) -> k to PTree(k, v) }.toMap()
+    .map { (w, x, z) -> PTree(w, listOf(X[x]!! to Z[z]!!)) }
+    .fold(mapOf()) { acc, it -> merge(mapOf(it.root to it), acc) }
+//    .groupingBy { it.first }.aggregate { _, acc: List<Π2A<PTree>>?, it, _->
+//      val pair = X[it.second]!! to Z[it.third]!!
+//      if (acc == null) listOf(pair) else acc + pair
+//    }.map { (k, v) -> k to PTree(k, v) }.toMap()

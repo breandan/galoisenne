@@ -1,0 +1,62 @@
+\begin{center}
+\begin{equation*}
+  M^*(\mathcal{G}, \beta\alpha\gamma)=
+\begin{tikzpicture}[
+  scale=0.4,
+  baseline,
+  label distance=10pt % added
+]
+
+\matrix [matrix of math nodes,left delimiter=(,right delimiter=),row sep=0.1cm,column sep=0.1cm] (m) {
+\varnothing & \beta_1^\shri & \phantom{\cdots} & \,\Lambda_{\beta}\,  &        &                      & \phantom{\qs{|\alpha|}} &        &                      & \smash{\Lambda_{\beta\alpha\gamma}^*}      \\
+            &               & \phantom{\ddots} & \phantom{\vdots}     &        & \bm\Lambda_\alpha^\shup &                  &        &                      &        \\
+            &               &                  & \bs{|\beta|}         &        &                      &                  &        &                      & \phantom{\bs{|\beta|}}       \\
+            &               &                  &                      & \qs{1} & \phantom{\cdots}     & \Lambda_{\alpha} &        &                      & \phantom{\vs{j}} \\
+            &               &                  &                      &        & \phantom{\ddots}     & \phantom{\vdots} &        & \bm\Lambda_\alpha^\shri &        \\
+            &               &                  &                      &        &                      & \qs{|\alpha|}           &        &                      & \phantom{\qs{|\alpha|}}      \\
+            &               &                  &                      &        &                      &                  & \gs{1} & \phantom{\cdots}     & \Lambda_{\gamma}\vphantom{\gs{1}} \\
+            &               &                  &                      &        &                      &                  &        & \phantom{\ddots}     & \phantom{\vdots} \\
+            &               &                  &                      &        &                      &                  &        &                      & \gamma_{|\gamma|}^\shup      \\
+\varnothing &               &                  &                      &        &                      &                  &        &                      & \varnothing\\
+};
+
+\draw[loosely dotted] (m-1-1.south) -- (m-10-1.north);
+\draw[loosely dotted] (m-1-1.south east) -- (m-10-10.north west);
+\draw[loosely dotted] (m-10-1.east) -- (m-10-10.west);
+
+% β
+\draw[loosely dotted] (m-1-2.south east) -- ([xshift=0.3cm]m-3-4.north west);
+\draw[loosely dotted] (m-1-2.east) -- (m-1-4.west);
+\draw[loosely dotted] (m-1-4.south) -- (m-3-4.north);
+
+\draw[dashed] (m-1-4.north east) -- (m-3-4.south east);
+\draw[dashed] (m-3-4.south east) -- (m-3-10.south east);
+\draw[dashed] (m-1-7.north east) -- (m-6-7.south east);
+\draw[dashed] (m-6-7.south east) -- (m-6-10.south east);
+
+% α
+\draw[loosely dotted] (m-4-5.south east) -- ([xshift=0.45cm,yshift=-0.2cm]m-6-7.north west);
+\draw[loosely dotted] (m-4-5.east) -- (m-4-7.west);
+\draw[loosely dotted] (m-4-7.south) -- (m-6-7.north);
+
+% γ
+\draw[loosely dotted] (m-7-8.south east) -- ([xshift=-0.1cm,yshift=-0.3cm]m-9-10.north west);
+\draw[loosely dotted] (m-7-8.east) -- (m-7-10.west);
+\draw[loosely dotted] (m-7-10.south) -- (m-9-10.north);
+\node[
+    fit=(m-1-2)(m-1-4),
+    inner xsep=0,inner ysep=10pt,
+    above delimiter=\{,
+    label=above:$\beta$
+] {};
+
+\node[
+    fit=(m-7-10)(m-9-10),
+    inner xsep=14pt,inner ysep=0,
+    right delimiter=\},
+    label=right:$\gamma$
+] {};
+
+\end{tikzpicture}
+\end{equation*}
+\end{center}

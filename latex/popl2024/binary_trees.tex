@@ -1,0 +1,77 @@
+\[
+  \mathbf{M}^* = \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+                   \tikzmark{a} & \tikzmark{k}  & \tikzmark{b} & \tikzmark{m} & \tikzmark{c} & \tikzmark{q} & \tikzmark{d} \\
+                   \vno & \tikzmark{l}  &              & \tikzmark{n} &              & \tikzmark{r} & \tikzmark{w} \\
+                   \vdd & \ddd          & \tikzmark{e} & \tikzmark{o} & \tikzmark{f} & \tikzmark{s} & \tikzmark{g} \\
+                   &               &              & \tikzmark{p} &              & \tikzmark{t} & \tikzmark{x} \\
+                   &               &              &              & \tikzmark{h} & \tikzmark{u} & \tikzmark{i} \\
+                   &               &              &              &              & \tikzmark{v} &              \\
+                   \vno & \cdd          &              &              &              & \vno         & \tikzmark{j}
+  \end{pNiceArray}
+  \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}, redbr/.style={-,red}, grnbr/.style={-,green}]
+    \draw [grnbr] ({pic cs:l}) to ({pic cs:r});
+    \draw [grnbr] ({pic cs:v}) to ({pic cs:r});
+    \draw [grnbr] ({pic cs:r}) to ({pic cs:w});
+    \draw [blubr] ({pic cs:a}) to ({pic cs:b});
+    \draw [blubr] ({pic cs:e}) to ({pic cs:b});
+    \draw [blubr] ({pic cs:h}) to ({pic cs:c});
+    \draw [blubr] ({pic cs:b}) to ({pic cs:c});
+    \draw [blubr] ({pic cs:c}) to ({pic cs:d});
+    \draw [redbr] ({pic cs:h}) to ({pic cs:i});
+    \draw [redbr] ({pic cs:j}) to ({pic cs:i});
+    \draw [redbr] ({pic cs:e}) to ({pic cs:g});
+    \draw [redbr] ({pic cs:i}) to ({pic cs:g});
+    \draw [redbr] ({pic cs:g}) to ({pic cs:d});
+  \end{tikzpicture}\Rightarrow
+  \left\{\begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+           \tikzmark{a1} & \tikzmark{k1}  & \tikzmark{b1} & \tikzmark{m1} & \tikzmark{c1} & \tikzmark{q1} & \tikzmark{d1} \\
+           \vno          & \tikzmark{l1}  &               & \tikzmark{n1} &               & \tikzmark{r1} & \tikzmark{w1} \\
+           \vdd          & \ddd           & \tikzmark{e1} & \tikzmark{o1} & \tikzmark{f1} & \tikzmark{s1} & \tikzmark{g1} \\
+           &                &               & \tikzmark{p1} &               & \tikzmark{t1} & \tikzmark{x1} \\
+           &                &               &               & \tikzmark{h1} & \tikzmark{u1} & \tikzmark{i1} \\
+           &                &               &               &               & \tikzmark{v1} &              \\
+           \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j1}
+  \end{pNiceArray}
+  \begin{tikzpicture}[overlay, remember picture, redbr/.style={-,red}]
+    \draw [redbr] ({pic cs:a1}) to ({pic cs:d1});
+    \draw [redbr] ({pic cs:h1}) to ({pic cs:i1});
+    \draw [redbr] ({pic cs:j1}) to ({pic cs:i1});
+    \draw [redbr] ({pic cs:e1}) to ({pic cs:g1});
+    \draw [redbr] ({pic cs:i1}) to ({pic cs:g1});
+    \draw [redbr] ({pic cs:g1}) to ({pic cs:d1});
+  \end{tikzpicture}_{\textstyle,}
+  \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+    \tikzmark{a2} & \tikzmark{k2}  & \tikzmark{b2} & \tikzmark{m2} & \tikzmark{c2} & \tikzmark{q2} & \tikzmark{d2} \\
+    \vno          & \tikzmark{l2}  &               & \tikzmark{n2} &               & \tikzmark{r2} & \tikzmark{w2} \\
+    \vdd          & \ddd           & \tikzmark{e2} & \tikzmark{o2} & \tikzmark{f2} & \tikzmark{s2} & \tikzmark{g2} \\
+    &                &               & \tikzmark{p2} &               & \tikzmark{t2} & \tikzmark{x2} \\
+    &                &               &               & \tikzmark{h2} & \tikzmark{u2} & \tikzmark{i2} \\
+    &                &               &               &               & \tikzmark{v2} &              \\
+    \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j2}
+  \end{pNiceArray}
+  \begin{tikzpicture}[overlay, remember picture, blubr/.style={-,blue}]
+    \draw [blubr] ({pic cs:a2}) to ({pic cs:b2});
+    \draw [blubr] ({pic cs:e2}) to ({pic cs:b2});
+    \draw [blubr] ({pic cs:h2}) to ({pic cs:c2});
+    \draw [blubr] ({pic cs:b2}) to ({pic cs:c2});
+    \draw [blubr] ({pic cs:c2}) to ({pic cs:d2});
+    \draw [blubr] ({pic cs:j2}) to ({pic cs:d2});
+  \end{tikzpicture}_{\textstyle,}
+  \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+    \tikzmark{a3} & \tikzmark{k3}  & \tikzmark{b3} & \tikzmark{m3} & \tikzmark{c3} & \tikzmark{q3} & \tikzmark{d3} \\
+    \vno          & \tikzmark{l3}  &               & \tikzmark{n3} &               & \tikzmark{r3} & \tikzmark{w3} \\
+    \vdd          & \ddd           & \tikzmark{e3} & \tikzmark{o3} & \tikzmark{f3} & \tikzmark{s3} & \tikzmark{g3} \\
+    &                &               & \tikzmark{p3} &               & \tikzmark{t3} & \tikzmark{x3} \\
+    &                &               &               & \tikzmark{h3} & \tikzmark{u3} & \tikzmark{i3} \\
+    &                &               &               &               & \tikzmark{v3} &              \\
+    \vno          & \cdd           &               &               &               & \vno          & \tikzmark{j3}
+  \end{pNiceArray}
+  \begin{tikzpicture}[overlay, remember picture, grnbr/.style={-,green}]
+    \draw [grnbr] ({pic cs:l3}) to ({pic cs:r3});
+    \draw [grnbr] ({pic cs:n3}) to ({pic cs:p3});
+    \draw [grnbr] ({pic cs:v3}) to ({pic cs:r3});
+    \draw [grnbr] ({pic cs:r3}) to ({pic cs:w3});
+    \draw [grnbr] ({pic cs:j3}) to ({pic cs:d3});
+    \draw [grnbr] ({pic cs:a3}) to ({pic cs:d3});
+  \end{tikzpicture}\ldots\right\}
+\]

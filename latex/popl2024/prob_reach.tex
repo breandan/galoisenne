@@ -1,0 +1,25 @@
+\begin{algorithm}[H]
+  \caption{Probabilistic reachability}
+  \label{alg:adaptive}
+  \begin{algorithmic}[1]
+    \Require $\mathcal{G}$ grammar, $\err{\sigma}$ broken string, $p$ process ID, $c$ total CPU cores, $t_{\text{total}}$ timeout.
+    \State $\mathcal{Q} \gets \varnothing, \mathcal{R} \gets \varnothing, \epsilon \gets 1, i \gets 0, Y \sim \mathbb{Z}_2^m, t_0 \gets t_{\text{now}}$ \Comment{Initialize replay buffer $\mathcal{Q}$ and reservoir $\mathcal{R}$.}
+    \Repeat
+      \If {$\mathcal{Q} = \varnothing$ or \textbf{Rand}(0, 1) $< \epsilon$}
+        \State $\hat\sigma \gets \varphi^{-1}\left(\langle\kappa, \rho\rangle^{-1}(U^{ci+p}Y), \err{\sigma}\right), i \gets i + 1$ \Comment{Sample WoR using the leapfrog method.}
+      \Else
+        \State $\hat\sigma \sim \mathcal{Q} + \textbf{Noise}(\mathcal{Q})$ \Comment{Sample replay buffer with additive noise.}
+      \EndIf
+      \State $\mathcal{R} \gets \mathcal{R} \cup \{\hat\sigma\}$ \Comment{Insert repair candidate $\hat\sigma$ into reservoir $\mathcal{R}$.}
+      \If{$\mathcal{R}$ is full}
+        \State $\hat\sigma \gets \argmin_{\hat\sigma \in \mathcal{R}} PP(\hat\sigma)$ \Comment{Select lowest perplexity repair candidate.}
+        \If{$\hat\sigma \in \mathcal{L}(\mathcal{G})$}
+          \State $\mathcal{Q} \gets \mathcal{Q} \cup \{\hat\sigma\}$ \Comment{Insert successful repair into replay buffer.}
+        \EndIf
+        \State $\mathcal{R} \gets \mathcal{R} \setminus \{\hat\sigma\}$ \Comment{Remove checked sample from the reservoir.}
+      \EndIf
+      \State $\epsilon \leftarrow \textbf{Schedule}\big((t_{\text{now}} - t_0) / t_{\text{total}}\big)$ \Comment{Update exploration/exploitation rate.}
+    \Until{$t_{\text{total}}$ elapses.}
+    \State \Return $\tilde\sigma \in \mathcal{Q}$ ranked by $PP(\tilde\sigma)$.
+  \end{algorithmic}
+\end{algorithm}

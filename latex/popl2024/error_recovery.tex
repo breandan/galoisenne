@@ -1,0 +1,46 @@
+\hspace{-0.5cm}\begin{minipage}[l]{6cm}
+    \[
+      \begin{NiceMatrix}
+        \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+        &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+        \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+        \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+        \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+        &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+        &      &      &      &      &      & \pcd & \cdd &      & C    \\
+        &      &      &      &      &      &      &      & T_C  & \vdd \\
+        &      &      &      &      &      &      &      &      & \\
+        &      &      &      &      &      &      &      &      & \\
+        &      &      &      &      &      &      &      &      & \\
+        &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+        \vno & \cdd &      &      &      &      &      &      & \vno &
+      \end{NiceMatrix}
+    \]
+\end{minipage}
+\hspace{1cm}
+\begin{minipage}[l]{6cm}
+  \begin{halftidyinput}
+  (*@\err{\texttt{⊤ and ⊤ ! and ⊥ xor ⊤ ! ⊤ and ⊥}}\caret{ }@*)
+  \end{halftidyinput}
+
+  \begin{verbatim}
+    Recovered 3 parseable leaves:
+  \end{verbatim}
+  \noindent\hspace{0.64cm}\emoji{herb}\hspace{1.70cm}\emoji{herb}\hspace{1.98cm}\emoji{herb}\vspace{-5pt}
+  \begin{verbatim}
+    └── ! [3]   └── and [4]   └── xor [6]
+  \end{verbatim}
+
+  \begin{verbatim}
+    Recovered 2 parseable branches:
+  \end{verbatim}
+  \hspace{0.64cm}\emoji{herb}\hspace{2.51cm}\emoji{herb}\vspace{-5pt}
+  \begin{verbatim}
+    └── S [0..2]     └── S [8..11]
+        ├── ⊤ [0]        ├── S [8..9]
+        ├── and [1]      │   ├── ! [8]
+        └── ⊤ [2]        │   └── ⊤ [9]
+                         ├── and [10]
+                         └── ⊥ [11]
+  \end{verbatim}
+\end{minipage}

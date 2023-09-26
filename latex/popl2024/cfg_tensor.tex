@@ -1,0 +1,111 @@
+\definecolor{R}{RGB}{202,65,55}
+\definecolor{G}{RGB}{151,216,56}
+\definecolor{W}{RGB}{255,255,255}
+\definecolor{X}{RGB}{65,65,65}
+
+\newcommand{\TikZRubikFaceLeft}[9]{\def\myarrayL{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+\newcommand{\TikZRubikFaceRight}[9]{\def\myarrayR{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+\newcommand{\TikZRubikFaceTop}[9]{\def\myarrayT{#1,#2,#3,#4,#5,#6,#7,#8,#9}}
+\newcommand{\BuildArray}{\foreach \X [count=\Y] in \myarrayL%
+{\ifnum\Y=1%
+\xdef\myarray{"\X"}%
+\else%
+\xdef\myarray{\myarray,"\X"}%
+\fi}%
+\foreach \X in \myarrayR%
+{\xdef\myarray{\myarray,"\X"}}%
+\foreach \X in \myarrayT%
+{\xdef\myarray{\myarray,"\X"}}%
+\xdef\myarray{{\myarray}}%
+}
+\TikZRubikFaceLeft
+{LA}{W}{W}
+{W}{LB}{LC}
+{LD}{W}{W}
+\TikZRubikFaceRight
+{W}{LK}{W}
+{LC}{W}{LG}
+{W}{LH}{W}
+\TikZRubikFaceTop
+{LA}{W}{LI}
+{W}{W}{LJ}
+{W}{LK}{W}
+\BuildArray
+\pgfmathsetmacro\radius{0.1}
+\tdplotsetmaincoords{55}{135}
+
+\showcellnumberfalse
+
+\begin{figure}
+  \[
+    \begin{align*}
+      o &\rightarrow \hiliD{so} \mid \hiliC{rs} \mid \hiliB{rr}\hspace{0.5pt} \mid \hiliA{oo}\\
+      r &\rightarrow \hiliE{so} \mid \hiliH{ss}\hspace{0.4pt}\mid \hiliF{rr}\hspace{0.5pt} \mid \hiliK{os}\\
+      s &\rightarrow \hiliL{so} \mid \hiliG{rs} \mid \hiliJ{or} \mid \hiliI{oo}
+    \end{align*} \phantom{=} \mathcal{H}_{\{o\}} = \begin{pmatrix}
+                                                     \hiliA{\pder{^2 o}{\cev{o}\partial\vec{o}}} & \pder{^2 o}{\cev{o}\partial\vec{r}} & \pder{^2 o}{\cev{o}\partial\vec{s}}\\
+                                                     \pder{^2 o}{\cev{r}\partial\vec{o}} & \hiliB{\pder{^2 o}{\cev{r}\partial\vec{r}}} & \hiliC{\pder{^2 o}{\cev{r}\partial\vec{s}}}\\
+                                                     \hiliD{\pder{^2 o}{\cev{s}\partial\vec{o}}} & \pder{^2 o}{\cev{s}\partial\vec{r}} & \pder{^2 o}{\cev{s}\partial\vec{s}}
+    \end{pmatrix}
+%    \mathcal{J} = \begin{pmatrix}
+%       \pder{o}{o} & \pder{o}{r} & \pder{o}{s}\\
+%       \pder{r}{o} & \pder{r}{r} & \pder{r}{s}\\
+%       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
+%    \end{pmatrix}
+  \]
+  \hspace{-0.5cm}\begin{minipage}[l]{4.3cm}
+                   \scalebox{0.8}{\begin{tikzpicture}
+                                    \clip (-3,-2.5) rectangle (3,2.5);
+                                    \begin{scope}[tdplot_main_coords]
+                                      \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+                                      \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+                                      \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+                                      \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
+                                        \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
+                                          \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
+                                          \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                                          \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                                          \ifshowcellnumber
+                                          \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
+                                          \fi
+                                          \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
+                                          \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                                          \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                                          \ifshowcellnumber
+                                          \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
+                                          \fi
+                                          \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
+                                          \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                                          \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                                          \ifshowcellnumber
+                                          \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
+                                          \fi
+                                        }
+                                      }
+                                      \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
+                                      (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
+                                      \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+                                      (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_z$};
+                                      \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+                                      (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
+                                    \end{scope}
+                   \end{tikzpicture}}
+  \end{minipage}
+  \begin{minipage}[c]{3.5cm}
+    \begin{align*}
+      \mathcal{H}_{\{r\}} = & \begin{pmatrix}
+                                \pder{^2 r}{\cev{o}\partial\vec{o}} & \pder{^2 r}{\cev{o}\partial\vec{r}} & \hiliK{\pder{^2 r}{\cev{o}\partial\vec{s}}}\\
+                                \pder{^2 r}{\cev{r}\partial\vec{o}} & \hiliF{\pder{^2 r}{\cev{r}\partial\vec{r}}} & \pder{^2 r}{\cev{r}\partial\vec{s}}\\
+                                \hiliE{\pder{^2 r}{\cev{s}\partial\vec{o}}} & \pder{^2 r}{\cev{s}\partial\vec{r}} & \hiliH{\pder{^2 r}{\cev{s}\partial\vec{s}}}
+      \end{pmatrix}
+    \end{align*}
+    \begin{align*}
+      \mathcal{H}_{\{s\}} = & \begin{pmatrix}
+                                \hiliI{\pder{^2 s}{\cev{o}\partial\vec{o}}} & \hiliJ{\pder{^2 s}{\cev{o}\partial\vec{r}}} & \pder{^2 s}{\cev{o}\partial\vec{s}}\\
+                                \pder{^2 s}{\cev{r}\partial\vec{o}} & \pder{^2 s}{\cev{r}\partial\vec{r}} & \hiliG{\pder{^2 s}{\cev{r}\partial\vec{s}}}\\
+                                \hiliL{\pder{^2 s}{\cev{s}\partial\vec{o}}} & \pder{^2 s}{\cev{s}\partial\vec{r}} & \pder{^2 s}{\cev{s}\partial\vec{s}}
+      \end{pmatrix}
+    \end{align*}
+  \end{minipage}
+  \caption{CFGs are witnessed by a rank-3 tensor, whose inhabitants indicate CNF productions. Gradients in this setting effectively condition the parse tensor M by constraining the superposition of admissible parse forests.\vspace{-10pt}}
+\end{figure}

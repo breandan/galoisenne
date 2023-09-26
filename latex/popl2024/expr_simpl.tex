@@ -1,0 +1,18 @@
+\[
+  \mathbf{M}^* = \begin{pNiceArray}{ccccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+                   \vno & \rcr \vs{1} & \Lambda_{1,3} & \Lambda_{1,3} & \rcw \Lambda_{1,4} & \cdd & \Lambda_{1,n} \\
+                   \vdd & \ddd        & \rcr\vs{2}        & \Lambda_{2,3} & \rcw\vdd               &      & \vdd \\
+                   &             &                   & \rcr\vs{3}        & \rcw                   &      & \\
+                   &             &                   &                   & \Lambda_{4,4}      &      & \\
+                   &             &                   &                   &                        & \ddd & \\
+                   &             &                   &                   &                        &      & \Lambda_{n,n} \\
+                   \vno & \cdd        &                   &                   &                        &      & \vno
+  \end{pNiceArray} \equiv
+  \begin{pNiceArray}{ccccc}[margin, extra-margin=2pt,colortbl-like, xdots/line-style=loosely dotted]
+    \vno & \rcr\Lambda_{1,3} & \rcw\Lambda_{1,4} & \cdd & \Lambda_{1,n} \\
+    \vdd & \ddd                  & \Lambda_{2,4}     &      & \vdd \\
+    &                       &                       & \ddd & \\
+    &                       &                       &      & \Lambda_{n,n} \\
+    \vno & \cdd                  &                       &      & \vno
+  \end{pNiceArray}
+\]

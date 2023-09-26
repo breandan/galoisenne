@@ -1,0 +1,382 @@
+POPL 2024 Paper #785 Reviews and Comments
+===========================================================================
+Paper #785 Syntax Error Correction as Idempotent Matrix Completion
+
+
+[ 4,
+[ 8, [ 5 ], [ [ 3 ] ] ],
+[ [ 7 ], [ ], [ [ [ 7 ] ] ] ],
+[ [ [ ], [ [ 0 ] ] ] ]
+]
+
+Review #785A
+===========================================================================
+
+Overall merit
+-------------
+D. Strong reject: I will argue for rejection.
+
+Reviewer expertise
+------------------
+X. Expert: I am an expert on the topic of the paper (or at least key
+   aspects of it).
+
+Summary of the paper
+--------------------
+The paper looks at the problem of error correction in artificial languages, like programming languages. This review focusses only on the theoretical part of the paper, which uses some matrix techniques  and not on the empirical justification based on the performance of an implementation. The problem here is given a string s and a CFG, find some string in the generated CFL that is close in Levenstein distance to s. While this problem has a fairly standard solution (intersect the CFG with the Levenstein automaton and find the shortest string in the intersected language, the authors investigate some alternatives.
+
+Assessment of the paper
+-----------------------
+This is a negative review so I will be explicit about the limitations and scope of my review, so the chairs can make an informed decision about the evaluation of this paper. 
+This is a technical review about some of the formal language elements here in this paper; I am not in the PL community so some of my observations may be off beam and reflect my lack of knowledge of notational conventions etc in this community. I also wasn't able to understand the whole paper, so this review very much reflects the first 10 pages or so, where the theoretical background is laid out.
+
+
+
+The paper is very interesting; there are lots of different ideas and concepts that are used throughout, and the general area of research -- online error correction for programming languages in editors or IDE, is well motivated, even in the current deep learning/copilot era. But though it is kind of fun to read (ursine dietary preferences is good), it is also very frustrating and hard to follow.
+
+The paper has two problems that make it not ready for publication in my view; first a presentational issue about how hard the paper is to follow, and how badly structured it is, and secondly some technical problems in the theoretical background. I should say that I was not able to follow the technical presentation at some points; especially I could not understand section 4.1 which is critical to understanding the paper, so the technical flaws may in the end be presentational flaws.I will describe these in the detailed comments section below.
+
+Detailed comments for authors
+-----------------------------
+Presentational issues
+---------------------
+
+The paper is very hard to read for various reasons; A) the paper is poorly structured and key definitions are promised and then never delivered clearly B) lot of ideas are introduced without proper preparation, notation is ill define and  there are lots of comments along the way that introduce entirely new and irrelevant concepts along the way; C) there are quite elegant and visually appealing  diagrams that don't help anything, D)  occasionally  entirely trivial observations are proved carefully,  E)  a lot of times things are defined in a very roundabout and convoluted way which introduces some additional friction to the reading process, and F) a minor issue is that  technical terms are used in a nonstandard way. 
+
+
+Let me give an example or two of each:
+A)
+The title talks about idempotent matrix completion, and then about Boolean tensor completion.
+But it is hard to find an explicit statement of  what this boolean tensor is and what the missing elements of the matrix/tensor are.
+
+
+. Line 141 the authors say, "We will begin by precisely defining the L-CFL reachability problem. Section 3" So one would expect that section 3 would have a very clear and  explicit statement; but we don't. We just have definition 3.1 which defines the LED distance as the number of edits.
+But the problem must use a CFG (i.e. a finite representation)  not a CFL and presumably we want not the distance but a string or strings that is a witness of that  distance.
+( I think CFL reachability is usually used for another problem involving graphs with labels on the arcs..)
+
+
+ B) In the overview section, where one would expect a general overview of the structure of the algorithms etc, line 78 has "This sequence can be viewed as an elliptic curve". This has nothing to do with anything else in the paper as far as I can tell and isn't used anywhere. So this may or may not be an interesting observation , but if it is going to be in the paper it should be in a discussion section, and what an elliptic curve is and how it relates to the sampling process, and why this is an interesting perspective should all be discussed. 
+
+line 238; "novel polynomial reduction from language equations onto XORSAT".
+But XORSAT is not used anywhere? 
+This sort of remark makes me expect that we will have a presentation of this reduction to XORSAT, but we only have SAT used later in several places? 
+There are maybe 10 places where we have similar digressions.
+
+C) Figure 2 talks about a tower of Hanoi;
+Figure 8 maybe is a good example; looks good, but this is a discrete distribution, the vertical lines don't seem to match the x-axis, 
+and the concept is very elementary.
+
+D)
+Lemma 3.2 is entirely trivial but is proved very slowly.
+
+E) Line 393: this is a definition of the set of terminals used in a string , $\Pi(\sigma)$. One can define this just by saying as I did "the set of terminals used in the string", or if one wants to be mathy 
+$\{ \sigma_i \mid 1 \leq i \leq n \}$ or some such formula. But instead we have the definition of the Parikh vector - an important theoretical concept in CF: and mildly context sensitive language theory -- and then 
+a formulation based on this. Which is unnnecessary complex and relies on introducing an extra theoretical concept that is only used here.
+
+F) 
+A lot of technical terms are used rather inappropriately;
+proposal distribution is a standard term from MCMC sampling for example, eg when using rejection sampling in the Metropolis-Hastings algorithm, and not just for the sampling distribution, matrix completion is usually used to mean when you have a matrix with missing entries and one wants to fill in the entries using some low-rank assumption. It's normal to talk about fixed points of a function, and solutions of an equation, but here they are often conflated (eg caption of Figure 1), and talking about the fixed point of an equation.
+CFL reachability normally means something different, involving labeled edges in a graph. 
+
+I think all of these flaws could easily be fixed with a careful rewrite that focuses on explaining the key technical elements more clearly, and less on interesting asides.
+
+
+
+Technical problems
+------------------
+
+Now I have a few significant technical concerns.
+First of all at a high level, there are fairly standard techniques for doing some of the things in this paper.
+For example, parsing with holes is trivial with a CKY parser.
+Just let V_1 be the set of nonterminals with a unit production,
+and add V_1 to the chart (dynamic programming table, or matrix here).
+Indeed one can do this with all holes simultaneusly, attach a cost to an edit and use standard weighted parsing algorithms to find the smallest number of edits. 
+At a high level this involves intersecting a regular language (acyclic DFA here) with a cfg, which the authors are aware of. 
+The weighted variants of this have had some attention recently ; 
+https://arxiv.org/abs/2209.06809
+https://www.cs.jhu.edu/~jason/papers/opedal+al.acl23.pdf
+
+(I am not an author either of these papers.)
+
+
+Secondly, the use of Valiant's "sub-cubic" algorithm.
+What is presented is just a notational variant of CKY algorithm in matrix form.
+Valiant's algorithm involves using more efficient ways of the doing the boolean matrix multiplications involvedd, which are not discussed here. The standard view -- perhaps not correct! -- is that the constants involved make the Valiant parser slower in practical applications. So a question for the authors -- do they actually use Valiants speedups and are they in practice faster? Or do they just use the normal cubic CKY.
+Also given that the underlying grammars are unambiguous, Earley parsing has an n^2 complexity. (Of course, when intersected  with some regular noise function it will no longer be unambigous)
+
+
+Finally, I find the use of finite fields very problematic.
+Para beginning line 222: the authors say that they can be represented as $\mathbb{Z}_2$,  and that this has the same algebraic structure. 
+It doesn't -- assuming Z_2 means the finite field of integers modulo 2, ie GF(2),
+this has 1+ 1 = 0, whereas we want the idempotent boolean semiring with 1+1 =1. This is a different algebraic structure and if you use this then the grammar will define not language membership but the degree of ambiguity 2, so if something has two parse trees then it will get 0 not 1.
+This may not be a problem with the implementation -- I suspect the implementation is quite different, and possibly this won't matter if the grammars are unambiguous -- but the theoretical analysis seems to rely on this.
+
+
+A few detailed comments
+-----------------------
+
+
+Beginning of section 4: 
+
+This is just a definition of a CKY parsing algorithm in matrix form, where the dynamic programming table is expressed as an upper diagonal matrix with bit vector entries and the iteration is expressed as a multiplication. This is as in Valiant but without the speedups.
+Note that this operation \otimes is not associative, so you need to define the transitive closure properly, which is not done here; i.e. M^3 needs to be the sum of two product
+
+It would be helpful to explicitly give this algebraic structure  a name S_G and then you could say that M  is an n+1 by n+1 dimensional matrix with entries in S_G.
+ How do you solve for the fixpoint? If all you are doing is iterating the computation then say that. If it is using a SAT solver say that. 
+
+
+Line 214-220 
+I can't follow the notation. \sigma with two arrows is defined correctly, but what are the entries on the matrices  in line 214 ?
+Why does $\sigma_1$ have a right arrow and $\sigma_n$ have an up arrow?
+Why does it have empty set rather than 0, since we defined the 0 to be the empty set and we operate in this domain. Why are all the entries $\Lambda$ the same, should these be all different? apart fron the final entry in the top right which has a *?
+Why is the first matrix $M^0$? I assume this superscript denotes a power, so should this be M or $M^1$?
+If not then the equation $M^* = M + M^2$ is undefined.
+What does the \Rightarrow mean? I assume it is one step in the fixed point iteration, but define the function then.
+
+
+Line 227: Why is this discussion here? 
+
+Section 4.1
+
+This is where I got stuck, I apologize. I couldn't understand this section.
+Line 247, $A(\sigma,G)$ is defined normally.
+A very minor criticism -- before we has. a string of length n and a matrix that was n+1 sized, and now we Neva n-1 and n respectively.  This could be made consistent.
+
+$\mathcal{M}$ is then introduced as an encoding of this set A. but the authors unhelpfully say that the precise encoding is immaterial.
+The entries are functions from boolean vectors to boolean vectors; but what do they represent?
+And how are they defined ?
+ Don't they have to have these holes/variables in them since they are described as "polynomimals" on line 236? So presumably polynomials in these variables.
+One would then expect an explanation of how it is encoded and how we solve it for fixpoints; but if it is idempotent then presumably it is already a fixed point? 
+
+The explanation is intended to be given in a large commutative diagram, but it doesn't look like the sort I am used to.
+Normally we have one label for each arrow, but here they all have two. Some of them appear to correspond to a pair of operations (+,x) and others to a single operation and its inverse. 
+But apart from that:
+what is Rubix?
+Why does Matrix label 2^V \times 2^V which is I guess an ordered pair of vectors.
+Why is the first  column labeled Parsing in contrast to the second?
+Why do we have G' rather than G?
+The beginning rightmost horizontal arrows have some detail that I don't understand? Perhaps indicating that it is an injection?
+If you have a binary operation then normally you have an arrow from M \times M to M 
+but here it is to M \times M.
+And lots of the functions and so on are not defined -- where does \phi come from, what are the two square operators?  
+An example, even a small one with n=3 or 4 would help a lot.
+
+The discussion of conjunctive grammars is interesting but CGs aren't just finite intersections of CFGs; the intersection is at the level of nonterminal derivations, so if all you want to do is intersect some CFGs you don't need to introduce the CG formalism.
+
+
+
+
+
+Minor but frequent formatting errors:
+-----------------------
+
+precision often occurs with a curly bracket structure after -- 
+eg line 950. Some artifact of an editor I suppose.
+
+There are many cases where there are weird wavy red underlinings of mathematical formula and other things. Eg line 191 \sigma has an underline. Is this a word processor spelling correction artifact, caused by importing it as pdf?
+(That's a bit meta for a paper on spelling correction methodology.)
+
+Questions to be addressed by author response
+--------------------------------------------
+Do you actually use Valiants speedups and are they in practice faster? Or do you just use the normal cubic CKY variant?
+
+What does matrix completion mean in this paper?
+
+Why not use an Earley parser which seems more efficient in these cases?
+
+At several points you talk about "solving". Does this always mean using a SAT solver?
+What are the advantages of using a SAT solver here rather than a standard polynomial time algorithm?
+
+Line 322: why use a CFG rather than a FA here?
+
+
+
+Review #785B
+===========================================================================
+
+Overall merit
+-------------
+D. Strong reject: I will argue for rejection.
+
+Reviewer expertise
+------------------
+Y. Knowledgeable: I am knowledgeable about the topic of the paper (or at
+   least key aspects of it).
+
+Summary of the paper
+--------------------
+This paper describes a family of techniques to extend the ideas of Valiant's sub-cubic CFG parsing strategy to suggest repairs for syntax errors. The general idea is to use a SAT encoding of Valiant's sub-cubic CYK-style parsing to find edits to an invalid string with holes inserted, and then to sample these efficiently (both in terms of speed and covering the space of possible repairs).  The paper lacks clarity on how all of the pieces of the work fit together, so it is difficult for me to summarize further.
+
+Assessment of the paper
+-----------------------
+Strengths:
+- Sensible approach to getting the partial parses of a CYK parser in faster time, which while not new to this paper, are new-to-PL
+- An implementation of the paper's core theoretical concepts with very performance on reasonable simple benchmarks.
+
+Weaknesses:
+- Critically, the paper lacks an overview of how exactly the many, individually-complex pieces fit together to accomplish the paper's main goal.
+- Critically, the paper uses many undefined notations that are not common in the PL literature, so it is often unclear what technical claims are being stated
+- Key details of key algorithms (such as the details of the SAT encoding) are not given
+- Some standard PL notation is misused in significant-enough ways that I am uncertain the paper's intended interpretation of that notation is the one
+- The paper often gives complex constructions without articulating their purpose or explaining why they succeed in providing important properties for correctness
+
+This paper has a wealth of very interesting ideas that I would love to see explored further. Unfortunately in its current state the paper is not ready to be published. The overall approach remains unclearly explained in the paper, partly due to lack of an overview and partly due to omitting key details about how the individual constructions in the paper are related. Background-wise it is far from self-contained, drawing on a wealth of mathematical theories without explanation or citation. The paper consistently starts using new notation that is never defined. Many constructions are described in insufficient detail (I can't complete the details of the construction), and/or are given without description of their purpose or any notion of correctness (which then makes it impossible to evaluate whether the construction described is in fact correct).
+
+I believe this paper's ideas are very promising, but the paper itself needs significant revision work to:
+1. include all relevant technical details,
+2. clearly articulate how all of the pieces fit together (and which pieces are speculative vs which are actually part of the current implementation), and 
+3. properly specify and justify all of the many intricate constructions in the paper
+
+Detailed comments for authors
+-----------------------------
+As I said, the ideas in this paper are very intriguing. The experimental results, suggesting good edits consistent with human edits as fast as reported in section 8, are great. This holds great promise! But unfortunately the submitted version does not adequately explain how the approach works end to end, which leaves me unable to assess in my role as reviewer *whether it works as intended*, which is critical to making an acceptance decision.
+
+At the end of the day, having read this paper carefully 3 times, I cannot say how TidyParse works. There were sections of individual technical bits in Section 4 that went beyond my background (though some of that is partly because the paper does not explain much of the notation it uses), but the fundamental issue is that the paper does not clearly explain how the parts of Section 4 fit together to actually implement suggestions for correction. Each individual piece seems like a plausible component of such a system, but I am left uncertain about how everything is related. My rough understanding is:
+
+1. Take the CFG, transform it into Chomsky Normal Form so the productions can be used with Valiant's construction
+2. Maybe, given a syntactically invalid string, insert some holes (how many?) and use a solver (the paper *explicitly* says this, but it sounds like using a bitvector encoding with a SAT solver) to solve for an idempotent matrix that would be the output of a successful parse. The paper is unclear on how unneeded holes are handled in this, and how deletions or replacements can be synthesized this way. This is sort of Section 4.1, which is quite brief.
+3. Or: It's actually unclear if the matrix formulation above is used only for parsing or is actually involved in suggesting repairs, because Section 4.3 suggests that a CFG describing all syntactically valid strings within a fixed edit distance of a broken string is dynamically generated, and strings from that CFG are sampled. The paper does not explain how this CFG is constructed. Section 4.3 claims this is from a straightforward extension of a Levenshtein automaton, but this section:
+  + doesn't explain Levenshtein automata, which are not currently common knowledge among POPL readers (a citation is given, but this is not enough for a key construction)
+  + doesn't explain what the extension is
+  + claims that reachability with that automaton is recognized by an infinite automaton constructed in a way that is also not common knowledge in the POPL community
+4. Assuming Section 4.3 is used rather than Section 4.1, *both* the automaton and grammar (why both?) are encoded in SAT, and a SAT solver is used for sampling accepting runs / derivations. The encoding sounds like k-bounded model checking, but details are sparse.
+5. Or: If Section 4.1 is used instead of 4.3 and 4.4, Section 4.5 describes optimizations to a SAT encoding that allow working with smaller matrices and ignoring portions of the matrices that don't contribute to successful parses. Section 4.6 describes another possible optimization, but per a later comment in the paper (line 1099) it's unclear if this is actually implemented; no algorithm is given in sufficient detail to actually implement the proposed optimization.
+6. In Section 4.7, it sounds like the *matrix* formulation is used for sampling. The math here lost me for lack of my own background (here most of the technical machinery is clearly identified and I happen to not be familiar with it). The description of how edit suggestions are read out of this process is not clear, because the details of how holes interact with parsing are not given clearly here or on Section 4.1.
+7: Some clever sampling is used to sample over all possible hole templates
+
+It is fundamentally unclear to me how the matrix encoding and the bounded reachability checking on the Levenshtein automaton are related; it seems like the exposition in Section 4 alternates between building on two very different formulations, whose relationship is never actually explained by the paper. It is not clear to me which is actually used for sampling, or how the solutions are encoded in the samples themselves (the description at the end of Section 4.7 is suggestive, but it's unclear how the decoding process works). This leaves me unable to see how all the parts fit together.  This is a fundamental issue with the paper: I can't support accepting a paper when I don't even see how all the parts are supposed to fit together, regardless of other concerns.
+
+And I do have other concerns:
+- The paper does not clearly explain if conjunctive grammars are *necessary* or if they're just an extension. If it's an extension, I'd rather the paper start by explaining only the necessary bits, then explaining extensions and performance optimizations *after* the core ideas are clear.
+- The paper is consistently handwavy with its claims to handling context sensitivity. By using conjunctive grammars, the paper *does* go beyond context-free expressive power. However, the paper suggests in a few places that all context-sensitive languages can be parsed with these techniques, but this is clearly impossible: the class of context-sensitive languages is equivalent to PSPACE, which strictly contains anything with a polynomial running time. Even aside from that, any specific conjunctive grammar is only the intersection of a fixed number of CFGs, let's call it N for some particular conjunctive grammar. It is well-known that additional intersections add more expressive power (https://link.springer.com/article/10.1007/BF01762237), and that even that hierarchy still does not capture the full class of context-sensitive languages. Rather than simply being some imprecise writing, this confusion leads to misleading examples in the paper. For example, the paper suggests several times that indentation checking or scope checking are feasible with this prototype, but this seems like overclaiming: indentation checking and scope checking are both context-sensitive grammatical properties, but critically I don't believe there's any way to support both *to arbitrary depth* (arbitrary indentation depth / arbitrary number of identifiers) using only a conjunction of a *finite fixed number of CFGs*. If I can always add additional identifiers or additional levels of nesting and produce a text that would not be in the grammar even though it has valid indentation or scoping, the problem is not solved. There does not appear to be a great deal known about the expressive power of conjunctive grammars specifically in comparison to context-sensitive grammars, beyond the fact that it seems any given grammar must live at some fixed point on the hierarchy I cited above. So it's possible I'm missing a subtle trick with conjunctive grammars, but I'd be thoroughly surprised if the general solution to identifier scoping or indentation could be described using conjunctive grammars
+- While the experiments in Sections 8.1-8.3 are reasonable, and if I were convinced the theory in the paper was correct I'd think those were adequate experiments, Section 8.4's experiments seem too synthetic to be informative (for the first experiment), and unreliable in the sense of relying on a special optimization tailored to the exact syntax error the experiment was looking for, which is totally unrealistic for parsing a general programming language with a wide array of syntax mistakes to make (for the second)
+
+
+Taking all of this into consideration, I do not believe the paper is publishable in its current form: there is simply not enough clarity in the technical presentation to evaluate the correctness of the technical claims. The technical errors I can identify in the paper (see line-by-line comments below) give me concerns that the parts of the paper with less rigorous expositions may be hiding more serious technical mistakes.
+
+As I said earlier though, the approach in this paper is extremely intriguing, and I would love to read an improved version that addresses these weaknesses in the future. The overall ideas are great. Clearly the implementation is doing something. This draft has convinced me the ideas have promise, but it has not convinced me that they are correct (i.e., that TidyParse works as advertised, and works for the reasons the paper claims).  Adding the amount of technical clarifications I am asking for requires significant space. I would recommend the following to make room:
+- Drop Lemma 3.3: a wildly generous upper bound that is then not used for anything beyond emphasizing that the space of edits is large is not technically interesting. The statement and proof take up 1/3 to 1/2 of a page. If you really want a bound, surely there is existing work you could cite that gives an upper bound on the number of strings within Levenshtein distance d, and using the same trick (the CFG of all words except sigma) that gives an upper bound on the admissible set, which would then also be tighter than the bound given here in addition to saving space.
+- Cut down on the extensive graphical depictions in Section 6. Most of the figures add little in the way of clarity about the technique's capabilities or use, even if they are visually appealing and do lend credence to the "reality" of the techniques.  But given that the paper does not actually do a qualitative human user evaluation of the tool utility or the usability aspects of the interface, these end up being very verbose re-explanations of use cases already discussed earlier in the paper, and evaluated in a more precise way in Section 8.  I would actually go so far as to suggest dropping Section 6 altogether.  More generally, this is tied to a theme in the paper, where the paper is of two minds about whether or not it is a tool paper or a research paper. Tools and their validation are an important part of research, but in this case the visual experience of using the tool is orthogonal to the technical contributions the paper is trying to make.
+
+Together those two suggestions would reclaim almost 3.5 pages which could be put to good use better explaining the details of the technical constructions in Section 4. I'd suggest dropping the experiments in 8.4 as well.  Then restructure the paper to first explain only the pieces strictly required for the approach: initially ignore all of the optimizations (tensor sparsification, isolation, reduction, minimization) to focus on the core ideas of the approach, and explain those in full detail. If the approach works with only CFGs, and can be done without using any conjunctions of grammars, defer conjunctive grammar discussions as well. Then once that simpler version is explained, loop back and go through the optimizations and enhancements needed to make the technique truly efficient.
+
+
+Line-by-line and low-level comments:
+- "Therefore" is consistently mis-spelled without its final 'e' throughout the paper
+- line 101: "As show" -> "As shown"
+- line 130: Laying out a set of totally ideal critera and then stating that "most" are satisfied by the paper's solution is odd; just say which criteria are actually satisfied.
+- line 154: define this "$\ell : \mathcal{L}$" notation or use something more standard. After some cross-referencing, it appears that $\mathcal{L}$ is supposed to be the class of context free languages, and $\ell$ is supposed to be an arbitrary (universally quantified) CFL. But this should not require detective work by readers. It's also inconsistent with both other work drawing on formal languages *and later sections of this paper* where $\mathcal{L}$ is a function from a grammar to the set of strings in the language described by the grammar.
+- line ~157: this inequality $1\le\Delta^*(\sigma...,\ell)\le q$ only makes sense if the sigma with the squiggle under it is syntactically invalid (otherwise the lower bound should be zero. This is fine, but please *say* that's what the sigma-squiggle ranges over.
+- line 162: There may not be a unique smallest such member, this line should mention "a member of minimal length"
+- line 175: Lemma 3.3 is both subtly wrong and not useful for the rest of the paper. First, the top number in the binomial coefficient should be $cn+n+c$, not $cn+n+1$, for the construction described. If $c$ $\epsilon$s are added between each pair of characters and before and after, that's $c(n+1)=cn+c$ $\epsilon$ locations, plus the $n$ original characters. This upper bound is nowhere near tight, so I'm not sure what it's value is. It would make sense is this bound were later used to show that the complexity is in fact less than some even worse bound, but it's not. So this lemma isn't used later in the paper (there's a reference alluding to the interleaving of $\epsilon^c$ as done in this construction, but that could just be described there), and doesn't by itself establish an independently interesting bound. I would just drop this lemma.
+- line 208: This line uses $\mathbb{G}$ as both a *specific* individual grammar and as a *type* (roughly, set) of grammars. Either specialize to $R_\mathbb{G} : \Sigma^n\rightarrow\mathbb{B}$, or adjust to use a variable $G\in\mathbb{G}$ in referring to the parameter of an instance of the construction. Line 221 seems to partly do this.
+- line 213-219: This description of matrix solving uses a mix of undefined and inconsistent notation. The preceding text describes a $\sigma$ with a superscript of both an upwards and rightwards arrow. Then the entries in the matrix appear with only upwards or rightwards arrows. Other entries that are not necessarily equal to each other appear as a single variable $\Lambda$. I happen to be familiar with matrix-based parsing of languages so I know what's going on, but I fear that readers who had not previously encountered these ideas would be very confused by the notational inconsistencies. Please (a) explain the arrow convention, including up vs right vs both, and (b) don't use the same variable for matrix entries that aren't necesarily equal.
+- line 223: "characteristic function, $\mathbb{1}$" I have never seen the notation $\mathbb{1}$ used for anything that was not simply a unit. Do you mean $\mathbb{2}$? Even then, that's typically used for booleans, not characteristic functions whose codomain is the set of boolean values. Can you clarify this?
+- line 223: What is $\circledast$ in this context? This is the only occurrence in the paper.
+- line 242: Note for next comment: As defined, Definition 4.1 sets up for the domain of H to be strings in $\Sigma^n$, \emph{not} $\underline{\Sigma}^n$.
+- line 247: This line describes $\sigma : \underline{\Sigma}^n$, but then talks of $H(\sigma)$, which per the previous comment, doesn't make sense. Is there a mistake in this definition? Or is the Definition 4.1 overly conservative?
+- Also Definition 4.2, plus following diagram: I cannot find definitions or descriptions for these notations anywhere in the paper:
+  + What is $\langle\sigma,\mathcal{G}\rangle$?
+  + What is $\mathcal{M}$? Or $M$?
+  + As above, what are all these $\mathbb{1}$s?
+  + What are these various plus and times operators? From context it seems they're probably supposed to be semiring operators, but the paper is not explicit
+  + It looks like there's a problem with the left side of the arrows the right column of arrows. If not, this is a notation I've never seen before.
+  + What is $\phi$ here?
+  + What is $\mathcal{V}$?  The paper says on line ~266 that $\mathcal{V}$ "is" a function from $|V|$ bits to a single bit, but what's $V$? The non-terminals of a grammar? And does this line mean $\mathcal{V}\in...$ or $\mathcal{V}=...$? The text is ambiguous
+- What is the purpose of the commutative diagram on page 6? The text beforehand suggests it has to do with being able to shift representations and solve equivalent problems in different forms, but the paper (here and later) is vague on exactly which conversions are actually used in the paper (and the plethora of undefined notation makes it hard to map later sections of the paper back to this diagram). Reading between the lines later, it seems the paper solves for idempotent matrices by encoding the solution space into SAT (with a few tricks for smaller encoding). But it's unclear what the difference between the bit and SAT columns is supposed to indicate in this figure.
+- page 7 equation 2: What does this $\equiv_\sigma$ notation mean?
+- line 309/310: this is the only mention of a grammar DSL in the whole paper. It's also out of context in this section on the formal development, which doesn't care about your DSL but about the class of grammars you're working with.
+- lines 312-315: These are not denotational semantics. The rules to the left seem to define "syntactic" validity,  the 3rd rule defines a condition under which a word is in the intersection of two grammars.  The last rule is sort of the inverse of the 3rd, but is not needed to define the intersection meaning... and what is Gamma here?  There are no environments or stores, so I'm not sure what role $\Gamma$ should play, or what domain it ranges over. Part of the problem is that the paper has not defined the judgment form(s) it is using. In $-\vdash-:-$, what are the domains of the 3 components of the judgment form?
+- Section 4.3: This section sounds really cool: dynamically instantiating a CFG to recognize the members of $\Delta_d(\sigma)$? Super cool! But the section doesn't explain the details of how this is done in adequate detail for me to check that this works.  What are "the transition dynamics of $\mathcal{L}(\sigma,d)$"?  For that matter, what is $\mathcal{L}(\sigma,d)$? The discussion of a non-deterministic infinite automaton's topology factorizing into products of certain other topologies sounds intriguing and it's clear this is meant to be established content. But it's not something I've seen before, and not something most POPL reviewers have seen before. I can understand not wanting to explain the details from scratch, but this is niche enough relative to what is well-known in the POPL community that it warrants at least a citation or two that I could go read to understand this in detail (Googling doesn't seem to turn up anything obvious). The section closes by saying "The structure of this space is approximated by an acyclic NFA, populated by .... or equivalently ..." But the paper doesn't say what notion of approximation is in play (so I can't check if it's true). This is a recurring problem with the paper's current form: so many of these technical details are not described in the paper and not even backed up with citations I can check that I'm left unable to verify the paper's technical claims, not because of me failing to understand something, but because the paper has not been clear about what it is I'm even supposed to understand.
+- Section 4.4:
+  + Isn't item (2) just the correctness criterion for $G(-,-)$? It seems like just a description of what $G$ is supposed to be describing
+  + What does it mean to encode the Levenshtein automaton and grammar as a single SAT formula? Why are both necessary, if they're supposed to be equivalent?
+  + Typically the dot between parentheses would indicate the $\phi_d$ is a function. What is supplied? The incorrect string? In that case, shouldn't $\phi_d(\sigma)$ or similar be returning UNSAT, rather than the function applied to nothing?  If not, what does the dot signify?
+  + The algorithm here isn't clear, partly because not enough details of the SAT encoding are given. The mention of "gradually admitting new acceptance states at increasing radii" sounds a lot like bounded model checking of the automaton with increasing depth. Is that what's going on? If so, how does the grammar factor into this beyond being derived from the grammar?
+  + Line ~358: aren't finding a satisfying assignment and attaining $d^*$ equivalent? If you start with radius 1 and then increase the radius until you find a satisfying assignment, isn't that radius $d^*$?
+- line 384: Please don't use "..." in text, it opens the doors for readers to complete that ellipsis incorrectly
+- Definition 4.9: This definition makes intuitive sense --- if extending the substring on both sides always contains a parse tree of the original substring, then that seems like you can just abstract the string by the non-terminal characterizing the substring.  Except I'm not convinced the notion of identity of parse trees here is right (or more precisely, the paper doesn't specify its notion of identity, making this definition ambiguous). Consider a (normalized) grammar recognizing $(aaa)^*$, and let's say $\alpha=aaa$ so one of the parse trees will have a root with the start symbol $S$. Let's assume that $S\rightarrow S\ S$ is a production in $G$. Then $T_\alpha$ will be a bunch of $X$ parse trees. But then consider $a\alpha{}aa$. Because of the hypothesized production rule, this will have a parse tree as $S$ whose two subtrees are each structurally equivalent to the original parse of $\alpha$. But does this count as isolated? Each of those subtrees corresponds to a different overlapping section of $\alpha$, splitting it in a way that runs contrary to the intuition the earlier text was suggesting about other productions not being able to "strip away" parts of this string. Did I misunderstand something? Is this example $\alpha$ isolated per your definition / does your definition assume positions in the substring are part of parse tree identity?
+- Line 437: "sufficiently large n" How do we know what this $n$ is?
+- Line ~450/451: The $-~-$ notation for sampling is not uncommon, but it's worth reminding readers given the volume of other notations in the paper, and the breadth of mathematical paper being incorporated (not all readers will come to this paper familiar with that notation)
+- line ~456: What does "at least exactly once" mean? What does "at most approximately once" mean?
+- line 501: What's this double $\in$ notation? a typo?
+- Section 4.9
+  + Item (1): what does the hat over sigma mean? Is this referring to the local variable in the pseudocode that is introduced later on the page?
+  + Item (6): What is LFSR? Please define and cite
+- line 593 and 634: What is "matrix powering"? I can't find any use of this term in the literature, but from the use on line 634 this just sounds like matrix multiplication?
+- Figure 10: What is this figure supposed to show? Please explain it, it's not mentioned in the text and it not self-explanator.
+- Section 5.4: This is an interesting idea, though I think the paper should note that CYK parsers could do something similar. I'm also skeptical of the usability of this approach: most Python programmers are not intimately familiar with the CFG for its syntax.
+- line 710: the most common type of color-blindness is red-green color blindness, consider a different color palette
+- line 723: in this context, "type" is confusing, I think you mean non-terminal?
+- line 750: see longer discussion above about context sensitivity
+- Section 6.1: This is not what "syntax highlighting" is normally taken to mean: "syntax highlighting" is usually meant to describe formatting different classes of the syntax differently for easier scanning of the source code, e.g., formatting keywords differently from identifiers and strings. This is related, but I don't think it's the best term for what 6.1 describes.
+- Most of 6.1-6.3 seem to describe things that are not unique to this paper's parsing approach, but are more speculative UI features that could be implemented atop *any* approach for suggesting syntax repairs. I don't think this part of the paper adds to understanding of the techniques, but it does consume space I think would be better used to more thoroughly explain the technical material.
+- Section 6.4: I thought this system was using conjunctive grammars. I can see how the two rules shown transform grammar productions indexed by finite sets into regular CFGs. This is a nice feature for use probably, but it's not new, and this also seems like the paper has veered off into highlighting usability aspects that are unrelated to the main research contributions. This space would be better spent in other ways.
+- Section 6.5: Again, see earlier note about context sensitive grammars
+- Section 7.1 / 7.2: These sections don't discuss any work on parser error recover, or syntax highlighting for partial or syntactically-invalid programs.... There's a *huge* amount of prior work on this, none of which is addressed. For example, just following the transitive references from https://dl.acm.org/doi/abs/10.1145/2400676.2400678 only scratches the surface. I don't expect 200 citations here, but I do expect a meaningful summary of the work in the area and a meaningful comparison to this work.
+- Section 8: 
+  + Please define "Precision@k" and related notations; even if these are common in Seq2Parse and related papers, they're not universally known (and won't necessarily remain unchanged in 5 years)
+  + Most of the experiments seem reasonable for validating a prototype's feasibility, but it's hard to really evaluate whether 40-50 character/token snippets are really representative
+  + I don't understand the value of the experiments in Section 8.4. The first experiment is so synthetic that I don't see the relevance of those results at all. The second experiment seems to rely critically on adding an additional grammar production to basically set aside all non-brackets in order to solve a smaller problem. This is clever engineering, but not something you could do for every possible kind of parsing mistake for a large grammar. What's the performance look like without this trick? That scenario would be more representative of doing this for an arbitrary language grammar without knowing in advance what kind of syntax errors would need to be repaired.
+- line 1099: Wait, is optimization based on isolation actually implemented, or was that purely speculative?
+- line 1151: again, this is possible with CYK parsers as well.
+
+Questions to be addressed by author response
+--------------------------------------------
+- Please explain the diagram on page 6, including defining all notation, and explain the relevance of the Recognition and Synthesis columns of the figure.
+- Can you give a high-level overview of the sequence of steps in your approach, going from the CFG and syntactically-invalid string to the generation of repair suggestions? The paper basically jumps between (critical!) subtasks but never fully ties things together, so while the individual pieces make sense it is not clear how all of them are connected. It's hard to tell which pieces of the paper are critical to the main task and which are asides, particularly regarding the frequent but brief mentions (but not explanations) of synthesis.
+- How is the grammar mentioned in Section 4.3 constructed?
+- What is the relationship between the use of the SAT solver to find related strings in Section 4.4 and the probabilistic sampling of 4.7? In particular, it's unclear to me how to use a SAT solver (which gives no distributional guarantees about what solutions it might return) as part of the controlled sampling approach.
+- How reasonable / representative are 40-50 character/token code snippets?
+- Why are the experiments in Section 8.4 informative?
+
+
+
+Review #785C
+===========================================================================
+
+Overall merit
+-------------
+C. Weak reject: I lean towards rejection.
+
+Reviewer expertise
+------------------
+Y. Knowledgeable: I am knowledgeable about the topic of the paper (or at
+   least key aspects of it).
+
+Summary of the paper
+--------------------
+This paper presents a technique for suggesting repairs to an input string to make it belong to a given context-free grammar.  The method is based on randomly generating a template string with “holes” and then parsing the string using a variant of Valiant’s algorithm to yield a candidate repair.  Many such repairs can be sampled and ranked by perplexity, as determined by a pre-trained Markov chain.  The method is implemented in a tool called Tidyparse, and is shown to be fast and precise on a dataset from StackOverflow.
+
+Assessment of the paper
+-----------------------
+The paper addresses an important problem, and uses lots of interesting mathematical machinery.  However, it omits several important pieces of background information as well as details about the approach, and the narrative structure is unclear.  I believe it needs significant revision before it can be published.
+
+There is an obvious way to compute the intersection L(G_1) /\ … /\ L(G_n) /\ \Delta_d(\sigma), by constructing the Levenshtein automaton for \sigma, and then performing the intersections from right to left. The resulting automaton is acyclic and easy to sample from (albeit not perfectly uniformly).  I believe that this is the strategy described in section 4.3 / 4.4, but then it is dropped.
+The paper should compare with this baseline.
+
+Detailed comments for authors
+-----------------------------
+- Page 2 line 77: “valid” strings?
+- Page 2 line 78: “can be viewed as an elliptic curve”: how?
+- Section 3 should define Levenshtein distance.
+- The “under tilde” notation is easy to miss.
+- Lemmas 3.2 and 3.3 do not appear to be used substantially in the paper.
+- Page 4 “this problem is ill-posed”: define the problem first.  It’s obvious that the solution to this problem is not unique, and it’s only ill-posed under the requirement that it is.
+- Page 5: $\sigma^\rightarrow$ and $\sigma^\uparrow$ are not defined.
+- Page 5 line 214: the fixpoint M* = M + M^2 is not uniquely determined.  
+- Page 5 line 222 “...can be represented as $\mathbb{Z}_2^{|V|}$”: describe the encoding
+- Page 5 line 223 what is \oast?
+- Section 4.1: Describe the reduction to XORSAT and prove its correctness.  The diagram on page 6 does not make sense to me (what is a “Rubix”?).
+- Section 4.2: I could not follow this.  My assumption is that the problem is parsing with holes for a conjunctive grammar, but this is never mentioned.  Where is Equation 2 used?
+- Page 7: I don’t understand the sense in which the inference rules constitute a “denotational semantics”
+- Section 4.3: the description of Levenshtein automata is incorrect: vertical transitions accept any single letter (not Kleene stars).  The “knights move” should not exist – instead, the diagonal transition should be able to recognize \epsilon (corresponding to deletion).  The explanation of the automaton using monotone Chebyshev / knight’s topology should be simplified to avoid this jargon.
+- Page 8 line 362: “the resulting intersection is a conjunctive language”: it’s finite.
+- Move optimizations (sec 4.5, 4.6, 4.8) to the base method to a separate subsection to make the structure of the core method easier to follow.
+- Section 4.5: What tensor? 
+- Section 4.7:  
+  - Line 459: what is $k$?
+  - Define ergodicity and periodicity.  C is a characteristic polynomial of what?  This section is in need of a high-level description of the method before going into the details (I think the idea is to enumerate all bitvectors using a linear-feedback shift register, but this is not mentioned anywhere)
+  - What is p? on line 484 (p also re-used in next paragraph)
+  - Page 12 line 541 There are \sum_{d=1}^q (n \choose d)$ total hole templates: is that all?  What is the argument?
+- Page 12 line 555 define LFSR
