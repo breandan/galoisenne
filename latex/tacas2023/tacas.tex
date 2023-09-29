@@ -1,0 +1,248 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+%\usepackage{graphicx}
+%\usepackage{mathtools}
+%\usepackage{amsfonts}
+%\usepackage{amssymb}
+%\usepackage{textcomp}
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\input{preamble.tex}
+\begin{document}
+%
+\title{Syntax Repair as Idempotent Tensor Completion}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Breandan Considine\inst{1} \and
+Jin Guo\inst{1}\and
+Xujie Si\inst{2}}
+%
+\authorrunning{Considine et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{McGill University, Montr\'eal, QC H2R 2Z4, Canada\\
+\email{\{breandan.considine@mail, jguo@cs\}.mcgill.ca}\and
+University of Toronto, Toronto, ON, M5S 1A1 Canada\\
+\email{six@utoronto.ca}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+
+We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto a Boolean tensor completion and compare various techniques for introducing the holes, and solving for their inhabitants. Our technique has practical applications for real-time syntax correction in programming languages.
+
+\keywords{Error correction \and CFL reachability \and Langauge games.}
+\end{abstract}
+
+\section{Introduction}
+
+Syntax repair, broadly speaking, is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. The result is a tool that is applicable to any context-free and conjunctive language, and which is provably sound and complete up to a Levenshtein bound.
+
+\subsection{Problem}
+
+Syntax repair can be framed as a language intersection problem between a context-free language (CFL) and a string with holes.
+
+\begin{definition}[Bounded Levenshtein-CFL reachability]
+  Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the bounded Levenshtein-CFL reachability problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $L(\err\sigma, d) \cap \ell$.
+\end{definition}
+
+To solve this problem, we will instead pose a simpler problem, then provide a few strategies for solving it exactly or approximately.
+
+\begin{definition}[Porous completion]
+  Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+\end{definition}
+
+\begin{definition}[Ranked repair]
+  Given a finite language $\ell^\cap := L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+  \begin{equation}
+ R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
+  \end{equation}
+\end{definition}
+
+Our main innovation and the central problem this paper tackles is, given $\err\sigma, d, P_\theta$, to find $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy.
+
+\subsection{Solving}
+
+There are a number of strategies to tackling this problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the following algebra:
+
+\begin{equation}
+  X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
+\end{equation}
+
+\begin{equation}
+  X \otimes Z := \bigoplus_{w, x, z}\big\{w \rightarrow (l + r) \mid [w\rightarrow xz] \in P, \langle l, r\rangle \in X(x) \times Z(x)\big\}
+\end{equation}
+
+After the fixpoint $M^*$ is attained, the solutions can be read off via $M^*[0, |\sigma|](S)$. The issue here is an exponential growth in cardinality when eagerly computing the Cartesian product, which becomes impractical for even small strings. We can make this encoding more compact by propagating an algebraic data type (ADT) $\mathbb{T}_2$ using the operations $\oplus, \otimes: 2^{\mathbb{T}_2} \times 2^{\mathbb{T}_2} \rightarrow 2^{\mathbb{T}_2}$ as follows:
+
+\begin{equation}
+X \oplus Z := \{\mathbb{T}_2(k, Q_x \cup Q_z) \mid (k, Q)_X \Join_k (k, Q)_Z\}
+\end{equation}
+
+\begin{equation}
+X \otimes Z := \bigoplus_{w, x, z}\big\{\mathbb{T}_2(w, \{\langle T_x, T_z\rangle\}) \mid [w\rightarrow xz] \in P, x \in \pi_1(X), z \in \pi_1(Z)\big\}
+\end{equation}
+
+Decoding, then becomes a matter of enumerating binary trees from the ADT using a recursive choice function that emits a sequence of strings satisfying $A(\sigma)$, with the type signature $\mathcal{C}: \mathbb{T}_2 \rightarrow (\mathbb{N} \rightarrow \Sigma^*)$ defined as follows:
+
+\begin{equation*}
+  \mathcal{C}(t: \mathbb{T}_2) := \begin{cases}
+                     \pi_1(t) & \text{if $\pi_2(t) = \varnothing$, or}\\
+                     \big\{x + z \mid \langle X, Z\rangle \in \pi_2(t), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(\mathcal{G}')}|\sigma|)$}.
+  \end{cases}
+\end{equation*}
+
+\subsection{Example}
+
+Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus:=\cup$, $X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+
+\begin{small}
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                 \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix} \\\hline
+  $M_\infty$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix}\\\hline
+\end{tabular}\\
+}
+\end{small}
+
+The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however these both are recognizers. That is to say, $[S\in M_{0, 3}]\Leftrightarrow [M_{0, 3, 3}=1] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since we have $V_{0, 3} = \{S\}$, we know there exists at least one solution to $1$ \_ \_, but $M_\infty$ does not tell us what they are.
+
+%$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
+
+In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. To encode $M = M^2$ we proceed as follows, defining $X \otimes Z \coloneqq [X_2 \land Z_1, -, -, X_1 \land Z_0]$ and $X \oplus Z \coloneqq [X_i \lor Z_i]_{i \in [0, |V|)}$.
+
+\begin{align}
+V_{0, 2} &= V_{0, 1} * V_{1, 2}\\
+         &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]\\
+         &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}]\\
+         &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]
+\end{align}
+
+\begin{align}
+  V_{1, 3} &= V_{1, 2} * V_{2, 3}\\
+  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
+  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
+  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
+\end{align}
+
+\begin{align}
+  V_{0, 3} &= V_{0, j} \cdot V_{i, 3}\\
+  &= V_{0, 1} * V_{1, 3} + V_{0, 2} * V_{2, 3}\\
+%  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
+  &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
+\end{align}
+
+Now, we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
+
+\begin{align}
+V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
+  &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
+  &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
+  &= N \in V_{0, 1} \land O \in V_{1, 2} \land N \in V_{2, 3}
+\end{align}
+
+Now we know $\sigma =$ 1 \underline{O} \underline{N}, which tells us $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times N\}$.
+
+\subsection{Ranking}
+
+Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after all solutions have been found.
+
+%Alternatively, this expression can be rewritten as a polynomial over GF(2):
+%
+%\[
+%  (v_1 \times w_2 + y_3 + 1) \Leftrightarrow [S \in Y] \Leftrightarrow [Q R \in L(G)]
+%\]
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+% \bibliographystyle{splncs04}
+% \bibliography{mybibliography}
+%
+\begin{thebibliography}{8}
+\bibitem{ref_article1}
+Author, B.: Article title. Journal \textbf{2}(5), 99--110 (2016)
+
+\bibitem{ref_lncs1}
+Author, F., Author, S.: Title of a proceedings paper. In: Editor,
+F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
+Springer, Heidelberg (2016). \doi{10.10007/1234567890}
+
+\bibitem{ref_book1}
+Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
+Location (1999)
+
+\bibitem{ref_proc1}
+Author, A.-B.: Contribution title. In: 9th International Proceedings
+on Proceedings, pp. 1--2. Publisher, Location (2010)
+
+\bibitem{ref_url1}
+LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
+Oct 2017
+\end{thebibliography}
+\end{document}

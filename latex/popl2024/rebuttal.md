@@ -27,7 +27,7 @@ We can define = in terms of {xor, ʌ, ⊤}:
 
 (a = b) <=> (a xor b) xor ⊤ <=> (a + b) + ⊤
 
-To encode M = M^2 case, we must first compute Y = V × W:
+To encode M = M^2, we must first compute Y = V × W:
 
           Q->RS  R->QS  S->QR
 V \dot W=[v2ʌw3, v1ʌw3, v1ʌw2]
@@ -47,7 +47,7 @@ Alternatively, this expression can be rewritten a polynomial over GF(2):
 (v1 × w2 + y3 + 1) <=> [S ∈ Y] <=> ["Q R" ∈ L(G)]
 ```
 
-Where `v1` can be interepreted as the truth value for "Is Q in hole 1?" and `w2` is interpreted as the truth value for "Is R in hole 2?" and `y3` is interpreted as the truth value for "does the entire string derive S?". This says that iff the string is recognizable by G (`y` is true), then the nonterminal Q must be hole 1 (`v1` is true) and R must be in hole 2 (`w2` is true).
+Where `v1` can be interpreted as the truth value for "Is Q in hole 1?" and `w2` is interpreted as the truth value for "Is R in hole 2?" and `y3` is interpreted as the truth value for "does the entire string derive S?". This says that iff the string is recognizable by G (`y` is true), then the nonterminal Q must be hole 1 (`v1` is true) and R must be in hole 2 (`w2` is true).
 
 ## Reviewer #785A
 
@@ -113,7 +113,7 @@ We thank reviewer #785B for their careful reading and thoughtful comments. We ar
 
 #### On the necessity of Conjunctive Grammars
 
-We agree that conjunctive grammars are not strictly necessary for our approach, but they are a natural fit for and are more expressive than CFGs. Computing intersections between CFGs allows us to encode future semantic properties and conjunction can be easily expressed with a SAT solver by appending additional constraints in conjunctive normal form. Futhermore, computing the intersection between a regular language (REG) and CFL as the intersection between two CFLs (CFL ∩ CFL) is simpler than using the Bar-Hillel construction (REG ∩ CFL) and avoids specialization or refactoring.
+We agree that conjunctive grammars are not strictly necessary for our approach, but they are a natural fit for and are more expressive than CFGs. Computing intersections between CFGs allows us to encode future semantic properties and conjunction can be easily expressed with a SAT solver by appending additional constraints in conjunctive normal form. Furthermore, computing the intersection between a regular language (REG) and CFL as the intersection between two CFLs (CFL ∩ CFL) is simpler than using the Bar-Hillel construction (REG ∩ CFL) and avoids specialization or refactoring.
 
 #### Context sensitivity
 
@@ -153,7 +153,7 @@ Recognition is the process of deciding whether a given string is contained in th
 
 > Can you give a high-level overview of the sequence of steps in your approach...?
 
-The approach we offer is less a sequence of steps than a general framework for solving a class of language intersection and membership problems. Many paths through the commutative diagram are possible to obtain the same result. The fastest path we have found in practice is to compile the problem into a circuit with free variables, then solve for the inputs that satisfy the circuit. The high-level steps for are as follows:
+The approach we offer is less a sequence of steps than a general framework for solving a class of language intersection and membership problems. Many paths through the commutative diagram are possible to obtain the same result. The fastest path we have found in practice is to compile the problem into a circuit with free variables, then solve for the inputs that satisfy the circuit. The high-level steps are as follows:
 
 1. Rewrite the grammar into Chomsky Normal Form (CNF).
 2. Given an invalid string, sample hole locations using the probabilistic sampler.
@@ -265,7 +265,7 @@ We refer Reviewer #785C to the remarks under All Reviewers.
 
 #### Obvious way to compute the intersection
 
-In practice, we only need two grammars to compute the intersection $\mathcal{L}(\mathcal{G}) \cap \Delta_d(\sigma)$ (CFL ∩ LEV), but in general there may be more than two grammars in the conjunctive case. It may be possible to sample paths through the Levenshtein automaton, but in practice when using the Levenshtein automaton, we encode the bounded L-CFL reachability problem as a single SAT instance and let the solver find all solutions directly. We must confess is a little unclear here precisely what baseline the reviewer is referring to, but perhaps they are referring to sampling $\Delta_d(\sigma)$ and rejecting the strings not in $\mathcal{L}(\mathcal{G})$, which is indeed the procedure we use in Sec. 8.1 of the experiments, before reranking.
+In practice, we only need two grammars to compute the intersection $\mathcal{L}(\mathcal{G}) \cap \Delta_d(\sigma)$ (CFL ∩ LEV), but in general there may be more than two grammars in the conjunctive case. It may be possible to sample paths through the Levenshtein automaton, but in practice when using the Levenshtein automaton, we encode the bounded L-CFL reachability problem as a single SAT instance and let the solver find all solutions directly. We must confess it is a little unclear here precisely what baseline the reviewer is referring to, but perhaps they are referring to sampling $\Delta_d(\sigma)$ and rejecting the strings not in $\mathcal{L}(\mathcal{G})$, which is indeed the procedure we use in Sec. 8.1 of the experiments, before reranking.
 
 #### Section 4.2
 
@@ -277,7 +277,7 @@ The "tensor" here refers to the multidimensional array consisting of polynomials
 
 #### Levenshtein Automaton
 
-We use a variant of Schulz and Mihov's Levenshtein automaton that avoids ε transitions, which are problematic for the Bar-Hillel construction as originally presented. Even though we do not currrently employ Bar-Hillel's construction, ε-arcs significantly complicate matters (see [Pasti et al. (2022)](https://arxiv.org/abs/2209.06809)), and so we avoid them altogether and use the "knights move" to simulate deletion. Indeed, Kleene star should be $Σ$ as the reviewer notes, or one arc per each $s ∈ Σ$. Additional arcs may be introduced from $q_{i, j} \rightarrow q_{i+h+1, j+h}$ to simulate h contiguous multitoken deletions.
+We use a variant of Schulz and Mihov's Levenshtein automaton that avoids ε transitions, which are problematic for the Bar-Hillel construction as originally presented. Even though we do not currently employ Bar-Hillel's construction, ε-arcs significantly complicate matters (see [Pasti et al. (2022)](https://arxiv.org/abs/2209.06809)), and so we avoid them altogether and use the "knights move" to simulate deletion. Indeed, Kleene star should be $Σ$ as the reviewer notes, or one arc per each $s ∈ Σ$. Additional arcs may be introduced from $q_{i, j} \rightarrow q_{i+h+1, j+h}$ to simulate h contiguous multitoken deletions.
 
 #### Liner-feedback shift register
 
