@@ -229,7 +229,7 @@ Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, a
 
 \subsection{Semiring Algebras}
 
-There are a number of strategies to tackling this problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the following algebra:
+There are a number of alternate semirings which solve the same problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the following algebra:
 
 \begin{equation}
   X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
@@ -258,21 +258,243 @@ Decoding, then becomes a matter of enumerating binary trees from the ADT using a
   \end{cases}
 \end{equation*}
 
+In our experiments, we will provide a comparison of the performance of the SAT algebra and these two semirings.
+
 \subsection{Bounded CFL Reachability}
 
-Now, let us return to the problem of bounded CFL reachability. A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
+Now, let us return to the problem of bounded CFL reachability. The question arises, where do we put the holes? Below is an example illustrating this procedure on a single Python snippet.
 
-\begin{align}
-  \ell_1:\textsc{Reg}, \ell_2: \textsc{Cfl} \vdash \text{ there exists } G \text{ s.t. } L(G): \textsc{Cfl} \text{ and } L(G) = \ell_1\cap\ell_2
-\end{align}
+%A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
+%
+%\begin{align}
+%  \ell_1:\textsc{Reg}, \ell_2: \textsc{Cfl} \vdash \text{ there exists } G \text{ s.t. } L(G): \textsc{Cfl} \text{ and } L(G) = \ell_1\cap\ell_2
+%\end{align}
+%
+%To compute the intersection between a CFG and a regular grammar, there is a standard construction from Beigel and Gasarch~\cite{beigelproof}, which allows us to compute the intersection grammar. We can then use the same procedure as before to compute the fixpoint, $M_\infty$, and extract the inhabitants.
+%
+%Alternatively, the procedure we use is to generate the contents of the grammar incrementally by sampling holes without replacement. We illustrate the procedure below, then discuss the theory.
 
-To compute the intersection between a CFG and a regular grammar, there is a standard construction, which can be attributed to Beigel and Gasarch: \ldots
+\begin{enumerate}
+  \item \texttt{d = sum([foo(i\err{]} for i in vals))}
+  \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+          \hline
+          \texttt{d} & \texttt{=} & \texttt{sum} & \texttt{(} & \texttt{[} & \texttt{foo} & \texttt{(} & \texttt{i} & \texttt{]} & \texttt{for} & \texttt{i} & \texttt{in} & \texttt{vals} & \texttt{)} & \texttt{)} \\\hline
+  \end{tabular}
+  \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+          \hline
+          \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+  \end{tabular}
+  \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+          \hline
+          \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+  \end{tabular}
+  \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+          \hline
+          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+  \end{tabular}\\
+  \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+    \hline
+    \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{(} & \texttt{[} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+%          & & & & & & & & & & & & & & \\\hline
+  \end{tabular}\\$\cdots$
+  \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c||c|c|||c|||c|||c|||c|||c|||c|||c|||}
+          \hline
+%          \texttt{w} & \texttt{=} & & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+          \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
+          & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
+  \end{tabular}
+  \item (a) \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
+  \item (b) \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
+\end{enumerate}
 
+The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7a), then reduced to its minimal form in step (7b), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
 
+\subsection{Sampling the Levenshtein ball without replacement in $\mathcal{O}(1)$}\label{sec:dsi}
+
+Now that we have a reliable method to synthesize admissible completions for strings containing holes, i.e., fix \textit{localized} errors, $F: (\mathcal{G} \times \underline\Sigma^n) \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}(\mathcal{G})$, how can we use $F$ to repair some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \Sigma^n \cap\mathcal{L}(\mathcal{G})^\complement$ where the holes' locations are unknown? Three questions stand out in particular: how many holes are needed to repair the string, where should we put those holes, and how ought we fill them to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$?
+
+One plausible approach would be to draw samples with a PCFG, minimizing tree-edit distance, however these are computationally expensive metrics and approximations may converge poorly. A more efficient strategy is to sample string perturbations, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ uniformly across the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$.
+
+To implement this strategy, we first construct a surjection $\varphi^{-1}: \mathbb{Z}_2^m\twoheadrightarrow\Delta_{q}(\err{\sigma})$ from bitvectors to Levenshtein edits over $\err\sigma, \Sigma$, sample bitvectors without replacement using a characteristic polynomial, then decode the resulting bitvectors into Levenshtein edits. This ensures the sampler eventually visits every Levenshtein edit at least exactly once and at most approximately once, without needing to store any samples, and discovers a steady stream of admissible edits throughout the solving process, independent of the grammar or string under repair.
+
+More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which are (1) bijective (2) maximally compact (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$\footnote[2]{\text{Following Stirling, we use $\stirlingii{n}{d}$ to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}-combinations via the Maculay representation~\cite{knuth2005taocp} and $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function courtesy of Szudzik~\cite{szudzik2006elegant}, which enumerates concentric square shells over the plane $\mathbb{N}^2$ and can be generalized to hypercubic shells in $\mathbb{N}^k$.
+
+Although $\langle\kappa, \rho\rangle$ could be used directly to exhaustively search the Levenshtein ball, they are temporally biased samplers due to lexicographic ordering. Rather, we would prefer a path that uniformly visits every fertile subspace of the Levenshtein ball over time regardless of the grammar or string in question: subsequences of $\langle\kappa, \rho\rangle$ should discover valid repairs with frequency roughly proportional to the filtration rate, i.e., the density of the admissible set relative to the Levenshtein ball. These additional constraints give rise to two more criteria: (4) ergodicity and (5) periodicity.
+
+\newcommand\ddd{\Ddots}
+\newcommand\vdd{\Vdots}
+\newcommand\cdd{\Cdots}
+\newcommand\lds{\ldots}
+\newcommand\vno{\varnothing}
+\newcommand{\ts}[1]{\textsuperscript{#1}}
+\newcommand\non{1\ts{st}}
+\newcommand\ntw{2\ts{nd}}
+\newcommand\nth{3\ts{rd}}
+\newcommand\nfo{4\ts{th}}
+\newcommand\nfi{5\ts{th}}
+\newcommand\nsi{6\ts{th}}
+\newcommand\nse{7\ts{th}}
+\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
+\newcommand{\gs}[1]{\gamma_{#1}^{\shur}}
+\newcommand{\qs}[1]{\alpha_{#1}^{\shur}}
+\newcommand\rcr{\rowcolor{black!15}}
+\newcommand\rcw{\rowcolor{white}}
+\newcommand\pcd{\cdot}
+\newcommand\pcp{\phantom\cdot}
+\newcommand\ppp{\phantom{\nse}}
+\newcommand\hhg[1]{\tikz[overlay]\node[rectangle,fill=black!15,draw=none,text opacity =1] {$#1$};}
+
+\begin{wrapfigure}{r}{0.45\textwidth}
+  \vspace{-10pt}
+  \begin{minipage}{.35\textwidth}
+    \begin{align*}
+      U^\intercal Y = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+                        C_1    & \cdd  &       &       & C_m \\
+                        \top   & \circ & \cdd  &       & \circ \\
+                        \circ  & \ddd  & \ddd  &       & \vdd \\
+                        \vdd   & \ddd  &       &       & \\
+                        \circ  & \cdd  & \circ & \top  & \circ
+      \end{pNiceMatrix}^t
+      \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+        Y_1 \\
+        \vdd\\
+        \\
+        \\
+        Y_m
+      \end{pNiceMatrix}\label{eq:lfsr}
+    \end{align*}
+  \end{minipage}
+\end{wrapfigure}
+
+To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times\Sigma^k$ using a finite field with a characteristic polynomial $C$ of degree $m\coloneqq\lceil \log_p {n \choose k}|\Sigma_\varepsilon|^k \rceil$. By choosing $C$ to be some irreducible polynomial, one ensures the path has the mixing properties we desire, e.g., suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is depicted to the right, wherein $C$ represents a primitive polynomial over $\mathbb{Z}_2^m$ with known coefficients $C_{1\ldots m}$ and semiring operators $\oplus \coloneqq + \pmod 2, \otimes \coloneqq \land, \top \coloneqq 1, \circ\coloneqq0$. Since $C$ is primitive, the sequence $\mathbf{R} = (U^{0 \ldots 2^m-1}Y)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{R}_i = \mathbf{R}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we construct a partial surjective function from $\mathbb{Z}_2^m$ onto the Levenshtein ball, $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$, cycle over $\mathbf{R}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$.
+
+This procedure requires $\mathcal{O}(1)$ per sample and roughly ${n \choose d}|\Sigma_\varepsilon|^{d}$ samples to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$. Its acceptance rate $p^{-m}{n \choose d}|\Sigma_\varepsilon|^{d}$ can be slightly improved with a more suitable base $p$, however this introduces some additional complexity and so we elected to defer this optimization.
+
+In addition to its statistically desirable properties, our sampler has the practical benefit of being trivially parallelizable using the leapfrog method, i.e., given $p$ independent processors, each one can independently check $[\varphi^{-1}(\langle\kappa, \rho\rangle^{-1}(\mathbf{R}_{i}), \err{\sigma}) \in \mathcal{L}(\mathcal{G})]$ where $i \equiv p_j \pmod p$. This procedure linearly scales with the number of processors, exhaustively searching $\Delta_{q}(\err{\sigma})$ in $p^{-1}$ of the time required by a single processor, or alternately drawing $p$ times as many samples in the same amount of time.
+
+To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production in our grammar, $\mathcal{G}$:\vspace{5pt}
+
+\begin{prooftree}
+  \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+  \RightLabel{$\varepsilon\textsc{-dup}$}
+  \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
+
+Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$ (see Lemma~\ref{lemma:interleaving}), then enumerate hole templates $\text{H}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\tilde{\sigma} \in \text{H}(\err\sigma_\varepsilon, i)$ satisfying $[S \in \Lambda^*_{\tilde\sigma, \mathcal{G}}] \Leftrightarrow [\tilde\sigma \in \mathcal{L}(\mathcal{G})]$. If $\bm\sigma \coloneqq \text{H}(\err\sigma_\varepsilon, i)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
+
+\begin{align*}
+  \text{Deletion}&=\begin{cases}
+                     \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+  \end{cases}\\
+  \text{Substitution}&=\begin{cases}
+                         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+                         \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+                         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+  \end{cases}\\
+  \text{Insertion}&=\begin{cases}
+                      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+  \end{cases}
+\end{align*}
+
+\noindent Although complete with respect to $\Delta_{q}(\err{\sigma})$, this approach can produce patches containing more Levenshtein edits than are strictly necessary to repair $\err\sigma$. To ensure patches are both minimal and syntactically valid, we first introduce a simple technique to minimize the repairs in \S\ref{sec:minimization}. By itself, uniformly sampling minimal repairs $\tilde\sigma\sim\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$ is sufficient but can be quite time-consuming, as we empirically show in \S\ref{sec:uniform}. To further reduce sample complexity and enable real-time repairs, we will then introduce a more efficient density estimator based on adaptive resampling (\S\ref{sec:adaptive}).
+
+\pagebreak\subsection{Patch minimization}\label{sec:minimization}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-14pt}
+  \resizebox{.4\textwidth}{!}{
+    $$
+    \def\arl{\ar@{-}}
+    \xymatrix{
+      & \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}\arl[dl]\arl[d]\arl[dr] & \\
+      \texttt{\vphantom{)}\err{\hlgreen{(} a \hlorange{+} b}}\arl[d]\arl[dr] & \texttt{\vphantom{(}\err{\hlgreen{(} a ( b \hlgreen{)}}}\arl[dl]|\hole\arl[dr]|\hole & \texttt{\vphantom{(}\err{a \hlorange{+} b \hlgreen{)}}}\arl[dl]\arl[d] \\
+      \texttt{\vphantom{(}\err{\hlgreen{(} a ( b}}\arl[dr]   & \texttt{a \hlorange{+} b}\arl[d]   & \texttt{\vphantom{)}a ( b \hlgreen{)}}\arl[dl] \\
+      & \texttt{\vphantom{)}\err{a ( b}} \\
+    }
+    $$
+  }
+  \caption{Patch powerset of $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}.}
+\end{wrapfigure}
+
+Suppose we have a string, \texttt{\err{a ( b}}, and discover the patch, $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}. Although $\tilde{\sigma}$ is syntactically admissible, it is not minimal. To minimize a patch, we consider the set of all of its constituent subpatches, namely, \texttt{\err{\hlgreen{(} a \hlorange{+} b}}, \texttt{\err{\hlgreen{(} a ( b \hlgreen{)}}}, \texttt{\err{a \hlorange{+} b \hlgreen{)}}}, \texttt{\err{\hlgreen{(} a ( b}}, \texttt{a \hlorange{+} b}, and \texttt{a \hlgreen{(} b \hlgreen{)}}, then retain only the smallest syntactically valid instance(s) by Levenshtein distance. This forms a so-called \textit{patch powerset}, which can be lazily enumerated from the top-down using the Maculay representation, after which we take all valid elements from the lowest level containing at least one admissible element, i.e., \texttt{a \hlorange{+} b} and \texttt{a \hlgreen{(} b \hlgreen{)}}. When patches are very large, minimization can be used in tandem with the delta debugging technique~\cite{zeller2002isolating} to first simplify contiguous edits, then apply the patch powerset construction. Minimization is often useful for estimating the language edit distance: given a single valid repair of arbitrary size, minimization lets us quickly approximate an upper-bound on $\Delta(\err{\sigma}, \ell)$.
+
+\subsection{Probabilistic reachability}\label{sec:adaptive}
+
+Since there are $\Sigma_{d=1}^q{n \choose d}$ total hole templates, each with $|\Sigma_\varepsilon| ^d$ individual edits to check, if $n$ and $q$ are large, this space can be slow to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\sigma\sim\Delta_{q}(\err{\sigma})$ is likely to produce a large number of unnatural edits and converge poorly on $\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$. To rapidly rank and render relevant repair recommendations, we prioritize candidate edits according to the following six-step procedure:
+
+\begin{enumerate}
+%    \item Retrieve the most recent grammar, $\mathcal{G}$, and string, $\err{\sigma}$, from the editor.
+%    \item Lazily enumerate edit templates, $i_{1\ldots d} \in \stirlingii{n}{d}$, for increasing values of $d \geq 1$.
+%    \item Rerank edit templates according to the distribution $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
+  \vspace{5pt}\item Draw samples $\hat\sigma \sim \Delta_q(\err{\sigma})$ without replacement using \S\ref{sec:dsi} with leapfrog \vspace{2pt}parallelization.
+  \vspace{5pt}\item Score by perplexity $PP(\hat\sigma)$ using a pretrained variable-order Markov chain (VOMC)~\cite{schulz2008vomc}.
+  \vspace{5pt}\item Resample using a concurrent variant of the A-Res~\cite{efraimidis2015weighted} online weighted reservoir sampler.
+  \vspace{5pt}\item Filter Levenshtein edits by admissibility with respect to the grammar, i.e., $[\hat\sigma \in \mathcal{L}\vspace{2pt}(\mathcal{G})]$.
+  \vspace{5pt}\item Minimize and store admissible repairs to a replay buffer, $\mathcal{Q} \leftarrow \tilde\sigma$, ranked by perplexity.
+  \vspace{5pt}\item Repeat steps (1)-(5), alternately sampling from the LFSR/VOMC-reweighted online resevoir sampler with probability $\epsilon$ or stochastically resampled $\mathcal{Q}$ with probability $(1-\epsilon)$, where $\epsilon$ decreases from $1$ to $0$ according to a stepwise schedule relative to the time remaining.
+\end{enumerate}
+
+\begin{wrapfigure}{r}{0.5\textwidth}
+  \vspace{-10pt}
+  \scalebox{0.5}{
+    \begin{minipage}{\textwidth}
+      \input{prob_reach.tex}
+    \end{minipage}
+  }
+\end{wrapfigure}
+
+Initially, the replay buffer $\mathcal{Q}$ is empty and repairs are sampled uniformly without replacement from the Levenshtein ball, $\Delta_{q}(\err{\sigma})$. As time progresses, $\mathcal{Q}$  is gradually populated with admissible repairs and resampled with increasing probability, allowing the algorithm to initially explore, then exploit the most promising candidates. This is summarized in Algorithm~\ref{alg:adaptive} which is run in parallel across all available CPU cores.
+
+We would prefer hole templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a probabilistic distance metric over $\Delta_q(\err{\sigma})$. For example, suppose we are given an invalid string, $\err{\sigma}_{\varepsilon}: \Sigma^{90}$ and $\mathcal{Q} \subseteq [0, |\sigma_\varepsilon|) \times \Sigma^q_\varepsilon$, a distribution over previously successful edits, which we can use to localize admissible repairs. By marginalizing onto $\err{\sigma}_\varepsilon$, the distribution $\mathcal{Q}(\err{\sigma}_\varepsilon)$ could take the form depicted in Fig.~\ref{fig:prob_reach}.
+
+%\begin{figure}[H]
+%    \hspace{-0.3cm}
+%\end{figure}
+%
+%Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
+%
+%\begin{align}
+%    \delta_{\textsc{KR}}(\mu, \nu) \coloneqq \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+%\end{align}
+
+\begin{wrapfigure}{r}{0.6\textwidth}
+  \scalebox{0.8}{
+    \begin{tikzpicture}[scale=0.4]
+      \begin{axis}[x=2cm, y=2cm, every axis plot post/.append style={mark=none,domain=-2:7.5,samples=50,smooth},
+        axis x line*=bottom, % no box around the plot, only x and y axis
+        ticks=none,
+        y axis line style={draw=none},
+        xticklabels={,,},
+        enlargelimits=upper] % extend the axes a bit to the right and top
+        \addplot[name path=F] {gauss(0.0,0.4)};
+        \addplot[name path=G] {gauss(3.0,0.5)};
+        \addplot[name path=H] {gauss(6.0,0.3)};
+        \addplot[name path=N] {nil(0)};
+        \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=F and N, soft clip={domain=-3:1}];
+        \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=G and N, soft clip={domain=1:5}];
+        \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=H and N, soft clip={domain=4:7.5}];
+      \end{axis}
+      \node [xshift=4.1cm, yshift=-7pt] {\footnotesize $\sigma_1\hspace{0.5cm}\sigma_{10}\err{\hspace{0.5cm}\sigma_{20}}\hspace{0.5cm}\sigma_{30}\hspace{0.5cm}\err{\sigma_{40}\hspace{0.5cm}\sigma_{50}}\hspace{0.5cm}\sigma_{60}\hspace{0.5cm}\err{\sigma_{70}\hspace{0.3cm}}\hspace{0.2cm}\sigma_{80}\hspace{0.5cm}\sigma_{90}$};
+%  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
+%  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
+    \end{tikzpicture}
+  }
+  \caption{The distribution $\mathcal{Q}$, projected onto the invalid string, suggests edit locations likely to yield admissible repairs, from which we draw subsets of size $d$.}\label{fig:prob_reach}
+\end{wrapfigure}
+
+More specifically in our setting, we want to sample from a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
 
 \subsection{Ranking}
 
-Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after all solutions have been found.
+Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after a fixed timeout has expired.
 
 %Alternatively, this expression can be rewritten as a polynomial over GF(2):
 %
@@ -286,28 +508,6 @@ Since the number of solutions can be very large, we can use a language model to 
 % BibTeX users should specify bibliography style 'splncs04'.
 % References will then be sorted and formatted in the correct style.
 %
-% \bibliographystyle{splncs04}
-% \bibliography{mybibliography}
-%
-\begin{thebibliography}{8}
-\bibitem{ref_article1}
-Author, B.: Article title. Journal \textbf{2}(5), 99--110 (2016)
-
-\bibitem{ref_lncs1}
-Author, F., Author, S.: Title of a proceedings paper. In: Editor,
-F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
-Springer, Heidelberg (2016). \doi{10.10007/1234567890}
-
-\bibitem{ref_book1}
-Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
-Location (1999)
-
-\bibitem{ref_proc1}
-Author, A.-B.: Contribution title. In: 9th International Proceedings
-on Proceedings, pp. 1--2. Publisher, Location (2010)
-
-\bibitem{ref_url1}
-LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
-Oct 2017
-\end{thebibliography}
+ \bibliographystyle{splncs04}
+ \bibliography{tacas}
 \end{document}
