@@ -3,10 +3,10 @@
   \label{alg:adaptive}
   \begin{algorithmic}[1]
     \Require $\mathcal{G}$ grammar, $\err{\sigma}$ broken string, $p$ process ID, $c$ total CPU cores, $t_{\text{total}}$ timeout.
-    \State $\mathcal{Q} \gets \varnothing, \mathcal{R} \gets \varnothing, \epsilon \gets 1, i \gets 0, Y \sim \mathbb{Z}_2^m, t_0 \gets t_{\text{now}}$ \Comment{Initialize replay buffer $\mathcal{Q}$ and reservoir $\mathcal{R}$.}
+    \State $\mathcal{Q} \gets \varnothing, \mathcal{R} \gets \varnothing, \epsilon \gets 1, i \gets 0, Y \sim \mathbb{Z}_2^m, t_0 \gets t_{\text{now}}$ % \Comment{Initialize replay buffer $\mathcal{Q}$ and reservoir $\mathcal{R}$.}
     \Repeat
       \If {$\mathcal{Q} = \varnothing$ or \textbf{Rand}(0, 1) $< \epsilon$}
-        \State $\hat\sigma \gets \varphi^{-1}\left(\langle\kappa, \rho\rangle^{-1}(U^{ci+p}Y), \err{\sigma}\right), i \gets i + 1$ \Comment{Sample WoR using the leapfrog method.}
+        \State $\hat\sigma \gets \varphi^{-1}\left(\langle\kappa, \rho\rangle^{-1}(U^{ci+p}Y), \err{\sigma}\right), i \gets i + 1$ \Comment{Sample WoR using LFSR.}
       \Else
         \State $\hat\sigma \sim \mathcal{Q} + \textbf{Noise}(\mathcal{Q})$ \Comment{Sample replay buffer with additive noise.}
       \EndIf

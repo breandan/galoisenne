@@ -43,7 +43,7 @@ University of Toronto, Toronto, ON, M5S 1A1 Canada\\
 %
 \begin{abstract}
 
-We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto a Boolean tensor completion and compare various techniques for introducing the holes, and solving for their inhabitants. Our technique has practical applications for real-time syntax correction in programming languages.
+We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto a Boolean tensor completion and compare various techniques for introducing the holes, and solving for their inhabitants. Our technique has practical applications for real-time syntax error correction.
 
 \keywords{Error correction \and CFL reachability \and Langauge games.}
 \end{abstract}
@@ -77,8 +77,7 @@ $A(\sigma)$ is often a large-cardinality set, so we want a procedure which retur
   We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
-Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy.
-We will first give an example, then dive into the theory.
+Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
 
 \subsection{Background}
 
@@ -208,7 +207,7 @@ V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
   &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
 \end{align}
 
-Now we can solve for $V_{0, 3}$ by taking the bitwise dot product:
+Now we solve for the corner entry $V_{0, 3}$ by taking the bitwise dot product between the first row and last column, yielding:
 
 \begin{align}
   V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = V_{0, 1} \boxtimes V_{1, 3} \boxplus V_{0, 2} \boxtimes V_{2, 3}\\
@@ -229,7 +228,7 @@ Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, a
 
 \subsection{Semiring Algebras}
 
-There are a number of alternate semirings which solve the same problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the following algebra:
+There are a number of alternate semirings which solve the same problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the algebra:
 
 \begin{equation}
   X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
@@ -258,11 +257,50 @@ Decoding, then becomes a matter of enumerating binary trees from the ADT using a
   \end{cases}
 \end{equation*}
 
-In our experiments, we will provide a comparison of the performance of the SAT algebra and these two semirings.
+In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
 
-\subsection{Bounded CFL Reachability}
+\subsection{Complexity}
 
-Now, let us return to the problem of bounded CFL reachability. The question arises, where do we put the holes? Below is an example illustrating this procedure on a single Python snippet.
+Let us consider some loose bounds on the the complexity of BCFL. To do, we first consider the complexity of computing language-edit distance, which is a lower-bound on the complexity of BCFL.
+
+\begin{definition}
+  Language edit distance (LED) is the problem of computing the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance. LED is known to have a subcubic complexity.~\cite{bringmann2019truly}
+\end{definition}
+
+We seek to find the set of strings $S$ such that $\forall \tilde{\sigma}\in S, \Delta(\err{\sigma}, \tilde{\sigma}) \leq q$, where $q$ is the maximum number of edits greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
+
+\begin{lemma}\label{lemma:upper-bound}
+For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+\end{lemma}
+
+\begin{proof}
+  Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m\coloneqq|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+
+  \begin{itemize}
+    \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
+    \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+  \end{itemize}
+
+  In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+\end{proof}
+
+Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
+
+\begin{lemma}\label{lemma:interleaving}
+BCFL complexity is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + 1} \choose c}(|\Sigma| + 1)^c\right)$.
+\end{lemma}
+
+\begin{proof}
+  We can overestimate the size of $A$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + 1$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + 1$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + 1} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + 1} \choose c}|\Sigma_\varepsilon|^c$.
+\end{proof}
+
+We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions.~\footnote{This reflects our general approach, which builds a surjection from the interleaved Hamming ball onto the Levenshtein ball.} In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
+
+In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\tilde{\sigma}\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
+
+\subsection{Our solution to bounded CFL reachability}
+
+Now, let us return to the problem of bounded CFL reachability. The question naturally arises, of should one put the holes? One solution is to sample holes without replacement from all possible locations. Below is an example illustrating this procedure on a single Python snippet.
 
 %A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
 %
@@ -274,7 +312,7 @@ Now, let us return to the problem of bounded CFL reachability. The question aris
 %
 %Alternatively, the procedure we use is to generate the contents of the grammar incrementally by sampling holes without replacement. We illustrate the procedure below, then discuss the theory.
 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=.23\linewidth]
   \item \texttt{d = sum([foo(i\err{]} for i in vals))}
   \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
           \hline
@@ -304,11 +342,11 @@ Now, let us return to the problem of bounded CFL reachability. The question aris
           \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
           & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
   \end{tabular}
-  \item (a) \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
-  \item (b) \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
+  \item \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
+  \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
 \end{enumerate}
 
-The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7a), then reduced to its minimal form in step (7b), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
+The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7), then reduced to its minimal form in step (8), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
 
 \subsection{Sampling the Levenshtein ball without replacement in $\mathcal{O}(1)$}\label{sec:dsi}
 
@@ -371,9 +409,9 @@ To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times\Sigma
 
 This procedure requires $\mathcal{O}(1)$ per sample and roughly ${n \choose d}|\Sigma_\varepsilon|^{d}$ samples to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$. Its acceptance rate $p^{-m}{n \choose d}|\Sigma_\varepsilon|^{d}$ can be slightly improved with a more suitable base $p$, however this introduces some additional complexity and so we elected to defer this optimization.
 
-In addition to its statistically desirable properties, our sampler has the practical benefit of being trivially parallelizable using the leapfrog method, i.e., given $p$ independent processors, each one can independently check $[\varphi^{-1}(\langle\kappa, \rho\rangle^{-1}(\mathbf{R}_{i}), \err{\sigma}) \in \mathcal{L}(\mathcal{G})]$ where $i \equiv p_j \pmod p$. This procedure linearly scales with the number of processors, exhaustively searching $\Delta_{q}(\err{\sigma})$ in $p^{-1}$ of the time required by a single processor, or alternately drawing $p$ times as many samples in the same amount of time.
+In addition to its statistically desirable properties, our sampler has the practical benefit of being trivially parallelizable using the leapfrog method, i.e., given $p$ independent processors, each one can independently check $[\varphi^{-1}(\langle\kappa, \rho\rangle^{-1}(\mathbf{R}_{i}), \err{\sigma}) \in \mathcal{L}(\mathcal{G})]$ where $i \equiv p_j \pmod p$. This procedure linearly scales with the number of processors, exhaustively searching $\Delta_{q}(\err{\sigma})$ in $p^{-1}$ of the time required by a single processor, or alternately drawing $p$ times as many samples in the same time.
 
-To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production in our grammar, $\mathcal{G}$:\vspace{5pt}
+To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal unit production contained in the grammar, $\mathcal{G}$, as follows:\vspace{5pt}
 
 \begin{prooftree}
   \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
@@ -386,27 +424,27 @@ To admit variable-length edits and enable deletion, we first define a $\varepsil
   \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
 \end{prooftree}
 
-Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$ (see Lemma~\ref{lemma:interleaving}), then enumerate hole templates $\text{H}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\tilde{\sigma} \in \text{H}(\err\sigma_\varepsilon, i)$ satisfying $[S \in \Lambda^*_{\tilde\sigma, \mathcal{G}}] \Leftrightarrow [\tilde\sigma \in \mathcal{L}(\mathcal{G})]$. If $\bm\sigma \coloneqq \text{H}(\err\sigma_\varepsilon, i)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
+Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$, then enumerate hole templates $\text{T}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $A(\err\sigma_\varepsilon)$. If $\bm\sigma \coloneqq \text{A}(\err\sigma_\varepsilon)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
 
 \begin{align*}
   \text{Deletion}&=\begin{cases}
-                     \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
   \end{cases}\\
   \text{Substitution}&=\begin{cases}
-                         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-                         \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-                         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+    \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
   \end{cases}\\
   \text{Insertion}&=\begin{cases}
-                      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-                      \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-                      \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
   \end{cases}
 \end{align*}
 
-\noindent Although complete with respect to $\Delta_{q}(\err{\sigma})$, this approach can produce patches containing more Levenshtein edits than are strictly necessary to repair $\err\sigma$. To ensure patches are both minimal and syntactically valid, we first introduce a simple technique to minimize the repairs in \S\ref{sec:minimization}. By itself, uniformly sampling minimal repairs $\tilde\sigma\sim\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$ is sufficient but can be quite time-consuming, as we empirically show in \S\ref{sec:uniform}. To further reduce sample complexity and enable real-time repairs, we will then introduce a more efficient density estimator based on adaptive resampling (\S\ref{sec:adaptive}).
+\noindent Although complete with respect to $\Delta_{q}(\err{\sigma})$, this approach can produce patches containing more Levenshtein edits than are strictly necessary to repair $\err\sigma$. To ensure patches are both minimal and syntactically valid, we first introduce a simple technique to minimize the repairs in \S\ref{sec:minimization}. By itself, uniformly sampling minimal repairs $\tilde\sigma\sim\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$ is sufficient but can be quite time-consuming. To further reduce sample complexity and enable real-time repairs, we will then introduce a more efficient density estimator based on adaptive resampling (\S\ref{sec:adaptive}).
 
-\pagebreak\subsection{Patch minimization}\label{sec:minimization}
+\subsection{Patch minimization}\label{sec:minimization}
 
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-14pt}
@@ -424,46 +462,23 @@ Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\e
   \caption{Patch powerset of $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}.}
 \end{wrapfigure}
 
-Suppose we have a string, \texttt{\err{a ( b}}, and discover the patch, $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}. Although $\tilde{\sigma}$ is syntactically admissible, it is not minimal. To minimize a patch, we consider the set of all of its constituent subpatches, namely, \texttt{\err{\hlgreen{(} a \hlorange{+} b}}, \texttt{\err{\hlgreen{(} a ( b \hlgreen{)}}}, \texttt{\err{a \hlorange{+} b \hlgreen{)}}}, \texttt{\err{\hlgreen{(} a ( b}}, \texttt{a \hlorange{+} b}, and \texttt{a \hlgreen{(} b \hlgreen{)}}, then retain only the smallest syntactically valid instance(s) by Levenshtein distance. This forms a so-called \textit{patch powerset}, which can be lazily enumerated from the top-down using the Maculay representation, after which we take all valid elements from the lowest level containing at least one admissible element, i.e., \texttt{a \hlorange{+} b} and \texttt{a \hlgreen{(} b \hlgreen{)}}. When patches are very large, minimization can be used in tandem with the delta debugging technique~\cite{zeller2002isolating} to first simplify contiguous edits, then apply the patch powerset construction. Minimization is often useful for estimating the language edit distance: given a single valid repair of arbitrary size, minimization lets us quickly approximate an upper-bound on $\Delta(\err{\sigma}, \ell)$.
+Suppose we have a string, \texttt{\err{a ( b}}, and discover the patch, $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}. Although $\tilde{\sigma}$ is syntactically admissible, it is not minimal. To minimize a patch, we consider the set of all of its constituent subpatches, namely, \texttt{\err{\hlgreen{(} a \hlorange{+} b}}, \texttt{\err{\hlgreen{(} a ( b \hlgreen{)}}}, \texttt{\err{a \hlorange{+} b \hlgreen{)}}}, \texttt{\err{\hlgreen{(} a ( b}}, \texttt{a \hlorange{+} b}, and \texttt{a \hlgreen{(} b \hlgreen{)}}, then retain only the smallest syntactically valid instance(s) by Levenshtein distance. This forms a so-called \textit{patch powerset}, which can be lazily enumerated from the top-down, after which we take all valid strings from the lowest level containing at least one valid string, i.e., \texttt{a \hlorange{+} b} and \texttt{a \hlgreen{(} b \hlgreen{)}}. When patches are very large, minimization can be used in tandem with the delta debugging technique~\cite{zeller2002isolating} to first simplify contiguous edits, then apply the patch powerset construction. Minimization is often useful for estimating the language edit distance: given a single valid repair of arbitrary size, minimization lets us quickly approximate an upper-bound on $\Delta(\err{\sigma}, \ell)$.
 
 \subsection{Probabilistic reachability}\label{sec:adaptive}
 
-Since there are $\Sigma_{d=1}^q{n \choose d}$ total hole templates, each with $|\Sigma_\varepsilon| ^d$ individual edits to check, if $n$ and $q$ are large, this space can be slow to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\sigma\sim\Delta_{q}(\err{\sigma})$ is likely to produce a large number of unnatural edits and converge poorly on $\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$. To rapidly rank and render relevant repair recommendations, we prioritize candidate edits according to the following six-step procedure:
+Since there are $\Sigma_{d=1}^q{n \choose d}$ total hole templates, each with $|\Sigma_\varepsilon| ^d$ individual edits to check, if $n$ and $q$ are large, this space can be slow to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\sigma\sim\Delta_{q}(\err{\sigma})$ is likely to produce a large number of unnatural edits and converge poorly on $\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$. To rapidly rank and render relevant repair recommendations, we prioritize candidate edits according to the following procedure.
 
-\begin{enumerate}
-%    \item Retrieve the most recent grammar, $\mathcal{G}$, and string, $\err{\sigma}$, from the editor.
-%    \item Lazily enumerate edit templates, $i_{1\ldots d} \in \stirlingii{n}{d}$, for increasing values of $d \geq 1$.
-%    \item Rerank edit templates according to the distribution $\int\mathcal{F}_\theta(\cdot \mid i_{1\ldots d})d\theta$.
-  \vspace{5pt}\item Draw samples $\hat\sigma \sim \Delta_q(\err{\sigma})$ without replacement using \S\ref{sec:dsi} with leapfrog \vspace{2pt}parallelization.
-  \vspace{5pt}\item Score by perplexity $PP(\hat\sigma)$ using a pretrained variable-order Markov chain (VOMC)~\cite{schulz2008vomc}.
-  \vspace{5pt}\item Resample using a concurrent variant of the A-Res~\cite{efraimidis2015weighted} online weighted reservoir sampler.
-  \vspace{5pt}\item Filter Levenshtein edits by admissibility with respect to the grammar, i.e., $[\hat\sigma \in \mathcal{L}\vspace{2pt}(\mathcal{G})]$.
-  \vspace{5pt}\item Minimize and store admissible repairs to a replay buffer, $\mathcal{Q} \leftarrow \tilde\sigma$, ranked by perplexity.
-  \vspace{5pt}\item Repeat steps (1)-(5), alternately sampling from the LFSR/VOMC-reweighted online resevoir sampler with probability $\epsilon$ or stochastically resampled $\mathcal{Q}$ with probability $(1-\epsilon)$, where $\epsilon$ decreases from $1$ to $0$ according to a stepwise schedule relative to the time remaining.
-\end{enumerate}
-
-\begin{wrapfigure}{r}{0.5\textwidth}
-  \vspace{-10pt}
-  \scalebox{0.5}{
-    \begin{minipage}{\textwidth}
-      \input{prob_reach.tex}
-    \end{minipage}
-  }
-\end{wrapfigure}
+(1) Draw samples $\hat\sigma \sim \Delta_q(\err{\sigma})$ without replacement using \S\ref{sec:dsi} with leapfrog parallelization. (2) Score by perplexity $PP(\hat\sigma)$ using a pretrained variable-order Markov chain (VOMC)~\cite{schulz2008vomc}. (3) Resample using a concurrent variant of the A-Res~\cite{efraimidis2015weighted} online weighted reservoir sampler. (4) Filter Levenshtein edits by admissibility with respect to the grammar, i.e., $[\hat\sigma \in \mathcal{L}\vspace{2pt}(\mathcal{G})]$.
+(5) Minimize and store admissible repairs to a replay buffer, $\mathcal{Q} \leftarrow \tilde\sigma$, ranked by perplexity. (6) Repeat steps (1)-(5), alternately sampling from the LFSR/VOMC-reweighted online resevoir sampler with probability $\epsilon$ or stochastically resampled $\mathcal{Q}$ with probability $(1-\epsilon)$, where $\epsilon$ decreases from $1$ to $0$ according to a stepwise schedule relative to the time remaining.
 
 Initially, the replay buffer $\mathcal{Q}$ is empty and repairs are sampled uniformly without replacement from the Levenshtein ball, $\Delta_{q}(\err{\sigma})$. As time progresses, $\mathcal{Q}$  is gradually populated with admissible repairs and resampled with increasing probability, allowing the algorithm to initially explore, then exploit the most promising candidates. This is summarized in Algorithm~\ref{alg:adaptive} which is run in parallel across all available CPU cores.
 
-We would prefer hole templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a probabilistic distance metric over $\Delta_q(\err{\sigma})$. For example, suppose we are given an invalid string, $\err{\sigma}_{\varepsilon}: \Sigma^{90}$ and $\mathcal{Q} \subseteq [0, |\sigma_\varepsilon|) \times \Sigma^q_\varepsilon$, a distribution over previously successful edits, which we can use to localize admissible repairs. By marginalizing onto $\err{\sigma}_\varepsilon$, the distribution $\mathcal{Q}(\err{\sigma}_\varepsilon)$ could take the form depicted in Fig.~\ref{fig:prob_reach}.
-
-%\begin{figure}[H]
-%    \hspace{-0.3cm}
-%\end{figure}
-%
-%Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
-%
-%\begin{align}
-%    \delta_{\textsc{KR}}(\mu, \nu) \coloneqq \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
-%\end{align}
+\begin{figure}[H]
+  \vspace{-10pt}
+    \begin{minipage}{\textwidth}
+      \input{prob_reach.tex}
+    \end{minipage}
+\end{figure}
 
 \begin{wrapfigure}{r}{0.6\textwidth}
   \scalebox{0.8}{
@@ -487,14 +502,26 @@ We would prefer hole templates likely to yield repairs that are (1) admissible (
 %  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
     \end{tikzpicture}
   }
-  \caption{The distribution $\mathcal{Q}$, projected onto the invalid string, suggests edit locations likely to yield admissible repairs, from which we draw subsets of size $d$.}\label{fig:prob_reach}
+  \caption{The distribution $\mathcal{Q}$, projected onto $\sigma$, suggests edit locations likely to yield admissible repairs, from which we draw subsets of size $d$.}\label{fig:prob_reach}
 \end{wrapfigure}
+
+We would prefer hole templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a probabilistic distance metric over $\Delta_q(\err{\sigma})$. For example, suppose we are given an invalid string, $\err{\sigma}_{\varepsilon}: \Sigma^{90}$ and $\mathcal{Q} \subseteq [0, |\sigma_\varepsilon|) \times \Sigma^q_\varepsilon$, a distribution over previously successful edits, which we can use to localize admissible repairs. Marginalizing onto $\err{\sigma}_\varepsilon$, the distribution $\mathcal{Q}(\err{\sigma}_\varepsilon)$ may take the form shown in Fig.~\ref{fig:prob_reach}.
+
+%\begin{figure}[H]
+%    \hspace{-0.3cm}
+%\end{figure}
+%
+%Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
+%
+%\begin{align}
+%    \delta_{\textsc{KR}}(\mu, \nu) \coloneqq \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+%\end{align}
 
 More specifically in our setting, we want to sample from a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
 
-\subsection{Ranking}
-
-Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after a fixed timeout has expired.
+%\subsection{Ranking}
+%
+%Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after a fixed timeout has expired.
 
 %Alternatively, this expression can be rewritten as a polynomial over GF(2):
 %
