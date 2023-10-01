@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 import kotlin.test.*
+import kotlin.time.measureTime
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest"

@@ -21,7 +21,7 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
 // Lazily computes all syntactically strings compatible with the given template
 fun CFG.solveSeq(s: String): Sequence<String> =
     initPForestMat(s.tokenizeByWhitespace()).seekFixpoint()
-      .diagonals.last()[0][START_SYMBOL]?.choose() ?: emptySequence()
+      .diagonals.last()[0][START_SYMBOL]?.choose()?.distinct() ?: emptySequence()
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(

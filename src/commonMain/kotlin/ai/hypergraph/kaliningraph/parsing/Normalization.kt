@@ -36,9 +36,9 @@ fun CFG.normalize(): CFG =
   }
 
 fun CFG.transformIntoCNF(): CFG =
-  addEpsilonProduction()
-    .refactorEpsilonProds()
-    .elimVarUnitProds()
+//  addEpsilonProduction()
+//    .refactorEpsilonProds()
+    elimVarUnitProds()
     .refactorRHS()
     .terminalsToUnitProds()
     .removeUselessSymbols()
