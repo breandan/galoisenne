@@ -707,7 +707,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 */
   @Test
   fun testBarHillel() {
-    // Generated from https://github.com/breandan/bar-hillel/blob/00e04c56d40eccd663d7dc0a00c7a6280fea566c/rayuela/test/cfg/test_epsilon_Bar_Hillel.py
+    // Generated from https://github.com/breandan/bar-hillel/blob/7527d2ad1a007fb4667b85cec295a43c56a237db/rayuela/test/cfg/test_epsilon_Bar_Hillel.py
     val bhcfg = """
       START -> [1,START,4]
       START -> [3,START,4]
@@ -844,7 +844,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       O -> x
       O -> +
       L -> O N
-    """
+    """.parseCFG()
 
     val fsa = """
       INIT: 1, 3 FINAL: 4
@@ -875,10 +875,14 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 //    }.also { println("Brute force solver took: ${it.inWholeMilliseconds}ms") }
 
     measureTime {
-      bhcfg.solve(template, {it.weight})
 //      bhcfg.solveSeq(template)
-        .onEach { assertTrue { it in bhcfg.language }; println(it) }
-        .toList().also { println("Found ${it.size} solutions.") }
+      bhcfg.solve(template) { it.weight }
+        .onEach {
+          println(it)
+          assertTrue { it in bhcfg.language }
+          assertTrue { it in fsaCfg.language }
+          assertTrue { it in cfg.language }
+        }.toList().also { println("Found ${it.size} solutions.") }
     }.also { println("Sequential solver took: ${it.inWholeMilliseconds}ms") }
   }
 }
