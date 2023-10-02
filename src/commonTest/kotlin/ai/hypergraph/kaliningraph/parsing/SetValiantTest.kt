@@ -712,6 +712,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       START -> [1,START,4]
       START -> [3,START,4]
       [1,+,3] -> +
+      [1,+,3] -> *
       [1,L,1] -> [1,O,1] [1,N,1]
       [1,L,1] -> [1,O,3] [3,N,1]
       [1,L,1] -> [1,O,4] [4,N,1]
@@ -793,6 +794,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       [3,START,4] -> [3,N,4] [4,L,4]
       [3,b,4] -> b
       [4,+,1] -> +
+      [4,+,1] -> *
       [4,L,1] -> [4,O,1] [1,N,1]
       [4,L,1] -> [4,O,3] [3,N,1]
       [4,L,1] -> [4,O,4] [4,N,1]
@@ -841,7 +843,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val cfg = """
       START -> N L
       N -> N N | a | b
-      O -> x
+      O -> *
       O -> +
       L -> O N
     """.parseCFG()
@@ -858,7 +860,8 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val fsaCfg = """
       START -> START b | 3 b
       3 -> 1 +
-      1 -> a | 1 a | START +
+      3 -> 1 *
+      1 -> a | 1 a | START + | START *
     """.parseCFG()
 
     println("Grammar size: ${bhcfg.size}")
@@ -874,11 +877,13 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 //        .toList().also { println("Found ${it.size} solutions.") }
 //    }.also { println("Brute force solver took: ${it.inWholeMilliseconds}ms") }
 
+    val clock = TimeSource.Monotonic.markNow()
+
     measureTime {
 //      bhcfg.solveSeq(template)
       bhcfg.solve(template) { it.weight }
         .onEach {
-          println(it)
+          println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
           assertTrue { it in bhcfg.language }
           assertTrue { it in fsaCfg.language }
           assertTrue { it in cfg.language }

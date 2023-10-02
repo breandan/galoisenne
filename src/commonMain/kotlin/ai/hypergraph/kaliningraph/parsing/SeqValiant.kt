@@ -7,13 +7,15 @@ fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
 class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf()) {
+  val repr = sequenceOf(if ("ε" in root) "" else root)
+  val branchSeq = branches.asSequence()
   // Returns the set of all strings derivable from the given PTree
   fun choose(): Sequence<String> =
-    if (branches.isEmpty()) sequenceOf(if("ε" in root) "" else root)
-    else branches.asSequence().flatMap { (l, r) ->
+    if (branches.isEmpty()) repr
+    else branchSeq.flatMap { (l, r) ->
       // TODO: Use weighted choice mechanism
       (l.choose() * r.choose()).map { (a, b) ->
-        if (a == "") b else if (b == "") a else "$a $b"
+        if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
       }
     }
 }
