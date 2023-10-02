@@ -49,7 +49,7 @@ fun CFG.sortwiseAlgebra(metric: ChoiceMetric): Ring<Sort> =
     times = { x, y -> join(x, y, metric) },
   )
 
-const val MAX_CAPACITY = 100
+var MAX_SORT_CAPACITY = 1000
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
 // Greedily selects candidate string fragments according to ChoiceMetric
 fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
@@ -66,7 +66,7 @@ fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
     val list = acc ?: mutableListOf()
     val idx = list.binarySearch(choice, Choice.comparator)
     if (idx < 0) list.add(-idx - 1, choice) // Only if not already present
-    list.apply { if (MAX_CAPACITY < size) removeLast() }
+    list.apply { if (MAX_SORT_CAPACITY < size) removeLast() }
   }.mapValues { it.value.toSet() }
 
 fun union(l: Sort, r: Sort): Sort =
@@ -94,7 +94,7 @@ data class Choice(val tokens: List<Σᐩ>, val weight: Float): Comparable<Choice
   override fun compareTo(other: Choice): Int = comparator.compare(this, other)
 
   operator fun plus(other: Choice) =
-    Choice(tokens + other.tokens, weight + other.weight)
+    Choice(sanitized + other.sanitized, weight + other.weight)
 
   val sanitized by lazy { tokens.filter { "ε" !in it } }
   val asString by lazy { sanitized.joinToString(" ") }

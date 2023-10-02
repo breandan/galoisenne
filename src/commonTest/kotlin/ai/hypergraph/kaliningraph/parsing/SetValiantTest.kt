@@ -360,7 +360,7 @@ class SetValiantTest {
     val leaves = tree.contents()
     assertEquals(expr, leaves)
 
-    val holExpr = "_ _ _ _ _ _ _ _ _ _"
+    val holExpr = "_ _ _ _"
 
     measureTime {
       val solutions = ocamlCFG.solve(holExpr, levMetric("( false curry )"))
@@ -864,19 +864,19 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     println("Grammar size: ${bhcfg.size}")
     println("Solutions:")
 
-    val template = "_ _ _ _ _ _ _"
-    measureTime {
-      template.tokenizeByWhitespace()
-        .solve(bhcfg, fillers = bhcfg.terminals)
-        .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
-        .distinct()
-        .onEach { println(it) }
-        .toList().also { println("Found ${it.size} solutions.") }
-    }.also { println("Brute force solver took: ${it.inWholeMilliseconds}ms") }
+    val template = List(53) { "_" }.joinToString(" ")
+//    measureTime {
+//      template.tokenizeByWhitespace()
+//        .solve(bhcfg, fillers = bhcfg.terminals)
+//        .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
+//        .distinct()
+//        .onEach { println(it) }
+//        .toList().also { println("Found ${it.size} solutions.") }
+//    }.also { println("Brute force solver took: ${it.inWholeMilliseconds}ms") }
 
     measureTime {
-//      bhcfg.solve(template, {it.weight})
-      bhcfg.solveSeq(template)
+      bhcfg.solve(template, {it.weight})
+//      bhcfg.solveSeq(template)
         .onEach { assertTrue { it in bhcfg.language }; println(it) }
         .toList().also { println("Found ${it.size} solutions.") }
     }.also { println("Sequential solver took: ${it.inWholeMilliseconds}ms") }
