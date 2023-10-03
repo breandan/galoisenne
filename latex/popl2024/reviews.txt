@@ -3,12 +3,6 @@ POPL 2024 Paper #785 Reviews and Comments
 Paper #785 Syntax Error Correction as Idempotent Matrix Completion
 
 
-[ 4,
-[ 8, [ 5 ], [ [ 3 ] ] ],
-[ [ 7 ], [ ], [ [ [ 7 ] ] ] ],
-[ [ [ ], [ [ 0 ] ] ] ]
-]
-
 Review #785A
 ===========================================================================
 
@@ -27,7 +21,7 @@ The paper looks at the problem of error correction in artificial languages, like
 
 Assessment of the paper
 -----------------------
-This is a negative review so I will be explicit about the limitations and scope of my review, so the chairs can make an informed decision about the evaluation of this paper. 
+This is a negative review so I will be explicit about the limitations and scope of my review, so the chairs can make an informed decision about the evaluation of this paper.
 This is a technical review about some of the formal language elements here in this paper; I am not in the PL community so some of my observations may be off beam and reflect my lack of knowledge of notational conventions etc in this community. I also wasn't able to understand the whole paper, so this review very much reflects the first 10 pages or so, where the theoretical background is laid out.
 
 
@@ -41,7 +35,7 @@ Detailed comments for authors
 Presentational issues
 ---------------------
 
-The paper is very hard to read for various reasons; A) the paper is poorly structured and key definitions are promised and then never delivered clearly B) lot of ideas are introduced without proper preparation, notation is ill define and  there are lots of comments along the way that introduce entirely new and irrelevant concepts along the way; C) there are quite elegant and visually appealing  diagrams that don't help anything, D)  occasionally  entirely trivial observations are proved carefully,  E)  a lot of times things are defined in a very roundabout and convoluted way which introduces some additional friction to the reading process, and F) a minor issue is that  technical terms are used in a nonstandard way. 
+The paper is very hard to read for various reasons; A) the paper is poorly structured and key definitions are promised and then never delivered clearly B) lot of ideas are introduced without proper preparation, notation is ill define and  there are lots of comments along the way that introduce entirely new and irrelevant concepts along the way; C) there are quite elegant and visually appealing  diagrams that don't help anything, D)  occasionally  entirely trivial observations are proved carefully,  E)  a lot of times things are defined in a very roundabout and convoluted way which introduces some additional friction to the reading process, and F) a minor issue is that  technical terms are used in a nonstandard way.
 
 
 Let me give an example or two of each:
@@ -55,28 +49,28 @@ But the problem must use a CFG (i.e. a finite representation)  not a CFL and pre
 ( I think CFL reachability is usually used for another problem involving graphs with labels on the arcs..)
 
 
- B) In the overview section, where one would expect a general overview of the structure of the algorithms etc, line 78 has "This sequence can be viewed as an elliptic curve". This has nothing to do with anything else in the paper as far as I can tell and isn't used anywhere. So this may or may not be an interesting observation , but if it is going to be in the paper it should be in a discussion section, and what an elliptic curve is and how it relates to the sampling process, and why this is an interesting perspective should all be discussed. 
+ B) In the overview section, where one would expect a general overview of the structure of the algorithms etc, line 78 has "This sequence can be viewed as an elliptic curve". This has nothing to do with anything else in the paper as far as I can tell and isn't used anywhere. So this may or may not be an interesting observation , but if it is going to be in the paper it should be in a discussion section, and what an elliptic curve is and how it relates to the sampling process, and why this is an interesting perspective should all be discussed.
 
 line 238; "novel polynomial reduction from language equations onto XORSAT".
-But XORSAT is not used anywhere? 
-This sort of remark makes me expect that we will have a presentation of this reduction to XORSAT, but we only have SAT used later in several places? 
+But XORSAT is not used anywhere?
+This sort of remark makes me expect that we will have a presentation of this reduction to XORSAT, but we only have SAT used later in several places?
 There are maybe 10 places where we have similar digressions.
 
 C) Figure 2 talks about a tower of Hanoi;
-Figure 8 maybe is a good example; looks good, but this is a discrete distribution, the vertical lines don't seem to match the x-axis, 
+Figure 8 maybe is a good example; looks good, but this is a discrete distribution, the vertical lines don't seem to match the x-axis,
 and the concept is very elementary.
 
 D)
 Lemma 3.2 is entirely trivial but is proved very slowly.
 
-E) Line 393: this is a definition of the set of terminals used in a string , $\Pi(\sigma)$. One can define this just by saying as I did "the set of terminals used in the string", or if one wants to be mathy 
-$\{ \sigma_i \mid 1 \leq i \leq n \}$ or some such formula. But instead we have the definition of the Parikh vector - an important theoretical concept in CF: and mildly context sensitive language theory -- and then 
+E) Line 393: this is a definition of the set of terminals used in a string , $\Pi(\sigma)$. One can define this just by saying as I did "the set of terminals used in the string", or if one wants to be mathy
+$\{ \sigma_i \mid 1 \leq i \leq n \}$ or some such formula. But instead we have the definition of the Parikh vector - an important theoretical concept in CF: and mildly context sensitive language theory -- and then
 a formulation based on this. Which is unnnecessary complex and relies on introducing an extra theoretical concept that is only used here.
 
-F) 
+F)
 A lot of technical terms are used rather inappropriately;
 proposal distribution is a standard term from MCMC sampling for example, eg when using rejection sampling in the Metropolis-Hastings algorithm, and not just for the sampling distribution, matrix completion is usually used to mean when you have a matrix with missing entries and one wants to fill in the entries using some low-rank assumption. It's normal to talk about fixed points of a function, and solutions of an equation, but here they are often conflated (eg caption of Figure 1), and talking about the fixed point of an equation.
-CFL reachability normally means something different, involving labeled edges in a graph. 
+CFL reachability normally means something different, involving labeled edges in a graph.
 
 I think all of these flaws could easily be fixed with a careful rewrite that focuses on explaining the key technical elements more clearly, and less on interesting asides.
 
@@ -90,9 +84,9 @@ First of all at a high level, there are fairly standard techniques for doing som
 For example, parsing with holes is trivial with a CKY parser.
 Just let V_1 be the set of nonterminals with a unit production,
 and add V_1 to the chart (dynamic programming table, or matrix here).
-Indeed one can do this with all holes simultaneusly, attach a cost to an edit and use standard weighted parsing algorithms to find the smallest number of edits. 
-At a high level this involves intersecting a regular language (acyclic DFA here) with a cfg, which the authors are aware of. 
-The weighted variants of this have had some attention recently ; 
+Indeed one can do this with all holes simultaneusly, attach a cost to an edit and use standard weighted parsing algorithms to find the smallest number of edits.
+At a high level this involves intersecting a regular language (acyclic DFA here) with a cfg, which the authors are aware of.
+The weighted variants of this have had some attention recently ;
 https://arxiv.org/abs/2209.06809
 https://www.cs.jhu.edu/~jason/papers/opedal+al.acl23.pdf
 
@@ -106,7 +100,7 @@ Also given that the underlying grammars are unambiguous, Earley parsing has an n
 
 
 Finally, I find the use of finite fields very problematic.
-Para beginning line 222: the authors say that they can be represented as $\mathbb{Z}_2$,  and that this has the same algebraic structure. 
+Para beginning line 222: the authors say that they can be represented as $\mathbb{Z}_2$,  and that this has the same algebraic structure.
 It doesn't -- assuming Z_2 means the finite field of integers modulo 2, ie GF(2),
 this has 1+ 1 = 0, whereas we want the idempotent boolean semiring with 1+1 =1. This is a different algebraic structure and if you use this then the grammar will define not language membership but the degree of ambiguity 2, so if something has two parse trees then it will get 0 not 1.
 This may not be a problem with the implementation -- I suspect the implementation is quite different, and possibly this won't matter if the grammars are unambiguous -- but the theoretical analysis seems to rely on this.
@@ -116,16 +110,16 @@ A few detailed comments
 -----------------------
 
 
-Beginning of section 4: 
+Beginning of section 4:
 
 This is just a definition of a CKY parsing algorithm in matrix form, where the dynamic programming table is expressed as an upper diagonal matrix with bit vector entries and the iteration is expressed as a multiplication. This is as in Valiant but without the speedups.
 Note that this operation \otimes is not associative, so you need to define the transitive closure properly, which is not done here; i.e. M^3 needs to be the sum of two product
 
 It would be helpful to explicitly give this algebraic structure  a name S_G and then you could say that M  is an n+1 by n+1 dimensional matrix with entries in S_G.
- How do you solve for the fixpoint? If all you are doing is iterating the computation then say that. If it is using a SAT solver say that. 
+ How do you solve for the fixpoint? If all you are doing is iterating the computation then say that. If it is using a SAT solver say that.
 
 
-Line 214-220 
+Line 214-220
 I can't follow the notation. \sigma with two arrows is defined correctly, but what are the entries on the matrices  in line 214 ?
 Why does $\sigma_1$ have a right arrow and $\sigma_n$ have an up arrow?
 Why does it have empty set rather than 0, since we defined the 0 to be the empty set and we operate in this domain. Why are all the entries $\Lambda$ the same, should these be all different? apart fron the final entry in the top right which has a *?
@@ -134,7 +128,7 @@ If not then the equation $M^* = M + M^2$ is undefined.
 What does the \Rightarrow mean? I assume it is one step in the fixed point iteration, but define the function then.
 
 
-Line 227: Why is this discussion here? 
+Line 227: Why is this discussion here?
 
 Section 4.1
 
@@ -146,19 +140,19 @@ $\mathcal{M}$ is then introduced as an encoding of this set A. but the authors u
 The entries are functions from boolean vectors to boolean vectors; but what do they represent?
 And how are they defined ?
  Don't they have to have these holes/variables in them since they are described as "polynomimals" on line 236? So presumably polynomials in these variables.
-One would then expect an explanation of how it is encoded and how we solve it for fixpoints; but if it is idempotent then presumably it is already a fixed point? 
+One would then expect an explanation of how it is encoded and how we solve it for fixpoints; but if it is idempotent then presumably it is already a fixed point?
 
 The explanation is intended to be given in a large commutative diagram, but it doesn't look like the sort I am used to.
-Normally we have one label for each arrow, but here they all have two. Some of them appear to correspond to a pair of operations (+,x) and others to a single operation and its inverse. 
+Normally we have one label for each arrow, but here they all have two. Some of them appear to correspond to a pair of operations (+,x) and others to a single operation and its inverse.
 But apart from that:
 what is Rubix?
 Why does Matrix label 2^V \times 2^V which is I guess an ordered pair of vectors.
 Why is the first  column labeled Parsing in contrast to the second?
 Why do we have G' rather than G?
 The beginning rightmost horizontal arrows have some detail that I don't understand? Perhaps indicating that it is an injection?
-If you have a binary operation then normally you have an arrow from M \times M to M 
+If you have a binary operation then normally you have an arrow from M \times M to M
 but here it is to M \times M.
-And lots of the functions and so on are not defined -- where does \phi come from, what are the two square operators?  
+And lots of the functions and so on are not defined -- where does \phi come from, what are the two square operators?
 An example, even a small one with n=3 or 4 would help a lot.
 
 The discussion of conjunctive grammars is interesting but CGs aren't just finite intersections of CFGs; the intersection is at the level of nonterminal derivations, so if all you want to do is intersect some CFGs you don't need to introduce the CG formalism.
@@ -170,7 +164,7 @@ The discussion of conjunctive grammars is interesting but CGs aren't just finite
 Minor but frequent formatting errors:
 -----------------------
 
-precision often occurs with a curly bracket structure after -- 
+precision often occurs with a curly bracket structure after --
 eg line 950. Some artifact of an editor I suppose.
 
 There are many cases where there are weird wavy red underlinings of mathematical formula and other things. Eg line 191 \sigma has an underline. Is this a word processor spelling correction artifact, caused by importing it as pdf?
@@ -224,7 +218,7 @@ This paper has a wealth of very interesting ideas that I would love to see explo
 
 I believe this paper's ideas are very promising, but the paper itself needs significant revision work to:
 1. include all relevant technical details,
-2. clearly articulate how all of the pieces fit together (and which pieces are speculative vs which are actually part of the current implementation), and 
+2. clearly articulate how all of the pieces fit together (and which pieces are speculative vs which are actually part of the current implementation), and
 3. properly specify and justify all of the many intricate constructions in the paper
 
 Detailed comments for authors
@@ -314,7 +308,7 @@ Line-by-line and low-level comments:
 - Section 6.4: I thought this system was using conjunctive grammars. I can see how the two rules shown transform grammar productions indexed by finite sets into regular CFGs. This is a nice feature for use probably, but it's not new, and this also seems like the paper has veered off into highlighting usability aspects that are unrelated to the main research contributions. This space would be better spent in other ways.
 - Section 6.5: Again, see earlier note about context sensitive grammars
 - Section 7.1 / 7.2: These sections don't discuss any work on parser error recover, or syntax highlighting for partial or syntactically-invalid programs.... There's a *huge* amount of prior work on this, none of which is addressed. For example, just following the transitive references from https://dl.acm.org/doi/abs/10.1145/2400676.2400678 only scratches the surface. I don't expect 200 citations here, but I do expect a meaningful summary of the work in the area and a meaningful comparison to this work.
-- Section 8: 
+- Section 8:
   + Please define "Precision@k" and related notations; even if these are common in Seq2Parse and related papers, they're not universally known (and won't necessarily remain unchanged in 5 years)
   + Most of the experiments seem reasonable for validating a prototype's feasibility, but it's hard to really evaluate whether 40-50 character/token snippets are really representative
   + I don't understand the value of the experiments in Section 8.4. The first experiment is so synthetic that I don't see the relevance of those results at all. The second experiment seems to rely critically on adding an additional grammar production to basically set aside all non-brackets in order to solve a smaller problem. This is clever engineering, but not something you could do for every possible kind of parsing mistake for a large grammar. What's the performance look like without this trick? That scenario would be more representative of doing this for an arbitrary language grammar without knowing in advance what kind of syntax errors would need to be repaired.
@@ -364,7 +358,7 @@ Detailed comments for authors
 - Lemmas 3.2 and 3.3 do not appear to be used substantially in the paper.
 - Page 4 “this problem is ill-posed”: define the problem first.  It’s obvious that the solution to this problem is not unique, and it’s only ill-posed under the requirement that it is.
 - Page 5: $\sigma^\rightarrow$ and $\sigma^\uparrow$ are not defined.
-- Page 5 line 214: the fixpoint M* = M + M^2 is not uniquely determined.  
+- Page 5 line 214: the fixpoint M* = M + M^2 is not uniquely determined.
 - Page 5 line 222 “...can be represented as $\mathbb{Z}_2^{|V|}$”: describe the encoding
 - Page 5 line 223 what is \oast?
 - Section 4.1: Describe the reduction to XORSAT and prove its correctness.  The diagram on page 6 does not make sense to me (what is a “Rubix”?).
@@ -373,10 +367,20 @@ Detailed comments for authors
 - Section 4.3: the description of Levenshtein automata is incorrect: vertical transitions accept any single letter (not Kleene stars).  The “knights move” should not exist – instead, the diagonal transition should be able to recognize \epsilon (corresponding to deletion).  The explanation of the automaton using monotone Chebyshev / knight’s topology should be simplified to avoid this jargon.
 - Page 8 line 362: “the resulting intersection is a conjunctive language”: it’s finite.
 - Move optimizations (sec 4.5, 4.6, 4.8) to the base method to a separate subsection to make the structure of the core method easier to follow.
-- Section 4.5: What tensor? 
-- Section 4.7:  
+- Section 4.5: What tensor?
+- Section 4.7:
   - Line 459: what is $k$?
   - Define ergodicity and periodicity.  C is a characteristic polynomial of what?  This section is in need of a high-level description of the method before going into the details (I think the idea is to enumerate all bitvectors using a linear-feedback shift register, but this is not mentioned anywhere)
   - What is p? on line 484 (p also re-used in next paragraph)
   - Page 12 line 541 There are \sum_{d=1}^q (n \choose d)$ total hole templates: is that all?  What is the argument?
 - Page 12 line 555 define LFSR
+
+
+Comment @A1 by Administrator
+---------------------------------------------------------------------------
+Meta-review
+==========
+
+Thank you for the response, but we are sorry to inform you that we will be rejecting this submission from POPL. After some discussion, we remain unanimously concerned about the paper's technical results. The rebuttal does clearly address many low-level concerns from the reviews and some of the higher-level claims (like how the high-level pieces fit together, though that section of the response raises questions about whether all parts of the paper are relevant to that). However, it also seemed to miss the point some of the original reviews' critiques. For example, the questions about whether or not the speed-ups from Valiant's reduction to matrix multiplication are actually used is material: the paper consistently highlights the importance of being able to take advantage of this, but the response, rather than affirming that those insights are used, instead argues that those details are immaterial. But the paper describes an implementation, and knowing how that implementation works is not immaterial --- and after the paper's stress on Valiant's construction, it seems quite relevant. The response also introduced additional constructs which would also need to be explained in detail in the paper, and did not give us confidence that the next revision would necessarily explain both those and the missing background we initially asked about in sufficient detail.
+
+Ultimately, while we all find interest and promise in the submitted paper, and encourage the authors to continue developing this, we believe one round of time-limited revision is not enough to get this paper into a form where many readers will be able to understand it, and at this time remain unable to assess the paper's technical correctness, both of which are major barriers to acceptance.
