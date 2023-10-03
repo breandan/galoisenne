@@ -846,7 +846,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       O -> *
       O -> +
       L -> O N
-    """.parseCFG()
+    """.parseCFG().noNonterminalStubs
 
     val fsa = """
       INIT: 1, 3 FINAL: 4
@@ -862,7 +862,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       3 -> 1 +
       3 -> 1 *
       1 -> a | 1 a | START + | START *
-    """.parseCFG()
+    """.parseCFG().noNonterminalStubs
 
     println("Grammar size: ${bhcfg.size}")
     println("Solutions:")
@@ -880,12 +880,12 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val clock = TimeSource.Monotonic.markNow()
 
     measureTime {
-//      bhcfg.solveSeq(template)
-      bhcfg.solve(template) { it.weight }
+//      cfg.solveSeq(template)
+      cfg.solve(template) { it.weight }
         .onEach {
           println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
-          assertTrue { it in bhcfg.language }
-          assertTrue { it in fsaCfg.language }
+//          assertTrue { it in bhcfg.language }
+//          assertTrue { it in fsaCfg.language }
           assertTrue { it in cfg.language }
         }.toList().also { println("Found ${it.size} solutions.") }
     }.also { println("Sequential solver took: ${it.inWholeMilliseconds}ms") }

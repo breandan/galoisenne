@@ -187,11 +187,11 @@ Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar b
 }
 \end{small}
 
-The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however these both are recognizers. That is to say, $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=1] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there is at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
+The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however these both are recognizers. That is to say, $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there is at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z \coloneqq [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z \coloneqq [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{0, 3}$ as follows:
+In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z \coloneqq [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z \coloneqq [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
 
 \begin{align}
 V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
@@ -226,81 +226,7 @@ V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\
 
 Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \sigma_r^{-1}(O) \times \sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
 
-\subsection{Semiring Algebras}
-
-There are a number of alternate semirings which solve the same problem. A first approach requires solving for $A(\sigma)$ using a semiring algebra, and propagating the values from the bottom-up as a string to a list of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the algebra:
-
-\begin{equation}
-  X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
-\end{equation}
-
-\begin{equation}
-  X \otimes Z := \bigoplus_{w, x, z}\big\{w \rightarrow (l + r) \mid [w\rightarrow xz] \in P, \langle l, r\rangle \in X(x) \times Z(x)\big\}
-\end{equation}
-
-\noindent After the fixpoint $M_\infty$ is attained, the solutions can be read off via $M_\infty[0, |\sigma|](S)$. The issue here is an exponential growth in cardinality when eagerly computing the Cartesian product, which becomes impractical for even small strings. We can make this encoding more compact by propagating an algebraic data type (ADT) $\mathbb{T}_2$ using the operations $\oplus, \otimes: 2^{\mathbb{T}_2} \times 2^{\mathbb{T}_2} \rightarrow 2^{\mathbb{T}_2}$ as follows:
-
-\begin{equation}
-  X \oplus Z := \{\mathbb{T}_2(k, Q_x \cup Q_z) \mid (k, Q)_X \Join_k (k, Q)_Z\}
-\end{equation}
-
-\begin{equation}
-  X \otimes Z := \bigoplus_{w, x, z}\big\{\mathbb{T}_2(w, \{\langle T_x, T_z\rangle\}) \mid [w\rightarrow xz] \in P, x \in \pi_1(X), z \in \pi_1(Z)\big\}
-\end{equation}
-
-Decoding, then becomes a matter of enumerating binary trees from the ADT using a recursive choice function that emits a sequence of strings satisfying $A(\sigma)$, with the type signature $\mathcal{C}: \mathbb{T}_2 \rightarrow (\mathbb{N} \rightarrow \Sigma^*)$ defined as follows:
-
-\begin{equation*}
-  \mathcal{C}(t: \mathbb{T}_2) := \begin{cases}
-    \pi_1(t) & \text{if $\pi_2(t) = \varnothing$, or}\\
-    \big\{x + z \mid \langle X, Z\rangle \in \pi_2(t), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
-  \end{cases}
-\end{equation*}
-
-In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
-
-\subsection{Complexity}
-
-Let us consider some loose bounds on the the complexity of BCFL. To do, we first consider the complexity of computing language-edit distance, which is a lower-bound on the complexity of BCFL.
-
-\begin{definition}
-  Language edit distance (LED) is the problem of computing the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance. LED is known to have a subcubic complexity.~\cite{bringmann2019truly}
-\end{definition}
-
-We seek to find the set of strings $S$ such that $\forall \tilde{\sigma}\in S, \Delta(\err{\sigma}, \tilde{\sigma}) \leq q$, where $q$ is the maximum number of edits greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
-
-\begin{lemma}\label{lemma:upper-bound}
-For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
-\end{lemma}
-
-\begin{proof}
-  Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m\coloneqq|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
-
-  \begin{itemize}
-    \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
-    \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
-  \end{itemize}
-
-  In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
-\end{proof}
-
-Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
-
-\begin{lemma}\label{lemma:interleaving}
-BCFL complexity is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + 1} \choose c}(|\Sigma| + 1)^c\right)$.
-\end{lemma}
-
-\begin{proof}
-  We can overestimate the size of $A$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + 1$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + 1$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + 1} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + 1} \choose c}|\Sigma_\varepsilon|^c$.
-\end{proof}
-
-We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions.~\footnote{This reflects our general approach, which builds a surjection from the interleaved Hamming ball onto the Levenshtein ball.} In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
-
-In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\tilde{\sigma}\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
-
-\subsection{Our solution to bounded CFL reachability}
-
-Now, let us return to the problem of bounded CFL reachability. The question naturally arises, of should one put the holes? One solution is to sample holes without replacement from all possible locations. Below is an example illustrating this procedure on a single Python snippet.
+The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
 
 %A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
 %
@@ -348,6 +274,150 @@ Now, let us return to the problem of bounded CFL reachability. The question natu
 
 The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7), then reduced to its minimal form in step (8), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
 
+To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production in our grammar, $\mathcal{G}$:\vspace{5pt}
+
+\begin{prooftree}
+  \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+  \RightLabel{$\varepsilon\textsc{-dup}$}
+  \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+\end{prooftree}
+
+Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$ (see Lemma~\ref{lemma:interleaving}), then enumerate hole templates $\text{H}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\tilde{\sigma} \in \text{H}(\err\sigma_\varepsilon, i)$ satisfying $[S \in \Lambda^*_{\tilde\sigma, \mathcal{G}}] \Leftrightarrow [\tilde\sigma \in \mathcal{L}(\mathcal{G})]$. If $\bm\sigma \coloneqq \text{H}(\err\sigma_\varepsilon, i)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
+
+\begin{align*}
+    \text{Deletion}&=\begin{cases}
+                         \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \end{cases}\\
+    \text{Substitution}&=\begin{cases}
+                             \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+                             \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+                             \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+    \end{cases}\\
+    \text{Insertion}&=\begin{cases}
+                          \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                          \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                          \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \end{cases}
+\end{align*}
+
+\subsection{Bar-Hillel Construction}
+
+Manually generating the edits is more controllable way to synthesize edits, but can be unnecessarily expensive if the goal is to synthesize all edits within a fixed edit distance. The second approach is more efficient, but requires generating a large grammar. We now describe the Bar-Hillel construction, which allows us to generate a grammar from a finite automaton, and then use the grammar to generate the edits without enumerating holes.
+
+\begin{definition}
+A finite state automata is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
+\end{definition}
+
+\begin{lemma}\label{lemma:bar-hillel}
+For any context-free language $\ell$ and finite state automata $\alpha$, there exists a context-free grammar $G^\cap$ such that $\mathcal{L}(G^\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
+\end{lemma}
+
+\noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G^\cap$:
+
+\begin{prooftree}
+  \AxiomC{$i \in I, f \in F\vphantom{\overset{a}{\rightarrow}}$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\big(S\rightarrow (i,S,f)\big) \in P^\cap$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\big((q,a,r)\rightarrow a\big)\in P^\cap$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$(w \rightarrow xz) \in P$}
+  \AxiomC{$p, q, r \in Q$}
+  \BinaryInfC{$\big((p,w,r)\rightarrow (p,w,q)(q,w,r)\big) \in P^\cap$}
+\end{prooftree}
+
+Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G^\cap$ recognizes and generates the admissible set.
+
+\begin{figure}[H]
+  \begin{center}
+  \resizebox{.9\textwidth}{!}{\input{nfa_cfg.tex}}
+  \end{center}
+  \caption{Levenshtein reachability from $\Sigma^n$ can be described as an NFA, or a left-linear CFG.}
+\end{figure}
+
+\noindent These rewrite rules can generate a large grammar. We can approximate the cardinality of the intersected grammar, $|P^\cap|=|I||F| + |\delta| + |P||Q|^3$. Although the grammar can be large, it significantly constrains the number of edits that must be checked compared with the enumerative approach. To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G^\cap)$.
+
+\subsection{Semiring Algebras}
+
+There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the algebra:
+
+\begin{equation}
+  X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
+\end{equation}
+
+\begin{equation}
+  X \otimes Z := \bigoplus_{w, x, z}\big\{w \rightarrow (l + r) \mid [w\rightarrow xz] \in P, \langle l, r\rangle \in X(x) \times Z(x)\big\}
+\end{equation}
+
+\noindent After the fixpoint $M_\infty$ is attained, the solutions can be read off via $M_\infty[0, |\sigma|](S)$. The issue here is an exponential growth in cardinality when eagerly computing the Cartesian product, which becomes impractical for even small strings. We can make this encoding more compact by propagating an algebraic data type (ADT) $\mathbb{T}_2$ using the operations $\oplus, \otimes: 2^{\mathbb{T}_2} \times 2^{\mathbb{T}_2} \rightarrow 2^{\mathbb{T}_2}$ as follows:
+
+\begin{equation}
+  X \oplus Z := \{\mathbb{T}_2(k, Q_x \cup Q_z) \mid (k, Q)_X \Join_k (k, Q)_Z\}
+\end{equation}
+
+\begin{equation}
+  X \otimes Z := \bigoplus_{w, x, z}\big\{\mathbb{T}_2(w, \{\langle T_x, T_z\rangle\}) \mid [w\rightarrow xz] \in P, x \in \pi_1(X), z \in \pi_1(Z)\big\}
+\end{equation}
+
+Decoding, then becomes a matter of enumerating binary trees from the ADT using a recursive choice function that emits a sequence of strings satisfying $A(\sigma)$, with the type signature $\mathcal{C}: \mathbb{T}_2 \rightarrow (\mathbb{N} \rightarrow \Sigma^*)$ defined as follows:
+
+\begin{equation*}
+  \mathcal{C}(t: \mathbb{T}_2) := \begin{cases}
+    \pi_1(t) & \text{if $\pi_2(t) = \varnothing$, or}\\
+    \big\{x + z \mid \langle X, Z\rangle \in \pi_2(t), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
+  \end{cases}
+\end{equation*}
+
+In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
+
+\subsection{Complexity}
+
+Let us consider some loose bounds on the the complexity of BCFLR. To do, we first consider the complexity of computing language-edit distance, which is a lower-bound on BCFLR complexity.
+
+\begin{definition}
+  Language edit distance (LED) is the problem of computing the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance. LED is known to have subcubic complexity~\cite{bringmann2019truly}.
+\end{definition}
+
+We seek to find the set of strings $S$ such that $\forall \tilde{\sigma}\in S, \Delta(\err{\sigma}, \tilde{\sigma}) \leq q$, where $q$ is the maximum number of edits greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
+
+\begin{lemma}\label{lemma:upper-bound}
+For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+\end{lemma}
+
+\begin{proof}
+  Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m\coloneqq|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+
+  \begin{itemize}
+    \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
+    \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+  \end{itemize}
+
+  In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+\end{proof}
+
+Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
+
+\begin{lemma}\label{lemma:interleaving}
+The complexity $A$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
+\end{lemma}
+
+\begin{proof}
+  We can overestimate the size of $A$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
+\end{proof}
+
+We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions.~\footnote{This reflects our general approach, which builds a surjection from the interleaved Hamming ball onto the Levenshtein ball.} In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
+
+In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\tilde{\sigma}\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
+
 \subsection{Sampling the Levenshtein ball without replacement in $\mathcal{O}(1)$}\label{sec:dsi}
 
 Now that we have a reliable method to synthesize admissible completions for strings containing holes, i.e., fix \textit{localized} errors, $F: (\mathcal{G} \times \underline\Sigma^n) \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}(\mathcal{G})$, how can we use $F$ to repair some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \Sigma^n \cap\mathcal{L}(\mathcal{G})^\complement$ where the holes' locations are unknown? Three questions stand out in particular: how many holes are needed to repair the string, where should we put those holes, and how ought we fill them to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$?
@@ -356,7 +426,7 @@ One plausible approach would be to draw samples with a PCFG, minimizing tree-edi
 
 To implement this strategy, we first construct a surjection $\varphi^{-1}: \mathbb{Z}_2^m\twoheadrightarrow\Delta_{q}(\err{\sigma})$ from bitvectors to Levenshtein edits over $\err\sigma, \Sigma$, sample bitvectors without replacement using a characteristic polynomial, then decode the resulting bitvectors into Levenshtein edits. This ensures the sampler eventually visits every Levenshtein edit at least exactly once and at most approximately once, without needing to store any samples, and discovers a steady stream of admissible edits throughout the solving process, independent of the grammar or string under repair.
 
-More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which are (1) bijective (2) maximally compact (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$\footnote[2]{\text{Following Stirling, we use $\stirlingii{n}{d}$ to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}-combinations via the Maculay representation~\cite{knuth2005taocp} and $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function courtesy of Szudzik~\cite{szudzik2006elegant}, which enumerates concentric square shells over the plane $\mathbb{N}^2$ and can be generalized to hypercubic shells in $\mathbb{N}^k$.
+More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which are (1) bijective (2) maximally compact (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$\footnote[2]{\text{Following Stirling, we use $\stirlingii{n}{d}$ to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}-combinations and $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function courtesy of Szudzik~\cite{szudzik2006elegant}, which enumerates concentric square shells over the plane $\mathbb{N}^2$ and can be generalized to hypercubic shells in $\mathbb{N}^k$.
 
 Although $\langle\kappa, \rho\rangle$ could be used directly to exhaustively search the Levenshtein ball, they are temporally biased samplers due to lexicographic ordering. Rather, we would prefer a path that uniformly visits every fertile subspace of the Levenshtein ball over time regardless of the grammar or string in question: subsequences of $\langle\kappa, \rho\rangle$ should discover valid repairs with frequency roughly proportional to the filtration rate, i.e., the density of the admissible set relative to the Levenshtein ball. These additional constraints give rise to two more criteria: (4) ergodicity and (5) periodicity.
 
@@ -410,37 +480,6 @@ To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times\Sigma
 This procedure requires $\mathcal{O}(1)$ per sample and roughly ${n \choose d}|\Sigma_\varepsilon|^{d}$ samples to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$. Its acceptance rate $p^{-m}{n \choose d}|\Sigma_\varepsilon|^{d}$ can be slightly improved with a more suitable base $p$, however this introduces some additional complexity and so we elected to defer this optimization.
 
 In addition to its statistically desirable properties, our sampler has the practical benefit of being trivially parallelizable using the leapfrog method, i.e., given $p$ independent processors, each one can independently check $[\varphi^{-1}(\langle\kappa, \rho\rangle^{-1}(\mathbf{R}_{i}), \err{\sigma}) \in \mathcal{L}(\mathcal{G})]$ where $i \equiv p_j \pmod p$. This procedure linearly scales with the number of processors, exhaustively searching $\Delta_{q}(\err{\sigma})$ in $p^{-1}$ of the time required by a single processor, or alternately drawing $p$ times as many samples in the same time.
-
-To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal unit production contained in the grammar, $\mathcal{G}$, as follows:\vspace{5pt}
-
-\begin{prooftree}
-  \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
-  \RightLabel{$\varepsilon\textsc{-dup}$}
-  \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
-  \DisplayProof
-  \hskip 1.5em
-  \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
-  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-\end{prooftree}
-
-Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$, then enumerate hole templates $\text{T}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $A(\err\sigma_\varepsilon)$. If $\bm\sigma \coloneqq \text{A}(\err\sigma_\varepsilon)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
-
-\begin{align*}
-  \text{Deletion}&=\begin{cases}
-    \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
-  \end{cases}\\
-  \text{Substitution}&=\begin{cases}
-    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-    \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
-  \end{cases}\\
-  \text{Insertion}&=\begin{cases}
-    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-    \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-    \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
-  \end{cases}
-\end{align*}
 
 \noindent Although complete with respect to $\Delta_{q}(\err{\sigma})$, this approach can produce patches containing more Levenshtein edits than are strictly necessary to repair $\err\sigma$. To ensure patches are both minimal and syntactically valid, we first introduce a simple technique to minimize the repairs in \S\ref{sec:minimization}. By itself, uniformly sampling minimal repairs $\tilde\sigma\sim\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$ is sufficient but can be quite time-consuming. To further reduce sample complexity and enable real-time repairs, we will then introduce a more efficient density estimator based on adaptive resampling (\S\ref{sec:adaptive}).
 
@@ -517,7 +556,7 @@ We would prefer hole templates likely to yield repairs that are (1) admissible (
 %    \delta_{\textsc{KR}}(\mu, \nu) \coloneqq \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
 %\end{align}
 
-More specifically in our setting, we want to sample from a discrete product space that factorizes into (1) the specific edit locations (e.g., informed by caret position, historical edit locations, or a static analyzer), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, finger travel distance on a physical keyboard, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs which minimize $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
+More specifically, we want to sample from a discrete product space that factorizes into (1) the edit locations (e.g., informed by caret position, historical edit locations, etc.), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs minimizing $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
 
 %\subsection{Ranking}
 %

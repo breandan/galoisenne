@@ -49,7 +49,7 @@ fun CFG.sortwiseAlgebra(metric: ChoiceMetric): Ring<Sort> =
     times = { x, y -> join(x, y, metric) },
   )
 
-var MAX_SORT_CAPACITY = 1000
+var MAX_SORT_CAPACITY = 50
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
 // Greedily selects candidate string fragments according to ChoiceMetric
 fun CFG.join(X: Sort, Z: Sort, metric: ChoiceMetric = { it.weight }): Sort =
