@@ -14,14 +14,14 @@ val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
 // Recursively rmoves all productions containing a dangling nonterminal, i.e.,
 // a nonterminal from a synthetic CFG that does not produce any terminals.
-fun CFG.removeDanglingNonterminals(
+fun CFG.removeVestigalProductions(
   matches: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == ',' } == 2 }
 ): CFG {
   val rw =
     filter { it.RHS.all { !matches(it) || it in nonterminals } }
     .toSet()
 
-  return if (rw.size == size) this else rw.removeDanglingNonterminals(matches)
+  return if (rw.size == size) this else rw.removeVestigalProductions(matches)
 }
 
 /**
@@ -44,7 +44,7 @@ fun CFG.normalize(): CFG =
       // Must remember to run the unit test if order changes in the future
       // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
       .generateNonterminalStubs()
-      .removeDanglingNonterminals()
+      .removeVestigalProductions()
       .also { cnf -> rewriteHistory.put(cnf.freeze(), rewrites) }
   }
 

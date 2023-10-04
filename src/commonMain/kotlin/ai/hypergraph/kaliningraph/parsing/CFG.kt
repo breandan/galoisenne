@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
-import kotlin.reflect.KProperty
 import kotlin.time.*
 
 typealias Σᐩ = String
@@ -93,6 +92,14 @@ val CFG.unitReachability by cache {
 val CFG.noNonterminalStubs: CFG by cache {
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet()
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
+  println("Disabling nonterminal stubs!")
+  filter { it.RHS.none { it.isNonterminalStubIn(this) } }
+    .filter { "ε" !in it.toString() }.toSet().removeVestigalProductions()
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
     .also { it.blocked.addAll(blocked) }
 }
@@ -229,3 +236,10 @@ fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) 
 fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
 
 fun CFG.dependencyGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
+
+fun CFG.jsonify() = "cfg = {\n" +
+  bimap.L2RHS.entries.joinToString("\n") {
+    ("\"${it.key}\": [${it.value.joinToString(", ") {
+      it.joinToString(", ", "(", ")") { "\"$it\"" }
+    }}],")
+  } + "\n}"

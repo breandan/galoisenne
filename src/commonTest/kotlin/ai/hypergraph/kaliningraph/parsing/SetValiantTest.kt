@@ -835,7 +835,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       [4,START,4] -> [4,N,3] [3,L,4]
       [4,START,4] -> [4,N,4] [4,L,4]
       [4,b,4] -> b
-    """.trimIndent().parseCFG().noNonterminalStubs
+    """.trimIndent().parseCFG().noEpsilonOrNonterminalStubs
 
     println(bhcfg.pretty)
 
@@ -862,7 +862,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       3 -> 1 +
       3 -> 1 *
       1 -> a | 1 a | START + | START *
-    """.parseCFG().noNonterminalStubs
+    """.parseCFG().noEpsilonOrNonterminalStubs
 
     println("Grammar size: ${bhcfg.size}")
     println("Solutions:")
@@ -880,14 +880,21 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val clock = TimeSource.Monotonic.markNow()
 
     measureTime {
-//      cfg.solveSeq(template)
-      cfg.solve(template) { it.weight }
-        .onEach {
-          println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
-//          assertTrue { it in bhcfg.language }
-//          assertTrue { it in fsaCfg.language }
-          assertTrue { it in cfg.language }
-        }.toList().also { println("Found ${it.size} solutions.") }
+      bhcfg.solveSeq(template).onEach {
+        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
+        assertTrue { it in bhcfg.language }
+        assertTrue { it in fsaCfg.language }
+        assertTrue { it in cfg.language }
+      }.toList().also { println("Found ${it.size} solutions.") }
     }.also { println("Sequential solver took: ${it.inWholeMilliseconds}ms") }
+
+    measureTime {
+      bhcfg.solve(template) { it.weight }.onEach {
+        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
+        assertTrue { it in bhcfg.language }
+        assertTrue { it in fsaCfg.language }
+        assertTrue { it in cfg.language }
+      }.toList().also { println("Found ${it.size} solutions.") }
+    }.also { println("Sort solver took: ${it.inWholeMilliseconds}ms") }
   }
 }
