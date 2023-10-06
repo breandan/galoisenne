@@ -320,22 +320,24 @@ For any context-free language $\ell$ and finite state automata $\alpha$, there e
 \pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G^\cap$:
 
 \begin{prooftree}
-  \AxiomC{$q_I \in I, q_F \in F\vphantom{\overset{a}{\rightarrow}}$}
+  \AxiomC{$q \in I, r \in F\vphantom{\overset{a}{\rightarrow}}$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\big(S\rightarrow (q_I,S,q_F)\big) \in P^\cap$}
+  \UnaryInfC{$\big(S\rightarrow q S r\big) \in P^\cap$}
   \DisplayProof
-  \hskip 1.5em
+  \hskip 1em
   \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\big((q,a,r)\rightarrow a\big)\in P^\cap$}
-\end{prooftree}
-\begin{prooftree}
-  \AxiomC{$(w \rightarrow xz) \in P$}
-  \AxiomC{$p, q, r \in Q$}
-  \BinaryInfC{$\big((p,w,r)\rightarrow (p,w,q)(q,w,r)\big) \in P^\cap$}
+  \UnaryInfC{$\big(qar\rightarrow a\big)\in P^\cap$}
+  \DisplayProof
+  \hskip 1em
+%\end{prooftree}
+%\begin{prooftree}
+  \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+  \AxiomC{$p,q,r \in Q$}
+  \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P^\cap$}
 \end{prooftree}
 
-Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G^\cap$ recognizes and generates the admissible set.
+Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G^\cap$ which recognizes and generates the admissible set.
 
 \begin{figure}[H]
   \begin{center}
@@ -357,18 +359,15 @@ Conveniently, the Levenshtein ball is recognized by a nondeterministic finite au
   \UnaryInfC{$q_{i,j}$}
 \end{prooftree}
 \begin{prooftree}
-  \AxiomC{$q_{i-1, j}, s=\sigma_i, i \in [1, n], j \in [1, k]$}
+  \AxiomC{$q_{i-1, j}, s=\sigma_i, i \in [1, n], j \in [0, k]$}
   \RightLabel{$\drightarrow$}
   \UnaryInfC{$q_{i,j}$}
   \DisplayProof
 %  \hskip 1.5em
-  \AxiomC{$q_{i-2, j-1}, s=\sigma_i, i \in [1, n], j \in [1, k]$}
+  \AxiomC{$q_{i-2, j-1}, s=\sigma_i, i \in [2, n], j \in [1, k]$}
   \RightLabel{$\knightarrow$}
   \UnaryInfC{$q_{i,j}$}
-  \DisplayProof
-  \hskip 1.5em
 \end{prooftree}
-
 \begin{prooftree}
   \AxiomC{$\vphantom{|}$}
   \RightLabel{$\textsc{Init}$}
@@ -379,8 +378,6 @@ Conveniently, the Levenshtein ball is recognized by a nondeterministic finite au
   \AxiomC{$|n-i+j| \leq k$}
   \RightLabel{$\textsc{Done}$}
   \BinaryInfC{$q_{i, j}\in F$}
-  \DisplayProof
-  \hskip 1.5em
 \end{prooftree}
 
 \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P^\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
