@@ -385,6 +385,30 @@
   }
 }
 
+\newcommand{\duparrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (0pt,6pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (0pt,6pt);
+  }
+}
+
+\newcommand{\drightarrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (6pt,0pt);
+  }
+}
+
+\newcommand{\ddiagarrow}{
+  \tikz{
+    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill (6pt,6pt) circle [radius = 1pt];
+    \draw [-to] (0pt,0pt) -- (6pt,6pt);
+  }
+}
+
 \newcommand{\knightkingarrow}{
   \tikz{
     \fill (0pt,0pt) circle [radius = 1pt];
