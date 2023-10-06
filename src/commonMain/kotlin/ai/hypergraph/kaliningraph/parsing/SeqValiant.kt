@@ -2,12 +2,18 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.time.measureTimedValue
 
 fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
 class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf()) {
-  val choice by lazy {
+  val totalTrees: ULong by lazy {
+    if (branches.isEmpty()) 1uL
+    else branches.sumOf { (l, r) -> l.totalTrees * r.totalTrees }
+  }
+  val shuffledBranches by lazy { branches.shuffled() }
+  private val choice by lazy {
     if (branches.isEmpty()) listOf(if ("ε" in root) "" else root)
     else branches.flatMap { (l, r) ->
     // TODO: Use weighted choice mechanism
@@ -17,14 +23,34 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
     }.distinct().toList()
   }
 
-  // Returns the set of all strings derivable from the given PTree
-  fun choose(): Sequence<String> = choice.asSequence()
+  private fun choose(): Sequence<String> = choice.asSequence()
+
+  // Returns the sequence of all strings derivable from the given PTree
+  // but needs a few seconds to warm up.
+  fun sampleWithoutReplacement(): Sequence<String> = choose()
+
+  // Samples instantaneously from the parse forest, but may return duplicates
+  // and only returns a fraction of the number of distinct strings when compared
+  // to SWOR on medium-sized finite sets under the same wall-clock timeout. If
+  // the set is sufficiently large, distinctness will never a problem.
+  fun sampleWithReplacement(): Sequence<String> = sequence { while(true) yield(sample()) }
+
+  fun sample(): String =
+    if (branches.isEmpty()) if ("ε" in root) "" else root
+    else branches.random().let { (l, r) ->
+      val (a, b) = l.sample() to r.sample()
+      if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
+    }
+
+  // TODO: Is there a sampler with no warmup that doesn't return duplicates?
+  //       We want one that is as fast as SWR but with no dupes like SWOR.
 }
 
-// Lazily computes all syntactically strings compatible with the given template
-fun CFG.solveSeq(s: String): Sequence<String> =
-    initPForestMat(s.tokenizeByWhitespace()).seekFixpoint()
-      .diagonals.last()[0][START_SYMBOL]?.choose()?.distinct() ?: emptySequence()
+fun CFG.startPTree(s: String) =
+  measureTimedValue {
+    initPForestMat(s.tokenizeByWhitespace())
+      .seekFixpoint().diagonals.last()[0][START_SYMBOL]
+  }.also { println("Time to compute parse forest: ${it.duration}") }.value
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(
@@ -66,3 +92,16 @@ fun CFG.joinSeq(X: PForest, Z: PForest): PForest =
 //      val pair = X[it.second]!! to Z[it.third]!!
 //      if (acc == null) listOf(pair) else acc + pair
 //    }.map { (k, v) -> k to PTree(k, v) }.toMap()
+
+fun CFG.sliceSolve(size: Int): Sequence<Σᐩ> =
+  solveSeq(List(size) { "_" }.joinToString(" "))
+
+fun CFG.sliceSample(size: Int): Sequence<Σᐩ> =
+  sampleSeq(List(size) { "_" }.joinToString(" "))
+
+// Lazily computes all syntactically strings compatible with the given template
+fun CFG.solveSeq(s: String): Sequence<String> =
+  startPTree(s)?.sampleWithoutReplacement()?.distinct() ?: sequenceOf()
+
+fun CFG.sampleSeq(s: String): Sequence<String> =
+  startPTree(s)?.sampleWithReplacement() ?: sequenceOf()

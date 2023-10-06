@@ -374,13 +374,19 @@ class SetValiantTest {
 */
   @Test
   fun testSeqValiant() {
-    val allSols = seq2parsePythonCFG.solveSeq("_ _ _ _ _").sortedBy { it.length }.toList()
-    allSols.forEach { println(it); assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
-    println("Found ${allSols.size} solutions, all were valid!")
+    val detSols =
+      seq2parsePythonCFG.solveSeq("_ _ _ _ _").sortedBy { it.length }.toList()
+    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
+    println("Found ${detSols.size} determinstic solutions, all were valid!")
+
+    val randSols = seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+      .sliceSample(20).take(10).toList()
+      .onEach { println(it); assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
+
+    println("Found ${randSols.size} random solutions, all were valid!")
   }
 
-  val seq2parsePythonCFG: CFG =
-    """
+  val seq2parsePythonCFG: CFG = """
 START -> Stmts_Or_Newlines Endmarker
 Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
 Stmt_Or_Newline -> Stmt | Newline
@@ -835,7 +841,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
       [4,START,4] -> [4,N,3] [3,L,4]
       [4,START,4] -> [4,N,4] [4,L,4]
       [4,b,4] -> b
-    """.trimIndent().parseCFG().noEpsilonOrNonterminalStubs
+    """.trimIndent().parseCFG().noNonterminalStubs
 
     println(bhcfg.pretty)
 
@@ -867,7 +873,7 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     println("Grammar size: ${bhcfg.size}")
     println("Solutions:")
 
-    val template = List(53) { "_" }.joinToString(" ")
+    val template = List(60) { "_" }.joinToString(" ")
 //    measureTime {
 //      template.tokenizeByWhitespace()
 //        .solve(bhcfg, fillers = bhcfg.terminals)
@@ -877,20 +883,31 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 //        .toList().also { println("Found ${it.size} solutions.") }
 //    }.also { println("Brute force solver took: ${it.inWholeMilliseconds}ms") }
 
-    val clock = TimeSource.Monotonic.markNow()
+    var clock = TimeSource.Monotonic.markNow()
 
     measureTime {
+      bhcfg.sampleSeq(template).onEach {
+//        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
+        assertTrue { it in bhcfg.language }
+        assertTrue { it in fsaCfg.language }
+        assertTrue { it in cfg.language }
+      }.take(300).toList().also { println("Found ${it.size} solutions.") }
+    }.also { println("Sampling solver took: ${it.inWholeMilliseconds}ms") }
+
+    clock = TimeSource.Monotonic.markNow()
+    measureTime {
       bhcfg.solveSeq(template).onEach {
-        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
+//        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
         assertTrue { it in bhcfg.language }
         assertTrue { it in fsaCfg.language }
         assertTrue { it in cfg.language }
       }.toList().also { println("Found ${it.size} solutions.") }
     }.also { println("Sequential solver took: ${it.inWholeMilliseconds}ms") }
 
+    clock = TimeSource.Monotonic.markNow()
     measureTime {
       bhcfg.solve(template) { it.weight }.onEach {
-        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
+//        println("${clock.elapsedNow().inWholeMilliseconds}ms: " + it)
         assertTrue { it in bhcfg.language }
         assertTrue { it in fsaCfg.language }
         assertTrue { it in cfg.language }

@@ -310,3 +310,4 @@ fun CFG.handleSingleton(s: Σᐩ): Set<Σᐩ> =
         bimap[s.substring(1, s.length - 1)]
             .mapNotNull { if (it.size == 1) it[0] else null }.toSet()
     else setOf()
+
