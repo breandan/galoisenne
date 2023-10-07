@@ -379,11 +379,13 @@ class SetValiantTest {
     detSols.forEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
     println("Found ${detSols.size} determinstic solutions, all were valid!")
 
+    val clock = TimeSource.Monotonic.markNow()
     val randSols = seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      .sliceSample(20).take(10).toList()
-      .onEach { println(it); assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
+      .sliceSample(20).take(10_000).toList()
+      .onEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
 
-    println("Found ${randSols.size} random solutions, all were valid!")
+    // 10k in ~22094ms
+    println("Found ${randSols.size} random solutions in ${clock.elapsedNow().inWholeMilliseconds}ms, all were valid!")
   }
 
   val seq2parsePythonCFG: CFG = """

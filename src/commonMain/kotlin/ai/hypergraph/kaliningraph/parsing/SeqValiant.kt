@@ -12,10 +12,10 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
     if (branches.isEmpty()) 1uL
     else branches.sumOf { (l, r) -> l.totalTrees * r.totalTrees }
   }
-  val shuffledBranches by lazy { branches.shuffled() }
+
   private val choice by lazy {
     if (branches.isEmpty()) listOf(if ("ε" in root) "" else root)
-    else branches.flatMap { (l, r) ->
+    else branches.shuffled().flatMap { (l, r) ->
     // TODO: Use weighted choice mechanism
       (l.choose() * r.choose()).map { (a, b) ->
         if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
