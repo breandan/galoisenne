@@ -12,16 +12,18 @@ import ai.hypergraph.kaliningraph.types.*
 
 val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
-// Recursively rmoves all productions containing a dangling nonterminal, i.e.,
-// a nonterminal from a synthetic CFG that does not produce any terminals.
+// Recursively removes all productions from a synthetic CFG containing a
+// dangling nonterminal, i.e., a nonterminal that does not produce any terminals.
 fun CFG.removeVestigalProductions(
-  matches: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == ',' } == 2 }
+  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == ',' } == 2 }
 ): CFG {
   val rw =
-    filter { it.RHS.all { !matches(it) || it in nonterminals } }
+    filter { it.RHS.all { !criteria(it) || it in nonterminals } }
     .toSet()
 
-  return if (rw.size == size) this else rw.removeVestigalProductions(matches)
+//  println("Removed ${size - rw.size} vestigal productions.")
+
+  return if (rw.size == size) this else rw.removeVestigalProductions(criteria)
 }
 
 /**

@@ -47,4 +47,40 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }
 
-// TODO: http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf
+fun makeLevFSA(str: Σᐩ, dist: Int, alphabet: Set<Σᐩ>): FSA =
+  makeLevFSA(str.tokenizeByWhitespace(), dist, alphabet)
+
+fun makeLevFSA(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): FSA =
+  (upArcs(str.size, dist, alphabet) +
+    diagArcs(str.size, dist, alphabet) +
+    str.map { rightArcs(str.size, dist, "ε") }.flatten() +
+    str.map { knightArcs(str.size, dist, "ε") }.flatten()).let { Q ->
+    val initialStates = setOf("q_0,0")
+    fun Σᐩ.unpackCoordinates() =
+      substringAfter("_").split("/")
+        .let { (i, j) -> i.toInt() to j.toInt() }
+
+    val finalStates = mutableSetOf<String>()
+    Q.states.forEach {
+      val (i, j) = it.unpackCoordinates()
+      if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
+    }
+
+    FSA(Q, initialStates, finalStates)
+  }
+
+fun upArcs(len: Int, dist: Int, alphabet: Set<Σᐩ>): TSA =
+  ((0..len).toSet() * (1..dist).toSet() * alphabet)
+    .map { (i, j, s) -> "q_$i/${j-1}" to s to "q_$i/$j" }.toSet()
+
+fun diagArcs(len: Int, dist: Int, alphabet: Set<Σᐩ>): TSA =
+  ((1..len).toSet() * (1..dist).toSet() * alphabet)
+    .map { (i, j, s) -> "q_${i-1}/${j-1}" to s to "q_$i/$j" }.toSet()
+
+fun rightArcs(len: Int, dist: Int, letter: Σᐩ): TSA =
+  ((1..len).toSet() * (0..dist).toSet() * setOf(letter))
+    .map { (i, j, s) -> "q_${i-1}/$j" to s to "q_$i/$j" }.toSet()
+
+fun knightArcs(len: Int, dist: Int, letter: Σᐩ): TSA =
+  ((2..len).toSet() * (1..dist).toSet() * setOf(letter))
+    .map { (i, j, s) -> "q_${i-2}/${j-1}" to s to "q_$i/$j" }.toSet()

@@ -28,6 +28,8 @@ class LGBuilder internal constructor() {
   operator fun LGVertex.minus(v: String): LGVertex = this - LGVertex(v)
   operator fun String.minus(v: LGVertex): LGVertex = LGVertex(this) - v
   operator fun String.minus(v: String): LGVertex = LGVertex(this) - LGVertex(v)
+  operator fun String.set(s: String, v: String): LGVertex =
+    ProtoEdge(LGVertex(this), s) - LGVertex(v)
 
   operator fun LGVertex.plus(edge: LabeledEdge) =
     V(this) { outgoing + edge }.also { mutGraph += it.graph }
