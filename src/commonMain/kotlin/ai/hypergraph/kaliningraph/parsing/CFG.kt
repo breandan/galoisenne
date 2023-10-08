@@ -62,7 +62,7 @@ val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.graph: LabeledGraph by cache { dependencyGraph() }
 
-val CFG.originalForm: CFG by cache { rewriteHistory[this]!![0] }
+val CFG.originalForm: CFG by cache { rewriteHistory[this]?.get(0) ?: this }
 val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.originalForm by cache { rewriteHistory[this]!![0] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }

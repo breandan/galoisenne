@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.types.*
 
 infix fun FSA.intersect(cfg: CFG) = cfg.intersect(this)
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf
+// https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersect(fsa: FSA): CFG {
   val initFinal =
@@ -24,11 +25,14 @@ infix fun CFG.intersect(fsa: FSA): CFG {
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
   val unitProds =
-    unitProductions.map { (lhs, rhs) ->
-      val relevantTransits = fsa.Q.filter { it.π1 == rhs[0] }
-      relevantTransits.map { (q, a, r) -> "[$q,$lhs,$r] -> $a" }
+    unitProductions.map { (A, rhs) ->
+      val relevantTransits = fsa.Q.filter { it.π2 == rhs[0] }
+      relevantTransits.map { (p, σ, q) -> "[$p,$A,$q] -> $σ" }
     }.flatten()
 
   return (initFinal + transits + binaryProds + unitProds).joinToString("\n")
-    .parseCFG(normalize = false).removeVestigalProductions()
+    .parseCFG(normalize = false)
+//    .also { println(it.pretty) }
+//    .removeVestigalProductions()
+//    .also { println(it.size) }
 }

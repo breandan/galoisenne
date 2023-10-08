@@ -223,16 +223,21 @@ class BarHillelTest {
     val simpleCFG = """
       START -> E
       O -> + | *
-      E -> N | E O N
+      E -> N O N
       N -> 1 | 2
     """.parseCFG().noEpsilonOrNonterminalStubs
 
-    val levFSA = makeLevFSA("1 + 2 + 1", 2, simpleCFG.terminals)
+    val levFSA = makeLevFSA("1 + 1", 1, simpleCFG.terminals)
+//    println(levFSA.graph.toDot())
 
-    println(levFSA.Q.size)
+//    println(levFSA.Q.size)
 
-//    val levCFG = (levFSA.intersect(simpleCFG)).also { println(it.pretty) }
+    val levCFG = (levFSA.intersect(simpleCFG))//.also { print(it.pretty) }
+//    println(levCFG.graph.toDot())
 
-    println(levFSA.recognizes("1 + 1 + 1"))
+    val testStr = "1 * 1"
+    assertTrue(levFSA.recognizes(testStr))
+    assertTrue(testStr in simpleCFG.language)
+//    println(levCFG.corner(testStr))
   }
 }

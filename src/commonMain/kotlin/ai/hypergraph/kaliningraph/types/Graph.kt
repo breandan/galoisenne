@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.types
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.cache.LRUCache
-import ai.hypergraph.kaliningraph.graphs.LGVertex
+import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.js.JsName
@@ -157,7 +157,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
         """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
-        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"=""]""" }
+        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"="${(e as? LabeledEdge)?.label ?: ""}"]""" }
           }
       }
     """.trimIndent()

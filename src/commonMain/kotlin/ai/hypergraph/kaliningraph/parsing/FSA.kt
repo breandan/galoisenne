@@ -13,16 +13,17 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
   val map: Map<Π2A<Σᐩ>, Set<Σᐩ>> by lazy {
     Q.groupBy({ (a, b, _) -> a to b }, { (_, _, c) -> c })
       .mapValues { (_, v) -> v.toSet() }
+//      .also { it.map { println("${it.key}=${it.value.joinToString(",", "[", "]"){if(it in init) "$it*" else if (it in final) "$it@" else it}}") } }
   }
 
-  val graph by lazy {
+  val graph: LabeledGraph by lazy {
     LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } }
   }
 
   fun recognizes(str: Σᐩ) =
     (str.tokenizeByWhitespace().fold(init) { acc, sym ->
       val nextStates = acc.flatMap { map[it to sym] ?: emptySet() }.toSet()
-      println("$acc --$sym--> $nextStates")
+//      println("$acc --$sym--> $nextStates")
       nextStates
     } intersect final).isNotEmpty()
 }

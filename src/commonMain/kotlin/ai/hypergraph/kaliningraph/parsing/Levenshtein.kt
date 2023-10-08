@@ -51,11 +51,11 @@ fun makeLevFSA(str: Σᐩ, dist: Int, alphabet: Set<Σᐩ>): FSA =
   makeLevFSA(str.tokenizeByWhitespace(), dist, alphabet)
 
 fun makeLevFSA(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): FSA =
-  (upArcs(str.size, dist, alphabet) +
-    diagArcs(str.size, dist, alphabet) +
-    str.map { rightArcs(str.size, dist, "ε") }.flatten() +
-    str.map { knightArcs(str.size, dist, "ε") }.flatten()).let { Q ->
-    val initialStates = setOf("q_0,0")
+  (upArcs(str, dist, alphabet) +
+    diagArcs(str, dist, alphabet) +
+    str.mapIndexed { i, it -> rightArcs(i, dist, it) }.flatten() +
+    str.mapIndexed { i, it -> knightArcs(i, dist, it) }.flatten()).let { Q ->
+    val initialStates = setOf("q_0/0")
     fun Σᐩ.unpackCoordinates() =
       substringAfter("_").split("/")
         .let { (i, j) -> i.toInt() to j.toInt() }
@@ -69,18 +69,23 @@ fun makeLevFSA(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): FSA =
     FSA(Q, initialStates, finalStates)
   }
 
-fun upArcs(len: Int, dist: Int, alphabet: Set<Σᐩ>): TSA =
-  ((0..len).toSet() * (1..dist).toSet() * alphabet)
+fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): TSA =
+  ((0..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
+    .filter { (i, _, s) -> str.size <= i || str[i] != s }
+    .filter { (i, j, _) -> i <= str.size || i - str.size < j }
     .map { (i, j, s) -> "q_$i/${j-1}" to s to "q_$i/$j" }.toSet()
 
-fun diagArcs(len: Int, dist: Int, alphabet: Set<Σᐩ>): TSA =
-  ((1..len).toSet() * (1..dist).toSet() * alphabet)
+fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): TSA =
+  ((1..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
+    .filter { (i, _, s) -> str.size <= i - 1 || str[i-1] != s }
+    .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
     .map { (i, j, s) -> "q_${i-1}/${j-1}" to s to "q_$i/$j" }.toSet()
 
-fun rightArcs(len: Int, dist: Int, letter: Σᐩ): TSA =
-  ((1..len).toSet() * (0..dist).toSet() * setOf(letter))
+fun rightArcs(idx: Int, dist: Int, letter: Σᐩ): TSA =
+  (setOf(idx + 1) * (0..dist).toSet() * setOf(letter))
     .map { (i, j, s) -> "q_${i-1}/$j" to s to "q_$i/$j" }.toSet()
 
-fun knightArcs(len: Int, dist: Int, letter: Σᐩ): TSA =
-  ((2..len).toSet() * (1..dist).toSet() * setOf(letter))
+fun knightArcs(idx: Int, dist: Int, letter: Σᐩ): TSA =
+  if (idx <= 1) setOf()
+  else (setOf(idx + 1) * (1..dist).toSet() * setOf(letter))
     .map { (i, j, s) -> "q_${i-2}/${j-1}" to s to "q_$i/$j" }.toSet()

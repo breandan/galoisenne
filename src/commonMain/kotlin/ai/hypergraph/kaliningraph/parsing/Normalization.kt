@@ -19,7 +19,7 @@ fun CFG.removeVestigalProductions(
 ): CFG {
   val rw =
     filter { it.RHS.all { !criteria(it) || it in nonterminals } }
-    .toSet()
+    .toSet().removeUselessSymbols()
 
 //  println("Removed ${size - rw.size} vestigal productions.")
 
@@ -46,6 +46,7 @@ fun CFG.normalize(): CFG =
       // Must remember to run the unit test if order changes in the future
       // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
       .generateNonterminalStubs()
+      // Should only need to run this on synthetic CFGs
       .removeVestigalProductions()
       .also { cnf -> rewriteHistory.put(cnf.freeze(), rewrites) }
   }
@@ -176,7 +177,7 @@ fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
  * A useful symbol is both generating and reachable.
  */
 
-private fun CFG.removeUselessSymbols(
+fun CFG.removeUselessSymbols(
   generating: Set<Σᐩ> = generatingSymbols(),
   reachable: Set<Σᐩ> = reachableSymbols()
 ): CFG = partition { (s, _) -> s in generating intersect reachable }
