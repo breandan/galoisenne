@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.types.*
 
 infix fun FSA.intersect(cfg: CFG) = cfg.intersect(this)
-// http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf
+// http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersect(fsa: FSA): CFG {
@@ -19,7 +19,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     nonterminalProductions.map {
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      triples.map { (p, q, r) -> "[$p,$A,$r] -> [$q,$B,$q] [$q,$C,$r]" }
+      triples.map { (p, q, r) -> "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]" }
     }.flatten()
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
@@ -32,7 +32,8 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 
   return (initFinal + transits + binaryProds + unitProds).joinToString("\n")
     .parseCFG(normalize = false)
-//    .also { println(it.pretty) }
-//    .removeVestigalProductions()
+    .removeVestigalProductions()
+    .normalForm.noNonterminalStubs
+    .also { println(it.pretty) }
 //    .also { println(it.size) }
 }

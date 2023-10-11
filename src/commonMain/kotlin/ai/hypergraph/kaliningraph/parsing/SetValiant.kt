@@ -41,6 +41,9 @@ fun CFG.isValid(str: List<Σᐩ>): 𝔹 =
     //.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
     .let { corner -> corner[bindex[START_SYMBOL]] }
 
+fun CFG.corner(str: Σᐩ) =
+ solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
+//  START_SYMBOL in solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
 

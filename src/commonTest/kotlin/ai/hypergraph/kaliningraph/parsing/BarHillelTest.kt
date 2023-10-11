@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.levenshtein
 import kotlin.test.*
 import kotlin.time.*
 
@@ -223,21 +224,33 @@ class BarHillelTest {
     val simpleCFG = """
       START -> E
       O -> + | *
-      E -> N O N
+      E -> N O N | E O N
       N -> 1 | 2
     """.parseCFG().noEpsilonOrNonterminalStubs
 
-    val levFSA = makeLevFSA("1 + 1", 1, simpleCFG.terminals)
-//    println(levFSA.graph.toDot())
+    val origStr = "1 + 1"
+    val levFSA = makeLevFSA(origStr, 2, simpleCFG.terminals)
 
-//    println(levFSA.Q.size)
+    val levCFG = levFSA.intersect(simpleCFG)
 
-    val levCFG = (levFSA.intersect(simpleCFG))//.also { print(it.pretty) }
-//    println(levCFG.graph.toDot())
+    fun testLevenshteinAcceptance(s: Σᐩ) {
+      assertTrue(levFSA.recognizes(s))
+      assertTrue(s in simpleCFG.language)
+      assertTrue(s in levCFG.language)
+    }
 
-    val testStr = "1 * 1"
-    assertTrue(levFSA.recognizes(testStr))
-    assertTrue(testStr in simpleCFG.language)
-//    println(levCFG.corner(testStr))
+    val neighbor = "1 * 2"
+    assertEquals(2, levenshtein(origStr, neighbor))
+    testLevenshteinAcceptance(neighbor)
+
+    val foreign = "1 + 1 + 1"
+    testLevenshteinAcceptance(foreign)
+
+    val testFail = "2 * 2"
+    assertFalse(testFail in levCFG.language)
+
+    val template = List(5) { "_" }.joinToString(" ")
+    val solutions = levCFG.solveSeq(template).toList().onEach { println(it) }
+    println("Found ${solutions.size} solutions within Levenshtein distance 2 of \"$origStr\"")
   }
 }
