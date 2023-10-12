@@ -230,7 +230,7 @@ class BarHillelTest {
     val origStr = "1 + 1"
     val levFSA = makeLevFSA(origStr, 2, simpleCFG.terminals)
 
-    val levCFG = levFSA.intersect(simpleCFG)
+    val levCFG = levFSA.intersectLevFSA(simpleCFG)
 
     fun testLevenshteinAcceptance(s: Σᐩ) {
       assertTrue(levFSA.recognizes(s))
@@ -259,13 +259,13 @@ class BarHillelTest {
   @Test
   fun testBooleanBarHillel() {
     val arithCFG = """
-      START -> START and START | START or START | ( START ) | true | false | ! START
+      START -> START and START | START or START | ( START ) | T | F | ! START
     """.parseCFG()
 
     val arithCFGNoEps = arithCFG.noEpsilonOrNonterminalStubs
 
-    val origStr = "true and ! ( true )"
-    val levCFG = arithCFGNoEps.intersect(makeLevFSA(origStr, 1, arithCFG.terminals))
+    val origStr = "T and ! ( F )"
+    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1, arithCFG.terminals))
 
     val template = List(8) { "_" }.joinToString(" ")
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
@@ -277,5 +277,40 @@ class BarHillelTest {
       .also { println("Found ${it.size} solutions using enumerative filtering") }
 
     assertEquals(lbhSet, efset, "Levenshtein/Bar-Hillel and enumerative filtering should return the same solutions")
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testDyckBarHillel"
+  */
+  @Test
+  fun testDyckBarHillel() {
+    val arithCFG = """
+      START -> ( START ) | ( ) | START START | [ ] | [ START ] | { } | { START }
+    """.parseCFG()
+
+    val arithCFGNoEps = arithCFG.noEpsilonOrNonterminalStubs
+
+    val origStr = "( ( ) ) [ { }"
+    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 2, arithCFG.terminals))
+
+    val template = List(9) { "_" }.joinToString(" ")
+    val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
+      .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
+
+    val totalParticipatingNonterminals =
+      lbhSet.map { levCFG.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
+
+    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + levCFG.nonterminals.size)
+    println("Active nonterminals: $totalParticipatingNonterminals")
+    println("Inactive nonterminals: ${levCFG.nonterminals - totalParticipatingNonterminals}")
+
+    val efset = arithCFG.solveSeq(template).toList()
+      .filter { levenshtein(it, origStr) < 3 }.toSet()
+//      .onEach { println(it) }
+      .also { println("Found ${it.size} solutions using enumerative filtering") }
+
+    assertEquals(lbhSet, efset, "Levenshtein/Bar-Hillel and enumerative" +
+      " filtering should return the same solutions, but disjoint union was: " +
+      "${(lbhSet + efset) - (lbhSet intersect efset)}")
   }
 }
