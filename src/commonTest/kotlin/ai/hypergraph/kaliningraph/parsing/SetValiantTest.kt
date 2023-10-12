@@ -322,32 +322,6 @@ class SetValiantTest {
     assertEquals(cfg3, cfg4)
   }
 
-  val ocamlCFG = """
-      S -> X
-      X -> A | V | ( X , X ) | X X | ( X )
-      A -> FUN | F | LI | M | L
-      FUN -> fun V `->` X
-      F -> if X then X else X
-      M -> match V with Branch
-      Branch -> `|` X `->` X | Branch Branch
-      L -> let V = X
-      L -> let rec V = X
-      LI -> L in X
-
-      V -> Vexp | ( Vexp ) | List | Vexp Vexp
-      Vexp -> Vname | FunName | Vexp VO Vexp | B
-      Vexp -> ( Vname , Vname ) | Vexp Vexp | I
-      List -> [] | V :: V
-      Vname -> a | b | c | d | e | f | g | h | i
-      Vname -> j | k | l | m | n | o | p | q | r
-      Vname -> s | t | u | v | w | x | y | z
-      FunName -> foldright | map | filter
-      FunName -> curry | uncurry | ( VO )
-      VO ->  + | - | * | / | >
-      VO -> = | < | `||` | `&&`
-      I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-      B ->  true | false
-    """.trimIndent().parseCFG().noNonterminalStubs
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testOCaml"
@@ -388,7 +362,35 @@ class SetValiantTest {
     println("Found ${randSols.size} random solutions in ${clock.elapsedNow().inWholeMilliseconds}ms, all were valid!")
   }
 
-  val seq2parsePythonCFG: CFG = """
+  companion object {
+    val ocamlCFG = """
+      S -> X
+      X -> A | V | ( X , X ) | X X | ( X )
+      A -> FUN | F | LI | M | L
+      FUN -> fun V `->` X
+      F -> if X then X else X
+      M -> match V with Branch
+      Branch -> `|` X `->` X | Branch Branch
+      L -> let V = X
+      L -> let rec V = X
+      LI -> L in X
+
+      V -> Vexp | ( Vexp ) | List | Vexp Vexp
+      Vexp -> Vname | FunName | Vexp VO Vexp | B
+      Vexp -> ( Vname , Vname ) | Vexp Vexp | I
+      List -> [] | V :: V
+      Vname -> a | b | c | d | e | f | g | h | i
+      Vname -> j | k | l | m | n | o | p | q | r
+      Vname -> s | t | u | v | w | x | y | z
+      FunName -> foldright | map | filter
+      FunName -> curry | uncurry | ( VO )
+      VO ->  + | - | * | / | >
+      VO -> = | < | `||` | `&&`
+      I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+      B ->  true | false
+    """.trimIndent().parseCFG().noNonterminalStubs
+
+    val seq2parsePythonCFG: CFG = """
 START -> Stmts_Or_Newlines Endmarker
 Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
 Stmt_Or_Newline -> Stmt | Newline
@@ -581,6 +583,7 @@ Comp_If -> If_Keyword Test_Nocond | If_Keyword Test_Nocond Comp_Iter
 Yield_Expr -> Yield_Keyword | Yield_Keyword Yield_Arg
 Yield_Arg -> From_Keyword Test | Testlist_Endcomma 
 """.parseCFG().noNonterminalStubs
+  }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testPythonRepairs"

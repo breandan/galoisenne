@@ -1,12 +1,14 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.time.TimeSource
 
 infix fun FSA.intersect(cfg: CFG) = cfg.intersect(this)
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersect(fsa: FSA): CFG {
+  val clock = TimeSource.Monotonic.markNow()
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START -> [$q,START,$r]" }
 
@@ -32,8 +34,10 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 
   return (initFinal + transits + binaryProds + unitProds).joinToString("\n")
     .parseCFG(normalize = false)
-    .removeVestigalProductions()
-    .normalForm.noNonterminalStubs
-    .also { println(it.pretty) }
+    .also { print("∩-grammar has ${it.size} total productions") }
+    .removeVestigalProductions().normalForm.noNonterminalStubs
+    .also { println("∩-grammar has ${it.size} useful productions") }
+    .also { println("∩-grammar construction took: ${clock.elapsedNow().inWholeMilliseconds}ms") }
+//    .also { println(it.pretty) }
 //    .also { println(it.size) }
 }
