@@ -32,7 +32,7 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
   // to SWOR on medium-sized finite sets under the same wall-clock timeout. If
-  // the set is sufficiently large, distinctness will never a problem.
+  // the set is sufficiently large, distinctness will never be a problem.
   fun sampleWithReplacement(): Sequence<String> = sequence { while(true) yield(sample()) }
 
   fun sample(): String =

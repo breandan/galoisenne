@@ -29,3 +29,33 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
 }
 
 val TSA.states by cache { flatMap { listOf(it.π1, it.π3) }.toSet() }
+
+// FSAs looks like this:
+/*
+INIT -> 1 | 3
+DONE -> 4
+1 -<a>-> 1
+1 -<+>-> 3
+3 -<b>-> 4
+4 -<+>-> 1
+4 -<b>-> 4
+ */
+
+fun Σᐩ.parseFSA(): FSA {
+  val Q =
+    lines().asSequence()
+      .filter { it.isNotBlank() }
+      .map { it.split("->") }
+      .map { (lhs, rhs) ->
+        val src = lhs.tokenizeByWhitespace().first()
+        val dst = rhs.split("|").map { it.trim() }.toSet()
+        val sym = if ("-<" in lhs && lhs.endsWith(">"))
+          lhs.split("-<").last().dropLast(1) else ""
+
+        setOf(src) * setOf(sym) * dst
+      }.flatten().toList()
+      .onEach { println(it) }
+  val init = Q.filter { it.π1 == "INIT" }.map { it.π3 }.toSet()
+  val final = Q.filter { it.π1 == "DONE" }.map { it.π3 }.toSet()
+  return FSA(Q.filter { it.π1 !in setOf("INIT", "DONE") }.toSet(), init, final)
+}
