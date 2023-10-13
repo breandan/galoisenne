@@ -51,7 +51,7 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG {
   return (initFinal + transits + binaryProds + unitProds).joinToString("\n")
     .parseCFG(normalize = false)
     .also { println("∩-grammar has ${it.size} total productions") }
-    .removeVestigalProductions().normalForm.noNonterminalStubs
+    .dropVestigialProductions().normalForm.noNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
     .also { println("∩-grammar construction took: ${clock.elapsedNow().inWholeMilliseconds}ms") }
 //    .also { println(it.pretty) }
@@ -89,7 +89,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
   return (initFinal + transits + binaryProds + unitProds).joinToString("\n")
     .parseCFG(normalize = false)
     .also { println("∩-grammar has ${it.size} total productions") }
-    .removeVestigalProductions().normalForm.noNonterminalStubs
+    .dropVestigialProductions().normalForm.noNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
     .also { println("∩-grammar construction took: ${clock.elapsedNow().inWholeMilliseconds}ms") }
 //    .also { println(it.pretty) }

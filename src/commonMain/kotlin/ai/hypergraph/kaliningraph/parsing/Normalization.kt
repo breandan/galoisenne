@@ -14,16 +14,17 @@ val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
 // Recursively removes all productions from a synthetic CFG containing a
 // dangling nonterminal, i.e., a nonterminal that does not produce any terminals.
-fun CFG.removeVestigalProductions(
+fun CFG.dropVestigialProductions(
   criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == ',' } == 2 }
 ): CFG {
-  val rw =
-    filter { it.RHS.all { !criteria(it) || it in nonterminals } }
-    .toSet().removeUselessSymbols()
+  val nts: Set<Σᐩ> = map { it.LHS }.toSet()
+  val rw = toMutableSet()
+    .apply { removeAll { !it.RHS.all { !criteria(it) || it in nts } } }
+    .removeUselessSymbols()
 
 //  println("Removed ${size - rw.size} vestigal productions.")
 
-  return if (rw.size == size) this else rw.removeVestigalProductions(criteria)
+  return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
 }
 
 /**
@@ -47,7 +48,7 @@ fun CFG.normalize(): CFG =
       // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
       .generateNonterminalStubs()
       // Should only need to run this on synthetic CFGs
-      .removeVestigalProductions()
+      .dropVestigialProductions()
       .also { cnf -> rewriteHistory.put(cnf.freeze(), rewrites) }
   }
 
@@ -180,7 +181,10 @@ fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
 fun CFG.removeUselessSymbols(
   generating: Set<Σᐩ> = generatingSymbols(),
   reachable: Set<Σᐩ> = reachableSymbols()
-): CFG = partition { (s, _) -> s in generating intersect reachable }
+): CFG =
+  toMutableSet().apply {
+    removeAll { (s, _) -> !(s in generating && s in reachable) }
+  }
 //  .also {
 //    println(
 //      it.second.joinToString("\n") { (l, r) ->
@@ -191,7 +195,7 @@ fun CFG.removeUselessSymbols(
 //      }
 //    )
 //  }
-  .first.toSet()
+//  .first.toSet()
 
 fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = unitReachability[from] ?: setOf(from)
 
