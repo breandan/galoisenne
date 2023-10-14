@@ -94,7 +94,9 @@ operator fun <T> Set<T>.contains(s: Set<T>) = containsAll(s)
   flatMap { s.map(it::to).toSet() }.toSet()
 
 // IDK why the Kotlin stdlib provides these for Map but not Set
-public inline fun <T> Set<T>.filter(predicate: (T) -> Boolean): Set<T> = filterTo(HashSet(), predicate)
+public inline fun <T> Set<T>.filter(noinline predicate: (T) -> Boolean): Set<T> =
+  toMutableSet().apply { retainAll(predicate) }
+//  filterTo(HashSet(), predicate)
 //public inline fun <T, Q> Set<T>.map(tx: (T) -> Q): Set<Q> = mapTo(HashSet(), tx)
 
 interface VT<E, L: S<*>> : List<E> {

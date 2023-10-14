@@ -108,6 +108,7 @@ kotlin {
         val multikVersion = "0.2.2"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
+        implementation("com.ionspin.kotlin:bignum:0.3.8")
       }
     }
 

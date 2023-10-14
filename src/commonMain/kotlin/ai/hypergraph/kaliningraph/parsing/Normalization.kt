@@ -150,7 +150,7 @@ fun Production.allSubSeq(nullables: Set<Σᐩ>): Set<Production> =
 
 /**
  * Makes ε-productions optional. n.b. We do not use CNF, but almost-CNF!
- * ε-productions are allowed, because want to be able to synthesize them
+ * ε-productions are allowed because we want to be able to synthesize them
  * as special characters, then simply omit them during printing.
  *
  *  - Determine nullable variables, i.e., those which contain ε on the RHS
@@ -204,12 +204,12 @@ fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
 
 // All symbols that are reachable from START_SYMBOL
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
-  reachability.getOrPut(from) { graph.transitiveClosure(setOf(from)) }
+  reachability.getOrPut(from) { depGraph.transitiveClosure(setOf(from)) }
 
 // All symbols that are either terminals or generate terminals
 fun CFG.generatingSymbols(
   from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
-  revGraph: LabeledGraph = graph.reversed()
+  revGraph: LabeledGraph = revDepGraph
 ): Set<Σᐩ> = revGraph.transitiveClosure(from)
 
 /* Drops variable unit productions, for example:

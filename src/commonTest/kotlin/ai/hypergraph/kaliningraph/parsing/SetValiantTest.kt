@@ -348,18 +348,24 @@ class SetValiantTest {
 */
   @Test
   fun testSeqValiant() {
-    val detSols =
-      seq2parsePythonCFG.solveSeq("_ _ _ _ _").sortedBy { it.length }.toList()
-    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
-    println("Found ${detSols.size} determinstic solutions, all were valid!")
+    var clock = TimeSource.Monotonic.markNow()
+    val detSols = seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+        .enumSeq(List(20) {"_"}.joinToString(" "))
+        .take(10_000).sortedBy { it.length }.toList()
 
-    val clock = TimeSource.Monotonic.markNow()
+    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
+
+    var elapsed = clock.elapsedNow().inWholeMilliseconds
+    println("Found ${detSols.size} determinstic solutions in ${elapsed}ms or ~${detSols.size / (elapsed/1000.0)}/s, all were valid!")
+
+    clock = TimeSource.Monotonic.markNow()
     val randSols = seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      .sliceSample(20).take(10_000).toList()
+      .sliceSample(20).take(10_000).toList().distinct()
       .onEach { assertTrue("\"$it\" was invalid!") { it in seq2parsePythonCFG.language } }
 
     // 10k in ~22094ms
-    println("Found ${randSols.size} random solutions in ${clock.elapsedNow().inWholeMilliseconds}ms, all were valid!")
+    elapsed = clock.elapsedNow().inWholeMilliseconds
+    println("Found ${randSols.size} random solutions in ${elapsed}ms or ~${randSols.size / (elapsed/1000.0)}/s, all were valid!")
   }
 
   companion object {
@@ -593,14 +599,15 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
     val refStr = "NAME = ( NAME"
     val refLst = refStr.tokenizeByWhitespace()
     val template = List(refLst.size + 3) { "_" }.joinToString(" ")
+    println("Solving: $template")
     measureTime {
-//      seq2parsePythonCFG.solve(template, levMetric(refStr))
-      seq2parsePythonCFG.solveSeq(template)
+      seq2parsePythonCFG.enumSeq(template)
         .map { it to levenshtein(it, refStr) }
-        .filter { it.second < 4 }.distinct()
-        .sortedWith(compareBy({ it.second }, { it.first.length })).toList()
-        .also { it.take(1000).forEach { println("Δ=${it.second}: ${it.first}") } }
+        .filter { it.second < 4 }.distinct().take(100)
+        .sortedWith(compareBy({ it.second }, { it.first.length }))
+        .onEach { println("Δ=${it.second}: ${it.first}") }
 //        .onEach { println("Δ=${levenshtein(it, refStr)}: $it") }
+        .toList()
         .also { println("Found ${it.size} solutions!") }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }

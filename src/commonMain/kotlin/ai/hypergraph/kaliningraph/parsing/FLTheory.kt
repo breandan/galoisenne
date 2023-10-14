@@ -37,7 +37,7 @@ fun CJL.upwardClosure(terminals: Set<Σᐩ>): CJL =
 fun CFG.upwardClosure(tokens: Set<Σᐩ>): CFG =
   tokens.intersect(terminals).let {
     if (it.isEmpty()) this
-    else (graph.reversed().transitiveClosure(tokens) - terminals)
+    else (depGraph.reversed().transitiveClosure(tokens) - terminals)
       .let { closure -> filter { it.LHS in closure } }
   }
 

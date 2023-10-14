@@ -2,38 +2,59 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
+import com.ionspin.kotlin.bignum.integer.*
 import kotlin.time.measureTimedValue
 
 fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
 class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf()) {
-  val totalTrees: ULong by lazy {
-    if (branches.isEmpty()) 1uL
-    else branches.sumOf { (l, r) -> l.totalTrees * r.totalTrees }
+  // TODO: Use weighted choice mechanism
+  val shuffledBranches by lazy { branches.shuffled() }
+  val totalTrees: BigInteger by lazy {
+    if (branches.isEmpty()) BigInteger.ONE
+    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
+      .reduce { acc, it -> acc + it }
+  }
+
+  val depth: Int by lazy {
+    if (branches.isEmpty()) 0
+    else branches.maxOf { (l, r) -> maxOf(l.depth, r.depth) + 1 }
   }
 
   private val choice by lazy {
     if (branches.isEmpty()) listOf(if ("ε" in root) "" else root)
-    else branches.shuffled().flatMap { (l, r) ->
-    // TODO: Use weighted choice mechanism
+    else shuffledBranches.flatMap { (l, r) ->
       (l.choose() * r.choose()).map { (a, b) ->
         if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
       }
-    }.distinct().toList()
+    }.distinct()
   }
 
-  private fun choose(): Sequence<String> = choice.asSequence()
+  fun choose(): Sequence<String> = choice.asSequence()
 
-  // Returns the sequence of all strings derivable from the given PTree
-  // but needs a few seconds to warm up.
-  fun sampleWithoutReplacement(): Sequence<String> = choose()
+  private fun decode(i: BigInteger): Pair<String, BigInteger> {
+    if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
+    val (quotient1, remainder) =
+      i.div(branches.size) to i.mod(branches.size.toBigInteger())
+    val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
+    val (l, quotient2) = lb.decode(quotient1)
+    val (r, quotient3) = rb.decode(quotient2)
+    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
+    return concat to quotient3
+  }
+
+  fun sampleWithoutReplacement(): Sequence<String> = sequence {
+    println("Total trees in PTree: $totalTrees")
+    var i = BigInteger.ZERO
+    while (i < totalTrees) yield(decode(i++).first)
+  }
 
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
   // to SWOR on medium-sized finite sets under the same wall-clock timeout. If
   // the set is sufficiently large, distinctness will never be a problem.
-  fun sampleWithReplacement(): Sequence<String> = sequence { while(true) yield(sample()) }
+  fun sampleWithReplacement(): Sequence<String> = generateSequence { sample() }
 
   fun sample(): String =
     if (branches.isEmpty()) if ("ε" in root) "" else root
@@ -41,9 +62,6 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
       val (a, b) = l.sample() to r.sample()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
-
-  // TODO: Is there a sampler with no warmup that doesn't return duplicates?
-  //       We want one that is as fast as SWR but with no dupes like SWOR.
 }
 
 fun CFG.startPTree(s: String) =
@@ -100,8 +118,15 @@ fun CFG.sliceSample(size: Int): Sequence<Σᐩ> =
   sampleSeq(List(size) { "_" }.joinToString(" "))
 
 // Lazily computes all syntactically strings compatible with the given template
+// Generally slow, but guaranteed to return all solutions
 fun CFG.solveSeq(s: String): Sequence<String> =
+  startPTree(s)?.choose()?.distinct() ?: sequenceOf()
+
+// This should never return duplicates and is the second fastest.
+// Eventually, this will become the default method for sampling.
+fun CFG.enumSeq(s: String): Sequence<String> =
   startPTree(s)?.sampleWithoutReplacement()?.distinct() ?: sequenceOf()
 
+// This is generally the fastest method, but may return duplicates
 fun CFG.sampleSeq(s: String): Sequence<String> =
   startPTree(s)?.sampleWithReplacement() ?: sequenceOf()

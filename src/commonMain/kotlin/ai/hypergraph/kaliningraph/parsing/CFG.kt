@@ -60,7 +60,8 @@ val CFG.vindex: Array<IntArray> by cache {
 
 val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
-val CFG.graph: LabeledGraph by cache { dependencyGraph() }
+val CFG.depGraph: LabeledGraph by cache { dependencyGraph() }
+val CFG.revDepGraph: LabeledGraph by cache { revDependencyGraph() }
 
 val CFG.originalForm: CFG by cache { rewriteHistory[this]?.get(0) ?: this }
 val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
@@ -235,7 +236,11 @@ fun CFG.forestHash(s: Σᐩ) = parseForest(s).structureEncode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
 fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
 
-fun CFG.dependencyGraph() = LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
+fun CFG.dependencyGraph() =
+  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
+
+fun CFG.revDependencyGraph() =
+  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> rhs - prod.LHS } } }
 
 fun CFG.jsonify() = "cfg = {\n" +
   bimap.L2RHS.entries.joinToString("\n") {

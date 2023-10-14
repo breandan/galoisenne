@@ -62,11 +62,11 @@ infix fun SATRubix.valEq(that: SATRubix): Formula =
 fun CFG.startFormula(ltop: SATVector, rtop: SATVector) =
   startSymbols.map { bindex[it] }.map { ltop[it] eq rtop[it] }.reduce { acc, satf -> acc and satf }
 
-fun CFG.downwardsReachabilitySeq() = graph
+fun CFG.downwardsReachabilitySeq() = depGraph
   .let { it.reachSequence(it.vertices.filter { it.label in startSymbols }.toSet()) }
   .map { it.map { it.label }.toSet() }
 
-fun CFG.upwardsReachabilitySeq() = graph
+fun CFG.upwardsReachabilitySeq() = depGraph
   .let { it.reachSequence(it.vertices.filter { it.label in terminals }.toSet(), it.A_AUG.transpose) }
   .drop(1).map { it.map { it.label }.toSet() }
 

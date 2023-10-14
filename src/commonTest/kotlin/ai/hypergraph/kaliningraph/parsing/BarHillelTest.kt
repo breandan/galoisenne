@@ -121,7 +121,7 @@ class BarHillelTest {
     assertFalse(testFail in levCFG.language)
 
     val template = List(5) { "_" }.joinToString(" ")
-    val solutions = levCFG.solveSeq(template).toList().onEach { println(it) }
+    val solutions = levCFG.enumSeq(template).toList().onEach { println(it) }
     println("Found ${solutions.size} solutions within Levenshtein distance 2 of \"$origStr\"")
   }
 
@@ -184,5 +184,16 @@ class BarHillelTest {
     assertEquals(lbhSet, efset, "Levenshtein/Bar-Hillel and enumerative" +
       " filtering should return the same solutions, but disjoint union was: " +
       "${(lbhSet + efset) - (lbhSet intersect efset)}")
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testPythonBarHillel"
+*/
+  @Test
+  fun testPythonBarHillel() {
+    val gram = SetValiantTest.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    gram.intersectLevFSA(makeLevFSA("1 + 2", 1, gram.terminals))
+      .enumSeq(List(5) { "_" }.joinToString(" "))
+      .onEach { println(it) }.toList()
   }
 }

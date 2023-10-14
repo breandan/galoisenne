@@ -7,7 +7,6 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 import kotlin.test.*
-import kotlin.time.measureTime
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest"
@@ -876,7 +875,7 @@ class SATValiantTest {
 //    }.also { println("Time: ${it}ms") }
 
     println(arithCFG.originalForm.prettyPrint())
-    arithCFG.originalForm.graph.let {
+    arithCFG.originalForm.depGraph.let {
       val start = it.vertices.first { it.label == "START" }
       println(it.reachability(setOf(start), 2))
     }
