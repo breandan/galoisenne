@@ -162,11 +162,11 @@ fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
  */
 
 fun CFG.removeUselessSymbols(
-  generating: Set<Σᐩ> = generatingSymbols(),
-  reachable: Set<Σᐩ> = reachableSymbols()
+  generating: Set<Σᐩ> = genSym(),
+  reachable: Set<Σᐩ> = reachSym()
 ): CFG =
   toMutableSet().apply {
-    removeAll { (s, _) -> !(s in generating && s in reachable) }
+    removeAll { (s, _) -> s !in generating || s !in reachable }
   }
 //  .also {
 //    println(
@@ -185,13 +185,43 @@ fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = unitReachability[from] ?: se
 fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
   transitiveClosure(filter { it.label in from }).map { it.label }.toSet()
 
+fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
+  val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
+  val nextReachable = mutableSetOf(from)
+
+  do {
+    val t = nextReachable.first()
+    nextReachable.remove(t)
+    allReachable += t
+    nextReachable += (bimap.NDEPS[t]?: emptyList())
+      .filter { it !in allReachable && it !in nextReachable }
+  } while (nextReachable.isNotEmpty())
+
+  return allReachable
+}
+
 // All symbols that are reachable from START_SYMBOL
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) { depGraph.transitiveClosure(setOf(from)) }
 
+fun CFG.genSym(from: Set<Σᐩ> = terminals): Set<Σᐩ> {
+  val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
+  val nextGenerating = from.toMutableSet()
+
+  do {
+    val t = nextGenerating.first()
+    nextGenerating.remove(t)
+    allGenerating += t
+    nextGenerating += (bimap.TDEPS[t]?: emptyList())
+      .filter { it !in allGenerating && it !in nextGenerating }
+  } while (nextGenerating.isNotEmpty())
+
+  return allGenerating
+}
+
 // All symbols that are either terminals or generate terminals
 fun CFG.generatingSymbols(
-  from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
+  from: Set<Σᐩ> = terminals,
   revGraph: LabeledGraph = revDepGraph
 ): Set<Σᐩ> = revGraph.transitiveClosure(from)
 

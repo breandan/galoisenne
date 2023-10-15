@@ -219,15 +219,53 @@ class Bindex<T>(
 }
 // Maps variables to expansions and expansions to variables in a grammar
 class BiMap(cfg: CFG) {
-  val L2RHS = cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() }
-  val R2LHS = cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() }
-  val TRIPL = R2LHS.filter { it.key.size == 2 }
-    .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
-  val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> = TRIPL.groupBy { it.second }
-    .mapValues { it.value.map { it.first to it.second to it.third } }
-  val UNITS =
+  val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
+  val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
+
+  val TDEPS by lazy { // Maps all symbols to NTs that can generate them
+//    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+//      cfg.forEach { (l, r) ->
+//        r.forEach { getOrPut(it) { mutableSetOf() }.add(l) }
+//      }
+//    }
+    val result = mutableMapOf<Σᐩ, MutableSet<Σᐩ>>()
+
+    for ((l, r) in cfg) {
+      for (symbol in r) {
+        result.getOrPut(symbol) { mutableSetOf() }.add(l)
+      }
+    }
+
+    result
+  }
+  val NDEPS by lazy { // Maps all NTs to the symbols they can generate
+//    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+//      cfg.forEach { (l, r) ->
+//        r.forEach { getOrPut(l) { mutableSetOf() }.add(it) }
+//      }
+//    }
+    val result = mutableMapOf<Σᐩ, MutableSet<Σᐩ>>()
+
+    for ((l, r) in cfg) {
+      for (symbol in r) {
+        result.getOrPut(l) { mutableSetOf() }.add(symbol)
+      }
+    }
+
+    result
+  }
+  val TRIPL by lazy {
+    R2LHS.filter { it.key.size == 2 }
+      .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
+  }
+  val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> by lazy {
+    TRIPL.groupBy { it.second }
+      .mapValues { it.value.map { it.first to it.second to it.third } }
+  }
+  val UNITS by lazy {
     cfg.filter { it.RHS.size == 1 && it.RHS[0] !in cfg.nonterminals }
       .groupBy({ it.LHS }, { it.RHS[0] }).mapValues { it.value.toSet() }
+  }
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }

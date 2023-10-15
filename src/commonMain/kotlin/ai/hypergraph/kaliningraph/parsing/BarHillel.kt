@@ -88,7 +88,7 @@ fun CFG.dropVestigialProductions(
   val nts: Set<Σᐩ> = map { it.LHS }.toSet()
 //  val reachable = reachableSymbols()
   val rw = toMutableSet()
-    .apply { removeAll { prod -> !prod.RHS.all { !criteria(it) || (it in nts) } } }
+    .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
     .removeUselessSymbols()
 
   println("Removed ${size - rw.size} vestigial productions.")
