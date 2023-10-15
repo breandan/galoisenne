@@ -192,9 +192,12 @@ class BarHillelTest {
   @Test
   fun testPythonBarHillel() {
     val gram = SetValiantTest.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    gram.intersectLevFSA(makeLevFSA("NUMBER + NEWLINE", 2, gram.terminals))
+    val intGram = gram.intersectLevFSA(makeLevFSA("NUMBER + NEWLINE", 2, gram.terminals))
       .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
-      .enumSeq(List(5) { "_" }.joinToString(" "))
+    val clock = TimeSource.Monotonic.markNow()
+
+    intGram.enumSeq(List(5) { "_" }.joinToString(" "))
       .onEach { println(it) }.toList()
+    println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
   }
 }

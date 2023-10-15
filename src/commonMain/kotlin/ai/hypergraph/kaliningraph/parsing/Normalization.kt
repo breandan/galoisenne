@@ -204,7 +204,7 @@ fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) { depGraph.transitiveClosure(setOf(from)) }
 
-fun CFG.genSym(from: Set<Σᐩ> = terminals): Set<Σᐩ> {
+fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()): Set<Σᐩ> {
   val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
   val nextGenerating = from.toMutableSet()
 
@@ -221,7 +221,7 @@ fun CFG.genSym(from: Set<Σᐩ> = terminals): Set<Σᐩ> {
 
 // All symbols that are either terminals or generate terminals
 fun CFG.generatingSymbols(
-  from: Set<Σᐩ> = terminals,
+  from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet(),
   revGraph: LabeledGraph = revDepGraph
 ): Set<Σᐩ> = revGraph.transitiveClosure(from)
 
