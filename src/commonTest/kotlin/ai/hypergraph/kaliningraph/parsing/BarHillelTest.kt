@@ -192,8 +192,9 @@ class BarHillelTest {
   @Test
   fun testPythonBarHillel() {
     val gram = SetValiantTest.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    gram.intersectLevFSA(makeLevFSA("1 + 2", 1, gram.terminals))
-      .enumSeq(List(5) { "_" }.joinToString(" "))
+    gram.intersectLevFSA(makeLevFSA("NUMBER + NEWLINE", 1, gram.terminals))
+      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
+      .enumSeq(List(4) { "_" }.joinToString(" "))
       .onEach { println(it) }.toList()
   }
 }

@@ -12,21 +12,6 @@ import ai.hypergraph.kaliningraph.types.*
 
 val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
-// Recursively removes all productions from a synthetic CFG containing a
-// dangling nonterminal, i.e., a nonterminal that does not produce any terminals.
-fun CFG.dropVestigialProductions(
-  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == ',' } == 2 }
-): CFG {
-  val nts: Set<Σᐩ> = map { it.LHS }.toSet()
-  val rw = toMutableSet()
-    .apply { removeAll { !it.RHS.all { !criteria(it) || it in nts } } }
-    .removeUselessSymbols()
-
-//  println("Removed ${size - rw.size} vestigal productions.")
-
-  return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
-}
-
 /**
  * n.b. Normalization may destroy organic nonterminals!
  * In order to preserve every organic nonterminal, you
@@ -47,8 +32,6 @@ fun CFG.normalize(): CFG =
       // Must remember to run the unit test if order changes in the future
       // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
       .generateNonterminalStubs()
-      // Should only need to run this on synthetic CFGs
-      .dropVestigialProductions()
       .also { cnf -> rewriteHistory.put(cnf.freeze(), rewrites) }
   }
 

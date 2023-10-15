@@ -100,7 +100,7 @@ val CFG.noNonterminalStubs: CFG by cache {
 val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }
-    .filter { "ε" !in it.toString() }.toSet().dropVestigialProductions()
+    .filter { "ε" !in it.toString() }.toSet()
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
     .also { it.blocked.addAll(blocked) }
 }

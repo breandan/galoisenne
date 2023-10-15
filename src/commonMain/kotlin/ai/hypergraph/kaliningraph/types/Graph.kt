@@ -88,6 +88,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   operator fun plus(that: G): G =
     G((this - that) + (this join that) + (that - this))
 
+
   operator fun minus(graph: G): G = G(vertices - graph.vertices)
 
   infix fun join(that: G): Set<V> =
@@ -299,9 +300,10 @@ abstract class Edge<G, E, V>(override val source: V, override val target: V) :
 abstract class Vertex<G, E, V>(override val id: String) :
   AGF<G, E, V>(), IVertex<G, E, V>
   where G : Graph<G, E, V>, E : Edge<G, E, V>, V : Vertex<G, E, V> {
+    val hash by lazy { id.hashCode() }
   override fun equals(other: Any?) = (other as? Vertex<*, *, *>)?.let { id == it.id } ?: false
   override fun encode() = id.vectorize()
-  override fun hashCode() = id.hashCode()
+  override fun hashCode() = hash
   override fun toString() = id
 }
 
