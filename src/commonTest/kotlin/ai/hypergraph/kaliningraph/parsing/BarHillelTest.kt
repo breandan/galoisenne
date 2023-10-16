@@ -43,7 +43,6 @@ class BarHillelTest {
       """.parseCFG().noEpsilonOrNonterminalStubs
 
     println("Grammar size: ${bhcfg.size}")
-    println("Solutions:")
 
     val template = List(60) { "_" }.joinToString(" ")
   //    measureTime {
@@ -209,10 +208,10 @@ class BarHillelTest {
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
 
-    val totalParticipatingNonterminals =
-      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
-
-    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + intGram.nonterminals.size)
+//    val totalParticipatingNonterminals =
+//      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
+//
+//    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + intGram.nonterminals.size)
 //    println(intGram.depGraph.toDot())
   }
 }

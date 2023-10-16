@@ -13,10 +13,10 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG = freeze().intersectLevFSAP(fsa)
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> "START -> [$q,START,$r]" }
+    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q,START,$r]") }
 
   val transits =
-    fsa.Q.map { (q, a, r) -> "[$q,$a,$r] -> $a" }
+    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
   fun Triple<Σᐩ, Σᐩ, Σᐩ>.isValid(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
     fun Σᐩ.coords() =
@@ -64,24 +64,23 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isValid(A to B to C) }
-        .map { (p, q, r) -> "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]" }
+        .map { (p, q, r) -> "[$p,$A,$r]" to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
     }.flatten()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow().inWholeMilliseconds}ms")
   clock = TimeSource.Monotonic.markNow()
-  return (initFinal + transits + binaryProds + unitProds).postProcess()
+  return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
     .also { println("Postprocessing took ${clock.elapsedNow().inWholeMilliseconds}ms") }
 }
 
 private fun CFG.unitProdRules(fsa: FSA) =
   unitProductions.map { (A, rhs) ->
     val relevantTransits = fsa.Q.filter { it.π2 == rhs[0] }
-    relevantTransits.map { (p, σ, q) -> "[$p,$A,$q] -> $σ" }
+    relevantTransits.map { (p, σ, q) -> "[$p,$A,$q]" to listOf(σ) }
   }.flatten()
 
-fun List<Σᐩ>.postProcess() =
-  joinToString("\n").parseCFG(normalize = false)
-    .also { println("∩-grammar has ${it.size} total productions") }
+fun CFG.postProcess() =
+    this.also { println("∩-grammar has ${it.size} total productions") }
     .dropVestigialProductions().normalForm.noNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
     .freeze()
@@ -125,10 +124,10 @@ infix fun FSA.intersect(cfg: CFG) = cfg.intersect(this)
 infix fun CFG.intersect(fsa: FSA): CFG {
   val clock = TimeSource.Monotonic.markNow()
   val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> "START -> [$q,START,$r]" }
+    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q,START,$r]") }
 
   val transits =
-    fsa.Q.map { (q, a, r) -> "[$q,$a,$r] -> $a" }
+    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
@@ -140,10 +139,12 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     nonterminalProductions.map {
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      triples.map { (p, q, r) -> "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]" }
+      triples.map { (p, q, r) ->
+        "[$p,$A,$r]" to listOf("[$p,$B,$q]", "[$q,$C,$r]")
+      }
     }.flatten()
 
-  return (initFinal + transits + binaryProds + unitProds).postProcess()
+  return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
     .also { println("Postprocessing took ${clock.elapsedNow().inWholeMilliseconds}ms") }
 }
 
