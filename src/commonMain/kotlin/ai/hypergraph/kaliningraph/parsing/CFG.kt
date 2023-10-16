@@ -222,37 +222,17 @@ class BiMap(cfg: CFG) {
   val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
   val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
 
-  val TDEPS by lazy { // Maps all symbols to NTs that can generate them
-//    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
-//      cfg.forEach { (l, r) ->
-//        r.forEach { getOrPut(it) { mutableSetOf() }.add(l) }
-//      }
-//    }
-    val result = mutableMapOf<Σᐩ, MutableSet<Σᐩ>>()
-
-    for ((l, r) in cfg) {
-      for (symbol in r) {
-        result.getOrPut(symbol) { mutableSetOf() }.add(l)
-      }
+  val TDEPS: Map<Σᐩ, Set<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
+    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+      for ((l, r) in cfg) for (symbol in r)
+          getOrPut(symbol) { mutableSetOf() }.add(l)
     }
-
-    result
   }
-  val NDEPS by lazy { // Maps all NTs to the symbols they can generate
-//    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
-//      cfg.forEach { (l, r) ->
-//        r.forEach { getOrPut(l) { mutableSetOf() }.add(it) }
-//      }
-//    }
-    val result = mutableMapOf<Σᐩ, MutableSet<Σᐩ>>()
-
-    for ((l, r) in cfg) {
-      for (symbol in r) {
-        result.getOrPut(l) { mutableSetOf() }.add(symbol)
-      }
+  val NDEPS: Map<Σᐩ, Set<Σᐩ>> by lazy { // Maps all NTs to the symbols they can generate
+    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+      for ((l, r) in cfg) for (symbol in r)
+          getOrPut(l) { mutableSetOf() }.add(symbol)
     }
-
-    result
   }
   val TRIPL by lazy {
     R2LHS.filter { it.key.size == 2 }

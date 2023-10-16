@@ -9,6 +9,11 @@ typealias TSA = Set<Arc>
 data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
   val alphabet by lazy { Q.map { it.π2 }.toSet() }
   val states by lazy { Q.states }
+  val APSP: Map<Pair<Σᐩ, Σᐩ>, Int> by lazy {
+    graph.APSP.map { (k, v) ->
+      Pair(Pair(k.first.label, k.second.label), v)
+    }.toMap()
+  }
 
   val map: Map<Π2A<Σᐩ>, Set<Σᐩ>> by lazy {
     Q.groupBy({ (a, b, _) -> a to b }, { (_, _, c) -> c })

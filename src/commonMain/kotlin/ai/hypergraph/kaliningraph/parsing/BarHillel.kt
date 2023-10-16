@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
 infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
@@ -15,7 +16,7 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG {
   val transits =
     fsa.Q.map { (q, a, r) -> "[$q,$a,$r] -> $a" }
 
-  fun Triple<Σᐩ, Σᐩ, Σᐩ>.isValid(): Boolean {
+  fun Triple<Σᐩ, Σᐩ, Σᐩ>.isValid(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
     fun Σᐩ.coords() =
       substringAfter("_").split("/")
         .let { (i, j) -> i.toInt() to j.toInt() }
@@ -23,8 +24,28 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG {
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
       first <= other.first && second <= other.second
 
-    return first.coords().dominates(second.coords()) &&
-      second.coords().dominates(third.coords())
+    fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): Int =
+      second.second - first.second + second.first - first.first
+
+    // Range of the shortest path to the longest path, i.e., Manhattan distance
+    fun SPLP(a: Σᐩ, b: Σᐩ) =
+      (fsa.APSP[a to b] ?: Int.MAX_VALUE)..
+        manhattanDistance(a.coords(), b.coords())
+
+    fun IntRange.overlaps(other: IntRange) =
+      (other.first in first..last) || (other.last in first..last)
+
+    fun parikhBounds(nt: Σᐩ): IntRange = parikhBounds[nt] ?: -1..-1
+
+    // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
+    fun isCompatible() =
+      first.coords().dominates(second.coords())
+        && second.coords().dominates(third.coords())
+        && parikhBounds(nts.first).overlaps(SPLP(first, third))
+        && parikhBounds(nts.second).overlaps(SPLP(first, second))
+        && parikhBounds(nts.third).overlaps(SPLP(second, third))
+
+    return isCompatible()
   }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
@@ -40,7 +61,7 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG {
       triples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isValid() }
+        .filter { it.isValid(A to B to C) }
         .map { (p, q, r) -> "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]" }
     }.flatten()
 
@@ -121,4 +142,24 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 
   return (initFinal + transits + binaryProds + unitProds).postProcess()
     .also { println("Postprocessing took ${clock.elapsedNow().inWholeMilliseconds}ms") }
+}
+
+// Tracks the number of tokens a given nonterminal can represent
+// e.g., a NT with a Parikh bound of 1..3 can parse { s: Σ* | |s| ∈ [1, 3] }
+val CFG.parikhBounds: Map<Σᐩ, IntRange> by cache {
+  val epsFree = noEpsilonOrNonterminalStubs
+  val temp = List(20) { "_" }
+  val map =
+    epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
+  epsFree.initPForestMat(temp).seekFixpoint().diagonals
+    .mapIndexed { index, sets ->
+      val nonterminalsAtLevel = sets.flatMap { it.map { it.key } }
+      nonterminalsAtLevel.forEach { nt ->
+        map[nt]?.let {
+          (if (it.first < 0) (index + 1) else it.first)..(index + 1)
+        }?.let { map[nt] = it }
+      }
+    }
+
+  map
 }

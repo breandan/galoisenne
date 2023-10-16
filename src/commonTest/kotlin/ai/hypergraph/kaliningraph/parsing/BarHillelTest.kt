@@ -191,13 +191,26 @@ class BarHillelTest {
 */
   @Test
   fun testPythonBarHillel() {
-    val gram = SetValiantTest.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val intGram = gram.intersectLevFSA(makeLevFSA("NUMBER + NEWLINE", 2, gram.terminals))
+    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val levBall = makeLevFSA("- NUMBER + NEWLINE", 2, gram.terminals)
+    val intGram = gram.intersectLevFSA(levBall)
       .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
     val clock = TimeSource.Monotonic.markNow()
 
-    intGram.enumSeq(List(5) { "_" }.joinToString(" "))
-      .onEach { println(it) }.toList()
+    val lbhSet = intGram.enumSeq(List(6) { "_" }.joinToString(" "))
+      .onEach {
+        println(it)
+        assertTrue(it in gram.language)
+        assertTrue(levBall.recognizes(it))
+      }.toList()
+
+    println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
+
+    val totalParticipatingNonterminals =
+      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
+
+    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + intGram.nonterminals.size)
+//    println(intGram.depGraph.toDot())
   }
 }
