@@ -161,6 +161,7 @@ fun CFG.refactorEpsilonProds(nlbls: Set<Σᐩ> = nullableNonterminals()): CFG =
  * A useful symbol is both generating and reachable.
  */
 
+// TODO: https://zerobone.net/blog/cs/non-productive-cfg-rules/
 fun CFG.removeUselessSymbols(
   generating: Set<Σᐩ> = genSym(),
   reachable: Set<Σᐩ> = reachSym()
@@ -179,6 +180,13 @@ fun CFG.removeUselessSymbols(
 //    )
 //  }
 //  .first.toSet()
+
+//fun CFG.removeNonGenerating(generating: Set<Σᐩ> = genSym()) =
+//  toMutableSet().apply { removeAll { (s, _) -> s !in generating } }
+//
+//fun CFG.removeUnreachable() =
+//  toMutableSet().apply { removeAll { (s, _) -> !reachableNTs[bindex[s]] } }
+//    .also { println("Removed ${size - it.size} unreachable productions.") }
 
 fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = unitReachability[from] ?: setOf(from)
 
