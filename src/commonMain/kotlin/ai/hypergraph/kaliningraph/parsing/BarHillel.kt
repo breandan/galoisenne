@@ -4,11 +4,13 @@ import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
-infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
+infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.freeze().intersectLevFSAP(this)
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
-infix fun CFG.intersectLevFSA(fsa: FSA): CFG {
+infix fun CFG.intersectLevFSA(fsa: FSA): CFG = freeze().intersectLevFSAP(fsa)
+
+private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START -> [$q,START,$r]" }
@@ -82,6 +84,7 @@ fun List<Σᐩ>.postProcess() =
     .also { println("∩-grammar has ${it.size} total productions") }
     .dropVestigialProductions().normalForm.noNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
+    .freeze()
     //    .also { println(it.pretty) }
     //    .also { println(it.size) }
 
@@ -110,7 +113,7 @@ fun CFG.dropVestigialProductions(
 //  val reachable = reachableSymbols()
   val rw = toMutableSet()
     .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
-    .removeUselessSymbols()
+    .freeze().removeUselessSymbols()
 
   println("Removed ${size - rw.size} vestigial productions.")
 

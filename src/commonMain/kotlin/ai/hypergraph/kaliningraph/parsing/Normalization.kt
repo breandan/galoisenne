@@ -212,7 +212,7 @@ fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()
     val t = nextGenerating.first()
     nextGenerating.remove(t)
     allGenerating += t
-    nextGenerating += (bimap.TDEPS[t]?: emptyList())
+    nextGenerating += (bimap.TDEPS[t] ?: emptyList())
       .filter { it !in allGenerating && it !in nextGenerating }
   } while (nextGenerating.isNotEmpty())
 

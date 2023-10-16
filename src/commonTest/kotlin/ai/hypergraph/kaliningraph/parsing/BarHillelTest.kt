@@ -192,12 +192,14 @@ class BarHillelTest {
   @Test
   fun testPythonBarHillel() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val levBall = makeLevFSA("- NUMBER + NEWLINE", 2, gram.terminals)
+    val toRepair = "NAME = ( NAME .".tokenizeByWhitespace()
+    val levBall = makeLevFSA(toRepair, 3, gram.terminals)
     val intGram = gram.intersectLevFSA(levBall)
-      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
+//      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
     val clock = TimeSource.Monotonic.markNow()
 
-    val lbhSet = intGram.enumSeq(List(6) { "_" }.joinToString(" "))
+    val template = List(toRepair.size + 2) { "_" }.joinToString(" ")
+    val lbhSet = intGram.enumSeq(template)
       .onEach {
         println(it)
         assertTrue(it in gram.language)
