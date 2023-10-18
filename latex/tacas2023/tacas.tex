@@ -79,7 +79,7 @@ $A(\sigma)$ is often a large-cardinality set, so we want a procedure which retur
 
 Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
 
-\subsection{Background}
+\subsection{Background}\label{sec:background}
 
 Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
@@ -95,29 +95,29 @@ $G\coloneqq\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrighta
 X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
 \end{align}
 
-\noindent If we define $\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_{r+1=c}(G', e) \coloneqq \;\sigma_r$ and solve for the fixpoint $M_{i+1} = M_i + M_i^2$,\vspace{-10pt}
+\noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$ and solve for the fixpoint $M_{i+1} = M_i + M_i^2$,\vspace{-10pt}
 
 \begin{align*}
 M_0\coloneqq
 \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-   \varnothing & \sigma_1 & \varnothing & \Cdots & \varnothing \\
+   \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
    \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
                &          &             &        & \varnothing\\
-               &          &             &        & \sigma_n \\
+               &          &             &        & \hat\sigma_n \\
    \varnothing & \Cdots   &             &        & \varnothing
 \end{pNiceMatrix} &\Rightarrow
 \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-  \varnothing & \sigma_1 & \Lambda & \Cdots & \varnothing \\
+  \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
   \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
               &          &         &        & \Lambda\\
-              &          &         &        & \sigma_n \\
+              &          &         &        & \hat\sigma_n \\
   \varnothing & \Cdots   &         &        & \varnothing
 \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
 \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-   \varnothing & \sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
+   \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
    \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
                &          &         &        & \Lambda\\
-               &          &         &        & \sigma_n \\
+               &          &         &        & \hat\sigma_n \\
    \varnothing & \Cdots   &         &        & \varnothing
 \end{pNiceMatrix}
 \end{align*}
@@ -224,7 +224,7 @@ V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\
   &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
 \end{align}
 
-Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \sigma_r^{-1}(O) \times \sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
+Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
 
 The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
 
@@ -387,46 +387,61 @@ Conveniently, the Levenshtein ball is recognized by a nondeterministic finite au
 
 \subsection{Semiring Algebras}
 
-There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we have $p(s: \Sigma) \coloneqq \{v \mid [v \rightarrow s]\in P\}$ and $p(\_) := \bigcup_{s\in \Sigma} p(s)$, then we compute the fixpoint using the algebra:
+There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = \hat\sigma_r = p(\sigma_r)$ as follows:
 
 \begin{equation}
-  X \oplus Z := \{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\}
+  p(s: \Sigma) \mapsto \{v \mid (v \rightarrow s)\in P\} \text{ and } p(\_) := \bigcup_{s\in \Sigma} p(s)
+\end{equation}
+
+Like the recognizer defined in \S~\ref{sec:background}, $p(\cdot)$ constructs elements of the superdiagonal, then we compute the fixpoint using the algebra:
+
+\begin{equation}
+  X \oplus Z \mapsto \big\{v \rightarrow \big(X(v) \cup Z(v)\big) \mid v \in V\big\}
 \end{equation}
 
 \begin{equation}
-  X \otimes Z := \bigoplus_{w, x, z}\big\{w \rightarrow (l + r) \mid [w\rightarrow xz] \in P, \langle l, r\rangle \in X(x) \times Z(x)\big\}
+  X \otimes Z \mapsto \bigoplus_{w, x, z}\big\{w \rightarrow (l + r) \mid (w\rightarrow xz) \in P, l \in X(x), r \in Z(x)\big\}
 \end{equation}
 
-\noindent After the fixpoint $M_\infty$ is attained, the solutions can be read off via $M_\infty[0, |\sigma|](S)$. The issue here is an exponential growth in cardinality when eagerly computing the Cartesian product, which becomes impractical for even small strings. We can make this encoding more compact by propagating an algebraic data type (ADT) $\mathbb{T}_2$ using the operations $\oplus, \otimes: 2^{\mathbb{T}_2} \times 2^{\mathbb{T}_2} \rightarrow 2^{\mathbb{T}_2}$ as follows:
+\noindent After the fixpoint $M_\infty$ is attained, the solutions can be read off via $\Lambda_\sigma^*[S]$. The issue here is an exponential growth in cardinality when eagerly computing the Cartesian product, which becomes impractical for even small strings.
+
+This encoding can be made more compact by propagating an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ as follows:
 
 \begin{equation}
-  X \oplus Z := \{\mathbb{T}_2(k, Q_x \cup Q_z) \mid (k, Q)_X \Join_k (k, Q)_Z\}
+\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(v, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (v \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) := \bigoplus_{s\in \Sigma} p(s)
+\end{equation}
+
+\noindent We compute the fixpoint $M_\infty$ by defining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+
+\begin{equation}
+  X \oplus Z \mapsto \big\{\mathbb{T}_2(k, Q_x \cup Q_z) \mid (k, Q)_X \Join_k (k, Q)_Z\big\}
 \end{equation}
 
 \begin{equation}
-  X \otimes Z := \bigoplus_{w, x, z}\big\{\mathbb{T}_2(w, \{\langle T_x, T_z\rangle\}) \mid [w\rightarrow xz] \in P, x \in \pi_1(X), z \in \pi_1(Z)\big\}
+  X \otimes Z \mapsto \bigoplus_{w, x, z}\Big\{\mathbb{T}_2\big(w, \{\langle X\circ x, Z\circ z\rangle\}\big) \mid (w\rightarrow xz) \in P, x \in \pi_1(X), z \in \pi_1(Z)\Big\}
 \end{equation}
 
-Decoding, then becomes a matter of enumerating binary trees from the ADT using a recursive choice function that emits a sequence of strings satisfying $A(\sigma)$, with the type signature $\mathcal{C}: \mathbb{T}_2 \rightarrow (\mathbb{N} \rightarrow \Sigma^*)$ defined as follows:
+Decoding trees from $\Lambda_\sigma^*[S]: \mathbb{T}_2$ becomes a straightforward matter of enumeration using a recursive choice function that emits a sequence of binary trees generated by the CFG. We define this construction more precisely in \S~\ref{sec:pairing}.
 
-\begin{equation*}
-  \mathcal{C}(t: \mathbb{T}_2) := \begin{cases}
-    \pi_1(t) & \text{if $\pi_2(t) = \varnothing$, or}\\
-    \big\{x + z \mid \langle X, Z\rangle \in \pi_2(t), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
-  \end{cases}
-\end{equation*}
+%\begin{equation*}
+%  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
+%    \texttt{root}(T) & \text{if $T$ is a leaf,} \\
+%    \big\{x z \mid \langle X, Z\rangle \in \texttt{children}(T), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
+%  \end{cases}
+%\end{equation*}
 
 In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
 
-\pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}
+\pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
 
-The type all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
+The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
 
 \begin{equation}
   L(p) = 1 + p L \phantom{addspace} P(a) = 1 + a L(P(a)^2)
 \end{equation}
 
-The number of binary trees inhabited in a single instance of the $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To compute the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) := \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T_S := M_\infty[0, n, S]$, and compute the total number of trees $|T_S|$ using the following recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) := \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^*[S]$, and compute the total number of trees using the following recurrence:
+
 
 %  val totalTrees: BigInteger by lazy {
 %    if (branches.isEmpty()) BigInteger.ONE
@@ -435,13 +450,14 @@ The number of binary trees inhabited in a single instance of the $\mathbb{T}_2$ 
 %  }
 
 \begin{equation}
-  |T: \mathbb{T}_2| = \begin{cases}
-    1 & \text{if $T$ is a leaf,} \\
+  |T: \mathbb{T}_2| \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+    1  & \text{if $T$ is a leaf,} \\
     \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
   \end{cases}
 \end{equation}
 
-To sample all trees uniformly without replacement, we define a pairing function $\varphi^{-1}: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ as follows:
+To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we first define a pairing function $\varphi^{-1}: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ as follows:
 
 %private fun decodeTree(i: BigInteger): Pair<Tree, BigInteger> {
 %  if (branches.isEmpty()) return Tree(root) to i
@@ -455,14 +471,14 @@ To sample all trees uniformly without replacement, we define a pairing function 
 %}
 
 \begin{equation}
-  \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) := \begin{cases}
-  \Big\langle\texttt{BTree}\big(\pi_1(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+  \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+  \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
   \text{Let } b = |\texttt{children}(T)|,\\
   \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
   \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
   \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
   \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
-  \Big\langle\texttt{BTree}\big(\pi_1(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+  \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
   \end{cases}
 \end{equation}
 
