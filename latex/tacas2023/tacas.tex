@@ -69,7 +69,7 @@ To solve this problem, we will first pose a simpler problem that only considers 
 $A(\sigma)$ is often a large-cardinality set, so we want a procedure which returns the most likely members first, without exhaustive enumeration. More precisely,
 
 \begin{definition}[Ranked repair]
-  Given a finite language $\ell^\cap := L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+  Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
   \begin{equation}
  R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
   \end{equation}
@@ -128,7 +128,7 @@ Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $
 
 \subsection{Example}\label{sec:example}
 
-Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus:=\cup$, $X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
 
 \begin{small}
 {\renewcommand{\arraystretch}{1.2}
@@ -191,7 +191,7 @@ The same procedure can be translated, without loss of generality, into the bit d
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z \coloneqq [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z \coloneqq [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
+In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
 
 \begin{align}
 V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
@@ -390,7 +390,7 @@ Conveniently, the Levenshtein ball is recognized by a nondeterministic finite au
 There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = \hat\sigma_r = p(\sigma_r)$ as follows:
 
 \begin{equation}
-  p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\_) := \bigcup_{s\in \Sigma} p(s)
+  p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\_) \mapsto \bigcup_{s\in \Sigma} p(s)
 \end{equation}
 
 Like the recognizer defined in \S~\ref{sec:background}, $p(\cdot)$ constructs elements of the superdiagonal, then we compute the fixpoint using the algebra:
@@ -408,7 +408,7 @@ Like the recognizer defined in \S~\ref{sec:background}, $p(\cdot)$ constructs el
 This encoding can be made more compact by propagating an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ as follows:
 
 \begin{equation}
-\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) := \bigoplus_{s\in \Sigma} p(s)
+\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) \mapsto \bigoplus_{s\in \Sigma} p(s)
 \end{equation}
 
 \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
@@ -440,7 +440,7 @@ The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in 
   L(p) = 1 + p L \phantom{addspace} P(a) = 1 + a L(P(a)^2)
 \end{equation}
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) := \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
 
 
 %  val totalTrees: BigInteger by lazy {
