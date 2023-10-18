@@ -75,11 +75,9 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
     }
 }
 
-fun CFG.startPTree(s: String) =
-  measureTimedValue {
-    initPForestMat(s.tokenizeByWhitespace())
-      .seekFixpoint().diagonals.last()[0][START_SYMBOL]
-  }.also { println("Time to compute parse forest: ${it.duration}") }.value
+fun CFG.startPTree(tokens: List<Σᐩ>) = measureTimedValue {
+  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
+}.also { println("Time to compute parse forest: ${it.duration}") }.value
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(
@@ -122,22 +120,20 @@ fun CFG.joinSeq(X: PForest, Z: PForest): PForest =
 //      if (acc == null) listOf(pair) else acc + pair
 //    }.map { (k, v) -> k to PTree(k, v) }.toMap()
 
-fun CFG.sliceSolve(size: Int): Sequence<Σᐩ> =
-  solveSeq(List(size) { "_" }.joinToString(" "))
+fun CFG.sliceSolve(size: Int): Sequence<Σᐩ> = solveSeq(List(size) { "_" })
 
-fun CFG.sliceSample(size: Int): Sequence<Σᐩ> =
-  sampleSeq(List(size) { "_" }.joinToString(" "))
+fun CFG.sliceSample(size: Int): Sequence<Σᐩ> = sampleSeq(List(size) { "_" })
 
 // Lazily computes all syntactically strings compatible with the given template
 // Generally slow, but guaranteed to return all solutions
-fun CFG.solveSeq(s: String): Sequence<String> =
-  startPTree(s)?.choose()?.distinct() ?: sequenceOf()
+fun CFG.solveSeq(tokens: List<Σᐩ>): Sequence<String> =
+  startPTree(tokens)?.choose()?.distinct() ?: sequenceOf()
 
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
-fun CFG.enumSeq(s: String): Sequence<String> =
-  startPTree(s)?.sampleWithoutReplacement()?.distinct() ?: sequenceOf()
+fun CFG.enumSeq(tokens: List<Σᐩ>): Sequence<String> =
+  startPTree(tokens)?.sampleWithoutReplacement()?.distinct() ?: sequenceOf()
 
 // This is generally the fastest method, but may return duplicates
-fun CFG.sampleSeq(s: String): Sequence<String> =
-  startPTree(s)?.sampleWithReplacement() ?: sequenceOf()
+fun CFG.sampleSeq(tokens: List<Σᐩ>): Sequence<String> =
+  startPTree(tokens)?.sampleWithReplacement() ?: sequenceOf()

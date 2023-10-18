@@ -44,7 +44,7 @@ class BarHillelTest {
 
     println("Grammar size: ${bhcfg.size}")
 
-    val template = List(60) { "_" }.joinToString(" ")
+    val template = List(60) { "_" }
   //    measureTime {
   //      template.tokenizeByWhitespace()
   //        .solve(bhcfg, fillers = bhcfg.terminals)
@@ -119,7 +119,7 @@ class BarHillelTest {
     val testFail = "2 * 2"
     assertFalse(testFail in levCFG.language)
 
-    val template = List(5) { "_" }.joinToString(" ")
+    val template = List(5) { "_" }
     val solutions = levCFG.enumSeq(template).toList().onEach { println(it) }
     println("Found ${solutions.size} solutions within Levenshtein distance 2 of \"$origStr\"")
   }
@@ -138,7 +138,7 @@ class BarHillelTest {
     val origStr = "T and ! ( F )"
     val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1, arithCFG.terminals))
 
-    val template = List(8) { "_" }.joinToString(" ")
+    val template = List(8) { "_" }
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
       .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
 
@@ -164,7 +164,7 @@ class BarHillelTest {
     val origStr = "( ( ) ) [ { }"
     val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 2, arithCFG.terminals))
 
-    val template = List(9) { "_" }.joinToString(" ")
+    val template = List(9) { "_" }
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
       .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
 
@@ -197,7 +197,7 @@ class BarHillelTest {
 //      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
     val clock = TimeSource.Monotonic.markNow()
 
-    val template = List(toRepair.size + 2) { "_" }.joinToString(" ")
+    val template = List(toRepair.size + 2) { "_" }
     val lbhSet = intGram.enumSeq(template)
       .onEach {
         println(it)
