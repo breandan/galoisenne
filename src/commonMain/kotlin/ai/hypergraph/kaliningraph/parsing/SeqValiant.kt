@@ -55,11 +55,18 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
     return concat to quotient3
   }
 
-  fun sampleWithoutReplacement(): Sequence<String> = sequence {
+  fun sampleTreesWithoutReplacement() =
+    sequence {
+      println("Total trees in PTree: $totalTrees")
+      var i = BigInteger.ZERO
+      while (i < totalTrees) yield(decodeTree(i++).first)
+    }.distinct()
+
+  fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
     println("Total trees in PTree: $totalTrees")
     var i = BigInteger.ZERO
     while (i < totalTrees) yield(decodeString(i++).first)
-  }
+  }.distinct()
 
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
@@ -132,8 +139,11 @@ fun CFG.solveSeq(tokens: List<Σᐩ>): Sequence<String> =
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
 fun CFG.enumSeq(tokens: List<Σᐩ>): Sequence<String> =
-  startPTree(tokens)?.sampleWithoutReplacement()?.distinct() ?: sequenceOf()
+  startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
 // This is generally the fastest method, but may return duplicates
 fun CFG.sampleSeq(tokens: List<Σᐩ>): Sequence<String> =
   startPTree(tokens)?.sampleWithReplacement() ?: sequenceOf()
+
+fun CFG.enumTree(tokens: List<Σᐩ>): Sequence<Tree> =
+  startPTree(tokens)?.sampleTreesWithoutReplacement() ?: sequenceOf()

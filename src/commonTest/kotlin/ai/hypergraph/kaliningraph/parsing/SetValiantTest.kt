@@ -350,7 +350,7 @@ class SetValiantTest {
   fun testSeqValiant() {
     var clock = TimeSource.Monotonic.markNow()
     val detSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-        .enumSeq(List(20) {"_"}.joinToString(" "))
+        .enumSeq(List(20) {"_"})
         .take(10_000).sortedBy { it.length }.toList()
 
     detSols.forEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
@@ -369,13 +369,21 @@ class SetValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUnitParse"
+*/
+  @Test
+  fun testUnitParse() {
+    assertNotNull(Grammars.seq2parsePythonCFG.parse("NEWLINE"))
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testPythonRepairs"
 */
   @Test
   fun testPythonRepairs() {
     val refStr = "NAME = ( NAME"
     val refLst = refStr.tokenizeByWhitespace()
-    val template = List(refLst.size + 3) { "_" }.joinToString(" ")
+    val template = List(refLst.size + 3) { "_" }
     println("Solving: $template")
     measureTime {
       Grammars.seq2parsePythonCFG.enumSeq(template)

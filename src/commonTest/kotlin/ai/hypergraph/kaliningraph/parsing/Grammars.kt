@@ -29,11 +29,10 @@ object Grammars {
   """.trimIndent().parseCFG().noNonterminalStubs
 
     val seq2parsePythonCFG: CFG = """
-  START -> Stmts_Or_Newlines Endmarker
+  START -> Stmts_Or_Newlines
   Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
   Stmt_Or_Newline -> Stmt | Newline
 
-  Endmarker -> 
   Newline -> NEWLINE
 
   Async_Funcdef -> Async_Keyword Funcdef

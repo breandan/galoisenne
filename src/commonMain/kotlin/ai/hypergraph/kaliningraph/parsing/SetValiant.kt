@@ -16,8 +16,15 @@ fun Σᐩ.matches(CJL: CJL): 𝔹 = CJL.cfgs.all { matches(it) }
 fun List<Σᐩ>.matches(CFG: CFG): 𝔹 = CFG.isValid(this)
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: Σᐩ): Tree? =
-  try { parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize() }
-  catch (e: Exception) { null }
+  try {
+//    enumTree(s.tokenizeByWhitespace()).firstOrNull()?.denormalize()
+    parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize()
+  } catch (e: Exception) { checkUnitWord(s).ifEmpty { null }?.firstOrNull() }
+
+fun CFG.checkUnitWord(str: Σᐩ): Forest =
+  if (str.tokenizeByWhitespace().size == 1 && START_SYMBOL in bimap[listOf(str)]) {
+    setOf(Tree(START_SYMBOL, str))
+  } else setOf()
 
 fun CFG.parseAll(s: Σᐩ): Forest =
   try { parseForest(s).filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() }
@@ -36,7 +43,8 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
 
 fun CFG.isValid(str: Σᐩ): 𝔹 = isValid(str.tokenizeByWhitespace())
 fun CFG.isValid(str: List<Σᐩ>): 𝔹 =
-  initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0]
+  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
+  else initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0]
     //.also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
     //.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
     .let { corner -> corner[bindex[START_SYMBOL]] }
@@ -44,6 +52,7 @@ fun CFG.isValid(str: List<Σᐩ>): 𝔹 =
 fun CFG.corner(str: Σᐩ) =
  solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
 //  START_SYMBOL in solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
+
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
 
