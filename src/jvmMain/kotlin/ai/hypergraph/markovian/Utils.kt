@@ -37,4 +37,4 @@ fun <T> List<T>.allMasks(): List<List<T?>> =
   }
 
 fun String.execute() =
-  ProcessBuilder(also { println("Executing: $it") }.split(" ")).start().waitFor()
+  ProcessBuilder(also { println("Executing: $it") }.split(' ')).start().waitFor()

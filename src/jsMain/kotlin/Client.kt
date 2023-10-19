@@ -8,7 +8,7 @@ import kotlin.js.Promise
 @OptIn(ExperimentalStdlibApi::class)
 fun main() {
     window.onhashchange = {
-        when (it.newURL.substringAfter("#")) {
+        when (it.newURL.substringAfter('#')) {
             "prefattach" -> prefAttach()
             "rewriter" -> rewriter()
             "cfgparser" -> cfgParser()

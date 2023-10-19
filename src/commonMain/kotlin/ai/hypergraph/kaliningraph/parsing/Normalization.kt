@@ -88,9 +88,9 @@ fun CFG.generateNonterminalStubs(): CFG =
     .map { it.LHS to listOf("<${it.LHS}>") }.toSet()).addEpsilonProduction()
 
 fun Σᐩ.isSyntheticNonterminal() =
-  split(".").size != 1 || "ε" in this || this == "START"
+  split('.').size != 1 || "ε" in this || this == "START"
 fun Σᐩ.isOrganicNonterminal() =
-  split(".").size == 1 && "ε" !in this && this != "START"
+  split('.').size == 1 && "ε" !in this && this != "START"
 
 // Add start symbol if none are present (e.g., in case the user forgets)
 private fun CFG.addGlobalStartSymbol(): CFG =

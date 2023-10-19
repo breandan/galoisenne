@@ -191,7 +191,7 @@ class BarHillelTest {
   @Test
   fun testPythonBarHillel() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val toRepair = "NAME = ( NAME .".tokenizeByWhitespace()
+    val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val levBall = makeLevFSA(toRepair, 3, gram.terminals)
     val intGram = gram.intersectLevFSA(levBall)
 //      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }

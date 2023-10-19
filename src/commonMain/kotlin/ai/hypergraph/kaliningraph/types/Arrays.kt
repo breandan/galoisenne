@@ -86,13 +86,13 @@ operator fun <T> Set<T>.contains(s: Set<T>) = containsAll(s)
   flatMap { s.map(it::to) }
 
 @JvmName("cartProdPair") operator fun <E: Π2<A, B>, A, B, Z> Set<E>.times(s: Set<Z>): Set<Π3<A, B, Z>> =
-  flatMap { s.map(it::to).toSet() }.toSet()
+  flatMap { s.map(it::to) }.toSet()
 
 @JvmName("cartProdPairPair") operator fun <A, B, C, D> Set<Π2<A, B>>.times(s: Set<Π2<C, D>>): Set<Π2<Π2<A, B>, Π2<C, D>>> =
-  flatMap { s.map(it::to).toSet() }.toSet()
+  flatMap { s.map(it::to) }.toSet()
 
 @JvmName("cartProdTriple") operator fun <E: Π3<A, B, C>, A, B, C, Z> Set<E>.times(s: Set<Z>): Set<Π4<A, B, C, Z>> =
-  flatMap { s.map(it::to).toSet() }.toSet()
+  flatMap { s.map(it::to) }.toSet()
 
 // IDK why the Kotlin stdlib provides these for Map but not Set
 public inline fun <T> Set<T>.filter(noinline predicate: (T) -> Boolean): Set<T> =

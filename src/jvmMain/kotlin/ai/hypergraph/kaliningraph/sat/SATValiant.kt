@@ -369,7 +369,7 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
 
 // Naming convention: HV_r::${r}_c::${c}..._f::${idx}
 fun Variable.toRowColNT(cfg: CFG): Π3<Int, Int, String> {
-  val (r, c, idx) = name().split("_").let { it[1].substringAfter("r::").toInt() to
+  val (r, c, idx) = name().split('_').let { it[1].substringAfter("r::").toInt() to
       it[2].substringAfter("c::").toInt() to it.last().substringAfter("f::").toInt() }
   return Π(r, c, cfg.bindex[idx])
 }

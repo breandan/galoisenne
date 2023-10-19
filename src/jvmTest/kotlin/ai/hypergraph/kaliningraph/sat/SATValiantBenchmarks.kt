@@ -23,7 +23,7 @@ class SATValiantBenchmarks {
     fun List<Double>.stddev() = average().let { μ -> map { (it - μ).pow(2) } }.average().pow(0.5)
 
     fun String.dropHoles(i: Int = 4, idxs: Set<Int> = indices.shuffled().take(i).toSet()) =
-      split(" ").mapIndexed { i, it -> if (i in idxs) "_" else it }.joinToString(" ")
+      split(' ').mapIndexed { i, it -> if (i in idxs) "_" else it }.joinToString(" ")
 
     val numSamples = 20
     var data = "holes, d1, d1err, d2, d2err, d3, d3err, d4, d4err"
@@ -57,7 +57,7 @@ class SATValiantBenchmarks {
       average().let { μ -> map { (it - μ).pow(2) } }.average().pow(0.5)
 
     fun String.makeError(i: Int = 4, idxs: Set<Int> = indices.shuffled().take(i).toSet()): String =
-      split(" ").mapIndexed { i, it -> if (i in idxs) "" else it }.joinToString(" ")
+      split(' ').mapIndexed { i, it -> if (i in idxs) "" else it }.joinToString(" ")
 
     val numSamples = 10
     var data = "errors, d1, d1err, d2, d2err, d3, d3err, d4, d4err"

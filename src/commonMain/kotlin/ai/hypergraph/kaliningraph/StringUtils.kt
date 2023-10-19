@@ -20,7 +20,7 @@ fun Σᐩ.hasBalancedBrackets(brackets: Set<Char> = BRACKETS): Boolean =
     stack.apply { if (isNotEmpty() && c.closes(peek())) pop() else push(c) }
   }.isEmpty() && brackets.any { it in this }
 
-fun Σᐩ.splitProd() = replaceFirst("->", "→").split("→").map { it.trim() }
+fun Σᐩ.splitProd() = replaceFirst("->", "→").split('→').map { it.trim() }
 
 fun List<Σᐩ>.formatAsGrid(cols: Int = -1): FreeMatrix<Σᐩ> {
   fun Σᐩ.tok() = splitProd()
@@ -57,7 +57,7 @@ private fun <T> List<List<T>>.col(i: Int) = map { it[i] }
 // https://en.wikipedia.org/wiki/Seam_carving
 fun Σᐩ.carveSeams(toRemove: Regex = Regex("\\s{2,}")): Σᐩ =
   replace("  |  ", "    ")
-    .lines().filter { it.isNotBlank() }.map { it.split("→") }.let { toMerge ->
+    .lines().filter { it.isNotBlank() }.map { it.split('→') }.let { toMerge ->
     val minCols = toMerge.minOf { it.size }
     val takeAway = (0 until minCols).map { toMerge.col(it).minOf { toRemove.find(it)!!.value.length } }
     val subs = takeAway.map { List(it) { " " }.joinToString("") }

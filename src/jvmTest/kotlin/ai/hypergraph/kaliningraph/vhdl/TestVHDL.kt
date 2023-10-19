@@ -415,6 +415,6 @@ fun String.runVHDL(name: String = "hello") {
 
 fun runCommand(command: String): Boolean =
     try {
-        ProcessBuilder(*command.split(" ").toTypedArray())
+        ProcessBuilder(*command.split(' ').toTypedArray())
             .redirectOutput(INHERIT).redirectError(INHERIT).start().waitFor(60, MINUTES)
     } catch (e: Exception) { false }

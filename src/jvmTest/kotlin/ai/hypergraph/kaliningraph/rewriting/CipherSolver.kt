@@ -19,7 +19,7 @@ fun main() {
   val isogram = ('a'..'z').shuffled().joinToString("")
   val message = "meet me at secret location at noon on wednesday"
   val ciphertext = encrypt(isogram, message)
-  val cipherwords = ciphertext.split(" ")
+  val cipherwords = ciphertext.split(' ')
 
   val possibleWords = FastListMultimap.newMultimap<String, String>()
   for (word in cipherwords)

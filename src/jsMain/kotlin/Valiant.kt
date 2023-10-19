@@ -61,7 +61,7 @@ fun cfgParser(
         val chunks = mutableList.mapIndexedNotNull { i, lbl ->
           val aVert = last[{ it.label == lbl }].first()
           val nonterminals =
-            last[{ it.label == lbl.substringAfter(":") }].first().neighbors
+            last[{ it.label == lbl.substringAfter(':') }].first().neighbors
           if (nonterminals.isNotEmpty()) {
             val mergeLabel = nonterminals.joinToString(",") { "$i:${it.label}" }
             newList.add(mergeLabel)

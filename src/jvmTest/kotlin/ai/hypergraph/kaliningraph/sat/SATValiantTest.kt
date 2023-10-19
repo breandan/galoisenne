@@ -180,7 +180,7 @@ class SATValiantTest {
     println(cfg.prettyPrint())
 
     "_ _ _ _ _ _".also { println("$it is being synthesized...") }
-      .split(" ").genCandidates(cfg)
+      .split(' ').genCandidates(cfg)
       .filter { (it.matches(cfg) to it.hasBalancedBrackets())
         .also { (valiant, stack) ->
           // Should never see either of these statements if we did our job correctly
@@ -585,7 +585,7 @@ class SATValiantTest {
       .take(10).toList().also { assert(it.isNotEmpty()) }
       .map {
         println(it)
-        val (left, right) = it.split("=")
+        val (left, right) = it.split('=')
         val (ltree, rtree) = arith.parse(left)!! to arith.parse(right)!!
         val (leval, reval) = ltree.eval() to rtree.eval()
         println("$leval = $reval")
@@ -838,7 +838,7 @@ class SATValiantTest {
 
    // Deletes two random characters from each string
     val corruptedStrings =
-      strings.map { val tokens = it.split(" ")
+      strings.map { val tokens = it.split(' ')
         val toDelete = tokens.indices.shuffled().take(2)
         tokens.filterIndexed { i, _ -> i !in toDelete }.joinToString(" ")
       }

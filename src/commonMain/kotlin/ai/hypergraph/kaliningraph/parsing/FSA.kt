@@ -53,7 +53,7 @@ fun Σᐩ.parseFSA(): FSA {
       .map { it.split("->") }
       .map { (lhs, rhs) ->
         val src = lhs.tokenizeByWhitespace().first()
-        val dst = rhs.split("|").map { it.trim() }.toSet()
+        val dst = rhs.split('|').map { it.trim() }.toSet()
         val sym = if ("-<" in lhs && lhs.endsWith(">"))
           lhs.split("-<").last().dropLast(1) else ""
 

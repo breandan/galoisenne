@@ -35,9 +35,8 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
 
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
     if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
-    val (quotient1, remainder) =
-      i.div(branches.size) to i.mod(branches.size.toBigInteger())
-    val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
+    val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
+    val (lb, rb) = shuffledBranches[remainder.intValue()]
     val (l, quotient2) = lb.decodeString(quotient1)
     val (r, quotient3) = rb.decodeString(quotient2)
     val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")

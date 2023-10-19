@@ -19,9 +19,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
   fun Triple<Σᐩ, Σᐩ, Σᐩ>.isValid(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
-    fun Σᐩ.coords() =
-      substringAfter("_").split("/")
-        .let { (i, j) -> i.toInt() to j.toInt() }
+    fun Σᐩ.coords(): Pair<Int, Int> = drop(2).run {
+      (length / 2).let {substring(0,it).toInt() to substring(it + 1).toInt() }
+    }
 
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
       first <= other.first && second <= other.second
@@ -151,7 +151,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 // Tracks the number of tokens a given nonterminal can represent
 // e.g., a NT with a Parikh bound of 1..3 can parse { s: Σ* | |s| ∈ [1, 3] }
 val CFG.parikhBounds: Map<Σᐩ, IntRange> by cache {
-  val epsFree = noEpsilonOrNonterminalStubs
+  val epsFree = noEpsilonOrNonterminalStubs.freeze()
   val temp = List(20) { "_" }
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()

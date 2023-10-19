@@ -50,14 +50,19 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
 fun makeLevFSA(str: Σᐩ, dist: Int, alphabet: Set<Σᐩ>): FSA =
   makeLevFSA(str.tokenizeByWhitespace(), dist, alphabet)
 
-fun makeLevFSA(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): FSA =
-  (upArcs(str, dist, alphabet) +
-    diagArcs(str, dist, alphabet) +
-    str.mapIndexed { i, it -> rightArcs(i, dist, it) }.flatten() +
-    str.mapIndexed { i, it -> knightArcs(i, dist, it) }.flatten()).let { Q ->
-    val initialStates = setOf("q_0/0")
+fun makeLevFSA(
+  str: List<Σᐩ>,
+  dist: Int,
+  alphabet: Set<Σᐩ>,
+  digits: Int = (str.size * dist).toString().length
+): FSA =
+  (upArcs(str, dist, alphabet, digits) +
+    diagArcs(str, dist, alphabet, digits) +
+    str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
+    str.mapIndexed { i, it -> knightArcs(i, dist, it, digits) }.flatten()).let { Q ->
+    val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
     fun Σᐩ.unpackCoordinates() =
-      substringAfter("_").split("/")
+      substringAfter('_').split('/')
         .let { (i, j) -> i.toInt() to j.toInt() }
 
     val finalStates = mutableSetOf<String>()
@@ -69,23 +74,45 @@ fun makeLevFSA(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): FSA =
     FSA(Q, initialStates, finalStates)
   }
 
-fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): TSA =
+fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
+
+fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
   ((0..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
-    .map { (i, j, s) -> "q_$i/${j-1}" to s to "q_$i/$j" }.toSet()
+    .map { (i, j, s) -> i to j-1 to s to i to j }
+    .map { (a, b, s, d, e) ->
+      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
+    }.map { (a, b, s, d, e) ->
+      "q_$a/$b" to s to "q_$d/$e"
+    }.toSet()
 
-fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>): TSA =
+fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
   ((1..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i - 1 || str[i-1] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
-    .map { (i, j, s) -> "q_${i-1}/${j-1}" to s to "q_$i/$j" }.toSet()
+    .map { (i, j, s) -> i-1 to j-1 to s to i to j }
+    .map { (a, b, s, d, e) ->
+      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
+    }.map { (a, b, s, d, e) ->
+      "q_$a/$b" to s to "q_$d/$e"
+    }.toSet()
 
-fun rightArcs(idx: Int, dist: Int, letter: Σᐩ): TSA =
+fun rightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int): TSA =
   (setOf(idx + 1) * (0..dist).toSet() * setOf(letter))
-    .map { (i, j, s) -> "q_${i-1}/$j" to s to "q_$i/$j" }.toSet()
+    .map { (i, j, s) -> i-1 to j to s to i to j }
+    .map { (a, b, s, d, e) ->
+      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
+    }.map { (a, b, s, d, e) ->
+      "q_$a/$b" to s to "q_$d/$e"
+    }.toSet()
 
-fun knightArcs(idx: Int, dist: Int, letter: Σᐩ): TSA =
+fun knightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int): TSA =
   if (idx <= 1) setOf()
   else (setOf(idx + 1) * (1..dist).toSet() * setOf(letter))
-    .map { (i, j, s) -> "q_${i-2}/${j-1}" to s to "q_$i/$j" }.toSet()
+    .map { (i, j, s) -> i-2 to j-1 to s to i to j }
+    .map { (a, b, s, d, e) ->
+      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
+    }.map { (a, b, s, d, e) ->
+      "q_$a/$b" to s to "q_$d/$e"
+    }.toSet()
