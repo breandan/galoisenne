@@ -64,7 +64,7 @@ This paper presents two high-level approaches to syntax error correction: one th
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{../figures/architecture_overview.pdf}
-  \caption{Our framework consists of three components, namely (2) a solver, (4) ranker and (3) sampler. Given an invalid string and grammar (1), we first compile them into a Boolean tensor (2) representing a multilinear system of equations whose fixed points characterize the admissible set. The system can be solved directly, yielding a set of repairs that are ranked using a suitable scoring function (4). Optionally, we may introduce stochastic edits to the string using the Levenshtein ball sampler (3) and extract the solutions incrementally (5). When the langauge edit distance and solutions are time-sensitive, (5) is typically more efficient.}
+  \caption{Our framework consists of three components, namely (2) a solver, (4) ranker and (3) sampler. Given an invalid string and grammar (1), we first compile them into a Boolean tensor (2) representing a multilinear system of equations whose fixed points characterize the admissible set. The system can be solved directly, yielding a set of repairs that are ranked using a suitable scoring function (4). Optionally, we may introduce stochastic edits to the string using the Levenshtein ball sampler (3) and extract the solutions incrementally (5). When the language edit distance and solutions are time-sensitive, (5) is typically more efficient.}
   \label{fig:overview}
 \end{figure}
 
@@ -222,7 +222,7 @@ Details of the bisimilarity between parsing and matrix multiplication can be fou
 
 \subsection{Parsing with holes}
 
-Valiant's algorithm can be abstracted by lifting it into the domain of linear equations over finite fields, where each bitvector in the upper triangular matrix instead contains polynomials whose solutions identify nonterminals participating in the parse forest of a \textit{porous string} on the superdiagonal (our work). This interpretation of Valiant's algorithm as an equational theory offers a novel polynomial reduction from language equations onto XORSAT. More formally, we solve the following problem:% e.g., langauge membership, langauge quotient, and reachability
+Valiant's algorithm can be abstracted by lifting it into the domain of linear equations over finite fields, where each bitvector in the upper triangular matrix instead contains polynomials whose solutions identify nonterminals participating in the parse forest of a \textit{porous string} on the superdiagonal (our work). This interpretation of Valiant's algorithm as an equational theory offers a novel polynomial reduction from language equations onto XORSAT. More formally, we solve the following problem:% e.g., language membership, language quotient, and reachability
 
 \begin{definition}[Hole subsumption]
   Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ represents a hole. We denote $\sqsubseteq: \underline\Sigma^n \times \Sigma^n$ as the relation $\{\langle\sigma, \sigma'\rangle \mid \sigma_i \in \Sigma \implies \sigma_i = \sigma_i'\}$ and the set of all $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$.
@@ -947,10 +947,10 @@ Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
 
 \begin{figure}[H]
 \begin{minipage}{.48\textwidth}
-\begin{center}\footnotesize\textbf{Synthetic bracket langauge}\end{center}
+\begin{center}\footnotesize\textbf{Synthetic bracket language}\end{center}
 \end{minipage}
 \begin{minipage}{.48\textwidth}
-\begin{center}\footnotesize\textbf{Organic bracket langauge}\end{center}
+\begin{center}\footnotesize\textbf{Organic bracket language}\end{center}
 \end{minipage}\\
 \vspace{10pt}
 \hspace{-0.25cm}\begin{tikzpicture}[scale=0.41]
@@ -1067,7 +1067,7 @@ error bars/y explicit
   \legend{10s, 30s, 60s}
   \end{axis}
 \end{tikzpicture}
-  \caption{Benchmarking bracket correction latency and accuracy across two bracketing langauges, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
+  \caption{Benchmarking bracket correction latency and accuracy across two bracketing languages, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
 \end{figure}
 
 In the second set of experiments, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub using the Dyck-nw\footnote{Using the Dyck-n grammar augmented with a single additional production, \texttt{Dyck-1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{Dyck-1}. Contiguous non-bracket characters are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, in which all source code tokens except brackets are replaced with a \texttt{w} token. For Java (2a), we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, and repair using Tidyparse, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser. For Python (2b), we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, which we repair using Tidyparse, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method. Since the Java and Python datasets do not have a ground-truth human fix, we report the percentage of repairs that are accepted by the language's official parser for repairs generated under a fixed time cutoff. Although the Java and Python datasets are not directly comparable, we observe that Tidyparse can detect and repair a significant fraction of bracket errors in both languages with a relatively unsophisticated grammar.

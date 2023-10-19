@@ -100,6 +100,7 @@
 
   \begin{center}
     \resizebox{0.42\textwidth}{!}{
+      \def\secondcirclepath{(1.15,0) coordinate (e) circle (2cm)}
       \begin{tikzpicture}[
         dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
         node contents={}}
@@ -109,22 +110,25 @@
         \def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
         \def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
         \def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
+
         \begin{scope}
-          \clip \secondcircle;
+          \clip[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
           \fill[black!15] \firstcircle;
         \end{scope}
+
         \draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
         \draw [dashed] \firstcirclea;
         \draw [dashed] \firstcircleb;
         \draw [dashed] \firstcirclec;
         \draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
         \draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
-        \draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$\vphantom{d}\ldots$};
-        \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^*$};
+        \draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$d^*$};
         \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
-        \draw \secondcircle;
-        \node [above] at (current bounding box.north -| a) {$\mathcal{L}(G(\err\sigma, r^*))$};
-        \node [above,yshift=1.5cm] at (e) {$\mathcal{L}(\mathcal{G})$};
+        \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^+$};
+
+        \draw[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
+        \node [above] at (current bounding box.north -| a) {$\mathcal{L}\bigl(G(\err\sigma, d^*)\bigr)$};
+        \node [above,yshift=2.1cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
       \end{tikzpicture}
     }
     \scalebox{7}{\large$^+$\Huge\fontspec{Arial Unicode MS}^^^^231b}
@@ -147,26 +151,46 @@
 
 \begin{frame}[fragile]{Syntax repair as a Gricean language game}
 
-  Imagine a game between two players, Player A and Player B.
-
-  They both see the same grammar, $\mathcal{G}$ and an invalid string, $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
-
-  % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
-
-  Player A moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$, and,
-
-  Player B moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
-
-  As soon as Player A repairs $\err\sigma$, the game immediately ends.
-
-  Neither player sees the other's move(s) before making their own.
 
   \begin{itemize}
-    \item If Player B anticipates Player's A's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
-    \item If Player A takes a move B did not anticipate, i.e., $\sigma \notin \tilde{\bm\sigma}$, A wins.
+    \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
+    \item They both see the same grammar, $\mathcal{G}$ and invalid string $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
+    % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
+    \item Author moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
+    \item Editor moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
+    \item As soon as Author repairs $\err\sigma$, the turn immediately ends.
+    \item Neither player sees the other's move(s) before making their own.
+    \item If Editor anticipates Author's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
+    \item If Author surprises Editor with a valid move, i.e., $\sigma \notin \tilde{\bm\sigma}$, Author wins.
+    \item We may consider a refinement where Editor wins in proportion to the time taken to anticipate Author's move.
   \end{itemize}
 
-  Furthermore, Player B wins in proportion to the time taken to anticipate Player A's move.
+\end{frame}
+
+\begin{frame}[fragile]{Bounded Levenshtein Reachability}
+  Syntax repair can be treated as a language intersection problem between a context-free language (CFL) and a regular language.
+
+  \begin{definition}[Bounded Levenshtein-CFL reachability]
+    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., we seek $L(\err\sigma, d) \cap \ell$ where $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$ and $\Delta$ is the Levenshtein metric.
+  \end{definition}
+
+  To solve this problem, we will first pose a simpler problem that only considers localized edits, then turn our attention back to BCFLR.
+
+  \begin{definition}[Porous completion]
+    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}[fragile]{Ranked repair under realtime constraints}
+  $A(\sigma)$ is often a very large-cardinality set, so we want a procedure which prioritizes likely repairs first, without exhaustive enumeration. Specifically,
+  \begin{definition}[Ranked repair]
+    Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+    \begin{equation}
+      R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
+    \end{equation}
+    % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and total latency.
+  \end{definition}
 \end{frame}
 
 \begin{frame}[fragile]{An Simple Reachability Proof}
@@ -198,10 +222,161 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Precision on Python StackOverflow Human Error Corpus}
+\begin{frame}[fragile]{High-level architecture overview}
   \begin{center}
-    \resizebox{0.85\textwidth}{!}{\input{histogram.pgf}}
+    \includegraphics[width=0.9\linewidth]{../figures/architecture_overview.pdf}
   \end{center}
+  \vspace{-10pt}
+  \begin{footnotesize}
+    Our framework consists of three components, (2) a solver, (4) ranker and (3) sampler. Given an invalid string and grammar (1), we first compile them into a multilinear system of equations which can be solved directly, yielding a set of repairs that are ranked using a suitable scoring function (4). Optionally, we may introduce stochastic edits to the string using the Levenshtein ball sampler (3) and extract the solutions incrementally (5).
+  \end{footnotesize}
+\end{frame}
+
+\begin{frame}[fragile]{Uniform sampling benchmark on natural syntax errors}
+  \begin{figure}[H]
+    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
+    \resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+    \resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+    \caption{Repairs discovered before the latency cutoff are reranked based on their tokenwise perplexity and compared for an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.}\label{fig:human}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Adaptive sampling benchmark on natural syntax errors}
+  \begin{figure}[H]
+    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
+    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
+    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
+    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
+    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Precision on Error Correction in Synthetic Language}
+  \begin{figure}[H]
+\begin{tikzpicture}[scale=0.41]
+\begin{axis}[
+width=8.3cm,
+height=7cm,
+title={\hspace{-1cm}\textbf{(1a) Latency with known locations}},
+ybar,
+bar width=6pt,
+xlabel={Number of holes},
+ylabel={ms to synthesize 10 repairs},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+ytick pos=left,
+xticklabels from table={\loctimings}{holes},
+ymajorgrids,
+legend pos=north west,
+legend columns=2,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
+\addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
+\legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.41]
+\begin{axis}[
+width=8.3cm,
+height=7cm,
+title={\hspace{-1cm}\textbf{(1b) Latency with unknown locations}},
+ybar,
+bar width=20pt,
+xlabel={Number of errors},
+%ylabel={ms to synthesize 1 repair},
+xtick=data,
+axis x line*=bottom,
+axis y line*=left,
+enlarge x limits={abs=0.5},
+ymode=log,
+ytick pos=left,
+xticklabels from table={\unloctimings}{errors},
+ymajorgrids,
+legend pos=north west,
+error bars/y dir=both,
+error bars/y explicit
+]
+\addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+\addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+\addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+\legend{Dyck-1, Dyck-2, Dyck-3}
+\end{axis}
+\end{tikzpicture}\\
+\begin{tikzpicture}[scale=0.41]
+  \begin{axis}[
+  width=8.3cm,
+  height=7cm,
+%    title={\hspace{-1cm}\textbf{Java Brackets}},
+  ybar,
+  bar width=10pt,
+  xlabel={$|\Sigma^*|$},
+  ylabel={Top-1 parser acceptance},
+  title={\textbf{(2a) Synthetic Java bracket error correction}},
+  xtick=data,
+  axis x line*=bottom,
+  axis y line*=left,
+  enlarge x limits={abs=0.5},
+  ytick pos=left,
+  xticklabels from table={\syntheticerrors}{len},
+  ymajorgrids,
+  legend pos=north east,
+  legend columns=3,
+  error bars/y dir=both,
+  error bars/y explicit
+  ]
+  \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
+  \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
+  \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
+  \legend{10s, 30s, 60s}
+  \end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.41]
+  \begin{axis}[
+  width=8.3cm,
+  height=7cm,
+  title={\textbf{(2b) Organic Python bracket error correction}},
+  ybar,
+  bar width=10pt,
+  xlabel={$|\Sigma^*|$},
+%ylabel={Parser acceptance},
+  xtick=data,
+  axis x line*=bottom,
+  axis y line*=left,
+  enlarge x limits={abs=0.5},
+  ytick pos=left,
+  xticklabels from table={\naturalerrors}{len},
+  ymajorgrids,
+  y tick label style={/pgf/number format/.cd,%
+  scaled y ticks = false,
+  set thousands separator={},
+  fixed},
+  legend pos=north east,
+  legend columns=3,
+  error bars/y dir=both,
+  error bars/y explicit
+  ]
+  \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
+  \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
+  \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
+  \legend{10s, 30s, 60s}
+  \end{axis}
+\end{tikzpicture}
+  \caption{Benchmarking bracket correction latency and accuracy across two bracketing langauges, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Uniform sampling benchmark}
+  \begin{figure}
+    \resizebox{.5\textwidth}{!}{\input{throughput.tex}}
+    \caption{We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs.}
+  \end{figure}
 \end{frame}
 
 \section{Formal Language Theory}\label{sec:fltheory}
@@ -503,8 +678,68 @@
     \item More sophisticated representations are known for $\binom{n}{0 \leq k}$ subsets
     \item If density is desired, possible to use the Maculay representation
 %            \item Set joins are an active topic of research in SQL query optimization
-    \item If you know of a more efficient encoding, please let us know!
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Satisfiability + holes (our contribution)}
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
+
+  \resizebox{\textwidth}{!}{
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix} \\\hline
+  $M_\infty$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix}\\\hline
+\end{tabular}
+}
+  }
 \end{frame}
 
 \begin{frame}[fragile]{Chomsky Denormalization}
@@ -766,6 +1001,99 @@ S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 \end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{The Chomsky-Levenshtein-Bar-Hillel Construction}
+The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free langauge.
+\noindent\begin{prooftree}
+  \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\big(S\rightarrow q S r\big) \in P^\cap$}
+  \DisplayProof
+  \hskip 0.5em
+  \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \UnaryInfC{$\big(qar\rightarrow a\big)\in P^\cap$}
+  \DisplayProof
+  \hskip 0.5em
+%\end{prooftree}
+%\begin{prooftree}
+  \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+  \AxiomC{$p,q,r \in Q$}
+  \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P^\cap$}
+\end{prooftree}
+
+The Levenshtein automata is another kind of lattice, not in the order-theoretic sense, but in the automata-theoretic sense.
+
+\begin{prooftree}
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+  \RightLabel{$\duparrow$}
+  \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+  \RightLabel{$\ddiagarrow$}
+  \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
+  \RightLabel{$\drightarrow$}
+  \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
+  \RightLabel{$\knightarrow$}
+  \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$\vphantom{|}$}
+  \RightLabel{$\textsc{Init}$}
+  \UnaryInfC{$q_{0,0} \in I$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$q_{i, j}$}
+  \AxiomC{$|n-i+j| \leq k$}
+  \RightLabel{$\textsc{Done}$}
+  \BinaryInfC{$q_{i, j}\in F$}
+\end{prooftree}
+\end{frame}
+
+\begin{frame}[fragile]{Semiring algebras: Part I}
+There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A na\"ive approach accumulates a mapping of nonterminals to sets of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = p(\sigma_r)$ using:
+
+\begin{equation*}
+p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\_) \mapsto \bigcup_{s\in \Sigma} p(s)
+\end{equation*}
+
+$p(\cdot)$ constructs the superdiagonal, then we solve for $\Lambda_\sigma^*$ using the algebra:
+
+\begin{equation*}
+X \oplus Z \mapsto \big\{w \stackrel{+}{\Rightarrow} (X \circ w) \cup (Z \circ w) \mid w \in \pi_1(X \cup Z)\big\}
+\end{equation*}
+
+\begin{equation*}
+X \otimes Z \mapsto \bigoplus_{w, x, z}\big\{w \stackrel{+}{\Rightarrow} (X\circ x)(Z\circ z) \mid (w\rightarrow xz) \in P, x\in X, z\in Z\big\}
+\end{equation*}
+
+\noindent After $M_\infty$ is attained, the solutions can be read off via $\Lambda_\sigma^* \circ S$. The issue here is exponential growth when eagerly computing the transitive closure.
+\end{frame}
+
+\begin{frame}[fragile]{Semiring algebras: Part II}
+The prior encoding can be improved using an ADT $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ using:
+
+\begin{equation*}
+\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) \mapsto \bigoplus_{s\in \Sigma} p(s)
+\end{equation*}
+
+\noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
+
+\begin{equation*}
+X \oplus Z \mapsto \bigcup_{k\in \pi_1(X \cup Z)}\big\{k \Rightarrow \mathbb{T}_2(k, Q_x \cup Q_z) \mid Q_x \in \pi_2(X\circ k), Q_z \in \pi_2(Z\circ k)\big\}
+\end{equation*}
+
+\begin{equation*}
+X \otimes Z \mapsto \bigoplus_{w, x, z}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid (w\rightarrow xz) \in P, x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+\end{equation*}
+\end{frame}
+
 \begin{frame}[fragile]{A birds eye view of the algorithm}
   We can lower Valiant's algorithm onto a polynomial system of equations over finite fields, allowing us to solve for holes and parse trees.
   \begin{figure}[H]
@@ -798,31 +1126,31 @@ S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
 
 \section{Error Correction}\label{sec:error-correction}
 
-\begin{frame}[fragile]{Sampling without replacement}
-Let $A$ be a complicated space we do not know how to sample from.
-\begin{figure}
-\centering
-\begin{tikzpicture}[ele/.style={fill=black,circle,minimum width=.8pt,inner sep=1pt},every fit/.style={ellipse,draw,minimum width=5pt,inner sep=10pt}]
-\node[ele,label=left:$a$] (a1) at (0,3) {};
-\node[ele,label=left:$b$] (a2) at (0,2) {};
-\node[ele,label=left:$c$] (a3) at (0,1) {};
-%\node[ele,label=left:$d$] (a4) at (0,1) {};
-
-\node[ele,,label=right:$1$] (b1) at (4,4) {};
-\node[ele,,label=right:$2$] (b2) at (4,3) {};
-\node[ele,,label=right:$3$] (b3) at (4,2) {};
-\node[ele,,label=right:$4$] (b4) at (4,1) {};
-
-\node[draw,fit= (a1) (a2) (a3),minimum width=2.5cm,label=below:$A$] {} ;
-\node[draw,fit= (b1) (b2) (b3) (b4),minimum width=2.5cm,label=below:$\mathbb{N}$] {} ;
-\draw[->,shorten <=2pt,shorten >=2pt] (a1) -- (b4);
-\draw[->,shorten <=2pt,shorten >=2] (a2) -- (b2);
-\draw[->,shorten <=2pt,shorten >=2] (a3) -- (b1);
-%\draw[->,shorten <=2pt,shorten >=2] (a4) -- (b3);
-\end{tikzpicture}
-\end{figure}
-We want a permutation mapping $f: A \rightarrow \mathbb{N} \mid \forall a \in A \exists i \in \mathbb{N}.f^{-1}(i) = a$. Then we can just sample $i \sim \mathbb{N}$ without replacement and apply $f^{-1}(i)$.
-\end{frame}
+%\begin{frame}[fragile]{Sampling without replacement}
+%Let $A$ be a complicated space we do not know how to sample from.
+%\begin{figure}
+%\centering
+%\begin{tikzpicture}[ele/.style={fill=black,circle,minimum width=.8pt,inner sep=1pt},every fit/.style={ellipse,draw,minimum width=5pt,inner sep=10pt}]
+%\node[ele,label=left:$a$] (a1) at (0,3) {};
+%\node[ele,label=left:$b$] (a2) at (0,2) {};
+%\node[ele,label=left:$c$] (a3) at (0,1) {};
+%%\node[ele,label=left:$d$] (a4) at (0,1) {};
+%
+%\node[ele,,label=right:$1$] (b1) at (4,4) {};
+%\node[ele,,label=right:$2$] (b2) at (4,3) {};
+%\node[ele,,label=right:$3$] (b3) at (4,2) {};
+%\node[ele,,label=right:$4$] (b4) at (4,1) {};
+%
+%\node[draw,fit= (a1) (a2) (a3),minimum width=2.5cm,label=below:$A$] {} ;
+%\node[draw,fit= (b1) (b2) (b3) (b4),minimum width=2.5cm,label=below:$\mathbb{N}$] {} ;
+%\draw[->,shorten <=2pt,shorten >=2pt] (a1) -- (b4);
+%\draw[->,shorten <=2pt,shorten >=2] (a2) -- (b2);
+%\draw[->,shorten <=2pt,shorten >=2] (a3) -- (b1);
+%%\draw[->,shorten <=2pt,shorten >=2] (a4) -- (b3);
+%\end{tikzpicture}
+%\end{figure}
+%We want a permutation mapping $f: A \rightarrow \mathbb{N} \mid \forall a \in A \exists i \in \mathbb{N}.f^{-1}(i) = a$. Then we can just sample $i \sim \mathbb{N}$ without replacement and apply $f^{-1}(i)$.
+%\end{frame}
 
 \begin{frame}[fragile]{Error Correction: Levenshtein q-Balls}
   Now that we have a reliable method to fix \textit{localized} errors, $S: \mathcal{G} \times (\Sigma\cup\{\varepsilon, \texttt{\texttt{\_}}\})^n \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}_\mathcal{G}$, given some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \highlight{\Sigma}^n \cap\mathcal{L}_\mathcal{G}^\complement$, where should we put holes to obtain a parseable $\sigma' \in \mathcal{L}_\mathcal{G}$? One way to do so is by sampling repairs, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ from the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$ (this is loosely analogous to a finite difference approximation). To admit variable-length edits, we first add an $\varepsilon^+$-production to each unit production:\vspace{5pt}
@@ -871,16 +1199,48 @@ We want a permutation mapping $f: A \rightarrow \mathbb{N} \mid \forall a \in A 
                        \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
     \end{cases}\\
     \text{Substitution}&=\begin{cases}
-                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-                           \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+         \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+         \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
     \end{cases}\\
     \text{Insertion}&=\begin{cases}
-                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-                        \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+        \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
     \end{cases}
   \end{align*}
+\end{frame}
+
+\begin{frame}[fragile]{A pairing function for sampling bounded binary trees}
+The type $\mathbb{T}_2$ of all trees that can be generated by a CNF CFG is a nested datatype: $P(a) = 1 + a L(P(a)^2), L(p) = 1 + p L(p)$. We can count and sample the total number of trees induced by a given sketch template as:
+
+\begin{equation*}
+  |T: \mathbb{T}_2| \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+    1  & \text{if $T$ is a leaf,} \\
+    \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
+  \end{cases}
+\end{equation*}
+
+\begin{equation*}
+  \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+  \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+  \text{Let } b = |\texttt{children}(T)|,\\
+  \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+  \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+  \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
+  \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
+  \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+  \end{cases}
+\end{equation*}
+\end{frame}
+
+\begin{frame}[fragile]{Probabilistic repair generation}
+\resizebox{\textwidth}{!}{
+\begin{minipage}{1.4\textwidth}
+\input{prob_reach.tex}
+\end{minipage}
+}
 \end{frame}
 
 %\begin{frame}[fragile]{Level I: Known Error Locations}
@@ -1606,16 +1966,12 @@ l = sqrt(sum)
 \begin{frame}{Special thanks}
   \begin{center}
     \LARGE{
-      Nghi D. Q. Bui\\
-      Zhixin Xiong\\
-      Brigitte Pientka\\
-      David Yu-Tung Hui\\
-      Ori Roth\\
-      Justine Gehring\\
+      Brigitte Pientka, David Yu-Tung Hui, Ori Roth\\
+      Younesse Kaddar, Michael Schröder\\
+      Torsten Scholak, Matthew Sotoudeh, Paul Zhu\\
       \phantom{}\\
     }
     \href{https://cs.mcgill.ca}{\includegraphics[scale=0.06]{../figures/mcgill_logo.png}}
-    \href{https://www.fpt-software.com}{\includegraphics[scale=0.15]{../figures/fpt_logo.png}}
     \href{https://mila.quebec}{\includegraphics[scale=0.1]{../figures/mila_logo.png}}
   \end{center}
 \end{frame}
