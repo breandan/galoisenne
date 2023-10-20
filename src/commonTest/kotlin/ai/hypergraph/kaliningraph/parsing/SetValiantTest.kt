@@ -360,7 +360,7 @@ class SetValiantTest {
 
     clock = TimeSource.Monotonic.markNow()
     val randSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      .sliceSample(20).take(10_000).toList().distinct()
+      .sampleSeq(List(20) { "_" }).take(10_000).toList().distinct()
       .onEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
 
     // 10k in ~22094ms

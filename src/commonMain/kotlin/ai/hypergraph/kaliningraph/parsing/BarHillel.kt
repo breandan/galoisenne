@@ -67,10 +67,10 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         .map { (p, q, r) -> "[$p,$A,$r]" to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
     }.flatten()
 
-  println("Constructing ∩-grammar took: ${clock.elapsedNow().inWholeMilliseconds}ms")
+  println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
-    .also { println("Postprocessing took ${clock.elapsedNow().inWholeMilliseconds}ms") }
+    .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
 private fun CFG.unitProdRules(fsa: FSA) =
@@ -145,7 +145,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     }.flatten()
 
   return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
-    .also { println("Postprocessing took ${clock.elapsedNow().inWholeMilliseconds}ms") }
+    .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
 // Tracks the number of tokens a given nonterminal can represent

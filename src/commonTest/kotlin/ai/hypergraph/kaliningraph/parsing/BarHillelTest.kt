@@ -224,7 +224,23 @@ class BarHillelTest {
     val gram = Grammars.seq2parsePythonCFG
     val prompt= "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val clock = TimeSource.Monotonic.markNow()
-    val lbhSet = gram.repairSeq(prompt).takeWhile { clock.elapsedNow().inWholeSeconds < timeout }.toList()
+    val lbhSet = gram.repairSeq(prompt).onEach { println(it) }
+      .takeWhile { clock.elapsedNow().inWholeSeconds < timeout }.toList()
     println("Found ${lbhSet.size} repairs using Levenshtein/Bar-Hillel in $timeout seconds")
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testAllBlankSampler"
+*/
+  @Test
+  fun testAllBlankSampler() {
+    val gram = Grammars.seq2parsePythonCFG
+    gram.startPTree(List(20) { "_" })?.also {
+      it.sampleWRGD().map { it.removeEpsilon() }.distinct()
+        .take(100).toList().onEach { println(it.removeEpsilon()) }
+    }?.also {
+      println("Total branches off START: ${it.branches.size}")
+      println("Average branching factor: ${it.branchRatio.let { (l, r) -> l / r }}")
+    }
   }
 }

@@ -13,6 +13,14 @@ fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
 class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()) {
+//  val hash by lazy { root.hashCode() + if (branches.isEmpty()) 0 else branches.hashCode() }
+//  override fun hashCode(): Int = hash
+
+  val branchRatio: Pair<Double, Double> by lazy { if (branches.isEmpty()) 0.0 to 0.0 else
+    (branches.size.toDouble() + branches.sumOf { (l, r) -> l.branchRatio.first + r.branchRatio.first }) to
+    (1 + branches.sumOf { (l, r) -> l.branchRatio.second + r.branchRatio.second })
+  }
+
   // TODO: Use weighted choice mechanism
   val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
   val totalTrees: BigInteger by lazy {
@@ -21,11 +29,11 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
       .reduce { acc, it -> acc + it }
   }
 
-  // e.g. if we want to prioritize shorter strings we can sort by total epsilons
-  val numEpsilons by lazy {
+  // e.g., if we want to prioritize shorter strings we can sort by total epsilons
+  val numEpsilons: BigInteger by lazy {
     if (branches.isEmpty()) if (root == "ε") BigInteger.ONE else BigInteger.ZERO
-    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
-      .reduce { acc, it -> acc + it }
+    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }.reduce { acc, it -> acc + it }
+//    else branches.maxOf { (l, r) -> l.numEpsilons + r.numEpsilons }
   }
 
   fun Π2A<PTree>.countEpsilons() = first.numEpsilons + second.numEpsilons
@@ -95,23 +103,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
 
-  fun sampleWRGD(): Sequence<String> =
-    generateSequence { sampleStrWithGeomDecay() }
-//    sequence {
-//      println("Total trees in PTree: $totalTrees")
-//      var i = BigInteger.ZERO
-//      while (i < totalTrees) yield(decodeStringWithShortBias(i++).first)
-//    }.distinct()
-
-  private fun decodeStringWithShortBias(i: BigInteger): Pair<String, BigInteger> {
-    if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
-    val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
-    val (lb, rb) = epsSortedBranches[remainder.intValue()]
-    val (l, quotient2) = lb.decodeString(quotient1)
-    val (r, quotient3) = rb.decodeString(quotient2)
-    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
-    return concat to quotient3
-  }
+  fun sampleWRGD(): Sequence<String> = generateSequence { sampleStrWithGeomDecay() }
 
   fun sampleStrWithGeomDecay(): String =
     if (branches.isEmpty()) if ("ε." in root) "" else root
@@ -159,6 +151,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 
 fun CFG.startPTree(tokens: List<Σᐩ>) = measureTimedValue {
   initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
+    ?.also { println("Total trees: ${it.totalTrees}") }
 }.also { println("Time to compute parse forest: ${it.duration}") }.value
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
@@ -180,6 +173,7 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
 typealias PForest = Map<String, PTree>
 fun merge(X: PForest, Z: PForest): PForest =
   (X.keys + Z.keys).associateWith { k ->
+//    PTree(k, ((X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf())).toSet().toList())
     PTree(k, (X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf()))
   }
 
@@ -229,7 +223,7 @@ fun CFG.enumSWOR(tokens: List<Σᐩ>): Sequence<Σᐩ> =
 fun CFG.hammingBallRepair(tokens: List<Σᐩ>): Sequence<Σᐩ> =
   tokens.indices.toSet().choose(5)
     .map { tokens.substituteIndices(it) { it, i -> "_" } }
-    .flatMap { enumSWOR(it).take(10) }
+    .flatMap { enumSWOR(it).take(100) }
 
 fun CFG.repairSeq(tokens: List<Σᐩ>): Sequence<Σᐩ> =
   tokens.intersperse(2, "ε").let { prompt ->
