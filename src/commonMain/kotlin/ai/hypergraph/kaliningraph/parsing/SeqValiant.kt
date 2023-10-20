@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
@@ -113,17 +115,46 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 
   fun sampleStrWithGeomDecay(): String =
     if (branches.isEmpty()) if ("ε." in root) "" else root
-    else epsSortedBranches.random().let { (l, r) ->
-      val (a, b) = l.sampleStrWithGeomDecay() to r.sampleStrWithGeomDecay()
-      if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
+    else {
+//      val p = 0.9 // Adjust this for different decay rates
+//      val rnd = Random.nextDouble()
+//      val index =(-(1.0 / ln(1 - p)) * ln(1 - rnd) * branches.size).toInt().coerceIn(branches.indices)
+//      println(index)
+      epsSortedBranches.sampleWithGeomDecay().let { (l, r) ->
+        val (a, b) = l.sampleStrWithGeomDecay() to r.sampleStrWithGeomDecay()
+        if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
+      }
     }
 
-  fun sampleWithGeomDecay(): Π2A<PTree> {
-    val p = 0.5 // Adjust this for different decay rates
-    val rnd = Random.nextDouble()
-    val index = -(1.0 / ln(1 - p)) * ln(1 - rnd)
-    return epsSortedBranches[index.toInt().coerceAtMost(branches.size - 1)]
+  fun <T> List<T>.sampleWithGeomDecay(): T {
+    if (isEmpty()) throw NoSuchElementException("List is empty.")
+
+    val r = 0.5 // Common ratio; adjust this for different decay rates
+
+    // Compute the total sum of the geometric series up to size
+    val total = (1 - r.pow(size)) / (1 - r)
+
+    // Generate a random value between 0 and the total
+    val rnd = Random.nextDouble() * total
+
+    // Iterate to find which item this random value corresponds to
+    var cumulativeSum = 0.0
+    var index = 0
+    while (index < size) {
+      cumulativeSum +=r.pow(index.toDouble())
+      if (rnd < cumulativeSum) break
+      index++
+    }
+
+    return this[index]
   }
+
+//  fun List<Π2A<PTree>>.sampleWithGeomDecay(): Π2A<PTree> {
+//    val p = 0.5 // Adjust this for different decay rates
+//    val rnd = Random.nextDouble()
+//    val index = -(1.0 / ln(1 - p)) * ln(1 - rnd)
+//    return epsSortedBranches[index.toInt().coerceAtMost(branches.size - 1)]
+//  }
 }
 
 fun CFG.startPTree(tokens: List<Σᐩ>) = measureTimedValue {
@@ -194,3 +225,18 @@ fun CFG.enumTree(tokens: List<Σᐩ>): Sequence<Tree> =
 
 fun CFG.enumSWOR(tokens: List<Σᐩ>): Sequence<Σᐩ> =
   startPTree(tokens)?.sampleWRGD() ?: sequenceOf()
+
+fun CFG.hammingBallRepair(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+  tokens.indices.toSet().choose(5)
+    .map { tokens.substituteIndices(it) { it, i -> "_" } }
+    .flatMap { enumSWOR(it).take(10) }
+
+fun CFG.repairSeq(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+  tokens.intersperse(2, "ε").let { prompt ->
+    hammingBallRepair(prompt).flatMap {
+      val result = it.tokenizeByWhitespace()
+      val edit = prompt.calcEdit(it.tokenizeByWhitespace())
+      Repair(prompt, edit, result, 0.0)
+        .minimalAdmissibleSubrepairs({ it.filter { it != "ε" } in language }, { edit.size.toDouble() })
+    }.distinct().map { it.resToStr().removeEpsilon() }.distinct()
+  }

@@ -349,8 +349,11 @@ fun allSubstitutions(eligibleIndices: Set<Int>, numEdits: Int, fishyLocations: L
 //        .thenBy { a -> a.sumOf { abs(fishyLocations.first() - it) } } // Sort by distance to first fishy location (caret)
 //    ).map { it.toSet() }
 
+fun List<Σᐩ>.substituteIndices(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): List<Σᐩ> =
+  mapIndexed { i, it -> if (i !in idxs) it else sub(it, i) }
+
 private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): Σᐩ =
-  mapIndexed { i, it -> if (i !in idxs) it else sub(it, i) }.joinToString(" ").trim()
+  substituteIndices(idxs, sub).joinToString(" ").trim()
 
 fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
 
