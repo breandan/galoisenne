@@ -14,6 +14,10 @@ fun newRepair(prompt: List<Σᐩ>, cfg: CFG, edits: Int = 3, skip: Int = 1, shif
     .filter { it.matches(cfg) }
     .map { it.joinToString(" ") }
 
+infix fun List<Σᐩ>.calcEdit(o: List<Σᐩ>): Edit =
+  if (size != o.size) throw Exception("Lists must be of equal length: $this vs $o")
+  else o.mapIndexed { i, it -> i to it }.filter { it.second != this[it.first] }
+
 // Indices of the prompt tokens to be replaced and the tokens to replace them with
 typealias Edit = List<Pair<Int, Σᐩ>>
 
@@ -104,7 +108,6 @@ class Repair constructor(val orig: List<Σᐩ>, val edit: Edit, val result: List
   }
 
   fun matches(groundTruth: String): Boolean = resToStr() == groundTruth
-
 
   override fun hashCode(): Int = result.hashCode()
   override fun equals(other: Any?): Boolean =

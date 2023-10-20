@@ -75,9 +75,9 @@ process
 begin
 
 ${
-    tests.joinToString("\n\n") { test ->
-        test.genPreconditions(vars) + "wait for 20 ns;\n" + test.genPostconditions()
-    }
+  tests.joinToString("\n\n") { test ->
+    test.genPreconditions(vars) + "wait for 20 ns;\n" + test.genPostconditions()
+  }
 }
 
 assert false report "Test done." severity note;

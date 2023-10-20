@@ -419,6 +419,15 @@ class SetValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testIfThenLanguage"
+*/
+  @Test
+  fun testIfThenLanguage() {
+    assertTrue("true and false" in Grammars.ifThen.language)
+    assertTrue("( true and false" !in Grammars.ifThen.language)
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUTMRepresentationEquivalence"
 */
   @ExperimentalTime

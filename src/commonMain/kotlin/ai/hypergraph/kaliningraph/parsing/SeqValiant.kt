@@ -3,19 +3,32 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
+import kotlin.math.*
+import kotlin.random.Random
 import kotlin.time.measureTimedValue
 
 fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
 
 // Algebraic data type / polynomial functor for parse forests
-class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf()) {
+class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()) {
   // TODO: Use weighted choice mechanism
-  val shuffledBranches by lazy { branches.shuffled() }
+  val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
   val totalTrees: BigInteger by lazy {
     if (branches.isEmpty()) BigInteger.ONE
     else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
       .reduce { acc, it -> acc + it }
   }
+
+  // e.g. if we want to prioritize shorter strings we can sort by total epsilons
+  val numEpsilons by lazy {
+    if (branches.isEmpty()) if (root == "ε") BigInteger.ONE else BigInteger.ZERO
+    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
+      .reduce { acc, it -> acc + it }
+  }
+
+  fun Π2A<PTree>.countEpsilons() = first.numEpsilons + second.numEpsilons
+
+  val epsSortedBranches by lazy { branches.sortedBy { -it.countEpsilons() } }
 
   val depth: Int by lazy {
     if (branches.isEmpty()) 0
@@ -79,6 +92,38 @@ class PTree(val root: String = "ε", val branches: List<Π2A<PTree>> = listOf())
       val (a, b) = l.sample() to r.sample()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
+
+  fun sampleWRGD(): Sequence<String> =
+    generateSequence { sampleStrWithGeomDecay() }
+//    sequence {
+//      println("Total trees in PTree: $totalTrees")
+//      var i = BigInteger.ZERO
+//      while (i < totalTrees) yield(decodeStringWithShortBias(i++).first)
+//    }.distinct()
+
+  private fun decodeStringWithShortBias(i: BigInteger): Pair<String, BigInteger> {
+    if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
+    val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
+    val (lb, rb) = epsSortedBranches[remainder.intValue()]
+    val (l, quotient2) = lb.decodeString(quotient1)
+    val (r, quotient3) = rb.decodeString(quotient2)
+    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
+    return concat to quotient3
+  }
+
+  fun sampleStrWithGeomDecay(): String =
+    if (branches.isEmpty()) if ("ε." in root) "" else root
+    else epsSortedBranches.random().let { (l, r) ->
+      val (a, b) = l.sampleStrWithGeomDecay() to r.sampleStrWithGeomDecay()
+      if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
+    }
+
+  fun sampleWithGeomDecay(): Π2A<PTree> {
+    val p = 0.5 // Adjust this for different decay rates
+    val rnd = Random.nextDouble()
+    val index = -(1.0 / ln(1 - p)) * ln(1 - rnd)
+    return epsSortedBranches[index.toInt().coerceAtMost(branches.size - 1)]
+  }
 }
 
 fun CFG.startPTree(tokens: List<Σᐩ>) = measureTimedValue {
@@ -146,3 +191,6 @@ fun CFG.sampleSeq(tokens: List<Σᐩ>): Sequence<String> =
 
 fun CFG.enumTree(tokens: List<Σᐩ>): Sequence<Tree> =
   startPTree(tokens)?.sampleTreesWithoutReplacement() ?: sequenceOf()
+
+fun CFG.enumSWOR(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+  startPTree(tokens)?.sampleWRGD() ?: sequenceOf()

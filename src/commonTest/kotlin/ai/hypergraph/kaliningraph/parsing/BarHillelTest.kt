@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.levenshtein
+import ai.hypergraph.kaliningraph.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -204,6 +204,36 @@ class BarHillelTest {
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
       }.toList()
+
+    println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
+    println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
+
+//    val totalParticipatingNonterminals =
+//      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
+//
+//    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + intGram.nonterminals.size)
+//    println(intGram.depGraph.toDot())
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testPythonBarHillel2"
+  */
+  @Test
+  fun testPythonBarHillel2() {
+    val gram = Grammars.seq2parsePythonCFG
+    val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
+    val prompt = toRepair.intersperse(2, "_")
+    val clock = TimeSource.Monotonic.markNow()
+
+    val lbhSet = gram.enumSWOR(prompt)
+//      .flatMap {
+//        println(it)
+//        val result = it.tokenizeByWhitespace()
+//        val edit = prompt.calcEdit(it.tokenizeByWhitespace())
+//        Repair(prompt, edit, result, 0.0)
+//          .minimalAdmissibleSubrepairs({ it.filter { it != "ε" } in gram.language }, { 0.0 })
+//      }.distinct().map { it.resToStr().removeEpsilon() }
+      .take(100).distinct().onEach { println(it.removeEpsilon()) }.toList()
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")

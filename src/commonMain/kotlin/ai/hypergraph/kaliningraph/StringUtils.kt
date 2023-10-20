@@ -103,8 +103,10 @@ fun <T> multisetManhattanDistance(q1: List<T>, q2: List<T>): Int {
   return totalDiff
 }
 
+fun String.removeEpsilon() = tokenizeByWhitespace().filter { it != "ε" }.joinToString(" ")
+
 // Intersperses "" in between every token in a list of tokens
-fun List<Σᐩ>.intersperse(i: Int = 1, spacer: List<Σᐩ> = List(i) { "" }): List<Σᐩ> =
+fun List<Σᐩ>.intersperse(i: Int = 1, tok: Σᐩ = "", spacer: List<Σᐩ> = List(i) { tok }): List<Σᐩ> =
   fold(spacer) { acc, s -> acc + spacer + s } + spacer
 
 fun String.cfgType() = when {

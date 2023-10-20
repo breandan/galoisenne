@@ -1,6 +1,21 @@
 import ai.hypergraph.kaliningraph.parsing.*
 
 object Grammars {
+  val ifThen = """
+     START -> X
+     X -> I | F | P | Q
+     P -> I O I | P O I
+     Q -> B BO B | Q O B
+     F -> IF | BF
+    IF -> if B then I else I
+    BF -> if B then B else B
+     O -> + | - | * | /
+     I -> 1 | 2 | 3 | 4 | I I | IF
+     B -> true | false | B BO B | ( B ) | BF | N B
+    BO -> and | or | xor | nand
+     N -> !
+  """.trimIndent().parseCFG().noNonterminalStubs
+
   val ocamlCFG = """
     S -> X
     X -> A | V | ( X , X ) | X X | ( X )
