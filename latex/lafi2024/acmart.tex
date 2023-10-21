@@ -67,21 +67,21 @@
     X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\hat\sigma_r$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
   \begin{align*}
       M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-               \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+               \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
                \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
                            &                &             &        & \varnothing\\
-                           &                &             &        & \sigma_n^\shup \\
+                           &                &             &        & \hat\sigma_n \\
                \varnothing & \Cdots         &             &        & \varnothing
       \end{pNiceMatrix} &\Rightarrow M^* =
       \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-        \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+        \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
         \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
                     &                &         &        & \Lambda\\
-                    &                &         &        & \sigma_n^\shup \\
+                    &                &         &        & \hat\sigma_n \\
         \varnothing & \Cdots         &         &        & \varnothing
       \end{pNiceMatrix}
   \end{align*}
@@ -100,27 +100,30 @@
 
   $\text{H}(\sigma)\cap\ell$ is often a large-cardinality set, so we want a procedure which samples uniformly without replacement from the set, without enumerating the whole set and shuffling it.
 
-   We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ as follows:
+   We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
 \begin{equation*}
-\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\}
-\end{equation*}
-
-\begin{equation*}
-\dot{p}(\_) \mapsto \bigoplus_{s\in \Sigma} p(s)
+  \begin{footnotesize}
+\Lambda(s: \underline\Sigma) \mapsto \begin{cases}
+\bigoplus_{s\in \Sigma} \Lambda(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
+\big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
+\end{cases}
+  \end{footnotesize}
 \end{equation*}
 
 \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
 
-  \begin{footnotesize}
 \begin{equation*}
-  X \oplus Z \mapsto \bigcup_{k\in \pi_1(X \cup Z)}\big\{k \Rightarrow \mathbb{T}_2(k, Q_x \cup Q_z) \mid Q_x \in \pi_2(X\circ k), Q_z \in \pi_2(Z\circ k)\big\}
+  \begin{footnotesize}
+  X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
+  \end{footnotesize}
 \end{equation*}
 
 \begin{equation*}
-  X \otimes Z \mapsto \bigoplus_{w, x, z}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid (w\rightarrow xz) \in P, x \in \pi_1(X), z \in \pi_1(Z)\Big\}
-\end{equation*}
+  \begin{footnotesize}
+  X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
 \end{footnotesize}
+\end{equation*}
 
 Decoding trees from $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$ becomes a straightforward matter of enumeration using a recursive choice function that emits a sequence of binary trees generated by the CFG. We define this construction more precisely in \S~\ref{sec:pairing}.
 
@@ -135,14 +138,15 @@ In our experiments, we provide a comparison of the performance of the SAT algebr
 
 \pagebreak\subsection{Pairing Breadth-Bounded Binary Trees}\label{sec:pairing}
 
-The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
+The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form are the fixpoints to the following recurrence:
 
 \begin{equation*}
-  L(p) = 1 + p L(p) \phantom{addspace} P(a) = 1 + a L(P(a)^2)
+  L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
 \end{equation*}
 
-  We depict it as a tree, where red nodes are \texttt{root}s and blue nodes are \texttt{children}:
+Given a $\sigma: \underline\Sigma^+$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Illustrated below is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}:
 
+\begin{figure}[H]
 \resizebox{0.9\columnwidth}{!}{
   \begin{tikzpicture}
   [
@@ -187,8 +191,10 @@ The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in 
     edge from parent node [above] };
   \end{tikzpicture}
 }
+\caption{A partial $\mathbb{T}_2$ for the grammar with productions $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+\end{figure}
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
 
 \begin{equation*}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -218,7 +224,7 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 
   \section{Prior Work}
 
-  Piantodosi define a similar construction, but it assumes the CFL is infinite and makes some additional assumptions about the CFG~\cite{piantadosi2023enumerate}. We provide a more general construction which works for any CFG. Sampling parse trees in CFGs can be viewed as sampling proofs in a limited kind of proof system~\cite{opedal2023efficient}.
+  Piantodosi define a similar construction, but it assumes the CFL is infinite and makes some additional assumptions about the CFG~\cite{piantadosi2023enumerate}. We provide a more general construction which works for any CFG. Sampling parse trees in CFGs can be viewed as sampling proofs in a weak kind of proof system~\cite{opedal2023efficient}.
 
   \section{Conclusion}
 
