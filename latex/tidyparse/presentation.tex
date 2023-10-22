@@ -289,7 +289,7 @@
 \begin{frame}[fragile]{Our Contribution}
   Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
 
-  Given a linear conjunctive language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a probability metric $\Delta$, under hard realtime constraints.
+  Given a context-free language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a probability metric $\Delta$, under hard realtime constraints.
 
   \begin{center}
     \resizebox{0.42\textwidth}{!}{
@@ -334,11 +334,35 @@
 \begin{frame}[fragile]{On the virtues of pragmatism}
   \textbf{pragmatism}: \textit{a reasonable and logical way of doing things or of thinking about problems that is based on dealing with specific situations instead of on ideas and theories.}\newline\\
   \begin{itemize}
-    \item Often framed as a compromise or concession, e.g., \textit{``It's not ideal, but let's be pragmatic.''}
-    \item Taken seriously, pragmatism is difficult because it requires accurately modeling and weighing the needs of multiple stakeholders.
+    \item Often framed as a compromise, \textit{``Let's be pragmatic...''}
+    \item Practiced seriously, pragmatism is difficult because it requires faithfully modeling the needs of multiple stakeholders.
     \item Pragmatism is a principled approach to problem solving.
     \item Putting it into practice requires knowing your customer, understanding their workflow, considering the most appropriate solution out of many possible alternatives.
   \end{itemize}
+    \setlength{\epigraphwidth}{0.97\textwidth}
+    \epigraph{``\textit{What is the use of studying philosophy if all that it does for you is to enable you to talk about some abstruse questions of logic and does not improve your thinking about the important questions of everyday life?}''}{Ludwig Wittgenstein, 1889–1951}
+\end{frame}
+
+\begin{frame}[fragile]{On the virtues of pragmatism}
+  \begin{columns}[T]
+    \begin{column}{0.9\textwidth}
+      \begin{itemize}
+        \item Began in 19th century by Pierce, James, Dewey, et al.
+        \item Wittgenstein was a pragmatist, early work on language games.
+        \item Pragmatism is a philosophy of language that emphasizes the role of intent in human communication.
+        \item Language is a tool for communication, \\not just a arbitrary set of rules.
+        \item Must actively imagine the intent of\\ the speaker, not just the literal\\meaning of their words.
+        \item Language is a bit like a game whose goal \\is to understand the speaker's intent.
+        \item Assume a sympathetic speaker, who is trying \\to communicate something meaningful.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \vspace*{2cm}
+      \hspace*{-3cm}
+      \includegraphics[width=1.7cm]{../figures/photo_pierce.png}
+      \includegraphics[width=2.6cm]{../figures/photo_wittgenstein.png}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}[fragile]{Common sources of syntax errors}
@@ -356,7 +380,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Syntax repair as a Gricean language game}
+\begin{frame}[fragile]{Syntax repair as a language game}
 
   \begin{itemize}
     \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
@@ -372,8 +396,6 @@
   \end{itemize}
 
 \end{frame}
-
-
 \begin{frame}{From Error-Correcting Codes to Correcting Coding Errors}
   \setlength{\epigraphwidth}{0.97\textwidth}
   \epigraph{``\textit{Damn it, if the machine can detect an error, why can't it\\\phantom{``}locate the position of the error and correct it?'}''}{Richard Hamming, 1915-1998}
@@ -398,7 +420,7 @@
   \begin{definition}[Ranked repair]
     Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
     \begin{equation}
-      R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
+      R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
     We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and total latency.
