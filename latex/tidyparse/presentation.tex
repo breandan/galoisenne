@@ -91,7 +91,200 @@
   \tableofcontents
 \end{frame}
 
-\section{Our Contribution}\label{sec:contribution}
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  form sympy import *
+  x = Symbol('x', real=True)
+  x, re(x), im(x)
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{form}! sympy import *
+  x = Symbol('x', real=True)
+  x, re(x), im(x)
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{from}! sympy import *
+  x = Symbol('x', real=True)
+  x, re(x), im(x)
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1)]
+  z = set([5, 0, 4)]
+
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1)]
+  z = set([5, 0, 4)]
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1!\hlorange{])}!
+  z = set([5, 0, 4!\hlorange{])}!
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  my_list = []
+  for i in range(10);
+    my_list.append(2*i)
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  my_list = []
+  for i in range(10)!\hlorange{;}!
+    my_list.append(2*i)
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  my_list = []
+  for i in range(10)!\hlorange{:}!
+    my_list.append(2*i)
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  import Global from Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{import}! Global !\hlorange{from}! Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{from}! Global !\hlorange{import}! Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+   try:
+     something()
+   catch AttributeError:
+     pass
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+   try:
+     something()
+   !\hlorange{catch}! AttributeError:
+     pass
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+   try:
+     something()
+   !\hlorange{except}! AttributeError:
+     pass
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
 
 \begin{frame}[fragile]{Our Contribution}
   Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
@@ -148,9 +341,22 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]{Common sources of syntax errors}
+  \begin{itemize}
+    \item Reading impairments (e.g., dyslexia, dysgraphia)
+    \item Motor impairments (e.g., tremors, Parkinson's)
+    \item Speech impediments (e.g., stuttering, apraxia, Tourette's)
+    \item Visual impairments (e.g., poor eyesight, blindness)
+    \item Language barriers (e.g., foreign and non-native speakers)
+    \item Inexperience (e.g., novice programmers)
+    \item Distraction (e.g., multitasking, fatigue, stress)
+    \item Time pressure (e.g., deadlines, interview coding)
+    \item Inattention (e.g., typographic mistakes, boredom, apathy)
+    \item Lack of feedback (e.g., no syntax highlighting or IDE)
+  \end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]{Syntax repair as a Gricean language game}
-
 
   \begin{itemize}
     \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
