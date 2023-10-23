@@ -533,4 +533,12 @@
 
 \newcommand{\bs}{\blacksquare}
 \newcommand{\ws}{\square}
-\usepackage{wrapfig}
+
+\tikzset{
+    treenode/.style = {shape=rectangle, rounded corners,
+    draw, align=center,
+    top color=white, bottom color=blue!20},
+    root/.style     = {treenode, font=\tiny, bottom color=red!30},
+    env/.style      = {treenode, font=\tiny},
+    dummy/.style    = {circle,draw}
+}

@@ -285,6 +285,82 @@
   \end{center}
 \end{frame}
 
+\begin{frame}[fragile]{On the virtues of pragmatism}
+  \textbf{Pragmatism}: \textit{a reasonable and logical way of solving problems that is based on dealing with specific situations instead of abstract theories.}\newline\\
+  \begin{itemize}
+    \item Often framed as a compromise, \textit{``Let's be pragmatic...''}
+    \item Pragmatism is a principled approach to problem solving.
+    \item Taken seriously, pragmatism is difficult because it requires modeling the needs of multiple stakeholders and balancing competing interests.
+    \item Putting it into practice requires knowing your customer, understanding their workflow, considering the most appropriate solution out of a set of possible alternatives.
+  \end{itemize}
+    \setlength{\epigraphwidth}{0.97\textwidth}
+    \epigraph{``\textit{What is the use of studying philosophy if all that it does for you is to enable you to talk about some abstruse questions of logic and does not improve your thinking about the important questions of everyday life?}''}{Ludwig Wittgenstein, 1889–1951}
+\end{frame}
+
+\begin{frame}[fragile]{On the virtues of pragmatism}
+  \begin{columns}[T]
+    \begin{column}{0.9\textwidth}
+      \begin{itemize}
+        \item Began in 19th century by Pierce, James, Dewey, et al.
+        \item Wittgenstein was a pragmatist, early work on language games.
+        \item Pragmatism is a philosophy of language that emphasizes the role of intent in human communication.
+        \item Language is a tool for communication, \\not just a arbitrary set of rules.
+        \item Must actively imagine the intent of\\ the speaker, not just the literal\\meaning of their words.
+        \item Language is a bit like a game whose goal \\is to understand the speaker's intent.
+        \item Assume a proficient speaker, who is trying \\to communicate something meaningful.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \vspace*{2cm}
+      \hspace*{-3cm}
+      \includegraphics[width=1.7cm]{../figures/photo_pierce.png}
+      \includegraphics[width=2.6cm]{../figures/photo_wittgenstein.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Common sources of syntax errors}
+  \begin{itemize}
+    \item Reading impairments (e.g., dyslexia, dysgraphia)
+    \item Motor impairments (e.g., tremors, Parkinson's)
+    \item Speech impediments (e.g., stuttering, apraxia, Tourette's)
+    \item Visual impairments (e.g., poor eyesight, blindness)
+    \item Language barriers (e.g., foreign and non-native speakers)
+    \item Inexperience (e.g., novice programmers)
+    \item Distraction (e.g., multitasking, fatigue, stress)
+    \item Time pressure (e.g., deadlines, interview coding)
+    \item Inattention (e.g., typographic mistakes, boredom, apathy)
+    \item Lack of feedback (e.g., no syntax highlighting or IDE)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Syntax repair as a language game}
+
+  \begin{itemize}
+    \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
+    \item They both see the same grammar, $\mathcal{G}$ and invalid string $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
+    % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
+    \item Author moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
+    \item Editor moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
+    \item As soon as Author repairs $\err\sigma$, the turn immediately ends.
+    \item Neither player sees the other's move(s) before making their own.
+    \item If Editor anticipates Author's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
+    \item If Author surprises Editor with a valid move, i.e., $\sigma \notin \tilde{\bm\sigma}$, Author wins.
+    \item We may consider a refinement where Editor wins in proportion to the time taken to anticipate Author's move.
+  \end{itemize}
+
+\end{frame}
+\begin{frame}{From Error-Correcting Codes to Correcting Coding Errors}
+  \begin{itemize}
+    \item Error-correcting codes are a well-studied topic in information theory used to detect and correct errors in data transmission.
+    \item Introduces parity bits to detect and correct transmission errors assuming a certain noise model (e.g., Hamming distance).
+    \item Like ECCs, we also assume a certain noise model (Levenshtein distance) and error tolerance (n-lexical tokens).
+    \item Instead of injecting parity bits, we use the grammar and mutual information between tokens to detect and correct errors.
+    \item Unlike ECCs, we do not assume a unique solution, but a set of admissible solutions ranked by statistical likliehood.
+    \end{itemize}
+  \setlength{\epigraphwidth}{0.97\textwidth}
+  \epigraph{``\textit{Damn it, if the machine can detect an error, why can't it\\\phantom{``}locate the position of the error and correct it?'}''}{Richard Hamming, 1915-1998}
+\end{frame}
 
 \begin{frame}[fragile]{Our Contribution}
   Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
@@ -329,76 +405,6 @@
 
   \textbf{Natural language:}
   \textit{Rapidly finds syntactically valid edits within a small neighborhood, ranked by tokenwise similarity and statistical likliehood.}
-\end{frame}
-
-\begin{frame}[fragile]{On the virtues of pragmatism}
-  \textbf{pragmatism}: \textit{a reasonable and logical way of doing things or of thinking about problems that is based on dealing with specific situations instead of on ideas and theories.}\newline\\
-  \begin{itemize}
-    \item Often framed as a compromise, \textit{``Let's be pragmatic...''}
-    \item Practiced seriously, pragmatism is difficult because it requires faithfully modeling the needs of multiple stakeholders.
-    \item Pragmatism is a principled approach to problem solving.
-    \item Putting it into practice requires knowing your customer, understanding their workflow, considering the most appropriate solution out of many possible alternatives.
-  \end{itemize}
-    \setlength{\epigraphwidth}{0.97\textwidth}
-    \epigraph{``\textit{What is the use of studying philosophy if all that it does for you is to enable you to talk about some abstruse questions of logic and does not improve your thinking about the important questions of everyday life?}''}{Ludwig Wittgenstein, 1889–1951}
-\end{frame}
-
-\begin{frame}[fragile]{On the virtues of pragmatism}
-  \begin{columns}[T]
-    \begin{column}{0.9\textwidth}
-      \begin{itemize}
-        \item Began in 19th century by Pierce, James, Dewey, et al.
-        \item Wittgenstein was a pragmatist, early work on language games.
-        \item Pragmatism is a philosophy of language that emphasizes the role of intent in human communication.
-        \item Language is a tool for communication, \\not just a arbitrary set of rules.
-        \item Must actively imagine the intent of\\ the speaker, not just the literal\\meaning of their words.
-        \item Language is a bit like a game whose goal \\is to understand the speaker's intent.
-        \item Assume a sympathetic speaker, who is trying \\to communicate something meaningful.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.6\textwidth}
-      \vspace*{2cm}
-      \hspace*{-3cm}
-      \includegraphics[width=1.7cm]{../figures/photo_pierce.png}
-      \includegraphics[width=2.6cm]{../figures/photo_wittgenstein.png}
-    \end{column}
-  \end{columns}
-\end{frame}
-
-\begin{frame}[fragile]{Common sources of syntax errors}
-  \begin{itemize}
-    \item Reading impairments (e.g., dyslexia, dysgraphia)
-    \item Motor impairments (e.g., tremors, Parkinson's)
-    \item Speech impediments (e.g., stuttering, apraxia, Tourette's)
-    \item Visual impairments (e.g., poor eyesight, blindness)
-    \item Language barriers (e.g., foreign and non-native speakers)
-    \item Inexperience (e.g., novice programmers)
-    \item Distraction (e.g., multitasking, fatigue, stress)
-    \item Time pressure (e.g., deadlines, interview coding)
-    \item Inattention (e.g., typographic mistakes, boredom, apathy)
-    \item Lack of feedback (e.g., no syntax highlighting or IDE)
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Syntax repair as a language game}
-
-  \begin{itemize}
-    \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
-    \item They both see the same grammar, $\mathcal{G}$ and invalid string $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
-    % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
-    \item Author moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
-    \item Editor moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
-    \item As soon as Author repairs $\err\sigma$, the turn immediately ends.
-    \item Neither player sees the other's move(s) before making their own.
-    \item If Editor anticipates Author's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
-    \item If Author surprises Editor with a valid move, i.e., $\sigma \notin \tilde{\bm\sigma}$, Author wins.
-    \item We may consider a refinement where Editor wins in proportion to the time taken to anticipate Author's move.
-  \end{itemize}
-
-\end{frame}
-\begin{frame}{From Error-Correcting Codes to Correcting Coding Errors}
-  \setlength{\epigraphwidth}{0.97\textwidth}
-  \epigraph{``\textit{Damn it, if the machine can detect an error, why can't it\\\phantom{``}locate the position of the error and correct it?'}''}{Richard Hamming, 1915-1998}
 \end{frame}
 
 \begin{frame}[fragile]{Bounded Levenshtein Reachability}
@@ -1320,12 +1326,62 @@ The prior encoding can be improved using an ADT $\mathbb{T}_3 = (V \cup \Sigma) 
 \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
 \begin{equation*}
-X \oplus Z \mapsto \bigcup_{k\in \pi_1(X \cup Z)}\big\{k \Rightarrow \mathbb{T}_2(k, Q_x \cup Q_z) \mid Q_x \in \pi_2(X\circ k), Q_z \in \pi_2(Z\circ k)\big\}
+X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
 \end{equation*}
 
 \begin{equation*}
-X \otimes Z \mapsto \bigoplus_{w, x, z}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid (w\rightarrow xz) \in P, x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
 \end{equation*}
+\end{frame}
+
+\begin{frame}[fragile]{Semiring algebras: Part II}
+\begin{figure}[H]
+\resizebox{0.9\columnwidth}{!}{
+\begin{tikzpicture}
+[
+grow                    = right,
+sibling distance        = 3em,
+level distance          = 5em,
+edge from parent/.style = {draw, -latex},
+every node/.style       = {font=\footnotesize},
+sloped
+]
+\node [root] {S}
+child { node [env] {BC}
+child { node [root] {B}
+child { node [env] {RD}
+child { node [root] {R} edge from parent node [above] }
+child { node [root] {D} edge from parent node [above] }
+edge from parent node [above] }
+edge from parent node [below] }
+child { node [root] {C}
+child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+%  child { edge from parent node [above] {\ldots} }
+edge from parent node [below] }
+edge from parent node [above] }
+child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+child { node [env] {AB}
+child { node [root] {A}
+child {
+node [env] {QC}
+child { node [root] {Q} edge from parent node [above] }
+child { node [root] {C} edge from parent node [above] }
+edge from parent node [above]
+}
+%    child { node [env] {ZQ} edge from parent node [above] }
+child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+edge from parent node [below] }
+child { node [root] {B}
+child { node [env] {RD}
+child { node [root] {R} edge from parent node [above] }
+child { node [root] {D} edge from parent node [above] }
+edge from parent node [above] }
+edge from parent node [below] }
+edge from parent node [above] };
+\end{tikzpicture}
+}
+\caption{A partial $\mathbb{T}_2$ for the grammar with productions $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+\end{figure}
 \end{frame}
 
 \begin{frame}[fragile]{A birds eye view of the algorithm}
