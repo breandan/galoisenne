@@ -450,9 +450,9 @@
 \begin{frame}[fragile]{Design Criteria}
   \begin{itemize}
     \item First and foremost, the framework must be \textbf{sound} and \textbf{complete}. It must (1) accept arbitrary CFGs, and (2) recognize all and only syntactically valid strings within a fixed edit distance of a given string.
-    \item Second, we require repairs be \textbf{plausible} and \textbf{diverse}, i.e., likely to have been written by a human, consistent with the surrounding context, and ceteris paribus, reasonably diverse in their edit structure.
-    \item Third, the tool must be \textbf{efficient} and \textbf{responsive}. It must be able to recognize well-formed strings in sub-cubic time, and generate admissible repairs in at worst polynomial time. These conditions are necessary to provide real-time feedback whilst the user is typing.
-    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. In practice, this means that the framework should be robust to multiple errors, handle grammars with a large number of productions and exhibit linear speedup inversely proportional to the number of processors.
+    \item Second, we strongly prefer repairs to be \textbf{plausible} and \textbf{consistent}, i.e., likely to be expressed in practice and consistent with the author's intent and surrounding context (e.g., stylistically, semantically)
+    \item Third, recommendations must be \textbf{efficient} and \textbf{responsive}. We must be able to recognize valid strings in subcubic time, and generate repairs in (at worst) polynomial time. These criteria are necessary to provide real-time feedback whilst the user is typing.
+    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. Ceteris paribus, the framework should be robust to multiple errors, handle large grammars and scale linearly with additional processors.
   \end{itemize}
 \end{frame}
 
