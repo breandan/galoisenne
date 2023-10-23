@@ -69,15 +69,15 @@ To solve this problem, we will first pose a simpler problem that only considers 
 $A(\sigma)$ is often a large-cardinality set, so we want a procedure which returns the most likely members first, without exhaustive enumeration. More precisely,
 
 \begin{definition}[Ranked repair]
-  Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+  Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
   \begin{equation}
- R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
+ R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
   \end{equation}
   % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
   We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
-Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
+Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell_\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
 
 \subsection{Background}\label{sec:background}
 

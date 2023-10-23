@@ -301,11 +301,11 @@
   \begin{columns}[T]
     \begin{column}{0.9\textwidth}
       \begin{itemize}
-        \item Began in 19th century by Pierce, James, Dewey, et al.
+        \item Pioneered in the 19th century by Pierce, James, Dewey, et al.
         \item Wittgenstein was a pragmatist, early work on language games.
         \item Pragmatism is a philosophy of language that emphasizes the role of intent in human communication.
         \item Language is a tool for communication, \\not just a arbitrary set of rules.
-        \item Must actively imagine the intent of\\ the speaker, not just the literal\\meaning of their words.
+        \item Must actively imagine the mindset of\\ the speaker, not just the literal\\meaning of their words.
         \item Language is a bit like a game whose goal \\is to understand the speaker's intent.
         \item Assume a proficient speaker, who is trying \\to communicate something meaningful.
       \end{itemize}
@@ -340,8 +340,8 @@
     \item Imagine a game between two players, \textit{Editor} and \textit{Author}.
     \item They both see the same grammar, $\mathcal{G}$ and invalid string $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
     % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
-    \item Author moves by selecting a single valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
-    \item Editor moves continuously, sampling a list of $\tilde{\bm\sigma} \in \mathcal{P}(\mathcal{L}(\mathcal{G}))$.
+    \item Author moves by modifying $\err\sigma$ to produce a valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
+    \item Editor moves continuously, sampling a set $\tilde{\bm\sigma} \in \mathcal{P}\big(\mathcal{L}(\mathcal{G})\big)$.
     \item As soon as Author repairs $\err\sigma$, the turn immediately ends.
     \item Neither player sees the other's move(s) before making their own.
     \item If Editor anticipates Author's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
@@ -365,7 +365,7 @@
 \begin{frame}[fragile]{Our Contribution}
   Helps novice programmers fix syntax errors in source code. We do so by solving the \textbf{Realtime Bounded Levenshtein Reachability Problem}:\vspace{10pt}
 
-  Given a context-free language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \Sigma^*$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a probability metric $\Delta$, under hard realtime constraints.
+  Given a context-free language $\ell: \mathcal{L}(\mathcal{G})$ and an invalid string $\err{\sigma}: \ell^\complement$, find every syntactically admissible edit $\tilde{\sigma}$ satisfying $\{\tilde{\sigma} \in \ell \mid \Delta(\err{\sigma}, \ell) < r\}$, ranked by a probability metric $\Delta$, under hard realtime constraints.
 
   \begin{center}
     \resizebox{0.42\textwidth}{!}{
@@ -396,7 +396,7 @@
         \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^+$};
 
         \draw[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
-        \node [above] at (current bounding box.north -| a) {$\mathcal{L}\bigl(G(\err\sigma, d^*)\bigr)$};
+        \node [above] at (current bounding box.north -| a) {$\mathcal{L}\bigl(L(\err\sigma, d^*)\bigr)$};
         \node [above,yshift=2.1cm] at (e) {$\mathcal{L}(\mathcal{G}')$};
       \end{tikzpicture}
     }
@@ -424,30 +424,15 @@
 \begin{frame}[fragile]{Ranked repair under realtime constraints}
   $A(\sigma)$ is often a very large-cardinality set, so we want a procedure which prioritizes likely repairs first, without exhaustive enumeration. Specifically,
   \begin{definition}[Ranked repair]
-    Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
     \begin{equation}
-      R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+      R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
     We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and total latency.
   \end{definition}
-\end{frame}
 
-\begin{frame}[fragile]{An Simple Reachability Proof}
-  \begin{lemma}
-    For any nonempty language $\ell: \mathcal{L}(\mathcal{G})$ and invalid string $\err{\sigma}: \Sigma^n$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$, where $\Delta$ denotes the Levenshtein edit distance.\\
-  \end{lemma}
-
-  \begin{proof}
-  Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m:=|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
-
-  \begin{itemize}
-    \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
-    \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
-  \end{itemize}
-
-  In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
-    \end{proof}
+  Since $R$ is intractable in general, we want a procedure that approximates it for a representative sampling of natural context-free grammars and strings, i.e., real-world programming languages and source code snippets.
 \end{frame}
 
 \begin{frame}[fragile]{From CFL Reachability to Real World Program Repair}
@@ -459,6 +444,15 @@
     \item \textbf{Responsiveness}: The usefulness of synthetic repairs is inversely proportional to the amount of time required to generate them.
     \item \textbf{Edit generation}: How do we generate edits that are (1) syntactically admissible (2) statistically plausible and (3) semantically meaningful?
     \item \textbf{Evaluation}: Big code and version control is too coarse-grained, contains irrelevant edits, not representative of small errors/fixes.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Design Criteria}
+  \begin{itemize}
+    \item First and foremost, the framework must be \textbf{sound} and \textbf{complete}. It must (1) accept arbitrary CFGs, and (2) recognize all and only syntactically valid strings within a fixed edit distance of a given string.
+    \item Second, we require repairs be \textbf{plausible} and \textbf{diverse}, i.e., likely to have been written by a human, consistent with the surrounding context, and ceteris paribus, reasonably diverse in their edit structure.
+    \item Third, the tool must be \textbf{efficient} and \textbf{responsive}. It must be able to recognize well-formed strings in sub-cubic time, and generate admissible repairs in at worst polynomial time. These conditions are necessary to provide real-time feedback whilst the user is typing.
+    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. In practice, this means that the framework should be robust to multiple errors, handle grammars with a large number of productions and exhibit linear speedup inversely proportional to the number of processors.
   \end{itemize}
 \end{frame}
 
@@ -859,7 +853,7 @@ error bars/y explicit
     \end{pNiceMatrix}
   \end{align*}
 
-  \noindent Valiant (1975) shows that $\sigma \in \mathcal{L}_{\mathcal{G}}$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}_\mathcal{G}}(\sigma)$.
+  \noindent $S \Rightarrow^* \sigma \iff \sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \Lambda^*_\sigma$, i.e., $\mathds{1}_{\Lambda^*_\sigma}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 \end{frame}
 
 \begin{frame}[fragile]{Lattices, Matrices and Trellises}
@@ -1499,6 +1493,24 @@ edge from parent node [above] };
         \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
     \end{cases}
   \end{align*}
+\end{frame}
+
+
+\begin{frame}[fragile]{An Simple Reachability Proof}
+\begin{lemma}
+For any nonempty language $\ell: \mathcal{L}(\mathcal{G})$ and invalid string $\err{\sigma}: \Sigma^n$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$, where $\Delta$ denotes the Levenshtein edit distance.\\
+\end{lemma}
+
+\begin{proof}
+Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m:=|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+
+\begin{itemize}
+\item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
+\item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+\end{itemize}
+
+In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+\end{proof}
 \end{frame}
 
 \begin{frame}[fragile]{A pairing function for sampling bounded binary trees}
