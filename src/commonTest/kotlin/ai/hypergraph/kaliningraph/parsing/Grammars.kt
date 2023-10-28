@@ -1,6 +1,9 @@
 import ai.hypergraph.kaliningraph.parsing.*
 
 object Grammars {
+  val sss = """START -> b | START | START START | START START START"""
+    .trimIndent().parseCFG().noNonterminalStubs
+
   val ifThen = """
      START -> X
      X -> I | F | P | Q

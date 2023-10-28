@@ -1,6 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.pow
+import com.ionspin.kotlin.bignum.decimal.*
+import com.ionspin.kotlin.bignum.integer.toBigInteger
+import kotlin.math.pow
 import kotlin.test.*
 import kotlin.time.*
 
@@ -235,12 +239,15 @@ class BarHillelTest {
   @Test
   fun testAllBlankSampler() {
     val gram = Grammars.seq2parsePythonCFG
-    gram.startPTree(List(20) { "_" })?.also {
+    val n = 10
+    gram.startPTree(List(n) { "_" })?.also {
       it.sampleWRGD().map { it.removeEpsilon() }.distinct()
         .take(100).toList().onEach { println(it.removeEpsilon()) }
     }?.also {
       println("Total branches off START: ${it.branches.size}")
       println("Average branching factor: ${it.branchRatio.let { (l, r) -> l / r }}")
+      println("Total parse trees off START: ${it.totalTrees}")
+      println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
     }
   }
 }
