@@ -63,21 +63,21 @@ Syntax repair can be treated as a language intersection problem between a contex
 To solve this problem, we will first pose a simpler problem that only considers intersections with a finite language, then turn our attention back to BCFLR.
 
 \begin{definition}[Porous completion]
-  Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+  Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
 \end{definition}
 
 $A(\sigma)$ is often a large-cardinality set, so we want a procedure which returns the most likely members first, without exhaustive enumeration. More precisely,
 
 \begin{definition}[Ranked repair]
-  Given a finite language $\ell^\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+  Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
   \begin{equation}
- R(\ell^\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell^\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\prod_{i = 1}^{|\sigma|} P_\theta(\sigma_i \mid \sigma_{1\ldots i})^{\frac{1}{|\sigma|}}
+    R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
   \end{equation}
   % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
   We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
-Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell^\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
+Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell_\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
 
 \subsection{Background}\label{sec:background}
 
@@ -314,30 +314,30 @@ A finite state automata is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, 
 \end{definition}
 
 \begin{lemma}\label{lemma:bar-hillel}
-For any context-free language $\ell$ and finite state automata $\alpha$, there exists a context-free grammar $G^\cap$ such that $\mathcal{L}(G^\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
+For any context-free language $\ell$ and finite state automata $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
 \end{lemma}
 
-\pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G^\cap$:
+\pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
 
 \begin{prooftree}
   \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\big(S\rightarrow q S r\big) \in P^\cap$}
+  \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
   \DisplayProof
   \hskip 1em
   \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \UnaryInfC{$\big(qar\rightarrow a\big)\in P^\cap$}
+  \UnaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
   \DisplayProof
   \hskip 1em
 %\end{prooftree}
 %\begin{prooftree}
   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
   \AxiomC{$p,q,r \in Q$}
-  \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P^\cap$}
+  \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G^\cap$ which recognizes and generates the admissible set.
+Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G_\cap$ which recognizes and generates the admissible set.
 
 \begin{figure}[H]
   \begin{center}
@@ -380,9 +380,9 @@ Conveniently, the Levenshtein ball is recognized by a nondeterministic finite au
   \BinaryInfC{$q_{i, j}\in F$}
 \end{prooftree}
 
-\noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P^\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
+\noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
 
-%To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G^\cap)$.
+%To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
 
 \subsection{Semiring Algebras}
@@ -408,17 +408,20 @@ Like the recognizer defined in \S~\ref{sec:background}, $p(\cdot)$ constructs el
 This encoding can be made more compact by propagating an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ as follows:
 
 \begin{equation}
-\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) \mapsto \bigoplus_{s\in \Sigma} \dot{p}(s)
+  \dot{p}(s: \underline\Sigma) \mapsto \begin{cases}
+     \bigoplus_{s\in \Sigma} \dot{p}(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
+     \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
+  \end{cases}
 \end{equation}
 
 \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
 
 \begin{equation}
-  X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\big\{k \Rightarrow \mathbb{T}_2(k, Q_x \cup Q_z) \mid Q_x \in \pi_2(X\circ k), Q_z \in \pi_2(Z\circ k)\big\}
+  X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
 \end{equation}
 
 \begin{equation}
-  X \otimes Z \mapsto \bigoplus_{w, x, z}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid (w\rightarrow xz) \in P, x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+  X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
 \end{equation}
 
 Decoding trees from $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$ becomes a straightforward matter of enumeration using a recursive choice function that emits a sequence of binary trees generated by the CFG. We define this construction more precisely in \S~\ref{sec:pairing}.
@@ -437,10 +440,10 @@ In our experiments, we provide a comparison of the performance of the SAT algebr
 The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
 
 \begin{equation}
-  L(p) = 1 + p L(p) \phantom{addspace} P(a) = 1 + a L(P(a)^2)
+  L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
 \end{equation}
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G^\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G_\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
 
 
 %  val totalTrees: BigInteger by lazy {
@@ -451,7 +454,7 @@ The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sen
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
-%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
     1  & \text{if $T$ is a leaf,} \\
     \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
   \end{cases}
