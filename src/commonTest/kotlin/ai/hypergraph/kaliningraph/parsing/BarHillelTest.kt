@@ -197,17 +197,36 @@ class BarHillelTest {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val levBall = makeLevFSA(toRepair, 3, gram.terminals)
+//  println(levBall.graph.toDot())
+//  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
+//    val part= intGram.nonterminals.map { it.substringAfter(',')
+//      .substringBefore(',') }.toSet().filter { it in gram.nonterminals }
+//
+//    println("Part: $part")
+//    println("Nopart: ${gram.nonterminals - part}")
+
 //      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
+//    println(intGram.prettyPrint())
     val clock = TimeSource.Monotonic.markNow()
 
     val template = List(toRepair.size + 2) { "_" }
-    val lbhSet = intGram.enumSeq(template)
-      .onEach {
-        println(it)
+
+    val lbhSet = intGram.enumSeq(template).onEachIndexed { i, it ->
+        if (i < 10) {
+          println(it)
+          val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
+          println("Found " + pf.size + " parse trees")
+          println(pf.first().prettyPrint())
+          println("\n\n")
+        }
+
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
       }.toList()
+
+//  Total trees in PTree: 29332695
+//  Found 14785 solutions using Levenshtein/Bar-Hillel
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
