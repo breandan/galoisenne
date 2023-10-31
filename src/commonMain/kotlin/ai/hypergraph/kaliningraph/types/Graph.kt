@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.types
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.js.JsName
@@ -147,7 +148,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun asString() =
     edgList.map { "${it.first} -> ${it.second.target}" }.formatAsGrid().toString()
 
-  fun toDot(): String {
+  fun toDot(highlight: Set<V> = setOf()): String {
     fun String.htmlify() =
       replace("<", "&lt;").replace(">", "&gt;")
     return """
@@ -155,7 +156,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
           graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
           ${
       vertices.joinToString("\n") {
-        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"]""" }
+        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"${if(it in highlight)""","fillcolor"="lightgray","style"="filled"""" else ""}]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
         """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"="${(e as? LabeledEdge)?.label ?: ""}"]""" }

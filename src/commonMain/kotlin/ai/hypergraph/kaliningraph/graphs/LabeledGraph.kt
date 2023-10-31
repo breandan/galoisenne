@@ -101,10 +101,11 @@ open class LGVertex internal constructor(
   var occupied: Boolean = false
 
   constructor(
-    label: String = randomString(),
+    label: String = "#RGEN_" + randomString(),
     id: String = label,
     out: Set<LGVertex> = emptySet()
-  ) : this(label = label, id = id, edgeMap = { s -> out.map { t -> LabeledEdge(s, t) }.toSet() })
+  ) : this(label = label, id = id, edgeMap = { s ->
+    out.map { t -> LabeledEdge(s, t, label.substringBefore("#RGEN_")) }.toSet() })
 
   constructor(lgv: LGVertex, edgeMap: (LGVertex) -> Set<LabeledEdge>) :
     this(label = lgv.label, id = lgv.id, edgeMap = edgeMap)

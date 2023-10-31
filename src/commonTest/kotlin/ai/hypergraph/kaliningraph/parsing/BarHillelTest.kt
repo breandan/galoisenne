@@ -1,10 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import Grammars
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.sampling.pow
-import com.ionspin.kotlin.bignum.decimal.*
-import com.ionspin.kotlin.bignum.integer.toBigInteger
-import kotlin.math.pow
 import kotlin.test.*
 import kotlin.time.*
 
@@ -197,7 +194,7 @@ class BarHillelTest {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val levBall = makeLevFSA(toRepair, 3, gram.terminals)
-//  println(levBall.graph.toDot())
+//  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
 //    val part= intGram.nonterminals.map { it.substringAfter(',')

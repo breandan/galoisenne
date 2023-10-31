@@ -31,6 +31,9 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
 //      println("$acc --$sym--> $nextStates")
       nextStates
     } intersect final).isNotEmpty()
+
+  fun toDot() =
+    graph.toDot(graph.vertices.filter { it.label in final }.toSet())
 }
 
 val TSA.states by cache { flatMap { listOf(it.π1, it.π3) }.toSet() }

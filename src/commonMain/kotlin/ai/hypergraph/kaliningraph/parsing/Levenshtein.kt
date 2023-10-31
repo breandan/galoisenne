@@ -76,43 +76,54 @@ fun makeLevFSA(
 
 fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 
+/*
+  s∈Σ i∈[0,n] j∈[1,k]
+-----------------------
+ (q_i,j−1 -s→ q_i,j)∈δ
+*/
+
 fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
   ((0..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
-    .map { (i, j, s) -> i to j-1 to s to i to j }
-    .map { (a, b, s, d, e) ->
-      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
-    }.map { (a, b, s, d, e) ->
-      "q_$a/$b" to s to "q_$d/$e"
-    }.toSet()
+    .map { (i, j, s) -> i to j-1 to s to i to j }.postProc(digits)
+
+/*
+   s∈Σ i∈[1,n] j ∈[1,k]
+-------------------------
+ (q_i−1,j−1 -s→ q_i,j)∈δ
+*/
 
 fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
   ((1..<str.size+dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i - 1 || str[i-1] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
-    .map { (i, j, s) -> i-1 to j-1 to s to i to j }
-    .map { (a, b, s, d, e) ->
-      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
-    }.map { (a, b, s, d, e) ->
-      "q_$a/$b" to s to "q_$d/$e"
-    }.toSet()
+    .map { (i, j, s) -> i-1 to j-1 to s to i to j }.postProc(digits)
+
+/*
+ s=σ_i i∈[1,n] j∈[0,k]
+-----------------------
+ (q_i−1,j -s→ q_i,j)∈δ
+*/
 
 fun rightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int): TSA =
   (setOf(idx + 1) * (0..dist).toSet() * setOf(letter))
-    .map { (i, j, s) -> i-1 to j to s to i to j }
-    .map { (a, b, s, d, e) ->
-      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
-    }.map { (a, b, s, d, e) ->
-      "q_$a/$b" to s to "q_$d/$e"
-    }.toSet()
+    .map { (i, j, s) -> i-1 to j to s to i to j }.postProc(digits)
+
+/*
+  s=σ_i i∈[2,n] j∈[1,k]
+-------------------------
+ (q_i−2,j−1 -s→ q_i,j)∈δ
+*/
 
 fun knightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int): TSA =
-  if (idx <= 1) setOf()
+  if (idx < 1) setOf()
   else (setOf(idx + 1) * (1..dist).toSet() * setOf(letter))
-    .map { (i, j, s) -> i-2 to j-1 to s to i to j }
-    .map { (a, b, s, d, e) ->
-      pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
-    }.map { (a, b, s, d, e) ->
-      "q_$a/$b" to s to "q_$d/$e"
-    }.toSet()
+    .map { (i, j, s) -> i-2 to j-1 to s to i to j }.postProc(digits)
+
+fun List<Π5<Int, Int, Σᐩ, Int, Int>>.postProc(digits: Int) =
+  map { (a, b, s, d, e) ->
+    pd(a, digits) to pd(b, digits) to s to pd(d, digits) to pd(e, digits)
+  }.map { (a, b, s, d, e) ->
+    "q_$a/$b" to s to "q_$d/$e"
+  }.toSet()
