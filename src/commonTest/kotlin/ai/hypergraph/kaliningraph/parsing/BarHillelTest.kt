@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.sampling.all
 import kotlin.test.*
 import kotlin.time.*
 
@@ -210,17 +211,17 @@ class BarHillelTest {
     val template = List(toRepair.size + 2) { "_" }
 
     val lbhSet = intGram.enumSeq(template).onEachIndexed { i, it ->
-        if (i < 10) {
-          println(it)
-          val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
-          println("Found " + pf.size + " parse trees")
-          println(pf.first().prettyPrint())
-          println("\n\n")
-        }
+      if (i < 10) {
+        println(it)
+        val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
+        println("Found " + pf.size + " parse trees")
+        println(pf.first().prettyPrint())
+        println("\n\n")
+      }
 
-        assertTrue(it in gram.language)
-        assertTrue(levBall.recognizes(it))
-      }.toList()
+      assertTrue(it in gram.language)
+      assertTrue(levBall.recognizes(it))
+    }.toList()
 
 //  Total trees in PTree: 29332695
 //  Found 14785 solutions using Levenshtein/Bar-Hillel
@@ -265,5 +266,23 @@ class BarHillelTest {
       println("Total parse trees off START: ${it.totalTrees}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testToyArith"
+*/
+  @Test
+  fun testToyArith() {
+    val prompt = ") ( (".tokenizeByWhitespace()
+    val overwrittenRepairs =
+      Grammars.toyArith.barHillelRepair(prompt, 3).toSet()
+        .also { println("Found ${it.size} overwritten repairs.") }
+
+    val allTriples = Grammars.toyArith.solveSeq(List(3) { "_" })
+      .distinct().toSet().also { println("Found ${it.size} total triples.") }
+
+    val allTriplesMinusOverwritten = overwrittenRepairs - allTriples
+    allTriplesMinusOverwritten.forEach { println(it) }
+    println("Found ${allTriplesMinusOverwritten.size} non-overwritten triples.")
   }
 }

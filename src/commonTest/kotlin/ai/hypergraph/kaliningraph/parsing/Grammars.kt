@@ -19,6 +19,12 @@ object Grammars {
      N -> !
   """.trimIndent().parseCFG().noNonterminalStubs
 
+  val toyArith = """
+    S -> S + S | S * S | S - S | S / S | ( S ) | - S
+    S -> 0 | 1 | 2 | 3 | 4
+    S -> X | Y | Z
+  """.trimIndent().parseCFG().noNonterminalStubs
+
   val ocamlCFG = """
     S -> X
     X -> A | V | ( X , X ) | X X | ( X )

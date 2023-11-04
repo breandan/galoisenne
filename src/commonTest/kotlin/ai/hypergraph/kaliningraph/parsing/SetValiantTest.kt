@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
@@ -78,16 +79,12 @@ class SetValiantTest {
 */
   @Test
   fun testArithmetic() {
-    """
-      S -> S + S | S * S | S - S | S / S | ( S )
-      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-      S -> X | Y | Z
-    """.let { cfg ->
+    toyArith.let { cfg ->
       assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
       assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
       println(cfg.parse("( 1 + ( 2 * 3 ) ) / 4")?.prettyPrint())
-      println(cfg.parseCFG().prettyPrint())
+      println(cfg.prettyPrint())
     }
   }
 
@@ -512,5 +509,26 @@ class SetValiantTest {
       pairs.map { (a, b) -> fastJoin(vidx, a, b) }
         .reduce { a, b -> union(a, b) }
     }.also { println("Merged a 10^6 bitvecs in ${it.inWholeMilliseconds}ms.") } // Should be ~5000ms
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testCompareSolvers"
+*/
+  @Test
+  fun testCompareSolvers() {
+    val prompt = "_ _ ( _ _ _".tokenizeByWhitespace()
+    val enumSeq = measureTimedValue { toyArith.enumSeq(prompt).toSet() }
+    val solveSeq = measureTimedValue { toyArith.solveSeq(prompt).toSet() }
+    val origSet = measureTimedValue { prompt.solve(toyArith).toSet() }
+
+//  EnumSeq: 584 (842.693834ms)
+//  SolvSeq: 584 (3.802375ms)
+//  SetCYK: 584 (7.388834667s)
+    enumSeq.also { println("EnumSeq: ${it.value.size} (${it.duration})") }.value
+    solveSeq.also { println("SolvSeq: ${it.value.size} (${it.duration})") }.value
+    origSet.also { println("SetCYK: ${it.value.size} (${it.duration})") }.value
+
+    assertEquals(origSet.value, enumSeq.value, "EnumSeq was missing:" + (origSet.value - enumSeq.value))
+    assertEquals(origSet.value, solveSeq.value)
   }
 }

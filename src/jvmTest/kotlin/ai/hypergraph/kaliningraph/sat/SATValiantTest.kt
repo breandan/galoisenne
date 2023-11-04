@@ -7,7 +7,6 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test
 import kotlin.test.*
-import kotlin.time.TimeSource
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest"
@@ -884,7 +883,7 @@ class SATValiantTest {
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLongTerminals"
- */
+*/
   @Test
   fun testLongTerminals() {
     println("START -> A B C D E F G H I".parseCFG().prettyPrint())

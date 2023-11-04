@@ -2,8 +2,8 @@
 
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.*
-import ai.hypergraph.kaliningraph.splitProd
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
 
@@ -302,7 +302,7 @@ fun List<Σᐩ>.solve(
 ): Sequence<Σᐩ> =
   genCandidates(CFG, fillers)
 //    .also { println("Solving (Complexity: ${fillers.size.pow(count { it == "_" })}): ${joinToString(" ")}") }
-    .takeWhile { takeMoreWhile() }.filter { it.matches(CFG) }
+    .takeWhile { takeMoreWhile() }.filter { it.matches(CFG) }.map { it.removeEpsilon() }
 
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {

@@ -12,6 +12,9 @@ infix fun CFG.intersectLevFSA(fsa: FSA): CFG = freeze().intersectLevFSAP(fsa)
 fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
   intersectLevFSA(makeLevFSA(source, distance, terminals))
 
+fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
+  makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
+
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val initFinal =
@@ -116,7 +119,7 @@ fun CFG.dropVestigialProductions(
     .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
     .freeze().removeUselessSymbols()
 
-  println("Removed ${size - rw.size} vestigial productions.")
+  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
   return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
 }
