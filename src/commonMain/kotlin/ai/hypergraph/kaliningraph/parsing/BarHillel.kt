@@ -1,14 +1,19 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
-infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.freeze().intersectLevFSAP(this)
+infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersectLevFSA(fsa: FSA): CFG = freeze().intersectLevFSAP(fsa)
+
+fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
+  intersectLevFSA(makeLevFSA(source, distance, terminals))
+
+fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
+  makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
 
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
@@ -18,9 +23,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   val transits =
     fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
-  fun Triple<Σᐩ, Σᐩ, Σᐩ>.isValid(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
+  fun Triple<Σᐩ, Σᐩ, Σᐩ>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
     fun Σᐩ.coords(): Pair<Int, Int> = drop(2).run {
-      (length / 2).let {substring(0,it).toInt() to substring(it + 1).toInt() }
+      (length / 2).let { substring(0, it).toInt() to substring(it + 1).toInt() }
     }
 
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
@@ -37,15 +42,15 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     fun IntRange.overlaps(other: IntRange) =
       (other.first in first..last) || (other.last in first..last)
 
-    fun parikhBounds(nt: Σᐩ): IntRange = parikhBounds[nt] ?: -1..-1
+    fun lengthBounds(nt: Σᐩ): IntRange = lengthBounds[nt] ?: -1..-1
 
     // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
     fun isCompatible() =
       first.coords().dominates(second.coords())
         && second.coords().dominates(third.coords())
-        && parikhBounds(nts.first).overlaps(SPLP(first, third))
-        && parikhBounds(nts.second).overlaps(SPLP(first, second))
-        && parikhBounds(nts.third).overlaps(SPLP(second, third))
+        && lengthBounds(nts.first).overlaps(SPLP(first, third))
+        && lengthBounds(nts.second).overlaps(SPLP(first, second))
+        && lengthBounds(nts.third).overlaps(SPLP(second, third))
 
     return isCompatible()
   }
@@ -63,7 +68,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       triples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isValid(A to B to C) }
+        .filter { it.isCompatibleWith(A to B to C) }
         .map { (p, q, r) -> "[$p,$A,$r]" to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
     }.flatten()
 
@@ -112,9 +117,9 @@ fun CFG.dropVestigialProductions(
 //  val reachable = reachableSymbols()
   val rw = toMutableSet()
     .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
-    .freeze().removeUselessSymbols()//.removeUnreachable().freeze().removeNonGenerating()
+    .freeze().removeUselessSymbols()
 
-  println("Removed ${size - rw.size} vestigial productions.")
+  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
   return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
 }
@@ -149,21 +154,21 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 }
 
 // Tracks the number of tokens a given nonterminal can represent
-// e.g., a NT with a Parikh bound of 1..3 can parse { s: Σ* | |s| ∈ [1, 3] }
-val CFG.parikhBounds: Map<Σᐩ, IntRange> by cache {
+// e.g., a NT with a bound of 1..3 can parse { s: Σ^[1, 3] }
+val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
+  val clock = TimeSource.Monotonic.markNow()
   val epsFree = noEpsilonOrNonterminalStubs.freeze()
-  val temp = List(20) { "_" }
+  val tpl = List(20) { "_" }
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
-  epsFree.initPForestMat(temp).seekFixpoint().diagonals
-    .mapIndexed { index, sets ->
-      val nonterminalsAtLevel = sets.flatMap { it.map { it.key } }
-      nonterminalsAtLevel.forEach { nt ->
-        map[nt]?.let {
-          (if (it.first < 0) (index + 1) else it.first)..(index + 1)
-        }?.let { map[nt] = it }
-      }
+  epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
+    sets.flatMap { it.map { it.key } }.forEach { nt ->
+      map[nt]?.let {
+        (if (it.first < 0) (idx + 1) else it.first)..(idx + 1)
+      }?.let { map[nt] = it }
     }
+  }
 
+  println("Computed NT length bounds in ${clock.elapsedNow()}")
   map
 }

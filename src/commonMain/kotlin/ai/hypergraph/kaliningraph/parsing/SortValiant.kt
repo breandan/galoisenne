@@ -87,8 +87,8 @@ data class Choice(val tokens: List<Σᐩ>, val weight: Float): Comparable<Choice
   constructor(token: Σᐩ): this(listOf(token), if ("ε" in token) 0f else 1f)
 
   companion object {
-    val comparator: Comparator<Choice> =
-      compareBy<Choice> { it.weight }.thenBy { it.sanitized.size }.thenBy { it.asString }
+    val comparator: Comparator<Choice> = compareBy<Choice> { it.weight }
+      .thenBy { it.sanitized.size }.thenBy { it.asString }
   }
 
   override fun compareTo(other: Choice): Int = comparator.compare(this, other)

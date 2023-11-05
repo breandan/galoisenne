@@ -81,7 +81,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
     val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
     val (l, quotient2) = lb.decodeTree(quotient1)
     val (r, quotient3) = rb.decodeTree(quotient2)
-    val concat = Tree(l.root, children = arrayOf(l, r))
+    val concat = Tree(root, children = arrayOf(l, r))
     return concat to quotient3
   }
 
@@ -95,7 +95,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
     println("Total trees in PTree: $totalTrees")
     var i = BigInteger.ZERO
-    while (i < totalTrees) yield(decodeString(i++).first)
+    while (i < 3 * totalTrees) yield(decodeString(i++).first)
   }.distinct()
 
   // Samples instantaneously from the parse forest, but may return duplicates

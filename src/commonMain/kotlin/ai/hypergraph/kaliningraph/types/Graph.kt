@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.types
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
 import kotlin.js.JsName
@@ -147,7 +148,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
   fun asString() =
     edgList.map { "${it.first} -> ${it.second.target}" }.formatAsGrid().toString()
 
-  fun toDot(): String {
+  fun toDot(highlight: Set<V> = setOf()): String {
     fun String.htmlify() =
       replace("<", "&lt;").replace(">", "&gt;")
     return """
@@ -155,7 +156,7 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
           graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
           ${
       vertices.joinToString("\n") {
-        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"]""" }
+        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"${if(it in highlight)""","fillcolor"="lightgray","style"="filled"""" else ""}]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
         """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"="${(e as? LabeledEdge)?.label ?: ""}"]""" }
@@ -188,17 +189,22 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 // All pairs shortest path
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.APSP: Map<Pair<V, V>, Int>     by cache {
   val dist = mutableMapOf<Pair<V, V>, Int>()
-  for (v in vertices) for (w in vertices) dist[v to w] = if (v == w) 0 else Int.MAX_VALUE
-  for (e in edges) dist[e.source to e.target] = 1
-  for (k in vertices) for (i in vertices) for (j in vertices) {
-    val ik = dist[i to k]!!
-    val kj = dist[k to j]!!
-    val ij = dist[i to j]!!
-    if (ik != Int.MAX_VALUE && kj != Int.MAX_VALUE && ik + kj < ij) dist[i to j] = ik + kj
+  for ((u, v) in vertices * vertices) {
+      dist[v to u] = if (v == u) 0 else Int.MAX_VALUE
+  }
+  for (e in adjList) { dist[e.first to e.second] = 1 }
+  while (true) {
+    var done = true
+    for ((k, i, j) in vertices * vertices * vertices) {
+      if (dist[i to k]!! < Int.MAX_VALUE && dist[k to j]!! < Int.MAX_VALUE) {
+        val newDist = dist[i to k]!! + dist[k to j]!!
+        if (newDist < dist[i to j]!!) { dist[i to j] = newDist; done = false }
+      }
+    }
+    if (done) break
   }
   dist
 }
-
 
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by cache { vertices.associateWith { it.neighbors.size } }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edges: Set<E>           by cache { edgMap.values.flatten().toSet() }

@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import Grammars
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.sampling.pow
-import com.ionspin.kotlin.bignum.decimal.*
-import com.ionspin.kotlin.bignum.integer.toBigInteger
-import kotlin.math.pow
+import ai.hypergraph.kaliningraph.sampling.all
 import kotlin.test.*
 import kotlin.time.*
 
@@ -197,17 +195,36 @@ class BarHillelTest {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val levBall = makeLevFSA(toRepair, 3, gram.terminals)
+//  println(levBall.toDot())
+//  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
+//    val part= intGram.nonterminals.map { it.substringAfter(',')
+//      .substringBefore(',') }.toSet().filter { it in gram.nonterminals }
+//
+//    println("Part: $part")
+//    println("Nopart: ${gram.nonterminals - part}")
+
 //      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
+//    println(intGram.prettyPrint())
     val clock = TimeSource.Monotonic.markNow()
 
     val template = List(toRepair.size + 2) { "_" }
-    val lbhSet = intGram.enumSeq(template)
-      .onEach {
+
+    val lbhSet = intGram.enumSeq(template).onEachIndexed { i, it ->
+      if (i < 10) {
         println(it)
-        assertTrue(it in gram.language)
-        assertTrue(levBall.recognizes(it))
-      }.toList()
+        val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
+        println("Found " + pf.size + " parse trees")
+        println(pf.first().prettyPrint())
+        println("\n\n")
+      }
+
+      assertTrue(it in gram.language)
+      assertTrue(levBall.recognizes(it))
+    }.toList()
+
+//  Total trees in PTree: 29332695
+//  Found 14785 solutions using Levenshtein/Bar-Hillel
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
@@ -249,5 +266,23 @@ class BarHillelTest {
       println("Total parse trees off START: ${it.totalTrees}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testToyArith"
+*/
+  @Test
+  fun testToyArith() {
+    val prompt = ") ( (".tokenizeByWhitespace()
+    val overwrittenRepairs =
+      Grammars.toyArith.barHillelRepair(prompt, 3).toSet()
+        .also { println("Found ${it.size} overwritten repairs.") }
+
+    val allTriples = Grammars.toyArith.solveSeq(List(3) { "_" })
+      .distinct().toSet().also { println("Found ${it.size} total triples.") }
+
+    val allTriplesMinusOverwritten = overwrittenRepairs - allTriples
+    allTriplesMinusOverwritten.forEach { println(it) }
+    println("Found ${allTriplesMinusOverwritten.size} non-overwritten triples.")
   }
 }

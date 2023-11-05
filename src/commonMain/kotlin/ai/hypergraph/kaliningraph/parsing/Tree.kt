@@ -32,10 +32,13 @@ class Tree constructor(
         }
       ) { i, acc, it -> acc + it.toGraph("$j.$i") }
 
+  val indxInfo by lazy { if (span.first < Int.MAX_VALUE) " [${span.first}]" else "" }
+  val spanInfo by lazy { if (span.first < Int.MAX_VALUE) " [$span]" else "" }
+
   fun prettyPrint(buffer: Σᐩ = "", prefix: Σᐩ = "", nextPrefix: Σᐩ = ""): Σᐩ =
-    if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()} [${span.first}]\n")
+    if (children.isEmpty()) (buffer + prefix + "${terminal?.htmlify()}$indxInfo\n")
     else children.foldIndexed("$buffer$prefix" + root.htmlify() +
-      (if (-1 !in span) " [$span]" else "") + "\n") { i: Int, acc: Σᐩ, it: Tree ->
+      (if (-1 !in span) spanInfo else "") + "\n") { i: Int, acc: Σᐩ, it: Tree ->
         if (i == children.size - 1)
           it.prettyPrint(acc + "", "$nextPrefix└── ", "$nextPrefix    ")
         else it.prettyPrint(acc, "$nextPrefix├── ", "$nextPrefix│   ")

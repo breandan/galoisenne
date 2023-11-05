@@ -24,7 +24,7 @@ val Production.RHS: List<Σᐩ> get() =
  * will be slow to compute the first time, but much faster on subsequent calls.
  * Storing the hashCode() in a field avoids recomputing it on every read.
  */
-fun CFG.freeze(): CFG = FrozenCFG(this)
+fun CFG.freeze(): CFG = if (this is FrozenCFG) this else FrozenCFG(this)
 private class FrozenCFG(val cfg: CFG): CFG by cfg {
   val cfgId = cfg.hashCode()
   override fun equals(other: Any?) =
