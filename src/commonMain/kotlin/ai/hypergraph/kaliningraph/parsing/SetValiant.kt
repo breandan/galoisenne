@@ -291,7 +291,7 @@ fun Σᐩ.validate(
 
 /*
  * Takes a grammar and a partially complete string where '_' denotes holes, and
- * returns a set of completed strings consistent with that grammar. Naive search
+ * returns a set of completed strings consistent with that grammar. Naïve search
  * over all holes takes O(|Σ|^n) where n is the number of holes.
  */
 

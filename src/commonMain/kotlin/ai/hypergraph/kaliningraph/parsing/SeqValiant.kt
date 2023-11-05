@@ -27,7 +27,10 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
   }
 
   // Σ^n/|T(n)|, if < 1 then we know the grammar is surely ambiguous
-  val inverseDensity by lazy { allTerminals.size.toBigInteger().pow(depth) / totalTrees }
+  val inverseDensity by lazy {
+    measureTimedValue { allTerminals.size.toBigInteger().pow(depth) / totalTrees }
+      .also { println("Solution density was: 1/${it.value} (${it.duration})") }.value
+  }
 
   // TODO: Use weighted choice mechanism
   val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
@@ -87,13 +90,11 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 
   fun sampleTreesWithoutReplacement() =
     sequence {
-      println("Total trees in PTree: $totalTrees")
       var i = BigInteger.ZERO
       while (i < totalTrees) yield(decodeTree(i++).first)
     }.distinct()
 
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
-    println("Total trees in PTree: $totalTrees")
     var i = BigInteger.ZERO
     while (i < 3 * totalTrees) yield(decodeString(i++).first)
   }.distinct()
@@ -157,9 +158,8 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 //  }
 }
 
-fun CFG.startPTree(tokens: List<Σᐩ>) = measureTimedValue {
+fun CFG.startPTree(tokens: List<String>) = measureTimedValue {
   initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
-    ?.also { println("Total trees: ${it.totalTrees}") }
 }.also { println("Time to compute parse forest: ${it.duration}") }.value
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
@@ -204,36 +204,44 @@ fun CFG.joinSeq(X: PForest, Z: PForest): PForest =
 //      if (acc == null) listOf(pair) else acc + pair
 //    }.map { (k, v) -> k to PTree(k, v) }.toMap()
 
-fun CFG.sliceSolve(size: Int): Sequence<Σᐩ> = solveSeq(List(size) { "_" })
+fun CFG.sliceSolve(size: Int): Sequence<String> = solveSeq(List(size) { "_" })
 
-fun CFG.sliceSample(size: Int): Sequence<Σᐩ> = sampleSeq(List(size) { "_" })
+fun CFG.sliceSample(size: Int): Sequence<String> = sampleSeq(List(size) { "_" })
 
 // Lazily computes all syntactically strings compatible with the given template
 // Generally slow, but guaranteed to return all solutions
-fun CFG.solveSeq(tokens: List<Σᐩ>): Sequence<String> =
+fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.choose()?.distinct() ?: sequenceOf()
 
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
-fun CFG.enumSeq(tokens: List<Σᐩ>): Sequence<String> =
-  startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
+fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
+  startPTree(tokens)?.let { pt ->
+    if (BigInteger.ONE < pt.inverseDensity) pt.sampleStrWithoutReplacement()
+    // This means the grammar is highly ambiguous and we would probably be
+    // better off sampling from the bottom-up, instead of from the top-down.
+    else {
+      println("Ambiguity exceeds total solutions, switching to bottom-up naïve search!")
+      tokens.solve(this)
+    }
+  } ?: sequenceOf()
 
 // This is generally the fastest method, but may return duplicates
-fun CFG.sampleSeq(tokens: List<Σᐩ>): Sequence<String> =
+fun CFG.sampleSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleWithReplacement() ?: sequenceOf()
 
-fun CFG.enumTree(tokens: List<Σᐩ>): Sequence<Tree> =
+fun CFG.enumTree(tokens: List<String>): Sequence<Tree> =
   startPTree(tokens)?.sampleTreesWithoutReplacement() ?: sequenceOf()
 
-fun CFG.enumSWOR(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+fun CFG.enumSWOR(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleWRGD() ?: sequenceOf()
 
-fun CFG.hammingBallRepair(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+fun CFG.hammingBallRepair(tokens: List<String>): Sequence<String> =
   tokens.indices.toSet().choose(5)
     .map { tokens.substituteIndices(it) { it, i -> "_" } }
     .flatMap { enumSWOR(it).take(100) }
 
-fun CFG.repairSeq(tokens: List<Σᐩ>): Sequence<Σᐩ> =
+fun CFG.repairSeq(tokens: List<String>): Sequence<String> =
   tokens.intersperse(2, "ε").let { prompt ->
     hammingBallRepair(prompt).flatMap {
       val result = it.tokenizeByWhitespace()

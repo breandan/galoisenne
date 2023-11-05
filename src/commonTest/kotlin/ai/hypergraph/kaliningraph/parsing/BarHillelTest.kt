@@ -269,6 +269,21 @@ class BarHillelTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.ambiguityTortureTest"
+*/
+  @Test
+  fun ambiguityTortureTest() {
+    val gram = Grammars.sss
+    val n = 10
+    gram.startPTree("b b b b b _ b _ b b b b b b".tokenizeByWhitespace())?.also {
+      println("Total branches off START: ${it.branches.size}")
+      println("Average branching factor: ${it.branchRatio.let { (l, r) -> l / r }}")
+      println("Total parse trees off START: ${it.totalTrees}")
+      println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testToyArith"
 */
   @Test
