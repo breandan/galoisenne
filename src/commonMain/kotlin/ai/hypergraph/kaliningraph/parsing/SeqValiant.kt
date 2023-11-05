@@ -160,7 +160,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 
 fun CFG.startPTree(tokens: List<String>) = measureTimedValue {
   initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
-}.also { println("Time to compute parse forest: ${it.duration}") }.value
+}.also { println("Took ${it.duration} to compute parse forest") }.value
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(
