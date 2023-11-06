@@ -231,7 +231,7 @@ There are essentially three approaches, which we will number (1-3) and offer inc
 
  2. We can use the sampler to generate the hole locations and feed them to the SAT solver to extract the admissible set. This lets us control the hole locations, and when a given hole configuration has no models the SAT solver will return UNSAT. When a repair is found, the generated repairs are used to bias the sampler towards nearby hole locations.
 
- 3. Finally, we can pretrain a variable-order Markov chain (VOMC), then use the uniform sampler to generate the hole locations and the VOMC to sample candidate solutions, which are filtered through the recognizer to ensure they are admissible, then the resulting repairs are ranked by perplexity of the VOMC. This the approach we use for the experiments in Sec. 8.1-8.4.
+ 3. Finally, we can pretrain a variable-order Markov chain (VOMC), then use the uniform sampler to generate the hole locations and the VOMC to sample candidate solutions, which are filtered through the recognizer to ensure they are admissible, then the resulting repairs are ranked by perplexity of the VOMC. This is the approach we use for the experiments in Sec. 8.1-8.4.
 
 Typically, if the number of holes in the string is small, it is faster to simply enumerate the solutions by brute forcing a recognizer with all Levenshtein edits. As the number of holes and string length increases, it becomes more efficient to use a SAT solver.
 
@@ -239,15 +239,15 @@ Typically, if the number of holes in the string is small, it is faster to simply
 
 40 lexical tokens are more than enough for ~95% of the samples in the StackOverflow dataset and 99% of the samples in the Seq2Parse dataset. We provide the CDFs below:
 
-Percent of snippets with lexical token length <= n
+Percentage of snippets with lexical token length <= n
 
-| n   | StackOverflow | Seq2Parse |
-|:---:|:-------------:|:---------:|
-| 10  |      60%      |    90%    |
-| 20  |      84%      |    98%    |
-| 30  |      92%      |    99%    |
-| 40  |      95%      |    99%    |
-| 50  |      97%      |    99%    |
+| n  | StackOverflow | Seq2Parse |
+|:--:|:-------------:|:---------:|
+| 10 |      9%       |    29%    |
+| 20 |      16%      |    47%    |
+| 30 |      25%      |    62%    |
+| 40 |      34%      |    73%    |
+| 50 |      41%      |    79%    |
 
 We believe these datasets are representative of the kinds of strings that programmers write in practice and certainly more than enough to repair a single line of code in most programming languages, but will leave this question to the reader to decide. 
 
