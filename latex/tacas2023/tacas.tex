@@ -307,14 +307,14 @@ Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\e
 
 \subsection{Bar-Hillel Construction}
 
-Manually generating the edits is more controllable way to synthesize edits, but can be unnecessarily expensive if the goal is to synthesize all edits within a fixed edit distance. The second approach is more efficient, but requires generating a large grammar. We now describe the Bar-Hillel construction, which allows us to generate a grammar from a finite automaton, and then use the grammar to generate the edits without enumerating holes.
+Manually generating the edits is a more controllable way to synthesize edits, but can be unnecessarily expensive if the goal is to synthesize all edits within a fixed edit distance. The second approach is more efficient, but requires generating a large grammar. We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a finite automaton, and then use the grammar to generate the edits without enumerating holes.
 
 \begin{definition}
-A finite state automata is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
+A finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
 \end{definition}
 
 \begin{lemma}\label{lemma:bar-hillel}
-For any context-free language $\ell$ and finite state automata $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
+For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
 \end{lemma}
 
 \pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
@@ -337,7 +337,7 @@ For any context-free language $\ell$ and finite state automata $\alpha$, there e
   \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automata (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G_\cap$ which recognizes and generates the admissible set.
+Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automaton (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G_\cap$ which recognizes and generates the admissible set.
 
 \begin{figure}[H]
   \begin{center}
