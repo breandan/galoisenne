@@ -7,9 +7,9 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "1.9.20"
+  kotlin("multiplatform") version "2.0.0-Beta1"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.49.0"
+  id("com.github.ben-manes.versions") version "0.50.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
 }
 
@@ -139,7 +139,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.1.0")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.4.3")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.5.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -157,7 +157,7 @@ kotlin {
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:4.0.3")
+        implementation("org.sosy-lab:java-smt:4.1.0")
 
         // val z3Version = "4.12.2-glibc_2.27"
         // runtimeOnly("org.sosy-lab:javasmt-solver-z3:$z3Version:com.microsoft.z3@jar")
@@ -181,7 +181,7 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.10.1")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:24.0.1")
+        implementation("org.jetbrains:annotations:24.1.0")
         implementation("org.slf4j:slf4j-simple:2.0.9")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf

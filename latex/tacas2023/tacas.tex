@@ -668,13 +668,87 @@ We would prefer hole templates likely to yield repairs that are (1) admissible (
 
 More specifically, we want to sample from a discrete product space that factorizes into (1) the edit locations (e.g., informed by caret position, historical edit locations, etc.), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs minimizing $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
 
+\pagebreak\section{Dataset}
+
+The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
+
+\begin{figure}
+\begin{tikzpicture}
+  \begin{axis}[
+    ybar,
+    bar width=15pt,
+    xlabel={Beginning of snippet $\longleftrightarrow$ End of snippet},
+    ylabel={Frequency},
+    title={Normalized edit locations},
+    ymin=0,
+    ymax=35,
+    xtick=data,
+    xticklabels={10\%,20\%,30\%,40\%,50\%,60\%,70\%,80\%,90\%,100\%},
+    ymajorgrids=true,
+    grid style=dashed,
+    width=\textwidth,
+    height=0.3\textwidth
+  ]
+
+  \addplot table {
+    X Y
+    10 11.6539
+    20 5.7252
+    30 6.2087
+    40 5.9542
+    50 5.5980
+    60 7.9389
+    70 7.0738
+    80 6.9466
+    90 12.4173
+    100 30.4835
+  };
+  \end{axis}
+\end{tikzpicture}
+\end{figure}
+
+\noindent Likewise, we can plot the number of tokens between edits within each patch:
+
+\begin{figure}
+\begin{tikzpicture}
+  \begin{axis}[
+    ybar,
+    bar width=15pt,
+    title={Intra-patch edit distance},
+    xlabel={Caret distance},
+    ylabel={Frequency},
+    xtick=data,
+    ymajorgrids=true,
+    grid style=dashed,
+    xticklabels={1,2,3,4,5,6,7,8,9,10+},
+    width=\textwidth,
+    height=0.3\textwidth
+  ]
+
+  \addplot table {
+    X Y
+    1 40.66
+    2 15.00
+    3 5.80
+    4 4.86
+    5 4.26
+    6 2.98
+    7 2.05
+    8 2.73
+    9 1.62
+    10 13.64
+  };
+  \end{axis}
+\end{tikzpicture}
+\end{figure}
+
 \section{Evaluation}
 
 We evaluate Tidyparse along three primary axes: latency, throughput, and accuracy on a dataset of human repairs. Our intention here is to show that Tidyparse is competitive with a large language model (roughly, a deep circuit) that is slow but highly sample-efficient with a small language model (roughly, a shallow circuit) that is fast but less sample-efficient.
 
-Large language models typically take between several hundred milliseconds and several seconds to infer a repair. The output is not guaranteed to be syntactically valid, and may require more than one sample to sample a valid repair. In contrast, Tidyparse can discover thousands of repairs in the same duration, all of which are guaranteed to be syntactically valid. Furthermore, if a valid repair exists within a certain number of edits, it will eventually be found.
+Large language models typically take between several hundred milliseconds and several seconds to infer a repair. The output is not guaranteed to be syntactically valid, and may require more than one sample to discover a valid repair. In contrast, Tidyparse can discover thousands of repairs in the same duration, all of which are guaranteed to be syntactically valid. Furthermore, if a valid repair exists within a certain number of edits, it will eventually be found.
 
-To substantiate these claims, we conduct experiments to plot:
+To substantiate these claims, we conduct experiments measuring:
 
 \begin{itemize}
   \item the average worst-case time to discover a human repair across varying sizes, i.e., average latency to discover a repair with edit distance $d$.
@@ -685,7 +759,7 @@ To substantiate these claims, we conduct experiments to plot:
 
 \subsection{Uniform sampling benchmark}\label{sec:uniform}
 
-Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before the latency cutoff are reranked based on their tokenwise perplexity and compared for an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
+Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before timeout expiration are reranked by tokenwise perplexity then compared using an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
 
 \begin{figure}[H]
   \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
@@ -761,9 +835,9 @@ While adapting sampling is able to saturate the admissible set for 1- and 2-edit
 \subsection{Throughput benchmark}
 
 \begin{wrapfigure}{r}{0.3\textwidth}
-  \vspace{-15pt}
   \resizebox{.3\textwidth}{!}{\input{throughput.tex}}
   \label{fig:throughput}
+  \vspace{-30pt}
 \end{wrapfigure}
 
 End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
@@ -788,7 +862,7 @@ In addition to the StackOverflow dataset, we also evaluate our approach on two d
     \begin{center}\footnotesize\textbf{Organic bracket language}\end{center}
   \end{minipage}\\
   \vspace{10pt}
-  \hspace{-0.25cm}\begin{tikzpicture}[scale=0.41]
+  \hspace{-0.25cm}\begin{tikzpicture}[scale=0.35]
      \begin{axis}[
        width=8.3cm,
        height=7cm,
@@ -815,7 +889,7 @@ In addition to the StackOverflow dataset, we also evaluate our approach on two d
        \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
      \end{axis}
   \end{tikzpicture}
-  \begin{tikzpicture}[scale=0.41]
+  \begin{tikzpicture}[scale=0.35]
     \begin{axis}[
       width=8.3cm,
       height=7cm,
@@ -843,7 +917,7 @@ In addition to the StackOverflow dataset, we also evaluate our approach on two d
     \end{axis}
   \end{tikzpicture}
   \hspace{20pt}
-  \begin{tikzpicture}[scale=0.41]
+  \begin{tikzpicture}[scale=0.35]
     \begin{axis}[
     width=8.3cm,
     height=7cm,
@@ -871,7 +945,7 @@ In addition to the StackOverflow dataset, we also evaluate our approach on two d
     \legend{10s, 30s, 60s}
     \end{axis}
   \end{tikzpicture}
-  \begin{tikzpicture}[scale=0.41]
+  \begin{tikzpicture}[scale=0.35]
     \begin{axis}[
     width=8.3cm,
     height=7cm,
