@@ -8,7 +8,7 @@
 %% For single-blind review submission, w/ CCS and ACM Reference
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
-\documentclass[sigplan,nonacm,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+\documentclass[sigplan,nonacm]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
@@ -47,7 +47,7 @@
 
   \author{Breandan Considine}
   \affiliation{\institution{McGill University}}
-  \email{breandan.considine@mail.mcgill.ca}
+  \email{bre@ndan.co}
 
   \maketitle
 
@@ -98,7 +98,7 @@
 
    We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively, where children are pairs of conjoined twins.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
-\begin{equation*}
+\vspace{-10pt}\begin{equation*}
   \begin{footnotesize}
 \Lambda(s: \underline\Sigma) \mapsto \begin{cases}
 \bigoplus_{s\in \Sigma} \Lambda(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
@@ -121,7 +121,7 @@
 \end{footnotesize}
 \end{equation*}
 
-  These operators group subtrees trees by their root nonterminal, then aggregate their children. Each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can then be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins as we describe in \S~\ref{sec:replacement}, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
+  These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can then be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins as we describe in \S~\ref{sec:replacement}, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
 
 %\begin{equation*}
 %  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -245,5 +245,10 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
   \section{Conclusion}
 
   We have presented a novel algorithm for sampling trees in bounded context-free languages with and without replacement. This technique has applications to code completion and program repair. In future work, we would like to construct a biased no-replacement rejection-free sampling procedure which prioritizes samples based on their likelihood according to a PCFG and extend our technique to the more general case of sampling from conjunctive languages.
+
+  \section{Acknowledgements}
+
+  The author wishes to thank David Bieber for mentioning analytic combinatorics during a sunrise hike and David Yu-Tung Hui for sharing his thoughts on Boltzmann sampling.
+
   \bibliography{../bib/acmart}
 \end{document}
