@@ -223,8 +223,8 @@ class BarHillelTest {
       assertTrue(levBall.recognizes(it))
     }.toList()
 
-//  Total trees in PTree: 29332695
-//  Found 14785 solutions using Levenshtein/Bar-Hillel
+//  Found 19346 solutions using Levenshtein/Bar-Hillel
+//  Enumerative solver took 382737ms
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")

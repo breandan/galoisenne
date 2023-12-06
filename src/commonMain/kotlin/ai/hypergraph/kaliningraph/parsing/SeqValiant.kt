@@ -180,10 +180,18 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
 
 typealias PForest = Map<String, PTree>
 fun merge(X: PForest, Z: PForest): PForest =
-  (X.keys + Z.keys).associateWith { k ->
-//    PTree(k, ((X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf())).toSet().toList())
-    PTree(k, (X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf()))
-  }
+  X.toMutableMap().apply {
+    Z.forEach { (k, v) ->
+      if (k in this) this[k] = PTree(k, (this[k]!!.branches + v.branches).distinct())
+      else this[k] = v
+    }
+  }.toMap()
+
+// Too slow:
+//  (X.keys + Z.keys).associateWith { k ->
+////    PTree(k, ((X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf())).toSet().toList())
+//    PTree(k, (X[k]?.branches ?: listOf()) + (Z[k]?.branches ?: listOf()))
+//  }
 
 //fun merge(X: PForest, Z: PForest): PForest =
 //  (X.keys + Z.keys).associateWith { k ->
