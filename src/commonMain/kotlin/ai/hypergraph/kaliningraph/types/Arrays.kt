@@ -2,7 +2,6 @@
 
 package ai.hypergraph.kaliningraph.types
 
-import kotlin.js.JsName
 import kotlin.jvm.JvmName
 
 // Monomorphic arrays
