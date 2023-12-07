@@ -223,8 +223,8 @@ class BarHillelTest {
       assertTrue(levBall.recognizes(it))
     }.toList()
 
-//  Found 19346 solutions using Levenshtein/Bar-Hillel
-//  Enumerative solver took 382737ms
+//  Found 19433 solutions using Levenshtein/Bar-Hillel
+//  Enumerative solver took 320485ms
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")

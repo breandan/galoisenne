@@ -205,8 +205,11 @@ fun merge(X: PForest, Z: PForest): PForest =
 // X ⊗ Z := { w | <x, z> ∈ X × Z, (w -> xz) ∈ P }
 fun CFG.joinSeq(X: PForest, Z: PForest): PForest =
   bimap.TRIPL.filter { (_, x, z) -> x in X && z in Z }
-    .map { (w, x, z) -> PTree(w, listOf(X[x]!! to Z[z]!!)) }
-    .fold(mapOf()) { acc, it -> merge(mapOf(it.root to it), acc) }
+//    .map { (w, x, z) -> PTree(w, listOf(X[x]!! to Z[z]!!)) }
+    .map { (w, x, z) -> Triple(w, X[x]!!, Z[z]!!) }.groupBy { it.first }
+    .map { (k, v) -> k to PTree(k, v.map { it.second to it.third }) }
+    .toMap()
+
 //    .groupingBy { it.first }.aggregate { _, acc: List<Π2A<PTree>>?, it, _->
 //      val pair = X[it.second]!! to Z[it.third]!!
 //      if (acc == null) listOf(pair) else acc + pair
