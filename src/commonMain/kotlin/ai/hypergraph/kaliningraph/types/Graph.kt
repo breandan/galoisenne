@@ -21,10 +21,10 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   fun V(out: Set<V>): V = TODO("Must override me if you want a fresh vertex")
 
   val deepHashCode: Int
-  fun G() = G(setOf())
-  fun G(vararg graphs: G): G = G(graphs.toList())
-  fun G(vararg vertices: V): G = G(vertices.map { it.graph })
-  fun G(list: List<Any>): G = when {
+  @JsName("G1") fun G() = G(setOf())
+  @JsName("G2") fun G(vararg graphs: G): G = G(graphs.toList())
+  @JsName("G3") fun G(vararg vertices: V): G = G(vertices.map { it.graph })
+  @JsName("G4") fun G(list: List<Any>): G = when {
     list.isEmpty() -> setOf()
     list allAre G() -> list.fold(G()) { it, acc -> it + acc as G }
     list allAre list.first() -> list.map { it as V }.toSet()
