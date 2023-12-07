@@ -227,8 +227,22 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
+  startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
+
+// This should never return duplicates and is the second fastest.
+// Eventually, this will become the default method for sampling.
+fun CFG.enumSeqSmart(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.let { pt ->
-    if (BigInteger.ONE < pt.inverseDensity) pt.sampleStrWithoutReplacement()
+    if (BigInteger.ONE < pt.inverseDensity) {
+      if (pt.totalTrees < BigInteger(100_000)) {
+        println("Small number of parse trees (${pt.totalTrees}), sampling without replacement!")
+        pt.sampleStrWithoutReplacement()
+      }
+      else {
+        println("Large number of parse trees (${pt.totalTrees}), sampling with replacement!")
+        pt.sampleWithReplacement()
+      }
+    }
     // This means the grammar is highly ambiguous and we would probably be
     // better off sampling from the bottom-up, instead of from the top-down.
     else {
