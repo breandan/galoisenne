@@ -20,8 +20,8 @@ fun <A> PKernel<A>.nullity(): FKernel<Int> =
     (π2  != null).compareTo(false) to
     (π3 != null).compareTo(false)
 
-val ecaAlgebra = kernelAlgebra<𝔹>()
-fun initializeECA(len: Int, cc: (Int) -> 𝔹 = { true }) =
+val ecaAlgebra = kernelAlgebra<Bln>()
+fun initializeECA(len: Int, cc: (Int) -> Bln = { true }) =
   FreeMatrix(ecaAlgebra, len, 1) { r, c -> null to cc(r) to null }
 
 // Create a tridiagonal (Toeplitz) matrix
@@ -33,8 +33,8 @@ fun <A> KernelMatrix<A>.genMat(algebra: Ring<PKernel<A>> = kernelAlgebra<A>()): 
     else null to null to null
   }
 
-fun 𝔹ⁿ.toECA() = initializeECA(size) { this[it] }
-fun 𝔹ⁿ.evolve(steps: Int = 1): 𝔹ⁿ =
+fun Blns.toECA() = initializeECA(size) { this[it] }
+fun Blns.evolve(steps: Int = 1): Blns =
   toECA().evolve(steps = steps, rule = { (π2 && !π1) || (π2 xor π3) }).data.map { it!!.second!! }.toBooleanArray()
 
 tailrec fun <A> KernelMatrix<A>.evolve(
@@ -45,8 +45,8 @@ tailrec fun <A> KernelMatrix<A>.evolve(
   if (steps == 0) this
   else (circulantMatrix * this).nonlinearity(rule).evolve(rule, circulantMatrix, steps - 1)
 
-fun FreeMatrix<PKernel<𝔹>>.str() = transpose.map { if (it?.π2 == true) "1" else " " }.toString()
-fun FreeMatrix<PKernel<𝔹>>.print() = println(str())
+fun FreeMatrix<PKernel<Bln>>.str() = transpose.map { if (it?.π2 == true) "1" else " " }.toString()
+fun FreeMatrix<PKernel<Bln>>.print() = println(str())
 
 fun <A> KernelMatrix<A>.nonlinearity(rule: FKernel<A>.() -> A): KernelMatrix<A> =
   FreeMatrix(numRows, 1) { r, c -> null to (this[r, c] as FKernel<A>).rule() to null }

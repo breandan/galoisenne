@@ -10,10 +10,10 @@ import ai.hypergraph.kaliningraph.types.*
 
 // SetValiant interface
 //=====================================================================================
-fun Σᐩ.matches(cfg: Σᐩ): 𝔹 = matches(cfg.validate().parseCFG())
-fun Σᐩ.matches(CFG: CFG): 𝔹 = CFG.isValid(tokenizeByWhitespace())
-fun Σᐩ.matches(CJL: CJL): 𝔹 = CJL.cfgs.all { matches(it) }
-fun List<Σᐩ>.matches(CFG: CFG): 𝔹 = CFG.isValid(this)
+fun Σᐩ.matches(cfg: Σᐩ): Bln = matches(cfg.validate().parseCFG())
+fun Σᐩ.matches(CFG: CFG): Bln = CFG.isValid(tokenizeByWhitespace())
+fun Σᐩ.matches(CJL: CJL): Bln = CJL.cfgs.all { matches(it) }
+fun List<Σᐩ>.matches(CFG: CFG): Bln = CFG.isValid(this)
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
 fun CFG.parse(s: Σᐩ): Tree? =
   try {
@@ -41,8 +41,8 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
   else if (size == 1) listOf("ε", first(), "ε")
   else this
 
-fun CFG.isValid(str: Σᐩ): 𝔹 = isValid(str.tokenizeByWhitespace())
-fun CFG.isValid(str: List<Σᐩ>): 𝔹 =
+fun CFG.isValid(str: Σᐩ): Bln = isValid(str.tokenizeByWhitespace())
+fun CFG.isValid(str: List<Σᐩ>): Bln =
   if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
   else initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0]
     //.also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
@@ -115,12 +115,12 @@ fun CFG.treeJoin(left: Forest, right: Forest): Forest =
 fun CFG.setJoin(left: Set<Σᐩ>, right: Set<Σᐩ>): Set<Σᐩ> =
   (left * right).flatMap { bimap[it.toList()] }.toSet()
 
-fun CFG.toBitVec(nts: Set<Σᐩ>): 𝔹ⁿ =
+fun CFG.toBitVec(nts: Set<Σᐩ>): Blns =
   if (1 < nts.size) nonterminals.map { it in nts }.toBooleanArray()
   else BooleanArray(nonterminals.size) { false }
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
-fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: 𝔹ⁿ, right: 𝔹ⁿ): 𝔹ⁿ {
+fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: Blns, right: Blns): Blns {
   if (left.isEmpty() || right.isEmpty()) return booleanArrayOf()
 
   val result = BooleanArray(vidx.size)
@@ -140,18 +140,18 @@ fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: 𝔹ⁿ, right: 𝔹ⁿ): �
 //  if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
 //  else vindex.map { it.any { (B, C) -> left[B] and right[C] } }.toBooleanArray()
 
-fun CFG.join(left: 𝔹ⁿ, right: 𝔹ⁿ): 𝔹ⁿ = fastJoin(vindex, left, right)
+fun CFG.join(left: Blns, right: Blns): Blns = fastJoin(vindex, left, right)
 
-fun maybeJoin(vindexFast: Array<ℤⁿ>, left: 𝔹ⁿ?, right: 𝔹ⁿ?): 𝔹ⁿ? =
+fun maybeJoin(vindexFast: Array<ℤⁿ>, left: Blns?, right: Blns?): Blns? =
   if (left == null || right == null) null else fastJoin(vindexFast, left, right)
 
-fun maybeUnion(left: 𝔹ⁿ?, right: 𝔹ⁿ?): 𝔹ⁿ? =
+fun maybeUnion(left: Blns?, right: Blns?): Blns? =
   if (left == null || right == null) { left ?: right }
   else if (left.isEmpty() && right.isNotEmpty()) right
   else if (left.isNotEmpty() && right.isEmpty()) left
   else union(left, right)
 
-fun union(left: 𝔹ⁿ, right: 𝔹ⁿ): 𝔹ⁿ {
+fun union(left: Blns, right: Blns): Blns {
   val result = BooleanArray(left.size)
   for (i in left.indices) {
     result[i] = left[i]
@@ -161,7 +161,7 @@ fun union(left: 𝔹ⁿ, right: 𝔹ⁿ): 𝔹ⁿ {
   return result
 }
 
-val CFG.bitwiseAlgebra: Ring<𝔹ⁿ> by cache {
+val CFG.bitwiseAlgebra: Ring<Blns> by cache {
   vindex.let {
     Ring.of(
       nil = BooleanArray(nonterminals.size) { false },
@@ -172,7 +172,7 @@ val CFG.bitwiseAlgebra: Ring<𝔹ⁿ> by cache {
 }
 
 // Like bitwiseAlgebra, but with nullable bitvector literals for free variables
-val CFG.satLitAlgebra: Ring<𝔹ⁿ?> by cache {
+val CFG.satLitAlgebra: Ring<Blns?> by cache {
   vindex.let {
     Ring.of(
       nil = BooleanArray(nonterminals.size) { false },
@@ -182,26 +182,26 @@ val CFG.satLitAlgebra: Ring<𝔹ⁿ?> by cache {
   }
 }
 
-fun CFG.toNTSet(nts: 𝔹ⁿ): Set<Σᐩ> =
+fun CFG.toNTSet(nts: Blns): Set<Σᐩ> =
   nts.mapIndexed { i, it -> if (it) bindex[i] else null }.filterNotNull().toSet()
 
-fun 𝔹ⁿ.decodeWith(cfg: CFG): Set<Σᐩ> =
+fun Blns.decodeWith(cfg: CFG): Set<Σᐩ> =
   mapIndexed { i, it -> if (it) cfg.bindex[i] else null }.filterNotNull().toSet()
 
-fun CFG.toBooleanArray(nts: Set<Σᐩ>): 𝔹ⁿ =
+fun CFG.toBooleanArray(nts: Set<Σᐩ>): Blns =
   BooleanArray(nonterminals.size) { i -> bindex[i] in nts }
 
 //=====================================================================================
 
 val HOLE_MARKER = "_"
-fun Σᐩ.containsHole(): 𝔹 = HOLE_MARKER in this
+fun Σᐩ.containsHole(): Bln = HOLE_MARKER in this
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
 fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
-fun Σᐩ.isNonterminalStubInNTs(nts: Set<Σᐩ>): 𝔹 = isNonterminalStub() && drop(1).dropLast(1) in nts
-fun Σᐩ.isNonterminalStubIn(cfg: CFG): 𝔹 = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
-fun Σᐩ.isNonterminalStubIn(CJL: CJL): 𝔹 = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
-fun Σᐩ.containsNonterminal(): 𝔹 = Regex("<[^\\s>]*>") in this
+fun Σᐩ.isNonterminalStubInNTs(nts: Set<Σᐩ>): Bln = isNonterminalStub() && drop(1).dropLast(1) in nts
+fun Σᐩ.isNonterminalStubIn(cfg: CFG): Bln = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
+fun Σᐩ.isNonterminalStubIn(CJL: CJL): Bln = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }
+fun Σᐩ.containsNonterminal(): Bln = Regex("<[^\\s>]*>") in this
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
 fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
@@ -217,7 +217,7 @@ fun CFG.initialUTBMatrix(
   allNTs: Set<Σᐩ> = nonterminals,
   bmp: BiMap = bimap,
   unitReach: Map<Σᐩ, Set<Σᐩ>> = originalForm.unitReachability
-): UTMatrix<𝔹ⁿ> =
+): UTMatrix<Blns> =
   UTMatrix(
     ts = tokens.map { it ->
       bmp[listOf(it)].let { nts ->
@@ -261,8 +261,8 @@ private val freshNames: Sequence<Σᐩ> =
     .filter { it != START_SYMBOL }
 
 fun Σᐩ.parseCFG(
-  normalize: 𝔹 = true,
-  validate: 𝔹 = false
+  normalize: Bln = true,
+  validate: Bln = false
 ): CFG =
   (if (validate) validate() else this).lines().filter { "->" in it }.map { line ->
     val prod = line.splitProd()
@@ -298,7 +298,7 @@ fun Σᐩ.validate(
 fun List<Σᐩ>.solve(
   CFG: CFG,
   fillers: Set<Σᐩ> = CFG.terminals - CFG.blocked,
-  takeMoreWhile: () -> 𝔹 = { true },
+  takeMoreWhile: () -> Bln = { true },
 ): Sequence<Σᐩ> =
   genCandidates(CFG, fillers)
 //    .also { println("Solving (Complexity: ${fillers.size.pow(count { it == "_" })}): ${joinToString(" ")}") }
@@ -312,7 +312,7 @@ fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Se
   }
 
 // TODO: Compactify [en/de]coding: https://news.ycombinator.com/item?id=31442706#31442719
-fun CFG.nonterminals(bitvec: List<𝔹>): Set<Σᐩ> =
+fun CFG.nonterminals(bitvec: List<Bln>): Set<Σᐩ> =
     bitvec.mapIndexedNotNull { i, it -> if (it) bindex[i] else null }.toSet()
         .apply { ifEmpty { throw Exception("Unable to reconstruct NTs from: $bitvec") } }
 

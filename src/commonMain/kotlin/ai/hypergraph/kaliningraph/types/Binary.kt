@@ -3,8 +3,10 @@ package ai.hypergraph.kaliningraph.types
 
 import kotlin.jvm.JvmName
 
-typealias 𝔹 = Boolean
-typealias 𝔹ⁿ = BooleanArray
+//typealias 𝔹 = Boolean
+//typealias 𝔹ⁿ = BooleanArray
+typealias Bln = Boolean
+typealias Blns = BooleanArray
 
 sealed class B<X, P : B<X, P>>(open val x: X? = null) {
   val T: T<P> get() = T(this as P)

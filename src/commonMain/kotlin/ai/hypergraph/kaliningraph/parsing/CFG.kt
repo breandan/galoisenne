@@ -175,7 +175,7 @@ private fun Σᐩ.isTreelikeNonterminalIn(
   cfg: CFG,
   reachables: Set<Σᐩ> = cfg.reachableSymbols(this) - this,
   nonTreeLike: Set<Σᐩ> = setOf(this)
-): 𝔹 = when {
+): Bln = when {
   "ε" in this -> true
   (reachables intersect nonTreeLike).isNotEmpty() -> false
   else -> reachables.all { it in cfg.terminals ||
@@ -190,7 +190,7 @@ class JoinMap(val CFG: CFG) {
       .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
       .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
 
-  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: 𝔹 = false): Set<Π3A<Σᐩ>> =
+  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Bln = false): Set<Π3A<Σᐩ>> =
     if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
     else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
 
