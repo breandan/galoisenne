@@ -134,7 +134,7 @@ kotlin {
         implementation("org.graalvm.js:js:23.0.2")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC")
 
         implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
 

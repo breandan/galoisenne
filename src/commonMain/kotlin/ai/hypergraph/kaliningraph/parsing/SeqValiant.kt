@@ -9,10 +9,9 @@ import kotlin.math.*
 import kotlin.random.Random
 import kotlin.time.measureTimedValue
 
-fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
-
-// Algebraic data type / polynomial functor for parse forests
-class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()) {
+typealias PForest = Map<String, PTree> // ℙ₃
+// Algebraic data type / polynomial functor for parse forests (ℙ₂)
+class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()) {
 //  val hash by lazy { root.hashCode() + if (branches.isEmpty()) 0 else branches.hashCode() }
 //  override fun hashCode(): Int = hash
 
@@ -79,20 +78,20 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
 
   private fun decodeTree(i: BigInteger): Pair<Tree, BigInteger> {
     if (branches.isEmpty()) return Tree(root) to i
-    val (quotient1, remainder) =
-      i.div(branches.size) to i.mod(branches.size.toBigInteger())
+    val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
     val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
     val (l, quotient2) = lb.decodeTree(quotient1)
     val (r, quotient3) = rb.decodeTree(quotient2)
-    val concat = Tree(root, children = arrayOf(l, r))
-    return concat to quotient3
+    val isSingleton = l.children.isEmpty() && r.root == ".ε"
+    return (if (isSingleton) Tree(root, terminal = l.root)
+    else Tree(root, children = arrayOf(l, r))) to quotient3
   }
 
-  fun sampleTreesWithoutReplacement() =
+  fun sampleTreesWithoutReplacement(): Sequence<Tree> =
     sequence {
       var i = BigInteger.ZERO
       while (i < totalTrees) yield(decodeTree(i++).first)
-    }.distinct()
+    }
 
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
     var i = BigInteger.ZERO
@@ -105,6 +104,16 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
   // the set is sufficiently large, distinctness will never be a problem.
   fun sampleWithReplacement(): Sequence<String> = generateSequence { sample() }
 
+  fun sampleDiverseTrees(): Sequence<Tree> =
+    sampleTreesWithoutReplacement().distinctBy { it.structureEncode() }
+
+  fun sampleTree(): Tree =
+    if (branches.isEmpty()) Tree(root)
+    else shuffledBranches.random().let { (l, r) ->
+      val (a, b) = l.sampleTree() to r.sampleTree()
+      Tree(root, children = arrayOf(a, b))
+    }
+
   fun sample(): String =
     if (branches.isEmpty()) if ("ε" in root) "" else root
     else branches.random().let { (l, r) ->
@@ -115,7 +124,7 @@ class PTree(val root: String = "ε.", val branches: List<Π2A<PTree>> = listOf()
   fun sampleWRGD(): Sequence<String> = generateSequence { sampleStrWithGeomDecay() }
 
   fun sampleStrWithGeomDecay(): String =
-    if (branches.isEmpty()) if ("ε." in root) "" else root
+    if (branches.isEmpty()) if (".ε" in root) "" else root
     else {
 //      val p = 0.9 // Adjust this for different decay rates
 //      val rnd = Random.nextDouble()
@@ -162,11 +171,16 @@ fun CFG.startPTree(tokens: List<String>) = measureTimedValue {
   initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
 }.also { println("Took ${it.duration} to compute parse forest") }.value
 
+// Instead of defining a special case, we instead represent the unit production
+// as a left child whose sibling is empty like so: Left child to Right child
+fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
+
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(
     ts = tokens.map { token ->
       (if (token != HOLE_MARKER) bimap[listOf(token)] else unitNonterminals)
         .associateWith { nt ->
+          // Here we construct
           if (token != HOLE_MARKER) PSingleton(token)
           else bimap.UNITS[nt]?.map { PSingleton(it) }?.flatten() ?: listOf()
         }.map { (k, v) -> k to PTree(k, v) }.toMap()
@@ -178,7 +192,6 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
     )
   )
 
-typealias PForest = Map<String, PTree>
 fun merge(X: PForest, Z: PForest): PForest =
   X.toMutableMap().apply {
     Z.forEach { (k, v) ->
@@ -229,18 +242,20 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
+var maxTrees = 100_000
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
 fun CFG.enumSeqSmart(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.let { pt ->
     if (BigInteger.ONE < pt.inverseDensity) {
-      if (pt.totalTrees < BigInteger(100_000)) {
+      if (pt.totalTrees < BigInteger(maxTrees)) {
         println("Small number of parse trees (${pt.totalTrees}), sampling without replacement!")
         pt.sampleStrWithoutReplacement()
       }
       else {
         println("Large number of parse trees (${pt.totalTrees}), sampling with replacement!")
         pt.sampleWithReplacement()
+//        pt.sampleDiverseTrees().map { it.contents(true) }
       }
     }
     // This means the grammar is highly ambiguous and we would probably be

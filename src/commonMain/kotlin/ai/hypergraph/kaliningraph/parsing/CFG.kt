@@ -250,7 +250,7 @@ class BiMap(cfg: CFG) {
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
 }
 
-fun CFG.forestHash(s: Σᐩ) = parseForest(s).structureEncode()
+fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
 fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
 
