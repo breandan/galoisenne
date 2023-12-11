@@ -290,3 +290,11 @@ fun CFG.repairSeq(tokens: List<String>): Sequence<String> =
         .minimalAdmissibleSubrepairs({ it.filter { it != "ε" } in language }, { edit.size.toDouble() })
     }.distinct().map { it.resToStr().removeEpsilon() }.distinct()
   }
+
+fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
+  tokens.intersperse(1, "ε").let { prompt ->
+    prompt.indices.toSet().choose(4)
+      .map { prompt.substituteIndices(it) { _, _ -> "_" } }
+      .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
+      .map { it.removeEpsilon() }
+  }
