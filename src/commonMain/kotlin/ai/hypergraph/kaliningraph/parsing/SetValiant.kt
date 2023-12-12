@@ -266,7 +266,7 @@ fun Σᐩ.parseCFG(
 ): CFG =
   (if (validate) validate() else this).lines().filter { "->" in it }.map { line ->
     val prod = line.splitProd()
-    if (2 == prod.size && " " !in prod[0]) prod[0] to prod[1].tokenizeByWhitespace()
+    if (2 == prod.size && prod[0].trim().isNotEmpty()) prod[0] to prod[1].tokenizeByWhitespace()
     else throw Exception("Invalid production ${prod.size}: $line")
   }.toSet().let { if (normalize) it.normalForm else it }
 
