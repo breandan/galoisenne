@@ -146,7 +146,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:4.2.0")
+        implementation("org.apache.datasketches:datasketches-java:5.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
