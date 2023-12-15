@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.0.0-Beta1"
+  kotlin("multiplatform") version "2.0.0-Beta2"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.50.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
@@ -194,14 +194,14 @@ kotlin {
         // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
         implementation("com.redislabs:jredisgraph:2.6.0-RC2")
-        implementation("io.lacuna:bifurcan:0.2.0-alpha6")
+        implementation("io.lacuna:bifurcan:0.2.0-alpha7")
 
         val jgraphtVersion by extra { "1.5.2" }
         implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.7.0" }
+        val tinkerpopVersion by extra { "3.7.1" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
@@ -218,7 +218,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
       }
     }
   }
