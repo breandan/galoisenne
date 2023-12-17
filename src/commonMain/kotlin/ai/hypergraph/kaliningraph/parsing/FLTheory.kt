@@ -46,10 +46,10 @@ fun pruneInactiveRules(cfg: CFG): CFG =
     "a finite language rooted at t and disjoint from the upward closure.")
 
 // REL ⊂ CFL ⊂ CJL
-operator fun REL.contains(s: Σᐩ): Boolean = s in reg.asCFG.language
-operator fun CFL.contains(s: Σᐩ): Boolean = cfg.isValid(s)
-operator fun CJL.contains(s: Σᐩ): Boolean = cfls.all { s in it }
-operator fun CFL.contains(s: List<Σᐩ>): Boolean = cfg.isValid(s)
+operator fun REL.contains(s: Σᐩ): Bln = s in reg.asCFG.language
+operator fun CFL.contains(s: Σᐩ): Bln = cfg.isValid(s)
+operator fun CJL.contains(s: Σᐩ): Bln = cfls.all { s in it }
+operator fun CFL.contains(s: List<Σᐩ>): Bln = cfg.isValid(s)
 
 // https://arxiv.org/pdf/2209.06809.pdf
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf
