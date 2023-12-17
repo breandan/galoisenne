@@ -146,7 +146,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:4.2.0")
+        implementation("org.apache.datasketches:datasketches-java:5.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -194,14 +194,14 @@ kotlin {
         // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
         implementation("com.redislabs:jredisgraph:2.6.0-RC2")
-        implementation("io.lacuna:bifurcan:0.2.0-alpha6")
+        implementation("io.lacuna:bifurcan:0.2.0-alpha7")
 
         val jgraphtVersion by extra { "1.5.2" }
         implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.7.0" }
+        val tinkerpopVersion by extra { "3.7.1" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
@@ -218,7 +218,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
       }
     }
   }
