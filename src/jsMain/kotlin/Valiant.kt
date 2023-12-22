@@ -34,7 +34,7 @@ val canonical: MutableList<LabeledGraph> = mutableListOf(
     "05:XY" - "05:S"
   },
 )
-var i = 0
+internal var i = 0
 
 fun cfgParser(
   toParse: String = "aaabbb",

@@ -10,7 +10,7 @@ import ai.hypergraph.kaliningraph.types.*
 
 // SetValiant interface
 //=====================================================================================
-fun Σᐩ.matches(cfg: Σᐩ): Bln = matches(cfg.validate().parseCFG())
+fun Σᐩ.matches(cfg: Σᐩ): Bln = matches(cfg.parseCFG())
 fun Σᐩ.matches(CFG: CFG): Bln = CFG.isValid(tokenizeByWhitespace())
 fun Σᐩ.matches(CJL: CJL): Bln = CJL.cfgs.all { matches(it) }
 fun List<Σᐩ>.matches(CFG: CFG): Bln = CFG.isValid(this)
@@ -264,13 +264,15 @@ fun Σᐩ.parseCFG(
   normalize: Bln = true,
   validate: Bln = false
 ): CFG =
-  (if (validate) validate() else this).lines().filter { "->" in it }.map { line ->
-    val prod = line.splitProd()
-    if (2 == prod.size && prod[0].trim().isNotEmpty()) prod[0] to prod[1].tokenizeByWhitespace()
-    else throw Exception("Invalid production ${prod.size}: $line")
+  lines().filter { "->" in it }.map { line ->
+    if (validate && !line.isValidProd()) throw Exception("Invalid production: $line")
+    line.splitProd().let { it[0] to it[1].tokenizeByWhitespace() }
   }.toSet().let { if (normalize) it.normalForm else it }
 
 fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
+
+val PRODCFG = Regex("\\s*[^|]+\\s+->\\s+([^|]+\\s+\\|\\s+)*[^|]+\\s*")
+fun Σᐩ.isValidProd() = matches(PRODCFG)
 
 fun CFGCFG(names: Collection<Σᐩ>): CFG = """
     START -> CFG
@@ -284,8 +286,10 @@ fun Σᐩ.validate(
   presets: Set<Σᐩ> = setOf("|", "->"),
   tokens: Sequence<Σᐩ> = tokenizeByWhitespace().filter { it !in presets }.asSequence(),
   names: Map<Σᐩ, Σᐩ> = freshNames.filterNot(::contains).zip(tokens).toMap(),
-): Σᐩ = lines().filter(Σᐩ::isNotBlank).joinToString(" \\n ")
-  .tokenizeByWhitespace().joinToString(" ") { names[it] ?: it }
+): Σᐩ = lines().filter { "->" in it }
+  .onEach { if (!it.isValidProd()) throw Exception("Invalid production: $it") }
+  .joinToString(" \\n ").tokenizeByWhitespace()
+  .joinToString(" ") { names[it] ?: it }
   .let { if (it.matches(CFGCFG(names.values))) this
   else throw Exception("!CFL: $it") }
 

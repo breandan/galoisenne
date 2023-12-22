@@ -357,6 +357,9 @@ private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): 
 
 fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
 
+fun Σᐩ.tokenizeByWhitespaceAndKeepDelimiters(): List<Σᐩ> =
+  split(Regex("(?<=\\s)|(?=\\s)"))
+
 // MUCH faster than above (but incorrect)
 //fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =
 //  mutableListOf<Σᐩ>().also { list ->

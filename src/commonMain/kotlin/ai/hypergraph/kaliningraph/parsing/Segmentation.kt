@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.image.escapeHTML
 
 data class Segmentation(
   val valid: List<Int> = emptyList(),
@@ -35,6 +36,25 @@ data class Segmentation(
   val parseableRegions = valid.map { it..it }.mergeContiguousRanges().map { it.charIndicesOfWordsInString(line) }
   val unparseableRegions = invalid.filter { it !in illegal }.map { it..it }.mergeContiguousRanges().map { it.charIndicesOfWordsInString(line) }
   val illegalRegions = illegal.map { it..it }.map { it.charIndicesOfWordsInString(line) }
+
+  fun toColorfulHTMLString(): String {
+    val illegalRegions =
+      unparseableRegions.map { it to "orange" } +
+        illegalRegions.map { it to "red" }
+
+    val regions =
+      (parseableRegions.map { it to "other" } + illegalRegions).sortedBy { it.first.first }
+
+    if (illegalRegions.isEmpty()) return line.escapeHTML()
+
+    val coloredLine = StringBuilder().append("<u>")
+    regions.forEach { (range, color) ->
+      coloredLine.append("<span class=\"$color\">${line.substring(range).escapeHTML()}</span>")
+    }
+    coloredLine.append("</u>")
+
+    return coloredLine.toString()
+  }
 
   fun toColorfulString(): String {
     val coloredLine = StringBuilder()
