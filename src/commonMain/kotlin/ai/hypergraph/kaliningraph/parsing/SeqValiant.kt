@@ -69,9 +69,19 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
     if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
     val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
-    val (lb, rb) = shuffledBranches[remainder.intValue()]
+    val (lb, rb) = shuffledBranches[remainder.intValue(false)]
     val (l, quotient2) = lb.decodeString(quotient1)
     val (r, quotient3) = rb.decodeString(quotient2)
+    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
+    return concat to quotient3
+  }
+
+  private fun decodeStringFast(i: Long): Pair<String, Long> {
+    if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
+    val (quotient1, remainder) = i / branches.size.toLong() to (i % branches.size.toLong())
+    val (lb, rb) = shuffledBranches[remainder.toInt()]
+    val (l, quotient2) = lb.decodeStringFast(quotient1)
+    val (r, quotient3) = rb.decodeStringFast(quotient2)
     val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
     return concat to quotient3
   }
@@ -94,8 +104,8 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
-    var i = BigInteger.ZERO
-    while (i < 3 * totalTrees) yield(decodeString(i++).first)
+    var i = 0L
+    while (i < totalTrees.longValue(false)) yield(decodeStringFast(i++).first)
   }.distinct()
 
   // Samples instantaneously from the parse forest, but may return duplicates

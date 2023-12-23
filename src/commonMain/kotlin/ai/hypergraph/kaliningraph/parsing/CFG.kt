@@ -69,9 +69,9 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
 //val CFG.nonparametricForm by cache { rewriteHistory[this]!![1] }
 
 /** Backing fields for [reachableSymbols], [reachableSymbolsViaUnitProds]
-    TODO: back the fields with functions instead of vis versa using mutable maps?
-          - Pros: early accesses are faster with a gradually-filled map
-          - Cons: immutable fields follow convention, easier to reason about
+ *  TODO: back the fields with functions instead of vis versa using mutable maps?
+ *        - Pros: early accesses are faster with a gradually-filled map
+ *        - Cons: immutable fields follow convention, easier to reason about
  */
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 

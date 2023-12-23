@@ -531,4 +531,23 @@ class SetValiantTest {
     assertEquals(origSet.value, enumSeq.value, "EnumSeq was missing:" + (origSet.value - enumSeq.value))
     assertEquals(origSet.value, solveSeq.value)
   }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testRandomCFG"
+  */
+  @Test
+  fun testRandomCFG() {
+    fun String.deleteRandomSingleWord() =
+      tokenizeByWhitespace().let { it.subList(0, Random.nextInt(it.size)) + it.subList(Random.nextInt(it.size), it.size) }
+        .joinToString(" ")
+    generateSequence {
+      measureTime {
+        val cfg = generateRandomCFG().parseCFG().freeze()
+        val results = cfg.enumSeq(List(30) { "_" }).filter { 20 < it.length }.take(10).toList()
+        val corruptedResults = results.map { if (Random.nextBoolean()) it else it.deleteRandomSingleWord() }
+        preparseParseableLines(cfg, corruptedResults.joinToString("\n"))
+        repeat(corruptedResults.size) { println() }
+      }
+    }.onEach { println(it) }.take(100).toList()
+  }
 }

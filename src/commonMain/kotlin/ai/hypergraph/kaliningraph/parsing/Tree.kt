@@ -53,7 +53,7 @@ class Tree constructor(
    else "[.\\texttt{$root} " + children.joinToString(" ", "", " ]") { it.qtreeify() }
 
   private fun Σᐩ.htmlify() =
-    replace('<', '⟨').replace('>', '⟩')
+    replace("->", "→").replace('<', '⟨').replace('>', '⟩')
 
   // Xujie's algorithm - it works! :-D
   fun denormalize(): Tree {

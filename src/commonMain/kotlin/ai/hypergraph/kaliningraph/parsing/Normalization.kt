@@ -14,9 +14,9 @@ val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
 /**
  * n.b. Normalization may destroy organic nonterminals!
- * In order to preserve every organic nonterminal, you
+ * If you want to preserve every organic NT, then you
  * must first generateNonterminalStubs() for all V ∈ G
- * ensure that ∃v.(v->*) ∈ G => (v-><v>) ∈ G holds.
+ * to ensure that ∃v.(v->*) ∈ G => (v-><v>) ∈ G holds.
  */
 fun CFG.normalize(): CFG =
   mutableListOf<CFG>().let { rewrites ->
@@ -270,5 +270,5 @@ private tailrec fun CFG.terminalsToUnitProds(): CFG {
   val freshRHS = mixProd.RHS.toMutableList().also { it[termIdx] = freshName }
   val newProd = freshName to listOf(mixProd.RHS[termIdx])
   val newGrammar = this - mixProd + (mixProd.LHS to freshRHS) + newProd
-  return if (this == newGrammar) this else newGrammar.terminalsToUnitProds()
+  return if (this == newGrammar) this else newGrammar.freeze().terminalsToUnitProds()
 }

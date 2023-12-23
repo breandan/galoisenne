@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.random.Random
 
 
 // SetValiant interface
@@ -234,14 +235,13 @@ fun CFG.initialUTBMatrix(
 
 fun CFG.initialUTMatrix(
   tokens: List<Σᐩ>,
-  origCFG: CFG = originalForm,
   bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<Σᐩ>> = origCFG.unitReachability
+  unitReach: Map<Σᐩ, Set<Σᐩ>> = originalForm.unitReachability
 ): UTMatrix<Forest> =
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
       if (terminal == HOLE_MARKER)
-        unitReachability.values.flatten().toSet().map { root ->
+        unitReach.values.flatten().toSet().map { root ->
           bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
             .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
         }.flatten().toSet()
@@ -260,6 +260,28 @@ private val freshNames: Sequence<Σᐩ> =
   .let { it + (it * it).map { (a, b) -> a + b } }
     .filter { it != START_SYMBOL }
 
+fun generateRandomCFG(
+  numProds: IntRange = 10..20,
+  numChoicesPerProd: IntRange = 1..10,
+  numTokPerChoice: IntRange = 1..3,
+): String {
+  val existingNames = mutableSetOf(START_SYMBOL)
+  fun freshName(): Σᐩ = ('A'..'Z').let { az -> (0..2).joinToString("") { "" + az.random() } }
+  var grammar = ""
+  repeat(numProds.random()) {
+    val LHS = existingNames.random()
+    if (it == 0) existingNames -= START_SYMBOL
+    val RHS = (1..numChoicesPerProd.random()).joinToString(" | ") {
+      generateSequence {
+        if (Random.nextDouble() < 0.3 && existingNames.isNotEmpty()) existingNames.random()
+        else freshName().also { existingNames.add(it) }
+      }.take(numTokPerChoice.random()).joinToString(" ")
+    }
+    grammar += "$LHS -> $RHS\n"
+  }
+  return grammar
+}
+
 fun Σᐩ.parseCFG(
   normalize: Bln = true,
   validate: Bln = false
@@ -272,7 +294,7 @@ fun Σᐩ.parseCFG(
 fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
 
 val PRODCFG = Regex("\\s*[^|]+\\s+->\\s+([^|]+\\s+\\|\\s+)*[^|]+\\s*")
-fun Σᐩ.isValidProd() = matches(PRODCFG)
+fun Σᐩ.isValidProd() = lines().filter { "->" in it }.all { l -> l.matches(PRODCFG) }
 
 fun CFGCFG(names: Collection<Σᐩ>): CFG = """
     START -> CFG
