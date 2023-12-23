@@ -66,6 +66,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   fun choose(): Sequence<String> = choice.asSequence()
 
+  // Average time: 436.96ms, total time 43696.959ms (testRandomCFG)
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
     if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
     val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
@@ -76,6 +77,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     return concat to quotient3
   }
 
+  // Average time: 328.99ms, total time 32899.708ms (testRandomCFG)
   private fun decodeStringFast(i: Long): Pair<String, Long> {
     if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
     val (quotient1, remainder) = i / branches.size.toLong() to (i % branches.size.toLong())
@@ -104,8 +106,8 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
-    var i = 0L
-    while (i < totalTrees.longValue(false)) yield(decodeStringFast(i++).first)
+    var i = BigInteger.ZERO
+    while (i < totalTrees) yield(decodeString(i++).first)
   }.distinct()
 
   // Samples instantaneously from the parse forest, but may return duplicates

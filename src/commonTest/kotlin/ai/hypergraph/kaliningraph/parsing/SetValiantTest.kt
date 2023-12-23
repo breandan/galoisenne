@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
+import org.kosat.round
 import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.*
@@ -538,16 +539,19 @@ class SetValiantTest {
   @Test
   fun testRandomCFG() {
     fun String.deleteRandomSingleWord() =
-      tokenizeByWhitespace().let { it.subList(0, Random.nextInt(it.size)) + it.subList(Random.nextInt(it.size), it.size) }
-        .joinToString(" ")
-    generateSequence {
-      measureTime {
-        val cfg = generateRandomCFG().parseCFG().freeze()
-        val results = cfg.enumSeq(List(30) { "_" }).filter { 20 < it.length }.take(10).toList()
-        val corruptedResults = results.map { if (Random.nextBoolean()) it else it.deleteRandomSingleWord() }
-        preparseParseableLines(cfg, corruptedResults.joinToString("\n"))
-        repeat(corruptedResults.size) { println() }
-      }
-    }.onEach { println(it) }.take(100).toList()
+      tokenizeByWhitespace().let {
+        val delIdx: Int = Random.nextInt(it.size - 1)
+        it.subList(0, delIdx) + it.subList(delIdx + 1, it.size)
+      }.joinToString(" ")
+
+      generateSequence {
+        measureTime {
+          val cfg = generateRandomCFG().parseCFG().freeze()
+          val results = cfg.enumSeq(List(30) { "_" }).filter { 20 < it.length }.take(10).toList()
+          val corruptedResults = results.map { if (Random.nextBoolean()) it else it.deleteRandomSingleWord() }
+          preparseParseableLines(cfg, corruptedResults.joinToString("\n"))
+        }
+      }.take(100).toList().map { it.toDouble(DurationUnit.MILLISECONDS) }
+        .also { println("Average time: ${it.average().round(3)}ms, total time ${it.sum().round(3)}ms") }
   }
 }

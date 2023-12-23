@@ -214,7 +214,10 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by cache { associateWith { it.neighbors.size } }
 
 val cache = LRUCache<String, Any>()
-fun getCaller() = Throwable().stackTraceToString().lines()[3].hashCode()
+
+object PlatformVars { var PLATFORM_CALLER_STACKTRACE_DEPTH: Int = 3 }
+fun getCaller() = Throwable().stackTraceToString()
+  .lines()[PlatformVars.PLATFORM_CALLER_STACKTRACE_DEPTH].hashCode()
 
 // Lazily evaluates and caches result for later use, until cache expiry,
 // after which said value will be reevaluated and cached if it is needed
@@ -227,7 +230,8 @@ fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
     val csg = "$id$caller"
 //    val csg = "${y!!::class.simpleName}${id}$caller"
-    cache.getOrPut(csg) { y.fn() as Any } as T
+    (cache.getOrPut(csg) { y.fn() as Any } as T)
+//    .also { println("$id :: $caller :: $it") }
   }
 
 class RandomWalk<G, E, V>(
