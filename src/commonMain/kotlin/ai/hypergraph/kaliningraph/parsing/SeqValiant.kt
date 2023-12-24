@@ -254,7 +254,7 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
-var maxTrees = 100_000
+var maxTrees = 50_000
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
 fun CFG.enumSeqSmart(tokens: List<String>): Sequence<String> =
