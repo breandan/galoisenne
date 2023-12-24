@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.image.escapeHTML
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.tensor.transpose
@@ -90,6 +91,55 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   }
   return prev[o2.size]
 }
+
+fun levenshteinAlign(a: String, b: String) =
+  levenshteinAlign(a.tokenizeByWhitespace(), b.tokenizeByWhitespace())
+
+fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
+  val costs = Array(a.size + 1) { IntArray(b.size + 1) }
+  for (j in 0..b.size) costs[0][j] = j
+  for (i in 1..a.size) {
+    costs[i][0] = i
+    for (j in 1..b.size) {
+      val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
+      costs[i][j] = minOf(1 + minOf(costs[i - 1][j], costs[i][j - 1]), temp)
+    }
+  }
+
+  val aPathRev = mutableListOf<T?>()
+  val bPathRev = mutableListOf<T?>()
+  var i = a.size
+  var j = b.size
+  while (i != 0 && j != 0) {
+    val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
+    when (costs[i][j]) {
+      temp -> {
+        aPathRev.add(a[--i])
+        bPathRev.add(b[--j])
+      }
+      1 + costs[i-1][j] -> {
+        aPathRev.add(a[--i])
+        bPathRev.add(null)
+      }
+      1 + costs[i][j-1] -> {
+        aPathRev.add(null)
+        bPathRev.add(b[--j])
+      }
+    }
+  }
+  return aPathRev.reversed().zip(bPathRev.reversed())
+}
+
+fun <T> List<Pair<T?, T?>>.paintDiffs(): String =
+  joinToString(" ") { (a, b) ->
+    when {
+      a == null -> "<span style=\"color: green\">${b.toString().escapeHTML()}</span>"
+      b == null -> "<span style=\"background-color: gray\"><span class=\"noselect\">${List(a.toString().length){" "}.joinToString("")}</span></span>"
+      a == "_" -> "<span style=\"color: green\">${b.toString().escapeHTML()}</span>"
+      a != b -> "<span style=\"color: orange\">${b.toString().escapeHTML()}</span>"
+      else -> b.toString().escapeHTML()
+    }
+  }
 
 fun multisetManhattanDistance(s1: Σᐩ, s2: Σᐩ): Int =
   multisetManhattanDistance(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
