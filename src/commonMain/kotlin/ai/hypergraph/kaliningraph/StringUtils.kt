@@ -110,7 +110,7 @@ fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
   val bPathRev = mutableListOf<T?>()
   var i = a.size
   var j = b.size
-  while (i != 0 && j != 0) {
+  while (i > 0 && j > 0) {
     val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
     when (costs[i][j]) {
       temp -> {
@@ -127,7 +127,20 @@ fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
       }
     }
   }
-  return aPathRev.reversed().zip(bPathRev.reversed())
+
+  while (i > 0) {
+    aPathRev.add(a[--i])
+    bPathRev.add(null)
+  }
+
+  while (j > 0) {
+    aPathRev.add(null)
+    bPathRev.add(b[--j])
+  }
+
+  val revPathA = aPathRev.reversed()
+  val revPathB = bPathRev.reversed()
+  return revPathA.zip(revPathB)
 }
 
 fun <T> List<Pair<T?, T?>>.paintDiffs(): String =
