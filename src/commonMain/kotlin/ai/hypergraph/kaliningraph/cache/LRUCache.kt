@@ -5,7 +5,7 @@ class LRUCache<K, V>(
   private val maxSize: Int = 10_000,
   private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }
 ) {
-  private val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
+  val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
   private var size: Int = 0
 
   fun getOrPut(key: K, value: () -> V): V =

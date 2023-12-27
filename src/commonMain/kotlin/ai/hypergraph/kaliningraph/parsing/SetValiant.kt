@@ -195,7 +195,7 @@ fun CFG.toBooleanArray(nts: Set<Σᐩ>): Blns =
 //=====================================================================================
 
 val HOLE_MARKER = "_"
-fun Σᐩ.containsHole(): Bln = HOLE_MARKER in this
+fun Σᐩ.containsHole(): Bln = HOLE_MARKER in tokenizeByWhitespace()
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
 fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
