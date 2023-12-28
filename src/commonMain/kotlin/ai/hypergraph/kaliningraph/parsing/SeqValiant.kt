@@ -70,7 +70,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
     if (branches.isEmpty()) return (if ("ε" in root) "" else root) to i
     val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
-    val (lb, rb) = shuffledBranches[remainder.intValue(false)]
+    val (lb, rb) = shuffledBranches[remainder.intValue()]
     val (l, quotient2) = lb.decodeString(quotient1)
     val (r, quotient3) = rb.decodeString(quotient2)
     val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
@@ -99,16 +99,15 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     else Tree(root, children = arrayOf(l, r))) to quotient3
   }
 
-  fun sampleTreesWithoutReplacement(): Sequence<Tree> =
-    sequence {
+  fun sampleTreesWithoutReplacement(): Sequence<Tree> = sequence {
       var i = BigInteger.ZERO
-      while (i < totalTrees) yield(decodeTree(i++).first)
+      while (i < 3 * totalTrees) yield(decodeTree(i++).first)
     }
 
   fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
     var i = BigInteger.ZERO
-    while (i < totalTrees) yield(decodeString(i++).first)
-  }.distinct()
+    while (i < 3 * totalTrees) yield(decodeString(i++).first)
+  }
 
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
