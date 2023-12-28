@@ -24,9 +24,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
   fun Triple<Σᐩ, Σᐩ, Σᐩ>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
-    fun Σᐩ.coords(): Pair<Int, Int> = drop(2).run {
-      (length / 2).let { substring(0, it).toInt() to substring(it + 1).toInt() }
-    }
+    fun Σᐩ.coords(): Pair<Int, Int> =
+      (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
 
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
       first <= other.first && second <= other.second
