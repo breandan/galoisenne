@@ -210,7 +210,7 @@ class BarHillelTest {
 
     val template = List(toRepair.size + 2) { "_" }
 
-    val lbhSet = intGram.enumSeq(template).onEachIndexed { i, it ->
+    val lbhSet = intGram.enumSeq(template).distinct().onEachIndexed { i, it ->
       if (i < 10) {
         println(it)
         val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
