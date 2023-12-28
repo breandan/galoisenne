@@ -105,21 +105,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        val multikVersion = "0.2.2"
-        implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
-        implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
         implementation("com.ionspin.kotlin:bignum:0.3.8")
-      }
-    }
-
-    val kotlinxVersion = "0.8.0" // Do not update to 0.8.1
-    val jsMain by getting {
-      dependencies {
-        implementation(kotlin("stdlib-js"))
-        implementation(kotlin("stdlib-common"))
-        implementation(kotlin("reflect"))
-
-        implementation("org.jetbrains.kotlinx:kotlinx-html:$kotlinxVersion")
       }
     }
 
@@ -135,8 +121,6 @@ kotlin {
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC")
-
-        implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:$kotlinxVersion") // TODO: why is this necessary?
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.1.0")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.5.0")
@@ -168,6 +152,10 @@ kotlin {
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
         implementation("org.logicng:logicng:2.4.1")
+
+        val multikVersion = "0.2.2"
+        implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
+        implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
     }
 
