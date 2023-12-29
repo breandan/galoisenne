@@ -16,14 +16,9 @@ fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
 fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
   makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
 
+// Specialized Bar-Hillel construction for Levenshtein FSA
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
-  val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q,START,$r]") }
-
-  val transits =
-    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
-
   fun Triple<Σᐩ, Σᐩ, Σᐩ>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
     fun Σᐩ.coords(): Pair<Int, Int> =
       (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
@@ -54,6 +49,12 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
     return isCompatible()
   }
+
+  val initFinal =
+    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q,START,$r]") }
+
+  val transits =
+    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
@@ -124,8 +125,9 @@ fun CFG.dropVestigialProductions(
   return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
 }
 
-infix fun FSA.intersect(cfg: CFG) = cfg.intersect(this)
+infix fun FSA.intersect(cfg: CFG) = cfg.freeze().intersect(this)
 
+// Generic Bar-Hillel construction for arbitrary FSA
 infix fun CFG.intersect(fsa: FSA): CFG {
   val clock = TimeSource.Monotonic.markNow()
   val initFinal =

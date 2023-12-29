@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 
@@ -155,7 +155,7 @@ fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   return prev[o2.size]
 }
 
-fun levenshteinAlign(a: String, b: String) =
+fun levenshteinAlign(a: Σᐩ, b: Σᐩ): List<Pair<Σᐩ?, Σᐩ?>> =
   levenshteinAlign(a.tokenizeByWhitespace(), b.tokenizeByWhitespace())
 
 fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
@@ -205,3 +205,16 @@ fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
   val revPathB = bPathRev.reversed()
   return revPathA.zip(revPathB)
 }
+
+fun <T> List<Pair<T?, T?>>.paintANSIColors(): Σᐩ =
+  joinToString(" ") { (a, b) ->
+    when {
+      // Green (insertion)
+      a == null -> "$ANSI_GREEN_BACKGROUND$b$ANSI_RESET"
+      // Red (deletion)
+      b == null -> "$ANSI_RED_BACKGROUND$a$ANSI_RESET"
+      // Orange (substitution)
+      a != b -> "$ANSI_ORANGE_BACKGROUND$b$ANSI_RESET"
+      else -> b.toString()
+    }
+  }

@@ -102,7 +102,8 @@ class BarHillelTest {
     """.parseCFG().noEpsilonOrNonterminalStubs
 
     val origStr = "1 + 1"
-    val levFSA = makeLevFSA(origStr, 2, simpleCFG.terminals)
+    val levDist = 2
+    val levFSA = makeLevFSA(origStr, levDist, simpleCFG.terminals)
 
     val levCFG = levFSA.intersectLevFSA(simpleCFG)
 
@@ -122,8 +123,13 @@ class BarHillelTest {
     val testFail = "2 * 2"
     assertFalse(testFail in levCFG.language)
 
-    val template = List(5) { "_" }
-    val solutions = levCFG.enumSeq(template).toList().onEach { println(it) }
+    val template = List(origStr.tokenizeByWhitespace().size + levDist) { "_" }
+    val solutions = levCFG.enumSeq(template).toList().onEach {
+      val actDist = levenshtein(origStr, it)
+      val levAlgn = levenshteinAlign(origStr, it).paintANSIColors()
+      assertTrue(actDist <= levDist)
+      println(levAlgn)
+    }
     println("Found ${solutions.size} solutions within Levenshtein distance 2 of \"$origStr\"")
   }
 
@@ -189,13 +195,39 @@ class BarHillelTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testIfThenBarHillel"
+*/
+  @Test
+  fun testIfThenBarHillel() {
+    val gram = Grammars.ifThen
+    val origStr = "if ( true or false then true else 1"
+    val tokens = origStr.tokenizeByWhitespace()
+    val levDist = 3
+    val levBall = makeLevFSA(origStr, levDist, gram.terminals)
+    val intGram = gram.intersectLevFSA(levBall)
+    val clock = TimeSource.Monotonic.markNow()
+    val template = List(tokens.size + levDist) { "_" }
+    intGram.enumSeq(template).distinct().onEach {
+      val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
+      val actDist= levenshtein(origStr, it)
+      println(levAlign)
+
+      assertTrue(it in gram.language)
+      assertTrue(levBall.recognizes(it))
+      assertTrue(actDist <= levDist)
+    }.toList().also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testPythonBarHillel"
 */
   @Test
   fun testPythonBarHillel() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val toRepair = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
-    val levBall = makeLevFSA(toRepair, 3, gram.terminals)
+    val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
+    val toRepair = origStr.tokenizeByWhitespace()
+    val levDist = 3
+    val levBall = makeLevFSA(toRepair, levDist, gram.terminals)
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
@@ -209,17 +241,19 @@ class BarHillelTest {
 //    println(intGram.prettyPrint())
     val clock = TimeSource.Monotonic.markNow()
 
-    val template = List(toRepair.size + 2) { "_" }
+    val template = List(toRepair.size + levDist - 1) { "_" }
 
     val lbhSet = intGram.enumSeq(template).distinct().onEachIndexed { i, it ->
-      if (i < 10) {
-        println(it)
+      if (i < 100) {
+        val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
+        println(levAlign)
         val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
         println("Found " + pf.size + " parse trees")
         println(pf.first().prettyPrint())
         println("\n\n")
       }
 
+      assertTrue(levenshtein(origStr, it) <= levDist)
       assertTrue(it in gram.language)
       assertTrue(levBall.recognizes(it))
     }.toList()
@@ -238,10 +272,10 @@ class BarHillelTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.realisticTest"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.semiRealisticTest"
 */
 //  @Test
-  fun realisticTest() {
+  fun semiRealisticTest() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val toRepair = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ]".tokenizeByWhitespace()
     val levBall = makeLevFSA(toRepair, 1, gram.terminals)
