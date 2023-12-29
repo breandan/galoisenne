@@ -1,5 +1,6 @@
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.sampling.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger

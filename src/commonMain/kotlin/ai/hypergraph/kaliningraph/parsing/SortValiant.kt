@@ -2,7 +2,7 @@
 
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.levenshtein
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 

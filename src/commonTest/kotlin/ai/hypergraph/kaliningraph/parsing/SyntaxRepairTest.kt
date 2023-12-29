@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.repair.multiTokenSubstitutionsAndInsertions
 import kotlin.test.Test
 import kotlin.time.*
 

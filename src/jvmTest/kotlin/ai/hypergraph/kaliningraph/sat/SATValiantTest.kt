@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.sat
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.visualization.show
 import org.junit.jupiter.api.Test

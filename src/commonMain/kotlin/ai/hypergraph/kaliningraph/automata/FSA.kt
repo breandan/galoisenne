@@ -1,6 +1,8 @@
-package ai.hypergraph.kaliningraph.parsing
+package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 
 typealias Arc = Π3A<Σᐩ>

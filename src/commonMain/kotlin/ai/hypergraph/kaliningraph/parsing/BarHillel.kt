@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.automata.FSA
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.time.TimeSource
 

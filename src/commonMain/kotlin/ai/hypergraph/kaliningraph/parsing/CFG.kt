@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.time.*
@@ -62,6 +63,9 @@ val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.depGraph: LabeledGraph by cache { dependencyGraph() }
 val CFG.revDepGraph: LabeledGraph by cache { revDependencyGraph() }
+
+// Terminals which are blocked from being synthesized by a solver
+val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
 
 val CFG.originalForm: CFG by cache { rewriteHistory[this]?.get(0) ?: this }
 val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
@@ -239,8 +243,7 @@ class BiMap(cfg: CFG) {
       .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
   }
   val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> by lazy {
-    TRIPL.groupBy { it.second }
-      .mapValues { it.value.map { it.first to it.second to it.third } }
+    TRIPL.groupBy { it.second }.mapValues { it.value }
   }
   val UNITS by lazy {
     cfg.filter { it.RHS.size == 1 && it.RHS[0] !in cfg.nonterminals }

@@ -1,6 +1,7 @@
-package ai.hypergraph.kaliningraph.parsing
+package ai.hypergraph.kaliningraph.repair
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.math.absoluteValue
@@ -17,9 +18,6 @@ var MAX_REPAIR = 2 // Maximum number of edits per repair
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 // Takes a string and a set of invariant indices and returns mutated strings
 typealias Mutator = (Σᐩ, Set<Int>) -> Sequence<Σᐩ>
-
-// Terminals which are blocked from being synthesized by a solver
-val CFG.blocked: MutableSet<Σᐩ> by cache { mutableSetOf() }
 
 fun repair(
   prompt: Σᐩ,
@@ -354,11 +352,6 @@ fun List<Σᐩ>.substituteIndices(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): L
 
 private fun List<Σᐩ>.substitute(idxs: Set<Int>, sub: (Σᐩ, Int) -> Σᐩ): Σᐩ =
   substituteIndices(idxs, sub).joinToString(" ").trim()
-
-fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
-
-fun Σᐩ.tokenizeByWhitespaceAndKeepDelimiters(): List<Σᐩ> =
-  split(Regex("(?<=\\s)|(?=\\s)"))
 
 // MUCH faster than above (but incorrect)
 //fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> =

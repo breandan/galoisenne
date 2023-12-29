@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.automata.parseFSA
 import ai.hypergraph.kaliningraph.sampling.all
 import kotlin.test.*
 import kotlin.time.*

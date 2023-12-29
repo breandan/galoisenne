@@ -8,6 +8,11 @@ import ai.hypergraph.kaliningraph.tensor.transpose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 
+fun Σᐩ.tokenizeByWhitespace(): List<Σᐩ> = split(Regex("\\s+")).filter { it.isNotBlank() }
+
+fun Σᐩ.tokenizeByWhitespaceAndKeepDelimiters(): List<Σᐩ> =
+  split(Regex("(?<=\\s)|(?=\\s)"))
+
 infix fun Char.closes(that: Char) =
   if (this == ')' && that == '(') true
   else if (this == ']' && that == '[') true
@@ -67,81 +72,6 @@ fun Σᐩ.carveSeams(toRemove: Regex = Regex("\\s{2,}")): Σᐩ =
         .joinToString("→").drop(4).dropLast(3)
     }
   }
-
-fun allPairsLevenshtein(s1: Set<Σᐩ>, s2: Set<Σᐩ>) =
-  (s1 * s2).sumOf { (a, b) -> levenshtein(a, b) }
-
-fun levenshtein(s1: Σᐩ, s2: Σᐩ): Int =
-  levenshtein(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
-
-fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
-  var prev = IntArray(o2.size + 1)
-  for (j in 0 until o2.size + 1) prev[j] = j
-  for (i in 1 until o1.size + 1) {
-    val curr = IntArray(o2.size + 1)
-    curr[0] = i
-    for (j in 1 until o2.size + 1) {
-      val d1 = prev[j] + 1
-      val d2 = curr[j - 1] + 1
-      val d3 = prev[j - 1] + if (o1[i - 1] == o2[j - 1]) 0 else 1
-      curr[j] = min(min(d1, d2), d3)
-    }
-
-    prev = curr
-  }
-  return prev[o2.size]
-}
-
-fun levenshteinAlign(a: String, b: String) =
-  levenshteinAlign(a.tokenizeByWhitespace(), b.tokenizeByWhitespace())
-
-fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
-  val costs = Array(a.size + 1) { IntArray(b.size + 1) }
-  for (j in 0..b.size) costs[0][j] = j
-  for (i in 1..a.size) {
-    costs[i][0] = i
-    for (j in 1..b.size) {
-      val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
-      costs[i][j] = minOf(1 + minOf(costs[i - 1][j], costs[i][j - 1]), temp)
-    }
-  }
-
-  val aPathRev = mutableListOf<T?>()
-  val bPathRev = mutableListOf<T?>()
-  var i = a.size
-  var j = b.size
-  while (i > 0 && j > 0) {
-    val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
-    when (costs[i][j]) {
-      temp -> {
-        aPathRev.add(a[--i])
-        bPathRev.add(b[--j])
-      }
-      1 + costs[i-1][j] -> {
-        aPathRev.add(a[--i])
-        bPathRev.add(null)
-      }
-      1 + costs[i][j-1] -> {
-        aPathRev.add(null)
-        bPathRev.add(b[--j])
-      }
-    }
-  }
-
-  while (i > 0) {
-    aPathRev.add(a[--i])
-    bPathRev.add(null)
-  }
-
-  while (j > 0) {
-    aPathRev.add(null)
-    bPathRev.add(b[--j])
-  }
-
-  val revPathA = aPathRev.reversed()
-  val revPathB = bPathRev.reversed()
-  return revPathA.zip(revPathB)
-}
 
 fun <T> List<Pair<T?, T?>>.paintDiffs(): String =
   joinToString(" ") { (a, b) ->
