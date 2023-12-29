@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import Grammars
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.parseFSA
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.sampling.all
 import kotlin.test.*
 import kotlin.time.*
@@ -207,15 +208,23 @@ class BarHillelTest {
     val intGram = gram.intersectLevFSA(levBall)
     val clock = TimeSource.Monotonic.markNow()
     val template = List(tokens.size + levDist) { "_" }
-    intGram.enumSeq(template).distinct().onEach {
-      val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
-      val actDist= levenshtein(origStr, it)
-      println(levAlign)
+    intGram.enumSeq(template)
+      .distinct().map {
+        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
+          " ", { this in gram.language })
+      }.distinctBy { it.third }
+      .onEachIndexed { i, (_, _, it) ->
+        val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
+        val actDist= levenshtein(origStr, it)
+        println(levAlign)
 
-      assertTrue(it in gram.language)
-      assertTrue(levBall.recognizes(it))
-      assertTrue(actDist <= levDist)
-    }.toList().also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
+        assertTrue(it in gram.language)
+        assertTrue(levBall.recognizes(it))
+        assertTrue(actDist <= levDist)
+    }.toList()
+      // Found 221 minimal solutions using Levenshtein/Bar-Hillel in 23.28s
+      .also { println("Found ${it.size} minimal solutions using " +
+        "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
   }
 
 /*
@@ -243,7 +252,12 @@ class BarHillelTest {
 
     val template = List(toRepair.size + levDist - 1) { "_" }
 
-    val lbhSet = intGram.enumSeq(template).distinct().onEachIndexed { i, it ->
+    val lbhSet = intGram.enumSeq(template)
+      .distinct().map {
+        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
+          " ", { this in gram.language })
+      }.distinctBy { it.third }
+      .onEachIndexed { i, (_, _, it) ->
       if (i < 100) {
         val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
         println(levAlign)
@@ -258,11 +272,9 @@ class BarHillelTest {
       assertTrue(levBall.recognizes(it))
     }.toList()
 
-//  Found 19433 solutions using Levenshtein/Bar-Hillel
-//  Enumerative solver took 320485ms
+  //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
+  //  Enumerative solver took 360184ms
 
-    println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
-    println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
 
 //    val totalParticipatingNonterminals =
 //      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
@@ -274,50 +286,40 @@ class BarHillelTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.semiRealisticTest"
 */
-//  @Test
+  @Test
   fun semiRealisticTest() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val toRepair = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ]".tokenizeByWhitespace()
-    val levBall = makeLevFSA(toRepair, 1, gram.terminals)
+    val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
+    val toRepair = origStr.tokenizeByWhitespace()
+    val levDist = 2
+    val levBall = makeLevFSA(toRepair, levDist, gram.terminals)
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
-//    val part= intGram.nonterminals.map { it.substringAfter(',')
-//      .substringBefore(',') }.toSet().filter { it in gram.nonterminals }
-//
-//    println("Part: $part")
-//    println("Nopart: ${gram.nonterminals - part}")
 
-//      .also { println("LEV ∩ CFG grammar:\n${it.pretty}") }
-//    println(intGram.prettyPrint())
     val clock = TimeSource.Monotonic.markNow()
 
-    val template = List(toRepair.size + 2) { "_" }
+    val template = List(toRepair.size + levDist) { "_" }
 
-    val lbhSet = intGram.enumSeq(template).distinct().onEachIndexed { i, it ->
-      if (i < 10) {
-        println(it)
-        val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
-        println("Found " + pf.size + " parse trees")
-        println(pf.first().prettyPrint())
-        println("\n\n")
-      }
+    val lbhSet = intGram.enumSeq(template)
+      .distinct().map {
+        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
+        " ", { this in gram.language })
+      }.distinctBy { it.third }
+      .onEachIndexed { i, (_, _, it) ->
 
-      assertTrue(it in gram.language)
-      assertTrue(levBall.recognizes(it))
-    }.toList()
+        if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
-//  Found 19346 solutions using Levenshtein/Bar-Hillel
-//  Enumerative solver took 382737ms
+        assertTrue(levenshtein(origStr, it) <= levDist)
+        assertTrue(it in gram.language)
+        assertTrue(levBall.recognizes(it))
+      }.toList()
+
+//  Found 657 solutions using Levenshtein/Bar-Hillel
+//  Enumerative solver took 113329ms
 
     println("Found ${lbhSet.size} solutions using Levenshtein/Bar-Hillel")
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
-
-//    val totalParticipatingNonterminals =
-//      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
-//
-//    println("Participation ratio: " + totalParticipatingNonterminals.size + "/" + intGram.nonterminals.size)
-//    println(intGram.depGraph.'toDot())
   }
 
   /*
