@@ -216,19 +216,11 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
 fun CFG.initialUTBMatrix(
   tokens: List<Σᐩ>,
   allNTs: Set<Σᐩ> = nonterminals,
-  bmp: BiMap = bimap,
-  unitReach: Map<Σᐩ, Set<Σᐩ>> = originalForm.unitReachability
+  bmp: BiMap = bimap
 ): UTMatrix<Blns> =
   UTMatrix(
     ts = tokens.map { it ->
-      bmp[listOf(it)].let { nts ->
-        // Check whether the token part of a string that contains a user-
-        // defined nonterminal stub that was in the original grammar
-        if (tokens.none { it.isNonterminalStubInNTs(allNTs) }) nts
-        // We use the original form because A -> B -> C can be normalized
-        // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { unitReach[it] ?: setOf(it) }.flatten().toSet()
-      }.let { nts -> allNTs.map { it in nts } }.toBooleanArray()
+      bmp[listOf(it)].let { nts -> allNTs.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
     algebra = bitwiseAlgebra
   )
@@ -245,12 +237,7 @@ fun CFG.initialUTMatrix(
           bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
             .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
         }.flatten().toSet()
-      else bmp[listOf(terminal)].let { nts ->
-        if (tokens.none { it.isNonterminalStubIn(this) }) nts
-        // We use the original form because A -> B -> C can be normalized
-        // to A -> C, and we want B to be included in the equivalence class
-        else nts.map { (unitReach[it] ?: setOf(it)) }.flatten().toSet()
-      }.map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
+      else bmp[listOf(terminal)].map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()
   )

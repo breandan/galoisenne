@@ -192,7 +192,6 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
     ts = tokens.map { token ->
       (if (token != HOLE_MARKER) bimap[listOf(token)] else unitNonterminals)
         .associateWith { nt ->
-          // Here we construct
           if (token != HOLE_MARKER) PSingleton(token)
           else bimap.UNITS[nt]?.map { PSingleton(it) }?.flatten() ?: listOf()
         }.map { (k, v) -> k to PTree(k, v) }.toMap()
