@@ -214,10 +214,12 @@ class BarHillelTest {
           " ", { this in gram.language })
       }.distinctBy { it.third }
       .onEachIndexed { i, (_, _, it) ->
-        val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
-        val actDist= levenshtein(origStr, it)
-        println(levAlign)
+        if (i < 100) {
+          val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
+          println(levAlign)
+        }
 
+        val actDist= levenshtein(origStr, it)
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
         assertTrue(actDist <= levDist)

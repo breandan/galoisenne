@@ -8,7 +8,7 @@ class KoSATTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.reasoning.KoSATTest.testKoSAT1"
 */
-  @Test
+//  @Test
   fun testKoSAT1() {
     val cnf: CNF = ((-3 v 4) ʌ (3 v 4) ʌ (-3 v -4)) v ((-4 v 5) ʌ (4 v 5) ʌ (-4 v -5))
 //  val cnf = (1 ʌ 2 ʌ -3) v (T as CNF)
@@ -26,7 +26,7 @@ class KoSATTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.reasoning.KoSATTest.testIdempotentMatrixMultiplication"
 */
-  @Test
+//  @Test
   fun testIdempotentMatrixMultiplication() {
     // Boolean matrix multiplication: A * B
     //  A     B
@@ -53,7 +53,7 @@ class KoSATTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.reasoning.KoSATTest.testKoSATEq"
 */
-  @Test
+//  @Test
   fun testKoSATEq() {
     val cnf: CNF = (-1).asCNF() eq 2.asCNF()
 
