@@ -209,11 +209,10 @@ class BarHillelTest {
     val clock = TimeSource.Monotonic.markNow()
     val template = List(tokens.size + levDist) { "_" }
     intGram.enumSeq(template)
-      .distinct().map {
-        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
-          " ", { this in gram.language })
-      }.distinctBy { it.third }
-      .onEachIndexed { i, (_, _, it) ->
+      .distinct()
+      .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in gram.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
         if (i < 100) {
           val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
           println(levAlign)
@@ -255,24 +254,23 @@ class BarHillelTest {
     val template = List(toRepair.size + levDist - 1) { "_" }
 
     val lbhSet = intGram.enumSeq(template)
-      .distinct().map {
-        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
-          " ", { this in gram.language })
-      }.distinctBy { it.third }
-      .onEachIndexed { i, (_, _, it) ->
-      if (i < 100) {
-        val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
-        println(levAlign)
-        val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
-        println("Found " + pf.size + " parse trees")
-        println(pf.first().prettyPrint())
-        println("\n\n")
-      }
+      .distinct()
+      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
+        if (i < 100) {
+          val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
+          println(levAlign)
+          val pf = intGram.enumTree(it.tokenizeByWhitespace()).toList()
+          println("Found " + pf.size + " parse trees")
+          println(pf.first().prettyPrint())
+          println("\n\n")
+        }
 
-      assertTrue(levenshtein(origStr, it) <= levDist)
-      assertTrue(it in gram.language)
-      assertTrue(levBall.recognizes(it))
-    }.toList()
+        assertTrue(levenshtein(origStr, it) <= levDist)
+        assertTrue(it in gram.language)
+        assertTrue(levBall.recognizes(it))
+      }.toList()
 
   //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
   //  Enumerative solver took 360184ms
@@ -304,12 +302,10 @@ class BarHillelTest {
     val template = List(toRepair.size + levDist) { "_" }
 
     val lbhSet = intGram.enumSeq(template)
-      .distinct().map {
-        minimizeFix(origStr, { tokenizeByWhitespace() }, it,
-        " ", { this in gram.language })
-      }.distinctBy { it.third }
-      .onEachIndexed { i, (_, _, it) ->
-
+      .distinct()
+      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
         if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
         assertTrue(levenshtein(origStr, it) <= levDist)

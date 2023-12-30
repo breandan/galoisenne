@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.repair
 
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.choose
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.time.TimeSource
@@ -45,6 +46,21 @@ fun minimizeFix(
   return broke to fixedJoin to minfix
 }
 
+fun minimizeFix(
+  brokeTokens: List<Σᐩ>,
+  fixedTokens: List<Σᐩ>,
+  isValid: Σᐩ.() -> Boolean
+): Σᐩ {
+  val patch: Patch = extractPatch(brokeTokens, fixedTokens)
+  val time = TimeSource.Monotonic.markNow()
+  val minEdit = deltaDebug(
+    patch.changedIndices(),
+    timeout = { 5 < time.elapsedNow().inWholeSeconds }
+  ) { idxs -> patch.apply(idxs, " ").isValid() }
+
+  return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
+}
+
 typealias Edit = Π2A<Σᐩ>
 typealias Patch = List<Edit>
 val Edit.old: Σᐩ get() = first
@@ -54,7 +70,7 @@ val Edit.new: Σᐩ get() = second
 // returns when there are at least two types of edits (insertions, deletions, changes) choose 2
 fun Patch.isInteresting() = changedIndices().let { ch ->
   filterIndexed { index, pair -> index in ch }
-    .map { (a, b) -> if(b == "") "D" else if(a == "") "I" else "C" }
+    .map { (a, b) -> if (b == "") "D" else if(a == "") "I" else "C" }
     .toSet().size > 1
 }
 fun Patch.changedIndices(): List<Int> = indices.filter { this[it].old != this[it].new }

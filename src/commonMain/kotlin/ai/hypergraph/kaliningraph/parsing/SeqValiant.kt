@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.repair.substituteIndices
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
@@ -309,4 +309,4 @@ fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
       .map { it.removeEpsilon() }
-  }
+  }.map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
