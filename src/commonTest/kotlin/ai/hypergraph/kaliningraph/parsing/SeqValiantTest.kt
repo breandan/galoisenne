@@ -94,7 +94,7 @@ class SeqValiantTest {
   @Test
   fun testCheckedArithmetic() {
     Grammars.checkedArithCFG.enumSeq("( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )".tokenizeByWhitespace())
-      .take(10).toList().also { assertTrue(it.isNotEmpty()) }
+      .take(200).toList().also { assertTrue(it.isNotEmpty()) }
       .map {
         println(it)
         val (left, right) = it.split('=')

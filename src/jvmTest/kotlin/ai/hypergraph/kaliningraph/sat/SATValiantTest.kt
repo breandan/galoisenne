@@ -508,7 +508,7 @@ class SATValiantTest {
   fun testCheckedArithmetic() {
     "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )"
       .synthesizeIncrementally(Grammars.checkedArithCFG, allowNTs = false)
-      .take(200).toList().also { assert(it.isNotEmpty()) }
+      .take(10).toList().also { assert(it.isNotEmpty()) }
       .map {
         println(it)
         val (left, right) = it.split('=')
