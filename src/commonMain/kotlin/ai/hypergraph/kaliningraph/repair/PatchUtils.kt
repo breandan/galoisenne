@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.repair
 
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.choose
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.time.TimeSource
@@ -43,6 +44,21 @@ fun minimizeFix(
   val minfix = patch.apply(minEdit, separator)
 
   return broke to fixedJoin to minfix
+}
+
+fun minimizeFix(
+  brokeTokens: List<Σᐩ>,
+  fixedTokens: List<Σᐩ>,
+  isValid: Σᐩ.() -> Boolean
+): Σᐩ {
+  val patch: Patch = extractPatch(brokeTokens, fixedTokens)
+  val time = TimeSource.Monotonic.markNow()
+  val minEdit = deltaDebug(
+    patch.changedIndices(),
+    timeout = { 5 < time.elapsedNow().inWholeSeconds }
+  ) { idxs -> patch.apply(idxs, " ").isValid() }
+
+  return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
 }
 
 typealias Edit = Π2A<Σᐩ>
