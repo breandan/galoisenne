@@ -52,11 +52,12 @@ fun minimizeFix(
   isValid: Σᐩ.() -> Boolean
 ): Σᐩ {
   val patch: Patch = extractPatch(brokeTokens, fixedTokens)
+  val changedIndices = patch.changedIndices()
   val time = TimeSource.Monotonic.markNow()
-  val minEdit = deltaDebug(
-    patch.changedIndices(),
-    timeout = { 5 < time.elapsedNow().inWholeSeconds }
-  ) { idxs -> patch.apply(idxs, " ").isValid() }
+  val minEdit =
+    deltaDebug(changedIndices, timeout = { 5 < time.elapsedNow().inWholeSeconds } ) { idxs ->
+      patch.apply(idxs, " ").isValid()
+    }
 
   return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
 }
