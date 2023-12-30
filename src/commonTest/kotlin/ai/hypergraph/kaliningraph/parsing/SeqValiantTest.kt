@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import Grammars.arith
 import Grammars.evalArith
+import Grammars.tinyC
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import org.kosat.round
@@ -147,5 +148,74 @@ class SeqValiantTest {
         .toList()
         .also { println("Found ${it.size} solutions!") }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SeqValiantTest.testRepairWithNTStub"
+*/
+  @Test
+  fun testRepairWithNTStub() {
+    var str = "( ε <term> ) ; "
+    assertTrue(str in tinyC.language)
+    println(tinyC.parse(str)?.prettyPrint())
+    println("First diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).diagonals.first().joinToString(","))
+    println("Second diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[1].joinToString(","))
+    println("Third diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[2].joinToString(","))
+    println("Fourth diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[3].joinToString(","))
+    println("Fifth diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[4].joinToString(","))
+
+    str = "( <term> ) ; "
+    assertTrue(str in tinyC.language)
+    println(tinyC.parse(str)?.prettyPrint())
+    println("First diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).diagonals.first().joinToString(","))
+    // .seekFixpoint().diagonals
+    println("Second diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[1].joinToString(","))
+    println("Third diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[2].joinToString(","))
+    println("Fourth diagonal: " + tinyC.initialUTMatrix(str.tokenizeByWhitespace()).seekFixpoint().diagonals[3].joinToString(","))
+
+    val refStr = "while ( <term> ) ;"
+    tinyC.parse(refStr)?.let { println(it) }
+    println(refStr in tinyC.language)
+    tinyC.fastRepairSeq(refStr.tokenizeByWhitespace()).take(100).forEach {
+      println(it)
+      assertTrue(it in tinyC.language, "Invalid solution: $it")
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SeqValiantTest.testTLArithmetic"
+*/
+  @Test
+  fun testTLArithmetic() {
+    val cfg = """
+      S1C -> 1
+      S2C -> 2
+      S3C -> 3
+      S4C -> 4
+      S -> S1 | S2 | S3 | S4 
+      S -> S1 = S1C
+      S -> S2 = S2C
+      S -> S3 = S3C
+      S -> S4 = S4C
+      S1 -> S1C
+      S2 -> S2C | S1 + S1
+      S3 -> S3C | S2 + S1 | S1 + S2
+      S4 -> S4C | S3 + S1 | S1 + S3 | S2 + S2
+    """.parseCFG().noNonterminalStubs
+
+    println(cfg.prettyPrint())
+    println(cfg.parse("3 + 1 = 4")?.prettyPrint())
+    println(cfg.enumSeq("_ _ _ = _".tokenizeByWhitespace()).first())
+    println(cfg.enumSeq("_ _ _ _ _ _ _ _ + 1 _ _ _ _ _ _ _ _".tokenizeByWhitespace()).first())
+    //cfg.parseHTML("3 + 1 = 4").show()
+    assertEquals("3 + 1 = 4", cfg.enumSeq("3 + _ = 4".tokenizeByWhitespace()).first().also { println("Got $it")})
+    assertEquals("3 + 1 = 4", cfg.enumSeq("_ + 1 = 4".tokenizeByWhitespace()).first().also { println("Got $it")})
+    assertEquals("3 + 1 = 4", cfg.enumSeq("3 + 1 = _".tokenizeByWhitespace()).first().also { println("Got $it")})
+
+    assertTrue("3 + 1 = 4".matches(cfg))
+    assertTrue("2 + 2 = 4".matches(cfg))
+    assertTrue("2 + 1 = 3".matches(cfg))
+    assertTrue("1 + 1 + 1 = 3".matches(cfg))
+    assertTrue("1 + 1 + 1 + 1 = 4".matches(cfg))
   }
 }

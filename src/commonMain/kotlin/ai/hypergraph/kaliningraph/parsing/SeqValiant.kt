@@ -308,5 +308,13 @@ fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
-      .map { it.removeEpsilon() }
-  }.map { if (it.isEmpty()) it else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+      .map { it }
+  }
+    .map {
+      println("Original patch: ${it.tokenizeByWhitespace().joinToString(" ") { if ("ε" in it) "ε" else it }}\nParse tree:" +
+          parse(it.tokenizeByWhitespace().joinToString(" ") { if ("ε" in it) "ε" else it })?.prettyPrint())
+      val epsRemoved = it.tokenizeByWhitespace().filter { "ε" !in it }.joinToString(" ")
+      println("Epsilons removed: $epsRemoved\nParse tree:" + parse(epsRemoved)?.prettyPrint())
+      epsRemoved
+    }
+    .map { if (it.isEmpty()) it else minimizeFixAbsolute(tokens, it.tokenizeByWhitespace()) { this in language } }

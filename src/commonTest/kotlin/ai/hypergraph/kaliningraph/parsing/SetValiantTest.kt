@@ -255,22 +255,22 @@ class SetValiantTest {
 */
   @Test
   fun testDropUnitProds() {
-    "S -> c | d".parseCFG()
+    "START -> c | d".parseCFG()
     """
-      S -> A
+      START -> A
       A -> B
       B -> C
       B -> D
       C -> c
       D -> d
-    """.parseCFG().let { cfg ->
+    """.parseCFG().noNonterminalStubs.let { cfg ->
       println(cfg.prettyPrint())
       assertTrue("B" !in cfg.nonterminals)
       assertTrue("A" !in cfg.nonterminals)
     }
 
     """
-      S -> C | D
+      START -> C | D
       C -> c
       D -> d
     """.parseCFG()

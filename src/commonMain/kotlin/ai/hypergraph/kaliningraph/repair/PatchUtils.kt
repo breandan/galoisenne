@@ -1,8 +1,8 @@
 package ai.hypergraph.kaliningraph.repair
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.choose
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 import kotlin.time.TimeSource
@@ -60,6 +60,25 @@ fun minimizeFix(
     }
 
   return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
+    .also { println("Applied patch: $it\n${it.isValid()}") }
+}
+
+fun minimizeFixAbsolute(
+  brokeTokens: List<Σᐩ>,
+  fixedTokens: List<Σᐩ>,
+  isValid: Σᐩ.() -> Boolean
+): Σᐩ {
+  val patch: Patch = extractPatch(brokeTokens, fixedTokens)
+  val changedIndices = patch.changedIndices()
+  val time = TimeSource.Monotonic.markNow()
+  println(patch.prettyPrint())
+  println(patch.apply(" "))
+  println("Original patch valid: " + patch.apply(" ").isValid())
+  println("Changed indices: $changedIndices")
+  val minEdit = changedIndices.minimalSubpatch { patch.apply(this, " ").isValid() }
+
+  return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
+    .also { println("Applied patch: $it\n${it.isValid()}") }
 }
 
 typealias Edit = Π2A<Σᐩ>
@@ -67,6 +86,19 @@ typealias Patch = List<Edit>
 val Edit.old: Σᐩ get() = first
 // If new is empty, then this is a deletion
 val Edit.new: Σᐩ get() = second
+fun Patch.prettyPrint(): String = unzip().let { (a, b) ->
+  a.mapIndexed { i, s ->
+    val padded = s.padEnd(max(s.length, b[i].length))
+    if (b[i].isEmpty()) "$ANSI_RED_BACKGROUND$padded$ANSI_RESET"
+    else if (s.isEmpty() || s == b[i]) padded
+    else "$ANSI_YELLOW_BACKGROUND$padded$ANSI_RESET"
+ }.joinToString(" ") + "\n" + b.mapIndexed { i, s ->
+    val padded = s.padEnd(max(s.length, a[i].length))
+    if (a[i].isEmpty()) "$ANSI_GREEN_BACKGROUND$padded$ANSI_RESET"
+    else if (s.isEmpty() || s == a[i]) padded
+    else "$ANSI_YELLOW_BACKGROUND$padded$ANSI_RESET"
+  }.joinToString(" ")
+}
 
 // returns when there are at least two types of edits (insertions, deletions, changes) choose 2
 fun Patch.isInteresting() = changedIndices().let { ch ->
@@ -96,6 +128,8 @@ fun List<Int>.minimalSubpatch(filter: List<Int>.() -> Boolean): List<Int> =
 
 fun Patch.apply(indices: List<Int>, separator: Σᐩ = ""): Σᐩ =
   mapIndexed { i, it -> if (i in indices) it.new else it.old }.joinToString(separator)
+
+fun Patch.apply(separator: Σᐩ = ""): Σᐩ = map { it.new }.joinToString(separator)
 
 fun extractPatch(original: List<Σᐩ>, new: List<Σᐩ>): Patch =
   levenshteinAlign(original, new).map { (old, new) ->

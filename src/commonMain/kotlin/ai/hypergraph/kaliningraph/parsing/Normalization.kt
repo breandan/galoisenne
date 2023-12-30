@@ -25,13 +25,15 @@ fun CFG.normalize(): CFG =
       .also { rewrites.add(it) } /** [originalForm] */
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
+      .generateNonterminalStubs()
       .transformIntoCNF()
       // This should occur after CNF transform otherwise it causes issues
       // during nonterminal-constrained synthesis, e.g., _ _ _ <NT> _ _ _
       // because we do not use equivalence class during bitvector encoding
       // Must remember to run the unit test if order changes in the future
       // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testTLArithmetic"
-      .generateNonterminalStubs()
+      // ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SeqValiantTest.testTLArithmetic"
+      // .generateNonterminalStubs()
       .also { cnf -> rewriteHistory.put(cnf.freeze(), rewrites) }
   }
 

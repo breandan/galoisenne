@@ -69,6 +69,23 @@ object Grammars {
     S -> lambda w : S | lambda w , w : S | lambda w , w , w : S | lambda w , w , w , w : S
   """.parseCFG().noNonterminalStubs
 
+  val tinyC: CFG = """
+    START -> program
+    program -> statement
+    statement -> if paren_expr statement
+    statement -> if paren_expr statement else statement
+    statement -> while paren_expr statement
+    statement -> do statement while paren_expr ;
+    statement -> { statement }
+    statement -> expr ;
+    statement -> ;
+    paren_expr -> ( expr )
+    expr -> test | id = expr
+    test -> sum | sum < sum
+    sum -> term | sum + term | sum - term
+    term -> id | int | paren_expr
+  """.parseCFG().freeze()
+
   val seq2parsePythonCFG: CFG = """
     START -> Stmts_Or_Newlines
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines

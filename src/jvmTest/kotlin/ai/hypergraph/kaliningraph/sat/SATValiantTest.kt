@@ -60,7 +60,7 @@ class SATValiantTest {
       S2 -> S2C | S1 + S1
       S3 -> S3C | S2 + S1 | S1 + S2
       S4 -> S4C | S3 + S1 | S1 + S3 | S2 + S2
-    """.parseCFG()
+    """.parseCFG().noNonterminalStubs
 
     println(cfg.prettyPrint())
     println(cfg.parse("3 + 1 = 4")?.prettyPrint())
