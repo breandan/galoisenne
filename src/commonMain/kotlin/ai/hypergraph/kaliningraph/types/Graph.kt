@@ -216,6 +216,8 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val cache = LRUCache<String, Any>()
 
 object PlatformVars { var PLATFORM_CALLER_STACKTRACE_DEPTH: Int = 3 }
+// This is somewhat of a hack and may break depending on the platform.
+// We do this because Kotlin Common has poor reflection capabilities.
 fun getCaller() = Throwable().stackTraceToString()
   .lines()[PlatformVars.PLATFORM_CALLER_STACKTRACE_DEPTH].hashCode()
 
@@ -225,6 +227,19 @@ fun getCaller() = Throwable().stackTraceToString()
 // to first check hashCode() / deepHashCode - we expect it to be unique!
 // We use this to materialize properties that are expensive to compute,
 // and that we expect to be used multiple times once computed.
+
+// The advantage of using the cache { ... } pattern versus lazy { ... }
+// is that it allows us to do the following:
+// typealias TQ = List<String>
+// val TQ.hello by cache { "Hello" }
+// val TQ.world by cache { hello + " world" }
+// Whereas this is not possible with lazy { ... }:
+// typealias TQ = List<String>
+// val TQ.hello by lazy { "Hello" }
+// val TQ.world by lazy { hello + " world" } // Fails
+// It also allows us to add persistent properties to interfaces, see:
+// https://stackoverflow.com/questions/43476811/can-a-kotlin-interface-cache-a-value/71632459#71632459
+
 fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
   ReadOnlyProperty<Y, T> { y, _ ->
     val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
