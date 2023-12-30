@@ -261,4 +261,75 @@ object Grammars {
     Yield_Expr -> Yield_Keyword | Yield_Keyword Yield_Arg
     Yield_Arg -> From_Keyword Test | Testlist_Endcomma 
   """.parseCFG().noNonterminalStubs
+
+
+  val checkedArithCFG = """
+    START -> S
+S -> S1 = S1
+S -> S2 = S2
+S -> S3 = S3
+S -> S4 = S4
+S -> S5 = S5
+S -> S6 = S6
+S -> S7 = S7
+S -> S8 = S8
+S -> S9 = S9
+
+
+S1 -> P1
+S2 -> P2 | ( S2 ) | P1 + P1
+S3 -> P3 | ( S3 ) | P2 + P1 | P1 + P2
+S4 -> P4 | ( S4 ) | P3 + P1 | P1 + P3 | P2 + P2
+S5 -> P5 | ( S5 ) | P1 + P4 | P4 + P1 | P2 + P3 | P2 + P3
+S6 -> P6 | ( S6 ) | P1 + P5 | P5 + P1 | P3 + P3 | P2 + P4 | P4 + P2
+S7 -> P7 | ( S7 ) | P1 + P6 | P6 + P1 | P5 + P2 | P2 + P5 | P4 + P3 | P3 + P4
+S8 -> P8 | ( S8 ) | P1 + P7 | P7 + P1 | P6 + P2 | P2 + P6 | P3 + P5 | P5 + P3 | P4 + P4
+S9 -> P9 | ( S9 ) | P1 + P8 | P8 + P1 | P7 + P2 | P2 + P7 | P3 + P6 | P6 + P3 | P4 + P5 | P5 + P4
+
+S1 -> P9 - P8 | P8 - P7 | P7 - P6 | P6 - P5 | P5 - P4 | P4 - P3 | P3 - P2 | P2 - P1
+S2 -> P9 - P7 | P8 - P6 | P7 - P5 | P6 - P4 | P5 - P3 | P4 - P2 | P3 - P1
+S3 -> P9 - P6 | P8 - P5 | P7 - P4 | P6 - P3 | P5 - P2 | P4 - P1
+S4 -> P9 - P5 | P8 - P4 | P7 - P3 | P6 - P2 | P5 - P1
+S5 -> P9 - P4 | P8 - P3 | P7 - P2 | P6 - P1
+S6 -> P9 - P3 | P8 - P2 | P7 - P1
+S7 -> P9 - P2 | P8 - P1
+S8 -> P9 - P1
+
+P1 -> 1 | ( S1 ) | P1 * P1
+P2 -> 2 | ( S2 ) | P2 * P1 | P1 * P2
+P3 -> 3 | ( S3 ) | P3 * P1 | P1 * P3
+P4 -> 4 | ( S4 ) | P2 * P2 | P4 * P1 | P1 * P4
+P5 -> 5 | ( S5 ) | P5 * P1 | P1 * P5
+P6 -> 6 | ( S6 ) | P6 * P1 | P1 * P6 | P3 * P2 | P2 * P3
+P7 -> 7 | ( S7 ) | P7 * P1 | P1 * P7
+P8 -> 8 | ( S8 ) | P4 * P2 | P2 * P4 | P8 * P1 | P1 * P8
+P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
+
+P1 -> P9 / P9 | P8 / P8 | P7 / P7 | P6 / P6 | P5 / P5 | P4 / P4 | P3 / P3 | P2 / P2 | P1 / P1
+P2 -> P8 / P2 | P6 / P3 | P4 / P2 | P2 / P1
+P3 -> P9 / P3 | P6 / P2 | P3 / P1
+P4 -> P8 / P2 | P4 / P1
+P5 -> P5 / P1
+P6 -> P6 / P1
+P7 -> P7 / P1
+P8 -> P8 / P1
+P9 -> P9 / P1
+  """.parseCFG().noNonterminalStubs.freeze()
+
+  val arith = """
+    O -> + | * | - | /
+    S -> S O S | ( S )
+    S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+  """.parseCFG()
+
+  private fun Tree.middle(): Σᐩ? = children.drop(1).firstOrNull()?.terminal
+  fun Tree.evalArith(): Int = when {
+    middle() == "/" -> children.first().evalArith() / children.last().evalArith()
+    middle() == "-" -> children.first().evalArith() - children.last().evalArith()
+    middle() == "*" -> children.first().evalArith() * children.last().evalArith()
+    middle() == "+" -> children.first().evalArith() + children.last().evalArith()
+    terminal?.toIntOrNull() != null -> terminal!!.toInt()
+    terminal in listOf("(", ")") -> -1
+    else -> children.asSequence().map { it.evalArith() }.first { 0 <= it }
+  }
 }

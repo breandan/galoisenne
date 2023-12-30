@@ -340,59 +340,12 @@ class SetValiantTest {
       solutions.forEach { println(it); assertTrue("$it was invalid!") { Grammars.ocamlCFG.isValid(it) } }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testSeqValiant"
-*/
-  @Test
-  fun testSeqValiant() {
-    var clock = TimeSource.Monotonic.markNow()
-    val detSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-        .enumSeq(List(20) {"_"})
-        .take(10_000).sortedBy { it.length }.toList()
-
-    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
-
-    var elapsed = clock.elapsedNow().inWholeMilliseconds
-    println("Found ${detSols.size} determinstic solutions in ${elapsed}ms or ~${detSols.size / (elapsed/1000.0)}/s, all were valid!")
-
-    clock = TimeSource.Monotonic.markNow()
-    val randSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      .sampleSeq(List(20) { "_" }).take(10_000).toList().distinct()
-      .onEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
-
-    // 10k in ~22094ms
-    elapsed = clock.elapsedNow().inWholeMilliseconds
-    println("Found ${randSols.size} random solutions in ${elapsed}ms or ~${randSols.size / (elapsed/1000.0)}/s, all were valid!")
-  }
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testUnitParse"
 */
   @Test
   fun testUnitParse() {
     assertNotNull(Grammars.seq2parsePythonCFG.parse("NEWLINE"))
-  }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testPythonRepairs"
-*/
-  @Test
-  fun testPythonRepairs() {
-    val refStr = "NAME = ( NAME"
-    val refLst = refStr.tokenizeByWhitespace()
-    val template = List(refLst.size + 3) { "_" }
-    println("Solving: $template")
-    measureTime {
-      Grammars.seq2parsePythonCFG.enumSeq(template)
-        .map { it to levenshtein(it, refStr) }
-        .filter { it.second < 4 }.distinct().take(100)
-        .sortedWith(compareBy({ it.second }, { it.first.length }))
-        .onEach { println("Δ=${it.second}: ${it.first}") }
-//        .onEach { println("Δ=${levenshtein(it, refStr)}: $it") }
-        .toList()
-        .also { println("Found ${it.size} solutions!") }
-    }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }
   }
 
 /*
@@ -510,48 +463,5 @@ class SetValiantTest {
       pairs.map { (a, b) -> fastJoin(vidx, a, b) }
         .reduce { a, b -> union(a, b) }
     }.also { println("Merged a 10^6 bitvecs in ${it.inWholeMilliseconds}ms.") } // Should be ~5000ms
-  }
-
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testCompareSolvers"
-*/
-  @Test
-  fun testCompareSolvers() {
-    val prompt = "_ _ ( _ _ _".tokenizeByWhitespace()
-    val enumSeq = measureTimedValue { toyArith.enumSeq(prompt).toSet() }
-    val solveSeq = measureTimedValue { toyArith.solveSeq(prompt).toSet() }
-    val origSet = measureTimedValue { prompt.solve(toyArith).toSet() }
-
-//  EnumSeq: 584 (842.693834ms)
-//  SolvSeq: 584 (3.802375ms)
-//  SetCYK: 584 (7.388834667s)
-    enumSeq.also { println("EnumSeq: ${it.value.size} (${it.duration})") }.value
-    solveSeq.also { println("SolvSeq: ${it.value.size} (${it.duration})") }.value
-    origSet.also { println("SetCYK: ${it.value.size} (${it.duration})") }.value
-
-    assertEquals(origSet.value, enumSeq.value, "EnumSeq was missing:" + (origSet.value - enumSeq.value))
-    assertEquals(origSet.value, solveSeq.value)
-  }
-
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testRandomCFG"
-  */
-  @Test
-  fun testRandomCFG() {
-    fun String.deleteRandomSingleWord() =
-      tokenizeByWhitespace().let {
-        val delIdx: Int = Random.nextInt(it.size - 1)
-        it.subList(0, delIdx) + it.subList(delIdx + 1, it.size)
-      }.joinToString(" ")
-
-      generateSequence {
-        measureTime {
-          val cfg = generateRandomCFG().parseCFG().freeze()
-          val results = cfg.enumSeq(List(30) { "_" }).filter { 20 < it.length }.take(10).toList()
-          val corruptedResults = results.map { if (Random.nextBoolean()) it else it.deleteRandomSingleWord() }
-          preparseParseableLines(cfg, corruptedResults.joinToString("\n"))
-        }
-      }.take(100).toList().map { it.toDouble(DurationUnit.MILLISECONDS) }
-        .also { println("Average time: ${it.average().round(3)}ms, total time ${it.sum().round(3)}ms") }
   }
 }

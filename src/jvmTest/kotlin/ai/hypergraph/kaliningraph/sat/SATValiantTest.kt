@@ -1,5 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
+import Grammars.arith
+import Grammars.evalArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*
@@ -86,25 +88,6 @@ class SATValiantTest {
       R1 -> )
       R2 -> ]
     """
-
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmetic"
-  */
-  @Test
-  fun testArithmetic() {
-    """
-      S -> S + S | S * S | S - S | S / S | ( S )
-      S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-      S -> X | Y | Z
-    """.parseCFG().let { cfg ->
-      assertTrue("( 1 + 2 * 3 ) / 4".matches(cfg))
-      assertFalse("( 1 + 2 * 3 ) - ) / 4".matches(cfg))
-      assertFalse("( 1 + 2 * 3 ) - ( ) / 4".matches(cfg))
-      println(cfg.parse("( 1 + 2 ) - 1")?.prettyPrint())
-//      cfg.parseHTML("( ( 1 + 2 ) * 3 ) / 4").show()
-      println(cfg.prettyPrint())
-    }
-  }
 
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testXujieExample"
@@ -518,77 +501,19 @@ class SATValiantTest {
       }
   }
 
-  val arith = """
-    O -> + | * | - | /
-    S -> S O S | ( S )
-    S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-  """.parseCFG()
-
-  private fun Tree.middle(): Σᐩ? = children.drop(1).firstOrNull()?.terminal
-  fun Tree.eval(): Int = when {
-    middle() == "/" -> children.first().eval() / children.last().eval()
-    middle() == "-" -> children.first().eval() - children.last().eval()
-    middle() == "*" -> children.first().eval() * children.last().eval()
-    middle() == "+" -> children.first().eval() + children.last().eval()
-    terminal?.toIntOrNull() != null -> terminal!!.toInt()
-    terminal in listOf("(", ")") -> -1
-    else -> children.asSequence().map { it.eval() }.first { 0 <= it }
-  }
-
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testArithmeticEval"
-  */
-  @Test
-  fun testArithmeticEval() {
-    assertEquals(arith.parse("( 1 + 2 ) * ( 3 * 4 )")!!.eval(), 36)
-  }
-
-  val checkedArithCFG = """
-    S -> S1 | S2 | S3 | S4 | S5 | S6 | S7
-    S -> S1 = S1
-    S -> S2 = S2
-    S -> S3 = S3
-    S -> S4 = S4
-    S -> S5 = S5
-    S -> S6 = S6
-    S -> S7 = S7
-    S -> S8 = S8
-    S -> S9 = S9
-    
-    S1 -> P1
-    S2 -> P2 | ( S2 ) | P1 + P1
-    S3 -> P3 | ( S3 ) | P2 + P1 | P1 + P2
-    S4 -> P4 | ( S4 ) | P3 + P1 | P1 + P3 | P2 + P2
-    S5 -> P5 | ( S5 ) | P1 + P4 | P4 + P1 | P2 + P3 | P2 + P3
-    S6 -> P6 | ( S6 ) | P1 + P5 | P5 + P1 | P3 + P3 | P2 + P4 | P4 + P2
-    S7 -> P7 | ( S7 ) | P1 + P6 | P6 + P1 | P5 + P2 | P2 + P5 | P4 + P3 | P3 + P4
-    S8 -> P8 | ( S8 ) | P1 + P7 | P7 + P1 | P6 + P2 | P2 + P6 | P3 + P5 | P5 + P3 | P4 + P4
-    S9 -> P9 | ( S9 ) | P1 + P8 | P8 + P1 | P7 + P2 | P2 + P7 | P3 + P6 | P6 + P3 | P4 + P5 | P5 + P4
-    
-    P1 -> 1 | ( S1 ) | P1 * P1
-    P2 -> 2 | ( S2 ) | P2 * P1 | P1 * P2
-    P3 -> 3 | ( S3 ) | P3 * P1 | P1 * P3
-    P4 -> 4 | ( S4 ) | P2 * P2 | P4 * P1 | P1 * P4
-    P5 -> 5 | ( S5 ) | P5 * P1 | P1 * P5
-    P6 -> 6 | ( S6 ) | P6 * P1 | P1 * P6 | P3 * P2 | P2 * P3
-    P7 -> 7 | ( S7 ) | P7 * P1 | P1 * P7
-    P8 -> 8 | ( S8 ) | P4 * P2 | P2 * P4 | P8 * P1 | P1 * P8
-    P9 -> 9 | ( S9 ) | P9 * P1 | P1 * P9 | P3 * P3
-  """.parseCFG()
-
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testCheckedArithmetic"
   */
   @Test
   fun testCheckedArithmetic() {
     "( _ + _ ) * ( _ + _ ) = ( _ * _ ) + ( _ * _ )"
-      .synthesizeIncrementally(checkedArithCFG, allowNTs = false)
-      .take(10).toList().also { assert(it.isNotEmpty()) }
+      .synthesizeIncrementally(Grammars.checkedArithCFG, allowNTs = false)
+      .take(200).toList().also { assert(it.isNotEmpty()) }
       .map {
         println(it)
         val (left, right) = it.split('=')
         val (ltree, rtree) = arith.parse(left)!! to arith.parse(right)!!
-        val (leval, reval) = ltree.eval() to rtree.eval()
+        val (leval, reval) = ltree.evalArith() to rtree.evalArith()
         println("$leval = $reval")
         assertEquals(leval, reval)
         leval
