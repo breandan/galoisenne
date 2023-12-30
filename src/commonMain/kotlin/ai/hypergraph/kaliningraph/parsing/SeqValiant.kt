@@ -304,8 +304,8 @@ fun CFG.repairSeq(tokens: List<String>): Sequence<String> =
   }
 
 fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
-  tokens.intersperse(1, "ε").let { prompt ->
-    prompt.indices.toSet().choose(minOf(5, prompt.size - 1))
+  tokens.intersperse(2, "ε").let { prompt ->
+    prompt.indices.toSet().choose(minOf(6, prompt.size - 1))
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
