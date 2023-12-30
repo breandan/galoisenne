@@ -317,4 +317,4 @@ fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
       println("Epsilons removed: $epsRemoved\nParse tree:" + parse(epsRemoved)?.prettyPrint())
       epsRemoved
     }
-    .map { if (it.isEmpty()) it else minimizeFixAbsolute(tokens, it.tokenizeByWhitespace()) { this in language } }
+    .map { if (it.isEmpty()) it else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }

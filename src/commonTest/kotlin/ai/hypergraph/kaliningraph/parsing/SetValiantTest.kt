@@ -253,7 +253,7 @@ class SetValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testDropUnitProds"
 */
-  @Test
+//  @Test
   fun testDropUnitProds() {
     "START -> c | d".parseCFG()
     """

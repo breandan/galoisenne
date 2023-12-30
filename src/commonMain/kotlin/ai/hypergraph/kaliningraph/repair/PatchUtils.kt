@@ -55,30 +55,11 @@ fun minimizeFix(
   val changedIndices = patch.changedIndices()
   val time = TimeSource.Monotonic.markNow()
   val minEdit =
-    deltaDebug(changedIndices, timeout = { 5 < time.elapsedNow().inWholeSeconds } ) { idxs ->
+    deltaDebug(changedIndices, timeout = { 5 < time.elapsedNow().inWholeSeconds }) { idxs ->
       patch.apply(idxs, " ").isValid()
     }
 
   return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
-    .also { println("Applied patch: $it\n${it.isValid()}") }
-}
-
-fun minimizeFixAbsolute(
-  brokeTokens: List<Σᐩ>,
-  fixedTokens: List<Σᐩ>,
-  isValid: Σᐩ.() -> Boolean
-): Σᐩ {
-  val patch: Patch = extractPatch(brokeTokens, fixedTokens)
-  val changedIndices = patch.changedIndices()
-  val time = TimeSource.Monotonic.markNow()
-  println(patch.prettyPrint())
-  println(patch.apply(" "))
-  println("Original patch valid: " + patch.apply(" ").isValid())
-  println("Changed indices: $changedIndices")
-  val minEdit = changedIndices.minimalSubpatch { patch.apply(this, " ").isValid() }
-
-  return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
-    .also { println("Applied patch: $it\n${it.isValid()}") }
 }
 
 typealias Edit = Π2A<Σᐩ>
