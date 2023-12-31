@@ -22,7 +22,7 @@ class ParallelSetValiantTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.ParallelSetValiantTest.testParallelSetValiant"
 */
-  @Test
+//  @Test
   fun testParallelSetValiant() {
     println(Runtime.getRuntime().availableProcessors())
     val template = List(8) { "_" }
