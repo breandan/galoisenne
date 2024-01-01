@@ -251,7 +251,86 @@ class BiMap(cfg: CFG) {
   }
   operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
   operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
+  operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
 }
+
+val CFG.mustGenerate by cache { inevitableSymbols() }
+
+fun CFG.inevitableSymbols(map: Map<Σᐩ, Set<Σᐩ>> = emptyMap()): Map<Σᐩ, Set<Σᐩ>> {
+  val newMap = map.toMutableMap()
+  symbols.forEach { smb ->
+//    println("Testing $smb")
+    bimap.TDEPS[smb]?.forEach { nt ->
+//      println("Testing $smb -> $nt")
+      if (bimap[nt].all { smb in it || nt in it }) {
+//        println("Worked! $nt => $smb")
+        newMap[nt] = newMap.getOrPut(nt) { emptySet() } + smb +
+            newMap.getOrPut(smb) { emptySet() }
+      }
+//      else {
+//        if (smb == "NEWLINE")
+//        println("Failed! $nt !=> $smb, first ${bimap[nt].first { smb !in it }}")
+//      }
+    }
+  }
+  return if (newMap == map) map else inevitableSymbols(newMap)
+}
+
+fun Bln.explain(cfg: CFG, prod: Production, reason: String = "") = this.also{
+  if(it) {
+    println("Removed [${prod.LHS} -> ${prod.RHS.joinToString(" ")}] because $reason")
+    if (cfg.count { it.first == prod.LHS } == 1) println("And no other productions were left for `${prod.LHS}`!")
+  }
+}
+
+fun CFG.removeTerminalsVerbose(allowed: Set<Σᐩ>, otps: Set<Production> = this.terminalUnitProductions, origTerms: Set<Σᐩ> = this.terminals, mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate): CFG {
+  val deadNTs = mutableSetOf<Σᐩ>()
+  val next = toMutableSet().apply { removeAll { prod ->
+    (
+//        (prod in otps && (prod.RHS.first() !in allowed))
+//          .explain(this, prod, "the terminal `${prod.RHS.first()}` is not allowed") ||
+        (mustGenerate[prod.LHS]?.any { (it in origTerms && it !in allowed)
+          .explain(this, prod, "LHS value `${prod.LHS}` must generate `$it` and `$it` was not allowed") } == true) ||
+        prod.RHS.any { rhs -> mustGenerate[rhs]?.any { (it in origTerms && it !in allowed)
+          .explain(this, prod, "RHS value `$rhs` must generate `$it` and `$it` was not allowed") } == true }
+    ).also { if (it && this.count { it.first == prod.first } == 1) {
+        println("Added `${prod.first}` to deadNTs!")
+        deadNTs.add(prod.LHS) }
+      }
+  } }
+
+  next.removeAll { prod ->
+    prod.RHS.any { rhs ->
+      (rhs in deadNTs).explain(next, prod, "the RHS value `$rhs` is a dead NT!") ||
+        (rhs !in origTerms).explain(next, prod, "the RHS terminal `$rhs` was a chopped NT")
+    }
+  }
+
+  return if (next.size == size) this else next.removeTerminalsVerbose(allowed, otps, origTerms, mustGenerate)
+}
+
+fun CFG.removeTerminals(allowed: Set<Σᐩ>, otps: Set<Production> = this.terminalUnitProductions, origTerms: Set<Σᐩ> = this.terminals, mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate): CFG {
+  val deadNTs = mutableSetOf<Σᐩ>()
+  val next = toMutableSet().apply {
+    removeAll { prod ->
+      (
+        (prod in otps && (prod.RHS.first() !in allowed)) ||
+        mustGenerate[prod.LHS]?.any { (it in origTerms && it !in allowed) } == true ||
+        prod.RHS.any { rhs -> mustGenerate[rhs]?.any { (it in origTerms && it !in allowed) } == true }
+      ).also { if (it && count { it.first == prod.first } == 1) deadNTs.add(prod.LHS) }
+    }
+  }
+
+  next.removeAll { prod -> prod.RHS.any { rhs -> rhs in deadNTs || (rhs in next.terminals && rhs !in origTerms) } }
+
+  return if (next.size == size) this else next.removeTerminals(allowed, otps, origTerms, mustGenerate)
+}
+
+fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
+  removeTerminals(image)
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .freeze()
+    .also { println("All terminals: ${it.terminals}") }
 
 fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
