@@ -10,7 +10,9 @@ infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersectLevFSA(fsa: FSA): CFG =
-  subgrammar(fsa.alphabet).intersectLevFSAP(fsa)
+  subgrammar(fsa.alphabet)
+//    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
+    .intersectLevFSAP(fsa)
 
 fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
   intersectLevFSA(makeLevFSA(source, distance, terminals))
@@ -39,7 +41,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     fun IntRange.overlaps(other: IntRange) =
       (other.first in first..last) || (other.last in first..last)
 
-    fun lengthBounds(nt: Σᐩ): IntRange = lengthBounds[nt] ?: -1..-1
+    fun lengthBounds(nt: Σᐩ): IntRange =
+      (lengthBounds[nt] ?: -1..-1).let { (it.first - 1)..(it.last+1) }
 
     // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
     fun isCompatible() =
@@ -66,7 +69,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val binaryProds =
     nonterminalProductions.mapIndexed { i, it ->
-      if (i % 10 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
+      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       triples
