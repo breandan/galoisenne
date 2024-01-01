@@ -264,14 +264,15 @@ fun CFG.inevitableSymbols(map: Map<Σᐩ, Set<Σᐩ>> = emptyMap()): Map<Σᐩ, 
 //      println("Testing $smb -> $nt")
       if (bimap[nt].all { smb in it || nt in it }) {
 //        println("Worked! $nt => $smb")
-        newMap[nt] = newMap.getOrPut(nt) { emptySet() } + smb +
-            newMap.getOrPut(smb) { emptySet() }
+        newMap[nt] = newMap.getOrPut(nt) { setOf(nt) } +
+            newMap.getOrPut(smb) { setOf(smb) }
       }
 //      else {
 //        if (smb == "NEWLINE")
 //        println("Failed! $nt !=> $smb, first ${bimap[nt].first { smb !in it }}")
 //      }
     }
+    newMap[smb] = newMap.getOrPut(smb) { setOf(smb) }
   }
   return if (newMap == map) map else inevitableSymbols(newMap)
 }
@@ -309,23 +310,33 @@ fun CFG.removeTerminalsVerbose(allowed: Set<Σᐩ>, otps: Set<Production> = this
   return if (next.size == size) this else next.removeTerminalsVerbose(allowed, otps, origTerms, mustGenerate)
 }
 
-fun CFG.removeTerminals(allowed: Set<Σᐩ>, otps: Set<Production> = this.terminalUnitProductions, origTerms: Set<Σᐩ> = this.terminals, mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate): CFG {
-  val deadNTs = mutableSetOf<Σᐩ>()
+fun CFG.removeTerminals(
+  allowed: Set<Σᐩ>,
+  deadNTs: Set<Σᐩ> = emptySet(),
+  origTerms: Set<Σᐩ> = this.terminals,
+  mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate
+): CFG {
+  val deadNTs = deadNTs.toMutableSet()
   val next = toMutableSet().apply {
     removeAll { prod ->
-      (
-        (prod in otps && (prod.RHS.first() !in allowed)) ||
-        mustGenerate[prod.LHS]?.any { (it in origTerms && it !in allowed) } == true ||
-        prod.RHS.any { rhs -> mustGenerate[rhs]?.any { (it in origTerms && it !in allowed) } == true }
-      ).also { if (it && count { it.first == prod.first } == 1) deadNTs.add(prod.LHS) }
+      (prod.RHS + prod.LHS).toSet().any { mustGenerate[it]?.any { it in origTerms && it !in allowed || it in deadNTs } == true }
+        .also { if (it && count { it.first == prod.first } == 1) deadNTs.add(prod.LHS) }
     }
   }
 
   next.removeAll { prod -> prod.RHS.any { rhs -> rhs in deadNTs || (rhs in next.terminals && rhs !in origTerms) } }
 
-  return if (next.size == size) this else next.removeTerminals(allowed, otps, origTerms, mustGenerate)
+  val new = next.removeUselessSymbols()
+
+  return if (new.size == size) this else new.removeTerminals(allowed, deadNTs, origTerms, mustGenerate)
 }
 
+/*
+ Specializes the CFG to a set of terminals X, by recursively pruning
+ every nonterminal v which necessarily generates a terminal t' ∉ X and
+ every nonterminal that necessarily generates v. We call the set of all
+ productions that remain after pruning, the preimage of G under T or the "subgrammar".
+ */
 fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
   removeTerminals(image)
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }

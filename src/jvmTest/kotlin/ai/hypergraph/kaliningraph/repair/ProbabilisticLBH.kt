@@ -18,9 +18,9 @@ class ProbabilisticLBH {
 */
   @Test
   fun testProbabilisticLBH() {
-    Grammars.seq2parsePythonCFG.mustGenerate.entries.forEach {
-      println(it.key + " -> " + it.value)
-    }
+//    Grammars.seq2parsePythonCFG.mustGenerate.entries.forEach {
+//      println(it.key + " -> " + it.value)
+//    }
   }
 
 /*
@@ -51,8 +51,7 @@ class ProbabilisticLBH {
 //    println("::::::::::::")
 //    subgrammar.forEach { println("${it.LHS} ->" + it.RHS.joinToString(" ")) }
 
-    fun Forest.summarize() = joinToString("\n") { it.root + "-[${it.children.joinToString(","){it.root}}]" }
-
+//    fun Forest.summarize() = joinToString("\n") { it.root + "-[${it.children.joinToString(","){it.root}}]" }
 
     validPythonStatements.lines().forEach {
       val pp ="$it NEWLINE" .also { println(it) }
@@ -112,33 +111,33 @@ class ProbabilisticLBH {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
 //    invalidPythonStatements.lines().drop(1).forEach {
-      val clock = TimeSource.Monotonic.markNow()
+    val clock = TimeSource.Monotonic.markNow()
 //      val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
 //      val origStr = "$it NEWLINE"
-      val toRepair = origStr.tokenizeByWhitespace()
-      val levDist = 2
-      println("Top terms: ${topTerms.joinToString(", ")}")
-      val levBall = makeLevFSA(toRepair, levDist, topTerms)
-      println("Total transitions in FSA: ${levBall.Q.size}")
-      println("Prompt: $origStr")
-      println("Alphabet: ${levBall.alphabet}")
-      val intGram = gram.intersectLevFSA(levBall)
-      println("Finished intersection in ${clock.elapsedNow()}")
+    val toRepair = origStr.tokenizeByWhitespace()
+    val levDist = 2
+    println("Top terms: ${topTerms.joinToString(", ")}")
+    val levBall = makeLevFSA(toRepair, levDist, topTerms)
+    println("Total transitions in FSA: ${levBall.Q.size}")
+    println("Prompt: $origStr")
+    println("Alphabet: ${levBall.alphabet}")
+    val intGram = gram.intersectLevFSA(levBall)
+    println("Finished intersection in ${clock.elapsedNow()}")
 
-      val template = List(toRepair.size + levDist) { "_" }
+    val template = List(toRepair.size + levDist) { "_" }
 
-      val lbhSet = intGram.enumSeq(template)
-        .distinct()
-        .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
-        .distinct()
-        .onEachIndexed { i, it ->
-          if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
+    val lbhSet = intGram.enumSeq(template)
+      .distinct()
+      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
+        if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
-          assertTrue(levenshtein(origStr, it) <= levDist)
-          assertTrue(it in gram.language)
-          assertTrue(levBall.recognizes(it))
-        }.toList()
-        .also { println("TOTAL REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+        assertTrue(levenshtein(origStr, it) <= levDist)
+        assertTrue(it in gram.language)
+        assertTrue(levBall.recognizes(it))
+      }.toList()
+      .also { println("TOTAL REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
   }
 
   fun CFG.getS2PNT(string: String) =
