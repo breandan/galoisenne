@@ -179,9 +179,9 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 //  }
 }
 
-fun CFG.startPTree(tokens: List<String>) = measureTimedValue {
+fun CFG.startPTree(tokens: List<String>) = //measureTimedValue {
   initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
-}.also { println("Took ${it.duration} to compute parse forest") }.value
+//}.also { println("Took ${it.duration} to compute parse forest") }.value
 
 // Instead of defining a special case, we instead represent the unit production
 // as a left child whose sibling is empty like so: Left child to Right child
@@ -302,9 +302,9 @@ fun CFG.repairSeq(tokens: List<String>): Sequence<String> =
     }.distinct().map { it.resToStr().removeEpsilon() }.distinct()
   }
 
-fun CFG.fastRepairSeq(tokens: List<String>): Sequence<String> =
-  tokens.intersperse(2, "ε").let { prompt ->
-    prompt.indices.toSet().choose(minOf(6, prompt.size - 1))
+fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> =
+  tokens.intersperse(spacing, "ε").let { prompt ->
+    prompt.indices.toSet().choose(minOf(holes, prompt.size - 1))
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }

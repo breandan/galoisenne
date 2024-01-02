@@ -109,7 +109,7 @@ class ProbabilisticLBH {
       assertTrue("$it NEWLINE" in Grammars.seq2parsePythonCFG.language)
     }
 
-    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
 //    val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
     val origStr = invalidPythonStatements.lines().first() + " NEWLINE"
 //    invalidPythonStatements.lines().drop(1).forEach {
@@ -123,23 +123,24 @@ class ProbabilisticLBH {
       println("Total transitions in FSA: ${levBall.Q.size}")
       println("Prompt: $origStr")
       println("Alphabet: ${levBall.alphabet}")
-      val intGram = gram.intersectLevFSA(levBall)
+      val intGram = s2pg.intersectLevFSA(levBall)
       println("Finished intersection in ${clock.elapsedNow()}")
+//      intGram.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") }
 
       val template = List(toRepair.size + levDist) { "_" }
 
       val lbhSet = intGram.enumSeq(template)
         .distinct()
-        .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
+        .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
         .distinct()
         .onEachIndexed { i, it ->
           if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
           assertTrue(levenshtein(origStr, it) <= levDist)
-          assertTrue(it in gram.language)
+          assertTrue(it in s2pg.language)
           assertTrue(levBall.recognizes(it))
         }.toList()
-        .also { println("TOTAL REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+        .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
 //    }
   }
 

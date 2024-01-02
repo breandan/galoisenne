@@ -271,10 +271,28 @@ class BarHillelTest {
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
       }.toList()
+      .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
 
   //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
   //  Enumerative solver took 360184ms
 
+    val s2pg = Grammars.seq2parsePythonCFG
+    val prbSet = s2pg.fastRepairSeq(toRepair, 1, 3)
+      .distinct()
+      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
+        val levDistance = levenshtein(origStr, it)
+        if (i < 100) println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
+        if (levDistance < levDist) {
+          println("Checking: $it")
+          assertTrue(it in s2pg.language)
+          assertTrue(levBall.recognizes(it))
+          assertTrue(it in intGram.language)
+          assertTrue(it in lbhSet)
+        }
+      }.toList()
+      .also { println("TOTAL PRB REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
 
 //    val totalParticipatingNonterminals =
 //      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
