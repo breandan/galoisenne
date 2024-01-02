@@ -208,7 +208,7 @@ class BarHillelTest {
     val intGram = gram.intersectLevFSA(levBall)
     val clock = TimeSource.Monotonic.markNow()
     val template = List(tokens.size + levDist) { "_" }
-    intGram.enumSeq(template)
+    val lbhSet = intGram.enumSeq(template)
       .distinct()
       .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in gram.language } }
       .distinct()
@@ -222,10 +222,27 @@ class BarHillelTest {
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
         assertTrue(actDist <= levDist)
-    }.toList()
+    }.toSet()
       // Found 221 minimal solutions using Levenshtein/Bar-Hillel in 23.28s
       .also { println("Found ${it.size} minimal solutions using " +
         "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
+
+    val prbSet = Grammars.ifThen.fastRepairSeq(tokens, 1, 3)
+      .distinct()
+      .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in Grammars.ifThen.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
+        val levDistance = levenshtein(origStr, it)
+        if (levDistance < levDist) {
+          println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
+          assertTrue(it in Grammars.ifThen.language)
+          assertTrue(levBall.recognizes(it))
+          assertTrue(it in intGram.language)
+          assertTrue(it in lbhSet)
+        }
+      }.toList()
+      .also { println("Found ${it.size} minimal solutions using " +
+          "Probabilistic repair in ${clock.elapsedNow()}") }
   }
 
 /*
@@ -270,8 +287,9 @@ class BarHillelTest {
         assertTrue(levenshtein(origStr, it) <= levDist)
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
-      }.toList()
-      .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+      }.toSet()
+      .also { println("Found ${it.size} minimal solutions using " +
+          "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
   //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
   //  Enumerative solver took 360184ms
@@ -292,7 +310,8 @@ class BarHillelTest {
           assertTrue(it in lbhSet)
         }
       }.toList()
-      .also { println("TOTAL PRB REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+      .also { println("Found ${it.size} minimal solutions using " +
+          "Probabilistic repair in ${clock.elapsedNow()}") }
 
 //    val totalParticipatingNonterminals =
 //      lbhSet.map { intGram.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
@@ -329,7 +348,27 @@ class BarHillelTest {
         assertTrue(levenshtein(origStr, it) <= levDist)
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
+      }.toSet()
+      .also { println("Found ${it.size} minimal solutions using " +
+          "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
+
+    val s2pg = Grammars.seq2parsePythonCFG
+    val prbSet = s2pg.fastRepairSeq(toRepair, 1, 2)
+      .distinct()
+      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
+      .distinct()
+      .onEachIndexed { i, it ->
+        val levDistance = levenshtein(origStr, it)
+        if (levDistance < levDist) {
+          println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
+          assertTrue(it in s2pg.language)
+          assertTrue(levBall.recognizes(it))
+          assertTrue(it in intGram.language)
+          assertTrue(it in lbhSet)
+        }
       }.toList()
+      .also { println("Found ${it.size} minimal solutions using " +
+          "Probabilistic repair in ${clock.elapsedNow()}") }
 
 //  Found 657 solutions using Levenshtein/Bar-Hillel
 //  Enumerative solver took 113329ms
