@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.Patch
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.math.*
 
@@ -74,10 +75,16 @@ fun makeLevFSA(
       if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
     }
 
-    FSA(Q, initialStates, finalStates)
+    FSA(Q, initialStates, finalStates).also { println("Levenshtein automata size: ${Q.size}") }
   }
 
-fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
+private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
+
+/**
+   TODO: upArcs and diagArcs are the most expensive operations taking ~O(2n|Σ|) to construct.
+     We can probably do much better by only creating arcs that are contextually probable.
+     See: [ai.hypergraph.kaliningraph.repair.CEAProb]
+ */
 
 /*
   s∈Σ i∈[0,n] j∈[1,k]

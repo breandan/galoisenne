@@ -2,13 +2,17 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.FSA
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.types.times
 import kotlin.time.TimeSource
 
 infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
-infix fun CFG.intersectLevFSA(fsa: FSA): CFG = freeze().intersectLevFSAP(fsa)
+infix fun CFG.intersectLevFSA(fsa: FSA): CFG =
+  subgrammar(fsa.alphabet)
+//    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
+    .intersectLevFSAP(fsa)
 
 fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
   intersectLevFSA(makeLevFSA(source, distance, terminals))
@@ -37,7 +41,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     fun IntRange.overlaps(other: IntRange) =
       (other.first in first..last) || (other.last in first..last)
 
-    fun lengthBounds(nt: Σᐩ): IntRange = lengthBounds[nt] ?: -1..-1
+    fun lengthBounds(nt: Σᐩ): IntRange =
+      (lengthBounds[nt] ?: -1..-1).let { (it.first - 1)..(it.last+1) }
 
     // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
     fun isCompatible() =
@@ -63,7 +68,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val binaryProds =
-    nonterminalProductions.map {
+    nonterminalProductions.mapIndexed { i, it ->
+      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       triples
@@ -143,7 +149,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val binaryProds =
-    nonterminalProductions.map {
+    nonterminalProductions.mapIndexed { i, it ->
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       triples.map { (p, q, r) ->
