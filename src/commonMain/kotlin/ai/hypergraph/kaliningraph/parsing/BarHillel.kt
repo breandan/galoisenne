@@ -42,7 +42,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       (other.first in first..last) || (other.last in first..last)
 
     fun lengthBounds(nt: Σᐩ): IntRange =
-      (lengthBounds[nt] ?: -1..-1).let { (it.first - 1)..(it.last+1) }
+      (lengthBounds[nt] ?: -1..-1)
+        // Okay if we overapproximate the length bounds a bit
+        .let { (it.first - 1)..(it.last + 1) }
 
     // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
     fun isCompatible() =

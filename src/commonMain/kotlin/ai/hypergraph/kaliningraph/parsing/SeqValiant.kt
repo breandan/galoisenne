@@ -321,23 +321,32 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
       .flatMap { enumSeq(it).take(100).ifEmpty { sequenceOf("ε") } }
   }.iterator()
 
+  val distinct1 = mutableSetOf<String>()
+  val distinct2 = mutableSetOf<String>()
+
   return generateSequence {
     if (blanketSeq.hasNext() && Random.nextBoolean()) blanketSeq.next()//.also { println("Blanket: $it") }
     else if (uniformSeq.hasNext()) uniformSeq.next()//.also { println("Uniform: $it") }
     else null
-  }.map { it.removeEpsilon() }
-    .filter { it.isNotEmpty() }
-    .distinct()
-    .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
-    .distinct()
-    .onEach {
-      val newBlanket = updateLevenshteinBlanket(levenshteinBlanket, it.tokenizeByWhitespace())
-      if (newBlanket != levenshteinBlanket && "_" in newBlanket) {
-        levenshteinBlanket = newBlanket
-        blanketSeq = enumSeqSmart(levenshteinBlanket).iterator()
-        println("New blanket: ${levenshteinBlanket.joinToString(" ")}")
+  }.map { it.removeEpsilon() }.map {
+    if (it.isEmpty()) it
+    else if (it in distinct1) it
+    else {
+      distinct1.add(it)
+      minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language }.also { minfix ->
+        if (minfix !in distinct2) {
+          distinct2.add(minfix)
+          val newBlanket =
+            updateLevenshteinBlanket(levenshteinBlanket, minfix.tokenizeByWhitespace())
+          if (newBlanket != levenshteinBlanket && "_" in newBlanket) {
+            levenshteinBlanket = newBlanket
+            blanketSeq = enumSeqSmart(levenshteinBlanket).iterator()
+            println("Levenshtein blanket: ${levenshteinBlanket.joinToString(" ")}")
+          }
+        }
       }
     }
+  }
 }
 
 fun updateLevenshteinBlanket(oldBlanket: List<String>, newRepair: List<String>) =
