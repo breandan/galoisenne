@@ -176,7 +176,7 @@ class SeqValiantTest {
     val refStr = "while ( <term> ) ;"
     tinyC.parse(refStr)?.let { println(it) }
     println(refStr in tinyC.language)
-    tinyC.fastRepairSeq(refStr.tokenizeByWhitespace()).take(100).forEach {
+    tinyC.fasterRepairSeq(refStr.tokenizeByWhitespace()).take(100).forEach {
       println(it)
       assertTrue(it in tinyC.language, "Invalid solution: $it")
     }

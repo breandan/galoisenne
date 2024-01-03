@@ -208,10 +208,7 @@ class BarHillelTest {
     val intGram = gram.intersectLevFSA(levBall)
     val clock = TimeSource.Monotonic.markNow()
     val template = List(tokens.size + levDist) { "_" }
-    val lbhSet = intGram.enumSeq(template)
-      .distinct()
-      .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in gram.language } }
-      .distinct()
+    val lbhSet = intGram.enumSeqMinimal(template, tokens)
       .onEachIndexed { i, it ->
         if (i < 100) {
           val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
@@ -227,10 +224,7 @@ class BarHillelTest {
       .also { println("Found ${it.size} minimal solutions using " +
         "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
-    val prbSet = Grammars.ifThen.fastRepairSeq(tokens, 1, 3)
-      .distinct()
-      .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in Grammars.ifThen.language } }
-      .distinct()
+    val prbSet = Grammars.ifThen.fasterRepairSeq(tokens, 1, 3)
       .onEachIndexed { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (levDistance < levDist) {
@@ -270,10 +264,7 @@ class BarHillelTest {
 
     val template = List(toRepair.size + levDist - 1) { "_" }
 
-    val lbhSet = intGram.enumSeq(template)
-      .distinct()
-      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
-      .distinct()
+    val lbhSet = intGram.enumSeqMinimal(template, toRepair)
       .onEachIndexed { i, it ->
         if (i < 100) {
           val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
@@ -288,17 +279,15 @@ class BarHillelTest {
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
       }.toSet()
-      .also { println("Found ${it.size} minimal solutions using " +
-          "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
+    // Found 6182 minimal solutions using Levenshtein/Bar-Hillel in 9m 12.755585250s
+    .also { println("Found ${it.size} minimal solutions using " +
+            "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
   //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
   //  Enumerative solver took 360184ms
 
     val s2pg = Grammars.seq2parsePythonCFG
-    val prbSet = s2pg.fastRepairSeq(toRepair, 1, 3)
-      .distinct()
-      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
-      .distinct()
+    val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 3)
       .onEachIndexed { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (i < 100) println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
@@ -310,6 +299,7 @@ class BarHillelTest {
           assertTrue(it in lbhSet)
         }
       }.toList()
+      // Found 3912 minimal solutions using Probabilistic repair in 11m 51.535605250s
       .also { println("Found ${it.size} minimal solutions using " +
           "Probabilistic repair in ${clock.elapsedNow()}") }
 
@@ -338,10 +328,7 @@ class BarHillelTest {
 
     val template = List(toRepair.size + levDist) { "_" }
 
-    val lbhSet = intGram.enumSeq(template)
-      .distinct()
-      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in gram.language } }
-      .distinct()
+    val lbhSet = intGram.enumSeqMinimal(template, toRepair)
       .onEachIndexed { i, it ->
         if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
@@ -353,10 +340,7 @@ class BarHillelTest {
           "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
     val s2pg = Grammars.seq2parsePythonCFG
-    val prbSet = s2pg.fastRepairSeq(toRepair, 1, 2)
-      .distinct()
-      .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
-      .distinct()
+    val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2)
       .onEachIndexed { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (levDistance < levDist) {

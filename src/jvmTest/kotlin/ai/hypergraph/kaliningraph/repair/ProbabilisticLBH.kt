@@ -128,10 +128,7 @@ class ProbabilisticLBH {
 
       val template = List(toRepair.size + levDist) { "_" }
 
-      val lbhSet = intGram.enumSeq(template)
-        .distinct()
-        .map { minimizeFix(toRepair, it.tokenizeByWhitespace()) { this in s2pg.language } }
-        .distinct()
+      val lbhSet = intGram.enumSeqMinimal(template, toRepair)
         .onEachIndexed { i, it ->
           if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 

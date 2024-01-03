@@ -50,16 +50,15 @@ fun minimizeFix(
   brokeTokens: List<Σᐩ>,
   fixedTokens: List<Σᐩ>,
   isValid: Σᐩ.() -> Boolean
-): Σᐩ {
+): Sequence<Σᐩ> {
   val patch: Patch = extractPatch(brokeTokens, fixedTokens)
   val changedIndices = patch.changedIndices()
   val time = TimeSource.Monotonic.markNow()
-  val minEdit =
-    deltaDebug(changedIndices, timeout = { 5 < time.elapsedNow().inWholeSeconds }) { idxs ->
-      patch.apply(idxs, " ").isValid()
-    }
-
-  return patch.apply(minEdit, " ").tokenizeByWhitespace().joinToString(" ")
+  return deltaDebug(changedIndices,
+    timeout = { 5 < time.elapsedNow().inWholeSeconds }
+  ) { idxs -> patch.apply(idxs, " ").isValid() }
+    .minimalSubpatches { patch.apply(this).isValid() }
+    .map { patch.apply(it, " ").tokenizeByWhitespace().joinToString(" ") }
 }
 
 typealias Edit = Π2A<Σᐩ>
@@ -106,6 +105,10 @@ fun Patch.totalCharacterwiseEditDistance(): Int =
 fun List<Int>.minimalSubpatch(filter: List<Int>.() -> Boolean): List<Int> =
   (1..size).asSequence().map { choose(it).map { it.toList() } }
     .map { it.filter { it.filter() } }.firstOrNull { it.any() }?.firstOrNull() ?: this
+
+fun List<Int>.minimalSubpatches(filter: List<Int>.() -> Boolean): Sequence<List<Int>> =
+  (1..size).asSequence().map { choose(it).map { it.toList() } }
+    .map { it.filter { it.filter() } }.firstOrNull { it.any() } ?: sequenceOf(this)
 
 fun Patch.apply(indices: List<Int>, separator: Σᐩ = ""): Σᐩ =
   mapIndexed { i, it -> if (i in indices) it.new else it.old }.joinToString(separator)

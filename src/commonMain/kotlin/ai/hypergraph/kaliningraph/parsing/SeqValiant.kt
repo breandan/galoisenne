@@ -253,6 +253,13 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
+fun CFG.enumSeqMinimal(prompt: List<String>, tokens: List<String>): Sequence<String> =
+  startPTree(prompt)?.sampleStrWithoutReplacement()
+    ?.distinct()
+    ?.flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+    ?.distinct()
+    ?: sequenceOf()
+
 var maxTrees = 50_000
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.
@@ -309,7 +316,7 @@ fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): S
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
       .map { it.removeEpsilon() }
-  }.map { if (it.isEmpty()) it else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+  }.flatMap { if (it.isEmpty()) sequenceOf(it) else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
 
 fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> {
   var levenshteinBlanket = tokens
@@ -318,7 +325,7 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
     prompt.indices.toSet().choose(minOf(holes, prompt.size - 1))
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
-      .flatMap { enumSeq(it).take(100).ifEmpty { sequenceOf("ε") } }
+      .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
   }.iterator()
 
   return generateSequence {
@@ -328,7 +335,7 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
   }.map { it.removeEpsilon() }
     .filter { it.isNotEmpty() }
     .distinct()
-    .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+    .flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
     .distinct()
     .onEach {
       val newBlanket = updateLevenshteinBlanket(levenshteinBlanket, it.tokenizeByWhitespace())
@@ -339,6 +346,11 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
       }
     }
 }
+
+/**
+ * We define the Levenshtein blanket as the union of all hole locations that overlap a
+ * minimal admissible patch. Crucially, the patches must be minimal, see [minimizeFix].
+ */
 
 fun updateLevenshteinBlanket(oldBlanket: List<String>, newRepair: List<String>) =
   levenshteinAlign(oldBlanket, newRepair).map { (old, new) ->
