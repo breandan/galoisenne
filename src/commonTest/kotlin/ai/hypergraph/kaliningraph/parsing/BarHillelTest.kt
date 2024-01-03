@@ -374,7 +374,7 @@ class BarHillelTest {
     val clock = TimeSource.Monotonic.markNow()
 
     val s2pg = Grammars.seq2parsePythonCFG
-    s2pg.fasterRepairSeq(toRepair, 1, 2)
+    s2pg.fasterRepairSeq(toRepair, 1, 2).distinct()
       .onEachIndexed { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (levDistance <= levDist) {
