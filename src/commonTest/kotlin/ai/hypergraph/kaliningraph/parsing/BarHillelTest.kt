@@ -377,6 +377,34 @@ class BarHillelTest {
     println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.levenshteinBlanketTest"
+*/
+  @Test
+  fun levenshteinBlanketTest() {
+    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
+    val toRepair = origStr.tokenizeByWhitespace()
+    val levDist = 2
+    val levBall = makeLevFSA(toRepair, levDist, gram.terminals)
+    val clock = TimeSource.Monotonic.markNow()
+
+    val s2pg = Grammars.seq2parsePythonCFG
+    s2pg.fasterRepairSeq(toRepair, 1, 2)
+      .onEachIndexed { i, it ->
+        val levDistance = levenshtein(origStr, it)
+        if (levDistance <= levDist) {
+          println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
+          assertTrue(it in s2pg.language)
+          assertTrue(levBall.recognizes(it))
+        }
+      }.takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.toList()
+      .also { println("Found ${it.size} minimal solutions using " +
+        "Probabilistic repair in ${clock.elapsedNow()}") }
+
+    println("Enumerative solver took ${clock.elapsedNow().inWholeMilliseconds}ms")
+  }
+
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testHammingBallRepair"
   */

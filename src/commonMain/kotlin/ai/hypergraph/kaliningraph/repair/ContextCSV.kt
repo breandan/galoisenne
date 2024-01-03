@@ -1,3 +1,19 @@
+package ai.hypergraph.kaliningraph.repair
+
+import kotlin.math.pow
+
+val contextCSV by lazy { pythonContext.lines().readContextCSV() }
+
+fun List<String>.readContextCSV(diversity: Double = 1.0) =
+  drop(1).map { it.split(", ") }.associate {
+    ContextEdit(
+      type = EditType.valueOf(it[0].trim()),
+      context = Context(it[1], it[2], it[3]),
+      newMid = it[4]
+    ) to it[5].trim().toDouble().pow(diversity).toInt().coerceAtLeast(1)
+  }.let { CEADist(it) }
+
+val pythonContext = """
 Type , Left       , Old Mid      , Right        , New Mid    , Frequency
 INS  , NAME       ,              , NAME         , '('        , 1293     
 INS  , NEWLINE    ,              , NAME         , 99         , 1212     
@@ -5721,4 +5737,5 @@ DEL  , 98         , NAME         , ','          ,            , 1
 DEL  , 98         , ','          , NEWLINE      ,            , 1        
 INS  , NAME       ,              , '('          , ','        , 1        
 DEL  , NAME       , 'await'      , NAME         ,            , 1        
-INS  , '+'        ,              , ':'          , NUMBER     , 1        
+INS  , '+'        ,              , ':'          , NUMBER     , 1         
+""".trimIndent()

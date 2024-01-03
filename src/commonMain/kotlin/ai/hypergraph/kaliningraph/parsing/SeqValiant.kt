@@ -310,3 +310,37 @@ fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): S
       .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
       .map { it.removeEpsilon() }
   }.map { if (it.isEmpty()) it else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+
+fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> {
+  var levenshteinBlanket = tokens
+  var blanketSeq = emptySequence<String>().iterator()
+  val uniformSeq = tokens.intersperse(spacing, "ε").let { prompt ->
+    prompt.indices.toSet().choose(minOf(holes, prompt.size - 1))
+      .map { prompt.substituteIndices(it) { _, _ -> "_" } }
+      // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
+      .flatMap { enumSeq(it).take(100).ifEmpty { sequenceOf("ε") } }
+  }.iterator()
+
+  return generateSequence {
+    if (blanketSeq.hasNext() && Random.nextBoolean()) blanketSeq.next()//.also { println("Blanket: $it") }
+    else if (uniformSeq.hasNext()) uniformSeq.next()//.also { println("Uniform: $it") }
+    else null
+  }.map { it.removeEpsilon() }
+    .filter { it.isNotEmpty() }
+    .distinct()
+    .map { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+    .distinct()
+    .onEach {
+      val newBlanket = updateLevenshteinBlanket(levenshteinBlanket, it.tokenizeByWhitespace())
+      if (newBlanket != levenshteinBlanket && "_" in newBlanket) {
+        levenshteinBlanket = newBlanket
+        blanketSeq = enumSeqSmart(levenshteinBlanket).iterator()
+        println("New blanket: ${levenshteinBlanket.joinToString(" ")}")
+      }
+    }
+}
+
+fun updateLevenshteinBlanket(oldBlanket: List<String>, newRepair: List<String>) =
+  levenshteinAlign(oldBlanket, newRepair).map { (old, new) ->
+    if (old == null || new == null || old != new) "_" else old
+  }

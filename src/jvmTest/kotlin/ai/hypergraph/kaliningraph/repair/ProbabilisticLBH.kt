@@ -12,7 +12,6 @@ import kotlin.time.TimeSource
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH"
 */
 class ProbabilisticLBH {
-  val ceaDist by lazy { File("src/jvmTest/resources/context_edits.csv").readTrigramStats() }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testProbabilisticLBH"
 */
@@ -83,7 +82,7 @@ class ProbabilisticLBH {
   }
 
   val topTerms by lazy {
-    ceaDist.allProbs.entries
+    contextCSV.allProbs.entries
       .filter { it.key.type != EditType.DEL }
       .groupingBy { Grammars.seq2parsePythonCFG.getS2PNT(it.key.newMid) }
       .aggregate { _, acc: Int?, it, _ -> (acc ?: 0) + it.value }
