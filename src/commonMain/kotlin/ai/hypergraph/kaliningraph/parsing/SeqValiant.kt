@@ -135,6 +135,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   fun sampleWRGD(): Sequence<String> = generateSequence { sampleStrWithGeomDecay() }
 
+  // Prefers shorter strings, i.e., strings with more ε tokens
   fun sampleStrWithGeomDecay(): String =
     if (branches.isEmpty()) if (".ε" in root) "" else root
     else {
