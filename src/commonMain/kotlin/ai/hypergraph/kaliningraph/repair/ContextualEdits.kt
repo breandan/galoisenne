@@ -50,6 +50,9 @@ data class CEADist(val allProbs: Map<ContextEdit, Int>) {
     .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
   val insLeft: Map<String, Set<String>> = allProbs.keys.filter { it.type == EditType.INS }
     .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
+//  val insLeftRight: Map<Pair<String, String>, Set<String>> = allProbs.entries
+//    .filter { it.key.type == EditType.INS }.filter { 10 < it.value }.map { it.key }
+//    .groupBy { it.context.left to it.context.right }.mapValues { it.value.map { it.newMid }.toSet() }
 }
 
 fun CFG.contextualRepair(broken: List<String>): Sequence<List<String>> {

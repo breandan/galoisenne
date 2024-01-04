@@ -62,7 +62,7 @@ fun makeLevFSA(
   ceaDist: CEADist? = null
 ): FSA =
   (upArcs(str, dist, alphabet, digits, ceaDist) +
-    diagArcs(str, dist, alphabet, digits) +
+    diagArcs(str, dist, alphabet, digits, ceaDist) +
     str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
     str.mapIndexed { i, it -> knightArcs(i, dist, it, digits) }.flatten())
   .let { Q ->
@@ -103,7 +103,7 @@ fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDi
     .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
     .filter { (i, j, s) ->
-      if (ceaDist == null || j != 1) false
+      if (ceaDist == null || j != 1) true
       else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
     }
     .map { (i, j, s) -> i to j - 1 to s to i to j }.postProc(digits)
@@ -114,10 +114,14 @@ fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDi
  (q_i−1,j−1 -s→ q_i,j)∈δ
 */
 
-fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
+fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDist: CEADist? = null): TSA =
   ((1..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
+    .filter { (i, j, s) ->
+      if (ceaDist == null || j != 1) true
+      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
+    }
     .map { (i, j, s) -> i - 1 to j - 1 to s to i to j }.postProc(digits)
 
 /*

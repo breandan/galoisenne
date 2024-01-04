@@ -5,12 +5,14 @@ import kotlin.math.pow
 val contextCSV: CEADist by lazy { pythonContext.lines().readContextCSV() }
 
 fun List<String>.readContextCSV(diversity: Double = 1.0) =
-  drop(1).map { it.split(", ") }.associate {
+  drop(1).map { it.split(", ") }.map { it.map { it.trim() } }.map {
+    it.map { if (it.isEmpty()) it else if(it[0] == '\'' && it.last() == '\'') it.drop(1).dropLast(1) else it }
+  }.associate {
     ContextEdit(
-      type = EditType.valueOf(it[0].trim()),
+      type = EditType.valueOf(it[0]),
       context = Context(it[1], it[2], it[3]),
       newMid = it[4]
-    ) to it[5].trim().toDouble().pow(diversity).toInt().coerceAtLeast(1)
+    ) to it[5].toDouble().pow(diversity).toInt().coerceAtLeast(1)
   }.let { CEADist(it) }
 
 val pythonContext = """

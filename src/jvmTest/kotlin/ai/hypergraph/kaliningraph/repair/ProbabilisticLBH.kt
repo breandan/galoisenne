@@ -110,14 +110,14 @@ class ProbabilisticLBH {
 
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
 //    val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
-//    val origStr = invalidPythonStatements.lines().first() + " NEWLINE"
-    invalidPythonStatements.lines().drop(1).forEach {
+    val origStr = invalidPythonStatements.lines().first() + " NEWLINE"
+//    invalidPythonStatements.lines().drop(1).forEach {
     val clock = TimeSource.Monotonic.markNow()
-      val origStr = "$it NEWLINE"
+//      val origStr = "$it NEWLINE"
       val toRepair = origStr.tokenizeByWhitespace()
       val levDist = 2
       println("Top terms: ${topTerms.joinToString(", ")}")
-      val levBall = makeLevFSA(toRepair, levDist, topTerms, ceaDist = contextCSV)
+      val levBall = makeLevFSA(toRepair, levDist, topTerms)//, ceaDist = contextCSV)
       println("Total transitions in FSA: ${levBall.Q.size}")
       println("Prompt: $origStr")
       println("Alphabet: ${levBall.alphabet}")
@@ -135,8 +135,9 @@ class ProbabilisticLBH {
           assertTrue(it in s2pg.language)
           assertTrue(levBall.recognizes(it))
         }.toList()
+        // TOTAL LBH REPAIRS (1m 56.288773333s): 9
         .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
-    }
+//    }
   }
 
   fun CFG.getS2PNT(string: String) =
