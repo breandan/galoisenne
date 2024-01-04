@@ -248,6 +248,8 @@ class BarHillelTest {
     val toRepair = origStr.tokenizeByWhitespace()
     val maxLevDist = 3
     val levBall = makeLevFSA(toRepair, maxLevDist, gram.terminals)
+    println("Total transitions in FSA: ${levBall.Q.size}")
+//  throw Exception("")
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)

@@ -46,6 +46,10 @@ data class CEADist(val allProbs: Map<ContextEdit, Int>) {
   val P_insert = allProbs.filter { it.key.type == EditType.INS }
   val P_delSubOnCtx = P_delSub.keys.groupBy { it.context }
   val P_insertOnCtx = P_insert.keys.groupBy { it.context }
+  val subLeft: Map<String, Set<String>> = allProbs.keys.filter { it.type == EditType.SUB }
+    .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
+  val insLeft: Map<String, Set<String>> = allProbs.keys.filter { it.type == EditType.INS }
+    .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
 }
 
 fun CFG.contextualRepair(broken: List<String>): Sequence<List<String>> {

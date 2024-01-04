@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.repair
 
 import kotlin.math.pow
 
-val contextCSV by lazy { pythonContext.lines().readContextCSV() }
+val contextCSV: CEADist by lazy { pythonContext.lines().readContextCSV() }
 
 fun List<String>.readContextCSV(diversity: Double = 1.0) =
   drop(1).map { it.split(", ") }.associate {

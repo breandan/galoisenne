@@ -2,8 +2,9 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.repair.Patch
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
+import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.*
 
 // Only accept states that are within radius dist of (strLen, 0)
@@ -57,9 +58,10 @@ fun makeLevFSA(
   str: List<Σᐩ>,
   dist: Int,
   alphabet: Set<Σᐩ>,
-  digits: Int = (str.size * dist).toString().length
+  digits: Int = (str.size * dist).toString().length,
+  ceaDist: CEADist? = null
 ): FSA =
-  (upArcs(str, dist, alphabet, digits) +
+  (upArcs(str, dist, alphabet, digits, ceaDist) +
     diagArcs(str, dist, alphabet, digits) +
     str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
     str.mapIndexed { i, it -> knightArcs(i, dist, it, digits) }.flatten())
@@ -82,7 +84,11 @@ private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 
 /**
    TODO: upArcs and diagArcs are the most expensive operations taking ~O(2n|Σ|) to construct.
-     We can probably do much better by only creating arcs that are contextually probable.
+     Later, the Bar-Hillel construction creates a new production for every triple QxQxQ, so it
+     increases the size of generated grammar by (2n|Σ|)^3. For this to be tractable on real
+     world grammars and code snippets, we must prune the transitions aggressively by only
+     creating arcs that are contextually likely.
+
      See: [ai.hypergraph.kaliningraph.repair.CEAProb]
  */
 
@@ -92,10 +98,14 @@ private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
  (q_i,j−1 -s→ q_i,j)∈δ
 */
 
-fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int): TSA =
+fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDist: CEADist? = null): TSA =
   ((0..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
+    .filter { (i, j, s) ->
+      if (ceaDist == null || j != 1) false
+      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
+    }
     .map { (i, j, s) -> i to j - 1 to s to i to j }.postProc(digits)
 
 /*
