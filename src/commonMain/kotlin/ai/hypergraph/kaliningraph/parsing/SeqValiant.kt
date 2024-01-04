@@ -289,16 +289,16 @@ fun CFG.enumSeqSmart(tokens: List<String>): Sequence<String> =
 fun CFG.sampleSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleWithReplacement() ?: sequenceOf()
 
-fun CFG.enumTree(tokens: List<String>): Sequence<Tree> =
+fun CFG.enumTrees(tokens: List<String>): Sequence<Tree> =
   startPTree(tokens)?.sampleTreesWithoutReplacement() ?: sequenceOf()
 
-fun CFG.enumSWOR(tokens: List<String>): Sequence<String> =
+fun CFG.sampleSWOR(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleWRGD() ?: sequenceOf()
 
 fun CFG.hammingBallRepair(tokens: List<String>): Sequence<String> =
   tokens.indices.toSet().choose(5)
     .map { tokens.substituteIndices(it) { it, i -> "_" } }
-    .flatMap { enumSWOR(it).take(100) }
+    .flatMap { sampleSWOR(it).take(100) }
 
 fun CFG.repairSeq(tokens: List<String>): Sequence<String> =
   tokens.intersperse(2, "ε").let { prompt ->
@@ -315,10 +315,12 @@ fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): S
     prompt.indices.toSet().choose(minOf(holes, prompt.size - 1))
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
-      .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
+      .flatMap { sampleSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
       .map { it.removeEpsilon() }
   }.flatMap { if (it.isEmpty()) sequenceOf(it) else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
 
+// Note the repairs are not distinct as we try to avoid long delays between
+// repairs, so callees must remember to append .distinct() if they want this.
 fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> {
   var levenshteinBlanket = tokens
   var blanketSeq = emptySequence<String>().iterator()
@@ -326,21 +328,20 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
     prompt.indices.toSet().choose(minOf(holes, prompt.size - 1))
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
-      .flatMap { enumSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
+      .flatMap { sampleSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
   }.iterator()
 
   val distinct1 = mutableSetOf<String>()
   val distinct2 = mutableSetOf<String>()
 
   return generateSequence {
-    if (blanketSeq.hasNext() && Random.nextBoolean()) blanketSeq.next()//.also { println("Blanket: $it") }
-    else if (uniformSeq.hasNext()) uniformSeq.next()//.also { println("Uniform: $it") }
+    if (blanketSeq.hasNext() && Random.nextBoolean()) blanketSeq.next()
+    else if (uniformSeq.hasNext()) uniformSeq.next()
     else null
   }.map { it.removeEpsilon() }.flatMap {
-    if (it.isEmpty() || it in distinct1) sequenceOf(it)
-    else {
-      distinct1.add(it)
-      minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language }.onEach { minfix ->
+    if (it.isEmpty() || !distinct1.add(it)) sequenceOf(it)
+    else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language }
+      .onEach { minfix ->
         if (minfix !in distinct2) {
           distinct2.add(minfix)
           val newBlanket =
@@ -352,7 +353,6 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
           }
         }
       }
-    }
   }
 }
 
