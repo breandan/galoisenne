@@ -57,15 +57,24 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     return isCompatible()
   }
 
+  val nts = mutableSetOf("START")
+  fun Σᐩ.isSyntheticNT() =
+    first() == '[' && last() == ']' && count { it == ',' } == 2
+  fun List<Π2<Σᐩ, List<Σᐩ>>>.filterRHSInNTS() =
+    asSequence().filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q,START,$r]") }
+      .filterRHSInNTS()
 
   val transits =
-    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]" to listOf(a) }
+    fsa.Q.map { (q, a, r) -> "[$q,$a,$r]".also { nts.add(it) } to listOf(a) }
+      .filterRHSInNTS()
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
   val unitProds = unitProdRules(fsa)
+    .onEach { (a, _) -> nts.add(a) }.filterRHSInNTS()
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
@@ -78,8 +87,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C) }
-        .map { (p, q, r) -> "[$p,$A,$r]" to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
-    }.flatten()
+        .map { (p, q, r) -> "[$p,$A,$r]".also { nts.add(it) } to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
+    }.flatten().filterRHSInNTS()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
