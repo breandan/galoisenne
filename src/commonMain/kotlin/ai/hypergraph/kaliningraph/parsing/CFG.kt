@@ -254,6 +254,20 @@ class BiMap(cfg: CFG) {
   operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
 }
 
+/*
+Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
+----------------------- □β     yield β, then α necessarily yields β"
+Γ ⊢ □ α→[β]
+
+Γ ⊢ □ ω→[α] □ α→[β]
+----------------------- trans
+Γ ⊢ □ ω → [α]∪[β]
+
+Γ ⊢ s∈Σ\Σ'  v'∈V.v'→[s]      "Any production containing a nonterminal that
+----------------------- elim  necessarily generates a terminal that is not
+Γ ⊢ ∀ρ,v∈ρ  G' ← G' \ ρ       in the subgrammar can be safely removed."
+*/
+
 val CFG.mustGenerate by cache { inevitableSymbols() }
 
 fun CFG.inevitableSymbols(map: Map<Σᐩ, Set<Σᐩ>> = emptyMap()): Map<Σᐩ, Set<Σᐩ>> {

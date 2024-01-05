@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import org.junit.jupiter.api.Test
 import java.io.File
+import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.TimeSource
 
@@ -94,50 +95,76 @@ class ProbabilisticLBH {
       .toSet()
   }
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testInvalidLines"
+*/
+  @Test
+  fun testInvalidLines() {
+    invalidPythonStatements.lines().forEach {
+      val toRepair = "$it NEWLINE".tokenizeByWhitespace()
+      println("Repairing: ${toRepair.joinToString(" ")}\nRepairs:\n")
+      Grammars.seq2parsePythonCFG.fasterRepairSeq(toRepair)
+        .filter { it.isNotEmpty() }.distinct().take(10).forEach {
+          println(levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors())
+        }
+    }
+  }
+
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testCompleteness"
   */
   @Test
   fun testCompleteness() {
-    println(Grammars.seq2parsePythonCFG.terminals.size)
-
-    invalidPythonStatements.lines().forEach {
-      assertTrue("$it NEWLINE" !in Grammars.seq2parsePythonCFG.language)
-    }
-    validPythonStatements.lines().forEach {
-      assertTrue("$it NEWLINE" in Grammars.seq2parsePythonCFG.language)
-    }
-
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-//    val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
-    val origStr = invalidPythonStatements.lines().first() + " NEWLINE"
-//    invalidPythonStatements.lines().drop(1).forEach {
-    val clock = TimeSource.Monotonic.markNow()
-//      val origStr = "$it NEWLINE"
-      val toRepair = origStr.tokenizeByWhitespace()
+    val brokeLines = invalidPythonStatements.lines()
+    val fixedLines = validPythonStatements.lines()
+    brokeLines.zip(fixedLines).shuffled(Random(seed = 1))
+      .filter {
+        it.first !in s2pg.language
+          && (it.second + " NEWLINE") in s2pg.language
+          && levenshtein(it.first, it.second) < 3
+      }
+      .take(5).forEach { (broke, fixed) ->
+      val clock = TimeSource.Monotonic.markNow()
+      val origBroke = "$broke NEWLINE"
+      val origFixed = "$fixed NEWLINE"
+      println("Fixing: $origBroke")
+      val toRepair = origBroke.tokenizeByWhitespace()
+      val humanRepair = origFixed.tokenizeByWhitespace()
       val levDist = 2
-      println("Top terms: ${topTerms.joinToString(", ")}")
-      val levBall = makeLevFSA(toRepair, levDist, topTerms)//, ceaDist = contextCSV)
+
+      val levBall = makeLevFSA(toRepair, levDist, s2pg.terminals, ceaDist = contextCSV)
+      val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
+      assertTrue(levBall.recognizes(humanRepair), "Human repair not recognized by LevFSA (${levenshtein(origBroke, origFixed)}): $humanRepairANSI")
+
       println("Total transitions in FSA: ${levBall.Q.size}")
-      println("Prompt: $origStr")
+      println("Prompt: $origBroke")
       println("Alphabet: ${levBall.alphabet}")
-      val intGram = s2pg.intersectLevFSA(levBall)
-      println("Finished intersection in ${clock.elapsedNow()}")
+      try {
+        val intGram = s2pg.intersectLevFSA(levBall)
+        println("Finished intersection in ${clock.elapsedNow()}")
 //      intGram.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") }
 
-      val template = List(toRepair.size + levDist) { "_" }
+        val template = List(toRepair.size + levDist) { "_" }
 
-      val lbhSet = intGram.enumSeqMinimal(template, toRepair)
-        .onEachIndexed { i, it ->
-          if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
+        assertTrue(humanRepair in intGram.language, "Human repair not recognized by LBH: $humanRepairANSI")
 
-          assertTrue(levenshtein(origStr, it) <= levDist)
-          assertTrue(it in s2pg.language)
-          assertTrue(levBall.recognizes(it))
-        }.toList()
-        // TOTAL LBH REPAIRS (1m 56.288773333s): 9
-        .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
-//    }
+        val lbhSet = intGram.enumSeqMinimal(template, toRepair)
+          .onEachIndexed { i, it ->
+            if (i < 100) println(levenshteinAlign(origBroke, it).paintANSIColors())
+
+            assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $it")
+            assertTrue(it in s2pg.language, "CFG did not recognize: $it")
+            assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $it")
+          }.take(10).toList()
+          .also { assertTrue(it.isNotEmpty(), "No repairs found for repairable snippet!") }
+          // TOTAL LBH REPAIRS (1m 56.288773333s): 9
+          .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+      } catch (exception: Exception) {
+        println("Exception: $origBroke")
+        throw exception
+      }
+    }
   }
 
   fun CFG.getS2PNT(string: String) =

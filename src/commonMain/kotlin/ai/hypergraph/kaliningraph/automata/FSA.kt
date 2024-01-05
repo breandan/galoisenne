@@ -27,12 +27,14 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
     LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } }
   }
 
-  fun recognizes(str: Σᐩ) =
-    (str.tokenizeByWhitespace().fold(init) { acc, sym ->
+  fun recognizes(str: List<Σᐩ>) =
+    (str.fold(init) { acc, sym ->
       val nextStates = acc.flatMap { map[it to sym] ?: emptySet() }.toSet()
-//      println("$acc --$sym--> $nextStates")
+  //      println("$acc --$sym--> $nextStates")
       nextStates
     } intersect final).isNotEmpty()
+
+  fun recognizes(str: Σᐩ) = recognizes(str.tokenizeByWhitespace())
 
   fun toDot() =
     graph.toDot(graph.vertices.filter { it.label in final }.toSet())

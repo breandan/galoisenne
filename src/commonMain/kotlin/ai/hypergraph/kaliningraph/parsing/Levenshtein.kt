@@ -74,7 +74,7 @@ fun makeLevFSA(
     val finalStates = mutableSetOf<String>()
     Q.states.forEach {
       val (i, j) = it.unpackCoordinates()
-      if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
+      if ((str.size - i + j - 1).absoluteValue <= dist + 1) finalStates.add(it)
     }
 
     FSA(Q, initialStates, finalStates).also { println("Levenshtein automata size: ${Q.size}") }
@@ -104,7 +104,8 @@ fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDi
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
     .filter { (i, j, s) ->
       if (ceaDist == null || j != 1) true
-      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
+//      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
+      else s in ceaDist.topIns
     }
     .map { (i, j, s) -> i to j - 1 to s to i to j }.postProc(digits)
 
@@ -120,7 +121,8 @@ fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, cea
     .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
     .filter { (i, j, s) ->
       if (ceaDist == null || j != 1) true
-      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
+//      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
+      else s in ceaDist.topSub
     }
     .map { (i, j, s) -> i - 1 to j - 1 to s to i to j }.postProc(digits)
 
