@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
+import ai.hypergraph.kaliningraph.automata.pretty
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import io.kotest.assertions.print.printed
 import org.junit.jupiter.api.Test
 import java.io.File
 import kotlin.random.Random
@@ -135,7 +137,10 @@ class ProbabilisticLBH {
 
       val levBall = makeLevFSA(toRepair, levDist, s2pg.terminals, ceaDist = contextCSV)
       val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
-      assertTrue(levBall.recognizes(humanRepair), "Human repair not recognized by LevFSA (${levenshtein(origBroke, origFixed)}): $humanRepairANSI")
+//        levBall.debug(humanRepair)
+
+      assertTrue(levBall.recognizes(humanRepair),
+        "Human repair not recognized by LevFSA (${levenshtein(origBroke, origFixed)}): $humanRepairANSI")
 
       println("Total transitions in FSA: ${levBall.Q.size}")
       println("Prompt: $origBroke")
@@ -151,11 +156,12 @@ class ProbabilisticLBH {
 
         val lbhSet = intGram.enumSeqMinimal(template, toRepair)
           .onEachIndexed { i, it ->
-            if (i < 100) println(levenshteinAlign(origBroke, it).paintANSIColors())
+            val alignment = levenshteinAlign(origBroke, it).paintANSIColors()
+            if (i < 100) println(alignment)
 
-            assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $it")
-            assertTrue(it in s2pg.language, "CFG did not recognize: $it")
-            assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $it")
+            assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $alignment")
+            assertTrue(it in s2pg.language, "CFG did not recognize: $alignment")
+            assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $alignment")
           }.take(10).toList()
           .also { assertTrue(it.isNotEmpty(), "No repairs found for repairable snippet!") }
           // TOTAL LBH REPAIRS (1m 56.288773333s): 9

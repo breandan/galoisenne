@@ -61,10 +61,10 @@ fun makeLevFSA(
   digits: Int = (str.size * dist).toString().length,
   ceaDist: CEADist? = null
 ): FSA =
-  (upArcs(str, dist, alphabet, digits, ceaDist) +
-    diagArcs(str, dist, alphabet, digits, ceaDist) +
+  (upArcs(str, dist, (if (ceaDist == null) alphabet else alphabet.intersect(ceaDist.topIns)) + str, digits, ceaDist) +
+    diagArcs(str, dist, (if (ceaDist == null) alphabet else alphabet.intersect(ceaDist.topSub)) + str, digits, ceaDist) +
     str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
-    str.mapIndexed { i, it -> knightArcs(i, dist, it, digits) }.flatten())
+    str.mapIndexed { i, it -> knightArcs(i, dist, it, digits, str) }.flatten())
   .let { Q ->
     val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
     fun Σᐩ.unpackCoordinates() =
@@ -74,7 +74,7 @@ fun makeLevFSA(
     val finalStates = mutableSetOf<String>()
     Q.states.forEach {
       val (i, j) = it.unpackCoordinates()
-      if ((str.size - i + j - 1).absoluteValue <= dist + 1) finalStates.add(it)
+      if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
     }
 
     FSA(Q, initialStates, finalStates).also { println("Levenshtein automata size: ${Q.size}") }
@@ -102,11 +102,11 @@ fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDi
   ((0..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size < j }
-    .filter { (i, j, s) ->
-      if (ceaDist == null || j != 1) true
-//      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
-      else s in ceaDist.topIns
-    }
+//    .filter { (i, j, s) ->
+//      if (ceaDist == null || j != 1) true
+////      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
+//      else s in ceaDist.topIns
+//    }
     .map { (i, j, s) -> i to j - 1 to s to i to j }.postProc(digits)
 
 /*
@@ -119,11 +119,11 @@ fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, cea
   ((1..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
     .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
     .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
-    .filter { (i, j, s) ->
-      if (ceaDist == null || j != 1) true
-//      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
-      else s in ceaDist.topSub
-    }
+//    .filter { (i, j, s) ->
+//      if (ceaDist == null || j != 1) true
+////      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
+//      else s in ceaDist.topSub.intersect(alphabet) + str
+//    }
     .map { (i, j, s) -> i - 1 to j - 1 to s to i to j }.postProc(digits)
 
 /*
@@ -146,6 +146,13 @@ fun knightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int): TSA =
   if (idx < 1) setOf()
   else (setOf(idx + 1) * (1..dist).toSet() * setOf(letter))
     .map { (i, j, s) -> i - 2 to j - 1 to s to i to j }.postProc(digits)
+
+fun knightArcs(idx: Int, dist: Int, letter: Σᐩ, digits: Int, str: List<Σᐩ>): TSA =
+  (1..dist).flatMap { d ->
+    (setOf(idx) * (0..dist).toSet())
+      .filter { (i, j) -> i + d + 1 <= str.size && j + d <= dist }
+      .map { (i, j) -> i to j to str[i + d] to (i + d + 1) to (j + d) }
+  }.postProc(digits)
 
 fun List<Π5<Int, Int, Σᐩ, Int, Int>>.postProc(digits: Int) =
   map { (a, b, s, d, e) ->

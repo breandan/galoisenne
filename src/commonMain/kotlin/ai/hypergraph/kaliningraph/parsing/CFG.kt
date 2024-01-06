@@ -263,9 +263,9 @@ class BiMap(cfg: CFG) {
 ----------------------- trans
 Γ ⊢ □ ω → [α]∪[β]
 
-Γ ⊢ s∈Σ\Σ'  v'∈V.v'→[s]      "Any production containing a nonterminal that
------------------------ elim  necessarily generates a terminal that is not
-Γ ⊢ ∀ρ,v∈ρ  G' ← G' \ ρ       in the subgrammar can be safely removed."
+Γ ⊢ s∈Σ\Σ'  v'∈V.□v'→[s]      "Any production containing a nonterminal that
+----------------------- elim   necessarily generates a terminal that is not
+Γ ⊢ ∀ρ,v∈ρ  G' ← G'\ρ          in the subgrammar can be safely removed."
 */
 
 val CFG.mustGenerate by cache { inevitableSymbols() }

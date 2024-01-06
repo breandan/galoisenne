@@ -153,13 +153,14 @@ interface IGraph<G, E, V>: IGF<G, E, V>, Set<V>, Encodable
       replace("<", "&lt;").replace(">", "&gt;")
     return """
       strict digraph {
-          graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
+          graph ["concentrate"="false","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
           ${
       vertices.joinToString("\n") {
-        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"${if(it in highlight)""","fillcolor"="lightgray","style"="filled"""" else ""}]""" }
+        """"${it.id.htmlify()}" ["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="Mrecord"${if(it in highlight)""","fillcolor"=lightgray,"style"=filled""" else ""}]""" }
           } 
           ${edgList.joinToString("\n") { (v, e) -> 
-        """"${v.id.htmlify()}" -> "${e.target.id.htmlify()}" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"="${(e as? LabeledEdge)?.label ?: ""}"]""" }
+            val (src, tgt) = v.id.htmlify() to e.target.id.htmlify()
+        """"$src" -> "$tgt" ["color"="${ if (v is LGVertex && v.occupied) "red" else "black" }","arrowhead"="normal","penwidth"="2.0","label"="${(e as? LabeledEdge)?.label ?: ""}"]""" }
           }
       }
     """.trimIndent()

@@ -169,12 +169,17 @@ class BarHillelTest {
 
     val arithCFGNoEps = arithCFG.noEpsilonOrNonterminalStubs
 
+    val levDist = 2
+
     val origStr = "( ( ) ) [ { }"
-    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 2, arithCFG.terminals))
+    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, levDist, arithCFG.terminals))
 
     val template = List(9) { "_" }
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
-      .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
+      .onEach {
+        assertTrue(levenshtein(it, origStr) <= levDist,
+          "Lev dist ($levDist) exceeded: ${levenshteinAlign(it, origStr).paintANSIColors()}")
+      }.also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
 
     val totalParticipatingNonterminals =
       lbhSet.map { levCFG.parseTable(it).data.map { it.map { it.root } } }.flatten().flatten().toSet()
@@ -184,7 +189,7 @@ class BarHillelTest {
     println("Inactive nonterminals: ${levCFG.nonterminals - totalParticipatingNonterminals}")
 
     val efset = arithCFG.solveSeq(template).toList()
-      .filter { levenshtein(it, origStr) < 3 }.toSet()
+      .filter { levenshtein(it, origStr) <= levDist }.toSet()
 //      .onEach { println(it) }
       .also { println("Found ${it.size} solutions using enumerative filtering") }
 
