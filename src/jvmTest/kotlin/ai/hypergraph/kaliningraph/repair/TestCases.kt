@@ -1,11 +1,8 @@
 package ai.hypergraph.kaliningraph.repair
 
+import ai.hypergraph.kaliningraph.parsing.*
 import org.intellij.lang.annotations.Language
-
-val outliers = """
-  NAME = ( STRING STRING STRING STRING STRING STRING STRING STRING <= == NAME * STRING STRING )
-  NUMBER NAME = NAME ( ( NAME [ NUMBER ] , NAME ) for NAME , NAME in NAME ( NUMBER NAME ) )
-""".trimIndent()
+import kotlin.random.Random
 
 // The following are length 20-25 Python statements with a human fix <2 Levenshtein edits away
 @Language("py")
@@ -1247,3 +1244,11 @@ STRING . NAME ( [ NAME [ NAME ] for NAME in NAME ( NUMBER , NAME ( NAME ) - NUMB
 NAME [ NUMBER ] : NAME ( NAME ( NUMBER ) ) - NUMBER NEWLINE NAME [ NUMBER ] : NUMBER
 from NAME import NAME NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE NAME . NAME ( STRING , NAME = STRING )
 """.trimIndent()
+
+val pythonTestCases =
+  invalidPythonStatements.lines().zip(validPythonStatements.lines())
+    .shuffled(Random(seed = 1)).filter { (a, b) ->
+      (a + " NEWLINE") !in Grammars.seq2parsePythonCFG.language
+          && (b + " NEWLINE") in Grammars.seq2parsePythonCFG.language
+          && levenshtein(a, b) < 3
+    }

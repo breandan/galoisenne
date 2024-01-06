@@ -1,13 +1,9 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
-import ai.hypergraph.kaliningraph.automata.pretty
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import io.kotest.assertions.print.printed
 import org.junit.jupiter.api.Test
-import java.io.File
-import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.TimeSource
 
@@ -55,7 +51,7 @@ class ProbabilisticLBH {
 
 //    fun Forest.summarize() = joinToString("\n") { it.root + "-[${it.children.joinToString(","){it.root}}]" }
 
-    validPythonStatements.lines().forEach {
+    pythonTestCases.forEach { (_, it) ->
       val pp ="$it NEWLINE" .also { println(it) }
 
 //      val z1=  subgrammar.initialUTMatrix(pp.tokenizeByWhitespace()).seekFixpoint().diagonals
@@ -118,15 +114,7 @@ class ProbabilisticLBH {
   @Test
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val brokeLines = invalidPythonStatements.lines()
-    val fixedLines = validPythonStatements.lines()
-    brokeLines.zip(fixedLines).shuffled(Random(seed = 1))
-      .filter {
-        it.first !in s2pg.language
-          && (it.second + " NEWLINE") in s2pg.language
-          && levenshtein(it.first, it.second) < 3
-      }
-      .take(5).forEach { (broke, fixed) ->
+    pythonTestCases.take(5).forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
       val origFixed = "$fixed NEWLINE"
