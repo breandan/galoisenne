@@ -8,6 +8,10 @@ import ai.hypergraph.kaliningraph.types.*
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
 fun Arc.pretty() = "$π1 -<$π2>-> $π3"
+fun Σᐩ.coords(): Pair<Int, Int> =
+  (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
+typealias STC = Triple<Σᐩ, Int, Int>
+fun STC.coords() =  π2 to π3
 
 data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
   val alphabet by lazy { Q.map { it.π2 }.toSet() }
@@ -17,6 +21,8 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
       Pair(Pair(k.first.label, k.second.label), v)
     }.toMap()
   }
+
+  val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(it, i, j) } }.asSequence() }
 
   val edgeLabels by lazy {
     Q.groupBy { (a, b, c) -> a to c }

@@ -1,6 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.automata.FSA
+import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.time.TimeSource
@@ -20,13 +20,9 @@ fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
 fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
   makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
 
-// Specialized Bar-Hillel construction for Levenshtein FSA
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
-  fun Triple<Σᐩ, Σᐩ, Σᐩ>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
-    fun Σᐩ.coords(): Pair<Int, Int> =
-      (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
-
+  fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>): Boolean {
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
       first <= other.first && second <= other.second
 
@@ -34,9 +30,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       second.second - first.second + second.first - first.first
 
     // Range of the shortest path to the longest path, i.e., Manhattan distance
-    fun SPLP(a: Σᐩ, b: Σᐩ) =
-      (fsa.APSP[a to b] ?: Int.MAX_VALUE)..
-        manhattanDistance(a.coords(), b.coords())
+    fun SPLP(a: STC, b: STC) =
+      (fsa.APSP[a.π1 to b.π1] ?: Int.MAX_VALUE)..
+          manhattanDistance(a.coords(), b.coords())
 
     fun IntRange.overlaps(other: IntRange) =
       (other.first in first..last) || (other.last in first..last)
@@ -49,10 +45,10 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
     fun isCompatible() =
       first.coords().dominates(second.coords())
-        && second.coords().dominates(third.coords())
-        && lengthBounds(nts.first).overlaps(SPLP(first, third))
-        && lengthBounds(nts.second).overlaps(SPLP(first, second))
-        && lengthBounds(nts.third).overlaps(SPLP(second, third))
+          && second.coords().dominates(third.coords())
+          && lengthBounds(nts.first).overlaps(SPLP(first, third))
+          && lengthBounds(nts.second).overlaps(SPLP(first, second))
+          && lengthBounds(nts.third).overlaps(SPLP(second, third))
 
     return isCompatible()
   }
@@ -79,15 +75,18 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val binaryProds =
-    nonterminalProductions.mapIndexed { i, it ->
-      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
-      val triples = fsa.states * fsa.states * fsa.states
+    nonterminalProductions.map {
+//      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
+      val triples = fsa.stateCoords * fsa.stateCoords * fsa.stateCoords
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       triples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C) }
-        .map { (p, q, r) -> "[$p,$A,$r]".also { nts.add(it) } to listOf("[$p,$B,$q]", "[$q,$C,$r]") }
+        .map { (a, b, c) ->
+          val (p, q, r)  = a.π1 to b.π1 to c.π1
+          "[$p,$A,$r]".also { nts.add(it) } to listOf("[$p,$B,$q]", "[$q,$C,$r]")
+        }.toList()
     }.flatten().filterRHSInNTS()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
@@ -96,7 +95,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
-private fun CFG.unitProdRules(fsa: FSA) =
+fun CFG.unitProdRules(fsa: FSA) =
   unitProductions.map { (A, rhs) ->
     val relevantTransits = fsa.Q.filter { it.π2 == rhs[0] }
     relevantTransits.map { (p, σ, q) -> "[$p,$A,$q]" to listOf(σ) }
