@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.repair
 import Grammars
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
 import kotlin.test.*
 import kotlin.time.TimeSource
@@ -11,16 +12,6 @@ import kotlin.time.TimeSource
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH"
 */
 class ProbabilisticLBH {
-/*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testProbabilisticLBH"
-*/
-  @Test
-  fun testProbabilisticLBH() {
-//    Grammars.seq2parsePythonCFG.mustGenerate.entries.forEach {
-//      println(it.key + " -> " + it.value)
-//    }
-  }
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
 */
@@ -34,9 +25,9 @@ class ProbabilisticLBH {
       .forEach { assertEquals(s2pg.parse(it), subgrammar.parse(it)) }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammar"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammar"
+*/
   @Test
   fun testSubgrammar() {
     val terminalImage = setOf<String>() + "NEWLINE" + validPythonStatements.tokenizeByWhitespace().toSet()
@@ -108,13 +99,16 @@ class ProbabilisticLBH {
     }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testCompleteness"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testCompleteness"
+*/
   @Test
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    pythonTestCases.take(5).forEach { (broke, fixed) ->
+    pythonTestCases
+      // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
+      .map { it.first.tokenizeByWhitespace().map { if (it in s2pg.terminals) it else "." }.joinToString(" ") to it.second }
+      .forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
       val origFixed = "$fixed NEWLINE"
@@ -165,4 +159,24 @@ class ProbabilisticLBH {
     (if (string.trim().startsWith("'") && string.trim().endsWith("'"))
         bimap[listOf(string.trim().drop(1).dropLast(1))]
       else bimap[listOf(string.trim())])
+
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testTinyC"
+*/
+//  @Test
+  fun testTinyC() {
+    val gram = Grammars.tinyC.noEpsilonOrNonterminalStubs
+    val origStr = "id = ( id id ) ; "
+    val toRepair = origStr.tokenizeByWhitespace()
+    val maxLevDist = 2
+    val levBall = makeLevFSA(toRepair, maxLevDist, gram.terminals)
+    println("Total transitions in FSA: ${levBall.Q.size}")
+//  throw Exception("")
+//  println(levBall.toDot())
+//  throw Exception("")
+    val intGram = gram.intersectLevFSA(levBall)
+
+    intGram.depGraph.show()
+  }
 }

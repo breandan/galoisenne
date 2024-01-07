@@ -65,7 +65,7 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
     } 
       ${edgeLabels.entries.joinToString("\n") { (v, e) ->
       val (src, tgt) = v.first to v.second
-      """"$src" -> "$tgt" ["arrowhead"="normal","penwidth"="2.0","label"="${e}"]""" }
+      """"$src" -> "$tgt" ["arrowhead"="normal","penwidth"="2.0"]""" }
     }
       }
     """.trimIndent()
