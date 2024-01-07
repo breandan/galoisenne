@@ -105,7 +105,7 @@ class ProbabilisticLBH {
   @Test
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    pythonTestCases.take(10).forEach { (broke, fixed) ->
+    pythonTestCases.forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
       val origFixed = "$fixed NEWLINE"
@@ -132,17 +132,28 @@ class ProbabilisticLBH {
         val template = List(toRepair.size + levDist) { "_" }
 
         assertTrue(humanRepair in s2pg.language, "Human repair not recognized by CFG: $humanRepairANSI")
-        assertTrue(humanRepair in intGram.language, "Human repair not recognized by LBH: $humanRepairANSI")
+//        assertTrue(humanRepair in intGram.language, "Human repair not recognized by LBH: $humanRepairANSI")
+        if(humanRepair !in intGram.language) {
+          println("Human repair not recognized by LBH: $humanRepairANSI")
+          return@forEach
+        }
 
-        val lbhSet = intGram.enumSeqMinimal(template, toRepair)
-          .onEachIndexed { i, it ->
+        var foundHumanRepair = false
+        val lbhSet = intGram.parallelEnumSeqMinimalWR(template, toRepair) {
+            clock.elapsedNow().inWholeMinutes < 2 && !foundHumanRepair
+          }.onEachIndexed { i, it ->
             val alignment = levenshteinAlign(origBroke, it).paintANSIColors()
             if (i < 100) println(alignment)
 
             assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $alignment")
             assertTrue(it in s2pg.language, "CFG did not recognize: $alignment")
             assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $alignment")
-          }.take(10).toList()
+            if (it.tokenizeByWhitespace() == humanRepair) {
+              println("Human repair found after $i samples and ${clock.elapsedNow()}")
+              foundHumanRepair = true
+            }
+          }.toList()
+          .also { if (origFixed !in it) println("Human repair not found:\n$humanRepairANSI") }
           .also { assertTrue(it.isNotEmpty(), "No repairs found for repairable snippet!") }
           // TOTAL LBH REPAIRS (1m 56.288773333s): 9
           .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }

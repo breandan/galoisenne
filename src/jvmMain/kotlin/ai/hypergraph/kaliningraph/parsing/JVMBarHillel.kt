@@ -1,9 +1,45 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import NUM_CORES
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
+import kotlin.streams.asSequence
 import kotlin.time.TimeSource
+
+fun CFG.parallelEnumSeqMinimalWOR(
+  prompt: List<String>,
+  tokens: List<String>,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<NUM_CORES).toList().parallelStream().map { i ->
+      it.sampleStrWithoutReplacement(i)
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+        .flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
+
+fun CFG.parallelEnumSeqMinimalWR(
+  prompt: List<String>,
+  tokens: List<String>,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<NUM_CORES).toList().parallelStream().map { i ->
+      it.sampleWRGD()
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+        .flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
 
 /**
  * Much faster version of [intersectLevFSA] that leverages parallelism to construct

@@ -105,10 +105,11 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       while (i < 3 * totalTrees) yield(decodeTree(i++).first)
     }
 
-  fun sampleStrWithoutReplacement(): Sequence<String> = sequence {
-    var i = BigInteger.ZERO
-    while (i < 3 * totalTrees) yield(decodeString(i++).first)
-  }
+  fun sampleStrWithoutReplacement(stride: Int = 1, offset: Int = 0): Sequence<String> =
+    sequence {
+      var i = BigInteger.ZERO
+      while (i < 5 * totalTrees) yield(decodeString(i++ * stride + offset).first)
+    }
 
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
@@ -254,8 +255,13 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
-fun CFG.enumSeqMinimal(prompt: List<String>, tokens: List<String>): Sequence<String> =
+fun CFG.enumSeqMinimal(
+  prompt: List<String>,
+  tokens: List<String>,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
   startPTree(prompt)?.sampleStrWithoutReplacement()
+    ?.takeWhile { stoppingCriterion() }
     ?.distinct()
     ?.flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
     ?.distinct()

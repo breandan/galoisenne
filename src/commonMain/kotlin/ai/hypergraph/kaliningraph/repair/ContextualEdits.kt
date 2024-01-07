@@ -50,7 +50,7 @@ data class CEADist(val allProbs: Map<ContextEdit, Int>) {
     .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
   val insLeft: Map<String, Set<String>> = allProbs.keys.filter { it.type == EditType.INS }
     .groupBy { it.context.left }.mapValues { it.value.map { it.newMid }.toSet() }
-  val topThreshold = 30
+  val topThreshold = 50
   val topIns = allProbs.entries
     .filter { it.key.type == EditType.INS }.map { it.key.newMid to it.value }
     .groupBy { it.first }.mapValues { it.value.sumOf { it.second } }
