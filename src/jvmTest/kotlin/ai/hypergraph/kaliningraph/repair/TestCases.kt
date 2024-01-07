@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.repair
 
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import org.intellij.lang.annotations.Language
 import kotlin.random.Random
 
@@ -1247,6 +1248,9 @@ from NAME import NAME NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE NAME . NAME 
 
 val pythonTestCases =
   invalidPythonStatements.lines().zip(validPythonStatements.lines())
+    // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
+//    .map { it.first.tokenizeByWhitespace().map { if (it in Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
+    .filter { it.first.tokenizeByWhitespace().all { it in Grammars.seq2parsePythonCFG.terminals } }
     .shuffled(Random(seed = 1)).filter { (a, b) ->
       (a + " NEWLINE") !in Grammars.seq2parsePythonCFG.language
           && (b + " NEWLINE") in Grammars.seq2parsePythonCFG.language

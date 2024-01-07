@@ -106,8 +106,6 @@ class ProbabilisticLBH {
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     pythonTestCases
-      // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
-      .map { it.first.tokenizeByWhitespace().map { if (it in s2pg.terminals) it else "." }.joinToString(" ") to it.second }
       .forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
