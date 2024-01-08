@@ -21,7 +21,7 @@ class ProbabilisticLBH {
         ("$a NEWLINE" !in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed invalid") }
             && ("$b NEWLINE" in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed valid") }
             && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
-      }.distinct()
+      }.distinct().filter { it.first.tokenizeByWhitespace().size < 23 }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
 */
@@ -120,6 +120,12 @@ class ProbabilisticLBH {
     var currentTrials = 0
     var successTrials = 0
     var avgTimeSec = 0
+    fun printStats(broke: String, fixed: String, totalRepairs: Int) {
+      println("Precision at $TIMEOUT_MINS minutes: $successTrials / $currentTrials")
+      println("Mean time to find human repair: ${avgTimeSec.toDouble() / successTrials}s ($successTrials trials)")
+      if (totalRepairs == -1) println("LBH yielded empty grammar: ${levenshteinAlign(broke, fixed).paintANSIColors()}\n")
+      else println("# of unique repairs discovered: ${totalRepairs}\n")
+    }
     pythonTestCases.take(totalTrials).forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
@@ -169,12 +175,9 @@ class ProbabilisticLBH {
           currentTrials++
           if (origFixed !in it) println("Human repair not found:\n$humanRepairANSI")
           else { successTrials++; avgTimeSec += clock.elapsedNow().inWholeSeconds.toInt() }
-
-          println("Precision at $TIMEOUT_MINS min: $successTrials / $currentTrials")
-          println("Mean time to find human repair: ${avgTimeSec.toDouble() / successTrials}s ($successTrials trials)")
-          println("# of unique repairs discovered: ${it.size}\n")
+          printStats(origBroke, origFixed, it.size)
         }
-      } catch (exception: NoSuchElementException) { println("LBH yielded empty grammar: $origBroke\n") }
+      } catch (exception: NoSuchElementException) { printStats(origBroke, origFixed, -1) }
     }
   }
 
@@ -198,7 +201,9 @@ class ProbabilisticLBH {
   @Test
   fun diagnoseWholeGrammarDeletion() {
     // Sometimes the whole grammar is deleted because there are no generating or reachable productions
-    val toRepair = "NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE".tokenizeByWhitespace()
+//  val toRepair = "NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE".tokenizeByWhitespace()
+//    val toRepair = "NAME = NAME ( NAME , NAME = lambda NAME : ( NAME ( NAME [ NUMBER ] ) , NAME ( NAME [ NUMBER ] ) ) NEWLINE".tokenizeByWhitespace()
+    val toRepair = "NAME = STRING NEWLINE NAME = NAME ( NAME , NAME [ NUMBER : - NUMBER ] . NAME ( STRING ) NEWLINE".tokenizeByWhitespace()
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val levBall = makeLevFSA(toRepair, 2, s2pg.terminals, ceaDist = contextCSV)
     val intGram = s2pg.jvmIntersectLevFSA(levBall)

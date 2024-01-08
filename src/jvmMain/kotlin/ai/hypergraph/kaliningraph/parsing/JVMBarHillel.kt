@@ -77,8 +77,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods: Set<Production> = nonterminalProductions
+  var i = 0
   val binaryProds = prods.parallelStream().map {
-//      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
+      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
       val triples = fsa.stateCoords * fsa.stateCoords * fsa.stateCoords
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       triples
@@ -89,7 +90,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
         }.toList()
-    }.toList().flatten()
+    }.asSequence().flatten().toList()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()

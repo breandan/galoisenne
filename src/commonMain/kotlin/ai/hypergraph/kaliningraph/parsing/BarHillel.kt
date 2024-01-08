@@ -165,7 +165,7 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
   map
 }
 
-fun CFG.lengthBounds(nt: Σᐩ, fudge: Int = 3): IntRange =
+fun CFG.lengthBounds(nt: Σᐩ, fudge: Int = 8): IntRange =
   (lengthBounds[nt] ?: -1..-1)
     // Okay if we overapproximate the length bounds a bit
     .let { (it.first - fudge)..(it.last + fudge) }
