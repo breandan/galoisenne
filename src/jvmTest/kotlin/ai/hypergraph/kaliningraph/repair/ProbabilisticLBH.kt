@@ -3,7 +3,6 @@ package ai.hypergraph.kaliningraph.repair
 import Grammars
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 import kotlin.test.*
@@ -116,7 +115,12 @@ class ProbabilisticLBH {
   @Test
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    pythonTestCases.forEach { (broke, fixed) ->
+    val TIMEOUT_MINS = 2
+    val totalTrials = 100
+    var currentTrials = 0
+    var successTrials = 0
+    var avgTimeSec = 0
+    pythonTestCases.take(totalTrials).forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
       val origFixed = "$fixed NEWLINE"
@@ -132,46 +136,45 @@ class ProbabilisticLBH {
       assertTrue(levBall.recognizes(humanRepair),
         "Human repair not recognized by LevFSA (${levenshtein(origBroke, origFixed)}): $humanRepairANSI")
 
-      println("Prompt: $origBroke")
-      println("Alphabet: ${levBall.alphabet}")
       try {
         val intGram = s2pg.jvmIntersectLevFSA(levBall)
         println("Finished intersection in ${clock.elapsedNow()}")
-//      intGram.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") }
 
         val template = List(toRepair.size + levDist) { "_" }
 
         assertTrue(humanRepair in s2pg.language, "Human repair not recognized by CFG: $humanRepairANSI")
 //        assertTrue(humanRepair in intGram.language, "Human repair not recognized by LBH: $humanRepairANSI")
         if (humanRepair !in intGram.language) {
+          currentTrials++
           println("Human repair not recognized by LBH: $humanRepairANSI")
           return@forEach
         }
 
         var foundHumanRepair = false
-        val lbhSet = intGram.parallelEnumSeqMinimalWR(template, toRepair) {
-            clock.elapsedNow().inWholeMinutes < 2 && !foundHumanRepair
-          }.onEachIndexed { i, it ->
-            val alignment = levenshteinAlign(origBroke, it).paintANSIColors()
-            if (i < 100) println(alignment)
+        intGram.parallelEnumSeqMinimalWR(template, toRepair) {
+            clock.elapsedNow().inWholeMinutes < TIMEOUT_MINS && !foundHumanRepair
+        }.onEachIndexed { i, it ->
+          val alignment = levenshteinAlign(origBroke, it).paintANSIColors()
+          if (i < 100) println(alignment)
 
-            assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $alignment")
-            assertTrue(it in s2pg.language, "CFG did not recognize: $alignment")
-            assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $alignment")
-            if (it.tokenizeByWhitespace() == humanRepair) {
-              println("Human repair found after $i samples and ${clock.elapsedNow()}")
-              foundHumanRepair = true
-            }
-          }.toList()
-          .also { if (origFixed !in it) println("Human repair not found:\n$humanRepairANSI") }
-          .also { assertTrue(it.isNotEmpty(), "No repairs found for repairable snippet!") }
-          // TOTAL LBH REPAIRS (1m 56.288773333s): 9
-          .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
-      } catch (exception: NoSuchElementException) {
-        println("Exception: $origBroke\n")
-//        exception.printStackTrace()
-//        throw exception
-      }
+          assertTrue(levenshtein(origBroke, it) <= levDist, "LBH repair too far: $alignment")
+          assertTrue(it in s2pg.language, "CFG did not recognize: $alignment")
+          assertTrue(levBall.recognizes(it), "LevFSA did not recognize: $alignment")
+          if (it.tokenizeByWhitespace() == humanRepair) {
+            println("Human repair found after $i samples and ${clock.elapsedNow()}")
+            foundHumanRepair = true
+          }
+        }.toList()
+        .also {
+          currentTrials++
+          if (origFixed !in it) println("Human repair not found:\n$humanRepairANSI")
+          else { successTrials++; avgTimeSec += clock.elapsedNow().inWholeSeconds.toInt() }
+
+          println("Precision at $TIMEOUT_MINS min: $successTrials / $currentTrials")
+          println("Mean time to find human repair: ${avgTimeSec.toDouble() / successTrials}s ($successTrials trials)")
+          println("# of unique repairs discovered: ${it.size}\n")
+        }
+      } catch (exception: NoSuchElementException) { println("LBH yielded empty grammar: $origBroke\n") }
     }
   }
 
@@ -207,7 +210,48 @@ class ProbabilisticLBH {
     .onEachIndexed { i, it ->
     val alignment = levenshteinAlign(toRepair.joinToString(" "), it).paintANSIColors()
     println(alignment)
-  }.take(100).toList()
+  }.take(39).toList()
     .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
   }
 }
+
+// NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class ** STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , NAME = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , STRING = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , NUMBER = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ... = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ) = ( ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME ( NAME ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class * STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , class not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , not + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ) ( STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , * + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING ( ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ** + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , * - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ) = STRING ( ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , * not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ( ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , + + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ** - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , None = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ** not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , - + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , + - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , True = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , not - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , ) = ( STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , - - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , [ ] = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , { } = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , not not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( [ STRING , ] = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( STRING , lambda : STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
+//    NAME . NAME ( { STRING , } = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE

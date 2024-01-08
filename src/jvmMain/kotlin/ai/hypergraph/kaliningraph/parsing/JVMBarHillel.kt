@@ -61,7 +61,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   fun List<Π2<Σᐩ, List<Σᐩ>>>.filterRHSInNTS() =
     parallelStream()
       .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
-      .toList().toSet()
+      .asSequence().toSet()
 
   val initFinal =
     (fsa.init  * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
@@ -84,7 +84,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       triples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa) }
+        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -93,7 +93,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
-  return (initFinal + transits + binaryProds + unitProds).toList()
+  return (initFinal + transits + binaryProds + unitProds)
     .filterRHSInNTS().postProcess()
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }

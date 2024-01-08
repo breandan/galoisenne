@@ -22,6 +22,7 @@ fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
 
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
+  val lengthBoundsCache = lengthBounds
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && last() == ']' && count { it == '~' } == 2
@@ -51,7 +52,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       triples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa) }
+        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -101,8 +102,11 @@ fun CFG.dropVestigialProductions(
 ): CFG {
   val nts: Set<Σᐩ> = map { it.LHS }.toSet()
 //  val reachable = reachableSymbols()
-  val rw = toMutableSet()
-    .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
+//  val rw = toMutableSet()
+//    .apply { removeAll { prod -> prod.RHS.any { criteria(it) && it !in nts } } }
+//    .also { println("Removed ${size - it.size} invalid productions") }
+//    .freeze().removeUselessSymbols()
+  val rw = asSequence().filter { prod -> prod.RHS.all { !criteria(it) || it in nts } }.toSet()
     .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().removeUselessSymbols()
 
@@ -166,7 +170,7 @@ fun CFG.lengthBounds(nt: Σᐩ, fudge: Int = 3): IntRange =
     // Okay if we overapproximate the length bounds a bit
     .let { (it.first - fudge)..(it.last + fudge) }
 
-fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: FSA): Boolean {
+fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
   fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
     first <= other.first && second <= other.second
 

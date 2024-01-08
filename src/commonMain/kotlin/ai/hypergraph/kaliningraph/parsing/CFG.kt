@@ -355,7 +355,6 @@ fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
   removeTerminals(image)
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
     .freeze()
-    .also { println("All terminals: ${it.terminals}") }
 
 fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()

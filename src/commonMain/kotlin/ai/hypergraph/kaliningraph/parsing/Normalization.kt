@@ -174,9 +174,12 @@ fun CFG.removeUselessSymbols(
 //    .apply { removeAll { (s, _) -> s !in reachable } }
 //    .also { println("Removed ${size - it.size} unreachable prods") }
 //    .toSet()
-  toMutableSet().apply {
-    removeAll { (s, _) -> s !in generating || s !in reachable }
-  }
+
+//  toMutableSet().apply {
+//    removeAll { (s, _) -> s !in generating || s !in reachable }
+//  }
+ asSequence().filter { (s, _) -> s in generating && s in reachable }.toSet()
+
 //  .also {
 //    println(
 //      it.second.joinToString("\n") { (l, r) ->
