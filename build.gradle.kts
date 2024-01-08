@@ -261,7 +261,7 @@ tasks {
 
   withType<Test> {
     minHeapSize = "1g"
-    maxHeapSize = "6g"
+    maxHeapSize = "14g"
     useJUnitPlatform()
     testLogging {
       events = setOf(

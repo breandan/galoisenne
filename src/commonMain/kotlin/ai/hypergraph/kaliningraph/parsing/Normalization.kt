@@ -168,6 +168,12 @@ fun CFG.removeUselessSymbols(
   generating: Set<Σᐩ> = genSym(),
   reachable: Set<Σᐩ> = reachSym()
 ): CFG =
+//  toMutableSet()
+//    .apply { removeAll { (s, _) -> s !in generating } }
+//    .also { println("Removed ${size - it.size} nongenerating prods") }
+//    .apply { removeAll { (s, _) -> s !in reachable } }
+//    .also { println("Removed ${size - it.size} unreachable prods") }
+//    .toSet()
   toMutableSet().apply {
     removeAll { (s, _) -> s !in generating || s !in reachable }
   }
@@ -207,6 +213,8 @@ fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
       .filter { it !in allReachable && it !in nextReachable }
   } while (nextReachable.isNotEmpty())
 
+//  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
+
   return allReachable
 }
 
@@ -225,6 +233,8 @@ fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()
     nextGenerating += (bimap.TDEPS[t] ?: emptyList())
       .filter { it !in allGenerating && it !in nextGenerating }
   } while (nextGenerating.isNotEmpty())
+
+//  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
 
   return allGenerating
 }

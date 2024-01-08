@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.visualization.*
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.TimeSource
 
@@ -12,6 +13,16 @@ import kotlin.time.TimeSource
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH"
 */
 class ProbabilisticLBH {
+  val pythonTestCases =
+    invalidPythonStatements.lines().zip(validPythonStatements.lines())
+      // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
+//    .map { it.first.tokenizeByWhitespace().map { if (it in Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
+      .filter { it.first.tokenizeByWhitespace().all { it in Grammars.seq2parsePythonCFG.terminals } }
+      .shuffled(Random(seed = 1)).filter { (a, b) ->
+        ("$a NEWLINE" !in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed invalid") }
+            && ("$b NEWLINE" in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed valid") }
+            && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
+      }.distinct()
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
 */
@@ -121,7 +132,6 @@ class ProbabilisticLBH {
       assertTrue(levBall.recognizes(humanRepair),
         "Human repair not recognized by LevFSA (${levenshtein(origBroke, origFixed)}): $humanRepairANSI")
 
-      println("Total transitions in FSA: ${levBall.Q.size}")
       println("Prompt: $origBroke")
       println("Alphabet: ${levBall.alphabet}")
       try {
@@ -133,7 +143,7 @@ class ProbabilisticLBH {
 
         assertTrue(humanRepair in s2pg.language, "Human repair not recognized by CFG: $humanRepairANSI")
 //        assertTrue(humanRepair in intGram.language, "Human repair not recognized by LBH: $humanRepairANSI")
-        if(humanRepair !in intGram.language) {
+        if (humanRepair !in intGram.language) {
           println("Human repair not recognized by LBH: $humanRepairANSI")
           return@forEach
         }
@@ -158,7 +168,7 @@ class ProbabilisticLBH {
           // TOTAL LBH REPAIRS (1m 56.288773333s): 9
           .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
       } catch (exception: NoSuchElementException) {
-        println("Exception: $origBroke")
+        println("Exception: $origBroke\n")
 //        exception.printStackTrace()
 //        throw exception
       }
@@ -170,23 +180,34 @@ class ProbabilisticLBH {
         bimap[listOf(string.trim().drop(1).dropLast(1))]
       else bimap[listOf(string.trim())])
 
-
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testTinyC"
 */
-//  @Test
+  @Test
   fun testTinyC() {
-    val gram = Grammars.tinyC.noEpsilonOrNonterminalStubs
-    val origStr = "id = ( id id ) ; "
-    val toRepair = origStr.tokenizeByWhitespace()
-    val maxLevDist = 2
-    val levBall = makeLevFSA(toRepair, maxLevDist, gram.terminals)
-    println("Total transitions in FSA: ${levBall.Q.size}")
-//  throw Exception("")
-//  println(levBall.toDot())
-//  throw Exception("")
-    val intGram = gram.intersectLevFSA(levBall)
+    println(pythonTestCases.size)
+  }
 
-    intGram.depGraph.show()
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.diagnoseWholeGrammarDeletion"
+*/
+/** This is related to [CFG] */
+  @Test
+  fun diagnoseWholeGrammarDeletion() {
+    // Sometimes the whole grammar is deleted because there are no generating or reachable productions
+    val toRepair = "NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE".tokenizeByWhitespace()
+    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val levBall = makeLevFSA(toRepair, 2, s2pg.terminals, ceaDist = contextCSV)
+    val intGram = s2pg.jvmIntersectLevFSA(levBall)
+    val template = List(toRepair.size + 2) { "_" }
+
+  val clock = TimeSource.Monotonic.markNow()
+
+  val lbhSet = intGram.parallelEnumSeqMinimalWR(template, toRepair)
+    .onEachIndexed { i, it ->
+    val alignment = levenshteinAlign(toRepair.joinToString(" "), it).paintANSIColors()
+    println(alignment)
+  }.take(100).toList()
+    .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
   }
 }
