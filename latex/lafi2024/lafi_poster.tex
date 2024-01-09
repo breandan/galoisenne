@@ -1,0 +1,317 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% From a template maintained at https://github.com/jamesrobertlloyd/cbl-tikz-poster
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[portrait,a0b,final,a4resizeable]{a0poster}
+\setlength{\paperwidth}{36in} % A0 width: 46.8in
+\setlength{\paperheight}{48in} % A0 width: 46.8in
+
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
+\usepackage{qrcode}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{mathtools}
+%\usepackage{color}
+%\usepackage{morefloats}
+%\usepackage[pdftex]{graphicx}
+%\usepackage{rotating}
+\usepackage{amsmath, amsthm, amssymb, bm}
+%\usepackage{array}
+%\usepackage{booktabs}
+\usepackage{multirow}
+%\usepackage{hyperref}
+\usepackage{pgf-soroban}
+\usepackage{bussproofs}
+\usepackage{nicematrix}
+\usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc}
+\tikzstyle{mybox} = [draw=white, rectangle]
+%\definecolor{darkblue}{rgb}{0,0.08,0.45}
+%\definecolor{blue}{rgb}{0,0,1}
+%\usepackage{dsfont}
+\usepackage[margin=0.5in]{geometry}
+%\usepackage{fp}
+
+\input{include/jlposter.tex}
+
+\usepackage{include/preamble}
+
+
+% Custom notation
+\newcommand{\fdeep}{\vf^{(1:L)}}
+\newcommand{\flast}{\vf^{(L)}}
+\newcommand{\Jx}{J_{\vx \rightarrow \vy}}
+\newcommand{\Jxx}{J_{\vx \rightarrow \vy}(\vx)}
+\newcommand{\Jy}{J_{\vy \rightarrow \vx}}
+\newcommand{\Jyy}{J_{\vy \rightarrow \vx}(\vy)}
+\newcommand{\detJyy}{ \left| J_{\vy \rightarrow \vx}(\vy) \right|}
+
+\newcommand\transpose{{\textrm{\tiny{\sf{T}}}}}
+\newcommand{\note}[1]{}
+\newcommand{\hlinespace}{~\vspace*{-0.15cm}~\\\hline\\\vspace*{0.15cm}}
+\newcommand{\embeddingletter}{g}
+\newcommand{\bo}{{\sc bo}}
+\newcommand{\agp}{Arc \gp}
+
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\X}{\mathbf{X}}
+\newcommand{\y}{y}
+\newcommand{\data} {\X, \y}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\f}{\mathit{f}}
+
+\newcommand{\fx}{ f(\mathbf{x}) }
+\newcommand{\U}{\mathcal{U}}
+\newcommand{\E}{\mathbf{E}}
+
+
+\newcommand{\bardist}[0]{\hspace{-0.2cm}}
+
+\newlength{\arrowsize}
+\pgfarrowsdeclare{biggertip}{biggertip}{
+\setlength{\arrowsize}{10pt}
+\addtolength{\arrowsize}{2\pgflinewidth}
+\pgfarrowsrightextend{0}
+\pgfarrowsleftextend{-5\arrowsize}
+}{
+\setlength{\arrowsize}{1pt}
+\addtolength{\arrowsize}{\pgflinewidth}
+\pgfpathmoveto{\pgfpoint{-5\arrowsize}{4\arrowsize}}
+\pgfpathlineto{\pgfpointorigin}
+\pgfpathlineto{\pgfpoint{-5\arrowsize}{-4\arrowsize}}
+\pgfusepathqstroke
+}
+
+
+% Custom commmands.
+
+\def\jointspacing{\vspace{0.3in}}
+
+\def\boxwidth{0.21\columnwidth}
+\newcommand{\gpdrawbox}[1]{
+\setlength\fboxsep{0pt}
+\hspace{-0.36in}
+\fbox{\hspace{-4mm}
+%\includegraphics[width=\boxwidth]{../figures/deep_draws/deep_gp_sample_layer_#1}
+\hspace{-4mm}}}
+
+\newcommand{\mappic}[1]{
+%\hspace{-0.05in}\includegraphics[width=\boxwidth]{../../figures/seed-0-map/latent_coord_map_layer_#1}
+}
+
+\newcommand{\mappiccon}[1]{
+%\hspace{-0.05in}\includegraphics[width=\boxwidth]{../../figures/seed-0-map-connected/latent_coord_map_layer_#1}
+}
+
+\newcommand{\spectrumpic}[1]{
+%\includegraphics[trim=4.5mm 0mm 4mm 3mm, clip, width=0.44\columnwidth]{../figures/spectrum/layer-#1}
+}
+
+\newcommand{\feat}{\vh}
+
+
+\begin{document}
+  \begin{poster}
+    \vspace{1\baselineskip}   % Add some space at the top of the poster
+
+
+    %%% Header
+    \begin{center}
+      \begin{pcolumn}{1.03}
+        %%% Title
+        \begin{minipage}[c][9cm][c]{0.85\textwidth}
+          \begin{center}
+          {\veryHuge \textbf{A Tree Sampler for Bounded Context-Free Languages}}\\[10mm]
+          {\huge Breandan Considine}
+          \end{center}
+        \end{minipage}
+      \end{pcolumn}
+    \end{center}
+
+    \vspace*{-0.5cm}
+
+    \large
+
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Beginning of Document
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    \Large
+
+    \begin{multicols}{2}
+
+
+      \mysection{Main Idea}
+
+      \vspace*{-1cm}
+      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+      \begin{itemize}
+%        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
+        \item If you can count it, you can sample it! Analytic combinatorics
+        \item We implement a bijection between binary trees in bounded CFLs
+        \item Allows for parallelizable replacement-free sampling from BCFLs
+      \end{itemize}
+      \end{minipage}
+
+      \jointspacing
+
+      \mysection{Algebraic Parsing}
+      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal 2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\\
+      \end{minipage}
+
+      \[
+        s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}
+      \]
+
+      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+          Initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, will produce a fixedpoint $\mathbf{M}^*$:\\
+      \end{minipage}
+
+      \[
+          M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+                 \varnothing & \hat\sigma_1   & \varnothing & \Cdots & \varnothing \\
+                 \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                 &                &             &        & \varnothing\\
+                 &                &             &        & \hat\sigma_n \\
+                 \varnothing & \Cdots         &             &        & \varnothing
+          \end{pNiceMatrix} &\Rightarrow M_\infty =
+          \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+            \varnothing & \hat\sigma_1   & \Lambda & \Cdots & \Lambda^*_\sigma\\
+            \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+            &                &         &        & \Lambda\\
+            &                &         &        & \hat\sigma_n \\
+            \varnothing & \Cdots         &         &        & \varnothing
+          \end{pNiceMatrix}
+      \]
+
+      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+          Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+      \end{minipage}
+
+      \jointspacing
+
+      \mysection{Parsing Dynamics}
+      \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      \begin{itemize}
+        \item The matrix $\mathbf M_0$ is strictly upper triangular, i.e., nilpotent of degree $n$
+        \item The recognizer can be translated into a parser by storing \textit{backpointers}\\\\
+      \end{itemize}\vspace{-3cm}
+      \begin{tabular}{ c c c }
+        \small{$\mathbf{M}_1 = \mathbf{M}_0 + \mathbf{M}_0^2$} & \small{$\mathbf{M}_2 = \mathbf{M}_1 + \mathbf{M}_1^2$} & \small{$\mathbf{M}_3 = \mathbf{M}_2 + \mathbf{M}_2^2 = \mathbf{M}_4$} \\
+        \includegraphics[trim=420 288 0 0,clip, width=12.24cm]{../figures/parse2.png} &
+        \includegraphics[trim=420 285 0 0,clip, width=12.24cm]{../figures/parse3.png} &
+        \includegraphics[trim=420 287 0 0,clip, width=12.34cm]{../figures/parse4.png}
+      \end{tabular}
+      \begin{itemize}
+        \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary and we could solve for $\mathbf{M = M}^2$ above the superdiagonal\ldots
+      \end{itemize}
+      \end{minipage}
+      \jointspacing
+
+      \mysection{Binarized CFL Sketching}
+      \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      \begin{itemize}
+        \item CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
+        \item Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
+        \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
+        \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
+        \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+        \[\begin{tikzcd}
+            2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
+            & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
+            \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
+            & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
+        \end{tikzcd}\]
+        \item These operators can be lifted into matrices and tensors in the usual way
+%        \item In most cases, only a few nonterminals will be active at any given time
+%        \item If density is desired, possible to use the Maculay representation
+%        \item If you know of a more eﬀicient encoding, please let us know!
+      \end{itemize}
+                          \phantom{.}
+      \end{minipage}
+
+      \jointspacing
+
+      \pagebreak      \mysection{Method}
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively, where children are pairs of conjoined twins.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+
+      \[
+           \Lambda(s: \underline\Sigma) \mapsto \begin{cases}
+               \bigoplus_{s\in \Sigma} \Lambda(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
+               \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
+           \end{cases}
+      \]
+
+      \noindent We then compute the fixpoint $M_\infty$ by redefining the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+
+      \[
+          X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
+      \]
+
+      \[
+        X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+      \]
+
+      These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins.
+      \end{minipage}
+
+      \jointspacing
+
+      \mysection{A Pairing Function for BTrees}
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial with coefficients $P_{1\ldots n}$ and $\oplus := \veebar, \otimes := \land$:\\
+      \end{minipage}
+
+      \begin{equation*}
+        \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+          \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+          \text{Let } b = |\texttt{children}(T)|,\\
+          \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+          \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+          \phantom{\text{Let }} T_1, q_2 = \varphi(lb, q_1),\\
+          \phantom{\text{Let }} T_2, q_3 = \varphi(rb, q_2) \text{ in } \\
+          \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+        \end{cases}
+      \end{equation*}
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial}, then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:
+      \end{minipage}
+
+      \jointspacing
+
+      \mysection{Tidyparse IDE Plugin}
+
+      \null\hspace*{1.8cm}\begin{minipage}[c]{0.90\columnwidth}
+          \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
+          \phantom{.}
+      \end{minipage}
+
+      \jointspacing
+
+    \end{multicols}
+
+    \vspace{-1.76cm}
+    \bottombox{
+    %% QR code
+    %    \hfill\bottomboxlogo{img/kotlin_logo.png}
+    % Comment out the line below out to hide logo
+    \begin{minipage}[c][0.1\paperheight][c]{0.18\textwidth}\qrcode[height=2.6in]{https://tidyparse.github.io/} \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.25\textwidth}\includegraphics[height=2.6in]{../figures/tidyparse_logo.png} \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=2.6in]{../figures/mcgill.png} \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3.2in]{../figures/mila.png} \end{minipage}
+    %    \hfill\bottomboxlogo{img/mila_mauve.png} % \hfill shifts the logo across so it meets the right hand side margin
+    % Note that \bottomboxlogo takes an optional width argument. It defaults to the following:
+    % \hfill\bottomboxlogo[width=\textwidth]{<path_to_image_file>}
+    % where \textwidth is actually the width of a minipage which is defined in the \bottombox command of
+    % betterportaitposter.cls It's a standard \includegraphics command in there, so easy to change if
+    % you need to add a border etc.
+    }
+\end{poster}
+\end{document}
