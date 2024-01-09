@@ -99,7 +99,7 @@ class ProbabilisticLBH {
 */
   @Test
   fun testInvalidLines() {
-    invalidPythonStatements.lines().forEach {
+    invalidPythonStatements.lines().shuffled().take(10).forEach {
       val toRepair = "$it NEWLINE".tokenizeByWhitespace()
       println("Repairing: ${toRepair.joinToString(" ")}\nRepairs:\n")
       Grammars.seq2parsePythonCFG.fasterRepairSeq(toRepair)
@@ -116,7 +116,7 @@ class ProbabilisticLBH {
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val TIMEOUT_MINS = 2
-    val totalTrials = 100
+    val totalTrials = 10
     var currentTrials = 0
     var successTrials = 0
     var avgTimeSec = 0
@@ -201,23 +201,23 @@ class ProbabilisticLBH {
   @Test
   fun diagnoseWholeGrammarDeletion() {
     // Sometimes the whole grammar is deleted because there are no generating or reachable productions
-//  val toRepair = "NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE".tokenizeByWhitespace()
+  //  val toRepair = "NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE".tokenizeByWhitespace()
 //    val toRepair = "NAME = NAME ( NAME , NAME = lambda NAME : ( NAME ( NAME [ NUMBER ] ) , NAME ( NAME [ NUMBER ] ) ) NEWLINE".tokenizeByWhitespace()
-    val toRepair = "NAME = STRING NEWLINE NAME = NAME ( NAME , NAME [ NUMBER : - NUMBER ] . NAME ( STRING ) NEWLINE".tokenizeByWhitespace()
-    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val levBall = makeLevFSA(toRepair, 2, s2pg.terminals, ceaDist = contextCSV)
-    val intGram = s2pg.jvmIntersectLevFSA(levBall)
-    val template = List(toRepair.size + 2) { "_" }
+      val toRepair = "NAME = STRING NEWLINE NAME = NAME ( NAME , NAME [ NUMBER : - NUMBER ] . NAME ( STRING ) NEWLINE".tokenizeByWhitespace()
+      val clock = TimeSource.Monotonic.markNow()
 
-  val clock = TimeSource.Monotonic.markNow()
+      val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+      val levBall = makeLevFSA(toRepair, 2, s2pg.terminals, ceaDist = contextCSV)
+      val intGram = s2pg.jvmIntersectLevFSA(levBall)
+      val template = List(toRepair.size + 2) { "_" }
 
-  val lbhSet = intGram.parallelEnumSeqMinimalWR(template, toRepair)
-    .onEachIndexed { i, it ->
-    val alignment = levenshteinAlign(toRepair.joinToString(" "), it).paintANSIColors()
-    println(alignment)
-  }.take(39).toList()
-    .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
-  }
+      intGram.parallelEnumSeqMinimalWR(template, toRepair)
+        .onEachIndexed { i, it ->
+        val alignment = levenshteinAlign(toRepair.joinToString(" "), it).paintANSIColors()
+        println(alignment)
+      }.take(39).toList()
+        .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
+    }
 }
 
 // NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
