@@ -110,13 +110,12 @@
 }
 
 \newcommand{\feat}{\vh}
+\newcommand{\bs}{\blacksquare}
+\newcommand{\ws}{\square}
 
 
 \begin{document}
   \begin{poster}
-    \vspace{1\baselineskip}   % Add some space at the top of the poster
-
-
     %%% Header
     \begin{center}
       \begin{pcolumn}{1.03}
@@ -150,7 +149,7 @@
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
       \begin{itemize}
 %        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
-        \item If you can count it, you can sample it! Analytic combinatorics
+        \item Analytic combinatorics: If you can count it, then you can sample it!
         \item We implement a bijection between binary trees in bounded CFLs
         \item Allows for parallelizable replacement-free sampling from BCFLs
       \end{itemize}
@@ -160,7 +159,7 @@
 
       \mysection{Algebraic Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $\mathcal 2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\\
+          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{0.5cm}
       \end{minipage}
 
       \[
@@ -168,47 +167,103 @@
       \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Initializing $\mathbf{M}_0[i, j](\mathcal{G}, \sigma) \coloneqq \{A \mid i + 1 = j, (A \rightarrow \sigma_i) \in P\}$ and searching for the least solution to $\mathbf{M} = \mathbf{M} + \mathbf{M}^2$, will produce a fixedpoint $\mathbf{M}^*$:\\
-      \end{minipage}
+If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
+\end{minipage}
 
-      \[
-          M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-                 \varnothing & \hat\sigma_1   & \varnothing & \Cdots & \varnothing \\
-                 \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                 &                &             &        & \varnothing\\
-                 &                &             &        & \hat\sigma_n \\
-                 \varnothing & \Cdots         &             &        & \varnothing
-          \end{pNiceMatrix} &\Rightarrow M_\infty =
-          \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-            \varnothing & \hat\sigma_1   & \Lambda & \Cdots & \Lambda^*_\sigma\\
-            \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
-            &                &         &        & \Lambda\\
-            &                &         &        & \hat\sigma_n \\
-            \varnothing & \Cdots         &         &        & \varnothing
-          \end{pNiceMatrix}
-      \]
+\begin{align*}
+M_0\coloneqq
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+   \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
+   \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
+               &          &             &        & \varnothing\\
+               &          &             &        & \hat\sigma_n \\
+   \varnothing & \Cdots   &             &        & \varnothing
+\end{pNiceMatrix} \Rightarrow
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+  \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
+  \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
+              &          &         &        & \Lambda\\
+              &          &         &        & \hat\sigma_n \\
+  \varnothing & \Cdots   &         &        & \varnothing
+\end{pNiceMatrix} \Rightarrow \ldots \Rightarrow M_\infty =
+\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+   \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
+   \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
+               &          &         &        & \Lambda\\
+               &          &         &        & \hat\sigma_n \\
+   \varnothing & \Cdots   &         &        & \varnothing
+\end{pNiceMatrix}
+\end{align*}
 
-      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Valiant (1975) shows that $\sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \mathcal{T}$, i.e., $\mathds{1}_{\mathcal{T}}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
-      \end{minipage}
+\null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
+\end{minipage}
 
       \jointspacing
 
       \mysection{Parsing Dynamics}
-      \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      \begin{itemize}
-        \item The matrix $\mathbf M_0$ is strictly upper triangular, i.e., nilpotent of degree $n$
-        \item The recognizer can be translated into a parser by storing \textit{backpointers}\\\\
-      \end{itemize}\vspace{-3cm}
-      \begin{tabular}{ c c c }
-        \small{$\mathbf{M}_1 = \mathbf{M}_0 + \mathbf{M}_0^2$} & \small{$\mathbf{M}_2 = \mathbf{M}_1 + \mathbf{M}_1^2$} & \small{$\mathbf{M}_3 = \mathbf{M}_2 + \mathbf{M}_2^2 = \mathbf{M}_4$} \\
-        \includegraphics[trim=420 288 0 0,clip, width=12.24cm]{../figures/parse2.png} &
-        \includegraphics[trim=420 285 0 0,clip, width=12.24cm]{../figures/parse3.png} &
-        \includegraphics[trim=420 287 0 0,clip, width=12.34cm]{../figures/parse4.png}
-      \end{tabular}
-      \begin{itemize}
-        \item If we had a way to solve for $\mathbf{M = M + M}^2$ directly, power iteration would be unnecessary and we could solve for $\mathbf{M = M}^2$ above the superdiagonal\ldots
-      \end{itemize}
+
+      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$.\\
+      \end{minipage}
+
+      \null\hspace*{3cm}\begin{minipage}[c]{\columnwidth}
+                      \resizebox{.85\columnwidth}{!}{
+                      {\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|c|c|c|c|}
+  \hline
+  & $2^V$ & $\mathbb{B}^{|V|}$ & $\mathbb{B}^{|V|}\rightarrow\mathbb{B}^{|V|}$\\\hline
+  $M_0$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+              &          & V_{1, 2} & V_{1, 3} \\
+              &          &          & V_{2, 3} \\
+              &          &          &
+  \end{pmatrix} \\\hline
+  $M_\infty$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+              &          & V_{1, 2} & V_{1, 3} \\
+              &          &          & V_{2, 3} \\
+              &          &          &
+  \end{pmatrix}\\\hline
+\end{tabular}\\
+}
+                      }
       \end{minipage}
       \jointspacing
 
@@ -226,7 +281,7 @@
             \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
             & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
         \end{tikzcd}\]
-        \item These operators can be lifted into matrices and tensors in the usual way
+        \item These operators can be lifted into matrices and tensors in the usual manner
 %        \item In most cases, only a few nonterminals will be active at any given time
 %        \item If density is desired, possible to use the Maculay representation
 %        \item If you know of a more eﬀicient encoding, please let us know!
@@ -238,7 +293,16 @@
 
       \pagebreak      \mysection{Method}
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively, where children are pairs of conjoined twins.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+      We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ over the type $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$, is identified by a recurrence relation:
+      \end{minipage}
+
+      \begin{equation*}
+        L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
+      \end{equation*}
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      Morally, $\mathbb{T}_2$ represents an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+      \end{minipage}
 
       \[
            \Lambda(s: \underline\Sigma) \mapsto \begin{cases}
@@ -247,7 +311,9 @@
            \end{cases}
       \]
 
-      \noindent We then compute the fixpoint $M_\infty$ by redefining the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      We redefine the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+      \end{minipage}
 
       \[
           X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
@@ -257,15 +323,47 @@
         X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
       \]
 
-      These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins.
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins.
       \end{minipage}
 
       \jointspacing
 
-      \mysection{A Pairing Function for BTrees}
+      \mysection{Sampling with replacement}
+
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Let $\textbf{M}: \text{GF}(2^{n\times n})$ be a square matrix $\mathbf{M}^0_{r, c} = P_c \text{ if } r=0 \text{ else } \mathds{1}[c = r - 1]$, where $P$ is a feedback polynomial with coefficients $P_{1\ldots n}$ and $\oplus := \veebar, \otimes := \land$:\\
+      Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$, we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+      \end{minipage}
+
+      \begin{equation*}
+        \Gamma(T) \mapsto \begin{cases}
+                            \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
+                            \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
+        \end{cases}
+      \end{equation*}
+
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      This is closely related to the generating function for the ordinary Boltzmann sampler from analytic combinatorics,
+      \end{minipage}
+
+      \begin{equation*}
+        \Gamma C(x) \mapsto \begin{cases}
+                              \text{Bern} \left(\frac{A(x)}{A(x) + B(x)}\right) \rightarrow \Gamma A(x) \mid \Gamma B(x) & \text{ if } \mathcal{C}=\mathcal{A}+\mathcal{B} \\
+                              \big\langle \Gamma A(x), \Gamma B(x)\big\rangle & \text{ if } \mathcal{C}=\mathcal{A} \times \mathcal{B}
+        \end{cases}
+      \end{equation*}
+
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      however unlike Duchon et al. (2004), our work does require rejection to ensure exact-size sampling, as all trees contained in $\mathbb{T}_2$ are necessarily the same width.
+      \end{minipage}
+
+      \mysection{Sampling without replacement}
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+      To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, defined as:
       \end{minipage}
 
       \begin{equation*}
@@ -281,16 +379,7 @@
       \end{equation*}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Selecting any $V \neq \mathbf{0}$ and coefficients $P_j$ from a known \textit{primitive polynomial}, then powering the matrix $\mathbf{M}$ generates an ergodic sequence over GF$(2^n)$:
-      \end{minipage}
-
-      \jointspacing
-
-      \mysection{Tidyparse IDE Plugin}
-
-      \null\hspace*{1.8cm}\begin{minipage}[c]{0.90\columnwidth}
-          \href{https://github.com/breandan/tidyparse}{\includegraphics[width=\textwidth]{../figures/tidyparse.png}}
-          \phantom{.}
+      Then, instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.5cm}
       \end{minipage}
 
       \jointspacing
@@ -302,9 +391,12 @@
     %% QR code
     %    \hfill\bottomboxlogo{img/kotlin_logo.png}
     % Comment out the line below out to hide logo
+
+    \hspace{2cm}
     \begin{minipage}[c][0.1\paperheight][c]{0.18\textwidth}\qrcode[height=2.6in]{https://tidyparse.github.io/} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.25\textwidth}\includegraphics[height=2.6in]{../figures/tidyparse_logo.png} \end{minipage}
-    \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=2.6in]{../figures/mcgill.png} \end{minipage}
+    \hspace{-4cm}
+    \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3in]{../figures/mcgill.png} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3.2in]{../figures/mila.png} \end{minipage}
     %    \hfill\bottomboxlogo{img/mila_mauve.png} % \hfill shifts the logo across so it meets the right hand side margin
     % Note that \bottomboxlogo takes an optional width argument. It defaults to the following:
