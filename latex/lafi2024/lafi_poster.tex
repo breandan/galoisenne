@@ -26,7 +26,7 @@
 \usepackage{pgf-soroban}
 \usepackage{bussproofs}
 \usepackage{nicematrix}
-\usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc}
+\usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc,trees}
 \tikzstyle{mybox} = [draw=white, rectangle]
 %\definecolor{darkblue}{rgb}{0,0.08,0.45}
 %\definecolor{blue}{rgb}{0,0,1}
@@ -113,6 +113,15 @@
 \newcommand{\bs}{\blacksquare}
 \newcommand{\ws}{\square}
 
+\tikzset{
+  treenode/.style = {shape=rectangle, rounded corners,
+  draw, align=center,
+  top color=white, bottom color=blue!20},
+  root/.style     = {treenode, font=\tiny, bottom color=red!30},
+  env/.style      = {treenode, font=\tiny},
+  dummy/.style    = {circle,draw}
+}
+
 
 \begin{document}
   \begin{poster}
@@ -150,14 +159,14 @@
       \begin{itemize}
 %        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
         \item Analytic combinatorics: If you can count it, then you can sample it!
-        \item We implement a bijection between binary trees in bounded CFLs
-        \item Allows for parallelizable replacement-free sampling from BCFLs
+        \item We implement a bijection between labeled binary trees in BCFLs and $\mathbb{Z}_{|T|}$
+        \item Allows for communication-free parallel no-replacement sampling in $\widetilde{\mathcal{O}}(1)$
       \end{itemize}
       \end{minipage}
 
       \jointspacing
 
-      \mysection{Algebraic Parsing}
+      \mysection{Semiring Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
           Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{0.5cm}
       \end{minipage}
@@ -263,16 +272,20 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
   \end{pmatrix}\\\hline
 \end{tabular}\\
 }
-                      }
+                      }\\
+      \end{minipage}
+
+      \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      This procedure returns whether $\exists \sigma' \in \mathcal{L}(G) \mid \sigma' \sqsubseteq \sigma$ but forgets genealogy.
       \end{minipage}
       \jointspacing
 
-      \mysection{Binarized CFL Sketching}
+      \mysection{Encoding CFL Sketching into SAT}
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
       \begin{itemize}
         \item CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
         \item Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
-        \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
+%        \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
         \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
         \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
         \[\begin{tikzcd}
@@ -291,7 +304,10 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
 
       \jointspacing
 
-      \pagebreak      \mysection{Method}
+      \pagebreak      \mysection{A Nested Datatype for BCFLs}
+
+      \jointspacing
+
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
       We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ over the type $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$, is identified by a recurrence relation:
       \end{minipage}
@@ -299,6 +315,53 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \begin{equation*}
         L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
       \end{equation*}
+
+      \hspace*{10cm}\resizebox{0.5\columnwidth}{!}{
+        \begin{tikzpicture}
+        [
+          grow                    = right,
+          sibling distance        = 3em,
+          level distance          = 5em,
+          edge from parent/.style = {draw, -latex},
+          every node/.style       = {font=\footnotesize},
+          sloped
+        ]
+          \node [root] {S}
+          child { node [env] {BC}
+          child { node [root] {B}
+          child { node [env] {RD}
+          child { node [root] {R} edge from parent node [above] }
+          child { node [root] {D} edge from parent node [above] }
+          edge from parent node [above] }
+          edge from parent node [below] }
+          child { node [root] {C}
+          child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+%  child { edge from parent node [above] {\ldots} }
+          edge from parent node [below] }
+          edge from parent node [above] }
+          child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+          child { node [env] {AB}
+          child { node [root] {A}
+          child {
+            node [env] {QC}
+            child { node [root] {Q} edge from parent node [above] }
+            child { node [root] {C} edge from parent node [above] }
+            edge from parent node [above]
+          }
+%    child { node [env] {ZQ} edge from parent node [above] }
+          child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+          edge from parent node [below] }
+          child { node [root] {B}
+          child { node [env] {RD}
+          child { node [root] {R} edge from parent node [above] }
+          child { node [root] {D} edge from parent node [above] }
+          edge from parent node [above] }
+          edge from parent node [below] }
+          edge from parent node [above] };
+        \end{tikzpicture}
+      }
+
+      \vspace{1.5cm}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
       Morally, $\mathbb{T}_2$ represents an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
@@ -310,9 +373,9 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
                \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
            \end{cases}
       \]
-
+%
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      We redefine the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+      We redefine the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ over trees as follows:
       \end{minipage}
 
       \[
@@ -322,18 +385,20 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \[
         X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
       \]
+%
+%      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+%      These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins.
+%      \end{minipage}
 
-      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins.
-      \end{minipage}
-
+      \vspace{-0.5cm}
       \jointspacing
 
       \mysection{Sampling with replacement}
 
+      \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$, we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+      Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$, we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ like so:
       \end{minipage}
 
       \begin{equation*}
@@ -345,7 +410,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
 
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      This is closely related to the generating function for the ordinary Boltzmann sampler from analytic combinatorics,
+      This relates to the generating function for the ordinary Boltzmann sampler,
       \end{minipage}
 
       \begin{equation*}
@@ -360,10 +425,14 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       however unlike Duchon et al. (2004), our work does require rejection to ensure exact-size sampling, as all trees contained in $\mathbb{T}_2$ are necessarily the same width.
       \end{minipage}
 
+      \jointspacing
+
       \mysection{Sampling without replacement}
 
+      \jointspacing
+
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, defined as:
+      To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, defined as:
       \end{minipage}
 
       \begin{equation*}
@@ -379,7 +448,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \end{equation*}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Then, instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.5cm}
+      Then instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.5cm}
       \end{minipage}
 
       \jointspacing
