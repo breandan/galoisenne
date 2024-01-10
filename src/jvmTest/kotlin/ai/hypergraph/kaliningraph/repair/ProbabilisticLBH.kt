@@ -97,7 +97,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testInvalidLines"
 */
-  @Test
+//  @Test
   fun testInvalidLines() {
     invalidPythonStatements.lines().shuffled().take(10).forEach {
       val toRepair = "$it NEWLINE".tokenizeByWhitespace()

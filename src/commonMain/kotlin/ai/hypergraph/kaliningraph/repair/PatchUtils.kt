@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.jvm.JvmName
 import kotlin.math.*
 import kotlin.time.TimeSource
 
@@ -61,6 +62,21 @@ fun minimizeFix(
     .map { patch.apply(it, " ").tokenizeByWhitespace().joinToString(" ") }
 }
 
+fun minimizeFixInt(
+  brokeTokens: List<Int>,
+  fixedTokens: List<Int>,
+  isValid: List<Int>.() -> Boolean
+): Sequence<List<Int>> {
+  val patch = extractPatch(brokeTokens, fixedTokens)
+  val changedIndices = patch.changedIndices()
+  val time = TimeSource.Monotonic.markNow()
+  return deltaDebug(changedIndices, n = 1,
+    timeout = { 5 < time.elapsedNow().inWholeSeconds }
+  ) { idxs -> patch.apply(idxs).isValid() }
+    .minimalSubpatches { patch.apply(this).isValid() }
+    .map { patch.apply(it) }
+}
+
 typealias Edit = Π2A<Σᐩ>
 typealias Patch = List<Edit>
 val Edit.old: Σᐩ get() = first
@@ -88,6 +104,10 @@ fun Patch.isInteresting() = changedIndices().let { ch ->
 }
 fun Patch.changedIndices(): List<Int> = indices.filter { this[it].old != this[it].new }
 
+@JvmName("changedIndicesInt")
+fun List<Pair<Int, Int>>.changedIndices(): List<Int> =
+  indices.filter { this[it].run { first != second } }
+
 fun Patch.scan(i: Int, direction: Boolean, age: Edit.() -> Σᐩ): Σᐩ? =
   (if (direction) (i + 1 until size) else (i - 1 downTo 0))
     .firstOrNull { this[it].age() != "" }?.let { this[it].age() }
@@ -110,6 +130,9 @@ fun List<Int>.minimalSubpatches(filter: List<Int>.() -> Boolean): Sequence<List<
   (1..size).asSequence().map { choose(it).map { it.toList() } }
     .map { it.filter { it.filter() } }.firstOrNull { it.any() } ?: sequenceOf(this)
 
+fun List<Pair<Int, Int>>.apply(indices: List<Int>): List<Int> =
+  mapIndexed { i, it -> if (i in indices) it.second else it.first }
+
 fun Patch.apply(indices: List<Int>, separator: Σᐩ = ""): Σᐩ =
   mapIndexed { i, it -> if (i in indices) it.new else it.old }.joinToString(separator)
 
@@ -120,6 +143,16 @@ fun extractPatch(original: List<Σᐩ>, new: List<Σᐩ>): Patch =
     when {
       old == null -> "" to new!!
       new == null -> old to ""
+      else -> old to new
+    }
+  }
+
+@JvmName("extractPatchInt")
+fun extractPatch(original: List<Int>, new: List<Int>): List<Pair<Int, Int>> =
+  levenshteinAlign(original, new).map { (old, new) ->
+    when {
+      old == null -> -1 to new!!
+      new == null -> old to -1
       else -> old to new
     }
   }

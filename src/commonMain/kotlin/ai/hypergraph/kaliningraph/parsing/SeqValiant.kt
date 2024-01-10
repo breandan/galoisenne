@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
+import kotlin.jvm.JvmName
 import kotlin.math.*
 import kotlin.random.Random
 import kotlin.time.measureTimedValue
@@ -371,3 +372,11 @@ fun updateLevenshteinBlanket(oldBlanket: List<String>, newRepair: List<String>) 
   levenshteinAlign(oldBlanket, newRepair).map { (old, new) ->
     if (old == null || new == null || old != new) "_" else old
   }
+
+@JvmName("updateLevenshteinBlanketInt")
+fun updateLevenshteinBlanket(oldBlanket: List<Int>, newRepair: List<Int>) =
+  levenshteinAlign(oldBlanket, newRepair).map { (old, new) ->
+    if (old == null || new == null || old != new) -1 else old
+  }
+
+fun List<Int>.toStrLevBlanket(imap: (Int) -> String) = map { if (it == -1) "_" else imap(it) }
