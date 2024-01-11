@@ -127,6 +127,7 @@
 
 \begin{document}
   \begin{poster}
+    \vspace{-0.3cm}
     %%% Header
     \begin{center}
       \begin{pcolumn}{1.03}
@@ -157,12 +158,13 @@
       \mysection{Main Idea}
 
       \vspace*{-1cm}
-      \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
+      \null\hspace*{2.5cm}\begin{minipage}[c]{0.88\columnwidth}
+      \renewcommand\labelitemi{$\vcenter{\hbox{\small$\bullet$}}$}
       \begin{itemize}
 %        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
-        \item Analytic combinatorics: if you can count it, then you can sample from it!
-        \item We implement a bijection between labeled binary trees in BCFLs and $\mathbb{Z}_{|T|}$
-        \item Allows for communication-free parallel no-replacement sampling in $\widetilde{\mathcal{O}}(1)$
+        \item \phantom{\small{.}} Analytic combinatorics: if you can count it, then you can sample from it!
+        \item \phantom{\small{.}} We implement a bijection between labeled binary trees in BCFLs and $\mathbb{Z}_{|T|}$
+        \item \phantom{\small{.}} Allows for communication-free parallel no-replacement sampling in $\widetilde{\mathcal{O}}(1)$
       \end{itemize}
       \end{minipage}
 
@@ -215,10 +217,10 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \mysection{Parsing Dynamics}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\\
+      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\vspace{0.5cm}
       \end{minipage}
 
-      \null\hspace*{3cm}\begin{minipage}[c]{\columnwidth}
+      \null\hspace*{2.7cm}\begin{minipage}[c]{\columnwidth}
                       \resizebox{.85\columnwidth}{!}{
                       {\renewcommand{\arraystretch}{1.2}
 \begin{tabular}{|c|c|c|c|}
@@ -274,7 +276,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
   \end{pmatrix}\\\hline
 \end{tabular}\\
 }
-                      }\\
+                      }\vspace{0.4cm}
       \end{minipage}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
@@ -283,20 +285,21 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \jointspacing
 
       \mysection{Encoding CFL Sketching into SAT}
-      \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
+      \null\hspace*{2.5cm}\begin{minipage}[c]{0.90\columnwidth}
+      \renewcommand\labelitemi{$\vcenter{\hbox{\small$\bullet$}}$}
       \begin{itemize}
-        \item CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
-        \item Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
-%        \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
-        \item We simply encode the characteristic function, i.e., $\mathds{1}_{\subseteq V}: 2^V\rightarrow \mathbb{B}^{|V|}$
-        \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
+        \item \phantom{.} CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
+        \item \phantom{.} Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
+%       \item \phantom{.} Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
+        \item \phantom{.} We simply encode the characteristic function, i.e., $\mathds{1}_{\subseteq V}: 2^V\rightarrow \mathbb{B}^{|V|}$
+        \item \phantom{.} $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
         \[\begin{tikzcd}
             2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
             & 2^V \arrow[d, "\mathds{1}\phantom{^{-1}}"] \\
             \mathbb{B}^{|V|} \times \mathbb{B}^{|V|} \arrow[r, "\boxplus/\boxtimes", labels=below] \arrow[u, "\mathds{1}^{-2}"]
             & \mathbb{B}^{|V|} \arrow[u, "\mathds{1}^{-1}"]
         \end{tikzcd}\]
-        \item These operators can be lifted into matrices and tensors in the usual manner
+        \item \phantom{.} These operators can be lifted into matrices and tensors in the usual manner
 %        \item In most cases, only a few nonterminals will be active at any given time
 %        \item If density is desired, possible to use the Maculay representation
 %        \item If you know of a more eﬀicient encoding, please let us know!
@@ -456,7 +459,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \end{equation*}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Then instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.8cm}
+      Then instead of sampling trees, we can simply sample integers WoR from $\mathbb{Z}_{|T|}$.\vspace{1.8cm}
       \end{minipage}
 
       \jointspacing
