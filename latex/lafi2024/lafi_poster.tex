@@ -205,7 +205,7 @@ M_0\coloneqq
 \end{align*}
 
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
+CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
 \end{minipage}
 
       \jointspacing
@@ -276,7 +276,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \end{minipage}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      This procedure returns whether $\exists \sigma' \in \mathcal{L}(G) \mid \sigma' \sqsubseteq \sigma$ but forgets genealogy.
+      This procedure returns whether $\exists \sigma' \in \mathcal{L}(G) \mid \sigma' \sqsubseteq \sigma$ but forgets provenance.
       \end{minipage}
       \jointspacing
 
@@ -299,7 +299,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
 %        \item If density is desired, possible to use the Maculay representation
 %        \item If you know of a more eﬀicient encoding, please let us know!
       \end{itemize}
-                          \phantom{.}
+      \vspace{1.8cm}
       \end{minipage}
 
       \jointspacing
@@ -309,12 +309,18 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ over the type $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$, is identified by a recurrence relation:
+      We define a map from nonterminals $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ onto the datatype $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$, whose inhabitants satisfy the recurrence:
       \end{minipage}
 
       \begin{equation*}
         L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
       \end{equation*}
+
+      \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
+        Each $\mathbb{T}_2$ consists of a root nonterminal, and a list of distinct products, e.g.,
+      \end{minipage}
+
+      \jointspacing
 
       \hspace*{10cm}\resizebox{0.5\columnwidth}{!}{
         \begin{tikzpicture}
@@ -364,7 +370,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \vspace{1.5cm}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Morally, $\mathbb{T}_2$ represents an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+      Morally, $\mathbb{T}_2$ represents an implicit set of possible trees sharing the same root, where $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a porous string. Instead of $\hat\sigma_r$ we initialize using $\Lambda(\sigma_r)$:
       \end{minipage}
 
       \[
@@ -375,7 +381,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \]
 %
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      We redefine the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ over trees as follows:
+      The operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ are then redefined over trees as follows:
       \end{minipage}
 
       \[
@@ -393,7 +399,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \vspace{-0.5cm}
       \jointspacing
 
-      \mysection{Sampling with replacement}
+      \mysection{Sampling with Replacement}
 
       \jointspacing
 
@@ -427,7 +433,7 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
 
       \jointspacing
 
-      \mysection{Sampling without replacement}
+      \mysection{Sampling without Replacement}
 
       \jointspacing
 
@@ -448,24 +454,25 @@ we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Lef
       \end{equation*}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Then instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.5cm}
+      Then instead of sampling trees, we can simply sample integers WOR from $\mathbb{Z}_{|T|}$.\vspace{1.8cm}
       \end{minipage}
 
       \jointspacing
 
     \end{multicols}
 
-    \vspace{-1.76cm}
+    \vspace{-2.2cm}
     \bottombox{
     %% QR code
     %    \hfill\bottomboxlogo{img/kotlin_logo.png}
     % Comment out the line below out to hide logo
 
-    \hspace{2cm}
+    \hspace{1.8cm}
     \begin{minipage}[c][0.1\paperheight][c]{0.18\textwidth}\qrcode[height=2.6in]{https://tidyparse.github.io/} \end{minipage}
     \begin{minipage}[c][0.1\paperheight][c]{0.25\textwidth}\includegraphics[height=2.6in]{../figures/tidyparse_logo.png} \end{minipage}
     \hspace{-4cm}
     \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3in]{../figures/mcgill.png} \end{minipage}
+    \hspace{2cm}
     \begin{minipage}[c][0.1\paperheight][c]{0.33\textwidth}\includegraphics[height=3.2in]{../figures/mila.png} \end{minipage}
     %    \hfill\bottomboxlogo{img/mila_mauve.png} % \hfill shifts the logo across so it meets the right hand side margin
     % Note that \bottomboxlogo takes an optional width argument. It defaults to the following:
