@@ -42,7 +42,7 @@
 
   \title{A Tree Sampler for Bounded Context-Free Languages}
   \begin{abstract}
-    In the following paper, we present a simple method for sampling trees with and without replacement from bounded context-free languages (BCFLs). A BCFL is a context-free language (CFL) corresponding to finite-length strings with holes, which can be completed by valid terminals. We do so by defining an algebraic datatype that compactly represents candidate parse trees for an initial string. Once constructed, sampling trees is a straightforward matter of sampling integers uniformly without a replacement from a finite range.
+    In the following paper, we present a simple method for sampling trees with or without replacement from BCFLs. A BCFL is a context-free language (CFL) corresponding to an incomplete string with holes, which can be completed by valid terminals. To solve this problem, we introduce an algebraic datatype that compactly represents candidate parse forests for porous strings. Once constructed, sampling trees is a straightforward matter of sampling integers uniformly without replacement, then lazily decoding them into trees.
   \end{abstract}
 
   \author{Breandan Considine}
@@ -53,7 +53,7 @@
 
   \section{Introduction}
 
-  A CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P:=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
+  A CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. It is a well-known fact that every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example, the CFG, $P=\{S \rightarrow S S \mid ( S ) \mid ()\}$, corresponds to the CNF:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -64,13 +64,13 @@
   \noindent Given a CFG, $\mathcal{G}' : \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathcal{G}' \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
-    X \otimes Z := \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+    X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\hat\sigma_r$ and solve for the fixpoint $M_\infty = M + M^2$,\vspace{-10pt}
+  \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) = \;\hat\sigma_r$ then solve for $M = M + M^2$, the fixedpoint $M_\infty$ is fully determined by the superdiagonal entries:\vspace{-10pt}
 
   \begin{align*}
-      M^0:=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      M^0=\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
         \varnothing & \hat\sigma_1   & \varnothing & \Cdots & \varnothing \\
         \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
                     &                &             &        & \varnothing\\
@@ -86,10 +86,10 @@
       \end{pNiceMatrix}
   \end{align*}
 
-  \noindent we obtain the recognizer, $R(\mathcal{G}', \sigma) := S \in \Lambda^*_\sigma? \Leftrightarrow \sigma \in \mathcal{L}(\mathcal{G})?$ This procedure is essentially the standard CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring}. We are now ready to define the sampling problem as follows:
+  \noindent Once obtained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(\mathcal{G})]$. This procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring}. We are now ready to define the sampling problem as follows:
 
   \begin{definition}[Completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ represents a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i: \Sigma \implies \sigma_i' = \sigma_i\}$ and the set $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given an initial string $\sigma: \underline\Sigma^+$ we want to sample parse trees generated by $\mathcal{G}$ corresponding to $\sigma': \text{H}(\sigma)\cap\ell$.
+    Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ represents a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i: \Sigma \implies \sigma_i' = \sigma_i\}$ and the set $\{\sigma': \Sigma \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a porous string $\sigma: \underline\Sigma$, we want to sample parse trees generated by $\mathcal{G}$ corresponding to $\sigma': \text{H}(\sigma)\cap\ell$.
   \end{definition}
 
   $\text{H}(\sigma)\cap\ell$ is often a large-cardinality set, so we want a procedure which samples trees uniformly without replacement, without enumerating the whole set, parsing and shuffling it.
@@ -107,7 +107,7 @@
   \end{footnotesize}
 \end{equation*}
 
-\noindent We then compute the fixpoint $M_\infty$ by redefining the operations $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+\noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
 \begin{equation*}
   \begin{footnotesize}
@@ -121,7 +121,7 @@
 \end{footnotesize}
 \end{equation*}
 
-  These operators group subtrees by their root nonterminal, then aggregate their children. Each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can then be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins as we describe in \S~\ref{sec:replacement}, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
+  These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins as we describe in \S~\ref{sec:replacement}, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
 
 %\begin{equation*}
 %  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -154,13 +154,13 @@ This is closely related to the generating function for the ordinary Boltzmann sa
 
 \pagebreak\subsection{Sampling without replacement}\label{sec:pairing}
 
-The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form corresponds to the fixpoints of the following recurrence:
+The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form corresponds to the fixpoints of the following recurrence, which tells us that each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence consisting of nonterminal pairs and their two children:\vspace{-10pt}
 
 \begin{equation*}
-  L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
+  L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
 \end{equation*}
 
-Given a $\sigma: \underline\Sigma^+$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Illustrated below is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}:
+Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted below is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}:
 
 \begin{figure}[H]
 \resizebox{0.9\columnwidth}{!}{
@@ -210,7 +210,7 @@ Given a $\sigma: \underline\Sigma^+$, we construct $\mathbb{T}_2$ from the botto
 \caption{A partial $\mathbb{T}_2$ for the grammar with productions $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
 \end{figure}
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the initial string using the algebra defined in \S~\ref{sec:method}, letting $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string using the algebra defined in \S~\ref{sec:method}, letting $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
 
 \begin{equation*}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -238,13 +238,25 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
 Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \S~\ref{sec:method}, and lazily decode them into trees.
 
+%  \section{Benchmark}
+%
+%  Here we plot the number of distinct results found in Python code snippets.\footnote{Implementation found here: \url{https://github.com/breadnan/galoisenne}}
+%
+%  \begin{figure}[H]
+%    \resizebox{0.5\columnwidth}{!}{\input{histogram.pgf}}
+%    \caption{Average number of distinct found across n-holes.}
+%  \end{figure}
+
+
   \section{Prior work}
 
-  Our work is closely related to Boltzmann sampling~\cite{duchon2004boltzmann} in the case of sampling with replacement, but does not use rejection. Piantodosi~\cite{piantadosi2023enumerate} define a similar construction in the case of sampling without replacement, but it assumes the CFL is infinite and makes some additional assumptions about the ordering of productions. In the case when the initial string contains only holes, the problem of enumeration coincides with the Chomsky-Sch\"utzenberger enumeration theorem~\cite{panholzer2005grobner}, which provides a constructive way to count finite-length words in unambiguous CFLs (i.e., $\ell\cap\Sigma^n$). Our construction is more general and works for any CFG and initial string, regardless of ambiguity, finitude, or production ordering. %Sampling parse trees in CFGs can be viewed as sampling proofs of $S$ in a weak kind of proof system~\cite{opedal2023efficient}.
+  Our work is closely related to Boltzmann sampling~\cite{duchon2004boltzmann} in the case of sampling with replacement, but does not use rejection. Piantodosi~\cite{piantadosi2023enumerate} define a similar construction in the case of sampling without replacement, but it assumes the CFG generates an infinite language and its productions have a certain ordering. In the setting where the template contains only holes, BCFL completion coincides with the Chomsky-Sch\"utzenberger enumeration theorem~\cite{panholzer2005grobner}, which provides a constructive method for counting finite-length words in unambiguous CFLs (i.e., $\ell\cap\Sigma^n$). Our construction is more general, being designed to handle any CFG and template, regardless of ambiguity, finitude, or production ordering.
+
+  Loosely adapted from semiring parsing~\cite{goodman1999semiring} and Valiant's algorithm~\cite{valiant1975general}, our parser also supports bounded generation. We construct a nested datatype~\cite{bird1998nested} that compactly represents candidate parse forests and can be used to sample trees with or without replacement by sampling a finite integer range, enabling communication-free parallelization. %Sampling parse trees in CFGs can be viewed as sampling proofs of $S$ in a weak kind of proof system~\cite{opedal2023efficient}.
 
   \section{Conclusion}
 
-  We have presented a novel algorithm for sampling trees in bounded context-free languages with and without replacement. This technique has applications to code completion and program repair. In future work, we would like to construct a biased no-replacement rejection-free sampling procedure which prioritizes samples based on their likelihood according to a PCFG and extend our technique to the more general case of sampling from conjunctive languages.
+  We have presented a novel sound and complete algorithm for sampling trees in bounded context-free languages with and without replacement. This technique has applications to code completion and program repair. In future work, we intend to provide a proof of correctness and extend our technique to handle sampling from Boolean and conjunctive languages~\cite{okhotin2001conjunctive}. A reference implementation for $\mathbb{T}_2$ is provided in Kotlin and may be found at the \href{https://github.com/breandan/galoisenne/blob/3a2e811e8652ba29891aa21789ef0836ed19d257/src/commonMain/kotlin/ai/hypergraph/kaliningraph/parsing/SeqValiant.kt}{URL} linked below\footnote{\url{https://github.com/breandan/galoisenne/blob/3a2e811e8652ba29891aa21789ef0836ed19d257/src/commonMain/kotlin/ai/hypergraph/kaliningraph/parsing/SeqValiant.kt}}.
 
   \section{Acknowledgements}
 

@@ -3,10 +3,15 @@ package ai.hypergraph.kaliningraph.repair
 import Grammars
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import ai.hypergraph.markovian.*
 import org.junit.jupiter.api.Test
+import org.kosat.round
+import kotlin.math.roundToInt
 import kotlin.random.Random
+import kotlin.reflect.KFunction2
 import kotlin.test.*
-import kotlin.time.TimeSource
+import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH"
@@ -218,6 +223,49 @@ class ProbabilisticLBH {
       }.take(39).toList()
         .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
     }
+
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRandomGrammarCompletion"
+*/
+  @Test
+  fun testRandomGrammarCompletion() {
+    fun String.maskRandomIndices(toMask: Int) =
+      tokenizeByWhitespace().let { tks ->
+        val indicesToMask = tks.indices.shuffled().take(toMask)
+        tks.mapIndexed { i, it -> if (i in indicesToMask) "_" else it }
+      }
+
+    fun cfgToValidStrings(holes: Int) = validPythonStatements
+      .lines().map { Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) }
+      .filter { (a, b) ->
+        val clock = TimeSource.Monotonic.markNow()
+        a.sampleSeq(b).takeWhile { clock.elapsedNow() < 2.seconds }.iterator().hasNext()
+      }.take(100)
+
+    val duration: Duration = 10.seconds
+    fun List<Pair<CFG, List<String>>>.benchmark(f: KFunction2<Set<Pair<Σᐩ, List<Σᐩ>>>, List<String>, Sequence<String>>, holes: Int) =
+      parallelStream().map { (cfg, seq) ->
+        val clock = TimeSource.Monotonic.markNow()
+
+        val results = f(cfg, seq).takeWhile { clock.elapsedNow() < duration }.distinct().toList()
+        results.size.toDouble()//.also { println("Found $it distinct results in $duration") }
+      }.toList().also {
+        println(
+          "Average # $holes-hole results for ${f.name} found in $duration: " +
+            "${it.average().round(3)}, ${it.stdDev().round(3)}"
+        )
+      }
+
+    for (holes in 1..6) {
+      val templates = cfgToValidStrings(holes)
+      val tq = templates.benchmark(CFG::enumSeq, holes)
+      val pq = templates.benchmark(CFG::sampleSWOR, holes)
+      val mq = templates.benchmark(CFG::sampleSeq, holes)
+      val rr = templates.benchmark(CFG::solveSeq, holes)
+      println()
+    }
+  }
 }
 
 // NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE

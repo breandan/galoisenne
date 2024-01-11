@@ -317,6 +317,10 @@ fun List<Σᐩ>.solve(
 //    .also { println("Solving (Complexity: ${fillers.size.pow(count { it == "_" })}): ${joinToString(" ")}") }
     .takeWhile { takeMoreWhile() }.filter { it.matches(CFG) }.map { it.removeEpsilon() }
 
+fun CFG.setSolve(template: List<String>): Sequence<Σᐩ> =
+  template.genCandidates(this, terminals - blocked)
+    .filter { isValid(it) }.map { it.removeEpsilon() }
+
 fun List<Σᐩ>.genCandidates(CFG: CFG, fillers: Set<Σᐩ> = CFG.terminals): Sequence<Σᐩ> =
   MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER }).map {
     fold("" to it) { (a, b), c ->

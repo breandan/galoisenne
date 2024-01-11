@@ -21,8 +21,9 @@ tailrec fun Int.gcd(b: Int): Int =
 fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> =
   runBlocking { map { async { f(it) } }.awaitAll() }
 
-fun List<Double>.variance() =
-  average().let { mean -> map { (it - mean).pow(2) } }.average()
+fun List<Double>.variance() = average().let { avg -> map { (it - avg).pow(2) }.average() }
+
+fun List<Double>.stdDev() = variance().let { Math.sqrt(it) }
 
 fun log2(b: Int) = 32 - Integer.numberOfLeadingZeros(b - 1)
 
