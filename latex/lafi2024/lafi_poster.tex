@@ -109,6 +109,8 @@
 %\includegraphics[trim=4.5mm 0mm 4mm 3mm, clip, width=0.44\columnwidth]{../figures/spectrum/layer-#1}
 }
 
+\usepackage{dsfont}
+
 \newcommand{\feat}{\vh}
 \newcommand{\bs}{\blacksquare}
 \newcommand{\ws}{\square}
@@ -158,7 +160,7 @@
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
       \begin{itemize}
 %        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
-        \item Analytic combinatorics: If you can count it, then you can sample it!
+        \item Analytic combinatorics: if you can count it, then you can sample from it!
         \item We implement a bijection between labeled binary trees in BCFLs and $\mathbb{Z}_{|T|}$
         \item Allows for communication-free parallel no-replacement sampling in $\widetilde{\mathcal{O}}(1)$
       \end{itemize}
@@ -168,19 +170,19 @@
 
       \mysection{Semiring Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{0.5cm}
+          Given a CFG $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{0.5cm}
       \end{minipage}
 
       \[
-        s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}
+        s_1 \otimes s_2 = \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}
       \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
+If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
 \end{minipage}
 
 \begin{align*}
-M_0\coloneqq
+M_0=
 \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
    \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
    \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
@@ -205,7 +207,7 @@ M_0\coloneqq
 \end{align*}
 
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
+CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
 \end{minipage}
 
       \jointspacing
@@ -213,7 +215,7 @@ CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma
       \mysection{Parsing Dynamics}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$.\\
+      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\\
       \end{minipage}
 
       \null\hspace*{3cm}\begin{minipage}[c]{\columnwidth}
@@ -276,7 +278,7 @@ CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma
       \end{minipage}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.90\columnwidth}
-      This procedure returns whether $\exists \sigma' \in \mathcal{L}(G) \mid \sigma' \sqsubseteq \sigma$ but forgets provenance.
+      This procedure decides if $\exists \sigma' \in \mathcal{L}(G) \mid \sigma' \sqsubseteq \sigma$ but forgets provenance.
       \end{minipage}
       \jointspacing
 
@@ -286,7 +288,7 @@ CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma
         \item CYK parser can be lowered onto a Boolean tensor $\mathbb{B}^{n\times n \times |V|}$ (Valiant, 1975)
         \item Binarized CYK parser can be compiled to SAT to solve for $\mathbf{M}^*$ directly
 %        \item Enables sketch-based synthesis in either $\sigma$ or $\mathcal G$: just use variables for holes!
-        \item We simply encode the characteristic function, i.e. $\mathds{1}_{\subseteq V}: V\rightarrow \mathbb{B}^{|V|}$
+        \item We simply encode the characteristic function, i.e., $\mathds{1}_{\subseteq V}: 2^V\rightarrow \mathbb{B}^{|V|}$
         \item $\oplus, \otimes$ are defined as $\boxplus, \boxtimes$, so that the following diagram commutes:
         \[\begin{tikzcd}
             2^V \times 2^V \arrow[r, "\oplus/\otimes"] \arrow[d, "\mathds{1}^2"]
@@ -438,7 +440,7 @@ CFL membership is recognized by $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, defined as:
+      To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we define a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ using the construction:
       \end{minipage}
 
       \begin{equation*}
