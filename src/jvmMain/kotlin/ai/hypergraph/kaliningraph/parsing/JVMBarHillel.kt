@@ -41,6 +41,34 @@ fun CFG.parallelEnumSeqMinimalWR(
     }.asSequence().flatten()
   } ?: sequenceOf()
 
+fun CFG.parallelEnumSeqWR(
+  prompt: List<String>,
+  cores: Int,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<cores).toList().parallelStream().map { i ->
+      it.sampleWithReplacement()
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
+
+fun CFG.parallelEnumSeqWOR(
+  prompt: List<String>,
+  cores: Int,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<cores).toList().parallelStream().map { i ->
+      it.sampleStrWithoutReplacement(i)
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
+
 /**
  * Much faster version of [intersectLevFSA] that leverages parallelism to construct
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.

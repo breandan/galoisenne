@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.repair
 import Grammars
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import ai.hypergraph.kaliningraph.types.times
 import ai.hypergraph.markovian.*
 import org.junit.jupiter.api.Test
 import org.kosat.round
@@ -224,27 +225,27 @@ class ProbabilisticLBH {
         .also { println("TOTAL LBH REPAIRS (${clock.elapsedNow()}): ${it.size}\n\n") }
     }
 
+  fun String.maskRandomIndices(toMask: Int) =
+    tokenizeByWhitespace().let { tks ->
+      val indicesToMask = tks.indices.shuffled().take(toMask)
+      tks.mapIndexed { i, it -> if (i in indicesToMask) "_" else it }
+    }
 
-  /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRandomGrammarCompletion"
-*/
-  @Test
-  fun testRandomGrammarCompletion() {
-    fun String.maskRandomIndices(toMask: Int) =
-      tokenizeByWhitespace().let { tks ->
-        val indicesToMask = tks.indices.shuffled().take(toMask)
-        tks.mapIndexed { i, it -> if (i in indicesToMask) "_" else it }
-      }
-
-    fun cfgToValidStrings(holes: Int) = validPythonStatements
+  fun cfgToValidStrings(holes: Int) =
+    validPythonStatements
       .lines().map { Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) }
       .filter { (a, b) ->
         val clock = TimeSource.Monotonic.markNow()
         a.sampleSeq(b).takeWhile { clock.elapsedNow() < 2.seconds }.iterator().hasNext()
       }.take(100)
 
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRandomGrammarCompletion"
+*/
+  @Test
+  fun testRandomGrammarCompletion() {
     val duration: Duration = 10.seconds
-    fun List<Pair<CFG, List<String>>>.benchmark(f: KFunction2<Set<Pair<Σᐩ, List<Σᐩ>>>, List<String>, Sequence<String>>, holes: Int) =
+    fun List<Pair<CFG, List<String>>>.benchmark(f: KFunction2<CFG, List<String>, Sequence<String>>, holes: Int) =
       parallelStream().map { (cfg, seq) ->
         val clock = TimeSource.Monotonic.markNow()
 
@@ -263,6 +264,34 @@ class ProbabilisticLBH {
       val pq = templates.benchmark(CFG::sampleSWOR, holes)
       val mq = templates.benchmark(CFG::sampleSeq, holes)
       val rr = templates.benchmark(CFG::solveSeq, holes)
+      println()
+    }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMulticoreCompletion"
+*/
+//  @Test
+  fun testMulticoreCompletion() {
+    val duration = 10.seconds
+
+    fun List<Pair<CFG, List<String>>>.benchmark(f: CFG.(List<String>) -> Sequence<String>, name: String) =
+      map { (cfg, seq) ->
+        val results = f(cfg, seq).distinct().toList()
+        results.size.toDouble()//.also { println("$name found $it distinct results in $duration") }
+      }.also {
+        println(
+          "Average $name found in $duration: " +
+            "${it.average().round(3)}, ${it.stdDev().round(3)}"
+        )
+      }
+
+    ((2..6) * (1..10)).forEach { (holes, cores) ->
+      val templates = cfgToValidStrings(holes)
+      var clock = TimeSource.Monotonic.markNow()
+      templates.benchmark(f = { parallelEnumSeqWR(it, cores) { clock.elapsedNow() < duration } }, " PSWR[cores=$cores,holes=$holes]")
+      clock = TimeSource.Monotonic.markNow()
+      templates.benchmark(f = { parallelEnumSeqWOR(it, cores) { clock.elapsedNow() < duration } }, "PSWOR[cores=$cores,holes=$holes]")
       println()
     }
   }
