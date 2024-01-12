@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
+import kotlin.random.Random
 import kotlin.streams.asSequence
 import kotlin.time.TimeSource
 
@@ -45,29 +46,31 @@ fun CFG.parallelEnumSeqWR(
   prompt: List<String>,
   cores: Int,
   stoppingCriterion: () -> Boolean = { true }
-): Sequence<String> =
+): List<String> =
   startPTree(prompt)?.let {
     (0..<cores).toList().parallelStream().map { i ->
-      it.sampleWithReplacement()
+      it.sampleWRGD()
         .map { it.removeEpsilon() }
         .takeWhile { stoppingCriterion() }
         .distinct()
-    }.asSequence().flatten()
-  } ?: sequenceOf()
+        .toList()
+    }.toList().flatten()
+  } ?: listOf()
 
 fun CFG.parallelEnumSeqWOR(
   prompt: List<String>,
   cores: Int,
   stoppingCriterion: () -> Boolean = { true }
-): Sequence<String> =
+): List<String> =
   startPTree(prompt)?.let {
     (0..<cores).toList().parallelStream().map { i ->
-      it.sampleStrWithoutReplacement(i)
+      it.sampleStrWithoutReplacement(cores, i)
         .map { it.removeEpsilon() }
         .takeWhile { stoppingCriterion() }
         .distinct()
-    }.asSequence().flatten()
-  } ?: sequenceOf()
+        .toList()
+    }.toList().flatten()
+  } ?: listOf()
 
 /**
  * Much faster version of [intersectLevFSA] that leverages parallelism to construct

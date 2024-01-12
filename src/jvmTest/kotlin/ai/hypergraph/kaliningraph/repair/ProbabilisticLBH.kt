@@ -233,7 +233,9 @@ class ProbabilisticLBH {
 
   fun cfgToValidStrings(holes: Int) =
     validPythonStatements
-      .lines().map { Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) }
+      .lines()
+      .shuffled()
+      .map { Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) }
       .filter { (a, b) ->
         val clock = TimeSource.Monotonic.markNow()
         a.sampleSeq(b).takeWhile { clock.elapsedNow() < 2.seconds }.iterator().hasNext()
@@ -271,28 +273,63 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMulticoreCompletion"
 */
-//  @Test
+  @Test
   fun testMulticoreCompletion() {
     val duration = 10.seconds
 
-    fun List<Pair<CFG, List<String>>>.benchmark(f: CFG.(List<String>) -> Sequence<String>, name: String) =
+    fun List<Pair<CFG, List<String>>>.benchmark(f: CFG.(List<String>) -> List<String>) =
       map { (cfg, seq) ->
         val results = f(cfg, seq).distinct().toList()
         results.size.toDouble()//.also { println("$name found $it distinct results in $duration") }
-      }.also {
-        println(
-          "Average $name found in $duration: " +
-            "${it.average().round(3)}, ${it.stdDev().round(3)}"
-        )
       }
 
-    ((2..6) * (1..10)).forEach { (holes, cores) ->
+    (2..6).forEach { holes ->
       val templates = cfgToValidStrings(holes)
       var clock = TimeSource.Monotonic.markNow()
-      templates.benchmark(f = { parallelEnumSeqWR(it, cores) { clock.elapsedNow() < duration } }, " PSWR[cores=$cores,holes=$holes]")
+      val singleCoreSWR =
+        templates.benchmark { parallelEnumSeqWR(it, 1) { clock.elapsedNow() < duration } }
+          .also {
+            println(
+              "Average ${" PSWR[cores=2,holes=$holes]"} found in $duration: " +
+                  "${it.average().round(3)}, ${it.stdDev().round(3)}"
+            )
+          }.average()
       clock = TimeSource.Monotonic.markNow()
-      templates.benchmark(f = { parallelEnumSeqWOR(it, cores) { clock.elapsedNow() < duration } }, "PSWOR[cores=$cores,holes=$holes]")
-      println()
+      val singleCoreSWoR =
+        templates.benchmark { parallelEnumSeqWOR(it, 1) { clock.elapsedNow() < duration } }
+          .also {
+            println(
+              "Average ${"PSWoR[cores=2,holes=$holes]"} found in $duration: " +
+                  "${it.average().round(3)}, ${it.stdDev().round(3)}"
+            )
+          }.average()
+      (2..10).forEach { cores ->
+        clock = TimeSource.Monotonic.markNow()
+        templates.benchmark { parallelEnumSeqWR(it, cores) { clock.elapsedNow() < duration } }
+          .also {
+            println(
+              "Average ${" PSWR[cores=$cores,holes=$holes]"} found in $duration: " +
+                  "${it.average().round(3)}, ${it.stdDev().round(3)}"
+            )
+            println(
+              "Relative improvement over single core: " +
+                  "${(it.average() - singleCoreSWR) / singleCoreSWR}"
+            )
+          }
+        clock = TimeSource.Monotonic.markNow()
+        templates.benchmark { parallelEnumSeqWOR(it, cores) { clock.elapsedNow() < duration } }
+          .also {
+            println(
+              "Average ${"PSWoR[cores=$cores,holes=$holes]"} found in $duration: " +
+                  "${it.average().round(3)}, ${it.stdDev().round(3)}"
+            )
+            println(
+              "Relative improvement over single core: " +
+                  "${(it.average() - singleCoreSWoR) / singleCoreSWoR}"
+            )
+          }
+        println()
+      }
     }
   }
 }
