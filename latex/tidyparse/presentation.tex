@@ -613,6 +613,45 @@ error bars/y explicit
   \end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{Multicore Scaling Results (aarch64)}
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      enlargelimits=0.15,
+      legend style={at={(0.03,0.97)},anchor=north west},
+      title={\textbf{Relative Total Distinct Solutions Found vs. Single Core}},
+      x=1cm,
+      ylabel={Relative improvement},
+      xlabel={Number of assigned cores},
+      symbolic x coords={2,3,4,5,6,7,8,9,10},
+      xtick=data,
+      bar width=3pt,
+    ]
+      \addplot coordinates {
+        (2,0.1343) (3,0.1955) (4,0.2249) (5,0.2475)
+        (6,0.2760) (7,0.2994) (8,0.3073) (9,0.3151) (10,0.3229)
+      };
+      \addplot coordinates {
+        (2,0.2655) (3,0.4353) (4,0.5614) (5,0.6644)
+        (6,0.7462) (7,0.7783) (8,0.8347) (9,0.8005) (10,0.7798)
+      };
+      \addplot coordinates {
+        (2,0.3972) (3,0.6928) (4,0.9327) (5,1.1834)
+        (6,1.3138) (7,1.3988) (8,1.6039) (9,1.5500) (10,1.5691)
+      };
+      \addplot coordinates {
+        (2,0.4863) (3,0.8326) (4,1.1368) (5,1.3879)
+        (6,1.5873) (7,1.7494) (8,1.8802) (9,1.9059) (10,1.9625)
+      };
+      \addplot coordinates {
+        (2,0.4315) (3,0.7583) (4,1.0122) (5,1.2593)
+        (6,1.4586) (7,1.6349) (8,1.7813) (9,1.8324) (10,1.8695)
+      };
+      \legend{Holes=2,Holes=3,Holes=4,Holes=5,Holes=6}
+    \end{axis}
+  \end{tikzpicture}
+\end{frame}
+
 \section{Formal Language Theory}\label{sec:fltheory}
 
 %------------------------------------------------------------------------------------------------
