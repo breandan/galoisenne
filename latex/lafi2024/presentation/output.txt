@@ -1,0 +1,234 @@
+    Average  PSWR[cores=2,holes=2] found in 10s: 1.299, 10.549
+    Average PSWoR[cores=2,holes=2] found in 10s: 32.448, 48.028
+    Average  PSWR[cores=2,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=2,holes=2] found in 10s: 36.806, 53.91
+    Relative improvement over single core: 0.13431462741490338
+
+    Average  PSWR[cores=3,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=3,holes=2] found in 10s: 38.791, 57.42
+    Relative improvement over single core: 0.19549218031278756
+
+    Average  PSWR[cores=4,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=4,holes=2] found in 10s: 39.746, 58.989
+    Relative improvement over single core: 0.22493100275988953
+
+    Average  PSWR[cores=5,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=5,holes=2] found in 10s: 40.478, 60.383
+    Relative improvement over single core: 0.24747010119595217
+
+    Average  PSWR[cores=6,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=6,holes=2] found in 10s: 41.403, 61.969
+    Relative improvement over single core: 0.2759889604415822
+
+    Average  PSWR[cores=7,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=7,holes=2] found in 10s: 42.164, 63.412
+    Relative improvement over single core: 0.2994480220791168
+
+    Average  PSWR[cores=8,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=8,holes=2] found in 10s: 42.418, 63.655
+    Relative improvement over single core: 0.30726770929162833
+
+    Average  PSWR[cores=9,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=9,holes=2] found in 10s: 42.672, 63.832
+    Relative improvement over single core: 0.31508739650413986
+
+    Average  PSWR[cores=10,holes=2] found in 10s: 1.313, 10.67
+    Relative improvement over single core: 0.011494252873563251
+    Average PSWoR[cores=10,holes=2] found in 10s: 42.925, 64.221
+    Relative improvement over single core: 0.3229070837166514
+
+    Average  PSWR[cores=2,holes=3] found in 10s: 54.989, 524.563
+    Average PSWoR[cores=2,holes=3] found in 10s: 168.033, 431.61
+    Average  PSWR[cores=2,holes=3] found in 10s: 62.283, 594.138
+    Relative improvement over single core: 0.13263490808460165
+    Average PSWoR[cores=2,holes=3] found in 10s: 212.652, 563.434
+    Relative improvement over single core: 0.2655411087392456
+
+    Average  PSWR[cores=3,holes=3] found in 10s: 66.076, 630.326
+    Relative improvement over single core: 0.20162087369045256
+    Average PSWoR[cores=3,holes=3] found in 10s: 241.174, 658.285
+    Relative improvement over single core: 0.43528041917329696
+
+    Average  PSWR[cores=4,holes=3] found in 10s: 68.587, 654.278
+    Relative improvement over single core: 0.2472820715556433
+    Average PSWoR[cores=4,holes=3] found in 10s: 262.359, 739.395
+    Relative improvement over single core: 0.5613558444918818
+
+    Average  PSWR[cores=5,holes=3] found in 10s: 70.054, 668.276
+    Relative improvement over single core: 0.27396718719114443
+    Average PSWoR[cores=5,holes=3] found in 10s: 279.674, 812.202
+    Relative improvement over single core: 0.664402613364383
+
+    Average  PSWR[cores=6,holes=3] found in 10s: 72.5, 691.606
+    Relative improvement over single core: 0.3184423799169796
+    Average PSWoR[cores=6,holes=3] found in 10s: 293.413, 861.515
+    Relative improvement over single core: 0.7461672811954201
+
+    Average  PSWR[cores=7,holes=3] found in 10s: 73.598, 702.079
+    Relative improvement over single core: 0.33840679976279886
+    Average PSWoR[cores=7,holes=3] found in 10s: 298.804, 895.258
+    Relative improvement over single core: 0.7782521508506369
+
+    Average  PSWR[cores=8,holes=3] found in 10s: 74.663, 712.24
+    Relative improvement over single core: 0.3577782170389406
+    Average PSWoR[cores=8,holes=3] found in 10s: 308.293, 927.447
+    Relative improvement over single core: 0.8347241089333073
+
+    Average  PSWR[cores=9,holes=3] found in 10s: 74.859, 714.106
+    Relative improvement over single core: 0.3613362324570072
+    Average PSWoR[cores=9,holes=3] found in 10s: 302.543, 951.535
+    Relative improvement over single core: 0.800504560450223
+
+    Average  PSWR[cores=10,holes=3] found in 10s: 76.207, 726.964
+    Relative improvement over single core: 0.38584700533702315
+    Average PSWoR[cores=10,holes=3] found in 10s: 299.065, 956.329
+    Relative improvement over single core: 0.7798046445436315
+
+    Average  PSWR[cores=2,holes=4] found in 10s: 0.07, 0.696
+    Average PSWoR[cores=2,holes=4] found in 10s: 384.62, 3260.692
+    Average  PSWR[cores=2,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=2,holes=4] found in 10s: 537.38, 4656.972
+    Relative improvement over single core: 0.3971712339451926
+
+    Average  PSWR[cores=3,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=3,holes=4] found in 10s: 651.1, 5701.948
+    Relative improvement over single core: 0.692839685923769
+
+    Average  PSWR[cores=4,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=4,holes=4] found in 10s: 743.34, 6553.429
+    Relative improvement over single core: 0.9326608080703033
+
+    Average  PSWR[cores=5,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=5,holes=4] found in 10s: 839.78, 7451.585
+    Relative improvement over single core: 1.1834017991784098
+
+    Average  PSWR[cores=6,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=6,holes=4] found in 10s: 889.92, 7918.518
+    Relative improvement over single core: 1.3137642348291818
+
+    Average  PSWR[cores=7,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=7,holes=4] found in 10s: 922.63, 8206.457
+    Relative improvement over single core: 1.3988092142894284
+
+    Average  PSWR[cores=8,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=8,holes=4] found in 10s: 1001.52, 8958.103
+    Relative improvement over single core: 1.6039207529509645
+
+    Average  PSWR[cores=9,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=9,holes=4] found in 10s: 980.78, 8722.995
+    Relative improvement over single core: 1.5499974000311996
+
+    Average  PSWR[cores=10,holes=4] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=10,holes=4] found in 10s: 988.11, 8770.67
+    Relative improvement over single core: 1.569055171337944
+
+    Average  PSWR[cores=2,holes=5] found in 10s: 0.07, 0.696
+    Average PSWoR[cores=2,holes=5] found in 10s: 377.85, 3758.857
+    Average  PSWR[cores=2,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=2,holes=5] found in 10s: 561.58, 5586.947
+    Relative improvement over single core: 0.4862511578668784
+
+    Average  PSWR[cores=3,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=3,holes=5] found in 10s: 692.44, 6888.988
+    Relative improvement over single core: 0.8325790657668387
+
+    Average  PSWR[cores=4,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=4,holes=5] found in 10s: 807.39, 8032.726
+    Relative improvement over single core: 1.1368003175863437
+
+    Average  PSWR[cores=5,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=5,holes=5] found in 10s: 902.25, 8976.571
+    Relative improvement over single core: 1.387852322350139
+
+    Average  PSWR[cores=6,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=6,holes=5] found in 10s: 977.63, 9726.592
+    Relative improvement over single core: 1.587349477305809
+
+    Average  PSWR[cores=7,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=7,holes=5] found in 10s: 1038.85, 10335.723
+    Relative improvement over single core: 1.7493714436945873
+
+    Average  PSWR[cores=8,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=8,holes=5] found in 10s: 1088.28, 10827.546
+    Relative improvement over single core: 1.880190551806272
+
+    Average  PSWR[cores=9,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=9,holes=5] found in 10s: 1098.0, 10924.259
+    Relative improvement over single core: 1.9059150456530367
+
+    Average  PSWR[cores=10,holes=5] found in 10s: 0.07, 0.696
+    Relative improvement over single core: 0.0
+    Average PSWoR[cores=10,holes=5] found in 10s: 1119.39, 11137.086
+    Relative improvement over single core: 1.9625248114331084
+
+    Average  PSWR[cores=2,holes=6] found in 10s: 0.07, 0.696
+    Average PSWoR[cores=2,holes=6] found in 10s: 215.09, 2139.516
+    Average  PSWR[cores=2,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=2,holes=6] found in 10s: 307.9, 3062.863
+    Relative improvement over single core: 0.43149379329582954
+
+    Average  PSWR[cores=3,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=3,holes=6] found in 10s: 378.2, 3762.239
+    Relative improvement over single core: 0.7583337207680505
+
+    Average  PSWR[cores=4,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=4,holes=6] found in 10s: 432.81, 4305.601
+    Relative improvement over single core: 1.0122274396764146
+
+    Average  PSWR[cores=5,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=5,holes=6] found in 10s: 485.96, 4834.437
+    Relative improvement over single core: 1.259333302338556
+
+    Average  PSWR[cores=6,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=6,holes=6] found in 10s: 528.83, 5260.988
+    Relative improvement over single core: 1.4586452182807197
+
+    Average  PSWR[cores=7,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=7,holes=6] found in 10s: 566.75, 5638.287
+    Relative improvement over single core: 1.6349435120182247
+
+    Average  PSWR[cores=8,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=8,holes=6] found in 10s: 598.23, 5951.509
+    Relative improvement over single core: 1.781300850806639
+
+    Average  PSWR[cores=9,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=9,holes=6] found in 10s: 609.22, 6060.858
+    Relative improvement over single core: 1.832395741317588
+
+    Average  PSWR[cores=10,holes=6] found in 10s: 0.08, 0.796
+    Relative improvement over single core: 0.14285714285714277
+    Average PSWoR[cores=10,holes=6] found in 10s: 617.2, 6140.258
+    Relative improvement over single core: 1.8694964898414617

@@ -209,7 +209,7 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
 fun merge(X: PForest, Z: PForest): PForest =
   X.toMutableMap().apply {
     Z.forEach { (k, v) ->
-      if (k in this) this[k] = PTree(k, (this[k]!!.branches + v.branches).distinct())
+      if (k in this) this[k] = PTree(k, (this[k]!!.branches + v.branches))
       else this[k] = v
     }
   }.toMap()

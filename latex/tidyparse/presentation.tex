@@ -92,199 +92,199 @@
 %  \tableofcontents
 %\end{frame}
 
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  form sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{form}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{from}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1)]
-  z = set([5, 0, 4)]
-
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1)]
-  z = set([5, 0, 4)]
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1!\hlorange{])}!
-  z = set([5, 0, 4!\hlorange{])}!
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10);
-    my_list.append(2*i)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10)!\hlorange{;}!
-    my_list.append(2*i)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10)!\hlorange{:}!
-    my_list.append(2*i)
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  import Global from Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{import}! Global !\hlorange{from}! Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{from}! Global !\hlorange{import}! Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   catch AttributeError:
-     pass
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   !\hlorange{catch}! AttributeError:
-     pass
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   !\hlorange{except}! AttributeError:
-     pass
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  form sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{form}! sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{from}! sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1)]
+%  z = set([5, 0, 4)]
+%
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1)]
+%  z = set([5, 0, 4)]
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1!\hlorange{])}!
+%  z = set([5, 0, 4!\hlorange{])}!
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10);
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10)!\hlorange{;}!
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10)!\hlorange{:}!
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  import Global from Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{import}! Global !\hlorange{from}! Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{from}! Global !\hlorange{import}! Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   catch AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{catch}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{except}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
 
 \begin{frame}[fragile]{On the virtues of pragmatism}
   \textbf{Pragmatism}: \textit{a reasonable and logical way of solving problems that is based on dealing with specific situations instead of abstract theories.}\newline\\
@@ -1112,8 +1112,8 @@ error bars/y explicit
 
   \begin{equation*}
     \Gamma(T) \mapsto \begin{cases}
-                        \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
-                        \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
+      \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
+      \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
     \end{cases}
   \end{equation*}
 
@@ -1144,13 +1144,13 @@ error bars/y explicit
 
   \begin{equation*}
     \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
-                                                                 \text{Let } b = |\texttt{children}(T)|,\\
-                                                                 \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
-                                                                 \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
-                                                                 \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
-                                                                 \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
-                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+      \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+      \text{Let } b = |\texttt{children}(T)|,\\
+      \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+      \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+      \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
+      \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
+      \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
     \end{cases}
   \end{equation*}
 \end{frame}
@@ -1185,12 +1185,12 @@ error bars/y explicit
   \begin{algorithm}[H]
     \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
     \begin{algorithmic}
-      \Procedure{Denormalize}{\texttt{t: Tree}}
-        \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-        \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
-          \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
-        \Else\Comment{Graft the denormalized children on root.}
-        \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+      \Procedure{Cut}{\texttt{t: Tree}}
+        \State $\texttt{stems} \leftarrow \{\:\textsc{Cut}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+        \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
+          \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
+        \Else%\Comment{Graft the denormalized children on root.}
+          \State \textbf{return } $\{\:\texttt{Tree(t.root, stems)}\:\}$
         \EndIf
       \EndProcedure
     \end{algorithmic}

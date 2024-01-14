@@ -1,0 +1,127 @@
+digraph prograph {
+node[ fontname="Helvetica" fontsize=20 shape=Mrecord ];
+edge[ fontname="Helvetica" fontsize=18 ];
+
+graph ["concentrate"="true","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
+"eeba8" ["label"="+"]
+"a8416" ["label"="+"]
+"4500f" ["label"="pow"]
+"a67f9" ["label"="*"]
+"0.5" ["label"="0.5"]
+"f14a3" ["label"="*"]
+"9c49d" ["label"="*"]
+"59c48" ["label"="+"]
+"980bd" ["label"="+"]
+"8f532" ["label"="+"]
+"1a609" ["label"="+"]
+"e58c4" ["label"="+"]
+"23f5b" ["label"="+"]
+"d829b" ["label"="+"]
+"y₀" ["label"="y₀"]
+"2783d" ["label"="+"]
+"8bd47" ["label"="+"]
+"y₂" ["label"="y₂"]
+"517e6" ["label"="+"]
+"8caa0" ["label"="+"]
+"y₁" ["label"="y₁"]
+"7da0d" ["label"="+"]
+"b12cb" ["label"="+"]
+"b" ["label"="b"]
+"f8941" ["label"="+"]
+"3eecd" ["label"="+"]
+"2e83a" ["label"="+"]
+"b59fd" ["label"="+"]
+"dae83" ["label"="+"]
+"b11ba" ["label"="*"]
+"3bb89" ["label"="*"]
+"b2454" ["label"="*"]
+"7bed4" ["label"="*"]
+"39644" ["label"="*"]
+"12c32" ["label"="*"]
+"d58d1" ["label"="*"]
+"6c64d" ["label"="*"]
+"fb0f0" ["label"="*"]
+"6c2be" ["label"="*"]
+"57fd4" ["label"="*"]
+"a9bc3" ["label"="*"]
+"x₀" ["label"="x₀"]
+"θ₀" ["label"="θ₀"]
+"x₂" ["label"="x₂"]
+"θ₁" ["label"="θ₁"]
+"x₂" ["label"="x₂"]
+"x₄" ["label"="x₄"]
+"x₁" ["label"="x₁"]
+"x₃" ["label"="x₃"]
+"eeba8" -> "a8416"
+"a8416" -> "4500f"
+"a67f9" -> "a8416"
+"0.5" -> "4500f"
+"f14a3" -> "eeba8"
+"9c49d" -> "eeba8"
+"59c48" -> "a67f9"
+"980bd" -> "a67f9"
+"8f532" -> "f14a3"
+"1a609" -> "f14a3"
+"e58c4" -> "9c49d"
+"23f5b" -> "9c49d"
+"d829b" -> "59c48"
+"y₀" -> "59c48"
+"y₀" -> "980bd"
+"2783d" -> "980bd"
+"8bd47" -> "8f532"
+"y₂" -> "8f532"
+"y₂" -> "1a609"
+"517e6" -> "1a609"
+"8caa0" -> "e58c4"
+"y₁" -> "e58c4"
+"y₁" -> "23f5b"
+"7da0d" -> "23f5b"
+"b12cb" -> "d829b"
+"b" -> "d829b"
+"b" -> "2783d"
+"b" -> "8bd47"
+"b" -> "517e6"
+"b" -> "8caa0"
+"b" -> "7da0d"
+"f8941" -> "2783d"
+"3eecd" -> "8bd47"
+"2e83a" -> "517e6"
+"b59fd" -> "8caa0"
+"dae83" -> "7da0d"
+"b11ba" -> "b12cb"
+"3bb89" -> "b12cb"
+"b2454" -> "f8941"
+"7bed4" -> "f8941"
+"39644" -> "3eecd"
+"12c32" -> "3eecd"
+"d58d1" -> "2e83a"
+"6c64d" -> "2e83a"
+"fb0f0" -> "b59fd"
+"6c2be" -> "b59fd"
+"57fd4" -> "dae83"
+"a9bc3" -> "dae83"
+"x₀" -> "b11ba"
+"x₀" -> "b2454"
+"θ₀" -> "b11ba"
+"θ₀" -> "b2454"
+"θ₀" -> "39644"
+"θ₀" -> "d58d1"
+"θ₀" -> "fb0f0"
+"θ₀" -> "57fd4"
+"x₂" -> "3bb89"
+"x₂" -> "7bed4"
+"θ₁" -> "3bb89"
+"θ₁" -> "7bed4"
+"θ₁" -> "12c32"
+"θ₁" -> "6c64d"
+"θ₁" -> "6c2be"
+"θ₁" -> "a9bc3"
+"x₂" -> "39644"
+"x₂" -> "d58d1"
+"x₄" -> "12c32"
+"x₄" -> "6c64d"
+"x₁" -> "fb0f0"
+"x₁" -> "57fd4"
+"x₃" -> "6c2be"
+"x₃" -> "a9bc3"
+}
