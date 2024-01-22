@@ -375,7 +375,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \vspace{1.5cm}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Morally, $\mathbb{T}_2$ represents an implicit set of possible trees sharing the same root, where $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a porous string. Instead of $\hat\sigma_r$ we initialize using $\Lambda(\sigma_r)$:
+      Morally, $\mathbb{T}_2$ denotes an implicit set of possible trees sharing the same root, where $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG and porous string. Instead of $\hat\sigma_r$, we initialize using $\Lambda(\sigma_r)$:
       \end{minipage}
 
       \[
@@ -409,13 +409,13 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$, we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ like so:
+      Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$, we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2\times\mathbb{T}_2) \rightsquigarrow \mathbb{T}$:
       \end{minipage}
 
       \begin{equation*}
         \Gamma(T) \mapsto \begin{cases}
-                            \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
-                            \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
+          \Gamma\Big(\text{Multi} \big(\texttt{children}(T), \mathbf{p}\big)\Big) & \text{ if $T: \mathbb{T}_2$ } \\
+          \Big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \Big\rangle & \text{ if $T: \mathbb{T}_2\times \mathbb{T}_2$ }
         \end{cases}
       \end{equation*}
 
@@ -448,13 +448,13 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
 
       \begin{equation*}
         \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-          \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+          \big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
           \text{Let } b = |\texttt{children}(T)|,\\
           \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
           \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
           \phantom{\text{Let }} T_1, q_2 = \varphi(lb, q_1),\\
           \phantom{\text{Let }} T_2, q_3 = \varphi(rb, q_2) \text{ in } \\
-          \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+          \big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\big\rangle & \text{otherwise.} \\
         \end{cases}
       \end{equation*}
 

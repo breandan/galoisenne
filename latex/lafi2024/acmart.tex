@@ -132,12 +132,12 @@
 
 \subsection{Sampling trees with replacement}\label{sec:replacement}
 
-Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
 
 \begin{equation*}
   \Gamma(T) \mapsto \begin{cases}
-        \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
-        \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
+        \Gamma\big(\text{Multi} \big(\texttt{children}(T), \mathbf{p}\big)\big) & \text{ if $T: \mathbb{T}_2$ } \\
+        \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
   \end{cases}
 \end{equation*}
 
