@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.repair.*
-import ai.hypergraph.kaliningraph.sampling.choose
+import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
@@ -150,29 +150,6 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
         if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
       }
     }
-
-  fun <T> List<T>.sampleWithGeomDecay(): T {
-    if (isEmpty()) throw NoSuchElementException("List is empty.")
-
-    val r = 0.5 // Common ratio; adjust this for different decay rates
-
-    // Compute the total sum of the geometric series up to size
-    val total = (1 - r.pow(size)) / (1 - r)
-
-    // Generate a random value between 0 and the total
-    val rnd = Random.nextDouble() * total
-
-    // Iterate to find which item this random value corresponds to
-    var cumulativeSum = 0.0
-    var index = 0
-    while (index < size) {
-      cumulativeSum +=r.pow(index.toDouble())
-      if (rnd < cumulativeSum) break
-      index++
-    }
-
-    return this[index]
-  }
 
 //  fun List<Π2A<PTree>>.sampleWithGeomDecay(): Π2A<PTree> {
 //    val p = 0.5 // Adjust this for different decay rates

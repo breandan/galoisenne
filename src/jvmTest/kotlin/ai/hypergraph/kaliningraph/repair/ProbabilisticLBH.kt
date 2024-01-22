@@ -235,10 +235,10 @@ class ProbabilisticLBH {
     validPythonStatements
       .lines()
       .shuffled()
-      .map { Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) }
+      .flatMap { (0..10).map { _ -> Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) } }
       .filter { (a, b) ->
         val clock = TimeSource.Monotonic.markNow()
-        a.sampleSeq(b).takeWhile { clock.elapsedNow() < 2.seconds }.iterator().hasNext()
+        a.sampleSWOR(b).takeWhile { clock.elapsedNow() < 2.seconds }.distinct().toList().size > 1
       }.take(100)
 
 /*
@@ -290,19 +290,22 @@ class ProbabilisticLBH {
         templates.benchmark { parallelEnumSeqWR(it, 1) { clock.elapsedNow() < duration } }
           .also {
             println(
-              "Average ${" PSWR[cores=2,holes=$holes]"} found in $duration: " +
+              "Average ${" PSWR[cores=1,holes=$holes]"} found in $duration: " +
                   "${it.average().round(3)}, ${it.stdDev().round(3)}"
             )
+            println("Relative improvement over single core: 0.0")
           }.average()
       clock = TimeSource.Monotonic.markNow()
       val singleCoreSWoR =
         templates.benchmark { parallelEnumSeqWOR(it, 1) { clock.elapsedNow() < duration } }
           .also {
             println(
-              "Average ${"PSWoR[cores=2,holes=$holes]"} found in $duration: " +
+              "Average ${"PSWoR[cores=1,holes=$holes]"} found in $duration: " +
                   "${it.average().round(3)}, ${it.stdDev().round(3)}"
             )
+            println("Relative improvement over single core: 0.0")
           }.average()
+      println()
       (2..10).forEach { cores ->
         clock = TimeSource.Monotonic.markNow()
         templates.benchmark { parallelEnumSeqWR(it, cores) { clock.elapsedNow() < duration } }

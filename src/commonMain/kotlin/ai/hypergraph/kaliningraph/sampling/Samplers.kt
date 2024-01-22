@@ -412,3 +412,26 @@ inline fun <reified T> List<T>.choose(
 ): Sequence<Set<T>> =
   if (size <= k) sequenceOf(toSet())
   else (0 until numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
+
+fun <T> List<T>.sampleWithGeomDecay(): T {
+  if (isEmpty()) throw NoSuchElementException("List is empty.")
+
+  val r = 0.5 // Common ratio; adjust this for different decay rates
+
+  // Compute the total sum of the geometric series up to size
+  val total = (1 - r.pow(size)) / (1 - r)
+
+  // Generate a random value between 0 and the total
+  val rnd = Random.nextDouble() * total
+
+  // Iterate to find which item this random value corresponds to
+  var cumulativeSum = 0.0
+  var index = 0
+  while (index < size) {
+    cumulativeSum +=r.pow(index.toDouble())
+    if (rnd < cumulativeSum) break
+    index++
+  }
+
+  return this[index]
+}
