@@ -434,6 +434,7 @@ class BarHillelTest {
       println("Total branches off START: ${it.branches.size}")
       println("Average branching factor: ${it.branchRatio.let { (l, r) -> l / r }}")
       println("Total parse trees off START: ${it.totalTrees}")
+      println("First children: ${it.branches.joinToString("\n") { it.first.root + "," + it.second.root }}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
     }
   }

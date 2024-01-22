@@ -71,6 +71,7 @@
 \newcommand\pcd{\cdot}
 \newcommand\pcp{\phantom\cdot}
 \newcommand\ppp{\phantom{\nse}}
+\newcommand\hole{\underline{\hspace{0.25cm}}}
 
 \title[A Pragmatic Approach to Syntax Repair]{A Pragmatic Approach to Syntax Repair}
 \titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo.png}}
@@ -91,199 +92,199 @@
 %  \tableofcontents
 %\end{frame}
 
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  form sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{form}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{from}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1)]
-  z = set([5, 0, 4)]
-
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1)]
-  z = set([5, 0, 4)]
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  newlist = []
-  i = set([5, 3, 1!\hlorange{])}!
-  z = set([5, 0, 4!\hlorange{])}!
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10);
-    my_list.append(2*i)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10)!\hlorange{;}!
-    my_list.append(2*i)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  my_list = []
-  for i in range(10)!\hlorange{:}!
-    my_list.append(2*i)
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  import Global from Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{import}! Global !\hlorange{from}! Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{from}! Global !\hlorange{import}! Global
-  globalObj = Global()
-  print(str(globalObj.Test()))
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   catch AttributeError:
-     pass
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   !\hlorange{catch}! AttributeError:
-     pass
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-   try:
-     something()
-   !\hlorange{except}! AttributeError:
-     pass
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  form sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{form}! sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{from}! sympy import *
+%  x = Symbol('x', real=True)
+%  x, re(x), im(x)
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1)]
+%  z = set([5, 0, 4)]
+%
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1)]
+%  z = set([5, 0, 4)]
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  newlist = []
+%  i = set([5, 3, 1!\hlorange{])}!
+%  z = set([5, 0, 4!\hlorange{])}!
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10);
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10)!\hlorange{;}!
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  my_list = []
+%  for i in range(10)!\hlorange{:}!
+%    my_list.append(2*i)
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  import Global from Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{import}! Global !\hlorange{from}! Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%  !\hlorange{from}! Global !\hlorange{import}! Global
+%  globalObj = Global()
+%  print(str(globalObj.Test()))
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   catch AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{catch}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{except}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
 
 \begin{frame}[fragile]{On the virtues of pragmatism}
   \textbf{Pragmatism}: \textit{a reasonable and logical way of solving problems that is based on dealing with specific situations instead of abstract theories.}\newline\\
@@ -417,7 +418,7 @@
   To solve this problem, we will first pose a simpler problem that only considers localized edits, then turn our attention back to BCFLR.
 
   \begin{definition}[Porous completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+    Let $\underline\Sigma \coloneqq \Sigma \cup \{\hole\}$, where \hole denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
   \end{definition}
 \end{frame}
 
@@ -611,6 +612,45 @@ error bars/y explicit
     \resizebox{.5\textwidth}{!}{\input{throughput.tex}}
     \caption{We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs.}
   \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Multicore Scaling Results (aarch64)}
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      enlargelimits=0.15,
+      legend style={at={(0.03,0.97)},anchor=north west},
+      title={\textbf{Relative Total Distinct Solutions Found vs. Single Core}},
+      x=1cm,
+      ylabel={Relative improvement},
+      xlabel={Number of assigned cores},
+      symbolic x coords={2,3,4,5,6,7,8,9,10},
+      xtick=data,
+      bar width=3pt,
+    ]
+      \addplot coordinates {
+        (2,0.1343) (3,0.1955) (4,0.2249) (5,0.2475)
+        (6,0.2760) (7,0.2994) (8,0.3073) (9,0.3151) (10,0.3229)
+      };
+      \addplot coordinates {
+        (2,0.2655) (3,0.4353) (4,0.5614) (5,0.6644)
+        (6,0.7462) (7,0.7783) (8,0.8347) (9,0.8005) (10,0.7798)
+      };
+      \addplot coordinates {
+        (2,0.3972) (3,0.6928) (4,0.9327) (5,1.1834)
+        (6,1.3138) (7,1.3988) (8,1.6039) (9,1.5500) (10,1.5691)
+      };
+      \addplot coordinates {
+        (2,0.4863) (3,0.8326) (4,1.1368) (5,1.3879)
+        (6,1.5873) (7,1.7494) (8,1.8802) (9,1.9059) (10,1.9625)
+      };
+      \addplot coordinates {
+        (2,0.4315) (3,0.7583) (4,1.0122) (5,1.2593)
+        (6,1.4586) (7,1.6349) (8,1.7813) (9,1.8324) (10,1.8695)
+      };
+      \legend{Holes=2,Holes=3,Holes=4,Holes=5,Holes=6}
+    \end{axis}
+  \end{tikzpicture}
 \end{frame}
 
 \section{Formal Language Theory}\label{sec:fltheory}
@@ -831,7 +871,7 @@ error bars/y explicit
     \text{e.g.},
     \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
   \]
-  \vspace{-20pt}
+  \vspace{-1.5cm}
 
   \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
 
@@ -916,7 +956,7 @@ error bars/y explicit
 \end{frame}
 
 \begin{frame}[fragile]{Satisfiability + holes (our contribution)}
-  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
+  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
 
   \resizebox{\textwidth}{!}{
 {\renewcommand{\arraystretch}{1.2}
@@ -976,6 +1016,145 @@ error bars/y explicit
   }
 \end{frame}
 
+\begin{frame}[fragile]{Semiring algebras: Part I}
+  The prior solution tell us whether $A(\sigma)$ is nonempty, but forgets the solution(s). To solve for $A(\sigma)$, a na\"ive approach accumulates a mapping of nonterminals to sets of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = p(\sigma_r)$ using:
+
+  \begin{equation*}
+    p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\hole) \mapsto \bigcup_{s\in \Sigma} p(s)
+  \end{equation*}
+
+  $p(\cdot)$ constructs the superdiagonal, then we solve for $\Lambda_\sigma^*$ using the algebra:
+
+  \begin{equation*}
+    X \oplus Z \mapsto \big\{w \stackrel{+}{\Rightarrow} (X \circ w) \cup (Z \circ w) \mid w \in \pi_1(X \cup Z)\big\}
+  \end{equation*}
+
+  \begin{equation*}
+    X \otimes Z \mapsto \bigoplus_{w, x, z}\big\{w \stackrel{+}{\Rightarrow} (X\circ x)(Z\circ z) \mid (w\rightarrow xz) \in P, x\in X, z\in Z\big\}
+  \end{equation*}
+
+  \noindent After $M_\infty$ is attained, the solutions can be read off via $\Lambda_\sigma^* \circ S$. The issue here is exponential growth when eagerly computing the transitive closure.
+\end{frame}
+
+\begin{frame}[fragile]{Semiring algebras: Part II}
+  The prior encoding can be improved using an ADT $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ using:
+
+  \begin{equation*}
+    \dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\hole) \mapsto \bigoplus_{s\in \Sigma} p(s)
+  \end{equation*}
+
+  \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
+
+  \begin{equation*}
+    X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
+  \end{equation*}
+
+  \begin{equation*}
+    X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+  \end{equation*}
+\end{frame}
+
+\begin{frame}[fragile]{Semiring algebras: Part III}
+  \begin{equation*}
+    \hspace{-3cm}L(p) = 1 + p L(p) \phantom{space} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
+  \end{equation*}
+  \vspace{-1cm}\begin{figure}[H]
+                 \resizebox{0.9\columnwidth}{!}{
+                   \begin{tikzpicture}
+                   [
+                     grow                    = right,
+                     sibling distance        = 3em,
+                     level distance          = 5em,
+                     edge from parent/.style = {draw, -latex},
+                     every node/.style       = {font=\footnotesize},
+                     sloped
+                   ]
+                     \node [root] {S}
+                     child { node [env] {BC}
+                     child { node [root] {B}
+                     child { node [env] {RD}
+                     child { node [root] {R} edge from parent node [above] }
+                     child { node [root] {D} edge from parent node [above] }
+                     edge from parent node [above] }
+                     edge from parent node [below] }
+                     child { node [root] {C}
+                     child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+%  child { edge from parent node [above] {\ldots} }
+                     edge from parent node [below] }
+                     edge from parent node [above] }
+                     child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+                     child { node [env] {AB}
+                     child { node [root] {A}
+                     child {
+                       node [env] {QC}
+                       child { node [root] {Q} edge from parent node [above] }
+                       child { node [root] {C} edge from parent node [above] }
+                       edge from parent node [above]
+                     }
+%    child { node [env] {ZQ} edge from parent node [above] }
+                     child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
+                     edge from parent node [below] }
+                     child { node [root] {B}
+                     child { node [env] {RD}
+                     child { node [root] {R} edge from parent node [above] }
+                     child { node [root] {D} edge from parent node [above] }
+                     edge from parent node [above] }
+                     edge from parent node [below] }
+                     edge from parent node [above] };
+                   \end{tikzpicture}
+                 }
+                 \vspace{-0.5cm}\caption{A partial $\mathbb{T}_2$ for the grammar with productions $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Sampling trees with replacement}
+  Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+
+  \begin{equation*}
+    \Gamma(T) \mapsto \begin{cases}
+      \text{Multi} \big(\texttt{children}(T), \mathbf{p}\big) & \text{ if $T$ is a \texttt{root}} \\
+      \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T$ is a \texttt{child} }
+    \end{cases}
+  \end{equation*}
+
+  This is closely related to the generating function for the ordinary Boltzmann sampler from analytic combinatorics,
+
+  \begin{equation*}
+    \Gamma C(x) \mapsto \begin{cases}
+                          \text{Bern} \left(\frac{A(x)}{A(x) + B(x)}\right) \rightarrow \Gamma A(x) \mid \Gamma B(x) & \text{ if } \mathcal{C}=\mathcal{A}+\mathcal{B} \\
+                          \big\langle \Gamma A(x), \Gamma B(x)\big\rangle & \text{ if } \mathcal{C}=\mathcal{A} \times \mathcal{B}
+    \end{cases}
+  \end{equation*}
+
+  \noindent however unlike Duchon et al. (2004), rejection is unnecessary to ensure exact-size sampling, as all trees in $\mathbb{T}_2$ will necessarily be the same size.
+\end{frame}
+
+\begin{frame}[fragile]{A pairing function for replacement-free tree sampling}
+  The total number of trees induced by a given sketch template is given by:
+
+  \begin{equation*}
+    |T: \mathbb{T}_2| \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
+                                1  & \text{if $T$ is a leaf,} \\
+                                \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
+    \end{cases}
+  \end{equation*}\\
+
+  To sample from $\mathbb{T}_2$ without replacement, we define a pairing function:
+
+  \begin{equation*}
+    \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+      \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+      \text{Let } b = |\texttt{children}(T)|,\\
+      \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+      \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+      \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
+      \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
+      \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+    \end{cases}
+  \end{equation*}
+\end{frame}
+
 \begin{frame}[fragile]{Chomsky Denormalization}
   Chomksy normalization is needed for matrix-based parsing, however produces lopsided parse trees. We can denormalize them using a simple recusive procedure to restore the natural shape of the original CFG:\vspace{0.5cm}\\
 
@@ -1006,12 +1185,12 @@ error bars/y explicit
   \begin{algorithm}[H]
     \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
     \begin{algorithmic}
-      \Procedure{Denormalize}{\texttt{t: Tree}}
-        \State $\texttt{stems} \leftarrow \{\:\textsc{Denormalize}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-        \If{$\texttt{t.root} \in V_{\mathcal{G}'} \setminus V_{\mathcal{G}}$}
-          \State \textbf{return } \texttt{stems} \Comment{Drop synthetic nonterminals.}
-        \Else\Comment{Graft the denormalized children on root.}
-        \State \textbf{return } $\{\:\texttt{Tree(root, stems)}\:\}$
+      \Procedure{Cut}{\texttt{t: Tree}}
+        \State $\texttt{stems} \leftarrow \{\:\textsc{Cut}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+        \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
+          \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
+        \Else%\Comment{Graft the denormalized children on root.}
+          \State \textbf{return } $\{\:\texttt{Tree(t.root, stems)}\:\}$
         \EndIf
       \EndProcedure
     \end{algorithmic}
@@ -1288,119 +1467,6 @@ The Levenshtein automata is another kind of lattice, not in the order-theoretic 
   \RightLabel{$\textsc{Done}$}
   \BinaryInfC{$q_{i, j}\in F$}
 \end{prooftree}
-\end{frame}
-
-\begin{frame}[fragile]{Semiring algebras: Part I}
-There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A na\"ive approach accumulates a mapping of nonterminals to sets of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = p(\sigma_r)$ using:
-
-\begin{equation*}
-p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\_) \mapsto \bigcup_{s\in \Sigma} p(s)
-\end{equation*}
-
-$p(\cdot)$ constructs the superdiagonal, then we solve for $\Lambda_\sigma^*$ using the algebra:
-
-\begin{equation*}
-X \oplus Z \mapsto \big\{w \stackrel{+}{\Rightarrow} (X \circ w) \cup (Z \circ w) \mid w \in \pi_1(X \cup Z)\big\}
-\end{equation*}
-
-\begin{equation*}
-X \otimes Z \mapsto \bigoplus_{w, x, z}\big\{w \stackrel{+}{\Rightarrow} (X\circ x)(Z\circ z) \mid (w\rightarrow xz) \in P, x\in X, z\in Z\big\}
-\end{equation*}
-
-\noindent After $M_\infty$ is attained, the solutions can be read off via $\Lambda_\sigma^* \circ S$. The issue here is exponential growth when eagerly computing the transitive closure.
-\end{frame}
-
-\begin{frame}[fragile]{Semiring algebras: Part II}
-The prior encoding can be improved using an ADT $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ using:
-
-\begin{equation*}
-\dot{p}(s: \Sigma) \mapsto \Big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\Big\} \text{ and } \dot{p}(\_) \mapsto \bigoplus_{s\in \Sigma} p(s)
-\end{equation*}
-
-\noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
-
-\begin{equation*}
-X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
-\end{equation*}
-
-\begin{equation*}
-X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
-\end{equation*}
-\end{frame}
-
-\begin{frame}[fragile]{Semiring algebras: Part II}
-\begin{figure}[H]
-\resizebox{0.9\columnwidth}{!}{
-\begin{tikzpicture}
-[
-grow                    = right,
-sibling distance        = 3em,
-level distance          = 5em,
-edge from parent/.style = {draw, -latex},
-every node/.style       = {font=\footnotesize},
-sloped
-]
-\node [root] {S}
-child { node [env] {BC}
-child { node [root] {B}
-child { node [env] {RD}
-child { node [root] {R} edge from parent node [above] }
-child { node [root] {D} edge from parent node [above] }
-edge from parent node [above] }
-edge from parent node [below] }
-child { node [root] {C}
-child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-%  child { edge from parent node [above] {\ldots} }
-edge from parent node [below] }
-edge from parent node [above] }
-child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-child { node [env] {AB}
-child { node [root] {A}
-child {
-node [env] {QC}
-child { node [root] {Q} edge from parent node [above] }
-child { node [root] {C} edge from parent node [above] }
-edge from parent node [above]
-}
-%    child { node [env] {ZQ} edge from parent node [above] }
-child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-edge from parent node [below] }
-child { node [root] {B}
-child { node [env] {RD}
-child { node [root] {R} edge from parent node [above] }
-child { node [root] {D} edge from parent node [above] }
-edge from parent node [above] }
-edge from parent node [below] }
-edge from parent node [above] };
-\end{tikzpicture}
-}
-\caption{A partial $\mathbb{T}_2$ for the grammar with productions $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
-\end{figure}
-\end{frame}
-
-
-\begin{frame}[fragile]{A pairing function for sampling bounded binary trees}
-The type $\mathbb{T}_2$ of all trees that can be generated by a CNF CFG is a nested datatype: $P(a) = 1 + a L(P(a)^2), L(p) = 1 + p L(p)$. We can count and sample the total number of trees induced by a given sketch template as:
-
-\begin{equation*}
-|T: \mathbb{T}_2| \mapsto \begin{cases}
-%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
-1  & \text{if $T$ is a leaf,} \\
-\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
-\end{cases}
-\end{equation*}
-
-\begin{equation*}
-\varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-\Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
-\text{Let } b = |\texttt{children}(T)|,\\
-\phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
-\phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
-\phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
-\phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
-\Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
-\end{cases}
-\end{equation*}
 \end{frame}
 
 %\begin{frame}[fragile]{A birds eye view of the algorithm}
