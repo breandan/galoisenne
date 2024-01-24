@@ -11,10 +11,10 @@ fun Arc.pretty() = "$π1 -<$π2>-> $π3"
 fun Σᐩ.coords(): Pair<Int, Int> =
   (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
 typealias STC = Triple<Σᐩ, Int, Int>
-fun STC.coords() =  π2 to π3
+fun STC.coords() = π2 to π3
 
-data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
-  val alphabet by lazy { Q.map { it.π2 }.toSet() }
+open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
+  open val alphabet by lazy { Q.map { it.π2 }.toSet() }
   val states by lazy { Q.states }
   val APSP: Map<Pair<Σᐩ, Σᐩ>, Int> by lazy {
     graph.APSP.map { (k, v) ->
@@ -50,14 +50,14 @@ data class FSA(val Q: TSA, val init: Set<Σᐩ>, val final: Set<Σᐩ>) {
       println("Step ($i): ${states.joinToString(", ")}")
     }.also { println("Allowed final states: ${final.joinToString(", ")}") }
 
-  fun recognizes(str: List<Σᐩ>) =
+  open fun recognizes(str: List<Σᐩ>) =
     (str.fold(init) { acc, sym ->
       val nextStates = acc.flatMap { map[it to sym] ?: emptySet() }.toSet()
   //      println("$acc --$sym--> $nextStates")
       nextStates
     } intersect final).isNotEmpty()
 
-  fun recognizes(str: Σᐩ) = recognizes(str.tokenizeByWhitespace())
+  open fun recognizes(str: Σᐩ) = recognizes(str.tokenizeByWhitespace())
 
   fun toDot(): String {
     fun String.htmlify() =

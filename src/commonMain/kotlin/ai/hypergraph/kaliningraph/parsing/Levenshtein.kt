@@ -77,7 +77,9 @@ fun makeLevFSA(
       if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
     }
 
-    FSA(Q, initialStates, finalStates).also { println("Levenshtein automata size: ${Q.size}") }
+    FSA(Q, initialStates, finalStates)
+//      .nominalize()
+      .also { println("Levenshtein automata size: ${Q.size}") }
   }
 
 private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
@@ -85,12 +87,15 @@ private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 /**
    TODO: upArcs and diagArcs are the most expensive operations taking ~O(2n|Σ|) to construct.
      Later, the Bar-Hillel construction creates a new production for every triple QxQxQ, so it
-     increases the size of generated grammar by (2n|Σ|)^3. For this to be tractable on real
-     world grammars and code snippets, we must prune the transitions aggressively by only
-     creating arcs that are contextually likely.
+     increases the size of generated grammar by (2n|Σ|)^3. To fix this, we must instead create
+     a nominal or parametric CFG with arcs which denote infinite alphabets.
 
      See: [ai.hypergraph.kaliningraph.repair.CEAProb]
- */
+*//*
+  References
+    - https://arxiv.org/pdf/1402.0897.pdf#section.7
+    - https://arxiv.org/pdf/2311.03901.pdf#subsection.2.2
+*/
 
 /*
   s∈Σ i∈[0,n] j∈[1,k]
