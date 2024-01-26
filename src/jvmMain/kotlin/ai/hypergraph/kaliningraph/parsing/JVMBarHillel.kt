@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
-import kotlin.random.Random
 import kotlin.streams.asSequence
 import kotlin.time.TimeSource
 
@@ -44,7 +43,35 @@ fun CFG.parallelEnumSeqMinimalWR(
 
 fun CFG.parallelEnumSeqWR(
   prompt: List<String>,
-  cores: Int,
+  cores: Int = NUM_CORES,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<cores).toList().parallelStream().map { i ->
+      it.sampleWRGD()
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
+
+fun CFG.parallelEnumSeqWOR(
+  prompt: List<String>,
+  cores: Int = NUM_CORES,
+  stoppingCriterion: () -> Boolean = { true }
+): Sequence<String> =
+  startPTree(prompt)?.let {
+    (0..<cores).toList().parallelStream().map { i ->
+      it.sampleStrWithoutReplacement()
+        .map { it.removeEpsilon() }
+        .takeWhile { stoppingCriterion() }
+        .distinct()
+    }.asSequence().flatten()
+  } ?: sequenceOf()
+
+fun CFG.parallelEnumListWR(
+  prompt: List<String>,
+  cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
 ): List<String> =
   startPTree(prompt)?.let {
@@ -57,7 +84,7 @@ fun CFG.parallelEnumSeqWR(
     }.toList().flatten()
   } ?: listOf()
 
-fun CFG.parallelEnumSeqWOR(
+fun CFG.parallelEnumListWOR(
   prompt: List<String>,
   cores: Int,
   stoppingCriterion: () -> Boolean = { true }
@@ -77,10 +104,10 @@ fun CFG.parallelEnumSeqWOR(
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.
  */
 
-infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG =
-  subgrammar(fsa.alphabet)
+infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = intersectLevFSAP(fsa)
+//  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
-    .intersectLevFSAP(fsa)
+//    .intersectLevFSAP(fsa)
 
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
@@ -127,5 +154,5 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + transits + binaryProds + unitProds)
     .filterRHSInNTS().postProcess()
-    .also { println("Postprocessing took ${clock.elapsedNow()}") }
+    .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }

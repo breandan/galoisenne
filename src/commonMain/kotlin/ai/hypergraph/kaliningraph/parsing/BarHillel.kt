@@ -12,10 +12,9 @@ import kotlin.time.TimeSource
 
 infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
 
-infix fun CFG.intersectLevFSA(fsa: FSA): CFG =
+infix fun CFG.intersectLevFSA(fsa: FSA): CFG = intersectLevFSAP(fsa)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
-    this.intersectLevFSAP(fsa)
 
 fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
   intersectLevFSA(makeLevFSA(source, distance))
@@ -67,7 +66,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
-    .also { println("Postprocessing took ${clock.elapsedNow()}") }
+    .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }
 
 // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q

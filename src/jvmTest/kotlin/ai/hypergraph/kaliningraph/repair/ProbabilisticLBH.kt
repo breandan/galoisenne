@@ -1,14 +1,11 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
-import ai.hypergraph.kaliningraph.automata.nominalize
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.kaliningraph.types.times
 import ai.hypergraph.markovian.*
 import org.junit.jupiter.api.Test
 import org.kosat.round
-import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.reflect.KFunction2
 import kotlin.test.*
@@ -202,6 +199,52 @@ class ProbabilisticLBH {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testHumanRepairRecovery"
+*/
+//  @Test
+  fun testHumanRepairRecovery() {
+    var errorRate = 0
+    var (recall, total) = 0 to 0
+    invalidPythonStatements.lines().zip(validPythonStatements.lines())
+      .forEach {  (invalid, valid) ->
+        val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
+        val humanRepair = "$valid NEWLINE".tokenizeByWhitespace()
+        val target = humanRepair.joinToString(" ")
+        val levDist = levenshtein(toRepair, humanRepair)
+
+        val levBall = makeLevFSA(toRepair, levDist)
+        val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
+        val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+        val intGram = try { s2pg.jvmIntersectLevFSA(levBall) }
+        catch (e: NoSuchElementException) { errorRate++; return@forEach }
+        val template = List(toRepair.size + levDist) { "_" }
+
+        total++
+        assertTrue(humanRepair in s2pg.language)
+        assertTrue(levBall.recognizes(humanRepair))
+        assertTrue(humanRepair in intGram.language)
+        println("Ground truth repair: $humanRepairANSI\n")
+        val clock = TimeSource.Monotonic.markNow()
+        run done@{
+          intGram.parallelEnumSeqWR(template).distinct().forEach {
+            if (it == target) {
+              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
+              println("Recall: ${++recall} / $total, errors: $errorRate")
+              return@done
+            } else {
+              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
+              println("Found valid repair (${clock.elapsedNow()}): $ascii")
+              if (30.seconds < clock.elapsedNow()) {
+                println("Timeout! Recall: $recall / $total, errors: $errorRate")
+                return@done
+              }
+            }
+          }
+        }
+      }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.diagnoseWholeGrammarDeletion"
 */
 /** This is related to [CFG] */
@@ -213,10 +256,11 @@ class ProbabilisticLBH {
       val toRepair = "NAME = STRING NEWLINE NAME = NAME ( NAME , NAME [ NUMBER : - NUMBER ] . NAME ( STRING ) NEWLINE".tokenizeByWhitespace()
       val clock = TimeSource.Monotonic.markNow()
 
+      val levDist = 2
       val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      val levBall = makeLevFSA(toRepair, 2)
+      val levBall = makeLevFSA(toRepair, levDist)
       val intGram = s2pg.jvmIntersectLevFSA(levBall)
-      val template = List(toRepair.size + 2) { "_" }
+      val template = List(toRepair.size + levDist) { "_" }
 
       intGram.parallelEnumSeqMinimalWR(template, toRepair)
         .onEachIndexed { i, it ->
@@ -288,7 +332,7 @@ class ProbabilisticLBH {
       val templates = cfgToValidStrings(holes)
       var clock = TimeSource.Monotonic.markNow()
       val singleCoreSWR =
-        templates.benchmark { parallelEnumSeqWR(it, 1) { clock.elapsedNow() < duration } }
+        templates.benchmark { parallelEnumListWR(it, 1) { clock.elapsedNow() < duration } }
           .also {
             println(
               "Average ${" PSWR[cores=1,holes=$holes]"} found in $duration: " +
@@ -298,7 +342,7 @@ class ProbabilisticLBH {
           }.average()
       clock = TimeSource.Monotonic.markNow()
       val singleCoreSWoR =
-        templates.benchmark { parallelEnumSeqWOR(it, 1) { clock.elapsedNow() < duration } }
+        templates.benchmark { parallelEnumListWOR(it, 1) { clock.elapsedNow() < duration } }
           .also {
             println(
               "Average ${"PSWoR[cores=1,holes=$holes]"} found in $duration: " +
@@ -309,7 +353,7 @@ class ProbabilisticLBH {
       println()
       (2..10).forEach { cores ->
         clock = TimeSource.Monotonic.markNow()
-        templates.benchmark { parallelEnumSeqWR(it, cores) { clock.elapsedNow() < duration } }
+        templates.benchmark { parallelEnumListWR(it, cores) { clock.elapsedNow() < duration } }
           .also {
             println(
               "Average ${" PSWR[cores=$cores,holes=$holes]"} found in $duration: " +
@@ -321,7 +365,7 @@ class ProbabilisticLBH {
             )
           }
         clock = TimeSource.Monotonic.markNow()
-        templates.benchmark { parallelEnumSeqWOR(it, cores) { clock.elapsedNow() < duration } }
+        templates.benchmark { parallelEnumListWOR(it, cores) { clock.elapsedNow() < duration } }
           .also {
             println(
               "Average ${"PSWoR[cores=$cores,holes=$holes]"} found in $duration: " +

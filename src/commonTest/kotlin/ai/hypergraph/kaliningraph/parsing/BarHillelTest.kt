@@ -316,10 +316,11 @@ class BarHillelTest {
   @Test
   fun semiRealisticTest() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-    val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
+    val origStr= "NAME = NAME . NAME [ : , STRING ] == NAME NEWLINE NAME [ [ NAME , : ] = NAME . NAME [ NAME , : ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
     val levBall = makeLevFSA(toRepair, levDist)
+  println(levBall.states.size)
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
