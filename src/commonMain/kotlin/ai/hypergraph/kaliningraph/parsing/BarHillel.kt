@@ -5,21 +5,26 @@ import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.time.TimeSource
 
+/**
+ * Specialized Bar-Hillel construction for Levenshtein automata. See also
+ * [FSA.intersect] for the generic Bar-Hillel version with arbitrary FSA.
+ */
+
 infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
-// http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
-// https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 
 infix fun CFG.intersectLevFSA(fsa: FSA): CFG =
-  subgrammar(fsa.alphabet)
+//  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
-    .intersectLevFSAP(fsa)
+    this.intersectLevFSAP(fsa)
 
 fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
-  intersectLevFSA(makeLevFSA(source, distance, terminals))
+  intersectLevFSA(makeLevFSA(source, distance))
 
 fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
   makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
 
+// http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
+// https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val lengthBoundsCache = lengthBounds
@@ -65,11 +70,12 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
-fun CFG.unitProdRules(fsa: FSA) =
-  unitProductions.map { (A, rhs) ->
-    val relevantTransits = fsa.Q.filter { it.π2 == rhs[0] }
-    relevantTransits.map { (p, σ, q) -> "[$p~$A~$q]" to listOf(σ) }
-  }.flatten()
+// For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
+// such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
+fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
+  (unitProductions * fsa.nominalize().flattenedTriples)
+    .filter { (_, σ, arc) -> (arc.π2)(σ) }
+    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
 
 fun CFG.postProcess() =
     this.also { println("∩-grammar has ${it.size} total productions") }
@@ -115,9 +121,9 @@ fun CFG.dropVestigialProductions(
   return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
 }
 
+// Generic Bar-Hillel construction for arbitrary CFL ∩ REG language
 infix fun FSA.intersect(cfg: CFG) = cfg.freeze().intersect(this)
 
-// Generic Bar-Hillel construction for arbitrary FSA
 infix fun CFG.intersect(fsa: FSA): CFG {
   val clock = TimeSource.Monotonic.markNow()
   val initFinal =

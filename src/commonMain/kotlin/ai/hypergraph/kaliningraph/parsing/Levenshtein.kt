@@ -51,18 +51,15 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
     .map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }.distinct()
 }
 
-fun makeLevFSA(str: Σᐩ, dist: Int, alphabet: Set<Σᐩ>): FSA =
-  makeLevFSA(str.tokenizeByWhitespace(), dist, alphabet)
+fun makeLevFSA(str: Σᐩ, dist: Int): FSA = makeLevFSA(str.tokenizeByWhitespace(), dist)
 
 fun makeLevFSA(
   str: List<Σᐩ>,
   dist: Int,
-  alphabet: Set<Σᐩ>,
   digits: Int = (str.size * dist).toString().length,
-  ceaDist: CEADist? = null
 ): FSA =
-  (upArcs(str, dist, (if (ceaDist == null) alphabet else alphabet.intersect(ceaDist.topIns)) + str, digits, ceaDist) +
-    diagArcs(str, dist, (if (ceaDist == null) alphabet else alphabet.intersect(ceaDist.topSub)) + str, digits, ceaDist) +
+  (upArcs(str, dist, digits) +
+    diagArcs(str, dist, digits) +
     str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
     str.mapIndexed { i, it -> knightArcs(i, dist, it, digits, str) }.flatten())
   .let { Q ->
@@ -103,16 +100,13 @@ private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
  (q_i,j−1 -s→ q_i,j)∈δ
 */
 
-fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDist: CEADist? = null): TSA =
-  ((0..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
-    .filter { (i, _, s) -> str.size <= i || str[i] != s }
-    .filter { (i, j, _) -> i <= str.size || i - str.size < j }
-//    .filter { (i, j, s) ->
-//      if (ceaDist == null || j != 1) true
-////      else s in (ceaDist.insLeft[str.getOrElse(i - 1) { "BOS" }] ?: setOf())
-//      else s in ceaDist.topIns
-//    }
-    .map { (i, j, s) -> i to j - 1 to s to i to j }.postProc(digits)
+fun upArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
+  ((0..<str.size + dist).toSet() * (1..dist).toSet())
+//    .filter { (i, _, s) -> str.size <= i || str[i] != s }
+    .filter { (i, j) -> i <= str.size || i - str.size < j }
+    .map { (i, j) -> i to j to if (i < str.size) str[i] else "~~~" }
+    .map { (i, j, s) -> i to j - 1 to "[!=]$s" to i to j }
+    .postProc(digits)
 
 /*
    s∈Σ i∈[1,n] j ∈[1,k]
@@ -120,16 +114,13 @@ fun upArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDi
  (q_i−1,j−1 -s→ q_i,j)∈δ
 */
 
-fun diagArcs(str: List<Σᐩ>, dist: Int, alphabet: Set<Σᐩ>, digits: Int, ceaDist: CEADist? = null): TSA =
-  ((1..<str.size + dist).toSet() * (1..dist).toSet() * alphabet)
-    .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
-    .filter { (i, j, _) -> i <= str.size || i - str.size <= j }
-//    .filter { (i, j, s) ->
-//      if (ceaDist == null || j != 1) true
-////      else s in (ceaDist.subLeft[str.getOrElse(i - 2) { "BOS" }] ?: setOf())
-//      else s in ceaDist.topSub.intersect(alphabet) + str
-//    }
-    .map { (i, j, s) -> i - 1 to j - 1 to s to i to j }.postProc(digits)
+fun diagArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
+  ((1..<str.size + dist).toSet() * (1..dist).toSet())
+//    .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
+    .filter { (i, j) -> i <= str.size || i - str.size <= j }
+    .map { (i, j) -> i to j to if (str.size <= i - 1) "~~~" else str[i - 1] }
+    .map { (i, j, s) -> i - 1 to j - 1 to "[!=]$s" to i to j }
+    .postProc(digits)
 
 /*
  s=σ_i i∈[1,n] j∈[0,k]

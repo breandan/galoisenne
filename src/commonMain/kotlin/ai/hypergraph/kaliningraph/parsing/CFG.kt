@@ -40,7 +40,7 @@ val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production>
     by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
-val CFG.unitProductions: Set<Production> by cache { filter { it.RHS.size == 1 } }
+val CFG.unitProductions: Set<Pair<Σᐩ, Σᐩ>> by cache { filter { it.RHS.size == 1 }.map { it.LHS to it.RHS[0] }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.unitNonterminals: Set<Σᐩ> by cache { terminalUnitProductions.map { it.LHS }.toSet() }
 val CFG.bimap: BiMap by cache { BiMap(this) }
@@ -84,7 +84,7 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 val CFG.unitReachability by cache {
   symbols.associateWith { from ->
     LabeledGraph {
-      unitProductions.map { it.LHS to it.RHS[0] }
+      unitProductions.map { it.first to it.second }
 //      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
         .forEach { (a, b) -> a - b }
     }.let {

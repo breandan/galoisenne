@@ -15,6 +15,8 @@ fun STC.coords() = π2 to π3
 
 open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
   open val alphabet by lazy { Q.map { it.π2 }.toSet() }
+  val isNominalizable by lazy { alphabet.any { it.startsWith("[!=]") } }
+  val nominalForm: NOM by lazy { nominalize() }
   val states by lazy { Q.states }
   val APSP: Map<Pair<Σᐩ, Σᐩ>, Int> by lazy {
     graph.APSP.map { (k, v) ->
@@ -51,10 +53,11 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     }.also { println("Allowed final states: ${final.joinToString(", ")}") }
 
   open fun recognizes(str: List<Σᐩ>) =
-    (str.fold(init) { acc, sym ->
+    if (isNominalizable) nominalForm.recognizes(str)
+    else (str.fold(init) { acc, sym ->
       val nextStates = acc.flatMap { map[it to sym] ?: emptySet() }.toSet()
   //      println("$acc --$sym--> $nextStates")
-      nextStates
+      nextStates.also { println("Next states: $it") }
     } intersect final).isNotEmpty()
 
   open fun recognizes(str: Σᐩ) = recognizes(str.tokenizeByWhitespace())

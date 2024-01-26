@@ -48,7 +48,7 @@ fun CFG.transformIntoCNF(): CFG =
 val START_SYMBOL = "START"
 
 fun Σᐩ.getParametersIn(cfg: CFG) =
-  cfg.unitProductions.map { it.LHS }.filter { "<$it>" in this }
+  cfg.unitProductions.map { it.first }.filter { "<$it>" in this }
 
 fun CFG.eliminateParametricityFromRHS(
   ntReplaced: Σᐩ,

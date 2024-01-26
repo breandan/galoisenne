@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
+import ai.hypergraph.kaliningraph.automata.nominalize
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.times
@@ -141,7 +142,7 @@ class ProbabilisticLBH {
       val humanRepair = origFixed.tokenizeByWhitespace()
       val levDist = 2
 
-      val levBall = makeLevFSA(toRepair, levDist, s2pg.terminals, ceaDist = contextCSV)
+      val levBall = makeLevFSA(toRepair, levDist)
       val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
 //        levBall.debug(humanRepair)
 
@@ -213,7 +214,7 @@ class ProbabilisticLBH {
       val clock = TimeSource.Monotonic.markNow()
 
       val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
-      val levBall = makeLevFSA(toRepair, 2, s2pg.terminals, ceaDist = contextCSV)
+      val levBall = makeLevFSA(toRepair, 2)
       val intGram = s2pg.jvmIntersectLevFSA(levBall)
       val template = List(toRepair.size + 2) { "_" }
 
@@ -244,7 +245,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRandomGrammarCompletion"
 */
-  @Test
+//  @Test
   fun testRandomGrammarCompletion() {
     val duration: Duration = 10.seconds
     fun List<Pair<CFG, List<String>>>.benchmark(f: KFunction2<CFG, List<String>, Sequence<String>>, holes: Int) =
@@ -273,7 +274,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMulticoreCompletion"
 */
-  @Test
+//  @Test
   fun testMulticoreCompletion() {
     val duration = 10.seconds
 

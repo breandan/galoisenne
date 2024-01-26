@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
 import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.automata.parseFSA
+import ai.hypergraph.kaliningraph.automata.*
 import kotlin.test.*
 import kotlin.time.*
 
@@ -102,7 +102,7 @@ class BarHillelTest {
 
     val origStr = "1 + 1"
     val levDist = 2
-    val levFSA = makeLevFSA(origStr, levDist, simpleCFG.terminals)
+    val levFSA = makeLevFSA(origStr, levDist)
 
     val levCFG = levFSA.intersectLevFSA(simpleCFG)
 
@@ -144,7 +144,7 @@ class BarHillelTest {
     val arithCFGNoEps = arithCFG.noEpsilonOrNonterminalStubs
 
     val origStr = "T and ! ( F )"
-    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1, arithCFG.terminals))
+    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1))
 
     val template = List(8) { "_" }
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
@@ -172,7 +172,7 @@ class BarHillelTest {
     val levDist = 2
 
     val origStr = "( ( ) ) [ { }"
-    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, levDist, arithCFG.terminals))
+    val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, levDist))
 
     val template = List(9) { "_" }
     val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
@@ -207,7 +207,7 @@ class BarHillelTest {
     val origStr = "if ( true or false then true else 1"
     val tokens = origStr.tokenizeByWhitespace()
     val maxLevDist = 3
-    val levBall = makeLevFSA(origStr, maxLevDist, gram.terminals)
+    val levBall = makeLevFSA(origStr, maxLevDist)
     val intGram = gram.intersectLevFSA(levBall)
     val clock = TimeSource.Monotonic.markNow()
     val template = List(tokens.size + maxLevDist) { "_" }
@@ -252,7 +252,7 @@ class BarHillelTest {
     val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val maxLevDist = 3
-    val levBall = makeLevFSA(toRepair, maxLevDist, gram.terminals)
+    val levBall = makeLevFSA(toRepair, maxLevDist)
     println("Total transitions in FSA: ${levBall.Q.size}")
 //  throw Exception("")
 //  println(levBall.toDot())
@@ -319,7 +319,7 @@ class BarHillelTest {
     val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
-    val levBall = makeLevFSA(toRepair, levDist, gram.terminals)
+    val levBall = makeLevFSA(toRepair, levDist)
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
@@ -371,7 +371,7 @@ class BarHillelTest {
     val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
-    val levBall = makeLevFSA(toRepair, levDist, gram.terminals)
+    val levBall = makeLevFSA(toRepair, levDist)
     val clock = TimeSource.Monotonic.markNow()
 
     val s2pg = Grammars.seq2parsePythonCFG
