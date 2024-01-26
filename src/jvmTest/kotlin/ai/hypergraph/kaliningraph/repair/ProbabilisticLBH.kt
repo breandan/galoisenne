@@ -201,11 +201,11 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testHumanRepairRecovery"
 */
-//  @Test
+  @Test
   fun testHumanRepairRecovery() {
     var errorRate = 0
     var (recall, total) = 0 to 0
-    invalidPythonStatements.lines().zip(validPythonStatements.lines())
+    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(10)
       .forEach {  (invalid, valid) ->
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
         val humanRepair = "$valid NEWLINE".tokenizeByWhitespace()
@@ -216,7 +216,10 @@ class ProbabilisticLBH {
         val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
         val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
         val intGram = try { s2pg.jvmIntersectLevFSA(levBall) }
-        catch (e: NoSuchElementException) { errorRate++; return@forEach }
+        catch (e: NoSuchElementException) {
+          println("Recall: $recall / $total, errors: ${++errorRate}")
+          return@forEach
+        }
         val template = List(toRepair.size + levDist) { "_" }
 
         total++
@@ -225,19 +228,15 @@ class ProbabilisticLBH {
         assertTrue(humanRepair in intGram.language)
         println("Ground truth repair: $humanRepairANSI\n")
         val clock = TimeSource.Monotonic.markNow()
-        run done@{
-          intGram.parallelEnumSeqWR(template).distinct().forEach {
+        run untilDone@{
+          intGram.parallelEnumSeqWR(template) { clock.elapsedNow() < 90.seconds }.distinct().forEach {
             if (it == target) {
               println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
               println("Recall: ${++recall} / $total, errors: $errorRate")
-              return@done
+              return@untilDone
             } else {
               val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
               println("Found valid repair (${clock.elapsedNow()}): $ascii")
-              if (30.seconds < clock.elapsedNow()) {
-                println("Timeout! Recall: $recall / $total, errors: $errorRate")
-                return@done
-              }
             }
           }
         }

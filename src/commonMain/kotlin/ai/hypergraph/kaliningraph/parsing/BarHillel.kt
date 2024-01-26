@@ -48,15 +48,17 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
+  val validTriples =
+    fsa.stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList()
+
   val binaryProds =
     nonterminalProductions.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
-      val triples = fsa.stateCoords * fsa.stateCoords * fsa.stateCoords
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      triples
+      validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa, lengthBoundsCache) }
+        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -170,15 +172,20 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
   map
 }
 
-fun CFG.lengthBounds(nt: Σᐩ, fudge: Int = 8): IntRange =
+fun CFG.lengthBounds(nt: Σᐩ, fudge: Int = 10): IntRange =
   (lengthBounds[nt] ?: -1..-1)
     // Okay if we overapproximate the length bounds a bit
     .let { (it.first - fudge)..(it.last + fudge) }
 
-fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
+fun Π3A<STC>.isValidStateTriple(): Boolean {
   fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
     first <= other.first && second <= other.second
 
+  return first.coords().dominates(second.coords())
+      && second.coords().dominates(third.coords())
+}
+
+fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: FSA): Boolean {
   fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): Int =
     second.second - first.second + second.first - first.first
 
@@ -192,11 +199,9 @@ fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: 
 
   // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
   fun isCompatible() =
-    first.coords().dominates(second.coords())
-        && second.coords().dominates(third.coords())
-        && cfg.lengthBounds(nts.first).overlaps(SPLP(first, third))
-        && cfg.lengthBounds(nts.second).overlaps(SPLP(first, second))
-        && cfg.lengthBounds(nts.third).overlaps(SPLP(second, third))
+    cfg.lengthBounds(nts.first).overlaps(SPLP(first, third))
+      && cfg.lengthBounds(nts.second).overlaps(SPLP(first, second))
+      && cfg.lengthBounds(nts.third).overlaps(SPLP(second, third))
 
   return isCompatible()
 }

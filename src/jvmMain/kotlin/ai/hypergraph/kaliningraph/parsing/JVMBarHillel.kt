@@ -104,14 +104,13 @@ fun CFG.parallelEnumListWOR(
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.
  */
 
-infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = intersectLevFSAP(fsa)
+infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
 
-private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
+private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
-  val lengthBoundsCache = lengthBounds
 
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
@@ -122,7 +121,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       .asSequence().toSet()
 
   val initFinal =
-    (fsa.init  * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
+    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
 
   val transits =
     fsa.Q.map { (q, a, r) -> "[$q,$a,$r]".also { nts.add(it) } to listOf(a) }
@@ -136,14 +135,16 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods: Set<Production> = nonterminalProductions
   var i = 0
+  val validTriples =
+    fsa.stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList()
+
   val binaryProds = prods.parallelStream().map {
       if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      val triples = fsa.stateCoords * fsa.stateCoords * fsa.stateCoords
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      triples
+      validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa, lengthBoundsCache) }
+        .filter { it.isCompatibleWith(A to B to C, this@jvmIntersectLevFSAP, fsa) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
