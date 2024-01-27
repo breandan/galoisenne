@@ -9,7 +9,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "2.0.0-Beta2"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.50.0"
+  id("com.github.ben-manes.versions") version "0.51.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
 }
 
@@ -117,20 +117,20 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:23.0.2")
+        implementation("org.graalvm.js:js:23.0.3")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC2")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.1.0")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.5.0")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.2.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.6.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:5.0.0")
+        implementation("org.apache.datasketches:datasketches-java:5.0.1")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -141,7 +141,7 @@ kotlin {
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:4.1.0")
+        implementation("org.sosy-lab:java-smt:4.1.1")
 
         // val z3Version = "4.12.2-glibc_2.27"
         // runtimeOnly("org.sosy-lab:javasmt-solver-z3:$z3Version:com.microsoft.z3@jar")
@@ -261,7 +261,7 @@ tasks {
 
   withType<Test> {
     minHeapSize = "1g"
-    maxHeapSize = "32g"
+    maxHeapSize = "60g"
     useJUnitPlatform()
     testLogging {
       events = setOf(

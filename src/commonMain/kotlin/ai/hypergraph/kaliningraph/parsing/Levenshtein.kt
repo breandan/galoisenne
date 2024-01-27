@@ -104,7 +104,7 @@ fun upArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
   ((0..<str.size + dist).toSet() * (1..dist).toSet())
 //    .filter { (i, _, s) -> str.size <= i || str[i] != s }
     .filter { (i, j) -> i <= str.size || i - str.size < j }
-    .map { (i, j) -> i to j to if (i < str.size) str[i] else "~~~" }
+    .map { (i, j) -> i to j to if (i < str.size) str[i] else "###" }
     .map { (i, j, s) -> i to j - 1 to "[!=]$s" to i to j }
     .postProc(digits)
 
@@ -118,7 +118,7 @@ fun diagArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
   ((1..<str.size + dist).toSet() * (1..dist).toSet())
 //    .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
     .filter { (i, j) -> i <= str.size || i - str.size <= j }
-    .map { (i, j) -> i to j to if (str.size <= i - 1) "~~~" else str[i - 1] }
+    .map { (i, j) -> i to j to if (str.size <= i - 1) "###" else str[i - 1] }
     .map { (i, j, s) -> i - 1 to j - 1 to "[!=]$s" to i to j }
     .postProc(digits)
 

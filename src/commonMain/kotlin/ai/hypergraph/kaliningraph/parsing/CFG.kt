@@ -226,13 +226,13 @@ class BiMap(cfg: CFG) {
   val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
   val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
 
-  val TDEPS: Map<Σᐩ, Set<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
+  val TDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
     mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
       for ((l, r) in cfg) for (symbol in r)
           getOrPut(symbol) { mutableSetOf() }.add(l)
     }
   }
-  val NDEPS: Map<Σᐩ, Set<Σᐩ>> by lazy { // Maps all NTs to the symbols they can generate
+  val NDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all NTs to the symbols they can generate
     mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
       for ((l, r) in cfg) for (symbol in r)
           getOrPut(l) { mutableSetOf() }.add(symbol)

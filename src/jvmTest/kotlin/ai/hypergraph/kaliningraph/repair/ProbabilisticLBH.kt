@@ -201,12 +201,17 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testHumanRepairRecovery"
 */
-  @Test
+//  @Test
   fun testHumanRepairRecovery() {
     var errorRate = 0
     var (recall, total) = 0 to 0
+    val sampleTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
+    val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
+    val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
+
     invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(10)
       .forEach {  (invalid, valid) ->
+        val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
         val humanRepair = "$valid NEWLINE".tokenizeByWhitespace()
         val target = humanRepair.joinToString(" ")
@@ -228,15 +233,26 @@ class ProbabilisticLBH {
         assertTrue(humanRepair in intGram.language)
         println("Ground truth repair: $humanRepairANSI\n")
         val clock = TimeSource.Monotonic.markNow()
+        var samplesBeforeMatch = 0
         run untilDone@{
           intGram.parallelEnumSeqWR(template) { clock.elapsedNow() < 90.seconds }.distinct().forEach {
+            samplesBeforeMatch++
             if (it == target) {
-              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
-              println("Recall: ${++recall} / $total, errors: $errorRate")
+              val elapsed = clock.elapsedNow().inWholeMilliseconds
+              val allElapsed = allTime.elapsedNow().inWholeMilliseconds
+              println("Found length-$levDist repair in $elapsed ms, $allElapsed ms, ")
+              println("Recall / samples : ${++recall} / $total, errors: $errorRate")
+              sampleTimeByLevDist[levDist] = sampleTimeByLevDist[levDist]!! + elapsed
+              println("Draw timings (ms): ${sampleTimeByLevDist.mapValues { it.value / recall }}")
+              allTimeByLevDist[levDist] = allTimeByLevDist[levDist]!! + allElapsed
+              println("Full timings (ms): ${allTimeByLevDist.mapValues { it.value / recall }}")
+              samplesBeforeMatchByLevDist[levDist] = samplesBeforeMatchByLevDist[levDist]!! + samplesBeforeMatch
+              println("Avg drawn samples: ${samplesBeforeMatchByLevDist.mapValues { it.value / recall }}")
+//              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
               return@untilDone
-            } else {
-              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
-              println("Found valid repair (${clock.elapsedNow()}): $ascii")
+//            } else {
+//              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
+//              println("Found valid repair (${clock.elapsedNow()}): $ascii")
             }
           }
         }

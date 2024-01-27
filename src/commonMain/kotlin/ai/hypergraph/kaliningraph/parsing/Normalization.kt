@@ -10,6 +10,7 @@ import ai.hypergraph.kaliningraph.types.*
 // https://www.cs.rit.edu/~jmg/courses/cs380/20051/slides/7-1-chomsky.pdf
 // https://user.phil-fak.uni-duesseldorf.de/~kallmeyer/Parsing/cyk.pdf#page=21
 
+// Helps keep track of the history of CFG transformations for debugging purposes
 val rewriteHistory = LRUCache<CFG, List<CFG>>()
 
 /**
@@ -180,6 +181,40 @@ fun CFG.removeUselessSymbols(
 //  }
  asSequence().filter { (s, _) -> s in generating && s in reachable }.toSet()
 
+fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
+  val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
+  val nextReachable = mutableSetOf(from)
+
+  do {
+    val t = nextReachable.first()
+    nextReachable.remove(t)
+    allReachable += t
+    nextReachable += (bimap.NDEPS[t]?: emptyList())
+      .filter { it !in allReachable && it !in nextReachable }
+  } while (nextReachable.isNotEmpty())
+
+//  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
+
+  return allReachable
+}
+
+fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()): Set<Σᐩ> {
+  val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
+  val nextGenerating = from.toMutableSet()
+
+  do {
+    val t = nextGenerating.first()
+    nextGenerating.remove(t)
+    allGenerating += t
+    nextGenerating += (bimap.TDEPS[t] ?: emptyList())
+      .filter { it !in allGenerating && it !in nextGenerating }
+  } while (nextGenerating.isNotEmpty())
+
+//  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
+
+  return allGenerating
+}
+
 //  .also {
 //    println(
 //      it.second.joinToString("\n") { (l, r) ->
@@ -204,43 +239,9 @@ fun CFG.equivalenceClass(from: Σᐩ): Set<Σᐩ> = unitReachability[from] ?: se
 fun LabeledGraph.transitiveClosure(from: Set<Σᐩ>) =
   transitiveClosure(filter { it.label in from }).map { it.label }.toSet()
 
-fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
-  val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
-  val nextReachable = mutableSetOf(from)
-
-  do {
-    val t = nextReachable.first()
-    nextReachable.remove(t)
-    allReachable += t
-    nextReachable += (bimap.NDEPS[t]?: emptyList())
-      .filter { it !in allReachable && it !in nextReachable }
-  } while (nextReachable.isNotEmpty())
-
-//  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
-
-  return allReachable
-}
-
 // All symbols that are reachable from START_SYMBOL
 fun CFG.reachableSymbols(from: Σᐩ = START_SYMBOL): Set<Σᐩ> =
   reachability.getOrPut(from) { depGraph.transitiveClosure(setOf(from)) }
-
-fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()): Set<Σᐩ> {
-  val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
-  val nextGenerating = from.toMutableSet()
-
-  do {
-    val t = nextGenerating.first()
-    nextGenerating.remove(t)
-    allGenerating += t
-    nextGenerating += (bimap.TDEPS[t] ?: emptyList())
-      .filter { it !in allGenerating && it !in nextGenerating }
-  } while (nextGenerating.isNotEmpty())
-
-//  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
-
-  return allGenerating
-}
 
 // All symbols that are either terminals or generate terminals
 fun CFG.generatingSymbols(
