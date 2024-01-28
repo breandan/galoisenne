@@ -199,18 +199,19 @@ class ProbabilisticLBH {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testHumanRepairRecovery"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPerfectRecall"
 */
 //  @Test
-  fun testHumanRepairRecovery() {
+  fun testPerfectRecall() {
+    // Perfect recall on first 20 repairs takes ~7 minutes on a 2019 MacBook Pro
     var errorRate = 0
     var (recall, total) = 0 to 0
     val sampleTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
 
-    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(10)
-      .forEach {  (invalid, valid) ->
+    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(20)
+      .forEach { (invalid, valid) ->
         val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
         val humanRepair = "$valid NEWLINE".tokenizeByWhitespace()

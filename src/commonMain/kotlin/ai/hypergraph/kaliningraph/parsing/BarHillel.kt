@@ -30,7 +30,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && last() == ']' && count { it == '~' } == 2
-  fun List<Π2<Σᐩ, List<Σᐩ>>>.filterRHSInNTS() =
+  fun List<Production>.filterRHSInNTS() =
     asSequence().filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
 
   val initFinal =
@@ -155,12 +155,12 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 // Tracks the number of tokens a given nonterminal can represent
 // e.g., a NT with a bound of 1..3 can parse { s: Σ^[1, 3] }
 val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
-  val clock = TimeSource.Monotonic.markNow()
+//  val clock = TimeSource.Monotonic.markNow()
   val epsFree = noEpsilonOrNonterminalStubs.freeze()
   val tpl = List(20) { "_" }
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
-  epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
+    epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
     sets.flatMap { it.map { it.key } }.forEach { nt ->
       map[nt]?.let {
         (if (it.first < 0) (idx + 1) else it.first)..(idx + 1)

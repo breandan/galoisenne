@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.time.TimeSource
@@ -114,13 +115,8 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
 
-  val nts = mutableSetOf("START")
-  fun Σᐩ.isSyntheticNT() =
-    first() == '[' && last() == ']' && count { it == '~' } == 2
-  fun List<Π2<Σᐩ, List<Σᐩ>>>.filterRHSInNTS() =
-    parallelStream()
-      .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
-      .asSequence().toSet()
+  val lengthBoundsCache = lengthBounds
+  val nts = ConcurrentSkipListSet(setOf("START"))
 
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
@@ -140,109 +136,128 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val validTriples =
     fsa.stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList()
 
-  val binaryProds = prods.parallelStream().map {
+  val binaryProds =
+    prods.parallelStream().flatMap {
       if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@jvmIntersectLevFSAP, fsa, lengthBounds) }
+        .filter { it.isCompatibleWith(A to B to C, this@jvmIntersectLevFSAP, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
-        }.toList()
-    }.asSequence().flatten().toList()
+        }.toList().stream()
+    }.toList()
+
+  fun Σᐩ.isSyntheticNT() =
+    first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
+  fun List<Production>.filterRHSInNTS(): CFG =
+    parallelStream()
+      .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+      .asSequence().toSet()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + transits + binaryProds + unitProds)
-    .filterRHSInNTS().postProcess()
+    .filterRHSInNTS()
+    .jvmPostProcess()
     .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }
 
 // Parallel streaming doesn't seem to be that much faster (yet)?
 
-//fun CFG.jvmPostProcess() =
-//  this.also { println("∩-grammar has ${it.size} total productions") }
-//    .jvmDropVestigialProductions().normalForm.noNonterminalStubs
-//    .also { println("∩-grammar has ${it.size} useful productions") }
-//    .freeze()
-//
-//fun CFG.jvmDropVestigialProductions(
-//  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == '~' } == 2 }
-//): CFG {
-//  val nts: Set<Σᐩ> = map { it.LHS }.toSet()
-//  val rw = asSequence().asStream().parallel()
-//    .filter { prod -> prod.RHS.all { !criteria(it) || it in nts } }
-//    .collect(Collectors.toSet())
-//    .also { println("Removed ${size - it.size} invalid productions") }
-//    .freeze().removeUselessSymbols()
-//
-//  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
-//
-//  return if (rw.size == size) this else rw.jvmDropVestigialProductions(criteria)
-//}
-//
-///**
-// * Eliminate all non-generating and unreachable symbols.
-// *
-// * All terminal-producing symbols are generating.
-// * If A -> [..] and all symbols in [..] are generating, then A is generating
-// * No other symbols are generating.
-// *
-// * START is reachable.
-// * If S -> [..] is reachable, then all variables in [..] are reachable.
-// * No other symbols are reachable.
-// *
-// * A useful symbol is both generating and reachable.
-// */
-//
-//// TODO: https://zerobone.net/blog/cs/non-productive-cfg-rules/
-//fun CFG.jvmRemoveUselessSymbols(
-//  generating: Set<Σᐩ> = genSym(),
-//  reachable: Set<Σᐩ> = reachSym()
-//): CFG =
-//  asSequence().asStream().parallel()
-//    .filter { (s, _) -> s in reachable && s in generating }
-//    .collect(Collectors.toSet())
-////    .let {
-////      val frozen = it.freeze()
-////      val generating = frozen.genSym()
-////      frozen.asSequence().asStream().parallel()
-////        .filter { (s, _) -> s in generating }
-////        .collect(Collectors.toSet())
-////    }
-//
-//private fun CFG.reachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
-//  val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
-//  val nextReachable = mutableSetOf(from)
-//
-//  do {
-//    val t = nextReachable.first()
-//    nextReachable.remove(t)
-//    allReachable += t
-//    nextReachable += (bimap.NDEPS[t]?: emptyList())
-//      .filter { it !in allReachable && it !in nextReachable }
-//  } while (nextReachable.isNotEmpty())
-//
-////  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
-//
-//  return allReachable
-//}
-//
-//private fun CFG.genSym(from: Set<Σᐩ> = terminalUnitProductions.map { it.LHS }.toSet()): Set<Σᐩ> {
-//  val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
-//  val nextGenerating = from.toMutableSet()
-//
-//  do {
-//    val t = nextGenerating.first()
-//    nextGenerating.remove(t)
-//    allGenerating += t
-//    nextGenerating += (bimap.TDEPS[t] ?: emptyList())
-//      .filter { it !in allGenerating && it !in nextGenerating }
-//  } while (nextGenerating.isNotEmpty())
-//
-////  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
-//
-//  return allGenerating
-//}
+fun CFG.jvmPostProcess() =
+  this.also { println("∩-grammar has ${it.size} total productions") }
+    .let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions() }
+    .normalForm
+    .noNonterminalStubs
+    .also { println("∩-grammar has ${it.size} useful productions") }
+    .freeze()
+
+fun CFG.jvmDropVestigialProductions(
+  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == '~' } == 2 }
+): CFG {
+  val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
+  val rw = asSequence().asStream().parallel()
+    .filter { prod -> prod.RHS.all { it in nts || !criteria(it) } }
+    .asSequence().toSet()
+    .also { println("Removed ${size - it.size} invalid productions") }
+    .freeze().jvmRemoveUselessSymbols()
+
+  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
+
+  return if (rw.size == size) this else rw.jvmDropVestigialProductions(criteria)
+}
+
+/**
+ * Eliminate all non-generating and unreachable symbols.
+ *
+ * All terminal-producing symbols are generating.
+ * If A -> [..] and all symbols in [..] are generating, then A is generating
+ * No other symbols are generating.
+ *
+ * START is reachable.
+ * If S -> [..] is reachable, then all variables in [..] are reachable.
+ * No other symbols are reachable.
+ *
+ * A useful symbol is both generating and reachable.
+ */
+
+// TODO: https://zerobone.net/blog/cs/non-productive-cfg-rules/
+fun CFG.jvmRemoveUselessSymbols(
+  generating: Set<Σᐩ> = jvmGenSym(),
+  reachable: Set<Σᐩ> = jvmReachSym()
+): CFG =
+  asSequence().asStream().parallel()
+    .filter { (s, _) -> s in reachable && s in generating }
+    .asSequence().toSet()
+
+private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
+  val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
+  val nextReachable: MutableSet<Σᐩ> = mutableSetOf(from)
+  val NDEPS =
+    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>().apply {
+      this@jvmReachSym.asSequence().asStream().parallel()
+        .forEach { (l, r) -> getOrPut(l) { ConcurrentSkipListSet() }.addAll(r) }
+    }
+
+  do {
+    val t = nextReachable.first()
+    nextReachable.remove(t)
+    allReachable += t
+    nextReachable += (NDEPS[t]?: emptyList())
+      .filter { it !in allReachable && it !in nextReachable }
+  } while (nextReachable.isNotEmpty())
+
+//  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
+
+  return allReachable
+}
+
+private fun CFG.jvmGenSym(
+  nonterminals: Set<Σᐩ> = asSequence().asStream().parallel().map { it.LHS }.asSequence().toSet(),
+  from: Set<Σᐩ> = asSequence().asStream().parallel()
+     .filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }
+     .map { it.LHS }.asSequence().toSet()
+): Set<Σᐩ> {
+  val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
+  val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
+  val TDEPS =
+    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>().apply {
+      this@jvmGenSym.asSequence().asStream().parallel()
+        .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentSkipListSet() }.add(l) } }
+    }
+
+  do {
+    val t = nextGenerating.first()
+    nextGenerating.remove(t)
+    allGenerating += t
+    nextGenerating += (TDEPS[t] ?: emptyList())
+      .filter { it !in allGenerating && it !in nextGenerating }
+  } while (nextGenerating.isNotEmpty())
+
+//  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
+
+  return allGenerating
+}
