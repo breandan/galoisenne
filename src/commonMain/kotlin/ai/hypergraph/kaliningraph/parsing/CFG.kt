@@ -254,6 +254,16 @@ class BiMap(cfg: CFG) {
   operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
 }
 
+fun CFG.sample(from: Σᐩ = START_SYMBOL): Σᐩ {
+  val children = bimap[from]
+  if (children.isEmpty()) { return if ("ε" in from) "" else from }
+  else {
+    val child = children.random()
+    return if (child.size == 1) sample(child.first())
+    else child.map { sample(it) }.filter { it.isNotEmpty() }.joinToString(" ")
+  }
+}
+
 /*
 Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
 ----------------------- □β     yield β, then α necessarily yields β"

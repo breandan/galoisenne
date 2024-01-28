@@ -6,8 +6,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.*
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.time.TimeSource
@@ -57,6 +56,35 @@ fun CFG.parallelEnumSeqWR(
         .distinct()
     }.asSequence().flatten()
   } ?: sequenceOf()
+
+fun CFG.jvmSample(
+  fastMap: Map<Σᐩ, Collection<List<Σᐩ>>>,
+  from: Σᐩ = START_SYMBOL,
+): String {
+  val children = fastMap[from]
+  if (children.isNullOrEmpty()) { return if ("ε" in from) "" else from }
+  else {
+    val child = children.random()
+    return if (child.size == 1) jvmSample(fastMap, child.first())
+    else child.map { jvmSample(fastMap, it) }.filter { it.isNotEmpty() }.joinToString(" ")
+  }
+}
+
+fun CFG.sampleDirectlyWR(
+  cores: Int = NUM_CORES,
+  stoppingCriterion: () -> Boolean = { true },
+  fastMap: ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<List<Σᐩ>>> =
+    asSequence().asStream().parallel().collect(
+      { ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<List<Σᐩ>>>() },
+      { map, (l, r) -> map.getOrPut(l) { ConcurrentLinkedQueue() }.add(r) },
+      { map1, map2 -> map1.putAll(map2) }
+    ),
+): Sequence<String> =
+  (0..<cores).toList().parallelStream().map { i ->
+    generateSequence { jvmSample(fastMap) }
+      .takeWhile { stoppingCriterion() }
+      .distinct()
+  }.asSequence().flatten()
 
 fun CFG.parallelEnumSeqWOR(
   prompt: List<String>,
@@ -171,7 +199,7 @@ fun CFG.jvmPostProcess() =
   this.also { println("∩-grammar has ${it.size} total productions") }
     .let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions() }
     .normalForm
-    .noNonterminalStubs
+    .noEpsilonOrNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
     .freeze()
 

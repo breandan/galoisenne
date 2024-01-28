@@ -211,7 +211,8 @@ class ProbabilisticLBH {
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
 
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
-      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
+//      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
+      .take(10)
       .forEach { (invalid, valid) ->
         val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
@@ -237,7 +238,7 @@ class ProbabilisticLBH {
         val clock = TimeSource.Monotonic.markNow()
         var samplesBeforeMatch = 0
         run untilDone@{
-          intGram.parallelEnumSeqWOR(template) { clock.elapsedNow() < 90.seconds }.distinct().forEach {
+          intGram.sampleDirectlyWR(stoppingCriterion = { clock.elapsedNow() < 90.seconds }).distinct().forEach {
             samplesBeforeMatch++
             if (it == target) {
               val elapsed = clock.elapsedNow().inWholeMilliseconds
