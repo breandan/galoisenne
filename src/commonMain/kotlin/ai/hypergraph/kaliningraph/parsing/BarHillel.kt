@@ -58,7 +58,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@intersectLevFSAP, fsa, lengthBoundsCache) }
+        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -119,7 +119,7 @@ fun CFG.dropVestigialProductions(
 
   println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
-  return if (rw.size == size) this else rw.dropVestigialProductions(criteria)
+  return if (rw.size == size) rw else rw.dropVestigialProductions(criteria)
 }
 
 // Generic Bar-Hillel construction for arbitrary CFL ∩ REG language
@@ -181,7 +181,7 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
       && second.coords().dominates(third.coords())
 }
 
-fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, cfg: CFG, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
+fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
   fun lengthBounds(nt: Σᐩ, fudge: Int = 10): IntRange =
     (lengthBounds[nt] ?: -1..-1)
       // Okay if we overapproximate the length bounds a bit

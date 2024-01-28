@@ -143,7 +143,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, this@jvmIntersectLevFSAP, fsa, lengthBoundsCache) }
+        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -176,18 +176,18 @@ fun CFG.jvmPostProcess() =
     .freeze()
 
 fun CFG.jvmDropVestigialProductions(
-  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && it.last() == ']' && it.count { it == '~' } == 2 }
+  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && 1 < it.length }// && it.last() == ']' && it.count { it == '~' } == 2 }
 ): CFG {
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
-    .filter { prod -> prod.RHS.all { it in nts || !criteria(it) } }
+    .filter { prod -> prod.RHS.all { !criteria(it) || it in nts } }
     .asSequence().toSet()
-//    .also { println("Removed ${size - it.size} invalid productions") }
+    .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().jvmRemoveUselessSymbols()
 
-//  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
+  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
-  return if (rw.size == size) this else rw.jvmDropVestigialProductions(criteria)
+  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(criteria)
 }
 
 /**
