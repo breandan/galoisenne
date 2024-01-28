@@ -138,7 +138,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
 
   val binaryProds =
     prods.parallelStream().flatMap {
-      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
+//      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
@@ -182,10 +182,10 @@ fun CFG.jvmDropVestigialProductions(
   val rw = asSequence().asStream().parallel()
     .filter { prod -> prod.RHS.all { it in nts || !criteria(it) } }
     .asSequence().toSet()
-    .also { println("Removed ${size - it.size} invalid productions") }
+//    .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().jvmRemoveUselessSymbols()
 
-  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
+//  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
   return if (rw.size == size) this else rw.jvmDropVestigialProductions(criteria)
 }

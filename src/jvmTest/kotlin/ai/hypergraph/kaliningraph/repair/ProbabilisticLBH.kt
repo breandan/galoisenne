@@ -116,7 +116,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testCompleteness"
 */
-  @Test
+//  @Test
   fun testCompleteness() {
     val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val TIMEOUT_MINS = 2
@@ -210,7 +210,7 @@ class ProbabilisticLBH {
     val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
 
-    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(20)
+    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(30)
       .forEach { (invalid, valid) ->
         val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
@@ -236,7 +236,7 @@ class ProbabilisticLBH {
         val clock = TimeSource.Monotonic.markNow()
         var samplesBeforeMatch = 0
         run untilDone@{
-          intGram.parallelEnumSeqWR(template) { clock.elapsedNow() < 90.seconds }.distinct().forEach {
+          intGram.parallelEnumSeqWOR(template) { clock.elapsedNow() < 90.seconds }.distinct().forEach {
             samplesBeforeMatch++
             if (it == target) {
               val elapsed = clock.elapsedNow().inWholeMilliseconds
