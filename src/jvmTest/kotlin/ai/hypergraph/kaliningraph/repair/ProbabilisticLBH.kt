@@ -210,7 +210,8 @@ class ProbabilisticLBH {
     val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
 
-    invalidPythonStatements.lines().zip(validPythonStatements.lines()).take(30)
+    invalidPythonStatements.lines().zip(validPythonStatements.lines())
+      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
       .forEach { (invalid, valid) ->
         val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
@@ -232,7 +233,7 @@ class ProbabilisticLBH {
         assertTrue(humanRepair in s2pg.language)
         assertTrue(levBall.recognizes(humanRepair))
         assertTrue(humanRepair in intGram.language)
-        println("Ground truth repair: $humanRepairANSI\n")
+        println("Ground truth repair: $humanRepairANSI")
         val clock = TimeSource.Monotonic.markNow()
         var samplesBeforeMatch = 0
         run untilDone@{
@@ -241,7 +242,7 @@ class ProbabilisticLBH {
             if (it == target) {
               val elapsed = clock.elapsedNow().inWholeMilliseconds
               val allElapsed = allTime.elapsedNow().inWholeMilliseconds
-              println("Found length-$levDist repair in $elapsed ms, $allElapsed ms, ")
+              println("Found length-$levDist repair in $elapsed ms, $allElapsed ms, $samplesBeforeMatch samples")
               println("Recall / samples : ${++recall} / $total, errors: $errorRate")
               sampleTimeByLevDist[levDist] = sampleTimeByLevDist[levDist]!! + elapsed
               println("Draw timings (ms): ${sampleTimeByLevDist.mapValues { it.value / recall }}")
@@ -249,7 +250,7 @@ class ProbabilisticLBH {
               println("Full timings (ms): ${allTimeByLevDist.mapValues { it.value / recall }}")
               samplesBeforeMatchByLevDist[levDist] = samplesBeforeMatchByLevDist[levDist]!! + samplesBeforeMatch
               println("Avg drawn samples: ${samplesBeforeMatchByLevDist.mapValues { it.value / recall }}")
-//              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
+              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
               return@untilDone
 //            } else {
 //              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
@@ -257,6 +258,8 @@ class ProbabilisticLBH {
             }
           }
         }
+
+        println()
       }
   }
 
