@@ -189,18 +189,17 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + transits + binaryProds + unitProds)
     .filterRHSInNTS()
-    .jvmPostProcess()
-    .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
+    .jvmPostProcess(clock)
 }
 
 // Parallel streaming doesn't seem to be that much faster (yet)?
 
-fun CFG.jvmPostProcess() =
-  this.also { println("∩-grammar has ${it.size} total productions") }
-    .let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions() }
+fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
+    let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions() }
+//    .elimVarUnitProds()
     .normalForm
     .noEpsilonOrNonterminalStubs
-    .also { println("∩-grammar has ${it.size} useful productions") }
+    .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
     .freeze()
 
 fun CFG.jvmDropVestigialProductions(
@@ -210,10 +209,10 @@ fun CFG.jvmDropVestigialProductions(
   val rw = asSequence().asStream().parallel()
     .filter { prod -> prod.RHS.all { !criteria(it) || it in nts } }
     .asSequence().toSet()
-    .also { println("Removed ${size - it.size} invalid productions") }
+//    .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().jvmRemoveUselessSymbols()
 
-  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
+//  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
   return if (rw.size == size) rw else rw.jvmDropVestigialProductions(criteria)
 }

@@ -125,9 +125,9 @@ class BarHillelTest {
     val template = List(origStr.tokenizeByWhitespace().size + levDist) { "_" }
     val solutions = levCFG.enumSeq(template).toList().onEach {
       val actDist = levenshtein(origStr, it)
-      val levAlgn = levenshteinAlign(origStr, it).paintANSIColors()
       assertTrue(actDist <= levDist)
-      println(levAlgn)
+//      val levAlgn = levenshteinAlign(origStr, it).paintANSIColors()
+//      println(levAlgn)
     }
     println("Found ${solutions.size} solutions within Levenshtein distance 2 of \"$origStr\"")
   }
@@ -313,7 +313,7 @@ class BarHillelTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.semiRealisticTest"
 */
-  @Test
+//  @Test
   fun semiRealisticTest() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"

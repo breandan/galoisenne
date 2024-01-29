@@ -212,7 +212,7 @@ class ProbabilisticLBH {
 
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
 //      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
-      .take(10)
+//      .take(10)
       .forEach { (invalid, valid) ->
         val allTime = TimeSource.Monotonic.markNow()
         val toRepair = "$invalid NEWLINE".tokenizeByWhitespace()
@@ -220,7 +220,7 @@ class ProbabilisticLBH {
         val target = humanRepair.joinToString(" ")
         val levDist = levenshtein(toRepair, humanRepair)
 
-        val levBall = makeLevFSA(toRepair, levDist)
+        val levBall = makeLevFSA(toRepair, 2)
         val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
         val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
         val intGram = try { s2pg.jvmIntersectLevFSA(levBall) }
@@ -228,7 +228,6 @@ class ProbabilisticLBH {
           println("Recall: $recall / $total, errors: ${++errorRate}")
           return@forEach
         }
-        val template = List(toRepair.size + levDist) { "_" }
 
         total++
         assertTrue(humanRepair in s2pg.language)
@@ -237,12 +236,16 @@ class ProbabilisticLBH {
         println("Ground truth repair: $humanRepairANSI")
         val clock = TimeSource.Monotonic.markNow()
         var samplesBeforeMatch = 0
+        var matchFound = false
+        val timeout = 90.seconds
         run untilDone@{
-          intGram.sampleDirectlyWR(stoppingCriterion = { clock.elapsedNow() < 90.seconds }).distinct().forEach {
+          intGram.sampleDirectlyWR(stoppingCriterion = { clock.elapsedNow() < timeout }).distinct().forEach {
             samplesBeforeMatch++
             if (it == target) {
+              matchFound = true
               val elapsed = clock.elapsedNow().inWholeMilliseconds
               val allElapsed = allTime.elapsedNow().inWholeMilliseconds
+              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
               println("Found length-$levDist repair in $elapsed ms, $allElapsed ms, $samplesBeforeMatch samples")
               println("Recall / samples : ${++recall} / $total, errors: $errorRate")
               sampleTimeByLevDist[levDist] = sampleTimeByLevDist[levDist]!! + elapsed
@@ -250,8 +253,7 @@ class ProbabilisticLBH {
               allTimeByLevDist[levDist] = allTimeByLevDist[levDist]!! + allElapsed
               println("Full timings (ms): ${allTimeByLevDist.mapValues { it.value / recall }}")
               samplesBeforeMatchByLevDist[levDist] = samplesBeforeMatchByLevDist[levDist]!! + samplesBeforeMatch
-              println("Avg drawn samples: ${samplesBeforeMatchByLevDist.mapValues { it.value / recall }}")
-              println("Found human repair (${clock.elapsedNow()}): $humanRepairANSI")
+              println("Avg samples drawn: ${samplesBeforeMatchByLevDist.mapValues { it.value / recall }}")
               return@untilDone
 //            } else {
 //              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
@@ -259,6 +261,8 @@ class ProbabilisticLBH {
             }
           }
         }
+
+        if (!matchFound) println("Drew $samplesBeforeMatch samples in $timeout, length-$levDist human repair not found")
 
         println()
       }
