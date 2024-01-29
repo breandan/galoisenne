@@ -220,11 +220,12 @@ class ProbabilisticLBH {
         val target = humanRepair.joinToString(" ")
         val levDist = levenshtein(toRepair, humanRepair)
 
-        val levBall = makeLevFSA(toRepair, 2)
+        val levBall = makeLevFSA(toRepair, levDist)
         val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
         val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
         val intGram = try { s2pg.jvmIntersectLevFSA(levBall) }
-        catch (e: NoSuchElementException) {
+        catch (e: Exception) {
+          println("Encountered error: ${e.message}")
           println("Recall: $recall / $total, errors: ${++errorRate}")
           return@forEach
         }
@@ -237,7 +238,7 @@ class ProbabilisticLBH {
         val clock = TimeSource.Monotonic.markNow()
         var samplesBeforeMatch = 0
         var matchFound = false
-        val timeout = 90.seconds
+        val timeout = 120.seconds
         run untilDone@{
           intGram.sampleDirectlyWR(stoppingCriterion = { clock.elapsedNow() < timeout }).distinct().forEach {
             samplesBeforeMatch++

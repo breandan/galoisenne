@@ -9,6 +9,7 @@ import ai.hypergraph.kaliningraph.types.times
 import java.util.concurrent.*
 import java.util.stream.*
 import kotlin.streams.*
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
 fun CFG.parallelEnumSeqMinimalWOR(
@@ -195,7 +196,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
 // Parallel streaming doesn't seem to be that much faster (yet)?
 
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
-    let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions() }
+    let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions(clock) }
 //    .elimVarUnitProds()
     .normalForm
     .noEpsilonOrNonterminalStubs
@@ -203,18 +204,22 @@ fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
     .freeze()
 
 fun CFG.jvmDropVestigialProductions(
+  clock: TimeSource.Monotonic.ValueTimeMark,
   criteria: (Σᐩ) -> Boolean = { it.first() == '[' && 1 < it.length }// && it.last() == ']' && it.count { it == '~' } == 2 }
 ): CFG {
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
-    .filter { prod -> prod.RHS.all { !criteria(it) || it in nts } }
+    .filter { prod ->
+      if (4.minutes < clock.elapsedNow()) throw Exception("Timeout")
+      prod.RHS.all { !criteria(it) || it in nts }
+    }
     .asSequence().toSet()
 //    .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().jvmRemoveUselessSymbols()
 
 //  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
-  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(criteria)
+  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(clock, criteria)
 }
 
 /**
