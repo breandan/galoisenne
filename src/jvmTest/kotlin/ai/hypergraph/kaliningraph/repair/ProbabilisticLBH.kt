@@ -209,6 +209,7 @@ class ProbabilisticLBH {
     val sampleTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
+    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
 
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
 //      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
@@ -222,7 +223,6 @@ class ProbabilisticLBH {
 
         val levBall = makeLevFSA(toRepair, levDist)
         val humanRepairANSI = levenshteinAlign(toRepair, humanRepair).paintANSIColors()
-        val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
         val intGram = try { s2pg.jvmIntersectLevFSA(levBall) }
         catch (e: Exception) {
           println("Encountered error: ${e.message}")
