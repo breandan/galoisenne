@@ -76,7 +76,7 @@ fun makeLevFSA(
 
     FSA(Q, initialStates, finalStates)
 //      .nominalize()
-      .also { println("Levenshtein automata size: ${Q.size}") }
+      .also { println("Levenshtein-${str.size}x$dist automaton has ${Q.size} arcs!") }
   }
 
 private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')

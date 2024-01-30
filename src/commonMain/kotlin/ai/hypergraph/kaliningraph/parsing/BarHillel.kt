@@ -182,7 +182,7 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 }
 
 fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
-  fun lengthBounds(nt: Σᐩ, fudge: Int = 10): IntRange =
+  fun lengthBounds(nt: Σᐩ, fudge: Int = 20): IntRange =
     (lengthBounds[nt] ?: -1..-1)
       // Okay if we overapproximate the length bounds a bit
       .let { (it.first - fudge)..(it.last + fudge) }

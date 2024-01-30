@@ -168,11 +168,12 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
+      if (4.minutes < clock.elapsedNow()) throw Exception("Timeout")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
+//        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
