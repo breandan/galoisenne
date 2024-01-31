@@ -254,15 +254,9 @@ class BiMap(cfg: CFG) {
   operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
 }
 
-fun CFG.sample(from: Σᐩ = START_SYMBOL): Σᐩ {
-  val children = bimap[from]
-  if (children.isEmpty()) { return if ("ε" in from) "" else from }
-  else {
-    val child = children.random()
-    return if (child.size == 1) sample(child.first())
-    else child.map { sample(it) }.filter { it.isNotEmpty() }.joinToString(" ")
-  }
-}
+// n.b., this only works if the CFG is acyclic, i.e., finite otherwise it will loop forever
+fun CFG.toPTree(from: Σᐩ = START_SYMBOL): PTree =
+  PTree(from, bimap[from].map { toPTree(it[0]) to if(it.size == 1) PTree() else toPTree(it[1]) })
 
 /*
 Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
