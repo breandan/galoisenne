@@ -71,7 +71,6 @@ fun CFG.sampleDirectlyWR(
         .map { it.removeEpsilon() }
         .takeWhile { stoppingCriterion() }
         .distinct()
-        .toList()
     }.asSequence().flatten()
   }
 
