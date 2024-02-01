@@ -232,6 +232,21 @@ fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
   return revPathA.zip(revPathB)
 }
 
+fun <T> List<Pair<T?, T?>>.patchSize(): Int = count { (a, b) -> a != b }
+
+fun <T> List<Pair<T?, T?>>.summarize(): Σᐩ =
+  filter { (a, b) -> a != b }.joinToString(", ") { (a, b) ->
+    when {
+      // Green (insertion)
+      a == null -> "I::$b"
+      // Red (deletion)
+      b == null -> "D::$a"
+      // Orange (substitution)
+      a != b -> "S::$a::$b"
+      else -> b.toString()
+    }
+  }
+
 fun <T> List<Pair<T?, T?>>.paintANSIColors(): Σᐩ =
   joinToString(" ") { (a, b) ->
     when {
