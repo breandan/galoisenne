@@ -27,9 +27,10 @@ fun CFG.checkUnitWord(str: Σᐩ): Forest =
     setOf(Tree(START_SYMBOL, str))
   } else setOf()
 
-fun CFG.parseAll(s: Σᐩ): Forest =
-  try { parseForest(s).filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() }
-  catch (e: Exception) { setOf() }
+fun CFG.parseAll(s: Σᐩ, denormalize: Boolean = true): Forest = try {
+  parseForest(s).filter { it.root == START_SYMBOL }
+  .map { if (denormalize) it.denormalize() else it }.toSet()
+} catch (e: Exception) { setOf() }
 
 /**
  * Checks whether a given string is valid by computing the transitive closure

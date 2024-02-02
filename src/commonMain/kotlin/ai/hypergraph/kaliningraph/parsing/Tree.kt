@@ -19,6 +19,9 @@ class Tree constructor(
   override fun hashCode() = hash
   override fun equals(other: Any?) = hashCode() == other.hashCode()
 
+  fun activeSymbols(): Set<Σᐩ> = setOf(root) + children.flatMap { it.activeSymbols() } +
+    if (terminal != null) setOf(terminal) else emptySet()
+
   fun structureEncode(): Σᐩ =
 //    if (terminal == "ε") ""
     if (children.isEmpty()) "()"

@@ -128,8 +128,10 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
 
+val BH_TIMEOUT = 10.minutes
+
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
-  if (400 < fsa.Q.size) throw Exception("FSA has too many arcs to efficiently intersect")
+  if (500 < fsa.Q.size) throw Exception("FSA size out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
   val lengthBoundsCache = lengthBounds
@@ -156,7 +158,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (4.minutes < clock.elapsedNow()) throw Exception("Timeout")
+      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
@@ -199,7 +201,7 @@ fun CFG.jvmDropVestigialProductions(
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
-      if (4.minutes < clock.elapsedNow()) throw Exception("Timeout")
+      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
       prod.RHS.all { !criteria(it) || it in nts }
     }
     .asSequence().toSet()

@@ -360,6 +360,11 @@ fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
     .freeze()
 
+fun CFG.directSubgrammar(toRemove: Set<Σᐩ>): CFG =
+  filter { (it.RHS + it.LHS).all { it !in toRemove } }
+    .normalize().noEpsilonOrNonterminalStubs.freeze()
+    .also { println("Reduced from ${size} to ${it.size} rules") }
+
 fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
 fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
