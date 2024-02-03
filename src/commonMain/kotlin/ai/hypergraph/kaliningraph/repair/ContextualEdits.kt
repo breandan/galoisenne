@@ -74,8 +74,7 @@ fun CFG.contextualRepair(broken: List<String>): Sequence<List<String>> {
   var (total, uniqueValid) = 0 to 0
 
   return generateSequence { broken }.map {
-    try { it.sampleEditTrajectoryV0(contextCSV, initREAs,
-      bonusProbs ) }
+    try { it.sampleEditTrajectoryV0(contextCSV, initREAs, bonusProbs) }
     catch (e: Exception) {
       println(broken.joinToString(" ")); e.printStackTrace(); listOf<String>() to listOf()
     }
