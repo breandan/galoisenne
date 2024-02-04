@@ -1,0 +1,374 @@
+fun main() {
+    // Parsing the CSV data
+    val lines = csvData.lines().drop(1).filter { it.first() == '3' } // Dropping the header line
+    val parsedData = lines.map { it.split(",").map(String::trim) }
+        .map { it[5].toInt() to it[3].toInt() } // Pair(rank, samples)
+
+    // Defining the sample ranges
+    val ranges = (1..300).map { it * 300 }
+
+    // Initializing counters for each P@N level and sample range
+    val rankThresholds = listOf(1, 5, 10, Int.MAX_VALUE) // P@1, P@5, P@10, P@All
+    val counters = rankThresholds.associateWith { mutableMapOf<Int, Int>() }
+
+    // Counting occurrences
+    for ((rank, samples) in parsedData) {
+        for (threshold in rankThresholds) {
+            if (rank <= threshold || threshold == Int.MAX_VALUE) {
+                ranges.forEach { range ->
+                    counters[threshold]?.merge(range, if (samples < range) 1 else 0, Int::plus)
+                }
+            }
+        }
+    }
+
+    // Calculating percentages and formatting the output
+    counters.forEach { (threshold, counts) ->
+        print("P@${if (threshold == Int.MAX_VALUE) "All" else threshold}= ")
+        ranges.sorted().reversed().forEach { range ->
+            val percentage = counts[range]?.toFloat()?.div(parsedData.size)?.times(100) ?: 0f
+            print("${range}s: %.3f, ".format(percentage / 100))
+        }
+        println() // Newline for each P@N level
+    }
+}
+
+// cat slurm-11966058.out | grep "Found length-"
+val csvData = """
+lev distance,milliseconds,total,samples,productions,rank
+1, 10002 ms, 47128 ms, 11, 97 prods, 0 
+2, 10001 ms, 185881 ms, 4170, 3259 prods, 3410 
+3, 10001 ms, 276640 ms, 7592, 2732 prods, 6746 
+2, 10001 ms, 78147 ms, 1238, 1802 prods, 1077 
+1, 10001 ms, 56034 ms, 9, 224 prods, 2 
+1, 10001 ms, 56531 ms, 61, 437 prods, 46 
+1, 10000 ms, 16906 ms, 5, 58 prods, 4 
+3, 10000 ms, 189566 ms, 29645, 7071 prods, 0 
+1, 10000 ms, 17645 ms, 10, 67 prods, 3 
+1, 10000 ms, 33193 ms, 28, 153 prods, 0 
+3, 10000 ms, 303112 ms, 11978, 9759 prods, 265 
+3, 10000 ms, 173681 ms, 46670, 8994 prods, 34288 
+1, 10000 ms, 33455 ms, 23, 141 prods, 2 
+1, 10000 ms, 19228 ms, 7, 52 prods, 0 
+2, 10000 ms, 59292 ms, 942, 1684 prods, 0 
+2, 10000 ms, 53047 ms, 1, 56 prods, 0 
+1, 10000 ms, 28280 ms, 5, 76 prods, 0 
+1, 10000 ms, 23239 ms, 27, 232 prods, 22 
+1, 10000 ms, 26184 ms, 2, 65 prods, 0 
+1, 10000 ms, 47172 ms, 13, 145 prods, 0 
+2, 10001 ms, 140862 ms, 1, 80 prods, 0 
+1, 10000 ms, 17607 ms, 20, 101 prods, 14 
+1, 10000 ms, 27918 ms, 33, 158 prods, 1 
+1, 10000 ms, 42220 ms, 67, 393 prods, 2 
+1, 10000 ms, 45440 ms, 1, 72 prods, 0 
+1, 10000 ms, 18193 ms, 2, 81 prods, 1 
+1, 10000 ms, 36962 ms, 9, 117 prods, 6 
+1, 10000 ms, 22983 ms, 34, 267 prods, 0 
+2, 10000 ms, 51985 ms, 1325, 854 prods, 0 
+2, 10001 ms, 153156 ms, 1531, 1722 prods, 1431 
+2, 10000 ms, 58430 ms, 1075, 1307 prods, 42 
+1, 10000 ms, 51347 ms, 29, 163 prods, 0 
+2, 10000 ms, 103746 ms, 4312, 1624 prods, 0 
+1, 10000 ms, 35446 ms, 1, 68 prods, 0 
+2, 10000 ms, 46950 ms, 555, 417 prods, 1 
+2, 10000 ms, 137714 ms, 4904, 2383 prods, 4831 
+1, 10000 ms, 20233 ms, 18, 100 prods, 0 
+1, 10000 ms, 21912 ms, 16, 161 prods, 12 
+2, 10000 ms, 57155 ms, 147, 146 prods, 0 
+2, 10000 ms, 54741 ms, 2390, 1763 prods, 2286 
+1, 10000 ms, 61599 ms, 28, 180 prods, 0 
+1, 10000 ms, 24442 ms, 15, 152 prods, 12 
+1, 10000 ms, 23425 ms, 58, 309 prods, 51 
+1, 10000 ms, 21941 ms, 1, 52 prods, 0 
+3, 10000 ms, 89215 ms, 18559, 3599 prods, 6874 
+1, 10000 ms, 17277 ms, 10, 106 prods, 6 
+1, 10000 ms, 58642 ms, 1, 82 prods, 0 
+1, 10000 ms, 25577 ms, 28, 250 prods, 26 
+1, 10000 ms, 32759 ms, 7, 68 prods, 1 
+1, 10000 ms, 21357 ms, 5, 73 prods, 4 
+1, 10000 ms, 50831 ms, 23, 169 prods, 22 
+1, 10000 ms, 24974 ms, 66, 282 prods, 63 
+1, 10000 ms, 19180 ms, 9, 64 prods, 0 
+2, 10000 ms, 50451 ms, 721, 971 prods, 584 
+1, 10000 ms, 28791 ms, 48, 255 prods, 44 
+1, 10000 ms, 19267 ms, 17, 91 prods, 0 
+1, 10000 ms, 55878 ms, 20, 154 prods, 0 
+2, 10000 ms, 47168 ms, 5036, 2227 prods, 11 
+2, 10000 ms, 42890 ms, 3414, 1888 prods, 3316 
+2, 10000 ms, 126643 ms, 385, 206 prods, 76 
+2, 10000 ms, 40243 ms, 723, 279 prods, 690 
+2, 10000 ms, 35514 ms, 2888, 961 prods, 0 
+1, 10000 ms, 19130 ms, 9, 100 prods, 6 
+1, 10000 ms, 41997 ms, 20, 129 prods, 1 
+2, 10000 ms, 46213 ms, 1755, 952 prods, 189 
+2, 10000 ms, 87657 ms, 16, 105 prods, 0 
+3, 10000 ms, 235111 ms, 52, 162 prods, 3 
+1, 10000 ms, 27155 ms, 1, 60 prods, 0 
+1, 10000 ms, 18217 ms, 74, 364 prods, 69 
+3, 10000 ms, 165830 ms, 389, 684 prods, 359 
+1, 10000 ms, 16523 ms, 5, 60 prods, 0 
+2, 10000 ms, 60355 ms, 2089, 1613 prods, 1948 
+1, 10000 ms, 16955 ms, 48, 231 prods, 44 
+2, 10000 ms, 53444 ms, 143, 100 prods, 0 
+2, 10001 ms, 32848 ms, 154, 191 prods, 0 
+2, 10000 ms, 83744 ms, 64, 334 prods, 61 
+1, 10000 ms, 23933 ms, 30, 258 prods, 0 
+2, 10000 ms, 65096 ms, 1, 60 prods, 0 
+1, 10000 ms, 32451 ms, 8, 142 prods, 7 
+1, 10000 ms, 25272 ms, 19, 105 prods, 2 
+1, 10000 ms, 42155 ms, 24, 145 prods, 23 
+1, 10000 ms, 27534 ms, 30, 146 prods, 0 
+2, 10000 ms, 76260 ms, 68, 334 prods, 54 
+2, 10000 ms, 169537 ms, 154, 131 prods, 0 
+1, 10000 ms, 51941 ms, 8, 129 prods, 6 
+1, 10000 ms, 33012 ms, 28, 177 prods, 25 
+1, 10000 ms, 23972 ms, 35, 176 prods, 30 
+1, 10000 ms, 59053 ms, 77, 388 prods, 71 
+1, 10000 ms, 19965 ms, 50, 178 prods, 28 
+1, 10000 ms, 24362 ms, 1, 52 prods, 0 
+1, 10000 ms, 17393 ms, 24, 115 prods, 0 
+1, 10000 ms, 27080 ms, 1, 56 prods, 0 
+1, 10000 ms, 31485 ms, 12, 81 prods, 6 
+2, 10000 ms, 91934 ms, 143, 116 prods, 0 
+1, 10000 ms, 26212 ms, 24, 117 prods, 6 
+2, 10000 ms, 66731 ms, 2360, 1002 prods, 2287 
+1, 10000 ms, 36242 ms, 7, 91 prods, 6 
+1, 10000 ms, 24571 ms, 54, 298 prods, 46 
+1, 10000 ms, 21670 ms, 14, 168 prods, 8 
+1, 10000 ms, 24971 ms, 11, 69 prods, 0 
+1, 10000 ms, 22717 ms, 28, 135 prods, 0 
+1, 10000 ms, 21776 ms, 23, 111 prods, 5 
+1, 10000 ms, 18798 ms, 7, 114 prods, 5 
+1, 10000 ms, 62445 ms, 1, 84 prods, 0 
+1, 10001 ms, 32106 ms, 24, 124 prods, 0 
+1, 10000 ms, 24014 ms, 21, 157 prods, 20 
+1, 10000 ms, 17719 ms, 19, 106 prods, 18 
+1, 10000 ms, 27136 ms, 2, 77 prods, 1 
+2, 10000 ms, 56408 ms, 4020, 2189 prods, 0 
+2, 10000 ms, 132352 ms, 382, 198 prods, 2 
+1, 10000 ms, 20989 ms, 29, 136 prods, 8 
+1, 10000 ms, 17716 ms, 37, 158 prods, 0 
+2, 10000 ms, 113507 ms, 386, 507 prods, 375 
+1, 10000 ms, 20872 ms, 7, 129 prods, 1 
+1, 10000 ms, 30073 ms, 5, 79 prods, 0 
+1, 10000 ms, 49582 ms, 40, 172 prods, 0 
+1, 10000 ms, 20500 ms, 23, 160 prods, 22 
+1, 10000 ms, 17060 ms, 15, 127 prods, 0 
+2, 10000 ms, 63613 ms, 91, 184 prods, 0 
+2, 10000 ms, 39217 ms, 124, 99 prods, 1 
+1, 10000 ms, 25885 ms, 13, 158 prods, 0 
+2, 10000 ms, 88821 ms, 1973, 1332 prods, 0 
+1, 10000 ms, 22499 ms, 3, 61 prods, 1 
+1, 10000 ms, 27246 ms, 7, 64 prods, 1 
+1, 10000 ms, 39002 ms, 13, 92 prods, 0 
+1, 10000 ms, 26564 ms, 4, 59 prods, 0 
+3, 10000 ms, 266357 ms, 5458, 217 prods, 1678 
+3, 10000 ms, 92516 ms, 11501, 1911 prods, 1 
+1, 10000 ms, 47838 ms, 2, 83 prods, 0 
+2, 10000 ms, 96231 ms, 6942, 3442 prods, 0 
+2, 10000 ms, 44866 ms, 568, 180 prods, 0 
+1, 10000 ms, 23195 ms, 5, 72 prods, 0 
+1, 10000 ms, 52619 ms, 32, 207 prods, 30 
+1, 10000 ms, 29945 ms, 20, 93 prods, 1 
+1, 10000 ms, 19781 ms, 3, 66 prods, 1 
+3, 10000 ms, 176675 ms, 55320, 4542 prods, 0 
+1, 10000 ms, 41307 ms, 16, 117 prods, 0 
+1, 10000 ms, 46143 ms, 29, 161 prods, 0 
+1, 10000 ms, 20281 ms, 1, 50 prods, 0 
+1, 10000 ms, 17826 ms, 5, 59 prods, 4 
+2, 10000 ms, 39116 ms, 329, 807 prods, 0 
+2, 10000 ms, 94598 ms, 165, 127 prods, 0 
+1, 10000 ms, 31975 ms, 13, 137 prods, 0 
+1, 10000 ms, 19193 ms, 23, 108 prods, 5 
+1, 10000 ms, 37559 ms, 29, 178 prods, 26 
+1, 10000 ms, 21799 ms, 9, 133 prods, 0 
+1, 10000 ms, 27011 ms, 46, 181 prods, 0 
+1, 10000 ms, 36765 ms, 1, 68 prods, 0 
+2, 10000 ms, 168097 ms, 122, 142 prods, 3 
+1, 10000 ms, 25468 ms, 9, 107 prods, 0 
+1, 10000 ms, 20311 ms, 19, 104 prods, 1 
+1, 10000 ms, 25039 ms, 34, 145 prods, 0 
+1, 10000 ms, 25281 ms, 11, 77 prods, 0 
+1, 10000 ms, 43904 ms, 22, 146 prods, 1 
+2, 10000 ms, 52743 ms, 2556, 1565 prods, 2396 
+1, 10000 ms, 20590 ms, 1, 50 prods, 0 
+2, 10000 ms, 141272 ms, 512, 236 prods, 259 
+1, 10000 ms, 22619 ms, 17, 153 prods, 0 
+1, 10000 ms, 35876 ms, 1, 68 prods, 0 
+3, 10000 ms, 185326 ms, 22125, 4350 prods, 6944 
+1, 10000 ms, 18809 ms, 46, 231 prods, 43 
+3, 10000 ms, 210690 ms, 22236, 6350 prods, 0 
+3, 10000 ms, 106577 ms, 41643, 3181 prods, 0 
+1, 10000 ms, 25631 ms, 7, 144 prods, 1 
+1, 10000 ms, 17965 ms, 26, 179 prods, 23 
+1, 10000 ms, 22561 ms, 7, 58 prods, 0 
+1, 10000 ms, 59024 ms, 18, 304 prods, 17 
+3, 10000 ms, 142434 ms, 96, 169 prods, 3 
+1, 10000 ms, 24535 ms, 1, 54 prods, 0 
+1, 10000 ms, 38956 ms, 55, 390 prods, 45 
+3, 10000 ms, 93991 ms, 16162, 2074 prods, 0 
+2, 10000 ms, 45018 ms, 3232, 1690 prods, 3118 
+2, 10000 ms, 98764 ms, 1, 72 prods, 0 
+2, 10000 ms, 81636 ms, 1969, 1116 prods, 0 
+1, 10000 ms, 20203 ms, 5, 66 prods, 0 
+1, 10000 ms, 32685 ms, 33, 158 prods, 4 
+2, 10000 ms, 47833 ms, 22, 77 prods, 0 
+1, 10000 ms, 41157 ms, 3, 107 prods, 2 
+1, 10000 ms, 29918 ms, 3, 75 prods, 0 
+1, 10000 ms, 20064 ms, 69, 329 prods, 63 
+1, 10000 ms, 39132 ms, 47, 233 prods, 44 
+1, 10000 ms, 44115 ms, 33, 172 prods, 1 
+1, 10001 ms, 59455 ms, 12, 103 prods, 5 
+1, 10000 ms, 16724 ms, 51, 176 prods, 30 
+1, 10000 ms, 42487 ms, 25, 156 prods, 0 
+2, 10000 ms, 88613 ms, 320, 325 prods, 32 
+1, 10000 ms, 16937 ms, 1, 42 prods, 0 
+1, 10000 ms, 32502 ms, 3, 112 prods, 1 
+1, 10000 ms, 25433 ms, 17, 164 prods, 16 
+1, 10000 ms, 32432 ms, 6, 160 prods, 0 
+1, 10000 ms, 21225 ms, 26, 236 prods, 16 
+1, 10000 ms, 38859 ms, 1, 68 prods, 0 
+2, 10000 ms, 89105 ms, 2038, 1271 prods, 232 
+1, 10000 ms, 37904 ms, 23, 125 prods, 1 
+2, 10000 ms, 152992 ms, 73, 449 prods, 65 
+2, 10000 ms, 154084 ms, 48, 135 prods, 2 
+1, 10000 ms, 61087 ms, 76, 491 prods, 65 
+1, 10000 ms, 56357 ms, 32, 180 prods, 0 
+1, 10000 ms, 20858 ms, 27, 127 prods, 8 
+1, 10000 ms, 24316 ms, 28, 253 prods, 23 
+1, 10000 ms, 25617 ms, 70, 332 prods, 62 
+1, 10000 ms, 44030 ms, 50, 206 prods, 0 
+1, 10001 ms, 26788 ms, 32, 154 prods, 12 
+1, 10000 ms, 50293 ms, 36, 195 prods, 3 
+1, 10000 ms, 16596 ms, 33, 138 prods, 0 
+1, 10000 ms, 22085 ms, 1, 48 prods, 0 
+1, 10000 ms, 23117 ms, 32, 157 prods, 0 
+1, 10000 ms, 39837 ms, 61, 435 prods, 51 
+1, 10000 ms, 17203 ms, 2, 77 prods, 0 
+1, 10000 ms, 35683 ms, 6, 93 prods, 5 
+1, 10000 ms, 34052 ms, 7, 166 prods, 0 
+2, 10000 ms, 38219 ms, 1517, 855 prods, 0 
+2, 10000 ms, 155365 ms, 39, 194 prods, 24 
+1, 10000 ms, 24319 ms, 55, 336 prods, 46 
+2, 10000 ms, 45535 ms, 706, 246 prods, 625 
+1, 10000 ms, 40919 ms, 12, 196 prods, 1 
+1, 10000 ms, 17605 ms, 10, 106 prods, 6 
+1, 10000 ms, 32448 ms, 23, 138 prods, 0 
+2, 10000 ms, 130208 ms, 505, 262 prods, 29 
+1, 10000 ms, 20128 ms, 2, 65 prods, 0 
+2, 10000 ms, 67055 ms, 215, 593 prods, 0 
+1, 10000 ms, 42666 ms, 15, 105 prods, 0 
+2, 10000 ms, 44723 ms, 2017, 1993 prods, 133 
+2, 10000 ms, 89359 ms, 231, 181 prods, 190 
+1, 10000 ms, 42540 ms, 46, 230 prods, 44 
+1, 10000 ms, 35687 ms, 23, 127 prods, 0 
+2, 10000 ms, 160573 ms, 4, 98 prods, 3 
+2, 10000 ms, 142398 ms, 174, 169 prods, 0 
+2, 10000 ms, 113111 ms, 405, 266 prods, 14 
+1, 10000 ms, 19886 ms, 23, 105 prods, 0 
+1, 10000 ms, 18256 ms, 10, 82 prods, 0 
+1, 10002 ms, 26712 ms, 14, 136 prods, 0 
+1, 10000 ms, 23510 ms, 24, 138 prods, 23 
+1, 10000 ms, 63714 ms, 23, 143 prods, 0 
+1, 10000 ms, 29135 ms, 13, 151 prods, 8 
+1, 10000 ms, 46462 ms, 8, 120 prods, 0 
+2, 10000 ms, 128106 ms, 1295, 1832 prods, 1156 
+1, 10000 ms, 37911 ms, 16, 128 prods, 14 
+1, 10000 ms, 17448 ms, 4, 65 prods, 2 
+2, 10000 ms, 53760 ms, 1818, 973 prods, 0 
+1, 10000 ms, 29517 ms, 11, 86 prods, 1 
+2, 10000 ms, 82892 ms, 2420, 1417 prods, 0 
+2, 10000 ms, 93242 ms, 5780, 1844 prods, 0 
+1, 10000 ms, 34012 ms, 2, 69 prods, 1 
+1, 10000 ms, 56962 ms, 16, 177 prods, 0 
+2, 10000 ms, 40080 ms, 1512, 855 prods, 0 
+2, 10000 ms, 44893 ms, 529, 189 prods, 0 
+1, 10000 ms, 24315 ms, 28, 132 prods, 0 
+1, 10000 ms, 40306 ms, 26, 253 prods, 14 
+1, 10000 ms, 20403 ms, 31, 223 prods, 25 
+1, 10000 ms, 16875 ms, 30, 130 prods, 2 
+2, 10000 ms, 111162 ms, 360, 479 prods, 0 
+2, 10000 ms, 150729 ms, 1615, 2868 prods, 2 
+1, 10000 ms, 24276 ms, 17, 122 prods, 16 
+1, 10000 ms, 17651 ms, 20, 100 prods, 2 
+1, 10000 ms, 28394 ms, 25, 119 prods, 2 
+2, 10000 ms, 139797 ms, 1, 80 prods, 0 
+1, 10008 ms, 46062 ms, 13, 99 prods, 0 
+2, 10000 ms, 56099 ms, 3461, 1312 prods, 3392 
+1, 10000 ms, 60074 ms, 1, 84 prods, 0 
+2, 10001 ms, 48964 ms, 143, 105 prods, 0 
+1, 10000 ms, 16799 ms, 4, 91 prods, 1 
+1, 10000 ms, 22610 ms, 61, 322 prods, 4 
+1, 10000 ms, 36888 ms, 3, 80 prods, 1 
+2, 10000 ms, 46347 ms, 3478, 1888 prods, 0 
+1, 10000 ms, 59725 ms, 5, 168 prods, 1 
+2, 10000 ms, 78589 ms, 1304, 1475 prods, 47 
+1, 10000 ms, 24430 ms, 45, 205 prods, 44 
+1, 10000 ms, 23498 ms, 27, 190 prods, 24 
+1, 10000 ms, 36411 ms, 5, 85 prods, 0 
+1, 10000 ms, 28465 ms, 55, 333 prods, 54 
+2, 10000 ms, 35237 ms, 965, 956 prods, 929 
+1, 10000 ms, 51074 ms, 11, 97 prods, 0 
+1, 10000 ms, 54085 ms, 5, 96 prods, 0 
+1, 10000 ms, 27667 ms, 22, 137 prods, 21 
+3, 10000 ms, 216333 ms, 11913, 358 prods, 0 
+1, 10000 ms, 57280 ms, 13, 102 prods, 0 
+2, 10000 ms, 43538 ms, 3837, 1528 prods, 903 
+1, 10000 ms, 55460 ms, 1, 80 prods, 0 
+1, 10000 ms, 19592 ms, 54, 283 prods, 0 
+1, 10000 ms, 29041 ms, 74, 371 prods, 72 
+1, 10000 ms, 34318 ms, 7, 79 prods, 0 
+1, 10000 ms, 19273 ms, 46, 210 prods, 43 
+2, 10000 ms, 41721 ms, 261, 338 prods, 0 
+1, 10000 ms, 26198 ms, 11, 77 prods, 0 
+1, 10000 ms, 23747 ms, 11, 75 prods, 0 
+1, 10001 ms, 23125 ms, 11, 75 prods, 0 
+2, 10000 ms, 57943 ms, 3086, 1662 prods, 1643 
+1, 10000 ms, 23229 ms, 25, 113 prods, 0 
+1, 10000 ms, 16912 ms, 11, 64 prods, 0 
+3, 10000 ms, 293803 ms, 5083, 2257 prods, 15 
+1, 10000 ms, 27564 ms, 7, 66 prods, 6 
+1, 10000 ms, 27872 ms, 36, 151 prods, 1 
+2, 10000 ms, 146909 ms, 1674, 1063 prods, 147 
+2, 10000 ms, 113366 ms, 1, 70 prods, 0 
+2, 10000 ms, 75559 ms, 497, 331 prods, 454 
+3, 10000 ms, 150278 ms, 11020, 338 prods, 38 
+1, 10000 ms, 35946 ms, 29, 157 prods, 0 
+1, 10000 ms, 39775 ms, 7, 189 prods, 4 
+2, 10000 ms, 46879 ms, 1, 48 prods, 0 
+2, 10000 ms, 128935 ms, 2376, 1604 prods, 0 
+1, 10000 ms, 17879 ms, 32, 219 prods, 26 
+1, 10000 ms, 18657 ms, 32, 146 prods, 1 
+3, 10001 ms, 699997 ms, 61437, 22137 prods, 59314 
+2, 10000 ms, 44975 ms, 1668, 335 prods, 2 
+2, 10000 ms, 121142 ms, 361, 180 prods, 0 
+1, 10000 ms, 18600 ms, 22, 99 prods, 0 
+2, 10001 ms, 81282 ms, 29, 148 prods, 26 
+2, 10000 ms, 152250 ms, 896, 1576 prods, 0 
+1, 10000 ms, 34515 ms, 46, 275 prods, 41 
+1, 10000 ms, 31714 ms, 35, 176 prods, 33 
+1, 10000 ms, 24718 ms, 24, 118 prods, 0 
+1, 10000 ms, 25110 ms, 18, 104 prods, 2 
+2, 10000 ms, 52254 ms, 99, 134 prods, 0 
+1, 10000 ms, 17932 ms, 25, 135 prods, 22 
+1, 10000 ms, 24664 ms, 12, 76 prods, 1 
+2, 10000 ms, 38102 ms, 931, 569 prods, 0 
+3, 10000 ms, 155004 ms, 40993, 7437 prods, 0 
+1, 10000 ms, 17326 ms, 5, 110 prods, 4 
+1, 10000 ms, 38414 ms, 74, 414 prods, 5 
+1, 10000 ms, 16968 ms, 9, 69 prods, 8 
+3, 10000 ms, 150413 ms, 9613, 537 prods, 0 
+1, 10000 ms, 35414 ms, 34, 333 prods, 22 
+2, 10000 ms, 50770 ms, 1462, 1236 prods, 908 
+2, 10000 ms, 48158 ms, 970, 279 prods, 893 
+1, 10000 ms, 18453 ms, 1, 42 prods, 0 
+1, 10000 ms, 21279 ms, 7, 142 prods, 2 
+2, 10000 ms, 44297 ms, 3992, 1730 prods, 124 
+2, 10000 ms, 154792 ms, 1, 80 prods, 0 
+1, 10000 ms, 38168 ms, 8, 137 prods, 0 
+2, 10000 ms, 37958 ms, 5116, 1618 prods, 3053 
+1, 10000 ms, 27246 ms, 12, 79 prods, 0 
+3, 10000 ms, 257740 ms, 6299, 5005 prods, 104 
+3, 10000 ms, 220109 ms, 1, 72 prods, 0 
+2, 10000 ms, 38576 ms, 324, 140 prods, 0 
+    """.trimIndent()
