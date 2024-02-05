@@ -112,7 +112,7 @@ open class MarkovChain<T>(
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
   val dists: LRUCache<List<Int>, Dist> = LRUCache()
 
-  // Computes perplexity of a sequence normalized by sequence length
+  // Computes perplexity of a sequence normalized by sequence length (lower is better)
   fun score(seq: List<T>): Double =
     if (memory < seq.size) -seq.windowed(memory)
       .map { (getAtLeastOne(it) + 1) / (getAtLeastOne(it.dropLast(1) + null) + dictionary.size) }
