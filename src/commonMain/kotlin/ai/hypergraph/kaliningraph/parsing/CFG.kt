@@ -363,7 +363,7 @@ fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
 fun CFG.directSubgrammar(toRemove: Set<Σᐩ>): CFG =
   filter { (it.RHS + it.LHS).all { it !in toRemove } }
     .normalize().noEpsilonOrNonterminalStubs.freeze()
-    .also { println("Reduced from ${size} to ${it.size} rules") }
+    .also { println("Reduced CFG from $size to ${it.size} rules") }
 
 fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
 fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
