@@ -28,12 +28,15 @@ fun minimizeFix(
 
   val patch: Patch = extractPatch(brokeTokens, fixedTokens)
   val time = TimeSource.Monotonic.markNow()
-  val minEdit = deltaDebug(
+  val minEdit: List<Int> = deltaDebug(
     patch.changedIndices(),
     timeout = { 5 < time.elapsedNow().inWholeSeconds }
   ) { idxs -> patch.apply(idxs, separator).isValid() }
-// deltaDebug only minimizes contiguous chunks, so here we find the minimal configuration of edits
-//      .minimalSubpatch { patch.apply(this).isValidPython() }
+// deltaDebug only minimizes contiguous chunks, so here we find the minimal configuration of edits (if tractable)
+    // Computing the patch powerset takes 2^n so is only really tractable for relatively small patches, which is
+    // why we first apply the DD minimizer to reduce contiguous runs. This is a heuristic and not guaranteed to
+    // find the absolute minimum, but should be close enough for most purposes.
+    .let { if (it.size < 8) it.minimalSubpatch { patch.apply(this).isValid() } else it }
 
 //  val pdiff = prettyDiffs(listOf(brokeJoin, minFix), listOf("broken", "minimized fix"))
 //  if(pdiff.any { it == '\u001B' } && pdiffTok.filter { !it.isWhitespace() } != pdiff.filter { !it.isWhitespace() }) println(pdiffTok + "\n\n" + pdiff)
