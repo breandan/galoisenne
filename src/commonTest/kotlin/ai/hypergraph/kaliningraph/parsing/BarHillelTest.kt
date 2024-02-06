@@ -202,14 +202,13 @@ class BarHillelTest {
   @Test
   fun testIfThenBarHillel() {
     val gram = Grammars.ifThen
+    val clock = TimeSource.Monotonic.markNow()
     val origStr = "if ( true or false then true else 1"
     val tokens = origStr.tokenizeByWhitespace()
     val maxLevDist = 3
     val levBall = makeLevFSA(origStr, maxLevDist)
     val intGram = gram.intersectLevFSA(levBall)
-    val clock = TimeSource.Monotonic.markNow()
-    val template = List(tokens.size + maxLevDist) { "_" }
-    val lbhSet = intGram.enumSeqMinimal(template, tokens)
+    val lbhSet = intGram.toPTree().sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
         if (i < 100) {
           val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
@@ -226,7 +225,7 @@ class BarHillelTest {
         "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
     val prbSet = Grammars.ifThen.fasterRepairSeq(tokens, 1, 3)
-      .distinct().mapNotNull {
+      .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct().mapNotNull {
         val levDistance = levenshtein(origStr, it)
         if (levDistance < maxLevDist) {
           println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
