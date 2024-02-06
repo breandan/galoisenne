@@ -146,11 +146,10 @@ class BarHillelTest {
     val origStr = "T and ! ( F )"
     val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1))
 
-    val template = List(8) { "_" }
-    val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
+    val lbhSet = levCFG.toPTree().sampleStrWithoutReplacement().toSet()//.onEach { println(it) }
       .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
 
-    val efset = arithCFG.solveSeq(template).toList()
+    val efset = arithCFG.solveSeq(List(8) { "_" }).toList()
       .filter { levenshtein(it, origStr) < 2 }.toSet()
 //      .onEach { println(it) }
       .also { println("Found ${it.size} solutions using enumerative filtering") }
@@ -174,8 +173,7 @@ class BarHillelTest {
     val origStr = "( ( ) ) [ { }"
     val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, levDist))
 
-    val template = List(9) { "_" }
-    val lbhSet = levCFG.solveSeq(template).toSet()//.onEach { println(it) }
+    val lbhSet = levCFG.toPTree().sampleStrWithoutReplacement().toSet()//.onEach { println(it) }
       .onEach {
         assertTrue(levenshtein(it, origStr) <= levDist,
           "Lev dist ($levDist) exceeded: ${levenshteinAlign(it, origStr).paintANSIColors()}")
@@ -188,7 +186,7 @@ class BarHillelTest {
     println("Active nonterminals: $totalParticipatingNonterminals")
     println("Inactive nonterminals: ${levCFG.nonterminals - totalParticipatingNonterminals}")
 
-    val efset = arithCFG.solveSeq(template).toList()
+    val efset = arithCFG.solveSeq(List(9) { "_" }).toList()
       .filter { levenshtein(it, origStr) <= levDist }.toSet()
 //      .onEach { println(it) }
       .also { println("Found ${it.size} solutions using enumerative filtering") }
@@ -251,7 +249,7 @@ class BarHillelTest {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
-    val maxLevDist = 3
+    val maxLevDist = 2
     val levBall = makeLevFSA(toRepair, maxLevDist)
     println("Total transitions in FSA: ${levBall.Q.size}")
 //  throw Exception("")
@@ -261,9 +259,7 @@ class BarHillelTest {
 
     val clock = TimeSource.Monotonic.markNow()
 
-    val template = List(toRepair.size + maxLevDist - 1) { "_" }
-
-    val lbhSet = intGram.enumSeqMinimal(template, toRepair)
+    val lbhSet = intGram.toPTree().sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
         if (i < 100) {
           val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
@@ -287,7 +283,8 @@ class BarHillelTest {
 
     val s2pg = Grammars.seq2parsePythonCFG
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 3)
-      .distinct().mapIndexedNotNull { i, it ->
+      .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
+      .mapIndexedNotNull { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (i < 100) println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
         if (levDistance < maxLevDist) {
@@ -313,7 +310,7 @@ class BarHillelTest {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.semiRealisticTest"
 */
-//  @Test
+  @Test
   fun semiRealisticTest() {
     val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
@@ -327,9 +324,7 @@ class BarHillelTest {
 
     val clock = TimeSource.Monotonic.markNow()
 
-    val template = List(toRepair.size + levDist) { "_" }
-
-    val lbhSet = intGram.enumSeqMinimal(template, toRepair)
+    val lbhSet = intGram.toPTree().sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
         if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
 
@@ -341,7 +336,8 @@ class BarHillelTest {
           "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
     val s2pg = Grammars.seq2parsePythonCFG
-    val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2).distinct()
+    val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2)
+      .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
       .mapIndexedNotNull { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (levDistance < levDist) {

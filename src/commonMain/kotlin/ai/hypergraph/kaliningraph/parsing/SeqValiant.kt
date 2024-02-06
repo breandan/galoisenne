@@ -303,6 +303,13 @@ fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): S
       .map { it.removeEpsilon() }
   }.flatMap { if (it.isEmpty()) sequenceOf(it) else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
 
+fun CFG.barHillelRepair(tokens: List<String>): Sequence<String> =
+  generateSequence(1) { it + 1 }
+    .flatMap { radius ->
+    try { intersectLevFSA(makeLevFSA(tokens, radius)).ifEmpty { null } }
+    catch (e: Exception) { null }?.toPTree()?.sampleStrWithoutReplacement() ?: sequenceOf()
+  }
+
 // Note the repairs are not distinct as we try to avoid long delays between
 // repairs, so callees must remember to append .distinct() if they want this.
 fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> {

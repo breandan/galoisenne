@@ -80,7 +80,9 @@ fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
 
 fun CFG.postProcess() =
     this.also { println("∩-grammar has ${it.size} total productions") }
-    .dropVestigialProductions().normalForm.noNonterminalStubs
+    .dropVestigialProductions()
+    .normalForm
+    .noEpsilonOrNonterminalStubs
     .also { println("∩-grammar has ${it.size} useful productions") }
     .freeze()
     //    .also { println(it.pretty) }
@@ -171,7 +173,6 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
 //  println("Computed NT length bounds in ${clock.elapsedNow()}")
   map
 }
-
 
 fun Π3A<STC>.isValidStateTriple(): Boolean {
   fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
