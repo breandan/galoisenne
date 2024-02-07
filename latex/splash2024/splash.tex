@@ -1,0 +1,1030 @@
+%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,10pt,review,anonymous]{acmart}
+%\settopmatter{printfolios=false,printccs=false,printacmref=false}
+%% For double-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For single-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission, w/ required CCS and ACM Reference
+%\documentclass[sigplan,nonacm]{acmart}
+\documentclass[sigplan,review,anonymous,acmsmall]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+\acmConference[SPLASH'24]{ACM SIGPLAN conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 22-27, 2024}{Pasadena, California, United States}
+%\acmYear{2018}
+%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2018}           %% If different from \acmYear
+
+%% Bibliography style
+\bibliographystyle{acmart}
+
+\input{preamble.tex}
+\begin{document}
+%
+  \title{Syntax Repair as Idempotent Tensor Completion}
+  %
+  \begin{abstract}
+
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto a Boolean tensor completion and compare various techniques for introducing the holes, and solving for their inhabitants. Our technique has practical applications for real-time syntax error correction.
+
+    \keywords{Error correction \and CFL reachability \and Langauge games.}
+  \end{abstract}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+%  \author{Breandan Considine\inst{1} \and
+%  Jin Guo\inst{1}\and
+%  Xujie Si\inst{2}}
+%
+%  \authorrunning{Considine et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+%  \institute{McGill University, Montr\'eal, QC H2R 2Z4, Canada\\
+%  \email{\{breandan.considine@mail, jguo@cs\}.mcgill.ca}\and
+%  University of Toronto, Toronto, ON, M5S 1A1 Canada\\
+%  \email{six@utoronto.ca}}
+%
+  \maketitle              % typeset the header of the contribution
+
+
+  \section{Introduction}
+
+  Syntax repair is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. The result is a tool that is applicable to any context-free language, and which is provably sound and complete up to a Levenshtein bound.
+
+  \subsection{Problem}
+
+  Syntax repair can be treated as a language intersection problem between a context-free language (CFL) and a regular language.
+
+  \begin{definition}[Bounded Levenshtein-CFL reachability]
+    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $L(\err\sigma, d) \cap \ell$.
+  \end{definition}
+
+  To solve this problem, we will first pose a simpler problem that only considers intersections with a finite language, then turn our attention back to BCFLR.
+
+  \begin{definition}[Porous completion]
+    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+  \end{definition}
+
+  $A(\sigma)$ is often a large-cardinality set, so we want a procedure which returns the most likely members first, without exhaustive enumeration. More precisely,
+
+  \begin{definition}[Ranked repair]
+    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+    \begin{equation}
+      R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+    \end{equation}
+    % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
+  \end{definition}
+
+  Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell_\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
+
+  \subsection{Background}\label{sec:background}
+
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+
+  \begin{table}[H]
+    \begin{tabular}{llll}
+      $G\coloneqq\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
+    \end{tabular}
+  \end{table}\vspace{-8pt}
+
+  \noindent Given a CFG, $G' : \mathbb{G} = \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathbb{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+
+  \begin{align}
+    X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+  \end{align}
+
+  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$ and solve for the fixpoint $M_{i+1} = M_i + M_i^2$,\vspace{-10pt}
+
+  \begin{align*}
+    M_0\coloneqq
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
+      \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
+      &          &             &        & \varnothing\\
+      &          &             &        & \hat\sigma_n \\
+      \varnothing & \Cdots   &             &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
+      \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
+      &          &         &        & \Lambda\\
+      &          &         &        & \hat\sigma_n \\
+      \varnothing & \Cdots   &         &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
+    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+      \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
+      \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
+      &          &         &        & \Lambda\\
+      &          &         &        & \hat\sigma_n \\
+      \varnothing & \Cdots   &         &        & \varnothing
+    \end{pNiceMatrix}
+  \end{align*}
+
+  \noindent we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
+
+  Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. A concrete example is shown in \S~\ref{sec:example}.
+
+  \subsection{Example}\label{sec:example}
+
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+
+  \begin{small}
+  {\renewcommand{\arraystretch}{1.2}
+  \noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+                          \hline
+                          & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+                          $M_0$ & \begin{pmatrix}
+                                    \phantom{V} & \tiny{\{N\}} &         &             \\
+                                    &              & \{N,O\} &             \\
+                                    &              &         & \{N,O\} \\
+                                    &              &         &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & \ws\bs\ws\ws &              &              \\
+                                            &              & \ws\bs\bs\ws &              \\
+                                            &              &              & \ws\bs\bs\ws \\
+                                            &              &              &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & V_{0, 1} &          &          \\
+                                            &          & V_{1, 2} &          \\
+                                            &          &          & V_{2, 3} \\
+                                            &          &          &
+                          \end{pmatrix} \\\hline
+                          $M_1$ & \begin{pmatrix}
+                                    \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+                                    &              & \{N,O\}     & \{L\}   \\
+                                    &              &             & \{N,O\} \\
+                                    &              &             &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                                            &              &              & \ws\bs\bs\ws \\
+                                            &              &              &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                                            &          & V_{1, 2} & V_{1, 3} \\
+                                            &          &          & V_{2, 3} \\
+                                            &          &          &
+                          \end{pmatrix} \\\hline
+                          $M_\infty$ & \begin{pmatrix}
+                                         \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+                                         &              & \{N,O\}     & \{L\}   \\
+                                         &              &             & \{N,O\} \\
+                                         &              &             &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                                            &              &              & \ws\bs\bs\ws \\
+                                            &              &              &
+                          \end{pmatrix} & \begin{pmatrix}
+                                            \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                                            &          & V_{1, 2} & V_{1, 3} \\
+                                            &          &          & V_{2, 3} \\
+                                            &          &          &
+                          \end{pmatrix}\\\hline
+  \end{tabular}\\
+  }
+  \end{small}
+
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however these both are recognizers. That is to say, $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there is at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
+
+%$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
+
+  In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
+
+  \begin{align}
+    V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
+    &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]\\
+    &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}]\\
+    &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]
+  \end{align}
+
+  \begin{align}
+    V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
+    &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
+    &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
+    &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
+  \end{align}
+
+  Now we solve for the corner entry $V_{0, 3}$ by taking the bitwise dot product between the first row and last column, yielding:
+
+  \begin{align}
+    V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = V_{0, 1} \boxtimes V_{1, 3} \boxplus V_{0, 2} \boxtimes V_{2, 3}\\
+%  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
+    &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
+  \end{align}
+
+  Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
+
+  \begin{align}
+    V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
+    &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
+    &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
+    &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
+  \end{align}
+
+  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
+
+  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
+
+%A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
+%
+%\begin{align}
+%  \ell_1:\textsc{Reg}, \ell_2: \textsc{Cfl} \vdash \text{ there exists } G \text{ s.t. } L(G): \textsc{Cfl} \text{ and } L(G) = \ell_1\cap\ell_2
+%\end{align}
+%
+%To compute the intersection between a CFG and a regular grammar, there is a standard construction from Beigel and Gasarch~\cite{beigelproof}, which allows us to compute the intersection grammar. We can then use the same procedure as before to compute the fixpoint, $M_\infty$, and extract the inhabitants.
+%
+%Alternatively, the procedure we use is to generate the contents of the grammar incrementally by sampling holes without replacement. We illustrate the procedure below, then discuss the theory.
+
+  \begin{enumerate}[leftmargin=.23\linewidth]
+    \item \texttt{d = sum([foo(i\err{]} for i in vals))}
+    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \texttt{d} & \texttt{=} & \texttt{sum} & \texttt{(} & \texttt{[} & \texttt{foo} & \texttt{(} & \texttt{i} & \texttt{]} & \texttt{for} & \texttt{i} & \texttt{in} & \texttt{vals} & \texttt{)} & \texttt{)} \\\hline
+    \end{tabular}
+    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+            \hline
+            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+    \end{tabular}
+    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+            \hline
+            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+    \end{tabular}
+    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+            \hline
+            \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+    \end{tabular}\\
+    \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+      \hline
+      \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{(} & \texttt{[} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+%          & & & & & & & & & & & & & & \\\hline
+    \end{tabular}\\$\cdots$
+    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c||c|c|||c|||c|||c|||c|||c|||c|||c|||}
+            \hline
+%          \texttt{w} & \texttt{=} & & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
+            & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
+    \end{tabular}
+    \item \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
+    \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
+  \end{enumerate}
+
+  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7), then reduced to its minimal form in step (8), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
+
+  To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production in our grammar, $\mathcal{G}$:\vspace{5pt}
+
+  \begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
+    \RightLabel{$\varepsilon\textsc{-dup}$}
+    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
+    \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
+  \end{prooftree}
+
+  Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$ (see Lemma~\ref{lemma:interleaving}), then enumerate hole templates $\text{H}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\tilde{\sigma} \in \text{H}(\err\sigma_\varepsilon, i)$ satisfying $[S \in \Lambda^*_{\tilde\sigma, \mathcal{G}}] \Leftrightarrow [\tilde\sigma \in \mathcal{L}(\mathcal{G})]$. If $\bm\sigma \coloneqq \text{H}(\err\sigma_\varepsilon, i)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
+
+  \begin{align*}
+    \text{Deletion}&=\begin{cases}
+                       \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
+    \end{cases}\\
+    \text{Substitution}&=\begin{cases}
+                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
+                           \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
+                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
+    \end{cases}\\
+    \text{Insertion}&=\begin{cases}
+                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
+                        \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
+                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
+    \end{cases}
+  \end{align*}
+
+  \subsection{Bar-Hillel Construction}
+
+  Manually generating the edits is a more controllable way to synthesize edits, but can be unnecessarily expensive if the goal is to synthesize all edits within a fixed edit distance. The second approach is more efficient, but requires generating a large grammar. We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a finite automaton, and then use the grammar to generate the edits without enumerating holes.
+
+  \begin{definition}
+    A finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
+  \end{definition}
+
+  \begin{lemma}\label{lemma:bar-hillel}
+  For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
+  \end{lemma}
+
+  \pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
+
+  \begin{prooftree}
+    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+    \DisplayProof
+    \hskip 1em
+    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+    \DisplayProof
+    \hskip 1em
+%\end{prooftree}
+%\begin{prooftree}
+    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+    \AxiomC{$p,q,r \in Q$}
+    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+
+  Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automaton (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G_\cap$ which recognizes and generates the admissible set.
+
+  \begin{figure}[H]
+    \begin{center}
+      \resizebox{.9\textwidth}{!}{\input{nfa_cfg.tex}}
+    \end{center}
+    \caption{Levenshtein reachability from $\Sigma^n$ can be described as an NFA, or a CFG.}
+  \end{figure}
+
+  \noindent Alternatively, this transition system can be viewed as a kind of proof system.
+
+  \begin{prooftree}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$\vphantom{|}$}
+    \RightLabel{$\textsc{Init}$}
+    \UnaryInfC{$q_{0,0} \in I$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$q_{i, j}$}
+    \AxiomC{$|n-i+j| \leq k$}
+    \RightLabel{$\textsc{Done}$}
+    \BinaryInfC{$q_{i, j}\in F$}
+  \end{prooftree}
+
+  \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
+
+%To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
+
+
+  \subsection{Semiring Algebras}
+
+  There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = \hat\sigma_r = p(\sigma_r)$ as follows:
+
+  \begin{equation}
+    p(s: \Sigma) \mapsto \{w \mid (w \rightarrow s)\in P\} \text{ and } p(\_) \mapsto \bigcup_{s\in \Sigma} p(s)
+  \end{equation}
+
+  Like the recognizer defined in \S~\ref{sec:background}, $p(\cdot)$ constructs elements of the superdiagonal, then we compute the fixpoint using the algebra:
+
+  \begin{equation}
+    X \oplus Z \mapsto \big\{w \stackrel{+}{\Rightarrow} (X \circ w) \cup (Z \circ w) \mid w \in \pi_1(X \cup Z)\big\}
+  \end{equation}
+
+  \begin{equation}
+    X \otimes Z \mapsto \bigoplus_{w, x, z}\big\{w \stackrel{+}{\Rightarrow} (X\circ x)(Z\circ z) \mid (w\rightarrow xz) \in P, x\in X, z\in Z\big\}
+  \end{equation}
+
+  \noindent After the fixpoint $M_\infty$ is attained, the solutions can be read off via $\Lambda_\sigma^* \circ S$. The issue here is an exponential growth in cardinality when eagerly computing the transitive closure, which grows impractical for even small strings and grammars.
+
+  This encoding can be made more compact by propagating an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Hereinafter, given a concrete $T:\mathbb{T}_2$, we shall refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \dot{p}(\sigma_r)$ as follows:
+
+  \begin{equation}
+    \dot{p}(s: \underline\Sigma) \mapsto \begin{cases}
+                                           \bigoplus_{s\in \Sigma} \dot{p}(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
+                                           \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
+    \end{cases}
+  \end{equation}
+
+  \noindent We then compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as follows:
+
+  \begin{equation}
+    X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
+  \end{equation}
+
+  \begin{equation}
+    X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+  \end{equation}
+
+  Decoding trees from $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$ becomes a straightforward matter of enumeration using a recursive choice function that emits a sequence of binary trees generated by the CFG. We define this construction more precisely in \S~\ref{sec:pairing}.
+
+%\begin{equation*}
+%  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
+%    \texttt{root}(T) & \text{if $T$ is a leaf,} \\
+%    \big\{x z \mid \langle X, Z\rangle \in \texttt{children}(T), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
+%  \end{cases}
+%\end{equation*}
+
+  In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
+
+  \pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
+
+  The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
+
+  \begin{equation}
+    L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
+  \end{equation}
+
+  The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G_\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
+
+
+%  val totalTrees: BigInteger by lazy {
+%    if (branches.isEmpty()) BigInteger.ONE
+%    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
+%      .reduce { acc, it -> acc + it }
+%  }
+
+  \begin{equation}
+    |T: \mathbb{T}_2| \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
+                                1  & \text{if $T$ is a leaf,} \\
+                                \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
+    \end{cases}
+  \end{equation}
+
+  To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we first define a pairing function $\varphi^{-1}: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ as follows:
+
+%private fun decodeTree(i: BigInteger): Pair<Tree, BigInteger> {
+%  if (branches.isEmpty()) return Tree(root) to i
+%  val (quotient1, remainder) =
+%  i.div(branches.size) to i.mod(branches.size.toBigInteger())
+%  val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
+%  val (l, quotient2) = lb.decodeTree(quotient1)
+%  val (r, quotient3) = rb.decodeTree(quotient2)
+%  val concat = Tree(l.root, children = arrayOf(l, r))
+%  return concat to quotient3
+%}
+
+  \begin{equation}
+    \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+                                                                 \text{Let } b = |\texttt{children}(T)|,\\
+                                                                 \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+                                                                 \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+                                                                 \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
+                                                                 \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
+                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+    \end{cases}
+  \end{equation}
+
+  Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \ref{sec:dsi}, and lazily decode them into trees.
+
+  \subsection{Complexity}
+
+  Let us consider some loose bounds on the complexity of BCFLR. To do, we first consider the complexity of computing language-edit distance, which is a lower-bound on BCFLR complexity.
+
+  \begin{definition}
+    Language edit distance (LED) is the problem of computing the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance. LED is known to have subcubic complexity~\cite{bringmann2019truly}.
+  \end{definition}
+
+  We seek to find the set of strings $S$ such that $\forall \tilde{\sigma}\in S, \Delta(\err{\sigma}, \tilde{\sigma}) \leq q$, where $q$ is the maximum number of edits greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
+
+  \begin{lemma}\label{lemma:upper-bound}
+  For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+  \end{lemma}
+
+  \begin{proof}
+    Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m\coloneqq|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+
+    \begin{itemize}
+      \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
+      \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+    \end{itemize}
+
+    In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+  \end{proof}
+
+  Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
+
+  \begin{lemma}\label{lemma:interleaving}
+  The complexity $A$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
+  \end{lemma}
+
+  \begin{proof}
+    We can overestimate the size of $A$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
+  \end{proof}
+
+  We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions.~\footnote{This reflects our general approach, which builds a surjection from the interleaved Hamming ball onto the Levenshtein ball.} In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
+
+%In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\tilde{\sigma}\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
+
+  \pagebreak\subsection{Sampling the Levenshtein ball without replacement in $\mathcal{O}(1)$}\label{sec:dsi}
+
+  Now that we have a reliable method to synthesize admissible completions for strings containing holes, i.e., fix \textit{localized} errors, $F: (\mathcal{G} \times \underline\Sigma^n) \rightarrow \{\Sigma^n\}\subseteq \mathcal{L}(\mathcal{G})$, how can we use $F$ to repair some unparseable string, i.e., $\err{\sigma_1\ldots\:\sigma_n}: \Sigma^n \cap\mathcal{L}(\mathcal{G})^\complement$ where the holes' locations are unknown? Three questions stand out in particular: how many holes are needed to repair the string, where should we put those holes, and how ought we fill them to obtain a parseable $\tilde{\sigma} \in \mathcal{L}(\mathcal{G})$?
+
+  One plausible approach would be to draw samples with a PCFG, minimizing tree-edit distance, however these are computationally expensive metrics and approximations may converge poorly. A more efficient strategy is to sample string perturbations, $\bm{\sigma}\sim\Sigma^{n\pm q}\cap\Delta_{q}(\err{\sigma})$ uniformly across the Levenshtein q-ball centered on $\err{\sigma}$, i.e., the space of all admissible edits with Levenshtein distance $\leq q$.
+
+  To implement this strategy, we first construct a surjection $\varphi^{-1}: \mathbb{Z}_2^m\twoheadrightarrow\Delta_{q}(\err{\sigma})$ from bitvectors to Levenshtein edits over $\err\sigma, \Sigma$, sample bitvectors without replacement using a characteristic polynomial, then decode the resulting bitvectors into Levenshtein edits. This ensures the sampler eventually visits every Levenshtein edit at least exactly once and at most approximately once, without needing to store any samples, and discovers a steady stream of admissible edits throughout the solving process, independent of the grammar or string under repair.
+
+  More specifically, we employ a pair of [un]tupling functions $\kappa, \rho: \mathbb{N}^k \leftrightarrow \mathbb{N}$ which are (1) bijective (2) maximally compact (3) computationally tractable (i.e., closed form inverses). $\kappa$ will be used to index $\stirlingii{n}{k}$\footnote[2]{\text{Following Stirling, we use $\stirlingii{n}{d}$ to denote the set of all $d$-element subsets of $\{1,\ldots, n\}$.}}-combinations and $\rho$ will index $\Sigma^k$ tuples, but is slightly more tricky to define. To maximize compactness, there is an elegant pairing function by Szudzik~\cite{szudzik2006elegant}, which enumerates concentric square shells over $\mathbb{N}^2$ and can be generalized to hypercubic shells in $\mathbb{N}^k$.
+
+  Although $\langle\kappa, \rho\rangle$ could be used directly to exhaustively search the Levenshtein ball, they are temporally biased samplers due to lexicographic ordering. Rather, we would prefer a path that uniformly visits every fertile subspace of the Levenshtein ball over time regardless of the grammar or string in question: subsequences of $\langle\kappa, \rho\rangle$ should discover valid repairs with frequency roughly proportional to the filtration rate, i.e., the density of the admissible set relative to the Levenshtein ball. These additional constraints give rise to two more criteria: (4) ergodicity and (5) periodicity.
+
+  \newcommand\ddd{\Ddots}
+  \newcommand\vdd{\Vdots}
+  \newcommand\cdd{\Cdots}
+  \newcommand\lds{\ldots}
+  \newcommand\vno{\varnothing}
+  \newcommand{\ts}[1]{\textsuperscript{#1}}
+  \newcommand\non{1\ts{st}}
+  \newcommand\ntw{2\ts{nd}}
+  \newcommand\nth{3\ts{rd}}
+  \newcommand\nfo{4\ts{th}}
+  \newcommand\nfi{5\ts{th}}
+  \newcommand\nsi{6\ts{th}}
+  \newcommand\nse{7\ts{th}}
+  \newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
+  \newcommand{\gs}[1]{\gamma_{#1}^{\shur}}
+  \newcommand{\qs}[1]{\alpha_{#1}^{\shur}}
+  \newcommand\rcr{\rowcolor{black!15}}
+  \newcommand\rcw{\rowcolor{white}}
+  \newcommand\pcd{\cdot}
+  \newcommand\pcp{\phantom\cdot}
+  \newcommand\ppp{\phantom{\nse}}
+  \newcommand\hhg[1]{\tikz[overlay]\node[rectangle,fill=black!15,draw=none,text opacity =1] {$#1$};}
+
+  \begin{wrapfigure}{r}{0.45\textwidth}
+    \vspace{-35pt}
+    \begin{minipage}{.35\textwidth}
+      \begin{align*}
+        U^\intercal Y = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+                          C_1    & \cdd  &       &       & C_m \\
+                          \top   & \circ & \cdd  &       & \circ \\
+                          \circ  & \ddd  & \ddd  &       & \vdd \\
+                          \vdd   & \ddd  &       &       & \\
+                          \circ  & \cdd  & \circ & \top  & \circ
+        \end{pNiceMatrix}^t
+        \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+          Y_1 \\
+          \vdd\\
+          \\
+          \\
+          Y_m
+        \end{pNiceMatrix}\label{eq:lfsr}
+      \end{align*}
+    \end{minipage}
+    \vspace{-15pt}
+  \end{wrapfigure}
+
+  To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times\Sigma^k$ using a finite field with a characteristic polynomial $C$ of degree $m\coloneqq\lceil \log_b {n \choose k}|\Sigma_\varepsilon|^k \rceil$. By choosing $C$ to be some irreducible polynomial, one ensures the path has the mixing properties we desire, e.g., suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is depicted to the right, wherein $C$ represents a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus \coloneqq + \pmod 2, \otimes \coloneqq \land, \top \coloneqq 1, \circ\coloneqq0$. Since $C$ is primitive, the sequence $\mathbf{R} = (U^{0 \ldots 2^m-1}Y)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{R}_i = \mathbf{R}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we construct a partial surjection from $\mathbb{Z}_2^m$ onto the Levenshtein ball, $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$, cycle over $\mathbf{R}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$.
+
+  This procedure requires $\mathcal{O}(1)$ per sample and roughly ${n \choose d}|\Sigma_\varepsilon|^{d}$ samples to exhaustively search $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$. Its acceptance rate $b^{-m}{n \choose d}|\Sigma_\varepsilon|^{d}$ can be slightly improved with a more suitable base $b$, however this introduces some additional complexity and so we elected to defer this optimization.
+
+  In addition to its statistically desirable properties, our sampler has the practical benefit of being trivially parallelizable using leapfrogging, i.e., given $p$ independent processors, each one $p_j$ can independently check $[\varphi^{-1}(\langle\kappa, \rho\rangle^{-1}(\mathbf{R}_{i}), \err{\sigma}) \in \mathcal{L}(\mathcal{G})]$ where $p_j \equiv i \pmod{|p|}$. This procedure linearly scales with the total processors, exhaustively searching $\Delta_{q}(\err{\sigma})$ in $|p|^{-1}$ of the time required by a single processor, or alternately drawing $|p|$ times as many samples in the same time.
+
+  \noindent Although complete with respect to $\Delta_{q}(\err{\sigma})$, this approach can produce patches containing more Levenshtein edits than are strictly necessary to repair $\err\sigma$. To ensure patches are both minimal and syntactically valid, we first introduce a simple technique to minimize the repairs in \S\ref{sec:minimization}. By itself, uniformly sampling minimal repairs $\tilde\sigma\sim\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$ is sufficient but can be quite time-consuming. To further reduce sample complexity and enable real-time repairs, we will then introduce a more efficient density estimator based on adaptive resampling (\S\ref{sec:adaptive}).
+
+  \subsection{Patch minimization}\label{sec:minimization}
+
+  \begin{wrapfigure}{r}{0.45\textwidth}
+    \vspace{-20pt}
+    \resizebox{.45\textwidth}{!}{
+      $$
+      \def\arl{\ar@{-}}
+      \xymatrix{
+        & \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}\arl[dl]\arl[d]\arl[dr] & \\
+        \texttt{\vphantom{)}\err{\hlgreen{(} a \hlorange{+} b}}\arl[d]\arl[dr] & \texttt{\vphantom{(}\err{\hlgreen{(} a ( b \hlgreen{)}}}\arl[dl]|\hole\arl[dr]|\hole & \texttt{\vphantom{(}\err{a \hlorange{+} b \hlgreen{)}}}\arl[dl]\arl[d] \\
+        \texttt{\vphantom{(}\err{\hlgreen{(} a ( b}}\arl[dr]   & \texttt{a \hlorange{+} b}\arl[d]   & \texttt{\vphantom{)}a ( b \hlgreen{)}}\arl[dl] \\
+        & \texttt{\vphantom{)}\err{a ( b}} \\
+      }
+      $$
+    }
+    \caption{The patch $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}} is decomposed into its constituents.}
+    \vspace{-20pt}
+  \end{wrapfigure}
+
+  Suppose we have a string, \texttt{\err{a ( b}}, and discover the patch, $\tilde{\sigma}=$ \texttt{\hlgreen{(} a \hlorange{+} b \hlgreen{)}}. Although $\tilde{\sigma}$ is syntactically admissible, it is not minimal. To minimize a patch, we consider the set of all of its constituent subpatches, namely, \texttt{\err{\hlgreen{(} a \hlorange{+} b}}, \texttt{\err{\hlgreen{(} a ( b \hlgreen{)}}}, \texttt{\err{a \hlorange{+} b \hlgreen{)}}}, \texttt{\err{\hlgreen{(} a ( b}}, \texttt{a \hlorange{+} b}, and \texttt{a \hlgreen{(} b \hlgreen{)}}, then retain only the smallest syntactically valid instance(s) by Levenshtein distance. This forms a so-called \textit{patch powerset}, which can be lazily enumerated from the top-down, after which we take all valid strings from the lowest level containing at least one valid string, i.e., \texttt{a \hlorange{+} b} and \texttt{a \hlgreen{(} b \hlgreen{)}}. When patches are very large, minimization can be used in tandem with the delta debugging technique~\cite{zeller2002isolating} to first simplify contiguous edits, then apply the patch powerset construction. Minimization is often useful for estimating the language edit distance: given a single valid repair of arbitrary size, minimization lets us quickly approximate an upper-bound on $\Delta(\err{\sigma}, \ell)$.
+
+  \subsection{Probabilistic reachability}\label{sec:adaptive}
+
+  Since there are $\Sigma_{d=1}^q{n \choose d}$ total hole templates, each with $|\Sigma_\varepsilon| ^d$ individual edits to check, if $n$ and $q$ are large, this space can be slow to exhaustively search and a uniform prior may be highly sample-inefficient. Furthermore, na\"ively sampling $\sigma\sim\Delta_{q}(\err{\sigma})$ is likely to produce a large number of unnatural edits and converge poorly on $\Delta_{q}(\err{\sigma})\cap\mathcal{L}(\mathcal{G})$. To rapidly rank and render relevant repair recommendations, we prioritize candidate edits according to the following procedure.
+
+  (1) Draw samples $\hat\sigma \sim \Delta_q(\err{\sigma})$ without replacement using \S\ref{sec:dsi} with leapfrog parallelization. (2) Score by perplexity $PP(\hat\sigma)$ using a pretrained variable-order Markov chain (VOMC)~\cite{schulz2008vomc}. (3) Resample using a concurrent variant of the A-Res~\cite{efraimidis2015weighted} online weighted reservoir sampler. (4) Filter Levenshtein edits by admissibility with respect to the grammar, i.e., $[\hat\sigma \in \mathcal{L}\vspace{2pt}(\mathcal{G})]$.
+  (5) Minimize and store admissible repairs to a replay buffer, $\mathcal{Q} \leftarrow \tilde\sigma$, ranked by perplexity. (6) Repeat steps (1)-(5), alternately sampling from the LFSR/VOMC-reweighted online resevoir sampler with probability $\epsilon$ or stochastically resampled $\mathcal{Q}$ with probability $(1-\epsilon)$, where $\epsilon$ decreases from $1$ to $0$ according to a stepwise schedule relative to the time remaining.
+
+  Initially, the replay buffer $\mathcal{Q}$ is empty and repairs are sampled uniformly without replacement from the Levenshtein ball, $\Delta_{q}(\err{\sigma})$. As time progresses, $\mathcal{Q}$  is gradually populated with admissible repairs and resampled with increasing probability, allowing the algorithm to initially explore, then exploit the most promising candidates. This is summarized in Algorithm~\ref{alg:adaptive} which is run in parallel across all available CPU cores.
+
+  \begin{figure}[H]
+    \vspace{-10pt}
+    \begin{minipage}{\textwidth}
+      \input{prob_reach.tex}
+    \end{minipage}
+  \end{figure}
+
+  \begin{wrapfigure}{r}{0.6\textwidth}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[scale=0.4]
+        \begin{axis}[x=2cm, y=2cm, every axis plot post/.append style={mark=none,domain=-2:7.5,samples=50,smooth},
+          axis x line*=bottom, % no box around the plot, only x and y axis
+          ticks=none,
+          y axis line style={draw=none},
+          xticklabels={,,},
+          enlargelimits=upper] % extend the axes a bit to the right and top
+          \addplot[name path=F] {gauss(0.0,0.4)};
+          \addplot[name path=G] {gauss(3.0,0.5)};
+          \addplot[name path=H] {gauss(6.0,0.3)};
+          \addplot[name path=N] {nil(0)};
+          \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=F and N, soft clip={domain=-3:1}];
+          \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=G and N, soft clip={domain=1:5}];
+          \addplot[pattern=vertical lines, pattern color=gray!50]fill between[of=H and N, soft clip={domain=4:7.5}];
+        \end{axis}
+        \node [xshift=4.1cm, yshift=-7pt] {\footnotesize $\sigma_1\hspace{0.5cm}\sigma_{10}\err{\hspace{0.5cm}\sigma_{20}}\hspace{0.5cm}\sigma_{30}\hspace{0.5cm}\err{\sigma_{40}\hspace{0.5cm}\sigma_{50}}\hspace{0.5cm}\sigma_{60}\hspace{0.5cm}\err{\sigma_{70}\hspace{0.3cm}}\hspace{0.2cm}\sigma_{80}\hspace{0.5cm}\sigma_{90}$};
+%  \node [xshift=142pt, yshift=7pt] {\footnotesize $P_2(X)$};
+%  \node [xshift=227pt, yshift=7pt] {\footnotesize $P_3(X)$};
+      \end{tikzpicture}
+    }
+    \caption{The distribution $\mathcal{Q}$, projected onto $\sigma$, suggests edit locations likely to yield admissible repairs, from which we draw subsets of size $d$.}\label{fig:prob_reach}
+  \end{wrapfigure}
+
+  We would prefer hole templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a probabilistic distance metric over $\Delta_q(\err{\sigma})$. For example, suppose we are given an invalid string, $\err{\sigma}_{\varepsilon}: \Sigma^{90}$ and $\mathcal{Q} \subseteq [0, |\sigma_\varepsilon|) \times \Sigma^q_\varepsilon$, a distribution over previously successful edits, which we can use to localize admissible repairs. Marginalizing onto $\err{\sigma}_\varepsilon$, the distribution $\mathcal{Q}(\err{\sigma}_\varepsilon)$ may take the form shown in Fig.~\ref{fig:prob_reach}.
+
+%\begin{figure}[H]
+%    \hspace{-0.3cm}
+%\end{figure}
+%
+%Morally, we would prefer sketch templates likely to yield repairs that are (1) admissible (i.e., grammatically correct) and (2) plausible (i.e., likely to have been written by a human author). To do so, we draw holes and rank admissible repairs using a distance metric over $\Delta_q(\err{\sigma})$. One such metric, the Kantorovich--Rubinstein (KR) metric, $\delta_{KR}$, can be viewed as an optimal transport problem minimizing $\Pi(\mu, \nu)$, the set of all mass-conserving transportation plans between two probability distributions $\mu$ and $\nu$ over a metric space $\Omega$:
+%
+%\begin{align}
+%    \delta_{\textsc{KR}}(\mu, \nu) \coloneqq \inf_{\pi\in \Pi(\mu, \nu)}\int_{\Omega\times \Omega} \delta(x, y)d\pi(x, y)
+%\end{align}
+
+  More specifically, we want to sample from a discrete product space that factorizes into (1) the edit locations (e.g., informed by caret position, historical edit locations, etc.), (2) probable completions (e.g., from a Markov chain or neural language model) and (3) an accompanying \textit{cost model}, $C: (\Sigma^* \times \Sigma^*) \rightarrow \mathbb{R}$, which may be any number of suitable distance metrics, such as language edit distance, weighted Levenshtein distance, or stochastic contextual edit distance~\cite{cotterell+al.acl14} in the case of probabilistic edits. Our goal then, is to discover repairs minimizing $C(\err{\sigma}, \tilde{\sigma})$, subject to the given grammar and latency constraints.
+
+  \subsection{Trajectory Matching}
+
+  Suppose we have a dataset of single token edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample edit trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+
+  \begin{enumerate}
+    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) \coloneqq \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
+    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
+    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
+  \end{enumerate}
+
+  \pagebreak\section{Dataset}
+
+  The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
+
+  \begin{figure}
+    \begin{tikzpicture}
+      \begin{axis}[
+      ybar,
+      bar width=15pt,
+      xlabel={Beginning of snippet $\longleftrightarrow$ End of snippet},
+      ylabel={Frequency},
+      title={Normalized edit locations},
+      ymin=0,
+      ymax=35,
+      xtick=data,
+      xticklabels={10\%,20\%,30\%,40\%,50\%,60\%,70\%,80\%,90\%,100\%},
+      ymajorgrids=true,
+      grid style=dashed,
+      width=\textwidth,
+      height=0.3\textwidth
+      ]
+
+      \addplot table {
+        X Y
+        10 11.6539
+        20 5.7252
+        30 6.2087
+        40 5.9542
+        50 5.5980
+        60 7.9389
+        70 7.0738
+        80 6.9466
+        90 12.4173
+        100 30.4835
+      };
+      \end{axis}
+    \end{tikzpicture}
+  \end{figure}
+
+  \noindent Likewise, we can plot the number of tokens between edits within each patch:
+
+  \begin{figure}
+    \begin{tikzpicture}
+      \begin{axis}[
+        ybar,
+        bar width=15pt,
+        title={Intra-patch edit distance},
+        xlabel={Caret distance},
+        ylabel={Frequency},
+        xtick=data,
+        ymajorgrids=true,
+        grid style=dashed,
+        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+        width=\textwidth,
+        height=0.3\textwidth
+      ]
+
+        \addplot table {
+          X Y
+          1 40.66
+          2 15.00
+          3 5.80
+          4 4.86
+          5 4.26
+          6 2.98
+          7 2.05
+          8 2.73
+          9 1.62
+          10 13.64
+        };
+      \end{axis}
+    \end{tikzpicture}
+  \end{figure}
+
+  \section{Evaluation}
+
+  We evaluate Tidyparse along three primary axes: latency, throughput, and accuracy on a dataset of human repairs. Our intention here is to show that Tidyparse is competitive with a large language model (roughly, a deep circuit) that is slow but highly sample-efficient with a small language model (roughly, a shallow circuit) that is fast but less sample-efficient.
+
+  Large language models typically take between several hundred milliseconds and several seconds to infer a repair. The output is not guaranteed to be syntactically valid, and may require more than one sample to discover a valid repair. In contrast, Tidyparse can discover thousands of repairs in the same duration, all of which are guaranteed to be syntactically valid. Furthermore, if a valid repair exists within a certain number of edits, it will eventually be found.
+
+  To substantiate these claims, we conduct experiments measuring:
+
+  \begin{itemize}
+    \item the average worst-case time to discover a human repair across varying sizes, i.e., average latency to discover a repair with edit distance $d$.
+    \item the average accuracy at varying latency cutoffs, i.e., average precision@k at latency cutoff $t$.
+    \item the average repair throughput across varying CPU cores, i.e., average number of admissible repairs discovered per second over the repair length.
+    \item the relative throughput versus a uniform sampler, i.e., average number of admissible repairs discovered per second divided by the uniform sampler's throughput
+  \end{itemize}
+
+  \subsection{Uniform sampling benchmark}\label{sec:uniform}
+
+  Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before timeout expiration are reranked by tokenwise perplexity then compared using an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
+
+  \begin{figure}[H]
+    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
+    \resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+    \resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+    \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
+  \end{figure}
+
+  Despite the high-latency, this demonstrates a uniform prior with post-timeout reranking is still able to achieve competitive precision@k using a relatively cheap ranking metric. This suggests that we can use the metric to bias the sampler towards more likely repairs, which we will now do.
+
+%\begin{figure}[h]
+%\resizebox{0.3\textwidth}{!}{
+%\begin{tikzpicture}
+%\begin{axis}[
+%ybar,
+%enlarge x limits=0.15,
+%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
+%ylabel={Precision@1},
+%xtick={1,2,3},
+%xlabel={Edit Distance},
+%xtick=data,
+%nodes near coords,
+%nodes near coords align={vertical},
+%ymin=0,ymax=1,
+%]
+%\addplot coordinates {(1, 0.9) (2, 0.857) (3, 0.794)};
+%\addplot coordinates {(1, 0.454) (2, 0.162) (3, 0.096)};
+%\addplot coordinates {(1, 0.005) (2, 0.004) (3, 0.0)};
+%\legend{Syntactic, AbstractEval, CharMatch}
+%\end{axis}
+%\end{tikzpicture}
+%}
+%\resizebox{0.3\textwidth}{!}{
+%\begin{tikzpicture}
+%\begin{axis}[
+%ybar,
+%enlarge x limits=0.15,
+%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
+%ylabel={Latency (ms)},
+%xtick={1,2,3},
+%xlabel={Edit Distance},
+%xtick=data,
+%nodes near coords,
+%nodes near coords align={vertical},
+%ymin=0,ymax=3000,
+%]
+%\phantom{\legend{Syntactic, AbstractEval, CharMatch}}
+%\addplot coordinates {(1, 1585.465) (2, 1953.56) (3, 2744.887)};
+%\end{axis}
+%\end{tikzpicture}
+%}
+%\caption{Seq2Parse precision@1 and latency on the StackOverflow dataset.}
+%\end{figure}
+
+  \subsection{Repair with an adaptive sampler}
+
+  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
+
+  \begin{figure}[H]
+    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
+    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
+    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
+    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
+    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
+  \end{figure}
+
+  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports precision@1 repairs, and so we only report Seq2parse precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
+
+  While adapting sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
+
+  \subsection{Throughput benchmark}
+
+  \begin{wrapfigure}{r}{0.3\textwidth}
+    \resizebox{.3\textwidth}{!}{\input{throughput.tex}}
+    \label{fig:throughput}
+    \vspace{-30pt}
+  \end{wrapfigure}
+
+  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
+
+  \subsection{Synthetic repair benchmark}\label{sec:latency}
+
+  In addition to the StackOverflow dataset, we also evaluate our approach on two datasets containing synthetic strings generated by a Dyck language, and bracketing errors of synthetic and organic provenance in organic source code. The first dataset contains length-50 strings sampled from various Dyck languages, i.e., the Dyck language containing n different types of balanced parentheses. The second contains abstracted Java and Python source code mined from GitHub repositories. The Dyck languages used in the remaining experiments are defined by the following context-free grammar(s):
+
+  \begin{wholetidyinput}
+    Dyck-1 -> ( ) | ( Dyck-1 ) | Dyck-1 Dyck-1
+    Dyck-2 -> Dyck-1 | [ ] | ( Dyck-2 ) | [ Dyck-2 ] | Dyck-2 Dyck-2
+    Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
+  \end{wholetidyinput}
+
+  \noindent In experiment (1a), we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number of indices in $[0, |\sigma|)$ with holes and measure the average time required to decode ten syntactically-admissible repairs across 100 trial runs. In experiment (1b), we sample a random valid string as before, but delete p tokens at random and rather than provide their location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the logarithmic scale on the y-axis.
+
+  \begin{figure}[H]
+    \begin{minipage}{.48\textwidth}
+      \begin{center}\footnotesize\textbf{Synthetic bracket language}\end{center}
+    \end{minipage}
+    \begin{minipage}{.48\textwidth}
+      \begin{center}\footnotesize\textbf{Organic bracket language}\end{center}
+    \end{minipage}\\
+    \vspace{10pt}
+    \hspace{-0.25cm}\begin{tikzpicture}[scale=0.35]
+                      \begin{axis}[
+                        width=8.3cm,
+                        height=7cm,
+                        title={\hspace{-1cm}\textbf{(1a) Latency with known locations}},
+                        ybar,
+                        bar width=6pt,
+                        xlabel={Number of holes},
+                        ylabel={ms to synthesize 10 repairs},
+                        xtick=data,
+                        axis x line*=bottom,
+                        axis y line*=left,
+                        ytick pos=left,
+                        xticklabels from table={\loctimings}{holes},
+                        ymajorgrids,
+                        legend pos=north west,
+                        legend columns=2,
+                        error bars/y dir=both,
+                        error bars/y explicit
+                      ]
+                        \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
+                        \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
+                        \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
+                        \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
+                        \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
+                      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}[scale=0.35]
+      \begin{axis}[
+        width=8.3cm,
+        height=7cm,
+        title={\hspace{-1cm}\textbf{(1b) Latency with unknown locations}},
+        ybar,
+        bar width=20pt,
+        xlabel={Number of errors},
+%ylabel={ms to synthesize 1 repair},
+        xtick=data,
+        axis x line*=bottom,
+        axis y line*=left,
+        enlarge x limits={abs=0.5},
+        ymode=log,
+        ytick pos=left,
+        xticklabels from table={\unloctimings}{errors},
+        ymajorgrids,
+        legend pos=north west,
+        error bars/y dir=both,
+        error bars/y explicit
+      ]
+        \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
+        \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
+        \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
+        \legend{Dyck-1, Dyck-2, Dyck-3}
+      \end{axis}
+    \end{tikzpicture}
+    \hspace{20pt}
+    \begin{tikzpicture}[scale=0.35]
+      \begin{axis}[
+      width=8.3cm,
+      height=7cm,
+%    title={\hspace{-1cm}\textbf{Java Brackets}},
+      ybar,
+      bar width=10pt,
+      xlabel={$|\Sigma^*|$},
+      ylabel={Top-1 parser acceptance},
+      title={\textbf{(2a) Synthetic Java bracket error correction}},
+      xtick=data,
+      axis x line*=bottom,
+      axis y line*=left,
+      enlarge x limits={abs=0.5},
+      ytick pos=left,
+      xticklabels from table={\syntheticerrors}{len},
+      ymajorgrids,
+      legend pos=north east,
+      legend columns=3,
+      error bars/y dir=both,
+      error bars/y explicit
+      ]
+      \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
+      \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
+      \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
+      \legend{10s, 30s, 60s}
+      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}[scale=0.35]
+      \begin{axis}[
+      width=8.3cm,
+      height=7cm,
+      title={\textbf{(2b) Organic Python bracket error correction}},
+      ybar,
+      bar width=10pt,
+      xlabel={$|\Sigma^*|$},
+%ylabel={Parser acceptance},
+      xtick=data,
+      axis x line*=bottom,
+      axis y line*=left,
+      enlarge x limits={abs=0.5},
+      ytick pos=left,
+      xticklabels from table={\naturalerrors}{len},
+      ymajorgrids,
+      y tick label style={/pgf/number format/.cd,%
+      scaled y ticks = false,
+      set thousands separator={},
+      fixed},
+      legend pos=north east,
+      legend columns=3,
+      error bars/y dir=both,
+      error bars/y explicit
+      ]
+      \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
+      \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
+      \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
+      \legend{10s, 30s, 60s}
+      \end{axis}
+    \end{tikzpicture}
+    \caption{Benchmarking bracket correction latency and accuracy across two bracketing languages, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
+  \end{figure}
+
+  In the second set of experiments, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub using the Dyck-nw\footnote{Using the Dyck-n grammar augmented with a single additional production, \texttt{Dyck-1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{Dyck-1}. Contiguous non-bracket characters are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, in which all source code tokens except brackets are replaced with a \texttt{w} token. For Java (2a), we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, and repair using Tidyparse, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser. For Python (2b), we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, which we repair using Tidyparse, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method. Since the Java and Python datasets do not have a ground-truth human fix, we report the percentage of repairs that are accepted by the language's official parser for repairs generated under a fixed time cutoff. Although the Java and Python datasets are not directly comparable, we observe that Tidyparse can detect and repair a significant fraction of bracket errors in both languages with a relatively unsophisticated grammar.
+
+%\subsection{Ranking}
+%
+%Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after a fixed timeout has expired.
+
+%Alternatively, this expression can be rewritten as a polynomial over GF(2):
+%
+%\[
+%  (v_1 \times w_2 + y_3 + 1) \Leftrightarrow [S \in Y] \Leftrightarrow [Q R \in L(G)]
+%\]
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+%  \bibliographystyle{splncs04}
+  \bibliography{acmart}
+\end{document}
