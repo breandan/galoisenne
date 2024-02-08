@@ -68,7 +68,6 @@ fun CFG.sampleDirectlyWR(
   toPTree().let {
     (0..<cores).toList().parallelStream().map { i ->
       it.sampleWRGD()
-        .map { it.removeEpsilon() }
         .takeWhile { stoppingCriterion() }
         .distinct()
     }.asSequence().flatten()
