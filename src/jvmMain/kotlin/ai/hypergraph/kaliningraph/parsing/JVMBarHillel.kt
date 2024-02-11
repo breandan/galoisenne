@@ -186,26 +186,44 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
 // Parallel streaming doesn't seem to be that much faster (yet)?
 
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
-    let { if (it.size < 1_000) it.dropVestigialProductions() else it.jvmDropVestigialProductions(clock) }
-//    .elimVarUnitProds()
-    .normalForm
-    .noEpsilonOrNonterminalStubs
-    .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
-    .freeze()
+  jvmDropVestigialProductions(clock)
+    .jvmElimVarUnitProds()
+      .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
+      .freeze()
+
+tailrec fun CFG.jvmElimVarUnitProds(
+  toVisit: Set<Σᐩ> = nonterminals,
+  vars: Set<Σᐩ> = nonterminals,
+  toElim: Σᐩ? = toVisit.firstOrNull()
+): CFG {
+  fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
+  if (toElim == null) return filter { !it.isVariableUnitProd() }
+  val varsThatMapToMe =
+    asSequence().asStream().parallel()
+      .filter { it.RHS.size == 1 && it.RHS[0] == toElim }
+      .map { it.LHS }.collect(Collectors.toSet())
+  val thingsIMapTo =
+    asSequence().asStream().parallel()
+      .filter { it.LHS == toElim }.map { it.RHS }
+      .collect(Collectors.toSet())
+  return (varsThatMapToMe * thingsIMapTo).fold(this) { g, p -> g + p }
+    .jvmElimVarUnitProds(toVisit.drop(1).toSet(), vars)
+}
 
 fun CFG.jvmDropVestigialProductions(
   clock: TimeSource.Monotonic.ValueTimeMark,
   criteria: (Σᐩ) -> Boolean = { it.first() == '[' && 1 < it.length }// && it.last() == ']' && it.count { it == '~' } == 2 }
 ): CFG {
+  val start = clock.elapsedNow()
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
       if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
+      // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
       prod.RHS.all { !criteria(it) || it in nts }
     }
     .collect(Collectors.toSet())
-//    .asSequence().toSet()
-//    .also { println("Removed ${size - it.size} invalid productions") }
+//    .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
     .freeze().jvmRemoveUselessSymbols()
 
 //  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
@@ -235,7 +253,6 @@ fun CFG.jvmRemoveUselessSymbols(
   asSequence().asStream().parallel()
     .filter { (s, _) -> s in reachable && s in generating }
     .collect(Collectors.toSet())
-//    .asSequence().toSet()
 
 private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
   val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
@@ -260,10 +277,10 @@ private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
 }
 
 private fun CFG.jvmGenSym(
-  nonterminals: Set<Σᐩ> = asSequence().asStream().parallel().map { it.LHS }.collect(Collectors.toSet()),//.asSequence().toSet(),
+  nonterminals: Set<Σᐩ> = asSequence().asStream().parallel().map { it.LHS }.collect(Collectors.toSet()),
   from: Set<Σᐩ> = asSequence().asStream().parallel()
      .filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }
-     .map { it.LHS }.collect(Collectors.toSet())//.asSequence().toSet()
+     .map { it.LHS }.collect(Collectors.toSet())
 ): Set<Σᐩ> {
   val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()

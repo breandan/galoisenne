@@ -109,7 +109,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
   fun sampleStrWithoutReplacement(stride: Int = 1, offset: Int = 0): Sequence<String> =
     sequence {
       var i = BigInteger.ZERO
-      while (i < 5 * totalTrees) yield(decodeString(i++ * stride + offset).first)
+      while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
     }
 
   // Samples instantaneously from the parse forest, but may return duplicates
