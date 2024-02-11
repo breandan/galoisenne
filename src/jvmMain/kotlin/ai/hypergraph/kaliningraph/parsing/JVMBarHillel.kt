@@ -66,7 +66,7 @@ fun CFG.sampleDirectlyWR(
   stoppingCriterion: () -> Boolean = { true },
 ): Stream<String> =
   toPTree().let {
-    (0..<cores).toList().parallelStream().flatMap<String?> { i ->
+    (0..<cores).toList().parallelStream().flatMap { i ->
       it.sampleWRGD()
         .takeWhile { stoppingCriterion() }
         .distinct()
@@ -79,7 +79,7 @@ fun CFG.sampleDirectlyWOR(
   stoppingCriterion: () -> Boolean = { true }
 ): Stream<String> =
   toPTree().let {
-    (0..<cores).toList().parallelStream().flatMap<String?> { i ->
+    (0..<cores).toList().parallelStream().flatMap { i ->
       it.sampleStrWithoutReplacement(cores, i)
         .takeWhile { stoppingCriterion() }
         .distinct()

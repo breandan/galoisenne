@@ -9,7 +9,7 @@ data = pd.read_csv('bar_hillel_niagara.csv', sep=r'\s*,\s*')
 max_samples = data['samples'].max() + 1
 print(f"Max samples: {max_samples}")
 # Create buckets for the 'samples' column in increments of 5
-buckets = np.arange(0, max_samples, 100)
+buckets = np.arange(0, max_samples, 10)
 bucket_labels = buckets[1:]  # Label each bucket by its upper limit
 
 # Initialize a DataFrame to hold the percentage of instances per bucket and level
@@ -34,8 +34,8 @@ for lev in percentages.index:
     ax.bar(np.arange(len(percentages.columns)), percentages.loc[lev], 1.0, label=f"$\Delta_L={lev}$")
 
 ax.set_xlabel('Samples drawn (log scale)')
-ax.set_ylabel('% matching human repair in $\leq N$ samples')
-ax.set_title('Sample Efficiency of Levenshtein-Bar-Hillel Sampler on StackOverflow Repairs $\Delta_L(\sigma, \sigma\')\in[1, 3]$')
+ax.set_ylabel('Precision@All')
+ax.set_title('Sample Efficiency')
 
 # Calculate tick spacing to only show about ten or so ticks across the x-axis
 total_buckets = len(bucket_labels)
