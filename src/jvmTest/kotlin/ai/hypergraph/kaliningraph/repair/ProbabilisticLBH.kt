@@ -255,7 +255,7 @@ class ProbabilisticLBH {
               println("Full timings (ms): ${allTimeByLevDist.mapValues { it.value / recall }}")
               samplesBeforeMatchByLevDist[levDist] = samplesBeforeMatchByLevDist[levDist]!! + samplesBeforeMatch
               println("Avg samples drawn: ${samplesBeforeMatchByLevDist.mapValues { it.value / recall }}")
-              return@untilDone
+//              return@untilDone
 //            } else {
 //              val ascii = levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors()
 //              println("Found valid repair (${clock.elapsedNow()}): $ascii")

@@ -64,13 +64,14 @@ fun CFG.parallelEnumSeqWR(
 fun CFG.sampleDirectlyWR(
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true },
-): Sequence<String> =
+): Stream<String> =
   toPTree().let {
-    (0..<cores).toList().parallelStream().map { i ->
+    (0..<cores).toList().parallelStream().flatMap<String?> { i ->
       it.sampleWRGD()
         .takeWhile { stoppingCriterion() }
         .distinct()
-    }.asSequence().flatten()
+        .asStream()
+    }
   }
 
 fun CFG.parallelEnumSeqWOR(
