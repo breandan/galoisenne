@@ -174,7 +174,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   fun List<Production>.filterRHSInNTS(): CFG =
     parallelStream()
       .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
-      .asSequence().toSet()
+      .collect(Collectors.toSet())
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
@@ -203,7 +203,8 @@ fun CFG.jvmDropVestigialProductions(
       if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
       prod.RHS.all { !criteria(it) || it in nts }
     }
-    .asSequence().toSet()
+    .collect(Collectors.toSet())
+//    .asSequence().toSet()
 //    .also { println("Removed ${size - it.size} invalid productions") }
     .freeze().jvmRemoveUselessSymbols()
 
@@ -233,7 +234,8 @@ fun CFG.jvmRemoveUselessSymbols(
 ): CFG =
   asSequence().asStream().parallel()
     .filter { (s, _) -> s in reachable && s in generating }
-    .asSequence().toSet()
+    .collect(Collectors.toSet())
+//    .asSequence().toSet()
 
 private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
   val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
@@ -258,10 +260,10 @@ private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
 }
 
 private fun CFG.jvmGenSym(
-  nonterminals: Set<Σᐩ> = asSequence().asStream().parallel().map { it.LHS }.asSequence().toSet(),
+  nonterminals: Set<Σᐩ> = asSequence().asStream().parallel().map { it.LHS }.collect(Collectors.toSet()),//.asSequence().toSet(),
   from: Set<Σᐩ> = asSequence().asStream().parallel()
      .filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals }
-     .map { it.LHS }.asSequence().toSet()
+     .map { it.LHS }.collect(Collectors.toSet())//.asSequence().toSet()
 ): Set<Σᐩ> {
   val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
