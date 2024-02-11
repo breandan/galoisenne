@@ -130,7 +130,7 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 val BH_TIMEOUT = 10.minutes
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
-  if (600 < fsa.Q.size) throw Exception("FSA size out of bounds")
+  if (1000 < fsa.Q.size) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
   val lengthBoundsCache = lengthBounds
