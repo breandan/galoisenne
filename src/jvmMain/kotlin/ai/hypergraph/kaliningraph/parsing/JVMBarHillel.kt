@@ -74,19 +74,18 @@ fun CFG.sampleDirectlyWR(
     }
   }
 
-fun CFG.parallelEnumSeqWOR(
-  prompt: List<String>,
+fun CFG.sampleDirectlyWOR(
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
-): Sequence<String> =
-  startPTree(prompt)?.let {
-    (0..<cores).toList().parallelStream().map { i ->
-      it.sampleStrWithoutReplacement()
-        .map { it.removeEpsilon() }
+): Stream<String> =
+  toPTree().let {
+    (0..<cores).toList().parallelStream().flatMap<String?> { i ->
+      it.sampleStrWithoutReplacement(cores, i)
         .takeWhile { stoppingCriterion() }
         .distinct()
-    }.asSequence().flatten()
-  } ?: sequenceOf()
+        .asStream()
+    }
+  }
 
 fun CFG.parallelEnumListWR(
   prompt: List<String>,
