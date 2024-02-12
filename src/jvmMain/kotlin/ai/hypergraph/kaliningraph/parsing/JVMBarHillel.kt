@@ -129,7 +129,7 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //    .intersectLevFSAP(fsa)
 
 val BH_TIMEOUT = 9.minutes
-val MINFREEMEM = 9000000000L
+val MINFREEMEM = 1000000000L
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
 //  if (700 < fsa.Q.size) throw Exception("FSA size was out of bounds")
