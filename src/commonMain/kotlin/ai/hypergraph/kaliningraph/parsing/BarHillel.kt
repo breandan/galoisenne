@@ -1,8 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
+import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
 /**
@@ -157,9 +159,9 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 // Tracks the number of tokens a given nonterminal can represent
 // e.g., a NT with a bound of 1..3 can parse { s: Σ^[1, 3] }
 val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
-//  val clock = TimeSource.Monotonic.markNow()
+  val clock = TimeSource.Monotonic.markNow()
   val epsFree = noEpsilonOrNonterminalStubs.freeze()
-  val tpl = List(20) { "_" }
+  val tpl = List(MAX_TOKENS) { "_" }
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
     epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
@@ -170,7 +172,7 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
     }
   }
 
-//  println("Computed NT length bounds in ${clock.elapsedNow()}")
+  println("Computed NT length bounds in ${clock.elapsedNow()}")
   map
 }
 
@@ -183,13 +185,13 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 }
 
 fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
-  fun lengthBounds(nt: Σᐩ, fudge: Int = 20): IntRange =
-    (lengthBounds[nt] ?: -1..-1)
+  fun lengthBounds(nt: Σᐩ, fudge: Int = 1): IntRange =
+    (lengthBounds[nt] ?: -9999..-9990)
       // Okay if we overapproximate the length bounds a bit
-      .let { (it.first - fudge)..(it.last + fudge) }
+//      .let { (it.first - fudge)..(it.last + fudge) }
 
   fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): Int =
-    second.second - first.second + second.first - first.first
+    (second.second - first.second).absoluteValue + (second.first - first.first).absoluteValue
 
   // Range of the shortest path to the longest path, i.e., Manhattan distance
   fun SPLP(a: STC, b: STC) =

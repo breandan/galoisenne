@@ -1,9 +1,10 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.graphs.*
-import ai.hypergraph.kaliningraph.parsing.Σᐩ
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.absoluteValue
 
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
@@ -25,6 +26,16 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   }
 
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(it, i, j) } }.asSequence() }
+
+  val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
+
+  fun Π3A<STC>.isValidStateTriple(): Boolean {
+    fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
+      first <= other.first && second <= other.second
+
+    return first.coords().dominates(second.coords())
+      && second.coords().dominates(third.coords())
+  }
 
   val edgeLabels by lazy {
     Q.groupBy { (a, b, c) -> a to c }
