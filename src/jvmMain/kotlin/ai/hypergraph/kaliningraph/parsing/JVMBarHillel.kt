@@ -136,7 +136,7 @@ val MAX_NTS = 4_000_000 // Give each nonterminal about ~35kb of memory
 val maxNTsSeen = AtomicInteger(0)
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
-//  if (700 < fsa.Q.size) throw Exception("FSA size was out of bounds")
+  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
   val lengthBoundsCache = lengthBounds
@@ -178,7 +178,9 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
 
-  println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
+  val totalProds = binaryProds.size + transits.size + unitProds.size + initFinal.size
+  println("Constructed ∩-grammar with $totalProds in ${clock.elapsedNow()}")
+
   clock = TimeSource.Monotonic.markNow()
   return Stream.concat(binaryProds.stream(),
     (initFinal + transits + unitProds).stream()).parallel()

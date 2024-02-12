@@ -161,7 +161,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
 val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
   val clock = TimeSource.Monotonic.markNow()
   val epsFree = noEpsilonOrNonterminalStubs.freeze()
-  val tpl = List(MAX_TOKENS) { "_" }
+  val tpl = List(MAX_TOKENS + 5) { "_" }
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
     epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
