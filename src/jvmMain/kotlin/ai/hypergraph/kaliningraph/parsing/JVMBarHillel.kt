@@ -159,7 +159,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (clock.elapsedNow() < BH_TIMEOUT || 99_000_000 < nts.size) throw Exception("Timeout: ${nts.size}")
+      if (BH_TIMEOUT < clock.elapsedNow() || 80_000_000 < nts.size) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
@@ -216,7 +216,7 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
-      if (counter.incrementAndGet() % 10 == 0 && clock.elapsedNow() < BH_TIMEOUT) throw Exception("Timeout!")
+      if (counter.incrementAndGet() % 10 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout!")
       // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
       prod.RHS.all { !(it.first() == '[' && 1 < it.length) || it in nts }
     }
