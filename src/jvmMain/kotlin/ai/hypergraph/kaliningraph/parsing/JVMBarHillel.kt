@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
@@ -127,10 +128,10 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
 
-val BH_TIMEOUT = 10.minutes
+val BH_TIMEOUT = 5.minutes
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
-  if (1000 < fsa.Q.size) throw Exception("FSA size was out of bounds")
+  if (700 < fsa.Q.size) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
   val lengthBoundsCache = lengthBounds
@@ -153,32 +154,31 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   var i = 0
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
+  val counter = AtomicInteger(0)
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
+      if (counter.incrementAndGet() % 1000 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      validTriples
+      validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
-        }.toList().stream()
+        }
     }.toList()
 
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
-  fun List<Production>.filterRHSInNTS(): CFG =
-    parallelStream()
-      .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
-      .collect(Collectors.toSet())
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
-  return (initFinal + transits + binaryProds + unitProds)
-    .filterRHSInNTS()
+  return Stream.concat(binaryProds.stream(),
+    (initFinal + transits + unitProds).stream()).parallel()
+    .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+    .collect(Collectors.toSet())
     .jvmPostProcess(clock)
 }
 
@@ -209,17 +209,15 @@ tailrec fun CFG.jvmElimVarUnitProds(
     .jvmElimVarUnitProds(toVisit.drop(1).toSet(), vars)
 }
 
-fun CFG.jvmDropVestigialProductions(
-  clock: TimeSource.Monotonic.ValueTimeMark,
-  criteria: (Σᐩ) -> Boolean = { it.first() == '[' && 1 < it.length }// && it.last() == ']' && it.count { it == '~' } == 2 }
-): CFG {
+fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
+  val counter = AtomicInteger(0)
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
-      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
+      if (counter.incrementAndGet() % 1000 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout")
       // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
-      prod.RHS.all { !criteria(it) || it in nts }
+      prod.RHS.all { !(it.first() == '[' && 1 < it.length) || it in nts }
     }
     .collect(Collectors.toSet())
 //    .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
@@ -227,7 +225,7 @@ fun CFG.jvmDropVestigialProductions(
 
 //  println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
-  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(clock, criteria)
+  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(clock)
 }
 
 /**
