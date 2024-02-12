@@ -128,8 +128,8 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
 
-val BH_TIMEOUT = 5.minutes
-val MINFREEMEM = 2000000000L
+val BH_TIMEOUT = 9.minutes
+val MINFREEMEM = 9000000000L
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
 //  if (700 < fsa.Q.size) throw Exception("FSA size was out of bounds")
@@ -159,7 +159,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (counter.incrementAndGet() % 100 == 0 && Runtime.getRuntime().freeMemory() < MINFREEMEM) throw Exception("Out of memory!")
+      if (Runtime.getRuntime().freeMemory() < MINFREEMEM || clock.elapsedNow() < BH_TIMEOUT) throw Exception("Out of memory!")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
@@ -216,7 +216,9 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
   val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
-      if (counter.incrementAndGet() % 100 == 0 && Runtime.getRuntime().maxMemory() < MINFREEMEM) throw Exception("Out of memory!")
+      if (counter.incrementAndGet() % 10 == 0 &&
+        (Runtime.getRuntime().freeMemory() < MINFREEMEM || clock.elapsedNow() < BH_TIMEOUT))
+        throw Exception("Out of memory!")
       // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
       prod.RHS.all { !(it.first() == '[' && 1 < it.length) || it in nts }
     }
