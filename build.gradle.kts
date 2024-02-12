@@ -10,7 +10,7 @@ plugins {
   kotlin("multiplatform") version "2.0.0-Beta2"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.51.0"
-  id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-1"
+  id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-2"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
@@ -105,7 +105,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("com.ionspin.kotlin:bignum:0.3.8")
+        implementation("com.ionspin.kotlin:bignum:0.3.9")
       }
     }
 
@@ -153,7 +153,7 @@ kotlin {
         // https://github.com/UnitTestBot/kosat
         implementation("org.logicng:logicng:2.4.1")
 
-        val multikVersion = "0.2.2"
+        val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
@@ -166,7 +166,7 @@ kotlin {
         implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
         implementation("io.kotest:kotest-assertions-core:$kotestVersion")
         implementation("io.kotest:kotest-property:$kotestVersion")
-        implementation("org.junit.jupiter:junit-jupiter:5.10.1")
+        implementation("org.junit.jupiter:junit-jupiter:5.10.2")
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.1.0")
