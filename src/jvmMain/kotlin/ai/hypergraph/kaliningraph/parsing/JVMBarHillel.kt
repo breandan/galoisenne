@@ -159,7 +159,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (clock.elapsedNow() < BH_TIMEOUT || 80_000_000 < nts.size) throw Exception("Timeout!")
+      if (clock.elapsedNow() < BH_TIMEOUT || 99_000_000 < nts.size) throw Exception("Timeout: ${nts.size}")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
