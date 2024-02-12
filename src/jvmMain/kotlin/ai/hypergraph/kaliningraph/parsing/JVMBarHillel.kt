@@ -131,6 +131,7 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 
 val BH_TIMEOUT = 9.minutes
 val MINFREEMEM = 1000000000L
+val MAX_NTS = 4_000_000 // Give each nonterminal about ~35kb of memory
 
 val maxNTsSeen = AtomicInteger(0)
 
@@ -162,11 +163,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      maxNTsSeen.updateAndGet {
-        if (nts.size > it) println("Max NT: ${nts.size}")
-        max(it, nts.size)
-      }
-      if (BH_TIMEOUT < clock.elapsedNow() || 80_000_000 < nts.size) throw Exception("Timeout: ${nts.size} nts")
+      if (BH_TIMEOUT < clock.elapsedNow() || MAX_NTS < nts.size) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
