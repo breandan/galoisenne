@@ -290,38 +290,9 @@
     \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
   \end{enumerate}
 
-  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2). Lexical tokens containing identifiers are abstracted in step (3), and interleaved with the empty token in step (4). We then sample hole configurations without replacement in step (5), many of which will have no admissible solutions. Eventually, the solver will discover an admissible solution, as seen in step (6). This solution is then used to generate a patch, which is applied to the original string in step (7), then reduced to its minimal form in step (8), and sampling is repeated until all possibilities are exhausted or a predetermined timeout expires.
+  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2).
 
-  To admit variable-length edits and enable deletion, we first define a $\varepsilon^+$-production and introduce it to the right- and left-hand side of each terminal in a unit production in our grammar, $\mathcal{G}$:\vspace{5pt}
 
-  \begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash \varepsilon \in \Sigma$}
-    \RightLabel{$\varepsilon\textsc{-dup}$}
-    \UnaryInfC{$\mathcal{G} \vdash (\varepsilon^+ \rightarrow \varepsilon \mid \varepsilon\:\varepsilon^+) \in P$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$\mathcal{G} \vdash (A \rightarrow B) \in P$}
-    \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\mathcal{G} \vdash (A \rightarrow B\:\varepsilon^+ \mid \varepsilon^+\:B \mid B) \in P$}
-  \end{prooftree}
-
-  Finally, to sample $\sigma\sim\Delta_{q}(\err{\sigma})$, we first interleave $\err\sigma$ as $\err\sigma_\varepsilon$ (see Lemma~\ref{lemma:interleaving}), then enumerate hole templates $\text{H}(\err\sigma_\varepsilon, i) = \sigma_{1\ldots i-1}\:\text{\_ \_}\:\sigma_{i+1\ldots n}$ for each $i \in \cdot \in \stirlingii{n}{d}$ and $d \in 1\ldots q$, then solve for $\tilde{\sigma} \in \text{H}(\err\sigma_\varepsilon, i)$ satisfying $[S \in \Lambda^*_{\tilde\sigma, \mathcal{G}}] \Leftrightarrow [\tilde\sigma \in \mathcal{L}(\mathcal{G})]$. If $\bm\sigma \coloneqq \text{H}(\err\sigma_\varepsilon, i)$ is nonempty, then each edit from each patch in each $\tilde{\sigma} \in \bm\sigma$ will match one of the following patterns, covering all three Levenshtein edits:\vspace{-10pt}
-
-  \begin{align*}
-    \text{Deletion}&=\begin{cases}
-                       \,\ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1, 2} = \varepsilon\label{eq:del}
-    \end{cases}\\
-    \text{Substitution}&=\begin{cases}
-                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlred{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \neq \varepsilon \land \gamma_2 = \varepsilon\\
-                           \ldots\sigma_{i-1}\:\text{\hlred{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \varepsilon \land \gamma_2 \neq \varepsilon\\
-                           \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\{\gamma_1, \gamma_2\}\cap\{\varepsilon, \sigma_i\} = \varnothing
-    \end{cases}\\
-    \text{Insertion}&=\begin{cases}
-                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlorange{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 = \sigma_i \land \gamma_2 \notin \{\varepsilon,  \sigma_i\}\label{eq:ins2}\\
-                        \ldots\sigma_{i-1}\:\text{\hlorange{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_1 \notin \{\varepsilon, \sigma_i\} \land \gamma_2 = \sigma_i\label{eq:ins1}\\
-                        \ldots\sigma_{i-1}\:\text{\hlgreen{$\gamma_1$}\:\hlgreen{$\gamma_2$}}\:\sigma_{i+1}\ldots\hspace{0.2cm}\gamma_{1,2} = \sigma_i\label{eq:copy}
-    \end{cases}
-  \end{align*}
 
   \subsection{Bar-Hillel Construction}
 
@@ -352,6 +323,7 @@
 %\begin{prooftree}
     \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
     \AxiomC{$p,q,r \in Q$}
+    \RightLabel{\textsc{\"w}}
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
@@ -399,6 +371,20 @@
   \end{prooftree}
 
   \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
+
+  \subsection{Levenshtein Bar-Hillel Specialization}
+
+  The standard Bar-Hillel construction applies to all context-free grammars and automata, but can be specialized to intersections with Levenshtein automata to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals unreachable from the start symbol or terminals in a certain distance.
+
+  Let us define a relation over the set of nonterminals in a grammar which computes the upper and lower bounds of the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
+
+  \begin{definition}[Parikh interval]
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define a function $\pi: V \times \Sigma \rightarrow \mathbb{N}_{[a, b]}$, where $a, b: \mathbb{N} \cup \{\infty\}$, that computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal, i.e., $\forall s: \Sigma^*, v: V$ such that $v \Rightarrow^* s$, we have $p(s) \in \pi(v, s)$.
+  \end{definition}
+
+  Roughly, the GLB of a nonterminal's Parikh interval tells us how many of each terminal it must generate, and the LUB tells us how many it can generate. We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies.
+
+  Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. Suppose we have a $p, q, r: Q$ and $w \rightarrow x z$, then check if $[\pi(q, q') \cap \pi(v) = \varnothing]$ for all $pwr, pxq, qzr$. If so, we can immediately rule out this tuple.
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
