@@ -131,12 +131,13 @@ infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 
 val BH_TIMEOUT = 9.minutes
 val MINFREEMEM = 1000000000L
-val MAX_NTS = 4_000_000 // Give each nonterminal about ~35kb of memory
+val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB
+val MAX_PRODS = 200_000_000
 
 val maxNTsSeen = AtomicInteger(0)
 
 private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
-  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
+//  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
   val lengthBoundsCache = lengthBounds
@@ -163,13 +164,14 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
   val binaryProds =
     prods.parallelStream().flatMap {
 //      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
-      if (BH_TIMEOUT < clock.elapsedNow() || MAX_NTS < nts.size) throw Exception("Timeout: ${nts.size} nts")
+      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .map { (a, b, c) ->
+          if (MAX_PRODS < counter.incrementAndGet()) throw Exception("Too many productions!")
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
         }
@@ -179,7 +181,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
     first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
 
   val totalProds = binaryProds.size + transits.size + unitProds.size + initFinal.size
-  println("Constructed ∩-grammar with $totalProds in ${clock.elapsedNow()}")
+  println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")
 
   clock = TimeSource.Monotonic.markNow()
   return Stream.concat(binaryProds.stream(),
