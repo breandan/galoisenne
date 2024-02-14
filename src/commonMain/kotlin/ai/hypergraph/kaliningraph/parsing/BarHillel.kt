@@ -61,6 +61,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
+        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
@@ -156,6 +157,13 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
+val CFG.parikhMap: ParikhMap by cache {
+  val clock = TimeSource.Monotonic.markNow()
+  val parikhMap = ParikhMap(this, MAX_TOKENS + 5)
+  println("Computed Parikh map in ${clock.elapsedNow()}")
+  parikhMap
+}
+
 // Tracks the number of tokens a given nonterminal can represent
 // e.g., a NT with a bound of 1..3 can parse { s: Σ^[1, 3] }
 val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
@@ -165,11 +173,14 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
   val map =
     epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
     epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
-    sets.flatMap { it.map { it.key } }.forEach { nt ->
-      map[nt]?.let {
-        (if (it.first < 0) (idx + 1) else it.first)..(idx + 1)
-      }?.let { map[nt] = it }
-    }
+    sets
+      .first().keys
+//      .flatMap { it.map { it.key } }.toSet()
+      .forEach { nt ->
+        map[nt]?.let {
+          (if (it.first < 0) (idx + 1) else it.first)..(idx + 1)
+        }?.let { map[nt] = it }
+      }
   }
 
   println("Computed NT length bounds in ${clock.elapsedNow()}")
@@ -182,6 +193,35 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 
   return first.coords().dominates(second.coords())
       && second.coords().dominates(third.coords())
+}
+
+fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, parikhMap: ParikhMap): Boolean {
+  fun sameLevel(a: STC, b: STC) = a.third == b.third
+  fun fetchPath(a: STC, b: STC) = fsa.levString
+//    .also { println("Levstr(${a.second}, ${b.second}): $it :: ${it.subList(a.second, b.second)}") }
+    .subList(a.second, b.second)
+  fun lpImage(a: STC, b: STC) = fetchPath(a, b).parikhVector()
+//    .also { println("${fetchPath(a, b)} => $it") }
+  fun obeys(a: STC, b: STC, nt: Σᐩ): Bln {
+    val sl = !sameLevel(a, b) ||
+      fsa.levString.size <= a.second ||
+      fsa.levString.size <= b.second
+
+    if (sl) return true
+//    println("Filtering by Parikh bounds: $a, $b, $nt")
+
+    val length = (b.second - a.second)
+    val pb = parikhMap.parikhBounds(nt, length)
+//    println("PB ($nt,$length) : $pb / ${fsa.levString.subList(a.second, b.second)}")
+
+    val pv = lpImage(a, b)
+//    println("PV: $pv")
+    return pb?.subsumes(pv) ?: false
+  }
+
+  return obeys(first, third, nts.first)
+      && obeys(first, second, nts.second)
+      && obeys(second, third, nts.third)
 }
 
 fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {

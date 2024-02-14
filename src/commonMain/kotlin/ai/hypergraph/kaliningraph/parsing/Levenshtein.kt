@@ -260,3 +260,9 @@ fun <T> List<Pair<T?, T?>>.paintANSIColors(): Σᐩ =
       else -> b.toString()
     }
   }
+
+fun FSA.levWalk(from: Σᐩ, to: Σᐩ): List<Σᐩ> =
+  walk(from) { me: Σᐩ, neighbors: List<Σᐩ> ->
+    if (me == to) -1
+    else neighbors.indexOfFirst { it.coords().second == me.coords().second }
+  }

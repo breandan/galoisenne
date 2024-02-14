@@ -124,7 +124,7 @@ fun CFG.parallelEnumListWOR(
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.
  */
 
-infix fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
+fun CFG.jvmIntersectLevFSA(fsa: FSA, parikhMap: ParikhMap): CFG = jvmIntersectLevFSAP(fsa, parikhMap)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
@@ -136,7 +136,7 @@ val MAX_PRODS = 200_000_000
 
 val maxNTsSeen = AtomicInteger(0)
 
-private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
+private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
@@ -170,6 +170,7 @@ private infix fun CFG.jvmIntersectLevFSAP(fsa: FSA): CFG {
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
         .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
+        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet()) throw Exception("Too many productions!")
           val (p, q, r)  = a.π1 to b.π1 to c.π1

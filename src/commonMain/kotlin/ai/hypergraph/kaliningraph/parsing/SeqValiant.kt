@@ -11,6 +11,7 @@ import kotlin.math.*
 import kotlin.random.Random
 import kotlin.time.measureTimedValue
 
+// Indexes a set of PTrees by their roots
 typealias PForest = Map<String, PTree> // ℙ₃
 // Algebraic data type / polynomial functor for parse forests (ℙ₂)
 class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()) {
@@ -64,6 +65,13 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
         if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
       }
     }.distinct()
+  }
+
+  val parikhBounds: ParikhBounds by lazy {
+    if (branches.isEmpty()) {
+      if ("ε" in root) mapOf() else mapOf(root to 1..1)
+    } else branches.map { it.first.parikhBounds * it.second.parikhBounds }
+      .reduce(ParikhBounds::plus)
   }
 
   fun choose(): Sequence<String> = choice.asSequence()

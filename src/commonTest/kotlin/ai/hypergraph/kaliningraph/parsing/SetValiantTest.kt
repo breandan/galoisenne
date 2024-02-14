@@ -1,11 +1,11 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import Grammars
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
-import org.kosat.round
 import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.*
@@ -444,6 +444,22 @@ class SetValiantTest {
     assertNotNull(cfg.parse("f l e e s x"))
     assertNotNull(cfg.parse("f e e l s"))
     assertNull(cfg.parse("f e e l s s")?.prettyPrint())
+  }
+
+ /*
+ ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testLevenshteinWalker"
+ */
+  @Test
+  fun testLevenshteinWalker() {
+    val tks = listOf("a", "b", "c")
+    val fsa = makeLevFSA(tks, 2)
+
+    val from = fsa.Q.first().first
+    val to = "q_3/0"
+    val path = fsa.levWalk(from, to)
+    assertEquals(fsa.levString, tks)
+    assertEquals(path, tks)
+    println(fsa.levString.subList(0, 3))
   }
 
   fun randomBitVector(size: Int) =

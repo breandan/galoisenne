@@ -25,6 +25,10 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     }.toMap()
   }
 
+  val transit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
+    Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
+  }
+
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(it, i, j) } }.asSequence() }
 
   val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
@@ -52,6 +56,37 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
   val graph: LabeledGraph by lazy {
     LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } }
+  }
+
+  val levString: List<Σᐩ> by lazy {
+    val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
+    val pad = stateCoords.maxOf { it.π2 }.toString().length
+//    println("Max state: $t")
+    val padY = "0".padStart(pad, '0')
+    (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
+      .map { (a, b) ->
+        val lbl = edgeLabels[a to b]
+//        if (lbl == null) {
+//        println("Looking up: $a to $b")
+//        println(edgeLabels)}
+        lbl!! }
+  }
+
+  fun walk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {
+    val startVtx = from
+    val path = mutableListOf<Σᐩ>()
+
+    fun Σᐩ.step(og: List<Pair<Σᐩ, Σᐩ>>? = transit[this]) =
+      if (this in transit && og != null) next(this, og.map { it.second }).let {
+        if (it !in og.indices) null
+        else og[it].also { path.add(it.first) }.second
+      } else null
+
+    var nextVtx = startVtx.step()
+
+    while (nextVtx != null) { nextVtx = nextVtx.step() }
+
+    return path
   }
 
   fun debug(str: List<Σᐩ>) =
