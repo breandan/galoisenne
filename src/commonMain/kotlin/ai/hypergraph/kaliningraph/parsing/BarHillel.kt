@@ -195,6 +195,26 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
       && second.coords().dominates(third.coords())
 }
 
+/**
+ * Before Levenshtein-Parikh contraints:
+ * Levenshtein-40x3 automaton has 641 arcs!
+ * Constructed ∩-grammar with 140110438 productions in 18.130682713s
+ * Reduced ∩-grammar from 126119038 to 40670 useful productions in 6m 55.547571414s
+ * Constructed LEV(3, 40, 641) ∩ CFG grammar with 40670 productions in 7m 13.682658465s
+ * Human repair is recognized by LEV ∩ CFG grammar
+ * Ground truth repair: NAME = NAME ( NAME , STRING ) NEWLINE NAME = NAME . NAME ( ) NEWLINE NAME = NAME ( [ ] [ NAME [ NUMBER ] . NAME ( STRING ) + NUMBER : ] . NAME ( ) ) NEWLINE
+ * Drew 3921 samples in 30s, 40670 prods, length-3 human repair not found
+ *
+ * After Levenshtein-Parikh contraints:
+ * Levenshtein-40x3 automaton has 641 arcs!
+ * Constructed ∩-grammar with 69055302 productions in 17.683343522s
+ * Reduced ∩-grammar from 30075865 to 40670 useful productions in 2m 25.985649805s
+ * Constructed LEV(3, 40, 641) ∩ CFG grammar with 40670 productions in 2m 43.673171671s
+ * Human repair is recognized by LEV ∩ CFG grammar
+ * Ground truth repair: NAME = NAME ( NAME , STRING ) NEWLINE NAME = NAME . NAME ( ) NEWLINE NAME = NAME ( [ ] [ NAME [ NUMBER ] . NAME ( STRING ) + NUMBER : ] . NAME ( ) ) NEWLINE
+ * Drew 3389 samples in 30s, 40670 prods, length-3 human repair not found
+ */
+
 fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, parikhMap: ParikhMap): Boolean {
   fun sameLevel(a: STC, b: STC) = a.third == b.third
   fun fetchPath(a: STC, b: STC) = fsa.levString

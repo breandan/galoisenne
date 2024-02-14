@@ -68,7 +68,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
       .map { (a, b) ->
         val lbl = edgeLabels[a to b]
         if (lbl == null) {
-          println("Looking up: $a to $b")
+          println("Failed to lookup: $a to $b")
           println(edgeLabels)
         }
         lbl!!
