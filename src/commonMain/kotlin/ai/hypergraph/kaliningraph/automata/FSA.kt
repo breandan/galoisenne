@@ -4,7 +4,7 @@ import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.math.absoluteValue
+import kotlin.math.*
 
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
@@ -60,16 +60,19 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
   val levString: List<Σᐩ> by lazy {
     val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
-    val pad = stateCoords.maxOf { it.π2 }.toString().length
+    val maxY = stateCoords.maxOf { it.π3 }
+    val pad = (t * maxY).toString().length
 //    println("Max state: $t")
     val padY = "0".padStart(pad, '0')
     (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
       .map { (a, b) ->
         val lbl = edgeLabels[a to b]
-//        if (lbl == null) {
-//        println("Looking up: $a to $b")
-//        println(edgeLabels)}
-        lbl!! }
+        if (lbl == null) {
+          println("Looking up: $a to $b")
+          println(edgeLabels)
+        }
+        lbl!!
+      }
   }
 
   fun walk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {
