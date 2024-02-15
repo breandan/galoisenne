@@ -64,7 +64,10 @@ class ParikhMap(val cfg: CFG, val size: Int) {
     genRanges().forEach { range ->
       range.map { parikhMap[it] ?: emptyMap() }
         .fold(emptyMap<Σᐩ, ParikhBounds>()) { acc, map -> pbmplus(acc, map) }
-        .also { println("Generating Parikh range for $range"); parikhRangeMap[range] = it }
+        .also {
+//          println("Generating Parikh range for $range");
+          parikhRangeMap[range] = it
+        }
     }
   }
 
