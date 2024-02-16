@@ -124,7 +124,8 @@ fun CFG.parallelEnumListWOR(
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.
  */
 
-fun CFG.jvmIntersectLevFSA(fsa: FSA, parikhMap: ParikhMap): CFG = jvmIntersectLevFSAP(fsa, parikhMap)
+fun CFG.jvmIntersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG =
+  jvmIntersectLevFSAP(fsa, parikhMap)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
