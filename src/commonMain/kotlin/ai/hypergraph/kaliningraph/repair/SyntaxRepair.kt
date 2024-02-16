@@ -13,6 +13,7 @@ import kotlin.time.*
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 80 // Maximum number of tokens per repair
 var MAX_RADIUS = 4
+var SAMPLER_MS = 60_000 // Maximum time to sample repairs
 var TIMEOUT_MS = 90_000 // Timeout for each repair attempt (default, modify elsewhere)
 var MAX_REPAIR = 2 // Maximum number of edits per repair
 

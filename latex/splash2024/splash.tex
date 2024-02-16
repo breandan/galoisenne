@@ -41,7 +41,7 @@
   %
   \begin{abstract}
 
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto Boolean tensor completion, then model syntax correction as a langauge intersection problem between a Levenshtein automaton and a context-free grammar. To decode the members, we then sample trees without replacement from the intersection grammar, which yields concrete repairs within a certain Levenshtein distance. Finally, we rank all repairs found within 60 seconds by a Markov chain. Our technique has practical applications for real-time syntax error correction.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, so we can usually enumerate them all then rank them in a short amount of time. To do so, we reduce CFL recognition onto Boolean tensor completion, then model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the members, we then sample trees without replacement from the intersection grammar, which yields concrete repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain. Our technique has practical applications for real-time syntax error correction.
 
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
@@ -68,22 +68,20 @@
 
   \section{Introduction}
 
-  Syntax repair is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. The result is a tool that is applicable to any context-free language, and which is provably sound and complete up to a Levenshtein bound.
-
-  Our technique is simple.
+  Syntax repair is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. Our technique is simple:
 
   \begin{enumerate}
-    \item We first reduce the problem of CFL recognition to Boolean tensor completion, then use that to compute the Parikh image of the CFL. This follows from a straightforward extension of the Chomsky-Sch\"utzenberger enumeration theorm.
+    \item We first reduce the problem of CFL recognition to Boolean tensor completion, then use that to compute the Parikh image of the CFL. This follows from a straightforward extension of the Chomsky-Sch\"utzenberger enumeration theorem.
     \item We then model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections. This greatly reduces the number of generated productions.
     \item To decode the members from the intersection grammar, we sample trees without replacement by constructing a bijection between syntax trees and the integers, then sampling integers uniformly without replacement from a finite range. This yields concrete repairs within a certain Levenshtein distance.
     \item Finally, we rank all repairs found within 60 seconds by a Markov chain.
   \end{enumerate}
 
-  While simple, this technique is surprisingly effective and competitive with SoTA syntax repair techniques. Its efficiency owes to the fact that it does not sample edits, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary fixed Levenshtein distance, and no more.
+  Though simple, this technique is surprisingly effective and competitive with SoTA syntax repair techniques. Its efficiency owes to the fact that it does not sample edits, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary fixed Levenshtein distance, and no more.
 
   \subsection{Problem}
 
-  Syntax repair can be treated as a language intersection problem between a context-free language (CFL) and a regular language.
+  We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
     Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $L(\err\sigma, d) \cap \ell$.
@@ -106,7 +104,7 @@
     We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  Our key innovation and the core problem this paper tackles is, given $\err\sigma, d, P_\theta$, to approximate $R(\ell_\cap, P_\theta)$ while minimizing latency and maximizing accuracy. We will start with some background, give an example, then dive into the theory.
+  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality of $\mathcal{L}(G)\cap\Sigma^n$ and $L(\err\sigma, d)$, it would be intractable to sample either set, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar for the language $\mathcal{L}(G) \cap L(\err\sigma, d)$, sample from it without replacement, then rerank all consistient repairs after a fixed timeout. As long as $|\ell_\cap|$ is sufficiently small and recognizes the true repair, our sampler is sure to retrieve it and terminate quickly. Then, the problem becomes one of ranking all sampled repairs which can be completed quickly using a Markov chain.
 
   \subsection{Background}\label{sec:background}
 
@@ -446,8 +444,6 @@
 %    \big\{x z \mid \langle X, Z\rangle \in \texttt{children}(T), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
 %  \end{cases}
 %\end{equation*}
-
-  In our experiments, we provide a comparison of the performance of the SAT algebra and these two semirings, evaluated on a dataset of Python statements.
 
   \pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
 

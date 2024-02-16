@@ -174,7 +174,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet())
-            throw Exception("∩-grammar has too many productions! (>$MAX_PRODS")
+            throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
         }
