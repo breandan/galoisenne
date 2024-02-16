@@ -41,7 +41,7 @@
   %
   \begin{abstract}
 
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto a Boolean tensor completion and compare various techniques for introducing the holes, and solving for their inhabitants. Our technique has practical applications for real-time syntax error correction.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. To do so, we reduce CFL recognition onto Boolean tensor completion, then model syntax correction as a langauge intersection problem between a Levenshtein automaton and a context-free grammar. To decode the members, we then sample trees without replacement from the intersection grammar, which yields concrete repairs within a certain Levenshtein distance. Finally, we rank all repairs found within 60 seconds by a Markov chain. Our technique has practical applications for real-time syntax error correction.
 
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
@@ -69,6 +69,17 @@
   \section{Introduction}
 
   Syntax repair is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. The result is a tool that is applicable to any context-free language, and which is provably sound and complete up to a Levenshtein bound.
+
+  Our technique is simple.
+
+  \begin{enumerate}
+    \item We first reduce the problem of CFL recognition to Boolean tensor completion, then use that to compute the Parikh image of the CFL. This follows from a straightforward extension of the Chomsky-Sch\"utzenberger enumeration theorm.
+    \item We then model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections. This greatly reduces the number of generated productions.
+    \item To decode the members from the intersection grammar, we sample trees without replacement by constructing a bijection between syntax trees and the integers, then sampling integers uniformly without replacement from a finite range. This yields concrete repairs within a certain Levenshtein distance.
+    \item Finally, we rank all repairs found within 60 seconds by a Markov chain.
+  \end{enumerate}
+
+  While simple, this technique is surprisingly effective and competitive with SoTA syntax repair techniques. Its efficiency owes to the fact that it does not sample edits, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary fixed Levenshtein distance, and no more.
 
   \subsection{Problem}
 
@@ -379,15 +390,14 @@
   Let us define a relation over the set of nonterminals in a grammar which computes the upper and lower bounds of the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
 
   \begin{definition}[Parikh interval]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define a function $\pi: V \times \Sigma \rightarrow \mathbb{N}_{[a, b]}$, where $a, b: \mathbb{N} \cup \{\infty\}$, that computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal, i.e., $\forall s: \Sigma^*, v: V$ such that $v \Rightarrow^* s$, we have $p(s) \in \pi(v, s)$.
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define a function $\pi: V \times \Sigma \rightarrow \mathbb{N}_{[a, b]}$, where $a, b: \mathbb{N} \cup \{\infty\}$, that computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal, i.e., $\forall s: \Sigma^{[l, h]}, v: V$ such that $v \Rightarrow^* s$, we have $p(s, ) \in \pi(v, s)$.
   \end{definition}
 
-  Roughly, the GLB of a nonterminal's Parikh interval tells us how many of each terminal it must generate, and the LUB tells us how many it can generate. We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies.
+  Roughly, the infimum of a nonterminal's Parikh interval tells us how many of each terminal it must generate, and the supremum tells us how many it can generate. We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies.
 
   Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. Suppose we have a $p, q, r: Q$ and $w \rightarrow x z$, then check if $[\pi(q, q') \cap \pi(v) = \varnothing]$ for all $pwr, pxq, qzr$. If so, we can immediately rule out this tuple.
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
-
 
   \subsection{Semiring Algebras}
 
