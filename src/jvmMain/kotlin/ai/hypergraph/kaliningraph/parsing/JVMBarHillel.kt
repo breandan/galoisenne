@@ -173,7 +173,8 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
         .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
-          if (MAX_PRODS < counter.incrementAndGet()) throw Exception("Too many productions!")
+          if (MAX_PRODS < counter.incrementAndGet())
+            throw Exception("∩-grammar has too many productions! (>$MAX_PRODS")
           val (p, q, r)  = a.π1 to b.π1 to c.π1
           "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
         }
@@ -199,6 +200,7 @@ fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
   jvmDropVestigialProductions(clock)
     .jvmElimVarUnitProds()
       .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
+      .also { if (80_000 < it.size) throw Exception("Reduced ∩-grammar is still too large (${it.size} productions)") }
       .freeze()
 
 tailrec fun CFG.jvmElimVarUnitProds(
