@@ -1,11 +1,14 @@
 package ai.hypergraph.markovian.mcmc
 
 import ai.hypergraph.kaliningraph.cache.LRUCache
-import ai.hypergraph.kaliningraph.sampling.*
+import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
-import org.apache.datasketches.frequencies.ItemsSketch
+import org.apache.datasketches.common.*
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
+import org.apache.datasketches.frequencies.ItemsSketch
+import org.apache.datasketches.memory.Memory
+import org.apache.datasketches.theta.Sketches
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
@@ -13,6 +16,7 @@ import java.util.concurrent.atomic.*
 import java.util.stream.Stream
 import kotlin.math.*
 import kotlin.random.Random
+
 
 /**
  * Marginalizes/sums out all dimensions not contained in [dims],
@@ -237,6 +241,10 @@ open class MarkovChain<T>(
         memCounts = memCounts.merge(other.memCounts)
       )
   }
+
+  fun toCSV() =
+    counter.memCounts.getFrequentItems(NO_FALSE_POSITIVES).filter { it.estimate > 1 }
+      .joinToString("\n") { "${it.item.joinToString(" ")} ::: ${it.estimate}" }
 }
 
 class Dist(
