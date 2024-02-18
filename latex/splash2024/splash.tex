@@ -40,9 +40,7 @@
   \title{Syntax Repair as Idempotent Tensor Completion}
   %
   \begin{abstract}
-
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, so we can usually enumerate them all then rank them in a short amount of time. To do so, we reduce CFL recognition onto Boolean tensor completion, then model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the members, we then sample trees without replacement from the intersection grammar, which yields concrete repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain. Our technique has practical applications for real-time syntax error correction.
-
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated within a small edit distance then ranked within a short amount of time. Furthermore, we place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we reduce CFL recognition onto Boolean tensor completion, then model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the solutions, we then sample trees without replacement from the intersection grammar, which yields valid repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 %
