@@ -261,6 +261,19 @@ fun <T> List<Pair<T?, T?>>.paintANSIColors(): Σᐩ =
     }
   }
 
+fun <T> List<Pair<T?, T?>>.printLaTeX(): Σᐩ =
+  joinToString(" ") { (a, b) ->
+    when {
+      // Green (insertion)
+      a == null -> "\\hlgreen{$b}"
+      // Red (deletion)
+      b == null -> "\\hlred{$a}"
+      // Orange (substitution)
+      a != b -> "\\hlorange{$b}"
+      else -> b.toString()
+    }
+  }
+
 fun FSA.levWalk(from: Σᐩ, to: Σᐩ): List<Σᐩ> =
   walk(from) { me: Σᐩ, neighbors: List<Σᐩ> ->
     if (me == to) -1
