@@ -243,7 +243,7 @@ open class MarkovChain<T>(
   }
 
   fun toCSV() =
-    counter.memCounts.getFrequentItems(NO_FALSE_POSITIVES).filter { it.estimate > 1 }
+    counter.memCounts.getFrequentItems(NO_FALSE_POSITIVES)
       .joinToString("\n") { "${it.item.joinToString(" ")} ::: ${it.estimate}" }
 }
 
