@@ -25,7 +25,7 @@ class ConcurrentRankedProbabilisticSet<T>(
   val atomicSize: AtomicInteger = AtomicInteger(-1)
   val mostLikely: ConcurrentSkipListMap<Double, T> = ConcurrentSkipListMap<Double, T>()
 
-  fun add(element: T, perplexity: Double) {
+  fun add(element: T, perplexity: Double) = synchronized(this) {
     if (keys.add(element)) {
       if (atomicSize.incrementAndGet() <= maxSize) {
         mostLikely[perplexity] = element
