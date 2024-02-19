@@ -18,6 +18,7 @@ fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
   .flatMap { i -> this(cores, i).asStream() }
 
 class ConcurrentRankedProbabilisticSet<T>(
+  val maxSize: Int = Int.MAX_VALUE,
   private val keys: MutableSet<T> = ConcurrentHashMap.newKeySet()
 ) : Set<T> by keys, FastRandomSet<T> {
 
@@ -26,8 +27,14 @@ class ConcurrentRankedProbabilisticSet<T>(
 
   fun add(element: T, perplexity: Double) {
     if (keys.add(element)) {
-      atomicSize.incrementAndGet()
-      mostLikely[perplexity] = element
+      if (atomicSize.incrementAndGet() <= maxSize) {
+        mostLikely[perplexity] = element
+      } else {
+        val (lastPerplexity, lastElement) = mostLikely.pollLastEntry()
+        mostLikely.remove(lastPerplexity, lastElement)
+        keys.remove(lastElement)
+        mostLikely[perplexity] = element
+      }
     }
   }
 

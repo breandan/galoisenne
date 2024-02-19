@@ -203,7 +203,6 @@ fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
   jvmDropVestigialProductions(clock)
     .jvmElimVarUnitProds()
       .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
-      .also { if (80_000 < it.size) throw Exception("Reduced ∩-grammar is still too large (${it.size} productions)") }
       .freeze()
 
 tailrec fun CFG.jvmElimVarUnitProds(
