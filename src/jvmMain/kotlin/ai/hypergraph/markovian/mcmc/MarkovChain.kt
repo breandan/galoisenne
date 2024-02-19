@@ -1,14 +1,12 @@
 package ai.hypergraph.markovian.mcmc
 
 import ai.hypergraph.kaliningraph.cache.LRUCache
+import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
-import org.apache.datasketches.common.*
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
 import org.apache.datasketches.frequencies.ItemsSketch
-import org.apache.datasketches.memory.Memory
-import org.apache.datasketches.theta.Sketches
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
@@ -242,9 +240,30 @@ open class MarkovChain<T>(
       )
   }
 
+  companion object {
+    const val CSVSEP = " ::: "
+    fun deserialize(csv: String): MarkovChain<Σᐩ> {
+      val lines = csv.lines()
+      val memory: Int = lines.first().substringBefore(CSVSEP).split(" ").size
+      val size = 2.pow(log2(lines.size) + 2)
+      return MarkovChain(
+        sequenceOf(),
+        memory = memory,
+        Counter(
+          total = AtomicInteger(lines.sumOf { it.substringAfter(CSVSEP).toLong().toInt() }),
+          memory = memory,
+          nrmCounts = ItemsSketch<List<Σᐩ?>>(size).apply {
+            lines.map { it.substringBefore(CSVSEP).split(" ") to it.substringAfter(CSVSEP).toLong() }
+              .forEach { (ngram, count) -> update(ngram, count) }
+          }
+        )
+      )
+    }
+  }
+
   fun toCSV() =
     counter.memCounts.getFrequentItems(NO_FALSE_POSITIVES)
-      .joinToString("\n") { "${it.item.joinToString(" ")} ::: ${it.estimate}" }
+      .joinToString("\n") { "${it.item.joinToString(" ")}$CSVSEP${it.estimate}" }
 }
 
 class Dist(
