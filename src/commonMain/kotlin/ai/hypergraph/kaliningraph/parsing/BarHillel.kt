@@ -245,51 +245,17 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 //}
 
 fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, parikhMap: ParikhMap): Boolean {
-  //  fun sameLevel(a: STC, b: STC) = (a.third - b.third).absoluteValue < 2
-  fun fetchPath(a: STC, b: STC) = fsa.levString
-//    .also { println("Levstr(${a.second}, ${b.second}): $it :: ${it.subList(a.second, b.second)}") }
-    .subList(a.second, b.second)
-  fun lpImage(a: STC, b: STC) = fetchPath(a, b).parikhVector()
-  //    .also { println("${fetchPath(a, b)} => $it") }
   fun obeys(a: STC, b: STC, nt: Σᐩ): Bln {
-    val sl = //!sameLevel(a, b) ||
+    val sl =
       fsa.levString.size <= a.second || // Part of the LA that handles extra
       fsa.levString.size <= b.second    // terminals at the end of the string
 
     if (sl) return true
-//    println("Filtering by Parikh bounds: $a, $b, $nt")
-
     val margin = (b.third - a.third).absoluteValue
     val length = (b.second - a.second)
-//    val pb = parikhMap.parikhBounds(nt, length)
-
     val range = (length - margin).coerceAtLeast(1)..(length + margin)
-
-//    println("Contains: ${range in parikhMap.parikhRangeMap}")
-
     val pb = parikhMap.parikhBounds(nt, range)
-
-//    val pb1 = range
-//      .mapNotNull { parikhMap.parikhBounds(nt, it) }
-//      .fold(mapOf<Σᐩ, IntRange>()) { acc, it -> acc + it }
-
-//    if (pb0 != pb1) {
-//      println("Range: $range")
-//      println("Disequal! First diff:")
-//      (pb0.keys + pb1.keys)
-//        .forEach { k ->
-//          val v0 = pb0[k]
-//          val v1 = pb1[k]
-//          println("$k: $v0 / $v1")
-//        }
-//    }
-
-//    println("PB ($nt,$length) : $pb / ${fsa.levString.subList(a.second, b.second)}")
-
-    val pv = lpImage(a, b)
-//    println("PV: $pv")
-//    return pb?.subsumes(pv) ?: false
-//    return pb0?.admits(pv, margin) ?: false
+    val pv = fsa.parikhVector(a.second, b.second)
     return pb.admits(pv, margin)
   }
 
@@ -299,7 +265,7 @@ fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa
 }
 
 fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
-  fun lengthBounds(nt: Σᐩ, fudge: Int = 1): IntRange =
+  fun lengthBounds(nt: Σᐩ): IntRange =
     (lengthBounds[nt] ?: -9999..-9990)
       // Okay if we overapproximate the length bounds a bit
 //      .let { (it.first - fudge)..(it.last + fudge) }

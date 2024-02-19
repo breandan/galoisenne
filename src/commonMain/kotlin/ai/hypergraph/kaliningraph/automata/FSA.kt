@@ -58,6 +58,11 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } }
   }
 
+  val parikhVector: MutableMap<IntRange, ParikhVector> = mutableMapOf()
+
+  fun parikhVector(from: Int, to: Int): ParikhVector =
+    parikhVector.getOrPut(from..to) { levString.subList(from, to).parikhVector() }
+
   val levString: List<Σᐩ> by lazy {
     val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
     val maxY = stateCoords.maxOf { it.π3 }
@@ -67,10 +72,10 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
       .map { (a, b) ->
         val lbl = edgeLabels[a to b]
-        if (lbl == null) {
-          println("Failed to lookup: $a to $b")
-          println(edgeLabels)
-        }
+//        if (lbl == null) {
+//          println("Failed to lookup: $a to $b")
+//          println(edgeLabels)
+//        }
         lbl!!
       }
   }
