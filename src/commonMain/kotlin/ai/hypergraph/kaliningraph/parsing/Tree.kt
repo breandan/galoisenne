@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
+import ai.hypergraph.kaliningraph.types.Π3A
 
 typealias TreeMatrix = FreeMatrix<Forest>
 typealias Forest = Set<Tree>
@@ -26,6 +27,11 @@ class Tree constructor(
 //    if (terminal == "ε") ""
     if (children.isEmpty()) "()"
     else children.joinToString("", prefix = "(", postfix = ")") { it.structureEncode() }
+
+  fun triples(): List<Π3A<Σᐩ>> =
+    if (children.size != 2) listOf()
+    else listOf(Π3A(root, children[0].root, children[1].root)) +
+      children.flatMap { it.triples() }
 
   fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +
