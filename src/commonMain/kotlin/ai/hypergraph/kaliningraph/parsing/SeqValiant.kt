@@ -120,6 +120,9 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
     }
 
+  fun sampleStrWithPCFG(pcfgTable: Map<Π3A<Σᐩ>, Int>): Sequence<String> =
+    sequence { while (true) yield(samplePCFG(pcfgTable)) }
+
   // Samples instantaneously from the parse forest, but may return duplicates
   // and only returns a fraction of the number of distinct strings when compared
   // to SWOR on medium-sized finite sets under the same wall-clock timeout. If
@@ -142,6 +145,21 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       val (a, b) = l.sample() to r.sample()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
+
+  fun Σᐩ.name() = if ("~" in this) split("~")[1] else this
+  val triples by lazy { branches.map { root.name() to it.first.root.name() to it.second.root.name() } }
+
+  fun samplePCFG(pcfgTable: Map<Π3A<Σᐩ>, Int>): Σᐩ {
+    if (branches.isEmpty()) return if ("ε" in root) "" else root
+
+    val probs = triples.map { (pcfgTable[it] ?: 1) + 1 }
+    val cdf = probs.runningReduce { acc, i -> acc + i }
+    val rnd = Random.nextInt(probs.sum())
+    val childIdx = cdf.binarySearch { it.compareTo(rnd) }.let { if (it < 0) -it - 1 else it }
+    val (l, r) = branches[childIdx]
+    val (a, b) = l.samplePCFG(pcfgTable) to r.samplePCFG(pcfgTable)
+    return if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
+  }
 
   fun sampleWRGD(): Sequence<String> = generateSequence { sampleStrWithGeomDecay() }
 
