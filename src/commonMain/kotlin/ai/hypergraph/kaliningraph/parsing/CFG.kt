@@ -256,7 +256,7 @@ class BiMap(cfg: CFG) {
 
 // n.b., this only works if the CFG is acyclic, i.e., finite otherwise it will loop forever
 fun CFG.toPTree(from: Σᐩ = START_SYMBOL): PTree =
-  PTree(from, bimap[from].map { toPTree(it[0]) to if(it.size == 1) PTree() else toPTree(it[1]) })
+  PTree(from, bimap[from].map { toPTree(it[0]) to if (it.size == 1) PTree() else toPTree(it[1]) })
 
 /*
 Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α

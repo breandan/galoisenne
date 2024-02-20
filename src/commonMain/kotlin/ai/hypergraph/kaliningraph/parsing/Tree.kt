@@ -3,7 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
-import ai.hypergraph.kaliningraph.types.Π3A
+import ai.hypergraph.kaliningraph.types.*
 
 typealias TreeMatrix = FreeMatrix<Forest>
 typealias Forest = Set<Tree>
@@ -32,6 +32,17 @@ class Tree constructor(
     if (children.size != 2) listOf()
     else listOf(Π3A(root, children[0].root, children[1].root)) +
       children.flatMap { it.triples() }
+
+  fun quintuples(parent: String = "NIL", lsibling: String = "NIL", rsibling: String = "NIL"): List<Π5A<Σᐩ>> =
+    if (children.size != 2) listOf()
+    else listOf(Π5A(parent, lsibling, rsibling, children[0].root, children[1].root)) +
+      children[0].quintuples(root, children[0].root, children[1].root) +
+      children[1].quintuples(root, children[0].root, children[1].root)
+
+  fun logProb(pcfgMap: Map<Π3A<Σᐩ>, Int>): Double =
+    if (children.isEmpty()) 0.0
+    else (pcfgMap[root to children[0].root to children[1].root]?.toDouble() ?: 0.0) +
+      children.sumOf { it.logProb(pcfgMap) }
 
   fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +

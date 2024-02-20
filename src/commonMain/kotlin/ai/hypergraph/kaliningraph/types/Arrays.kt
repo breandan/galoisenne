@@ -8,6 +8,7 @@ import kotlin.jvm.JvmName
 typealias Π2A<A> = Π2<A, A>
 typealias Π3A<A> = Π3<A, A, A>
 typealias Π4A<A> = Π4<A, A, A, A>
+typealias Π5A<A> = Π5<A, A, A, A, A>
 
 // Multimorphic arrays
 data class Π1<A>(val π1: A)/*: V1<A> by VT(π1)*/
