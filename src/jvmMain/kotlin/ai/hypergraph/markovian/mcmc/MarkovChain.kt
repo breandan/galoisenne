@@ -3,6 +3,7 @@ package ai.hypergraph.markovian.mcmc
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.sampling.pow
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
@@ -10,10 +11,13 @@ import org.apache.datasketches.frequencies.ItemsSketch
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
+import java.io.File
 import java.util.concurrent.atomic.*
 import java.util.stream.Stream
 import kotlin.math.*
 import kotlin.random.Random
+import kotlin.streams.asStream
+import kotlin.time.measureTimedValue
 
 
 /**
@@ -245,18 +249,22 @@ open class MarkovChain<T>(
     fun deserialize(csv: String): MarkovChain<Σᐩ> {
       val lines = csv.lines()
       val memory: Int = lines.first().substringBefore(CSVSEP).split(" ").size
-      val size = 2.pow(log2(lines.size) + 2)
+      val tokenSize = lines.flatMap { it.substringBefore(CSVSEP).split(" ") }
+        .toSet().size.let { 2.pow(log2(it) + 2) }
+      val rawCounts = ItemsSketch<Σᐩ>(tokenSize)
+      val ngramSize = 2.pow(log2(lines.size) + 2)
+      val nrmCounts = ItemsSketch<List<Σᐩ?>>(ngramSize)
+      var total = 0L
+      lines.map { it.substringBefore(CSVSEP).split(" ") to it.substringAfter(CSVSEP).toLong() }
+        .forEach { (ngram, count) ->
+          total += count
+          nrmCounts.update(ngram, count)
+          ngram.forEach { rawCounts.update(it, count) }
+        }
       return MarkovChain(
-        sequenceOf(),
+        train = sequenceOf(),
         memory = memory,
-        Counter(
-          total = AtomicInteger(lines.sumOf { it.substringAfter(CSVSEP).toLong().toInt() }),
-          memory = memory,
-          nrmCounts = ItemsSketch<List<Σᐩ?>>(size).apply {
-            lines.map { it.substringBefore(CSVSEP).split(" ") to it.substringAfter(CSVSEP).toLong() }
-              .forEach { (ngram, count) -> update(ngram, count) }
-          }
-        )
+        Counter(total = AtomicInteger(total.toInt()), memory = memory, rawCounts = rawCounts, nrmCounts = nrmCounts)
       )
     }
   }
