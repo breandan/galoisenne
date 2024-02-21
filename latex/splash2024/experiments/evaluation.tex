@@ -7,27 +7,34 @@
 % Packages
 \usepackage{amsmath}
 \usepackage{tikz}
+\usetikzlibrary{external}
+\tikzexternalize[prefix=figures/]
 \usepackage{pgfplots}
-
 
 % Document
 \begin{document}
 
-  \begin{figure}
+For our evaluation, we use the StackOverflow dataset from \cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
+
+For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
+
+\begin{figure}[h!]
+  \input{sample_efficiency}
+  \caption{Sample efficiency of LBH sampler at varying Levenshtein radii.}\label{fig:sample_efficiency}
+\end{figure}
+
+Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, using an ngram likelihood model.
+
+  \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
-    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1.tex}}
-    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2.tex}}
-    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3.tex}}
-    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4.tex}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
     \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
   \end{figure}
-
-  \begin{figure}
-    \input{sample_efficiency.tex}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Sample efficiency of Levenshtein Bar-Hillel sampler at varying Levenshtein radii.}\label{fig:sample_efficiency}
-  \end{figure}
+\bibliography{../acmart}
 \end{document}
