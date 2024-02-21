@@ -29,15 +29,15 @@ class Tree constructor(
     else children.joinToString("", prefix = "(", postfix = ")") { it.structureEncode() }
 
   fun triples(): List<Π3A<Σᐩ>> =
-    if (children.size != 2) listOf()
+    if (children.size != 2) listOf(Π3A(root, "$terminal", "ε"))
     else listOf(Π3A(root, children[0].root, children[1].root)) +
       children.flatMap { it.triples() }
 
   fun quintuples(parent: String = "NIL", lsibling: String = "NIL", rsibling: String = "NIL"): List<Π5A<Σᐩ>> =
-    if (children.size != 2) listOf()
+    if (children.size != 2) listOf(Π5A(parent, lsibling, rsibling, "$terminal", "ε"))
     else listOf(Π5A(parent, lsibling, rsibling, children[0].root, children[1].root)) +
-      children[0].quintuples(root, children[0].root, children[1].root) +
-      children[1].quintuples(root, children[0].root, children[1].root)
+      children[0].quintuples(root, children[0].root + "*", children[1].root) +
+      children[1].quintuples(root, children[0].root, children[1].root + "*")
 
   fun logProb(pcfgMap: Map<Π3A<Σᐩ>, Int>): Double =
     if (children.isEmpty()) 0.0
