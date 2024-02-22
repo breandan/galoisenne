@@ -120,7 +120,10 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
     }
 
-  fun sampleStrWithPCFG(pcfgTable: Map<Π3A<Σᐩ>, Int>): Sequence<String> =
+  fun sampleStrWithPCFG5(pcfgTable: Map<Π5A<Σᐩ>, Int>): Sequence<String> =
+    sequence { while (true) yield(samplePCFG5(pcfgTable)) }
+
+  fun sampleStrWithPCFG3(pcfgTable: Map<Π3A<Σᐩ>, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG3(pcfgTable)) }
 
   // Samples instantaneously from the parse forest, but may return duplicates
@@ -147,18 +150,19 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun Σᐩ.name() = if ("~" in this) split("~")[1] else this
-  val triples by lazy { branches.map { root.name() to it.first.root.name() to it.second.root.name() } }
+  val triples : List<Π3A<Σᐩ>> by lazy { branches.map { root.name() to it.first.root.name() to it.second.root.name() } }
 
-  fun samplePCFG5(pcfgTable: Map<Π5A<Σᐩ>, Int>, root: Σᐩ = "NIL", upLeft: Σᐩ = "NIL", upRight: Σᐩ = "NIL"): Σᐩ {
+  fun samplePCFG5(pcfgTable: Map<Π5A<Σᐩ>, Int>, upUp: Σᐩ = "NIL", upLeft: Σᐩ = "NIL", upRight: Σᐩ = "NIL"): Σᐩ {
     if (branches.isEmpty()) return if ("ε" in root) "" else root
     val rt = root.name()
-    val probs = triples.map { (pcfgTable[rt to upLeft to upRight to it.second to it.third] ?: 1) + 1 }
+    val probs = triples.map { (pcfgTable[upUp to upLeft to upRight to it.second to it.third] ?: 1) + 1 }
     val cdf = probs.runningReduce { acc, i -> acc + i }
     val rnd = Random.nextInt(probs.sum())
     val childIdx = cdf.binarySearch { it.compareTo(rnd) }.let { if (it < 0) -it - 1 else it }
     val (l, r) = branches[childIdx]
     val (lr, rr) = l.root.name() to r.root.name()
-    val (a, b) = l.samplePCFG5(pcfgTable, rt, lr, rr) to r.samplePCFG5(pcfgTable, rt, lr, rr)
+    val (a, b) = l.samplePCFG5(pcfgTable, rt, "$lr*", rr) to
+                         r.samplePCFG5(pcfgTable, rt, lr, "$rr*")
     return if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
   }
 

@@ -77,13 +77,13 @@ fun CFG.sampleDirectlyWR(
   }
 
 fun CFG.sampleWithPCFG(
-  pcfgTable: Map<Π3A<Σᐩ>, Int>,
+  pcfgTable: Map<Π5A<Σᐩ>, Int>,
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
 ): Stream<String> =
   toPTree().let {
     (0..<cores).toList().parallelStream().flatMap { i ->
-      it.sampleStrWithPCFG(pcfgTable)
+      it.sampleStrWithPCFG5(pcfgTable)
         .takeWhile { stoppingCriterion() }
         .distinct()
         .asStream()
