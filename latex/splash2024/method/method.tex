@@ -27,10 +27,10 @@ minimum height=1cm, text centered,
 draw=black, fill=blue!30]
 
 \tikzstyle{process} = [rectangle,
-minimum width=3cm,
+minimum width=3.5cm,
 minimum height=1cm,
 text centered,
-text width=3cm,
+text width=3.5cm,
 draw=black,
 fill=orange!30]
 
@@ -58,29 +58,34 @@ The syntax of most programming languages is context-free. Our proposed method is
 
 After sampling, we use an n-gram model to rank the samples, then return the top-k results by likelihood. We depict the flowchart below:
 
-\resizebox{0.8\textwidth}{!}{
+\begin{figure}[h!]
+  \begin{center}
+\resizebox{0.6\textwidth}{!}{
 \begin{tikzpicture}[node distance=2cm]
 
 %  \node (start) [startstop] {Start};
-  \node (in1) [io, below of=start] {Input};
-  \node (rin1) [io, right of=in1, xshift=3cm] {CFG};
-  \node (lin1) [io, left of=in1, xshift=-3cm] {NFA};
+  \node (in1) [io] {Input};
+  \node (rin1) [io, right of=in1, xshift=3cm] {L-NFA};
+  \node (lin1) [io, left of=in1, xshift=-3cm] {[P]CFG};
 
   \node (pro1) [process, below of=in1] {$\mathcal{G}_\cap \leftarrow \mathcal{G}\cap\Delta(\err\sigma, d)$};
 
-  \node (dec1) [decision, below of=pro1, yshift=-1cm] {$\mathcal{G}_{\cap} = \varnothing$};
+  \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[\mathcal{G}_{\cap} = \varnothing]$};
 
   \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius};
 
-  \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(\mathcal{G}_\cap)|$};
+  \node (dec2) [decision, below of=dec1, yshift=-0.8cm] {$|\mathcal{L}(\mathcal{G}_\cap)|$};
 
-  \node (samp1) [process, below of=dec2] {Enumerate};
-  \node (samp2) [process, right of=dec2, xshift=3cm] {Sample PCFG};
+  \node (samp1) [process, left of=dec2, xshift=-3cm] {Denumerate $\mathcal{L}(\mathcal{G}_\cap)$};
+  \node (samp2) [process, right of=dec2, xshift=3cm] {Sample [P]CFG};
+
+  \node (uin1) [io, below of=dec2, yshift=0.1cm] {VOMC};
+  \node (rank1) [process, below of=uin1, yshift=0.1cm] {Rerank solutions};
 
 %  \node (out1) [io, below of=pro2a] {Output};
 %  \node (stop) [startstop, below of=out1] {Stop};
 
-  \draw [arrow] (start) -- (in1);
+%  \draw [arrow] (start) -- (in1);
 
   \draw [arrow] (rin1) -- (in1);
   \draw [arrow] (lin1) -- (in1);
@@ -89,13 +94,20 @@ After sampling, we use an n-gram model to rank the samples, then return the top-
   \draw [arrow] (pro1) -- (dec1);
   \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
   \draw [arrow] (dec1) -- node[anchor=east] {no} (dec2);
-  \draw [arrow] (pro2b) |- (pro1);
-  \draw [arrow] (dec2) -- node[anchor=east] {small} (samp1);
+  \draw [arrow] (pro2b) -- (rin1);
+  \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
   \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+
+  \draw [arrow] (uin1) -- (rank1);
+  \draw [arrow] (samp1) |- (rank1);
+  \draw [arrow] (samp2) |- (rank1);
 %  \draw [arrow] (pro2a) -- (out1);
 %  \draw [arrow] (out1) -- (stop);
 
 \end{tikzpicture}
 }
+\end{center}
+\caption{Flowchart of our proposed method.}\label{fig:flowchart}
+\end{figure}
 
 \end{document}
