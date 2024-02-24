@@ -9,7 +9,6 @@ import ai.hypergraph.kaliningraph.types.times
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.*
-import kotlin.math.max
 import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
@@ -77,7 +76,7 @@ fun CFG.sampleDirectlyWR(
   }
 
 fun CFG.sampleWithPCFG(
-  pcfgTable: Map<Π5A<Σᐩ>, Int>,
+  pcfgTable: Map<StrQuintuple, Int>,
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
 ): Stream<String> =
@@ -204,8 +203,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
   println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")
 
   clock = TimeSource.Monotonic.markNow()
-  return Stream.concat(binaryProds.stream(),
-    (initFinal + transits + unitProds).stream()).parallel()
+  return Stream.concat(binaryProds.stream(), (initFinal + transits + unitProds).stream()).parallel()
     .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
     .collect(Collectors.toSet())
     .jvmPostProcess(clock)
