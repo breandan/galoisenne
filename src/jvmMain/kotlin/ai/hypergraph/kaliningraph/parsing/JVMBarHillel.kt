@@ -154,7 +154,6 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
-  val lengthBoundsCache = lengthBounds
   val nts = ConcurrentSkipListSet(setOf("START"))
 
   val initFinal =
@@ -170,31 +169,34 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val prods: Set<Production> = nonterminalProductions
-  var i = 0
+  val ntLst = nonterminals.toList()
+  val ntMap = ntLst.mapIndexed { i, s -> s to i }.toMap()
+  val prods: Set<IProduction> = nonterminalProductions
+    .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
+  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it]!! } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val elimCounter = AtomicInteger(0)
   val counter = AtomicInteger(0)
+  val lpClock = TimeSource.Monotonic.markNow()
   val binaryProds =
     prods.parallelStream().flatMap {
-//      if (i++ % 100 == 0) println("Finished $i/${nonterminalProductions.size} productions")
       if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (it) elimCounter.incrementAndGet() } }
-        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (it) elimCounter.incrementAndGet() } }
+        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (!it) elimCounter.incrementAndGet() } }
+        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (!it) elimCounter.incrementAndGet() } }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet())
             throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
-          val (p, q, r)  = a.π1 to b.π1 to c.π1
-          "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
+          val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
+          "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
         }
     }.toList()
 
-  println("LP constraints eliminated $elimCounter productions...")
+  println("Levenshtein-Parikh constraints eliminated $elimCounter productions in ${lpClock.elapsedNow()}")
 
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
@@ -214,7 +216,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
   jvmDropVestigialProductions(clock)
     .jvmElimVarUnitProds()
-      .also { println("Reduced ∩-grammar from $size to ${it.size} useful productions in ${clock.elapsedNow()}") }
+      .also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
       .freeze()
 
 tailrec fun CFG.jvmElimVarUnitProds(

@@ -1,17 +1,16 @@
 package ai.hypergraph.kaliningraph.automata
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.math.*
 
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
 fun Arc.pretty() = "$π1 -<$π2>-> $π3"
 fun Σᐩ.coords(): Pair<Int, Int> =
   (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
-typealias STC = Triple<Σᐩ, Int, Int>
+typealias STC = Triple<Int, Int, Int>
 fun STC.coords() = π2 to π3
 
 open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
@@ -19,9 +18,11 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val isNominalizable by lazy { alphabet.any { it.startsWith("[!=]") } }
   val nominalForm: NOM by lazy { nominalize() }
   val states by lazy { Q.states }
-  val APSP: Map<Pair<Σᐩ, Σᐩ>, Int> by lazy {
+  val stateLst by lazy { states.toList() }
+  val stateMap by lazy { states.toList().withIndex().associate { it.value to it.index } }
+  val APSP: Map<Int, Int> by lazy {
     graph.APSP.map { (k, v) ->
-      Pair(Pair(k.first.label, k.second.label), v)
+      Pair(hashPair(stateMap[k.first.label]!!, stateMap[k.second.label]!!), v)
     }.toMap()
   }
 
@@ -29,7 +30,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
   }
 
-  val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(it, i, j) } }.asSequence() }
+  val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
 
   val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
 

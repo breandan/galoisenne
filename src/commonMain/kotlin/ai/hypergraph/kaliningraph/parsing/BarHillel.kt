@@ -1,10 +1,11 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.hashPair
 import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
-import kotlin.math.absoluteValue
+import kotlin.math.*
 import kotlin.time.TimeSource
 
 /**
@@ -28,7 +29,6 @@ fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   var clock = TimeSource.Monotonic.markNow()
-  val lengthBoundsCache = lengthBounds
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && last() == ']' && count { it == '~' } == 2
@@ -50,11 +50,15 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val validTriples =
-    fsa.stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList()
+  val ntLst = nonterminals.toList()
+  val ntMap = ntLst.withIndex().associate { (i, s) -> s to i }
+  val prods: Set<IProduction> = nonterminalProductions
+    .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
+  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it]!! } }
+  val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val binaryProds =
-    nonterminalProductions.map {
+    prods.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       validTriples
@@ -64,7 +68,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
-          "[$p~$A~$r]".also { nts.add(it) } to listOf("[$p~$B~$q]", "[$q~$C~$r]")
+          "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
         }.toList()
     }.flatten().filterRHSInNTS()
 
@@ -244,48 +248,35 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 //      && obeys(second, third, nts.third)
 //}
 
-fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, parikhMap: ParikhMap): Boolean {
-  fun obeys(a: STC, b: STC, nt: Σᐩ): Bln {
-    val sl =
-      fsa.levString.size <= a.second || // Part of the LA that handles extra
-      fsa.levString.size <= b.second    // terminals at the end of the string
+private fun FSA.obeys(a: STC, b: STC, nt: Int, parikhMap: ParikhMap): Bln {
+  val sl = levString.size <= max(a.second, b.second) // Part of the LA that handles extra
 
-    if (sl) return true
-    val margin = (b.third - a.third).absoluteValue
-    val length = (b.second - a.second)
-    val range = (length - margin).coerceAtLeast(1)..(length + margin)
-    val pb = parikhMap.parikhBounds(nt, range)
-    val pv = fsa.parikhVector(a.second, b.second)
-    return pb.admits(pv, margin)
-  }
-
-  return obeys(first, third, nts.first)
-    && obeys(first, second, nts.second)
-    && obeys(second, third, nts.third)
+  if (sl) return true
+  val margin = (b.third - a.third).absoluteValue
+  val length = (b.second - a.second)
+  val range = (length - margin).coerceAtLeast(1)..(length + margin)
+  val pb = parikhMap.parikhBounds(nt, range)
+  val pv = parikhVector(a.second, b.second)
+  return pb.admits(pv, margin)
 }
 
-fun Π3A<STC>.isCompatibleWith(nts: Triple<Σᐩ, Σᐩ, Σᐩ>, fsa: FSA, lengthBounds: Map<Σᐩ, IntRange>): Boolean {
-  fun lengthBounds(nt: Σᐩ): IntRange =
-    (lengthBounds[nt] ?: -9999..-9990)
-      // Okay if we overapproximate the length bounds a bit
-//      .let { (it.first - fudge)..(it.last + fudge) }
+fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Int, Int, Int>, fsa: FSA, parikhMap: ParikhMap): Boolean =
+  fsa.obeys(first, third, nts.first, parikhMap)
+    && fsa.obeys(first, second, nts.second, parikhMap)
+    && fsa.obeys(second, third, nts.third, parikhMap)
 
-  fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): Int =
-    (second.second - first.second).absoluteValue + (second.first - first.first).absoluteValue
+private fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): Int =
+  (second.second - first.second).absoluteValue + (second.first - first.first).absoluteValue
 
-  // Range of the shortest path to the longest path, i.e., Manhattan distance
-  fun SPLP(a: STC, b: STC) =
-    (fsa.APSP[a.π1 to b.π1] ?: Int.MAX_VALUE)..
-        manhattanDistance(a.coords(), b.coords())
+// Range of the shortest path to the longest path, i.e., Manhattan distance
+private fun FSA.SPLP(a: STC, b: STC) =
+  (APSP[hashPair(a.π1, b.π1)] ?: Int.MAX_VALUE)..
+      manhattanDistance(a.coords(), b.coords())
 
-  fun IntRange.overlaps(other: IntRange) =
-    (other.first in first..last) || (other.last in first..last)
+private fun IntRange.overlaps(other: IntRange) =
+  (other.first in first..last) || (other.last in first..last)
 
-  // "[$p,$A,$r] -> [$p,$B,$q] [$q,$C,$r]"
-  fun isCompatible() =
-    lengthBounds(nts.first).overlaps(SPLP(first, third))
-      && lengthBounds(nts.second).overlaps(SPLP(first, second))
-      && lengthBounds(nts.third).overlaps(SPLP(second, third))
-
-  return isCompatible()
-}
+fun Π3A<STC>.isCompatibleWith(nts: Triple<Int, Int, Int>, fsa: FSA, lengthBounds: List<IntRange>): Boolean =
+    lengthBounds[nts.first].overlaps(fsa.SPLP(first, third))
+      && lengthBounds[nts.second].overlaps(fsa.SPLP(first, second))
+      && lengthBounds[nts.third].overlaps(fsa.SPLP(second, third))

@@ -10,6 +10,7 @@ import kotlin.time.*
 
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
+typealias IProduction = Π2<Int, List<Int>>
 // TODO: make this immutable
 typealias CFG = Set<Production>
 

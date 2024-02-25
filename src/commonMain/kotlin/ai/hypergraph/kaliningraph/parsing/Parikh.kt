@@ -54,6 +54,7 @@ class ParikhMap(val cfg: CFG, val size: Int) {
   private val lengthBounds: MutableMap<Int, Set<Σᐩ>> = mutableMapOf()
   private val parikhMap: MutableMap<Int, ParikhBoundsMap> = mutableMapOf()
   val parikhRangeMap: MutableMap<IntRange, ParikhBoundsMap> = mutableMapOf()
+  val ntIdx = cfg.nonterminals.toList()
 
   companion object {
     fun genRanges(delta: Int = 2 * MAX_RADIUS + 1, n: Int = MAX_TOKENS) =
@@ -83,6 +84,7 @@ class ParikhMap(val cfg: CFG, val size: Int) {
     }
   }
 
+  fun parikhBounds(nt: Int, range: IntRange): ParikhBounds = parikhBounds(ntIdx[nt], range)
   fun parikhBounds(nt: Σᐩ, range: IntRange): ParikhBounds = parikhRangeMap[range]?.get(nt) ?: emptyMap()
   fun parikhBounds(nt: Σᐩ, size: Int): ParikhBounds? = parikhMap[size]?.get(nt)
 //    parikhMap.also { println("Keys (${nt}): " + it.keys.size + ", ${it[size]?.get(nt)}") }[size]?.get(nt)
