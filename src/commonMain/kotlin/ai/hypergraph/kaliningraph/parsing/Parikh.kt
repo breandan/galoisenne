@@ -23,8 +23,20 @@ fun dist(pv: ParikhVector, pb: ParikhBounds) =
     else 0
   }
 
-fun ParikhBounds.admits(pv: ParikhVector, margin: Int = 0) =
-  dist(pv, this) <= margin
+// Too slow:
+//fun ParikhBounds.admits(pv: ParikhVector, margin: Int = 0) =
+//  dist(pv, this) <= margin
+// Like above, but short circuits if sum > margin
+fun ParikhBounds.admits(pv: ParikhVector, margin: Int = 0): Boolean {
+  var sum = 0
+  for ((k, v) in pv) {
+    val bounds = (this[k] ?: 0..0)
+    if (v < bounds.first) sum += bounds.first - v
+    else if (bounds.last < v) sum += v - bounds.last
+    if (sum > margin) return false
+  }
+  return true
+}
 
 fun ParikhBounds.subsumes(pv: ParikhVector) = dist(pv, this) == 0
 

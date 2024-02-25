@@ -142,7 +142,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       Tree(root, children = arrayOf(a, b))
     }
 
-  val epsStr by lazy { if ("ε" in root) "" else root }
+  val epsStr by lazy { if ('ε' in root) "" else root }
   val dotEpsStr by lazy { if (".ε" in root) "" else root }
 
   fun sample(): String =

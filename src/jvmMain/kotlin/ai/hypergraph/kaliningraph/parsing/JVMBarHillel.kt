@@ -184,8 +184,8 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if(it) elimCounter.incrementAndGet() } }
-        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if(it) elimCounter.incrementAndGet() } }
+        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (it) elimCounter.incrementAndGet() } }
+        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (it) elimCounter.incrementAndGet() } }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet())
             throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
