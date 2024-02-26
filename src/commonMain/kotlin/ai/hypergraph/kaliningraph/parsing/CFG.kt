@@ -52,6 +52,9 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
     .mapValues { it.value.map { it.second }.toSet() }
 }
 
+val CFG.ntLst by cache { (symbols + "ε").toList() }
+val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
+
 // Maps each nonterminal to the set of nonterminals that can generate it
 val CFG.vindex: Array<IntArray> by cache {
   Array(bindex.indexedNTs.size) { i ->
@@ -256,8 +259,9 @@ class BiMap(cfg: CFG) {
 }
 
 // n.b., this only works if the CFG is acyclic, i.e., finite otherwise it will loop forever
-fun CFG.toPTree(from: Σᐩ = START_SYMBOL): PTree =
-  PTree(from, bimap[from].map { toPTree(it[0]) to if (it.size == 1) PTree() else toPTree(it[1]) })
+fun CFG.toPTree(from: Σᐩ = START_SYMBOL, origCFG: CFG = this): PTree =
+  PTree(from, bimap[from].map { toPTree(it[0], origCFG) to if (it.size == 1) PTree() else toPTree(it[1], origCFG) })
+    .also { it.ntIdx = (origCFG.ntMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }
 
 /*
 Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α

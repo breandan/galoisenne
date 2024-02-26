@@ -10,6 +10,8 @@ import ai.hypergraph.kaliningraph.types.Π2A
 import kotlin.math.pow
 import kotlin.time.*
 
+var CFG_THRESH = 20_000
+var MAX_UNIQUE = 20_000 // Maximum number of unique samples to generate
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 80 // Maximum number of tokens per repair
 var MAX_RADIUS = 4

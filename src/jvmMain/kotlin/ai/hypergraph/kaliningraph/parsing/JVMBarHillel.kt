@@ -75,31 +75,27 @@ fun CFG.sampleDirectlyWR(
     }
   }
 
-fun CFG.sampleWithPCFG(
-  pcfgTable: Map<StrQuintuple, Int>,
+fun PTree.sampleWithPCFG(
+  pcfgTable: Map<Int, Int>,
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
 ): Stream<String> =
-  toPTree().let {
-    (0..<cores).toList().parallelStream().flatMap { i ->
-      it.sampleStrWithPCFG5(pcfgTable)
-        .takeWhile { stoppingCriterion() }
-        .distinct()
-        .asStream()
-    }
+  (0..<cores).toList().parallelStream().flatMap { i ->
+    sampleStrWithPCFG5(pcfgTable)
+      .takeWhile { stoppingCriterion() }
+      .distinct()
+      .asStream()
   }
 
-fun CFG.sampleDirectlyWOR(
+fun PTree.sampleDirectlyWOR(
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
 ): Stream<String> =
-  toPTree().let {
-    (0..<cores).toList().parallelStream().flatMap { i ->
-      it.sampleStrWithoutReplacement(cores, i)
-        .takeWhile { stoppingCriterion() }
-        .distinct()
-        .asStream()
-    }
+  (0..<cores).toList().parallelStream().flatMap { i ->
+    sampleStrWithoutReplacement(cores, i)
+      .takeWhile { stoppingCriterion() }
+      .distinct()
+      .asStream()
   }
 
 fun CFG.parallelEnumListWR(
@@ -169,8 +165,6 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val ntLst = nonterminals.toList()
-  val ntMap = ntLst.mapIndexed { i, s -> s to i }.toMap()
   val prods: Set<IProduction> = nonterminalProductions
     .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
   val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it]!! } }

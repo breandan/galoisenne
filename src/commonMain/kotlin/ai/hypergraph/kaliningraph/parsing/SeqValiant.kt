@@ -17,6 +17,7 @@ typealias PForest = Map<String, PTree> // ℙ₃
 class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()) {
 //  val hash by lazy { root.hashCode() + if (branches.isEmpty()) 0 else branches.hashCode() }
 //  override fun hashCode(): Int = hash
+  var ntIdx = -1
 
   val branchRatio: Pair<Double, Double> by lazy { if (branches.isEmpty()) 0.0 to 0.0 else
     (branches.size.toDouble() + branches.sumOf { (l, r) -> l.branchRatio.first + r.branchRatio.first }) to
@@ -120,10 +121,10 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
     }
 
-  fun sampleStrWithPCFG5(pcfgTable: Map<StrQuintuple, Int>): Sequence<String> =
+  fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG5(pcfgTable)) }
 
-  fun sampleStrWithPCFG3(pcfgTable: Map<Π3A<Σᐩ>, Int>): Sequence<String> =
+  fun sampleStrWithPCFG3(pcfgTable: Map<Int, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG3(pcfgTable)) }
 
   // Samples instantaneously from the parse forest, but may return duplicates
@@ -152,28 +153,32 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
 
-  fun Σᐩ.name() = if ("~" in this) split("~")[1] else this
-  val triples : List<Π3A<Σᐩ>> by lazy { branches.map { root.name() to it.first.root.name() to it.second.root.name() } }
+  fun Σᐩ.name() = if ('~' in this) split('~')[1] else this
+  val triples : List<Π2A<Int>> by lazy { branches.map { it.first.ntIdx to it.second.ntIdx } }
   val rootName by lazy { root.name() }
   val isLeaf by lazy { branches.isEmpty() }
 
-  fun samplePCFG5(pcfgTable: Map<StrQuintuple, Int>, upUp: Σᐩ = "NIL", upLeft: Σᐩ = "NIL", upRight: Σᐩ = "NIL"): Σᐩ {
+  fun samplePCFG5(pcfgTable: Map<Int, Int>, upUp: Int = 0, upLeft: Int = 0, upRight: Int = 0): Σᐩ {
     if (isLeaf) return epsStr
-    val probs = triples.map { (pcfgTable[StrQuintuple(upUp, upLeft, upRight, it.second, it.third)] ?: 1) + 1 }
+    val probs = triples.map {
+      val hash = hash(upUp, upLeft, upRight, it.first, it.second)
+      (pcfgTable[hash] ?: 1)
+//      .also { if(Random.nextInt(10000) == 3) if (it == 1) println("$hash Miss"); else println("$hash Hit") }
+      + 1 }
     val cdf = probs.runningReduce { acc, i -> acc + i }
     val rnd = Random.nextInt(probs.sum())
     val childIdx = cdf.binarySearch { it.compareTo(rnd) }.let { if (it < 0) -it - 1 else it }
     val (l, r) = branches[childIdx]
-    val (lr, rr) = l.rootName to r.rootName
-    val (a, b) = l.samplePCFG5(pcfgTable, rootName, "$lr*", rr) to
-                         r.samplePCFG5(pcfgTable, rootName, lr, "$rr*")
+    val (lr, rr) = l.ntIdx to r.ntIdx
+    val (a, b) = l.samplePCFG5(pcfgTable, ntIdx, 31 * lr, rr) to
+                         r.samplePCFG5(pcfgTable, ntIdx, lr, 31 * rr)
     return if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
   }
 
-  fun samplePCFG3(pcfgTable: Map<Π3A<Σᐩ>, Int>): Σᐩ {
+  fun samplePCFG3(pcfgTable: Map<Int, Int>): Σᐩ {
     if (branches.isEmpty()) return epsStr
 
-    val probs = triples.map { (pcfgTable[it] ?: 1) + 1 }
+    val probs = triples.map { (pcfgTable[hash(ntIdx, it.first, it.second)] ?: 1) + 1 }
     val cdf = probs.runningReduce { acc, i -> acc + i }
     val rnd = Random.nextInt(probs.sum())
     val childIdx = cdf.binarySearch { it.compareTo(rnd) }.let { if (it < 0) -it - 1 else it }
@@ -204,12 +209,6 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 //    val index = -(1.0 / ln(1 - p)) * ln(1 - rnd)
 //    return epsSortedBranches[index.toInt().coerceAtMost(branches.size - 1)]
 //  }
-}
-
-data class StrQuintuple(val a: String, val b: String, val c: String, val d: String, val e: String) {
-  val hash = a.hashCode() + b.hashCode() + c.hashCode() + d.hashCode() + e.hashCode()
-  override fun hashCode(): Int = hash
-  override fun equals(other: Any?): Boolean = other is StrQuintuple && other.hash == hash
 }
 
 fun CFG.startPTree(tokens: List<String>) = //measureTimedValue {

@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.hashPair
+import ai.hypergraph.kaliningraph.hash
 import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
@@ -270,7 +270,7 @@ private fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): In
 
 // Range of the shortest path to the longest path, i.e., Manhattan distance
 private fun FSA.SPLP(a: STC, b: STC) =
-  (APSP[hashPair(a.π1, b.π1)] ?: Int.MAX_VALUE)..
+  (APSP[hash(a.π1, b.π1)] ?: Int.MAX_VALUE)..
       manhattanDistance(a.coords(), b.coords())
 
 private fun IntRange.overlaps(other: IntRange) =

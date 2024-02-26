@@ -22,7 +22,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val stateMap by lazy { states.toList().withIndex().associate { it.value to it.index } }
   val APSP: Map<Int, Int> by lazy {
     graph.APSP.map { (k, v) ->
-      Pair(hashPair(stateMap[k.first.label]!!, stateMap[k.second.label]!!), v)
+      Pair(hash(stateMap[k.first.label]!!, stateMap[k.second.label]!!), v)
     }.toMap()
   }
 

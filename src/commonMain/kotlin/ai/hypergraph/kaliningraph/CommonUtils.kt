@@ -93,7 +93,8 @@ fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, 
 
 fun kroneckerDelta(i: Int, j: Int) = if (i == j) 1.0 else 0.0
 
-fun hashPair(i1: Int, i2: Int): Int = i1 * 31 + i2
+fun hash(vararg ints: Any): Int = ints.fold(0) { acc, i -> 31 * acc + i.hashCode() }
+fun hash(vararg ints: Int): Int = ints.fold(0) { acc, i -> 31 * acc + i }
 
 const val DEFAULT_FEATURE_LEN = 20
 fun String.vectorize(len: Int = DEFAULT_FEATURE_LEN) =
