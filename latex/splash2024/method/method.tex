@@ -120,4 +120,20 @@ When ambiguous, we use an n-gram model to rank and return the top-k results by l
 \caption{Flowchart of our proposed method.}\label{fig:flowchart}
 \end{figure}
 
+\subsection{The Nominal Levenshtein Automaton}
+
+Levenshtein edits are recognized by a certain kind of automaton, known as the Levenshtein automaton. Since the original approach used by Schultz and Mihov contains cycles and epsilon transitions, we propose a modified variant which is epsilon-free, acyclic and monotone. Furthermore, we use a nominal automaton, allowing for infinite alphabets. This considerably simplifies the langauge intersection.
+
+\subsection{The Bar-Hillel Construction}
+
+The Bar-Hillel construction is a general method for obtaining the context-free grammar representing the intersection of a context-free language and a regular language. We will now present the epsilon-free version of the Bar-Hillel construction used in our work.\footnote{Clemente Pasti has a version of the BH construction that supports epsilon transitions, but is slightly more complicated.}
+
+\subsection{The Levenshtein-Bar-Hillel-Parikh Reduction}
+
+The standard BH construction applies to any CFL and REG language. While straightforward, the general method can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. Our method considerably simplifies this process by eliminating the need to materialize most of those productions, and is the key to making our approach tractable.
+
+To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
+
+
+
 \end{document}
