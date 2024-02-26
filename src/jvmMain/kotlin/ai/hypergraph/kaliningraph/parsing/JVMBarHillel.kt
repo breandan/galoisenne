@@ -165,9 +165,9 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val prods: Set<IProduction> = nonterminalProductions
+  val prods = nonterminalProductions
     .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
-  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it]!! } }
+//  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it]!! } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val elimCounter = AtomicInteger(0)
@@ -180,7 +180,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (!it) elimCounter.incrementAndGet() } }
+//        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (!it) elimCounter.incrementAndGet() } }
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (!it) elimCounter.incrementAndGet() } }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet())

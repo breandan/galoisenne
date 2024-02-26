@@ -50,11 +50,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val ntLst = nonterminals.toList()
-  val ntMap = ntLst.withIndex().associate { (i, s) -> s to i }
-  val prods: Set<IProduction> = nonterminalProductions
+  val prods = nonterminalProductions
     .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
-  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it]!! } }
+//  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it]!! } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val binaryProds =
@@ -64,7 +62,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
+//        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = a.π1 to b.π1 to c.π1
@@ -260,7 +258,7 @@ private fun FSA.obeys(a: STC, b: STC, nt: Int, parikhMap: ParikhMap): Bln {
   return pb.admits(pv, margin)
 }
 
-fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Triple<Int, Int, Int>, fsa: FSA, parikhMap: ParikhMap): Boolean =
+fun Π3A<STC>.obeysLevenshteinParikhBounds(nts: Π3A<Int>, fsa: FSA, parikhMap: ParikhMap): Boolean =
   fsa.obeys(first, third, nts.first, parikhMap)
     && fsa.obeys(first, second, nts.second, parikhMap)
     && fsa.obeys(second, third, nts.third, parikhMap)
@@ -276,7 +274,7 @@ private fun FSA.SPLP(a: STC, b: STC) =
 private fun IntRange.overlaps(other: IntRange) =
   (other.first in first..last) || (other.last in first..last)
 
-fun Π3A<STC>.isCompatibleWith(nts: Triple<Int, Int, Int>, fsa: FSA, lengthBounds: List<IntRange>): Boolean =
+fun Π3A<STC>.isCompatibleWith(nts: Π3A<Int>, fsa: FSA, lengthBounds: List<IntRange>): Boolean =
     lengthBounds[nts.first].overlaps(fsa.SPLP(first, third))
       && lengthBounds[nts.second].overlaps(fsa.SPLP(first, second))
       && lengthBounds[nts.third].overlaps(fsa.SPLP(second, third))
