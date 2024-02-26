@@ -19,10 +19,11 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val nominalForm: NOM by lazy { nominalize() }
   val states by lazy { Q.states }
   val stateLst by lazy { states.toList() }
-  val stateMap by lazy { states.toList().withIndex().associate { it.value to it.index } }
-  val APSP: Map<Int, Int> by lazy {
+  val stateMap by lazy { states.withIndex().associate { it.value to it.index } }
+  val APSP: Map<Pair<Int, Int>, Int> by lazy {
     graph.APSP.map { (k, v) ->
-      Pair(hash(stateMap[k.first.label]!!, stateMap[k.second.label]!!), v)
+//      println("Hashing: ${k.first.label} -> ${k.second.label} == $v")
+      Pair(stateMap[k.first.label]!! to stateMap[k.second.label]!!, v)
     }.toMap()
   }
 

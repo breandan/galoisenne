@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.*
+import kotlin.random.Random
 import kotlin.time.TimeSource
 
 /**
@@ -268,7 +269,8 @@ private fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): In
 
 // Range of the shortest path to the longest path, i.e., Manhattan distance
 private fun FSA.SPLP(a: STC, b: STC) =
-  (APSP[hash(a.π1, b.π1)] ?: Int.MAX_VALUE)..
+  (APSP[a.π1 to b.π1] ?: Int.MAX_VALUE)..//.also { /*if (Random.nextInt(100000) == 3) if(it == Int.MAX_VALUE) println("Miss! ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") else */
+//    if (it != Int.MAX_VALUE) println("Hit: ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") }..
       manhattanDistance(a.coords(), b.coords())
 
 private fun IntRange.overlaps(other: IntRange) =

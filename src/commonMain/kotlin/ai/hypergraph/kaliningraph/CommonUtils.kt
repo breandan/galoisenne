@@ -93,6 +93,7 @@ fun Array<DoubleArray>.toDoubleMatrix() = DoubleMatrix(size, this[0].size) { i, 
 
 fun kroneckerDelta(i: Int, j: Int) = if (i == j) 1.0 else 0.0
 
+// This is fast, but seems to be an unreliable hash function
 fun hash(vararg ints: Any): Int = ints.fold(0) { acc, i -> 31 * acc + i.hashCode() }
 fun hash(vararg ints: Int): Int = ints.fold(0) { acc, i -> 31 * acc + i }
 

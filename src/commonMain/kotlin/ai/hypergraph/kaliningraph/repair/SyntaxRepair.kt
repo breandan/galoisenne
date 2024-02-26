@@ -13,7 +13,7 @@ import kotlin.time.*
 var CFG_THRESH = 20_000
 var MAX_UNIQUE = 20_000 // Maximum number of unique samples to generate
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
-var MAX_TOKENS = 80 // Maximum number of tokens per repair
+var MAX_TOKENS = 40 // Maximum number of tokens per repair
 var MAX_RADIUS = 4
 var TIMEOUT_MS = 90_000 // Timeout for each repair attempt (default, modify elsewhere)
 var MAX_REPAIR = 2 // Maximum number of edits per repair
