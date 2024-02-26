@@ -52,7 +52,7 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods = nonterminalProductions
     .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
-//  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it]!! } }
+  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val binaryProds =
@@ -62,10 +62,10 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-//        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
+        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
         .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
-          val (p, q, r)  = a.π1 to b.π1 to c.π1
+          val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
           "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
         }.toList()
     }.flatten().filterRHSInNTS()
