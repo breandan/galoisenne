@@ -8,134 +8,123 @@
   ]
   \node[state, initial]                (00) {$q_{0,0}$};
   \node[state, right of=00]            (10) {$q_{1,0}$};
-  \node[state, right of=10]            (20) {$q_{2,0}$};
-  \node[state, right of=20]            (30) {$q_{3,0}$};
-  \node[right of=30]                   (40) {$\vphantom{\vdots}\cdots$};
-  \node[accepting, state, right of=40] (n0) {$q_{n,0}$};
+  \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+  \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+  \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+  \node[accepting, state, right of=40] (50) {$q_{5,0}$};
 
-  \node[state, above of=00, shift={(-0.7cm,-0.0cm)}]            (01) {$q_{0,1}$};
-  \node[state, right of=01]            (11) {$q_{1,1}$};
-  \node[state, right of=11]            (21) {$q_{2,1}$};
-  \node[state, right of=21]            (31) {$q_{3,1}$};
-  \node[right of=31]                   (41) {$\vphantom{\vdots}\cdots$};
-  \node[accepting, state, right of=41] (n1) {$q_{n,1}$};
+  \node[state, above of=00, shift={(-1.5cm,-0.0cm)}] (01) {$q_{0,1}$};
+  \node[state, right of=01]                          (11) {$q_{1,1}$};
+  \node[state, right of=11]                          (21) {$q_{2,1}$};
+  \node[accepting, state, right of=21]               (31) {$q_{3,1}$};
+  \node[accepting, state, right of=31]               (41) {$q_{4,1}$};
+  \node[accepting, state, right of=41]               (51) {$q_{5,1}$};
 
-\node[above of=01, shift={(-0.7cm,-0.0cm)}]                   (0j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
-\node[right of=0j]                   (1j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
-\node[right of=1j]                   (2j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
-\node[right of=2j]                   (3j) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
-\node[right of=3j]                   (4j) {$\iddots$};
-\node[accepting, right of=4j]        (nj) {$\mathmakebox[\widthof{$\cdots$}]{\vdots}$};
+\node[state, above of=01, shift={(-1.5cm,-0.0cm)}] (0j) {$q_{0,2}$};
+\node[state, right of=0j]                          (1j) {$q_{1,2}$};
+\node[state, right of=1j]                          (2j) {$q_{2,2}$};
+\node[state, right of=2j]                          (3j) {$q_{3,2}$};
+\node[accepting, state, right of=3j]               (4j) {$q_{4,2}$};
+\node[accepting, state, right of=4j]               (5j) {$q_{5,2}$};
 
-\node[state, above of=0j, shift={(-0.7cm,0.0cm)}]            (0k) {$q_{0,k}$};
-\node[state, right of=0k]            (1k) {$q_{1,k}$};
-\node[state, right of=1k]            (2k) {$q_{2,k}$};
-\node[state, right of=2k]            (3k) {$q_{3,k}$};
-\node[right of=3k]                   (4k) {$\vphantom{\vdots}\cdots$};
-\node[accepting, state, right of=4k] (nk) {$q_{n,k}$};
+\node[state, above of=0j, shift={(-1.5cm,0.0cm)}] (0k) {$q_{0,3}$};
+\node[state, right of=0k]                         (1k) {$q_{1,3}$};
+\node[state, right of=1k]                         (2k) {$q_{2,3}$};
+\node[state, right of=2k]                         (3k) {$q_{3,3}$};
+\node[state, right of=3k]                         (4k) {$q_{4,3}$};
+\node[accepting, state, right of=4k]              (5k) {$q_{5,3}$};
 
 \draw [->] (00) edge[below] node{$\sigma_1$} (10);
 \draw [->] (10) edge[below] node{$\sigma_2$} (20);
 \draw [->] (20) edge[below] node{$\sigma_3$} (30);
 \draw [->] (30) edge[below] node{$\sigma_4$} (40);
-\draw [->] (40) edge[below] node{$\sigma_n$} (n0);
+\draw [->] (40) edge[below] node{$\sigma_5$} (50);
 
 \draw [->] (01) edge[below] node{$\sigma_1$} (11);
 \draw [->] (11) edge[below] node{$\sigma_2$} (21);
 \draw [->] (21) edge[below] node{$\sigma_3$} (31);
 \draw [->] (31) edge[below] node{$\sigma_4$} (41);
-\draw [->] (41) edge[below] node{$\sigma_n$} (n1);
+\draw [->] (41) edge[below] node{$\sigma_5$} (51);
 
 \draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
 \draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
 \draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
 \draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
-\draw [->] (4j) edge[below] node{$\sigma_n$} (nj);
+\draw [->] (4j) edge[below] node{$\sigma_5$} (5j);
 
 \draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
 \draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
 \draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
 \draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
-\draw [->] (4k) edge[below] node{$\sigma_n$} (nk);
+\draw [->] (4k) edge[below] node{$\sigma_5$} (5k);
 
-\draw [->] (00) edge[left] node{$\cdot$}         (11);
-\draw [->] (10) edge[left] node{$\cdot$}         (21);
-\draw [->] (20) edge[left] node{$\cdot$}         (31);
-\draw [->] (30) edge[left] node{$\cdot$}         (41);
-\draw [->, blue] (30) edge[bend right, below] node{$\color{blue}\sigma_5$} (41);
-\draw [->] (40) edge[           right] node{$\sigma_n$}  (n1);
-\draw [->] (40) edge[bend right, left] node{$\cdot$}         (n1);
+\draw [->] (00) edge[left] node{$\phantom{\cdot}$} (11);
+\draw [->] (10) edge[left] node{$\phantom{\cdot}$} (21);
+\draw [->] (20) edge[left] node{$\phantom{\cdot}$} (31);
+\draw [->] (30) edge[left] node{$\phantom{\cdot}$} (41);
+\draw [->] (40) edge[left] node{$\phantom{\cdot}$} (51);
 
-\draw [->, red] (00) edge[bend left=2] node[east, shift={(-0.5cm,-0.8cm)}]{$\color{red}\sigma_3$}         (3j);
-\draw [->, red] (10) edge[bend left=2] node[east, shift={(-0.5cm,-0.8cm)}]{$\color{red}\sigma_4$}         (4j);
-%\draw [->, red] (20) edge[bend left=7] node[east, shift={(-0.7cm,-0.8cm)}]{$\color{red}\sigma_5$}         (3j);
-%\draw [->, red] (30) edge[bend left=7] node[east, shift={(-0.7cm,-0.8cm)}]{$\color{red}\sigma_6$}         (4j);
+% Super-knight arcs
+\draw [->, red] (00) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_3$}         (3j);
+\draw [->, red] (10) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_4$}         (4j);
+\draw [->, red] (20) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_5$}         (5j);
+\draw [->, red] (01) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_3$}         (3k);
+\draw [->, red] (11) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_4$}         (4k);
+\draw [->, red] (21) edge[bend left=3] node[east, shift={(-0.3cm,-0.65cm)}]{$\color{red}\sigma_5$}         (5k);
 
-\draw [->] (01) edge[left] node{$\cdot$}                     (1j);
-\draw [->] (11) edge[left] node{$\cdot$}                     (2j);
-\draw [->] (21) edge[left] node{$\cdot$}                     (3j);
-\draw [->] (31) edge[left] node{$\cdot$}                     (4j);
-\draw [->, blue] (31) edge[bend right, below] node{$\color{blue}\sigma_5$} (4j);
-\draw [->] (41) edge[           right] node{$\sigma_n$}  (nj);
-\draw [->] (41) edge[bend right, left] node{$\cdot$}         (nj);
+\draw [->, violet] (00) edge[bend right=1] node[east, shift={(0cm,0.35cm)}]{$\color{violet}\sigma_4$}  (4k);
+\draw [->, violet] (10) edge[bend right=1] node[east, shift={(0cm,0.35cm)}]{$\color{violet}\sigma_5$}  (5k);
 
-\draw [->] (0j) edge[left] node{$\cdot$}                     (1k);
-\draw [->] (1j) edge[left] node{$\cdot$}                     (2k);
-\draw [->] (2j) edge[left] node{$\cdot$}                     (3k);
-\draw [->] (3j) edge[left] node{$\cdot$}                     (4k);
-\draw [->, blue] (3j) edge[bend right, below] node{$\color{blue}\sigma_5$} (4k);
-\draw [->] (4j) edge[           right] node{$\sigma_n$}  (nk);
-\draw [->] (4j) edge[bend right, left] node{$\cdot$}         (nk);
+\draw [->] (01) edge[left] node{$\phantom{\cdot}$} (1j);
+\draw [->] (11) edge[left] node{$\phantom{\cdot}$} (2j);
+\draw [->] (21) edge[left] node{$\phantom{\cdot}$} (3j);
+\draw [->] (31) edge[left] node{$\phantom{\cdot}$} (4j);
+\draw [->] (41) edge[left] node{$\phantom{\cdot}$} (5j);
 
-\draw [->] (00) edge[bend left, left] node{$\cdot$}   (01);
-\draw [->] (10) edge[bend left, left] node{$\cdot$}   (11);
-\draw [->] (20) edge[bend left, left] node{$\cdot$}   (21);
-\draw [->] (30) edge[bend left, left] node{$\cdot$}   (31);
-\draw [->] (40) edge[right] node{$\cdot$}             (41);
-\draw [->] (n0) edge[bend right, right] node{$\cdot$} (n1);
+\draw [->] (0j) edge[left] node{$\phantom{\cdot}$} (1k);
+\draw [->] (1j) edge[left] node{$\phantom{\cdot}$} (2k);
+\draw [->] (2j) edge[left] node{$\phantom{\cdot}$} (3k);
+\draw [->] (3j) edge[left] node{$\phantom{\cdot}$} (4k);
+\draw [->] (4j) edge[left] node{$\phantom{\cdot}$} (5k);
 
-\draw [->] (01) edge[bend left, left] node{$\cdot$}   (0j);
-\draw [->] (11) edge[bend left, left] node{$\cdot$}   (1j);
-\draw [->] (21) edge[bend left, left] node{$\cdot$}   (2j);
-\draw [->] (31) edge[bend left, left] node{$\cdot$}   (3j);
-\draw [->] (41) edge[right] node{$\cdot$}             (4j);
-\draw [->] (n1) edge[bend right, right] node{$\cdot$} (nj);
+\draw [->] (00) edge[bend left=10, left] node{$\phantom{\cdot}$} (01);
+\draw [->] (10) edge[bend left=10, left] node{$\phantom{\cdot}$} (11);
+\draw [->] (20) edge[bend left=10, left] node{$\phantom{\cdot}$} (21);
+\draw [->] (30) edge[bend left=10, left] node{$\phantom{\cdot}$} (31);
+\draw [->] (40) edge[bend left=10, left] node{$\phantom{\cdot}$} (41);
+\draw [->] (50) edge[bend left=10, left] node{$\phantom{\cdot}$} (51);
 
-\draw [->] (0j) edge[bend left, left] node{$\cdot$}   (0k);
-\draw [->] (1j) edge[bend left, left] node{$\cdot$}   (1k);
-\draw [->] (2j) edge[bend left, left] node{$\cdot$}   (2k);
-\draw [->] (3j) edge[bend left, left] node{$\cdot$}   (3k);
-\draw [->] (4j) edge[right] node{$\cdot$}             (4k);
-\draw [->] (nj) edge[bend right, right] node{$\cdot$} (nk);
+\draw [->] (01) edge[bend left=10, left] node{$\phantom{\cdot}$} (0j);
+\draw [->] (11) edge[bend left=10, left] node{$\phantom{\cdot}$} (1j);
+\draw [->] (21) edge[bend left=10, left] node{$\phantom{\cdot}$} (2j);
+\draw [->] (31) edge[bend left=10, left] node{$\phantom{\cdot}$} (3j);
+\draw [->] (41) edge[bend left=10, left] node{$\phantom{\cdot}$} (4j);
+\draw [->] (51) edge[bend left=10, left] node{$\phantom{\cdot}$} (5j);
 
-\draw [->, blue] (00) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (21);
-\draw [->, blue] (10) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (31);
-\draw [->, blue] (20) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (41);
+\draw [->] (0j) edge[bend left=10, left] node{$\phantom{\cdot}$} (0k);
+\draw [->] (1j) edge[bend left=10, left] node{$\phantom{\cdot}$} (1k);
+\draw [->] (2j) edge[bend left=10, left] node{$\phantom{\cdot}$} (2k);
+\draw [->] (3j) edge[bend left=10, left] node{$\phantom{\cdot}$} (3k);
+\draw [->] (4j) edge[bend left=10, left] node{$\phantom{\cdot}$} (4k);
+\draw [->] (5j) edge[bend left=10, left] node{$\phantom{\cdot}$} (5k);
 
-\draw [->, blue] (01) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (2j);
-\draw [->, blue] (11) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (3j);
-\draw [->, blue] (21) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (4j);
+\draw [->, blue] (00) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (21);
+\draw [->, blue] (10) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (31);
+\draw [->, blue] (20) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (41);
+\draw [->, blue] (30) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_5$}    (51);
 
-\draw [->, blue] (0j) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (2k);
-\draw [->, blue] (1j) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (3k);
-\draw [->, blue] (2j) edge[below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (4k);
+\draw [->, blue] (01) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (2j);
+\draw [->, blue] (11) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (3j);
+\draw [->, blue] (21) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (4j);
+\draw [->, blue] (31) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (5j);
+
+\draw [->, blue] (0j) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_2$}    (2k);
+\draw [->, blue] (1j) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_3$}    (3k);
+\draw [->, blue] (2j) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_4$}    (4k);
+\draw [->, blue] (3j) edge[bend left=2,below] node[shift={(-0.7cm,-0.5cm)}]{$\color{blue}\sigma_5$}    (5k);
 
 %https://tex.stackexchange.com/a/20986/139648
-\draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (n0.south east) node[midway,yshift=-3em]{\textbf{String length}};
-\draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-40pt,rotate=-75]{\textbf{Edit distance}};
+\draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (50.south east) node[midway,yshift=-3em]{\textbf{String length}};
+\draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1.2cm,yshift=-0.6cm,rotate=-60]{\textbf{Edit distance}};
 \end{tikzpicture}
 }
-%\end{minipage}
-%\hfill
-%\begin{minipage}[l]{5 cm}
-%\centering
-%\underline{CFG}\vspace{2pt}
-%\begin{align*}
-%S &\Rightarrow \{\cdot \in Q \mid \delta(\cdot, q_{n,0}) \leq k\}\\
-%+ &\Rightarrow \{\cdot \in \Sigma\}\\
-%\big\{q_{i, j} &\Rightarrow \{q_{i, j-1}+\} \mid i, j \in [0, n]\times[1, k]\big\}\\
-%\big\{q_{i, j} &\Rightarrow \{q_{i-1, j-1}+\}\mid i, j\in[1, n]\times [1, k]\big\}\\
-%\big\{q_{i, j} &\Rightarrow \{q_{i-1, j} \sigma_i \}\mid i, j \in [1, n]\times[0, k]\big\} \\
-%\big\{q_{i, j} &\Rightarrow \{q_{i-2, j-1} \sigma_i\} \mid i, j \in [2, n]\times[1, k] \big\}\\
-%\end{align*}
-%\end{minipage}

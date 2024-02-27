@@ -346,7 +346,7 @@
     \begin{center}
       \resizebox{.9\textwidth}{!}{\input{nfa_cfg.tex}}
     \end{center}
-    \caption{Levenshtein reachability from $\Sigma^n$ can be described as an NFA, or a CFG.}
+    \caption{Automaton recognizing Levenshtein $\Delta(\sigma: \Sigma^5, 3)$ reachability. Unlabeled arcs accept any terminal.}
   \end{figure}
 
   \noindent Alternatively, this transition system can be viewed as a kind of proof system.
@@ -362,14 +362,14 @@
     \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
   \begin{prooftree}
-    \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
     \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
     \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
   \begin{prooftree}
     \AxiomC{$\vphantom{|}$}
