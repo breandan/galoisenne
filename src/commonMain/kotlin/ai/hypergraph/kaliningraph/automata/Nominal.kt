@@ -23,8 +23,7 @@ class NOM(override val Q: TSA, override val init: Set<Σᐩ>, override val final
   }
 
   val flattenedTriples by lazy {
-    Q.map { (a, _, c) -> a to { _: Σᐩ -> true } to c }.toSet()
-//    Q.map { (a, b, c) -> a to b.predicate() to c }.toSet()
+    Q.map { (a, b, c) -> a to b.predicate() to c }.toSet()
   }
 
   override fun recognizes(str: List<Σᐩ>): Boolean =
