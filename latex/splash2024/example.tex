@@ -5,49 +5,5 @@
 \input{preamble}
 
 \begin{document}
-
-\section{Example}
-
-Consider the following Python snippet, which contains a small syntax error:\\
-
-\noindent\texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
-
-We can fix it by inserting a colon after the function definition, yielding:\\
-
-\noindent\texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
-
-A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
-%  Consider the following Kotlin snippet:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
-%
-%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
-
-Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just one hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
-
-%\setlength{\columnsep}{-10pt}
-%\setlength{\columnseprule}{-10pt}
-%\noindent\begin{multicols}{3}
-%  \begin{enumerate}
-%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
-%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
-%    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
-%    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
-%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
-%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
-%  \end{enumerate}
-%\end{multicols}
-\begin{figure}[h!]
-\noindent\begin{tabular}{@{}l@{\hspace{5pt}}l@{\hspace{5pt}}l@{}}
-(1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\\\
-(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})} \\
-\end{tabular}
-\end{figure}
-
-With some typing information we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 4, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in the Python language, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (3) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid repairs, the resulting solutions could be simply ranked by naturalness.
-
-The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible d-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
-
+\input{example_contents}
 \end{document}

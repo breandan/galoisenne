@@ -77,42 +77,11 @@
 
   Though simple, this technique is surprisingly effective and competitive with SoTA syntax repair techniques. Its efficiency owes to the fact that it does not sample edits, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary fixed Levenshtein distance, and no more.
 
-  \pagebreak\section{Example}
+  \pagebreak
 
-  Consider the following Python code snippet, which contains a small syntax error:\\
+  \input{example_contents}
 
-  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
-
-  We can fix it by inserting a colon after the function definition, yielding:\\
-
-  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
-
-  A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
-%  Consider the following Kotlin snippet:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
-%
-%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
-
-  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just one hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
-
-  \setlength{\columnsep}{-3pt}
-  \begin{multicols}{3}
-  \begin{enumerate}
-    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
-    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
-    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
-    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
-    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
-    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
-  \end{enumerate}
-  \end{multicols}
-
-  With some typing information we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 4, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in the Python language, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (3) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid repairs, the resulting solutions could be simply ranked by naturalness.
-
-  The trouble here is that any such procedure must be extremely sample efficient. We cannot afford to sample the universe of possible d-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could easily take over 24 hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
+  \input{method_contents}
 
   \section{Problem}
 
@@ -195,56 +164,56 @@
   \begin{small}
   {\renewcommand{\arraystretch}{1.2}
   \noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
-                          \hline
-                          & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
-                          $M_0$ & \begin{pmatrix}
-                                    \phantom{V} & \tiny{\{N\}} &         &             \\
-                                    &              & \{N,O\} &             \\
-                                    &              &         & \{N,O\} \\
-                                    &              &         &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws &              &              \\
-                                            &              & \ws\bs\bs\ws &              \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} &          &          \\
-                                            &          & V_{1, 2} &          \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix} \\\hline
-                          $M_1$ & \begin{pmatrix}
-                                    \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
-                                    &              & \{N,O\}     & \{L\}   \\
-                                    &              &             & \{N,O\} \\
-                                    &              &             &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
-                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
-                                            &          & V_{1, 2} & V_{1, 3} \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix} \\\hline
-                          $M_\infty$ & \begin{pmatrix}
-                                         \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
-                                         &              & \{N,O\}     & \{L\}   \\
-                                         &              &             & \{N,O\} \\
-                                         &              &             &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
-                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
-                                            &          & V_{1, 2} & V_{1, 3} \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix}\\\hline
+    \hline
+    & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+    $M_0$ & \begin{pmatrix}
+              \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws &              &              \\
+                      &              & \ws\bs\bs\ws &              \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} &          &          \\
+                      &          & V_{1, 2} &          \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix} \\\hline
+    $M_1$ & \begin{pmatrix}
+              \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                      &          & V_{1, 2} & V_{1, 3} \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix} \\\hline
+    $M_\infty$ & \begin{pmatrix}
+                   \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+                   &              & \{N,O\}     & \{L\}   \\
+                   &              &             & \{N,O\} \\
+                   &              &             &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                      &          & V_{1, 2} & V_{1, 3} \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix}\\\hline
   \end{tabular}\\
   }
   \end{small}
@@ -480,7 +449,7 @@
 %  \end{cases}
 %\end{equation*}
 
-  \pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
+  \subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
 
   The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
 
@@ -723,7 +692,7 @@
     \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
   \end{enumerate}
 
-  \pagebreak\section{Dataset}
+  \section{Dataset}
 
   The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
 
@@ -797,7 +766,9 @@
     \end{tikzpicture}
   \end{figure}
 
-  \section{Evaluation}
+  \input{eval_contents}
+
+  \subsection{Old Evaluation}
 
   We evaluate Tidyparse along three primary axes: latency, throughput, and accuracy on a dataset of human repairs. Our intention here is to show that Tidyparse is competitive with a large language model (roughly, a deep circuit) that is slow but highly sample-efficient with a small language model (roughly, a shallow circuit) that is fast but less sample-efficient.
 
