@@ -344,7 +344,7 @@
 
   \begin{figure}[H]
     \begin{center}
-      \resizebox{.9\textwidth}{!}{\input{nfa_cfg.tex}}
+      \input{nfa_cfg.tex}
     \end{center}
     \caption{Automaton recognizing Levenshtein $\Delta(\sigma: \Sigma^5, 3)$ reachability. Unlabeled arcs accept any terminal.}
   \end{figure}
@@ -383,7 +383,142 @@
     \BinaryInfC{$q_{i, j}\in F$}
   \end{prooftree}
 
-  \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
+  \newcommand{\substitutionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (24pt,8pt);
+      \draw [-to] (24pt,8pt) -- (32pt,8pt);
+      \draw [-to] (32pt,8pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\insertionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \fill[white] (16pt,0pt) circle [radius = 1.2pt];
+      \fill[white] (24pt,8pt) circle [radius = 1.2pt];
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (24pt,0pt);
+      \draw [-to] (24pt,0pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (32pt,8pt);
+      \draw [-to] (32pt,8pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\deletionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (24pt,0pt);
+      \draw [-to] (24pt,0pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\doubleDeletionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (24pt,16pt);
+      \draw [-to] (24pt,16pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\subDelExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\subSubExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (8pt,8pt);
+      \draw [-to] (8pt,8pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (24pt,16pt);
+      \draw [-to] (24pt,16pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\insertDeleteExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40,48}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \fill[white] (16pt,16pt) circle [radius = 1.2pt];
+      \fill[white] (8pt,0pt) circle [radius = 1.2pt];
+      \fill[white] (16pt,8pt) circle [radius = 1.2pt];
+      \draw [-to] (0pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (8pt,8pt);
+      \draw [-to] (8pt,8pt) -- (24pt,8pt);
+      \draw [-to] (24pt,8pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+      \draw [-to] (40pt,16pt) -- (48pt,16pt);
+    }
+  }
+
+  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles deletions of various lengths. Let us consider some illustrative examples.
+
+  \begin{table}[h!]
+    \begin{tabular}{ccccccc}
+
+  \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+  \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
+  \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+  \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+  \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+  \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+  \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+  \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+  \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+  \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
+    \end{tabular}
+  \end{table}
+
+ Note that the same edit can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ such that Levenshtein distance of $\Delta(\sigma, \sigma') \leq d_\max$.
+
+%  \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
 
   \subsection{Levenshtein Bar-Hillel Specialization}
 

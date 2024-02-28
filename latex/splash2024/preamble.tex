@@ -387,9 +387,11 @@
 
 \newcommand{\duparrow}{
   \tikz{
-    \fill (0pt,0pt) circle [radius = 1pt];
+    \fill[white] (0pt,0pt) circle [radius = 1pt];
+    \fill (6pt,0pt) circle [radius = 1pt];
     \fill (0pt,6pt) circle [radius = 1pt];
-    \draw [-to] (0pt,0pt) -- (0pt,6pt);
+    \fill[white] (6pt,6pt) circle [radius = 1pt];
+    \draw [-to] (6pt,0pt) -- (0pt,6pt);
   }
 }
 
