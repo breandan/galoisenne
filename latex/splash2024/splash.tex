@@ -464,8 +464,7 @@
         \fill (\x pt,16pt) circle [radius = 1pt];
       }
       \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (8pt,8pt);
-      \draw [-to] (8pt,8pt) -- (16pt,8pt);
+      \draw [-to] (8pt,0pt) -- (16pt,8pt);
       \draw [-to] (16pt,8pt) -- (24pt,16pt);
       \draw [-to] (24pt,16pt) -- (32pt,16pt);
       \draw [-to] (32pt,16pt) -- (40pt,16pt);
@@ -485,13 +484,12 @@
       \draw [-to] (0pt,0pt) -- (16pt,0pt);
       \draw [-to] (16pt,0pt) -- (8pt,8pt);
       \draw [-to] (8pt,8pt) -- (24pt,8pt);
-      \draw [-to] (24pt,8pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+      \draw [-to] (24pt,8pt) -- (40pt,16pt);
       \draw [-to] (40pt,16pt) -- (48pt,16pt);
     }
   }
 
-  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles deletions of various lengths. Let us consider some illustrative examples.
+  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles [consecutive] deletions of various lengths. Let us consider some illustrative cases.
 
   \begin{table}[h!]
     \begin{tabular}{ccccccc}
