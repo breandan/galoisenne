@@ -103,13 +103,17 @@
   \begin{definition}[Ranked repair]
     Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(\ell_\cap, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+      R(A, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ and $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar for the language $\ell \cap L(\err\sigma, d)$, sample from it without replacement, then rerank all consistient repairs after a fixed timeout. As long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve it and terminate quickly. Then, the problem becomes one of ranking all sampled repairs which can be completed quickly using a Markov chain.
+  The problem of ranked repair is typically solved by learning a distribution of natural edits, then filtering by validity, which can be sample-inefficient and generalize poorly to new langauges. By modeling the distribution as a relation over strings, this forces such a sampler to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: retrieval, then ranking. If we can guarantee retrieval is sufficiently precise and exhaustive, maximizing likliehood over the set of proximal repairs can be achieved with a much weaker language model.
+
+  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models.
+
+  Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. As long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly. Then, the problem becomes one of ranking all sampled repairs which can be completed quickly using a Markov chain.
 
   \section{Method}
 
