@@ -37,7 +37,7 @@
 \input{preamble}
 \begin{document}
 %
-  \title{Syntax Repair as Idempotent Tensor Completion}
+  \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
     We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated within a small edit distance then ranked within a short amount of time. Furthermore, we place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we reduce CFL recognition onto Boolean tensor completion, then model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the solutions, we then sample trees without replacement from the intersection grammar, which yields valid repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain.
@@ -66,7 +66,9 @@
 
   \section{Introduction}
 
-  Syntax repair is the problem of taking a grammar and a malformed string, and modifying the string so it conforms to the grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. We take a first-principles approach that makes no assumptions about the string or grammar and focuses on accuracy and end-to-end latency. Our technique is simple:
+  Syntax repair is the problem of modifying an invalid sentence so it conforms to some grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. This work features a variety of approaches including rule-based systems and statistical language models. However, these techniques are often brittle, and are susceptible to misgeneralization. In a prior paper published in SPLASH, the authors sample production rules from an error correcting grammar. While theoretically sound, this technique is incomplete, i.e., not guaranteed to sample all edits within a certain Levenshtein distance, and no more. In this paper, we demonsrate it is possible to attain a significant advantage by synthesizing and scoring all repairs within a certain Levenshtein distance. Not only does this technique guarantee perfect generalization, but also helps with precision.
+
+  We take a first-principles approach making no assumptions about the sentence or grammar and focuses on correctness and end-to-end latency. Our technique is simple:
 
   \begin{enumerate}
     \item We first reduce the problem of CFL recognition to Boolean tensor completion, then use that to compute the Parikh image of the CFL. This follows from a straightforward extension of the Chomsky-Sch\"utzenberger enumeration theorem.
@@ -75,13 +77,12 @@
     \item Finally, we rank all repairs found within 60 seconds by a Markov chain.
   \end{enumerate}
 
-  Though simple, this technique is surprisingly effective and competitive with SoTA syntax repair techniques. Its efficiency owes to the fact that it does not sample edits, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary fixed Levenshtein distance, and no more.
+  Though simple, this technique outperforms SoTA syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often the langauge of small repairs is surpisingly small compared with the langauge of all possible edits, enabling us to efficiently synthesize and score every possible solution. This offers a significant advantage over memoryless sampling techniques.
 
   \pagebreak
 
   \input{example_contents}
 
-  \input{method_contents}
 
   \section{Problem}
 
@@ -94,23 +95,399 @@
   To solve this problem, we will first pose a simpler problem that only considers intersections with a finite language, then turn our attention back to BCFLR.
 
   \begin{definition}[Porous completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
-  $A(\sigma)$ is often a large-cardinality set, so we want a procedure which returns the most likely members first, without exhaustive enumeration. More precisely,
+  As $A(\sigma)$ can be a large-cardinality set, we want a procedure which prioritizes natural solutions:
 
   \begin{definition}[Ranked repair]
-    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+    Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+      R(\ell_\cap, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
-    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
+%    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality of $\mathcal{L}(G)\cap\Sigma^n$ and $L(\err\sigma, d)$, it would be intractable to sample either set, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar for the language $\mathcal{L}(G) \cap L(\err\sigma, d)$, sample from it without replacement, then rerank all consistient repairs after a fixed timeout. As long as $|\ell_\cap|$ is sufficiently small and recognizes the true repair, our sampler is sure to retrieve it and terminate quickly. Then, the problem becomes one of ranking all sampled repairs which can be completed quickly using a Markov chain.
+  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ and $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar for the language $\ell \cap L(\err\sigma, d)$, sample from it without replacement, then rerank all consistient repairs after a fixed timeout. As long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve it and terminate quickly. Then, the problem becomes one of ranking all sampled repairs which can be completed quickly using a Markov chain.
 
-  \subsection{Background}\label{sec:background}
+  \section{Method}
+
+  \begin{wrapfigure}{r}{0.45\textwidth}
+%\begin{figure}[h!]
+    \vspace{-0.8cm}
+    \begin{center}
+      \resizebox{0.45\textwidth}{!}{
+        \begin{tikzpicture}[node distance=2cm]
+          \node (start) [startstop] {Start};
+          \node (pro1) [process, below of=start, yshift=-0.5cm] {$\mathcal{G}_\cap \leftarrow \mathcal{G}\cap\Delta(\err\sigma, d)$};
+          \node (pcfg) [io, left of=pro1, xshift=-3cm] {[P]CFG};
+          \node (lnfa) [io, right of=pro1, xshift=3cm] {L-WFA};
+
+          \node (code) [io, right of=start,xshift=3cm] {Code};
+          \node (synt) [io, left of=start,xshift=-3cm] {Syntax};
+
+          \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[\mathcal{G}_{\cap} = \varnothing]$};
+
+          \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
+
+          \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(\mathcal{G}_\cap)|$};
+
+          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(\mathcal{G}_\cap)$};
+          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(\mathcal{G}_\cap)$};
+
+          \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
+          \node (vlmc) [io, below of=rank, yshift=-0.1cm] {VLMC};
+
+%  \node (out1) [io, below of=pro2a] {Output};
+          \node (stop) [startstop, above of=rank] {Done};
+
+%  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
+
+          \draw [->] (0, 1.5) -- (start);
+
+          \draw [arrow] (start) -- (code);
+          \draw [arrow] (start) -- (synt);
+          \draw [arrow] (code) -- (lnfa);
+          \draw [arrow] (synt) -- (pcfg);
+          \draw [arrow] (lnfa) -- (pro1);
+          \draw [arrow] (pcfg) -- (pro1);
+
+%  \draw [arrow] (in1) -- (pro1);
+          \draw [arrow] (pro1) -- (dec1);
+          \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
+          \draw [arrow] (dec1) -- node[anchor=east] {no} (dec2);
+          \draw [arrow] (pro2b) -- (lnfa);
+          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
+          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+
+          \draw [arrow] (vlmc) -- (rank);
+          \draw [arrow] (samp1) |- (rank);
+          \draw [arrow] (samp2) |- (rank);
+%  \draw [arrow] (pro2a) -- (out1);
+          \draw [arrow] (rank) -- (stop);
+          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
+
+        \end{tikzpicture}
+      }
+    \end{center}
+    \caption{Flowchart of our proposed method.}\label{fig:flowchart}
+    \vspace{-1.5cm}
+  \end{wrapfigure}
+
+  The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the langauge syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
+
+  \begin{enumerate}
+    \item $\mathcal{G}_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
+    \item $\mathcal{L}(\mathcal{G}_\cap)$ is small, in which case we simply enumerate all possible repairs. Enumeration is tractable for $\sim 80\%$ of the dataset in $\leq 90$s.
+    \item $\mathcal{L}(\mathcal{G}_\cap)$ is too large to enumerate, so we sample from the intersection grammar $\mathcal{G}_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
+  \end{enumerate}
+
+  When ambiguous, we use an n-gram model to rank and return the top-k results by likelihood. This procedure is depicted in Fig.~\ref{fig:flowchart}.
+
+  \pagebreak\subsection{The Nominal Levenshtein Automaton}
+
+  \begin{wrapfigure}{r}{0.5\textwidth}
+    \vspace{-0.3cm}
+    \begin{center}
+      \input{nfa_cfg.tex}
+    \end{center}
+    \caption{NFA recognizing Levenshtein $\Delta(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
+    \vspace{-0.5cm}
+  \end{wrapfigure}
+
+  Levenshtein edits are recognized by a certain kind of automaton, known as the Levenshtein automaton. Since the original approach used by Schultz and Mihov contains cycles and epsilon transitions, we propose a modified variant which is epsilon-free, acyclic and monotone. Furthermore, we use a nominal automaton, allowing for infinite alphabets. This considerably simplifies the langauge intersection. We give an example of a small Levenshtein automaton recognizing $\Delta(\sigma: \Sigma^5, 3)$ in Fig.~\ref{fig:lev_nfa}. Unlabeled arcs accept any terminal.
+
+  \noindent Alternatively, this transition system can be viewed as a kind of proof system. This is equivalent to the Levenshtein automaton used by Schultz and Mihov, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and uses skip connections to represent consecutive deletions.
+
+  \begin{prooftree}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$\vphantom{|}$}
+    \RightLabel{$\textsc{Init}$}
+    \UnaryInfC{$q_{0,0} \in I$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$q_{i, j}$}
+    \AxiomC{$|n-i+j| \leq k$}
+    \RightLabel{$\textsc{Done}$}
+    \BinaryInfC{$q_{i, j}\in F$}
+  \end{prooftree}
+
+  \newcommand{\substitutionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (24pt,8pt);
+      \draw [-to] (24pt,8pt) -- (32pt,8pt);
+      \draw [-to] (32pt,8pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\insertionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \fill[white] (16pt,0pt) circle [radius = 1.2pt];
+      \fill[white] (24pt,8pt) circle [radius = 1.2pt];
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (24pt,0pt);
+      \draw [-to] (24pt,0pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (32pt,8pt);
+      \draw [-to] (32pt,8pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\deletionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+      }
+      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (24pt,0pt);
+      \draw [-to] (24pt,0pt) -- (40pt,8pt);
+    }
+  }
+
+  \newcommand{\doubleDeletionExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (24pt,16pt);
+      \draw [-to] (24pt,16pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\subDelExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\subSubExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \draw [-to] (0pt,0pt) -- (8pt,0pt);
+      \draw [-to] (8pt,0pt) -- (16pt,8pt);
+      \draw [-to] (16pt,8pt) -- (24pt,16pt);
+      \draw [-to] (24pt,16pt) -- (32pt,16pt);
+      \draw [-to] (32pt,16pt) -- (40pt,16pt);
+    }
+  }
+
+  \newcommand{\insertDeleteExample}{
+    \tikz{
+      \foreach \x in {0,8,16,24,32,40,48}{
+        \fill (\x pt,0pt) circle [radius = 1pt];
+        \fill (\x pt,8pt) circle [radius = 1pt];
+        \fill (\x pt,16pt) circle [radius = 1pt];
+      }
+      \fill[white] (16pt,16pt) circle [radius = 1.2pt];
+      \fill[white] (8pt,0pt) circle [radius = 1.2pt];
+      \fill[white] (16pt,8pt) circle [radius = 1.2pt];
+      \draw [-to] (0pt,0pt) -- (16pt,0pt);
+      \draw [-to] (16pt,0pt) -- (8pt,8pt);
+      \draw [-to] (8pt,8pt) -- (24pt,8pt);
+      \draw [-to] (24pt,8pt) -- (40pt,16pt);
+      \draw [-to] (40pt,16pt) -- (48pt,16pt);
+    }
+  }
+
+  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles [consecutive] deletions of various lengths. Let us consider some illustrative cases.
+
+  \begin{table}[h!]
+    \begin{tabular}{ccccccc}
+
+      \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+      \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
+      \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+      \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+      \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+      \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+      \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} &
+      \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+      \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+      \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
+    \end{tabular}
+  \end{table}
+
+  Note that the same edit can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ such that Levenshtein distance of $\Delta(\sigma, \sigma') \leq d_\max$.
+
+  To avoid creating multiple arcs for the same edit, we alter the following rules:
+
+  \begin{prooftree}
+    \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{S}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{S}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+
+  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d$ arcs for each terminal at each position in the string in the Levenshtein automaton, and $e^3$ productions in the construction to follow. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
+
+  \subsection{Levenshtein-Bar-Hillel Construction}
+
+  We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a finite automaton, and then use the grammar to generate the edits without enumerating holes.
+
+%  \begin{definition}
+%    A finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
+%  \end{definition}
+
+  \begin{lemma}\label{lemma:bar-hillel}
+  For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
+  \end{lemma}
+
+  \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
+
+  \begin{prooftree}
+    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+    \DisplayProof
+    \hskip 1em
+    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \UnaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+    \DisplayProof
+    \hskip 1em
+%\end{prooftree}
+%\begin{prooftree}
+    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+    \AxiomC{$p,q,r \in Q$}
+    \RightLabel{\textsc{\"w}}
+    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+
+  The standard BH construction applies to any CFL and REG language intersection, but can be specialized to intersections with Levenshtein automata to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals unreachable from the start symbol or terminals in a certain distance.
+
+  This generates large grammar whose cardinality is approximately $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata.
+
+  Instead, we specialize the BH construction to nominal Levenshtein automata in a process we call the LBH construction. Effectively this involves precomputing the Parikh image of the grammar, then use it to eliminate impossible prductions. Our method considerably simplifies this process by eliminating the need to materialize most of those productions, and is the key to making our approach tractable.
+
+  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
+
+  Consider $\textsc{\"w}$. What this tells us is that each step in the intersection grammar is a set of paths in the original automaton and a single step in the context-free grammar. A key thing to note here is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every possible path and every production, but this is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep? We do so by precomputing Parikh image for the grammar, then using it to exclude productions which are incompatible with the path.
+
+  Let us define a relation over the set of nonterminals in a grammar which computes the upper and lower bounds of the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
+
+  \begin{definition}[Parikh interval]
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define a function $\pi: V \times \Sigma \rightarrow \mathbb{N}_{[a, b]}$, where $a, b: \mathbb{N} \cup \{\infty\}$, that computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal, i.e., $\forall s: \Sigma^{[l, h]}, v: V$ such that $v \Rightarrow^* s$, we have $p(s, ) \in \pi(v, s)$.
+  \end{definition}
+
+  Roughly, the infimum of a nonterminal's Parikh interval tells us how many of each terminal it must generate, and the supremum tells us how many it can generate. We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies.
+
+  Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. Suppose we have a $p, q, r: Q$ and $w \rightarrow x z$, then check if $[\pi(q, q') \cap \pi(v) = \varnothing]$ for all $pwr, pxq, qzr$. If so, we can immediately rule out this tuple.
+
+%To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
+
+  \subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
+
+  The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
+
+  \begin{equation}
+    L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
+  \end{equation}
+
+  The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G_\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
+
+
+%  val totalTrees: BigInteger by lazy {
+%    if (branches.isEmpty()) BigInteger.ONE
+%    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
+%      .reduce { acc, it -> acc + it }
+%  }
+
+  \begin{equation}
+    |T: \mathbb{T}_2| \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
+                                1  & \text{if $T$ is a leaf,} \\
+                                \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
+    \end{cases}
+  \end{equation}
+
+  To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we first define a pairing function $\varphi^{-1}: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ as follows:
+
+%private fun decodeTree(i: BigInteger): Pair<Tree, BigInteger> {
+%  if (branches.isEmpty()) return Tree(root) to i
+%  val (quotient1, remainder) =
+%  i.div(branches.size) to i.mod(branches.size.toBigInteger())
+%  val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
+%  val (l, quotient2) = lb.decodeTree(quotient1)
+%  val (r, quotient3) = rb.decodeTree(quotient2)
+%  val concat = Tree(l.root, children = arrayOf(l, r))
+%  return concat to quotient3
+%}
+
+  \begin{equation}
+    \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+     \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
+     \text{Let } b = |\texttt{children}(T)|,\\
+     \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
+     \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
+     \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
+     \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
+     \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
+    \end{cases}
+  \end{equation}
+
+  Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \ref{sec:dsi}, and lazily decode them into trees.
+
+  \section{Background}\label{sec:background}
 
   Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
@@ -307,233 +684,6 @@
 
 
 
-  \subsection{Bar-Hillel Construction}
-
-  Manually generating the edits is a more controllable way to synthesize edits, but can be unnecessarily expensive if the goal is to synthesize all edits within a fixed edit distance. The second approach is more efficient, but requires generating a large grammar. We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a finite automaton, and then use the grammar to generate the edits without enumerating holes.
-
-  \begin{definition}
-    A finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
-  \end{definition}
-
-  \begin{lemma}\label{lemma:bar-hillel}
-  For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
-  \end{lemma}
-
-  \pagebreak \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
-
-  \begin{prooftree}
-    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-%  \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
-    \DisplayProof
-    \hskip 1em
-    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
-%  \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
-    \DisplayProof
-    \hskip 1em
-%\end{prooftree}
-%\begin{prooftree}
-    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-    \AxiomC{$p,q,r \in Q$}
-    \RightLabel{\textsc{\"w}}
-    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}
-
-  Conveniently, the Levenshtein ball is recognized by a nondeterministic finite automaton (NFA). From Lemma~\ref{lemma:bar-hillel}, we know the intersection of any context-free language and NFA is context-free, and therefor we can construct a single context-free grammar $G_\cap$ which recognizes and generates the admissible set.
-
-  \begin{figure}[H]
-    \begin{center}
-      \input{nfa_cfg.tex}
-    \end{center}
-    \caption{Automaton recognizing Levenshtein $\Delta(\sigma: \Sigma^5, 3)$ reachability. Unlabeled arcs accept any terminal.}
-  \end{figure}
-
-  \noindent Alternatively, this transition system can be viewed as a kind of proof system.
-
-  \begin{prooftree}
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
-    \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
-    \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$\vphantom{|}$}
-    \RightLabel{$\textsc{Init}$}
-    \UnaryInfC{$q_{0,0} \in I$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$q_{i, j}$}
-    \AxiomC{$|n-i+j| \leq k$}
-    \RightLabel{$\textsc{Done}$}
-    \BinaryInfC{$q_{i, j}\in F$}
-  \end{prooftree}
-
-  \newcommand{\substitutionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (24pt,8pt);
-      \draw [-to] (24pt,8pt) -- (32pt,8pt);
-      \draw [-to] (32pt,8pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\insertionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \fill[white] (16pt,0pt) circle [radius = 1.2pt];
-      \fill[white] (24pt,8pt) circle [radius = 1.2pt];
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (24pt,0pt);
-      \draw [-to] (24pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (32pt,8pt);
-      \draw [-to] (32pt,8pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\deletionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (24pt,0pt);
-      \draw [-to] (24pt,0pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\doubleDeletionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (24pt,16pt);
-      \draw [-to] (24pt,16pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\subDelExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\subSubExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (24pt,16pt);
-      \draw [-to] (24pt,16pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\insertDeleteExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40,48}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \fill[white] (16pt,16pt) circle [radius = 1.2pt];
-      \fill[white] (8pt,0pt) circle [radius = 1.2pt];
-      \fill[white] (16pt,8pt) circle [radius = 1.2pt];
-      \draw [-to] (0pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (8pt,8pt);
-      \draw [-to] (8pt,8pt) -- (24pt,8pt);
-      \draw [-to] (24pt,8pt) -- (40pt,16pt);
-      \draw [-to] (40pt,16pt) -- (48pt,16pt);
-    }
-  }
-
-  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles [consecutive] deletions of various lengths. Let us consider some illustrative cases.
-
-  \begin{table}[h!]
-    \begin{tabular}{ccccccc}
-
-  \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
-  \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
-  \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
-  \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
-
-  \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
-  \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
-  \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} &
-  \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
-  \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
-
-  \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
-    \end{tabular}
-  \end{table}
-
- Note that the same edit can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ such that Levenshtein distance of $\Delta(\sigma, \sigma') \leq d_\max$.
-
-%  \noindent These rewrite rules can generate a large grammar whose cardinality is approximated by $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Since it is so large, materializing the grammar directly can be expensive, however instead of materializing it directly, we can lazily enumerate its inhabitants by performing a kind of proof search.
-
-  \subsection{Levenshtein Bar-Hillel Specialization}
-
-  The standard Bar-Hillel construction applies to all context-free grammars and automata, but can be specialized to intersections with Levenshtein automata to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals unreachable from the start symbol or terminals in a certain distance.
-
-  Let us define a relation over the set of nonterminals in a grammar which computes the upper and lower bounds of the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
-
-  \begin{definition}[Parikh interval]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define a function $\pi: V \times \Sigma \rightarrow \mathbb{N}_{[a, b]}$, where $a, b: \mathbb{N} \cup \{\infty\}$, that computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal, i.e., $\forall s: \Sigma^{[l, h]}, v: V$ such that $v \Rightarrow^* s$, we have $p(s, ) \in \pi(v, s)$.
-  \end{definition}
-
-  Roughly, the infimum of a nonterminal's Parikh interval tells us how many of each terminal it must generate, and the supremum tells us how many it can generate. We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies.
-
-  Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. Suppose we have a $p, q, r: Q$ and $w \rightarrow x z$, then check if $[\pi(q, q') \cap \pi(v) = \varnothing]$ for all $pwr, pxq, qzr$. If so, we can immediately rule out this tuple.
-
-%To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
-
   \subsection{Semiring Algebras}
 
   There are a number of alternate semirings which can be used to solve for $A(\sigma)$. A first approach propagates the values from the bottom-up, while mapping nonterminals to lists of strings. Letting $D = V \rightarrow \mathcal{P}(\Sigma^*)$, we define $\oplus, \otimes: D \times D \rightarrow D$. Initially, we construct $M_0[r+1=c] = \hat\sigma_r = p(\sigma_r)$ as follows:
@@ -581,58 +731,6 @@
 %    \big\{x z \mid \langle X, Z\rangle \in \texttt{children}(T), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
 %  \end{cases}
 %\end{equation*}
-
-  \subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
-
-  The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form is identified by a recurrence relation:
-
-  \begin{equation}
-    L(p) = 1 + p L(p) \phantom{addspace} P(a) = V + a L\big(V^2P(a)^2\big)
-  \end{equation}
-
-  The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we can take the intersection between a CFG and the regular language, $\mathcal{L}(G_\cap) \coloneqq \mathcal{L}(\mathcal{G}) \cap \Sigma^n$, abstractly parse the string containing all holes, let $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the following recurrence:
-
-
-%  val totalTrees: BigInteger by lazy {
-%    if (branches.isEmpty()) BigInteger.ONE
-%    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
-%      .reduce { acc, it -> acc + it }
-%  }
-
-  \begin{equation}
-    |T: \mathbb{T}_2| \mapsto \begin{cases}
-%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P_\cap\}\big| & \text{if $T$ is a leaf,} \\
-                                1  & \text{if $T$ is a leaf,} \\
-                                \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
-    \end{cases}
-  \end{equation}
-
-  To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we first define a pairing function $\varphi^{-1}: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ as follows:
-
-%private fun decodeTree(i: BigInteger): Pair<Tree, BigInteger> {
-%  if (branches.isEmpty()) return Tree(root) to i
-%  val (quotient1, remainder) =
-%  i.div(branches.size) to i.mod(branches.size.toBigInteger())
-%  val (lb, rb) = shuffledBranches[remainder.toString().toInt()]
-%  val (l, quotient2) = lb.decodeTree(quotient1)
-%  val (r, quotient3) = rb.decodeTree(quotient2)
-%  val concat = Tree(l.root, children = arrayOf(l, r))
-%  return concat to quotient3
-%}
-
-  \begin{equation}
-    \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
-                                                                 \text{Let } b = |\texttt{children}(T)|,\\
-                                                                 \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
-                                                                 \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
-                                                                 \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
-                                                                 \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
-                                                                 \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
-    \end{cases}
-  \end{equation}
-
-  Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \ref{sec:dsi}, and lazily decode them into trees.
 
   \subsection{Complexity}
 
@@ -709,7 +807,7 @@
   \newcommand\hhg[1]{\tikz[overlay]\node[rectangle,fill=black!15,draw=none,text opacity =1] {$#1$};}
 
   \begin{wrapfigure}{r}{0.45\textwidth}
-    \vspace{-35pt}
+%    \vspace{-35pt}
     \begin{minipage}{.35\textwidth}
       \begin{align*}
         U^\intercal Y = \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
@@ -728,7 +826,7 @@
         \end{pNiceMatrix}\label{eq:lfsr}
       \end{align*}
     \end{minipage}
-    \vspace{-15pt}
+%    \vspace{-15pt}
   \end{wrapfigure}
 
   To achieve ergodicity, we permute the elements of $\stirlingii{n}{k}\times\Sigma^k$ using a finite field with a characteristic polynomial $C$ of degree $m\coloneqq\lceil \log_b {n \choose k}|\Sigma_\varepsilon|^k \rceil$. By choosing $C$ to be some irreducible polynomial, one ensures the path has the mixing properties we desire, e.g., suppose $U: \mathbb{Z}_2^{m\times m}$ is a matrix whose structure is depicted to the right, wherein $C$ represents a primitive polynomial over $\mathbb{Z}_2^m$ with coefficients $C_{1\ldots m}$ and semiring operators $\oplus \coloneqq + \pmod 2, \otimes \coloneqq \land, \top \coloneqq 1, \circ\coloneqq0$. Since $C$ is primitive, the sequence $\mathbf{R} = (U^{0 \ldots 2^m-1}Y)$ must have \textit{full periodicity}, i.e., for all $i, j \in[0, 2^m)$, ${\mathbf{R}_i = \mathbf{R}_j \Rightarrow i = j}$. To uniformly sample $\bm\sigma$ without replacement, we construct a partial surjection from $\mathbb{Z}_2^m$ onto the Levenshtein ball, $\mathbb{Z}_2^m\rightharpoonup\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$, cycle over $\mathbf{R}$, then discard samples which have no witness in $\stirlingii{n}{d}\times\Sigma_\varepsilon^{d}$.
