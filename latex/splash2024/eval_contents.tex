@@ -1,4 +1,13 @@
 \section{Evaluation}
+
+We consider the following research questions for our evaluation:
+
+\begin{itemize}
+\item \textbf{RQ 1}: What are the characteristics of the human repair? (Levenshtein edit distance, distance between edits etc)
+\item \textbf{RQ 2}: How do we compare with SoTA approaches? (e.g., Seq2Parse, BIFI, OrdinalFix, et al.)
+\item \textbf{RQ 3}: Ablation study over design choices? (search vs. sampling, timing cutoffs, ngram models, etc.)
+\end{itemize}
+
 For our evaluation, we use the StackOverflow dataset from~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
 
 For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
