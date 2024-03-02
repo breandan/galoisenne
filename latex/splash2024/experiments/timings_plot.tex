@@ -1,0 +1,19 @@
+%! Author = breandan
+%! Date = 3/1/24
+
+% Preamble
+\documentclass[11pt]{article}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18} % Or newer, if available
+
+% Document
+\begin{document}
+
+\begin{figure}[h!]
+  \minipage{\columnwidth}
+  \resizebox{\textwidth}{!}{\input{timings}}
+  \endminipage
+  \caption{End-to-end repair timings across snippet length.}
+\end{figure}
+
+\end{document}
