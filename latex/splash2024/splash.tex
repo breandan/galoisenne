@@ -417,36 +417,40 @@
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
-  The standard BH construction applies to any CFL and REG language intersection, but can be specialized to intersections with Levenshtein automata to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals unreachable from the start symbol or terminals in a certain distance.
+  The standard BH construction applies to any CFL and REG language intersection, but this generates large grammar whose cardinality is approximately $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In the case of LEV-CFL intersection, this technique can be specialized to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals-state triples which is essential to making our approach tractable. We will now describe this reduction in detail.
 
-  This generates large grammar whose cardinality is approximately $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata.
+%  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
 
-  Instead, we specialize the BH construction to nominal Levenshtein automata in a process we call the LBH construction. Effectively this involves precomputing the Parikh image of the grammar, then use it to eliminate impossible prductions. Our method considerably simplifies this process by eliminating the need to materialize most of those productions, and is the key to making our approach tractable.
+  Consider $\textsc{\"w}$. What this tells us is that each step in the intersection grammar is a set of paths sharing an origin and destination in the original automaton and a single step in the context-free grammar. A key thing to note here is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every pair of states and every production, but this is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep?
 
-  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
-
-  Consider $\textsc{\"w}$. What this tells us is that each step in the intersection grammar is a set of paths sharing an origin and destination in the original automaton and a single step in the context-free grammar. A key thing to note here is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every possible path and every production, but this is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep? We do so by precomputing Parikh image for the grammar, then using it to exclude productions which are incompatible with the path.
-
-  Let us define a relation over the set of nonterminals in a grammar which computes the upper and lower bounds of the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
+  Let us define a relation over the set of nonterminals in a grammar that soundly overapproximates the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
 
   \begin{definition}[Parikh interval of a nonterminal]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh vector~\cite{parikh1966context}, which counts the number of times each terminal appears in a string. We define $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ as the smallest interval $\forall s: \Sigma^{[l, h]}, v: V$ such that $v \Rightarrow^* s$, we have $p(s) \in \pi(v)$.
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh image~\cite{parikh1966context}, which counts the frequency of each terminal in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ be the smallest interval such that $\forall s: \Sigma^{[l, h]}, \forall v: V$, $v \Rightarrow^* s \vdash p(s) \in \pi(v)$.
   \end{definition}
 
-  In other words, the Parikh interval computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal must generate, and the supremum tells us how many it can generate. Likewise, we can define a similar relation over pairs of nodes in an automaton:
+  In other words, the Parikh interval computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal must generate, and the supremum tells us how many it can generate. Likewise, we define a similar relation over NFA state pairs:
 
-  \begin{definition}[Parikh interval of an automaton path]
-    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ as the smallest interval $\forall s: \Sigma^{[l, h]}, q, q': Q$ such that $q \overset{s}{\rightarrow}^* q'$, we have $p(s) \in \pi(v)$.
+  \begin{definition}[Parikh interval of two NFA states]
+    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ as the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{s}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
-  \begin{definition}[Divergence of path intervals]
-    Given two Parikh intervals $I, I'$, we define the divergence as the sum of the absolute distances such that $\forall i \in I, i' \in I'$ such that $l \leq r$ \ldots $\Sigma \min(i, i')$.
+  Now, we will define a distance between Parikh intervals, which will represent the minimum number of changes required to transform a string in one Parikh interval to a string in another.
+
+  \begin{definition}[Parikh divergence]
+    Given two Parikh intervals $\pi, \pi': \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$, we define the divergence between them as $\pi \parallel \pi' \coloneqq \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
- We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q\times Q \times P$ to which the rule \textsc{\"w} applies. Concretely, we alter the \textsc{\"w} rule as follows:
+  Now we know that if the Parikh divergence is greater than the Levenshtein margin separating the two states, these two Parikh intervals must be incompatible.
+
+  \begin{definition}[Levenshtein-Parikh compatibility]
+    Let $\mu=q_{h,i}, \mu' = q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(\mu, \nu, \mu'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $|k-i|$, i.e., $\nu \lhd \mu\mu' \iff (\pi(\nu) \parallel \pi(\mu, \mu')) \leq |k-i|$.
+  \end{definition}
+
+  We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q \times V$ to which the rule \textsc{\"w} applies. Concretely, we alter the \textsc{\"w} rule as follows:
 
 \begin{prooftree}
-  \AxiomC{$\color{orange} \phi(w) \models pr \phantom{\land} \phi(x) \models pq \phantom{\land} \phi(z) \models qr$}
+  \AxiomC{$\color{orange} \exists s: \Sigma^*.q\overset{s}{\Longrightarrow} q' \phantom{\land} w \lhd pr  \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
   \AxiomC{$p,q,r \in Q$}
   \RightLabel{\textsc{\"w}}
