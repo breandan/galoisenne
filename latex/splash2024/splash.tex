@@ -111,7 +111,7 @@
 
   The problem of ranked repair is typically solved by learning a distribution over string edits, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling the distribution over $\Sigma^*$ forces the model to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the set of proximal repairs can be achieved with a much weaker, syntax-oblivious language model.
 
-  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the large cardinality $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models.
+  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models.
 
   Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly. Then, the problem becomes one of ranking only sampled repairs which can be completed quickly using a Markov chain.
 
@@ -382,11 +382,11 @@
     \UnaryInfC{$(q_{i-1, j-1} \overset{S}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
 
-  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d$ arcs for each terminal at each position in the string in the Levenshtein automaton, and $e^3$ productions in the construction to follow. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
+  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d_\max}$ arcs for each terminal at each position in the string in the Levenshtein automaton, and $e^3$ productions in the construction to follow. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
 
   \subsection{Levenshtein-Bar-Hillel Construction}
 
-  We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a finite automaton, and then use the grammar to generate the edits without enumerating holes.
+  We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a regular and a context-free language, then specialize it to Levenshtein intersections.
 
 %  \begin{definition}
 %    A finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.
@@ -404,60 +404,68 @@
     \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
     \DisplayProof
     \hskip 1em
+    \AxiomC{$(A \rightarrow a) \in P$}
     \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \UnaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+    \BinaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
     \DisplayProof
     \hskip 1em
 %\end{prooftree}
 %\begin{prooftree}
     \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
     \AxiomC{$p,q,r \in Q$}
-    \RightLabel{\textsc{\"w}}
+    \RightLabel{\Join}
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
-  The standard BH construction applies to any CFL and REG language intersection, but this generates large grammar whose cardinality is approximately $|P_\cap|=|I||F| + |\delta| + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In the case of LEV-CFL intersection, this technique can be specialized to avoid creating many unnecessary productions. In this section, we describe a kind of reachability analysis that removes all nonterminals-state triples which is essential to making our approach tractable. We will now describe this reduction in detail.
+  The standard BH construction applies to any CFL and REG language intersection, but this generates a grammar whose cardinality is approximately $|P_\cap|=|I||F| + |P||\Sigma||\sigma|\cdot2d_{\max} + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In this section, we describe a kind of reachability analysis that removes useless nonterminal-state triples. We will now describe this reduction in detail.
 
 %  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
 
-  Consider $\textsc{\"w}$. What this tells us is that each step in the intersection grammar is a set of paths sharing an origin and destination in the original automaton and a single step in the context-free grammar. A key thing to note here is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every pair of states and every production, but this is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep?
+  Consider $\Join$, the most expensive rule. $\Join$ tells us each production in the intersection grammar abstracts a set of paths sharing an origin and destination in the original automaton and a single production in the original CFG. A key observation is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every pair of states and every production, but is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep?
 
-  Let us define a relation over the set of nonterminals in a grammar that soundly overapproximates the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent.
+  Let us define an interval domain that soundly overapproximates the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent. Since some intervals may be right-unbounded, we use $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound.
 
-  \begin{definition}[Parikh interval of a nonterminal]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh image~\cite{parikh1966context}, which counts the frequency of each terminal in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ be the smallest interval such that $\forall s: \Sigma^{[l, h]}, \forall v: V$, $v \Rightarrow^* s \vdash p(s) \in \pi(v)$.
+  \begin{definition}[Parikh mapping of a nonterminal]
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ be a function returning the smallest interval such that $\forall s: \Sigma^*, \forall v: V$, $v \Rightarrow^* s \vdash p(s) \in \pi(v)$.
   \end{definition}
 
-  In other words, the Parikh interval computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal must generate, and the supremum tells us how many it can generate. Likewise, we define a similar relation over NFA state pairs:
+  In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal must generate, and the supremum tells us how many it can generate. Likewise, we define a similar relation over NFA state pairs:
 
-  \begin{definition}[Parikh interval of two NFA states]
-    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$ as the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{s}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
+  \begin{definition}[Parikh mapping of NFA states]
+    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{s}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
-  Now, we will define a distance between Parikh intervals, which will represent the minimum number of changes required to transform a string in one Parikh interval to a string in another.
+  Next, we will define a measure between Parikh intervals, which will represent the minimum total changes required to transform a string in one Parikh interval to a string in another.
 
   \begin{definition}[Parikh divergence]
-    Given two Parikh intervals $\pi, \pi': \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}^{|\Sigma|}$, we define the divergence between them as $\pi \parallel \pi' \coloneqq \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
+    Given two Parikh intervals $\pi, \pi': \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
-  Now we know that if the Parikh divergence is greater than the Levenshtein margin separating the two states, these two Parikh intervals must be incompatible.
+  Now, we know that if the Parikh divergence is greater than the Levenshtein margin separating two states in a Levenshtein automaton, these two Parikh intervals must be incompatible.
 
   \begin{definition}[Levenshtein-Parikh compatibility]
-    Let $\mu=q_{h,i}, \mu' = q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(\mu, \nu, \mu'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $|k-i|$, i.e., $\nu \lhd \mu\mu' \iff (\pi(\nu) \parallel \pi(\mu, \mu')) \leq |k-i|$.
+    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $|k-i|$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq |k-i|$.
   \end{definition}
 
-  We then intersect the Parikh intervals with all triples in the Levenshtein automaton to obtain the subset of $Q\times Q \times V$ to which the rule \textsc{\"w} applies. Concretely, we alter the \textsc{\"w} rule as follows:
+  Finally, we modify the Bar-Hillel construction to Levenshtein intersection as follows:
 
 \begin{prooftree}
-  \AxiomC{$\color{orange} \exists s: \Sigma^*.q\overset{s}{\Longrightarrow} q' \phantom{\land} w \lhd pr  \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
+  \def\defaultHypSeparation{\hskip 0.15cm}
+  \AxiomC{$(A \rightarrow a) \in P$}
+  \AxiomC{$\color{orange}S(a)$}
+  \AxiomC{$(q\overset{S}{\rightarrow}r) \in \delta$}
+%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+  \TrinaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+  \DisplayProof
+  \AxiomC{$\vphantom{\overset{S}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
   \AxiomC{$p,q,r \in Q$}
-  \RightLabel{\textsc{\"w}}
+  \RightLabel{\Join}
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. Suppose we have a $p, q, r: Q$ and $w \rightarrow x z$, then check if $[\pi(q, q') \cap \pi(v) = \varnothing]$ for all $pwr, pxq, qzr$. If so, we can immediately rule out this tuple.
+%Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
@@ -606,7 +614,7 @@ Specifically, we compute Parikh intervals generated by every path though the Lev
 
   Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
 
-  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
+%  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
 
 %A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
 %
@@ -618,47 +626,48 @@ Specifically, we compute Parikh intervals generated by every path though the Lev
 %
 %Alternatively, the procedure we use is to generate the contents of the grammar incrementally by sampling holes without replacement. We illustrate the procedure below, then discuss the theory.
 
-  \begin{enumerate}[leftmargin=.23\linewidth]
-    \item \texttt{d = sum([foo(i\err{]} for i in vals))}
-    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
-            \hline
-            \texttt{d} & \texttt{=} & \texttt{sum} & \texttt{(} & \texttt{[} & \texttt{foo} & \texttt{(} & \texttt{i} & \texttt{]} & \texttt{for} & \texttt{i} & \texttt{in} & \texttt{vals} & \texttt{)} & \texttt{)} \\\hline
-    \end{tabular}
-    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
-            \hline
-            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-    \end{tabular}
-    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-            \hline
-            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-    \end{tabular}
-    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-            \hline
-            \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
-    \end{tabular}\\
-    \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-      \hline
-      \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{(} & \texttt{[} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-%          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
-%          & & & & & & & & & & & & & & \\\hline
-    \end{tabular}\\$\cdots$
-    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c||c|c|||c|||c|||c|||c|||c|||c|||c|||}
-            \hline
-%          \texttt{w} & \texttt{=} & & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
-            & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
-    \end{tabular}
-    \item \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
-    \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
-  \end{enumerate}
+%  \begin{enumerate}[leftmargin=.13\linewidth]
+%    \item \texttt{d = sum([foo(i\err{]} for i in vals))}
+%    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+%            \hline
+%            \texttt{d} & \texttt{=} & \texttt{sum} & \texttt{(} & \texttt{[} & \texttt{foo} & \texttt{(} & \texttt{i} & \texttt{]} & \texttt{for} & \texttt{i} & \texttt{in} & \texttt{vals} & \texttt{)} & \texttt{)} \\\hline
+%    \end{tabular}
+%    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+%            \hline
+%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%    \end{tabular}
+%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+%            \hline
+%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%    \end{tabular}
+%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+%            \hline
+%            \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+%    \end{tabular}\\
+%    \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
+%      \hline
+%      \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{(} & \texttt{[} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%%          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
+%%          & & & & & & & & & & & & & & \\\hline
+%    \end{tabular}\\$\cdots$
+%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c||c|c|||c|||c|||c|||c|||c|||c|||c|||}
+%            \hline
+%%          \texttt{w} & \texttt{=} & & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
+%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
+%            & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
+%    \end{tabular}
+%    \item \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
+%    \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
+%  \end{enumerate}
+%
+%  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2).
 
-  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2).
-
-  \subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
+  \pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
 
   Now that we have a method for parsing with matrix completion, we will translate this to the tree domain, where the semiring algebra will be defined over indexed forests. Then we will show how to sample trees.
 
   \begin{wrapfigure}{r}{0.45\textwidth}
+    \vspace{-20pt}
     \resizebox{0.45\textwidth}{!}{
       \begin{tikzpicture}
       [
@@ -710,6 +719,7 @@ Specifically, we compute Parikh intervals generated by every path though the Lev
       \end{tikzpicture}
     }
     \caption{A partial $\mathbb{T}_2$ for the grammar $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+    \vspace{-10pt}
   \end{wrapfigure}
 
   We will now describe a technique for sampling trees from the intersection grammar, representing distinct, fully formed repairs. When the number of choices is sufficiently constrained, this can be sampled without replacement, or otherwise with replacement using a PCFG. Once we have obtained the intersection grammar, we solve for all inhabitants using a matrix fixedpoint recurrence.
