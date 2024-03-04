@@ -374,15 +374,15 @@
   \begin{prooftree}
     \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{S}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}S}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
     \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{S}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}S}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
 
-  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d_\max}$ arcs for each terminal at each position in the string in the Levenshtein automaton, and $e^3$ productions in the construction to follow. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
+  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d_\max$ unnecessary arcs across the entire Levenshtein automaton. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
 
   \subsection{Levenshtein-Bar-Hillel Construction}
 
@@ -396,7 +396,7 @@
   For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
   \end{lemma}
 
-  \noindent Beigel and Gasarch~\cite{beigelproof} provide one explicit way to construct $G_\cap$:
+  \noindent Although Bar-Hillel~\cite{bar1961formal} lacks an explicit construction, Beigel and Gasarch~\cite{beigelproof} construct $G_\cap$ like so:
 
   \begin{prooftree}
     \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
@@ -407,7 +407,7 @@
     \AxiomC{$(A \rightarrow a) \in P$}
     \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-    \BinaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+    \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
     \DisplayProof
     \hskip 1em
 %\end{prooftree}
@@ -418,37 +418,37 @@
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
-  The standard BH construction applies to any CFL and REG language intersection, but this generates a grammar whose cardinality is approximately $|P_\cap|=|I||F| + |P||\Sigma||\sigma|\cdot2d_{\max} + |P||Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In this section, we describe a kind of reachability analysis that removes useless nonterminal-state triples. We will now describe this reduction in detail.
+  This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In this section, we describe a kind of reachability analysis that elides many unreachable productions in the case of Levenshtein intersection. We will now describe this reduction in detail.
 
 %  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
 
-  Consider $\Join$, the most expensive rule. $\Join$ tells us each production in the intersection grammar abstracts a set of paths sharing an origin and destination in the original automaton and a single production in the original CFG. A key observation is that $\big(pwr\rightarrow (pxq)(qzr)\big)$ considers the interaction between every pair of states and every production, but is a huge overapproximation. Most of these productions are completely useless. How do we know which ones to keep?
+  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every possible triple, but this is a huge overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals will recognize no strings in common.
 
-  Let us define an interval domain that soundly overapproximates the Parikh image. This will tell us the minimum and maximum number of symbols each nonterminal can represent. Since some intervals may be right-unbounded, we use $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound.
+  To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can represent. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to capture the upper bound.
 
   \begin{definition}[Parikh mapping of a nonterminal]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ be a function returning the smallest interval such that $\forall s: \Sigma^*, \forall v: V$, $v \Rightarrow^* s \vdash p(s) \in \pi(v)$.
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(s) \in \pi(v)$.
   \end{definition}
 
-  In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal must generate, and the supremum tells us how many it can generate. Likewise, we define a similar relation over NFA state pairs:
+  In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
 
   \begin{definition}[Parikh mapping of NFA states]
-    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{s}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
+    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
-  Next, we will define a measure between Parikh intervals, which will represent the minimum total changes required to transform a string in one Parikh interval to a string in another.
+  Next, we will define a measure on Parikh intervals, which will represent the minimum total edits required to transform a string in one Parikh interval to a string in another.
 
   \begin{definition}[Parikh divergence]
     Given two Parikh intervals $\pi, \pi': \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
-  Now, we know that if the Parikh divergence is greater than the Levenshtein margin separating two states in a Levenshtein automaton, these two Parikh intervals must be incompatible.
+  Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other in fewer than $\pi \parallel \pi'$ edits.
 
   \begin{definition}[Levenshtein-Parikh compatibility]
-    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $|k-i|$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq |k-i|$.
+    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
   \end{definition}
 
-  Finally, we modify the Bar-Hillel construction to Levenshtein intersection as follows:
+  Finally, we define the modified Bar-Hillel construction for Levenshtein intersections as follows:
 
 \begin{prooftree}
   \def\defaultHypSeparation{\hskip 0.15cm}
@@ -456,7 +456,7 @@
   \AxiomC{$\color{orange}S(a)$}
   \AxiomC{$(q\overset{S}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \TrinaryInfC{$\big(qar\rightarrow a\big)\in P_\cap$}
+  \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
   \DisplayProof
   \AxiomC{$\vphantom{\overset{S}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
