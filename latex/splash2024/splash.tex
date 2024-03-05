@@ -74,7 +74,7 @@
     \item We first reduce the problem of CFL recognition to Boolean tensor completion, then use that to compute the Parikh image of the CFL. This follows from a straightforward extension of the Chomsky-Sch\"utzenberger enumeration theorem.
     \item We then model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections. This greatly reduces the number of generated productions.
     \item To decode the members from the intersection grammar, we sample trees without replacement by constructing a bijection between syntax trees and the integers, then sampling integers uniformly without replacement from a finite range. This yields concrete repairs within a certain Levenshtein distance.
-    \item Finally, we rank all repairs found within 60 seconds by a Markov chain.
+    \item Finally, we rerank all repairs found before a fixed timeout by n-gram perplexity.
   \end{enumerate}
 
   Though simple, this technique outperforms SoTA syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often the langauge of small repairs is surpisingly small compared with the langauge of all possible edits, enabling us to efficiently synthesize and score every possible solution. This offers a significant advantage over memoryless sampling techniques.
@@ -82,7 +82,6 @@
   \pagebreak
 
   \input{example_contents}
-
 
   \section{Problem}
 
@@ -101,9 +100,9 @@
   As $A(\sigma)$ can be a large-cardinality set, we want a procedure which prioritizes natural solutions:
 
   \begin{definition}[Ranked repair]
-    Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
+    Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+      R(A, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
@@ -111,9 +110,7 @@
 
   The problem of ranked repair is typically solved by learning a distribution over string edits, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling the distribution over $\Sigma^*$ forces the model to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the set of proximal repairs can be achieved with a much weaker, syntax-oblivious language model.
 
-  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $A$, it would be intractable to sample either $\ell\cap\Sigma^n$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models.
-
-  Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly. Then, the problem becomes one of ranking only sampled repairs which can be completed quickly using a Markov chain.
+  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
   \section{Method}
 
@@ -424,22 +421,22 @@
 
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every possible triple, but this is a huge overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals will recognize no strings in common.
 
-  To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can represent. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to capture the upper bound.
+  To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can represent. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
 
   \begin{definition}[Parikh mapping of a nonterminal]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(s) \in \pi(v)$.
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \Pi$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(s) \in \pi(v)$.
   \end{definition}
 
   In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
 
   \begin{definition}[Parikh mapping of NFA states]
-    We define $\pi: Q\times Q \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
+    We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
   Next, we will define a measure on Parikh intervals, which will represent the minimum total edits required to transform a string in one Parikh interval to a string in another.
 
   \begin{definition}[Parikh divergence]
-    Given two Parikh intervals $\pi, \pi': \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
+    Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
   Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other in fewer than $\pi \parallel \pi'$ edits.
@@ -514,7 +511,7 @@
 
   \noindent we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
 
-  Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. A concrete example is shown in \S~\ref{sec:example}.
+  Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. A concrete example is now in order.
 
   Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
 
@@ -579,7 +576,7 @@
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-  In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
+  In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
 
   \begin{align}
     V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
@@ -603,7 +600,7 @@
     &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
   \end{align}
 
-  Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
+  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
 
   \begin{align}
     V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
@@ -612,7 +609,9 @@
     &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
   \end{align}
 
-  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and therefor we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees, in which case we can decode them incrementally.
+  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees.
+
+  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will need to redefine this algebra over parse forests.
 
 %  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
 
@@ -719,6 +718,7 @@
       \end{tikzpicture}
     }
     \caption{A partial $\mathbb{T}_2$ for the grammar $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+    \label{fig:ptree}
     \vspace{-10pt}
   \end{wrapfigure}
 
@@ -749,7 +749,43 @@
 \end{footnotesize}
 \end{equation*}
 
-These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal, which can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins as we describe in \S~\ref{sec:replacement}, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
+These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal. The PTree is a convenient datastructure for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
+
+\begin{equation*}
+  \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+  \big[[1, 1] \text{ if } \texttt{root}(T) = s \text{ else } [0, 0]\big]_{s\in \Sigma}  & \text{if $T$ is a leaf,} \\
+  \bigoplus_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \pi(T_1) \otimes \pi(T_2) & \text{otherwise.}
+  \end{cases}
+\end{equation*}
+
+  %infix fun IntRange.merge(other: IntRange) =
+  %  minOf(start, other.first)..maxOf(last, other.last)
+  %
+  %operator fun ParikhBounds.plus(other: ParikhBounds) =
+  %  (keys + other.keys).associateWith {
+  %    (get(it) ?: 0..0) merge (other[it] ?: 0..0)
+  %  }
+  %
+  %operator fun ParikhBounds.times(other: ParikhBounds) =
+  %  (keys + other.keys).associateWith {
+  %    (get(it) ?: 0..0) join (other[it] ?: 0..0)
+  %  }
+  %
+  %infix fun IntRange.join(other: IntRange) =
+  %  (first + other.first)..(last + other.last)
+
+  \noindent where $\oplus, \otimes: \Pi \times \Pi \rightarrow \Pi$ are defined as follows:
+
+  \begin{equation*}
+      X \oplus Z \mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}
+  \end{equation*}
+
+  \begin{equation*}
+      X \otimes Z \mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
+  \end{equation*}
+
+Whole parse trees can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
 
 %\begin{equation*}
 %  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -784,8 +820,7 @@ The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in 
   L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
 \end{equation*}
 
-Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted below is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}:
-
+Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}.
 
 The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string using the algebra defined in \S~\ref{sec:background}, letting $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
 
@@ -799,7 +834,6 @@ The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sen
 
 To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, which is defined as follows:
 
-\begin{small}
 \begin{equation*}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
@@ -811,7 +845,6 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
   \end{cases}
 \end{equation*}
-\end{small}
 
 Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \S~\ref{sec:method}, and lazily decode them into trees.
 
@@ -819,7 +852,7 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 
   The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
 
-  \begin{figure}
+  \begin{figure}[h!]
     \begin{tikzpicture}
       \begin{axis}[
       ybar,
@@ -856,7 +889,7 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 
   \noindent Likewise, we can plot the number of tokens between edits within each patch:
 
-  \begin{figure}
+  \begin{figure}[h!]
     \begin{tikzpicture}
       \begin{axis}[
         ybar,
@@ -923,11 +956,11 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
   Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before timeout expiration are reranked by tokenwise perplexity then compared using an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
 
   \begin{figure}[H]
-    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot}}
+    \resizebox{.3\textwidth}{!}{\input{repair1_plot}}
+    \resizebox{.3\textwidth}{!}{\input{repair2_plot}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot}}
     \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
   \end{figure}
 
@@ -982,10 +1015,10 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
   In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
   \begin{figure}[H]
-    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
-    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
+    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
+    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
+    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
+    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
     \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
   \end{figure}
 
@@ -996,7 +1029,7 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
   \subsection{Throughput benchmark}
 
   \begin{wrapfigure}{r}{0.3\textwidth}
-    \resizebox{.3\textwidth}{!}{\input{throughput.tex}}
+    \resizebox{.3\textwidth}{!}{\input{throughput}}
     \label{fig:throughput}
     \vspace{-30pt}
   \end{wrapfigure}
@@ -1005,9 +1038,11 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 
   \subsection{Timing benchmark}\label{sec:timings}
 
+  Below, we plot the end-to-end repair timings across snippet length. For each code snippet, we measure the time taken to sample the exact human repair, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.
+
   \begin{figure}[h!]
     \minipage{\columnwidth}
-    \resizebox{\textwidth}{!}{\input{experiments/timings}}
+    \resizebox{0.5\textwidth}{!}{\input{experiments/timings}}
     \endminipage
     \caption{End-to-end repair timings across snippet length.}
   \end{figure}
@@ -1165,10 +1200,6 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 
   Okhotin (2001)~\cite{okhotin2001conjunctive} extends CFGs with language conjunction in \textit{conjunctive grammars}, followed by Zhang \& Su (2017)~\cite{zhang2017context} who apply conjunctive language reachability to dataflow analysis.
 
-% Cover matrix multiplication-based parsing
-
-% Problem definition
-
   \subsection{Language equations}
 
   Language equations are a powerful tool for reasoning about formal languages and their inhabitants. First proposed by Ginsburg et al.~\cite{ginsburg1962two} for the ALGOL language, language equations are essentially systems of inequalities with variables representing \textit{holes}, i.e., unknown values, in the language or grammar. Solutions to these equations can be obtained using various fixpoint techniques, yielding members of the language. This insight reveals the true algebraic nature of CFLs and their cousins.
@@ -1208,231 +1239,6 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
   \subsection{Neural program repair}
 
   The recent success of deep learning has lead to a variety of work on neural program repair~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ Transformer-based neural language models (NLMs) and model the problem as a sequence-to-sequence transformation. Although recent work on circuit lower bounds have cast doubt on the ability of Transformers to truly learn formal languages~\cite{merrill2022saturated, chiang2023tighter}, expressivity aside, these models have been widely adopted for practical program repair tasks. In particular, two papers stand out being most closely related to our own: Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised machine translation to generate synthetic errors in clean code and fixes them. This reduces the amount of pairwise training data, but may generalize poorly to natural errors. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest multiple repairs with much lower latency, do not require a pairwise repair dataset, and can fix syntax errors in any language with a well-defined grammar. We note our approach is complementary to existing work in neural program repair, and may be used to generate synthetic repairs for training or employ a NLM model to rank its repairs.
-
-
-  \subsection{Uniform sampling benchmark}\label{sec:uniform}
-
-  Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before the latency cutoff are reranked based on their tokenwise perplexity and compared for an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
-
-  \begin{figure}[H]
-    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
-  \end{figure}
-
-  Despite the high-latency, this demonstrates a uniform prior with post-timeout reranking is still able to achieve competitive precision@k using a relatively cheap ranking metric. This suggests that we can use the metric to bias the sampler towards more likely repairs, which we will now do.
-
-%\begin{figure}[h]
-%\resizebox{0.3\textwidth}{!}{
-%\begin{tikzpicture}
-%\begin{axis}[
-%ybar,
-%enlarge x limits=0.15,
-%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
-%ylabel={Precision@1},
-%xtick={1,2,3},
-%xlabel={Edit Distance},
-%xtick=data,
-%nodes near coords,
-%nodes near coords align={vertical},
-%ymin=0,ymax=1,
-%]
-%\addplot coordinates {(1, 0.9) (2, 0.857) (3, 0.794)};
-%\addplot coordinates {(1, 0.454) (2, 0.162) (3, 0.096)};
-%\addplot coordinates {(1, 0.005) (2, 0.004) (3, 0.0)};
-%\legend{Syntactic, AbstractEval, CharMatch}
-%\end{axis}
-%\end{tikzpicture}
-%}
-%\resizebox{0.3\textwidth}{!}{
-%\begin{tikzpicture}
-%\begin{axis}[
-%ybar,
-%enlarge x limits=0.15,
-%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
-%ylabel={Latency (ms)},
-%xtick={1,2,3},
-%xlabel={Edit Distance},
-%xtick=data,
-%nodes near coords,
-%nodes near coords align={vertical},
-%ymin=0,ymax=3000,
-%]
-%\phantom{\legend{Syntactic, AbstractEval, CharMatch}}
-%\addplot coordinates {(1, 1585.465) (2, 1953.56) (3, 2744.887)};
-%\end{axis}
-%\end{tikzpicture}
-%}
-%\caption{Seq2Parse precision@1 and latency on the StackOverflow dataset.}
-%\end{figure}
-
-  \subsection{Repair with an adaptive sampler}
-
-  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
-
-  \begin{figure}[H]
-    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
-    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
-    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
-  \end{figure}
-
-  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports precision@1 repairs, and so we only report Seq2parse precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
-
-  While adapting sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
-
-  \subsection{Throughput benchmark}
-
-  \begin{wrapfigure}{r}{0.3\textwidth}
-    \vspace{-15pt}
-    \resizebox{.3\textwidth}{!}{\input{throughput.tex}}
-    \label{fig:throughput}
-  \end{wrapfigure}
-
-  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
-
-  \subsection{Synthetic repair benchmark}\label{sec:latency}
-
-  In addition to the StackOverflow dataset, we also evaluate our approach on two datasets containing synthetic strings generated by a Dyck language, and bracketing errors of synthetic and organic provenance in organic source code. The first dataset contains length-50 strings sampled from various Dyck languages, i.e., the Dyck language containing n different types of balanced parentheses. The second contains abstracted Java and Python source code mined from GitHub repositories. The Dyck languages used in the remaining experiments are defined by the following context-free grammar(s):
-
-  \begin{wholetidyinput}
-    Dyck-1 -> ( ) | ( Dyck-1 ) | Dyck-1 Dyck-1
-    Dyck-2 -> Dyck-1 | [ ] | ( Dyck-2 ) | [ Dyck-2 ] | Dyck-2 Dyck-2
-    Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
-  \end{wholetidyinput}
-
-  \noindent In experiment (1a), we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number of indices in $[0, |\sigma|)$ with holes and measure the average time required to decode ten syntactically-admissible repairs across 100 trial runs. In experiment (1b), we sample a random valid string as before, but delete p tokens at random and rather than provide their location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the logarithmic scale on the y-axis.
-
-  \begin{figure}[H]
-    \begin{minipage}{.48\textwidth}
-      \begin{center}\footnotesize\textbf{Synthetic bracket language}\end{center}
-    \end{minipage}
-    \begin{minipage}{.48\textwidth}
-      \begin{center}\footnotesize\textbf{Organic bracket language}\end{center}
-    \end{minipage}\\
-    \vspace{10pt}
-    \hspace{-0.25cm}\begin{tikzpicture}[scale=0.41]
-                      \begin{axis}[
-                        width=8.3cm,
-                        height=7cm,
-                        title={\hspace{-1cm}\textbf{(1a) Latency with known locations}},
-                        ybar,
-                        bar width=6pt,
-                        xlabel={Number of holes},
-                        ylabel={ms to synthesize 10 repairs},
-                        xtick=data,
-                        axis x line*=bottom,
-                        axis y line*=left,
-                        ytick pos=left,
-                        xticklabels from table={\loctimings}{holes},
-                        ymajorgrids,
-                        legend pos=north west,
-                        legend columns=2,
-                        error bars/y dir=both,
-                        error bars/y explicit
-                      ]
-                        \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
-                        \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
-                        \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
-                        \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
-                        \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
-                      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.41]
-      \begin{axis}[
-        width=8.3cm,
-        height=7cm,
-        title={\hspace{-1cm}\textbf{(1b) Latency with unknown locations}},
-        ybar,
-        bar width=20pt,
-        xlabel={Number of errors},
-%ylabel={ms to synthesize 1 repair},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\unloctimings}{errors},
-        ymajorgrids,
-        legend pos=north west,
-        error bars/y dir=both,
-        error bars/y explicit
-      ]
-        \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-        \legend{Dyck-1, Dyck-2, Dyck-3}
-      \end{axis}
-    \end{tikzpicture}
-    \hspace{20pt}
-    \begin{tikzpicture}[scale=0.41]
-      \begin{axis}[
-      width=8.3cm,
-      height=7cm,
-%    title={\hspace{-1cm}\textbf{Java Brackets}},
-      ybar,
-      bar width=10pt,
-      xlabel={$|\Sigma^*|$},
-      ylabel={Top-1 parser acceptance},
-      title={\textbf{(2a) Synthetic Java bracket error correction}},
-      xtick=data,
-      axis x line*=bottom,
-      axis y line*=left,
-      enlarge x limits={abs=0.5},
-      ytick pos=left,
-      xticklabels from table={\syntheticerrors}{len},
-      ymajorgrids,
-      legend pos=north east,
-      legend columns=3,
-      error bars/y dir=both,
-      error bars/y explicit
-      ]
-      \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
-      \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
-      \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
-      \legend{10s, 30s, 60s}
-      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.41]
-      \begin{axis}[
-      width=8.3cm,
-      height=7cm,
-      title={\textbf{(2b) Organic Python bracket error correction}},
-      ybar,
-      bar width=10pt,
-      xlabel={$|\Sigma^*|$},
-%ylabel={Parser acceptance},
-      xtick=data,
-      axis x line*=bottom,
-      axis y line*=left,
-      enlarge x limits={abs=0.5},
-      ytick pos=left,
-      xticklabels from table={\naturalerrors}{len},
-      ymajorgrids,
-      y tick label style={/pgf/number format/.cd,%
-      scaled y ticks = false,
-      set thousands separator={},
-      fixed},
-      legend pos=north east,
-      legend columns=3,
-      error bars/y dir=both,
-      error bars/y explicit
-      ]
-      \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
-      \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
-      \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
-      \legend{10s, 30s, 60s}
-      \end{axis}
-    \end{tikzpicture}
-    \caption{Benchmarking bracket correction latency and accuracy across two bracketing languages, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
-  \end{figure}
-
-  In the second set of experiments, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub using the Dyck-nw\footnote{Using the Dyck-n grammar augmented with a single additional production, \texttt{Dyck-1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{Dyck-1}. Contiguous non-bracket characters are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, in which all source code tokens except brackets are replaced with a \texttt{w} token. For Java (2a), we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, and repair using Tidyparse, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser. For Python (2b), we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, which we repair using Tidyparse, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method. Since the Java and Python datasets do not have a ground-truth human fix, we report the percentage of repairs that are accepted by the language's official parser for repairs generated under a fixed time cutoff. Although the Java and Python datasets are not directly comparable, we observe that Tidyparse can detect and repair a significant fraction of bracket errors in both languages with a relatively unsophisticated grammar.
 
   \section{Discussion}\label{sec:discussion}
 
@@ -1490,5 +1296,5 @@ Then, instead of sampling trees, we can simply sample integers uniformly without
 % References will then be sorted and formatted in the correct style.
 %
 %  \bibliographystyle{splncs04}
-  \bibliography{acmart}
+  \bibliography{../bib/acmart}
 \end{document}
