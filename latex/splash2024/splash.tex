@@ -108,7 +108,7 @@
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair is typically solved by learning a distribution over string edits, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling the distribution over $\Sigma^*$ forces the model to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the set of proximal repairs can be achieved with a much weaker, syntax-oblivious language model.
+  The problem of ranked repair is typically solved by learning a distribution over string edits, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling the distribution over $\Sigma^*$ forces the model to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the subsequent set can be achieved with a much weaker, syntax-oblivious language model.
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
@@ -415,7 +415,7 @@
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
-  This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to programming language syntax and Levenshtein automata can generate hundreds of trillions of productions for moderately sized grammars and Levenshtein automata. In this section, we describe a kind of reachability analysis that elides many unreachable productions in the case of Levenshtein intersection. We will now describe this reduction in detail.
+  This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical code snippets can generate hundreds of trillions of productions for even moderately sized grammars and Levenshtein automata. In this section, we describe a kind of reachability analysis that elides many unreachable productions in the case of Levenshtein intersection. We will now describe this reduction in detail.
 
 %  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
 
@@ -513,7 +513,7 @@
 
   Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. A concrete example is now in order.
 
-  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
 
   \begin{small}
   {\renewcommand{\arraystretch}{1.2}
@@ -572,7 +572,7 @@
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however these both are recognizers. That is to say, $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there is at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ expresses a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
@@ -609,9 +609,9 @@
     &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
   \end{align}
 
-  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, |\sigma|}$, but in general, there can be multiple valid parse trees.
+  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
 
-  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will need to redefine this algebra over parse forests.
+  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will proceed to redefine this algebra over parse forests.
 
 %  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
 
@@ -729,7 +729,7 @@
 \vspace{-10pt}\begin{equation*}
   \begin{footnotesize}
 \Lambda(s: \underline\Sigma) \mapsto \begin{cases}
-\bigoplus_{s\in \Sigma} \Lambda(s) & \text{if $s$ is a hole,} \vspace{5pt}\\
+\bigoplus_{s'\in \Sigma} \Lambda(s') & \text{if $s$ is a hole,} \vspace{5pt}\\
 \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
 \end{cases}
   \end{footnotesize}
@@ -749,7 +749,7 @@
 \end{footnotesize}
 \end{equation*}
 
-These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal. The PTree is a convenient datastructure for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
+These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal. $\mathbb{T}_2$ is a convenient datatype for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
 
 \begin{equation*}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -785,7 +785,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \otimes Z \mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{equation*}
 
-Whole parse trees can be sampled by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as described in \S~\ref{sec:pairing}.
+  This is the procedure we use to precompute the Parikh interval for a CFG up to finite length bounds. $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as we proceed to now describe.
 
 %\begin{equation*}
 %  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -846,93 +846,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{cases}
 \end{equation*}
 
-Then, instead of sampling trees, we can simply sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ using the construction defined in \S~\ref{sec:method}, and lazily decode them into trees.
-
-  \section{Dataset}
-
-  The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
-
-  \begin{figure}[h!]
-    \begin{tikzpicture}
-      \begin{axis}[
-      ybar,
-      bar width=15pt,
-      xlabel={Beginning of snippet $\longleftrightarrow$ End of snippet},
-      ylabel={Frequency},
-      title={Normalized edit locations},
-      ymin=0,
-      ymax=35,
-      xtick=data,
-      xticklabels={10\%,20\%,30\%,40\%,50\%,60\%,70\%,80\%,90\%,100\%},
-      ymajorgrids=true,
-      grid style=dashed,
-      width=\textwidth,
-      height=0.3\textwidth
-      ]
-
-      \addplot table {
-        X Y
-        10 11.6539
-        20 5.7252
-        30 6.2087
-        40 5.9542
-        50 5.5980
-        60 7.9389
-        70 7.0738
-        80 6.9466
-        90 12.4173
-        100 30.4835
-      };
-      \end{axis}
-    \end{tikzpicture}
-  \end{figure}
-
-  \noindent Likewise, we can plot the number of tokens between edits within each patch:
-
-  \begin{figure}[h!]
-    \begin{tikzpicture}
-      \begin{axis}[
-        ybar,
-        bar width=15pt,
-        title={Intra-patch edit distance},
-        xlabel={Caret distance},
-        ylabel={Frequency},
-        xtick=data,
-        ymajorgrids=true,
-        grid style=dashed,
-        xticklabels={1,2,3,4,5,6,7,8,9,10+},
-        width=\textwidth,
-        height=0.3\textwidth
-      ]
-
-        \addplot table {
-          X Y
-          1 40.66
-          2 15.00
-          3 5.80
-          4 4.86
-          5 4.26
-          6 2.98
-          7 2.05
-          8 2.73
-          9 1.62
-          10 13.64
-        };
-      \end{axis}
-    \end{tikzpicture}
-  \end{figure}
-
-  \section{Experimental setup}\label{sec:experiments}
-
-  To evaluate our model, we primarily use 5,600 pairs of (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose minimized patch sizes are shorter than four lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) < 4$), and adapt the Python grammar from SeqParse. Minimization uses the Delta debugging~\cite{zeller2002isolating} technique to isolate the smallest lexical patch that repairs a broken Python snippet.
-
-  In the first set of experiments, we uniformly sample without replacement from the Levenshtein edit ball using a LFSR over $\mathbb{Z}_2^m$, and measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs. This provides a baseline for the relative density of the admissible set, and an upper bound on the latency of attaining a given precision.
-
-  In the second set of experiments, we use an adaptive sampler that stochastically resamples edits using a Dirichlet process. Repairs are scored and placed into a ranked buffer, from which new edits are resampled with frequency relative to their perplexity, and additive noise is introduced. The adaptive sampler is described in further detail in \S\ref{sec:adaptive}.
-
-  To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens from the BIFI~\cite{yasunaga2021break} dataset took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
-
-  Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. We measure the precision using abstract lexical matching, following the Seq2Parse~\cite{sakkas2022seq2parse} evaluation, and give a baseline for their approach on the same dataset.
+If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This is the procedure we use to sample parse trees from the intersection grammar, and is the basis for our sampling algorithm.
 
   \input{eval_contents}
 
