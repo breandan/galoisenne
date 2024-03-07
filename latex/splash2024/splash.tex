@@ -88,27 +88,27 @@
   We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $L(\err\sigma, d) \cap \ell$.
+    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
-  To solve this problem, we will first pose a simpler problem that only considers intersections with a finite language, then turn our attention back to BCFLR.
+%  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
+%
+%  \begin{definition}[Porous completion]
+%    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+%  \end{definition}
 
-  \begin{definition}[Porous completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
-  \end{definition}
-
-  As $A(\sigma)$ can be a large-cardinality set, we want a procedure which prioritizes natural solutions:
+  As the admissible set $A$ is typically under-determined, we want a procedure which prioritizes natural and valid repairs over unnatural but valid repairs:
 
   \begin{definition}[Ranked repair]
     Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
+      R(A, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair is typically solved by learning a distribution over string edits, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling the distribution over $\Sigma^*$ forces the model to learn both syntax and stylistics. As we demonstrate, this problem can be decomposed into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the subsequent set can be achieved with a much weaker, syntax-oblivious language model.
+  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new langauges. Modeling a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. As our work demonstrates, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
@@ -116,7 +116,7 @@
 
   \begin{wrapfigure}{r}{0.45\textwidth}
 %\begin{figure}[h!]
-    \vspace{-0.8cm}
+    \vspace{-1.2cm}
     \begin{center}
       \resizebox{0.45\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
@@ -145,7 +145,7 @@
 
 %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
 
-          \draw [->] (0, 1.5) -- (start);
+          \draw [->,thick] (0, 1.3) -- (start);
 
           \draw [arrow] (start) -- (code);
           \draw [arrow] (start) -- (synt);
@@ -173,7 +173,7 @@
       }
     \end{center}
     \caption{Flowchart of our proposed method.}\label{fig:flowchart}
-    \vspace{-1.5cm}
+    \vspace{-1cm}
   \end{wrapfigure}
 
   The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the langauge syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
@@ -185,6 +185,18 @@
   \end{enumerate}
 
   When ambiguous, we use an n-gram model to rank and return the top-k results by likelihood. This procedure is depicted in Fig.~\ref{fig:flowchart}.
+
+  \subsection{Preliminaries}
+
+  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+
+  \begin{table}[H]
+    \begin{tabular}{llll}
+      $G\coloneqq\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
+    \end{tabular}
+  \end{table}\vspace{-8pt}
+
+  Likewise, a finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will use this notation in the following sections.
 
   \pagebreak\subsection{The Nominal Levenshtein Automaton}
 
@@ -419,7 +431,7 @@
 
 %  To achieve this, we precompute upper and lower Parikh bounds for every terminal and integer range of the string, which we call the Parikh map. This construction soundly overapproximates the minimum and maximum number of terminals that can be derived from a given nonterminal in a bounded-length string, and is used to prune the search space. We will now describe this reduction in detail.
 
-  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every possible triple, but this is a huge overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals will recognize no strings in common.
+  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals will recognize no strings in common.
 
   To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can represent. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
 
@@ -439,7 +451,7 @@
     Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
-  Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other in fewer than $\pi \parallel \pi'$ edits.
+  Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
 
   \begin{definition}[Levenshtein-Parikh compatibility]
     Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
@@ -467,14 +479,6 @@
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
   \subsection{Parsing as idempotent matrix completion}
-
-  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
-
-  \begin{table}[H]
-    \begin{tabular}{llll}
-      $G\coloneqq\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
-    \end{tabular}
-  \end{table}\vspace{-8pt}
 
   \noindent Given a CFG, $G' : \mathbb{G} = \langle \Sigma, V, P, S\rangle$ in CNF, we can construct a recognizer $R: \mathbb{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
@@ -572,98 +576,41 @@
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ expresses a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A(\sigma)$, but $M_\infty$ does not reveal its identity.
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ expresses a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
   In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
 
-  \begin{align}
-    V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}\\
-    &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]\\
-    &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}]\\
-    &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]
-  \end{align}
-
-  \begin{align}
-    V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
-    &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
-    &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
-    &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
-  \end{align}
+  \begin{small}
+  \begin{align*}
+    V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}                         &  V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
+    &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]                                           &  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
+    &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
+    &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
+  \end{align*}
+  \end{small}
 
   Now we solve for the corner entry $V_{0, 3}$ by taking the bitwise dot product between the first row and last column, yielding:
 
-  \begin{align}
+  \begin{align*}
     V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = V_{0, 1} \boxtimes V_{1, 3} \boxplus V_{0, 2} \boxtimes V_{2, 3}\\
 %  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
     &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
-  \end{align}
+  \end{align*}
 
   \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
 
-  \begin{align}
+  \begin{align*}
     V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
     &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
     &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
     &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
-  \end{align}
+  \end{align*}
 
-  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_r^{-1}(O) \times \hat\sigma_r^{-1}(N)$ to recover the admissible set, yielding $A(\sigma)=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
+  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the admissible set, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
 
-  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will proceed to redefine this algebra over parse forests.
-
-%  The question naturally arises, where should one put the holes? One solution is to interleave $\varepsilon$ between every token as $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, augment the grammar to admit $\varepsilon^+$, then sample holes without replacement from all possible locations. Below we illustrate this procedure on a single Python snippet.
-
-%A well-known result in FL theory is that the class of context-free languages are closed under intersection with regular languages, i.e.,
-%
-%\begin{align}
-%  \ell_1:\textsc{Reg}, \ell_2: \textsc{Cfl} \vdash \text{ there exists } G \text{ s.t. } L(G): \textsc{Cfl} \text{ and } L(G) = \ell_1\cap\ell_2
-%\end{align}
-%
-%To compute the intersection between a CFG and a regular grammar, there is a standard construction from Beigel and Gasarch~\cite{beigelproof}, which allows us to compute the intersection grammar. We can then use the same procedure as before to compute the fixpoint, $M_\infty$, and extract the inhabitants.
-%
-%Alternatively, the procedure we use is to generate the contents of the grammar incrementally by sampling holes without replacement. We illustrate the procedure below, then discuss the theory.
-
-%  \begin{enumerate}[leftmargin=.13\linewidth]
-%    \item \texttt{d = sum([foo(i\err{]} for i in vals))}
-%    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
-%            \hline
-%            \texttt{d} & \texttt{=} & \texttt{sum} & \texttt{(} & \texttt{[} & \texttt{foo} & \texttt{(} & \texttt{i} & \texttt{]} & \texttt{for} & \texttt{i} & \texttt{in} & \texttt{vals} & \texttt{)} & \texttt{)} \\\hline
-%    \end{tabular}
-%    \item \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
-%            \hline
-%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-%    \end{tabular}
-%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-%            \hline
-%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-%    \end{tabular}
-%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-%            \hline
-%            \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
-%    \end{tabular}\\
-%    \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||c|||}
-%      \hline
-%      \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{(} & \texttt{[} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-%%          \cellcolor{black!15}\texttt{\_} & \texttt{=} & \cellcolor{black!15}\texttt{\_} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \cellcolor{black!15}\texttt{\_} \\\hline
-%%          & & & & & & & & & & & & & & \\\hline
-%    \end{tabular}\\$\cdots$
-%    \item \begin{tabular}{|||c|||c|||c|||c|||c|||c|||c||c|c|||c|||c|||c|||c|||c|||c|||c|||}
-%            \hline
-%%          \texttt{w} & \texttt{=} & & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \texttt{w} & \texttt{]} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \texttt{)} & \texttt{)} \\\hline
-%            \texttt{w} & \texttt{=} & \texttt{w} & \texttt{(} & \texttt{[} & \texttt{w} & \texttt{(} & \cellcolor{black!15}\texttt{\_} &  \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{for} & \texttt{w} & \texttt{in} & \texttt{w} & \cellcolor{black!15}\texttt{\_} & \texttt{)} \\\hline
-%            & & & & & & & \cellcolor{green!25}\texttt{+} & & \cellcolor{orange!25}\texttt{)} & & & & & \cellcolor{orange!25}\texttt{]} & \\\hline
-%    \end{tabular}
-%    \item \texttt{d = sum([foo(\hlgreen{+}i\hlorange{)} for i in vals\hlorange{]})}
-%    \item \texttt{d = sum([foo(i\hlorange{)} for i in vals\hlorange{]})}
-%  \end{enumerate}
-%
-%  The initial broken string, \texttt{d = sum([foo(i\err{]} for i in vals))} (1), is first tokenized using a lexer to obtain the sequence in (2).
-
-  \pagebreak\subsection{A Pairing Function for Breadth-Bounded Binary Trees}\label{sec:pairing}
-
-  Now that we have a method for parsing with matrix completion, we will translate this to the tree domain, where the semiring algebra will be defined over indexed forests. Then we will show how to sample trees.
+  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will proceed to redefine the semiring algebra over indexed parse forests. Then we will show how to sample trees.
 
   \begin{wrapfigure}{r}{0.45\textwidth}
     \vspace{-20pt}
@@ -726,38 +673,38 @@
 
   We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively, where children are pairs of conjoined twins.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
-\vspace{-10pt}\begin{equation*}
+\vspace{-10pt}\begin{equation}
   \begin{footnotesize}
 \Lambda(s: \underline\Sigma) \mapsto \begin{cases}
 \bigoplus_{s'\in \Sigma} \Lambda(s') & \text{if $s$ is a hole,} \vspace{5pt}\\
 \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
 \end{cases}
   \end{footnotesize}
-\end{equation*}
+\end{equation}
 
 \noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
-\begin{equation*}
+\begin{equation}
   \begin{footnotesize}
   X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
   \end{footnotesize}
-\end{equation*}
+\end{equation}
 
-\begin{equation*}
+\begin{equation}
   \begin{footnotesize}
   X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
 \end{footnotesize}
-\end{equation*}
+\end{equation}
 
 These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal. $\mathbb{T}_2$ is a convenient datatype for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
 
-\begin{equation*}
+\begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
 %    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
   \big[[1, 1] \text{ if } \texttt{root}(T) = s \text{ else } [0, 0]\big]_{s\in \Sigma}  & \text{if $T$ is a leaf,} \\
   \bigoplus_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \pi(T_1) \otimes \pi(T_2) & \text{otherwise.}
   \end{cases}
-\end{equation*}
+\end{equation}
 
   %infix fun IntRange.merge(other: IntRange) =
   %  minOf(start, other.first)..maxOf(last, other.last)
@@ -777,15 +724,17 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
   \noindent where $\oplus, \otimes: \Pi \times \Pi \rightarrow \Pi$ are defined as follows:
 
-  \begin{equation*}
+  \begin{equation}
       X \oplus Z \mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}
-  \end{equation*}
+  \end{equation}
 
-  \begin{equation*}
+  \begin{equation}
       X \otimes Z \mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
-  \end{equation*}
+  \end{equation}
 
-  This is the procedure we use to precompute the Parikh interval for a CFG up to finite length bounds. $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as we proceed to now describe.
+  This is the procedure we use to obtain the Parikh interval for a CFG up to finite length bounds. To do so, we abstractly parse the string $\Sigma^n$ for all $n \in [1, l_\max]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, representing every repair length in the Levenshtein ball.
+
+  $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as we proceed to now describe.
 
 %\begin{equation*}
 %  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -796,45 +745,45 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
 
-\begin{equation*}
+\begin{equation}
   \Gamma(T) \mapsto \begin{cases}
         \Gamma\big(\text{Multi} \big(\texttt{children}(T), \mathbf{p}\big)\big) & \text{ if $T: \mathbb{T}_2$ } \\
         \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
   \end{cases}
-\end{equation*}
+\end{equation}
 
 This is closely related to the generating function for the ordinary Boltzmann sampler from analytic combinatorics,
 
-\begin{equation*}
+\begin{equation}
   \Gamma C(x) \mapsto \begin{cases}
   \text{Bern} \left(\frac{A(x)}{A(x) + B(x)}\right) \rightarrow \Gamma A(x) \mid \Gamma B(x) & \text{ if } \mathcal{C}=\mathcal{A}+\mathcal{B} \\
   \big\langle \Gamma A(x), \Gamma B(x)\big\rangle & \text{ if } \mathcal{C}=\mathcal{A} \times \mathcal{B}
   \end{cases}
-\end{equation*}
+\end{equation}
 
 \noindent however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees contained in $\mathbb{T}_2$ will necessarily be the same width.
 
 The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form corresponds to the fixpoints of the following recurrence, which tells us that each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence consisting of nonterminal pairs and their two children:\vspace{-10pt}
 
-\begin{equation*}
+\begin{equation}
   L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
-\end{equation*}
+\end{equation}
 
 Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}.
 
 The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string using the algebra defined in \S~\ref{sec:background}, letting $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
 
-\begin{equation*}
+\begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
 %    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
     1  & \text{if $T$ is a leaf,} \\
     \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
   \end{cases}
-\end{equation*}
+\end{equation}
 
 To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, which is defined as follows:
 
-\begin{equation*}
+\begin{equation}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
   \text{Let } b = |\texttt{children}(T)|,\\
@@ -844,7 +793,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \phantom{\text{Let }} T_2, q_3 = \varphi(rb, q_2) \text{ in } \\
   \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
   \end{cases}
-\end{equation*}
+\end{equation}
 
 If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This is the procedure we use to sample parse trees from the intersection grammar, and is the basis for our sampling algorithm.
 
