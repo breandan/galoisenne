@@ -93,9 +93,6 @@
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
 %
-%  \begin{definition}[Porous completion]
-%    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
-%  \end{definition}
 
   As the admissible set $A$ is typically under-determined, we want a procedure which prioritizes natural and valid repairs over unnatural but valid repairs:
 
@@ -381,17 +378,27 @@
   To avoid creating multiple arcs for each insertion or deletion, we alter the following rules:
 
   \begin{prooftree}
-    \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}S}}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$\color{orange}S(s: \Sigma) \mapsto [s \neq \sigma_i] \color{black}\phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}S}}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
 
-  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d_\max$ unnecessary arcs across the entire Levenshtein automaton. Thus, it is absolutely essential to first nominalize the automaton before proceeding.
+  By nominalizing the NFA, we can eliminate the creation of $e=|\Sigma|\cdot|\sigma|\cdot2d_\max$ unnecessary arcs across the entire Levenshtein automaton. Thus, it is essential to first nominalize the automaton before proceeding.
 
   \subsection{Levenshtein-Bar-Hillel Construction}
 
@@ -462,8 +469,8 @@
 \begin{prooftree}
   \def\defaultHypSeparation{\hskip 0.15cm}
   \AxiomC{$(A \rightarrow a) \in P$}
-  \AxiomC{$\color{orange}S(a)$}
-  \AxiomC{$(q\overset{S}{\rightarrow}r) \in \delta$}
+  \AxiomC{$\color{orange}S.a$}
+  \AxiomC{$(q\overset{{\color{orange}S}}{\rightarrow}r) \in \delta$}
 %  \RightLabel{$\varepsilon^+\textsc{-int}$}
   \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
   \DisplayProof
@@ -515,7 +522,11 @@
 
   \noindent we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
 
-  Since $\bigoplus_{c = 1}^n M_{r,c} \otimes M_{c,r}$ has cardinality bounded by $|V|$, it can be represented as $\mathbb{Z}_2^{|V|}$ using the characteristic function, $\mathds{1}$. A concrete example is now in order.
+  This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}, whose solutions are the set of all syntactically valid strings consistent with the input string.
+
+  \begin{definition}[Porous completion]
+    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+  \end{definition}
 
   Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
 
@@ -576,7 +587,7 @@
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ expresses a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ captures a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
@@ -610,10 +621,10 @@
 
   Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the admissible set, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
 
-  This procedure generates solutions satisfying the fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain. To do so, we will proceed to redefine the semiring algebra over indexed parse forests. Then we will show how to sample trees.
+  This procedure generates solutions satisfying the matrix fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain.
 
   \begin{wrapfigure}{r}{0.45\textwidth}
-    \vspace{-20pt}
+    \vspace{-5pt}
     \resizebox{0.45\textwidth}{!}{
       \begin{tikzpicture}
       [
@@ -666,12 +677,20 @@
     }
     \caption{A partial $\mathbb{T}_2$ for the grammar $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
     \label{fig:ptree}
-    \vspace{-10pt}
+    \vspace{-5pt}
   \end{wrapfigure}
 
-  We will now describe a technique for sampling trees from the intersection grammar, representing distinct, fully formed repairs. When the number of choices is sufficiently constrained, this can be sampled without replacement, or otherwise with replacement using a PCFG. Once we have obtained the intersection grammar, we solve for all inhabitants using a matrix fixedpoint recurrence.
+  We will now describe a datatype for compactly representing candidate parse forests, then redefine the semiring algebra over indexed parse forests. This construction is particularly convenient for tracking provenance under ambiguity, Parikh mapping, counting the size of a finite CFL, and sampling trees with replacement using a PCFG, or without replacement using an integer pairing function.
 
-  We define an algebraic data type $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively, where children are pairs of conjoined twins.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees sharing the same root, and $\mathbb{T}_3$ as a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG under a finite-length porous string. We construct $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+  We first define a datatype $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees that can be generated by a CFG in CNF, consistent with a finite-length porous string. We may also interpret $\mathbb{T}_2$ as as an algebraic data type corresponding to the fixpoints of the following recurrence, which tells us that each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence consisting of nonterminal pairs and their two children:\vspace{-10pt}
+
+  \begin{equation}
+    L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
+  \end{equation}
+
+  Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}.
+
+  We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
 \vspace{-10pt}\begin{equation}
   \begin{footnotesize}
@@ -732,18 +751,9 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \otimes Z \mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{equation}
 
-  This is the procedure we use to obtain the Parikh interval for a CFG up to finite length bounds. To do so, we abstractly parse the string $\Sigma^n$ for all $n \in [1, l_\max]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, representing every repair length in the Levenshtein ball.
+  To obtain the Parikh interval for a CFG up to finite length bounds, we abstractly parse the string $(\_)^n$ for all $n \in [1, l_{\max}]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, representing every repair length in the Levenshtein ball.
 
-  $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$, then recursively choosing twins, or without replacement via enumeration as we proceed to now describe.
-
-%\begin{equation*}
-%  \mathcal{C}(T: \mathbb{T}_2) \mapsto \begin{cases}
-%    \texttt{root}(T) & \text{if $T$ is a leaf,} \\
-%    \big\{x z \mid \langle X, Z\rangle \in \texttt{children}(T), x \in \mathcal{C}(X), z \in \mathcal{C}(Z)\big\} & \text{otherwise.}%\text{if $d \leq \max(|\err{\sigma}|, \min_{\sigma \in \mathcal{L}(G')}|\sigma|)$}.
-%  \end{cases}
-%\end{equation*}
-
-Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+  $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$. Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
 
 \begin{equation}
   \Gamma(T) \mapsto \begin{cases}
@@ -763,25 +773,18 @@ This is closely related to the generating function for the ordinary Boltzmann sa
 
 \noindent however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees contained in $\mathbb{T}_2$ will necessarily be the same width.
 
-The type $\mathbb{T}_2$ of all possible trees that can be generated by a CFG in Chomksy Normal Form corresponds to the fixpoints of the following recurrence, which tells us that each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence consisting of nonterminal pairs and their two children:\vspace{-10pt}
 
-\begin{equation}
-  L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
-\end{equation}
-
-Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}.
-
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string using the algebra defined in \S~\ref{sec:background}, letting $T=\Lambda_{\underline\sigma}^* \circ S$, and compute the total number of trees using the recurrence:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string $\sigma = (\_)^n$, letting $T=\Lambda_{\sigma}^* \circ S$, then use the recurrence below to compute the total number of trees:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
 %    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
-    1  & \text{if $T$ is a leaf,} \\
+    1 & \text{if $T$ is a leaf,} \\
     \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} |T_1| \cdot |T_2| & \text{otherwise.}
   \end{cases}
 \end{equation}
 
-To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, which is defined as follows:
+To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, that we define as follows:
 
 \begin{equation}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -795,7 +798,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{cases}
 \end{equation}
 
-If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This is the procedure we use to sample parse trees from the intersection grammar, and is the basis for our sampling algorithm.
+If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This procedure is the basis for our sampling algorithm and the method we use to decode repairs from the intersection grammar.
 
   \input{eval_contents}
 
@@ -1110,8 +1113,6 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   Our primary insight leading to SoTA precision@\{5,10\} is that repairs are typically concentrated near a small number of edit locations, and by biasing the search toward previously successful edit locations, we can achieve a significant speedup over a na\"ive search. We note this heuristic may not be applicable to all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
 
   Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to determine a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
-
-  Although possible to further reduce constraint size by preprocessing techniques such as those posed in \S\ref{sec:sparsity}, the length of the string under repair is by far the dominating factor in formula size. For this reason, the isolation problem posed in Def.~\ref{def:isolation} is a critical obstacle to overcome. A general solution would allow us to collapse well-formed substrings and handle much larger code fragments than are currently supported. We consider this a promising direction for future work.
 
   Tidyparse in its current form has several other technical shortcomings: firstly, it does not incorporate any neural language modeling technology at present, an omission we hope to address. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs. We also hope to explore the use of Metropolis-Hastings and determinantal point processes to encourage sampling diversity.
 
