@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.random.Random
 
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
@@ -29,6 +30,9 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
   val transit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
     Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
+  }
+  val revtransit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
+    Q.groupBy { it.π3 }.mapValues { (_, v) -> v.map { it.π2 to it.π1 } }
   }
 
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
@@ -98,6 +102,50 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
     return path
   }
+
+  fun revWalk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {
+    val startVtx = from
+    val path = mutableListOf<Σᐩ>()
+
+    fun Σᐩ.step(og: List<Pair<Σᐩ, Σᐩ>>? = revtransit[this]) =
+      if (this in revtransit && og != null)
+        next(this, og.map { it.second }).let {
+          if (it !in og.indices) null
+          else og[it].also { path.add(it.first) }.second
+        }
+      else null
+
+    var nextVtx = startVtx.step()
+
+    while (nextVtx != null) { nextVtx = nextVtx.step() }
+
+    return path
+  }
+
+  fun sample() = revWalk(final.random()) { _, lst ->
+//    lst.indices.random()
+    // Sample indices by exponentially weighted decaying probability
+    val weights = lst.indices.map { 1.0 / (it + 10) }
+    val sum = weights.sum()
+    val r = weights.map { it / sum }
+    val c = r.scan(0.0) { acc, it -> acc + it }
+    val p = Random.nextDouble()
+    c.indexOfFirst { it >= p }.coerceIn(lst.indices)
+  }
+
+  // TODO: Sample paths uniformly from **ALL** paths
+  fun samplePaths(alphabet: Set<Σᐩ> = setOf("OTHER")) =
+    generateSequence { sample().map { if (it in alphabet) it else alphabet.random() }.reversed().joinToString(" ") }
+
+  fun asCFG(alphabet: Set<Σᐩ>) =
+    (final.joinToString("\n") { "S -> $it" } + "\n" +
+    Q.groupBy({ it.π3 }, { it.π1 to it.π2 })
+      .mapValues { (_, v) -> v.map { it.first to it.second } }
+      .flatMap { (k, v) ->
+        v.map { (a, b) -> "$k -> $a ${if (b in alphabet) b else "OTHER"}" }
+      }
+      .joinToString("\n")).also { println("CFG size: ${it.lines().size}") }
+      .parseCFG().noEpsilonOrNonterminalStubs
 
   fun debug(str: List<Σᐩ>) =
     (0..str.size).forEachIndexed { i, it ->

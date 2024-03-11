@@ -440,7 +440,7 @@
 
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals will recognize no strings in common.
 
-  To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can represent. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
+  To identify these triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
 
   \begin{definition}[Parikh mapping of a nonterminal]
     Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \Pi$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(s) \in \pi(v)$.
@@ -707,19 +707,15 @@
 
 \noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
-\begin{equation}
-  \begin{footnotesize}
-  X \oplus Z \mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}
-  \end{footnotesize}
-\end{equation}
+\begin{align}
+  X \oplus Z &\mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}\\
+  X \otimes Z &\mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+\end{align}
 
-\begin{equation}
-  \begin{footnotesize}
-  X \otimes Z \mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
-\end{footnotesize}
-\end{equation}
+These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary of $\mathbb{T}_2$, indexed by their root nonterminals.
 
-These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary indexed by the root nonterminal. $\mathbb{T}_2$ is a convenient datatype for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
+
+  $\mathbb{T}_2$ is a convenient datatype for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
 
 \begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -747,13 +743,9 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
   \noindent where $\oplus, \otimes: \Pi \times \Pi \rightarrow \Pi$ are defined as follows:
 
-  \begin{equation}
-      X \oplus Z \mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}
-  \end{equation}
-
-  \begin{equation}
-      X \otimes Z \mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
-  \end{equation}
+  \begin{align}
+      X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
+  \end{align}
 
   To obtain the Parikh interval for a CFG up to finite length bounds, we abstractly parse the string $(\_)^n$ for all $n \in [1, l_{\max}]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, representing every repair length in the Levenshtein ball.
 
