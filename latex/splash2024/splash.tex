@@ -796,85 +796,132 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
 If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This procedure is the basis for our sampling algorithm and the method we use to decode repairs from the intersection grammar.
 
-  \input{eval_contents}
+  \section{Evaluation}
 
-  \subsection{Old Evaluation}
-
-  We evaluate Tidyparse along three primary axes: latency, throughput, and accuracy on a dataset of human repairs. Our intention here is to show that Tidyparse is competitive with a large language model (roughly, a deep circuit) that is slow but highly sample-efficient with a small language model (roughly, a shallow circuit) that is fast but less sample-efficient.
-
-  Large language models typically take between several hundred milliseconds and several seconds to infer a repair. The output is not guaranteed to be syntactically valid, and may require more than one sample to discover a valid repair. In contrast, Tidyparse can discover thousands of repairs in the same duration, all of which are guaranteed to be syntactically valid. Furthermore, if a valid repair exists within a certain number of edits, it will eventually be found.
-
-  To substantiate these claims, we conduct experiments measuring:
+  We consider the following research questions for our evaluation:
 
   \begin{itemize}
-    \item the average worst-case time to discover a human repair across varying sizes, i.e., average latency to discover a repair with edit distance $d$.
-    \item the average accuracy at varying latency cutoffs, i.e., average precision@k at latency cutoff $t$.
-    \item the average repair throughput across varying CPU cores, i.e., average number of admissible repairs discovered per second over the repair length.
-    \item the relative throughput versus a uniform sampler, i.e., average number of admissible repairs discovered per second divided by the uniform sampler's throughput
+    \item \textbf{RQ 1}: What properties do natural repairs exhibit? (e.g., error frequency, edit distance)
+    \item \textbf{RQ 2}: How precise is our technique at fixing syntax errors? (Precision@k vs. Seq2Parse)
+    \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, n-gram order)
   \end{itemize}
 
-  \subsection{Uniform sampling benchmark}\label{sec:uniform}
+  For our evaluation, we use the StackOverflow dataset from~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
 
-  Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before timeout expiration are reranked by tokenwise perplexity then compared using an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
+  \subsection{Dataset}
 
-  \begin{figure}[H]
-    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot}}
-    \resizebox{.3\textwidth}{!}{\input{repair1_plot}}
-    \resizebox{.3\textwidth}{!}{\input{repair2_plot}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot}}
+  To evaluate our model, we primarily use 5,600 pairs of (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are shorter than four lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) < 4$), and adapt the Python grammar from SeqParse.
+
+  \begin{figure}[h!]
+    \begin{tikzpicture}
+      \begin{axis}[
+      ybar,
+      bar width=5pt,
+      xlabel={Beginning of snippet $\longleftrightarrow$ End of snippet},
+      ylabel={Frequency},
+      title={Normalized edit locations},
+      axis x line*=bottom,
+      axis y line*=left,
+      ymin=0,
+      ymax=35,
+      xtick=data,
+      xticklabels={,20\%,,40\%,,60\%,,80\%,,100\%},
+      ymajorgrids=true,
+      grid style=dashed,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+
+      \addplot table {
+        X Y
+        10 11.6539
+        20 5.7252
+        30 6.2087
+        40 5.9542
+        50 5.5980
+        60 7.9389
+        70 7.0738
+        80 6.9466
+        90 12.4173
+        100 30.4835
+      };
+      \end{axis}
+    \end{tikzpicture}
+%\end{figure}
+%
+%\noindent Likewise, we can plot the number of tokens between edits within each patch:
+%
+%\begin{figure}[h!]
+    \begin{tikzpicture}
+      \begin{axis}[
+        ybar,
+        bar width=5pt,
+        title={Intra-patch edit distance},
+        xlabel={Caret distance},
+        ylabel={Frequency},
+        axis x line*=bottom,
+        axis y line*=left,
+        xtick=data,
+        ymajorgrids=true,
+        grid style=dashed,
+        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+        width=0.45\textwidth,
+        height=0.3\textwidth
+      ]
+
+        \addplot table {
+          X Y
+          1 40.66
+          2 15.00
+          3 5.80
+          4 4.86
+          5 4.26
+          6 2.98
+          7 2.05
+          8 2.73
+          9 1.62
+          10 13.64
+        };
+      \end{axis}
+    \end{tikzpicture}
+  \end{figure}
+
+  In the first set of experiments, we uniformly sample without replacement from the Levenshtein edit ball using a LFSR over $\mathbb{Z}_2^m$, and measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs. This provides a baseline for the relative density of the admissible set, and an upper bound on the latency of attaining a given precision.
+
+  In the second set of experiments, we use an adaptive sampler that stochastically resamples edits using a Dirichlet process. Repairs are scored and placed into a ranked buffer, from which new edits are resampled with frequency relative to their perplexity, and additive noise is introduced. The adaptive sampler is described in further detail in \S\ref{sec:adaptive}.
+
+  To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens from the BIFI~\cite{yasunaga2021break} dataset took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
+
+  Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. We measure the precision using abstract lexical matching, following the Seq2Parse~\cite{sakkas2022seq2parse} evaluation, and give a baseline for their approach on the same dataset.
+
+  The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
+
+  \subsection{StackOverflow Evaluation}
+
+  For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
+
+  \begin{figure}[h!]
+%  \input{sample_efficiency}
+    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii.}\label{fig:sample_efficiency}
+  \end{figure}
+
+  Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, using an n-gram likelihood model.
+
+  \begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3}}
+    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
     \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
   \end{figure}
 
-  Despite the high-latency, this demonstrates a uniform prior with post-timeout reranking is still able to achieve competitive precision@k using a relatively cheap ranking metric. This suggests that we can use the metric to bias the sampler towards more likely repairs, which we will now do.
+%  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
-%\begin{figure}[h]
-%\resizebox{0.3\textwidth}{!}{
-%\begin{tikzpicture}
-%\begin{axis}[
-%ybar,
-%enlarge x limits=0.15,
-%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
-%ylabel={Precision@1},
-%xtick={1,2,3},
-%xlabel={Edit Distance},
-%xtick=data,
-%nodes near coords,
-%nodes near coords align={vertical},
-%ymin=0,ymax=1,
-%]
-%\addplot coordinates {(1, 0.9) (2, 0.857) (3, 0.794)};
-%\addplot coordinates {(1, 0.454) (2, 0.162) (3, 0.096)};
-%\addplot coordinates {(1, 0.005) (2, 0.004) (3, 0.0)};
-%\legend{Syntactic, AbstractEval, CharMatch}
-%\end{axis}
-%\end{tikzpicture}
-%}
-%\resizebox{0.3\textwidth}{!}{
-%\begin{tikzpicture}
-%\begin{axis}[
-%ybar,
-%enlarge x limits=0.15,
-%legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend pos=outer north east},
-%ylabel={Latency (ms)},
-%xtick={1,2,3},
-%xlabel={Edit Distance},
-%xtick=data,
-%nodes near coords,
-%nodes near coords align={vertical},
-%ymin=0,ymax=3000,
-%]
-%\phantom{\legend{Syntactic, AbstractEval, CharMatch}}
-%\addplot coordinates {(1, 1585.465) (2, 1953.56) (3, 2744.887)};
-%\end{axis}
-%\end{tikzpicture}
-%}
-%\caption{Seq2Parse precision@1 and latency on the StackOverflow dataset.}
-%\end{figure}
-
-  \subsection{Repair with an adaptive sampler}
-
-  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
+  Previously, we used an adaptive sampler, which was much worse, because it did not sample directly from the admissible set, but the entire Levenshtein ball. We present the results from the earlier evaluation for comparison below.
 
   \begin{figure}[H]
     \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
@@ -886,30 +933,40 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports precision@1 repairs, and so we only report Seq2parse precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
 
-  While adapting sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
-
-  \subsection{Throughput benchmark}
+%  While adapting sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
 
   \begin{wrapfigure}{r}{0.3\textwidth}
     \resizebox{.3\textwidth}{!}{\input{throughput}}
     \label{fig:throughput}
-    \vspace{-30pt}
+    \vspace{-20pt}
   \end{wrapfigure}
 
   End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
 
-  \subsection{Timing benchmark}\label{sec:timings}
-
-  Below, we plot the end-to-end repair timings across snippet length. For each code snippet, we measure the time taken to sample the exact human repair, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.
-
-  \begin{figure}[h!]
-    \minipage{\columnwidth}
-    \resizebox{0.5\textwidth}{!}{\input{experiments/timings}}
-    \endminipage
+  \begin{wrapfigure}{l}{0.35\textwidth}
+    \resizebox{.3\textwidth}{!}{\input{experiments/timings}}
     \caption{End-to-end repair timings across snippet length.}
-  \end{figure}
+    \label{fig:timings}
+    \vspace{-25pt}
+  \end{wrapfigure}
+
+  In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the time until the sampler locates the exact human repair. For each code snippet, we measure the total time taken, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.
 
   \subsection{Synthetic repair benchmark}\label{sec:latency}
+
+  Pairwise naturally-occuring errors and human fixes are the most authentic data set, but can be difficult to obtain in as great a quantity as we would like. An alternative nearly as good is to collect a dataset of clean code, and synthetically corrupt it. The original source code then becomes the ground truth repair for the synthetically introduced typo, and the target for evaluating the precision of our repair procedure.
+
+  In our synthetic repair bechmark, we evaluate synthetically corrupted BIFI good code snippets according to an context-aware corruption. To do so, we train a contextual edit model on a pairwise dataset by computing the Levenshtein alignment, then approximating the conditional probability of each edit given the local context. We then sample a corruption of a good string matching the distribution of typos in the dataset, and measure the precision at recovering the originally valid string.
+
+  Suppose we have a dataset of single token edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+
+  \begin{enumerate}
+    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) \coloneqq \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
+    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
+    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
+  \end{enumerate}
+
+  This allows us to sample a corruption of a good string matching the distribution of typos in the dataset. We then measure the precision at recovering the originally valid string.
 
   In addition to the StackOverflow dataset, we also evaluate our approach on two datasets containing synthetic strings generated by a Dyck language, and bracketing errors of synthetic and organic provenance in organic source code. The first dataset contains length-50 strings sampled from various Dyck languages, i.e., the Dyck language containing n different types of balanced parentheses. The second contains abstracted Java and Python source code mined from GitHub repositories. The Dyck languages used in the remaining experiments are defined by the following context-free grammar(s):
 
