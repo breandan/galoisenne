@@ -118,21 +118,21 @@
       \resizebox{0.45\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop] {Start};
-          \node (pro1) [process, below of=start, yshift=-0.5cm] {$\mathcal{G}_\cap \leftarrow \mathcal{G}\cap\Delta(\err\sigma, d)$};
+          \node (pro1) [process, below of=start, yshift=-0.5cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
           \node (pcfg) [io, left of=pro1, xshift=-3cm] {[P]CFG};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-WFA};
 
           \node (code) [io, right of=start,xshift=3cm] {Code};
           \node (synt) [io, left of=start,xshift=-3cm] {Syntax};
 
-          \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[\mathcal{G}_{\cap} = \varnothing]$};
+          \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
 
           \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-          \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(\mathcal{G}_\cap)|$};
+          \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(G_\cap)|$};
 
-          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(\mathcal{G}_\cap)$};
-          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(\mathcal{G}_\cap)$};
+          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
 
           \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
           \node (vlmc) [io, above of=rank, yshift=-0.1cm] {VLMC};
@@ -176,16 +176,16 @@
   The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the langauge syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
 
   \begin{enumerate}
-    \item $\mathcal{G}_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
-    \item $\mathcal{L}(\mathcal{G}_\cap)$ is small, in which case we enumerate all possible repairs. Enumeration is tractable for $\sim 80\%$ of the dataset in $\leq 90$s.
-    \item $\mathcal{L}(\mathcal{G}_\cap)$ is too large to enumerate, so we sample from the intersection grammar $\mathcal{G}_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
+    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
+    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Enumeration is tractable for $\sim 80\%$ of the dataset in $\leq 90$s.
+    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
   \end{enumerate}
 
   When ambiguous, we use an n-gram model to rank and return the top-k results by likelihood. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide a method for extracting explicit repairs from it.
 
   \subsection{Preliminaries}
 
-  Recall that a CFG is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every $P$ takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -193,7 +193,7 @@
     \end{tabular}
   \end{table}\vspace{-8pt}
 
-  Likewise, a finite state automaton is a tuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will use this notation in the following sections.
+  Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will use this notation in the following sections.
 
   \pagebreak\subsection{The Nominal Levenshtein Automaton}\label{sec:lev_nfa}
 
@@ -475,7 +475,7 @@
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-  Finally, once $\mathcal{G}_\cap$ is constructed, it is renormalized by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $\mathcal{G}_\cap^*$, which is usually several orders of magnitude smaller. When this grammar is sufficiently small, we can extract all relevant repairs from it, otherwise we sample from it to obtain a subset of candidate repairs.
+  Finally, once $G_\cap$ is constructed, it is renormalized by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller. When this grammar is sufficiently small, we can extract all relevant repairs from it, otherwise we sample from it to obtain a subset of candidate repairs.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
@@ -488,13 +488,13 @@
 
   In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, amenability to parallelization, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
-  Given a CFG, $G' : \mathbb{G} = \langle \Sigma, V, P, S\rangle$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathbb{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+  Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
     X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$ and solve for the fixpoint $M_{i+1} = M_i + M_i^2$,\vspace{-10pt}
+  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries, which \vspace{-10pt}
 
   \begin{align*}
     M_0\coloneqq
@@ -521,7 +521,7 @@
     \end{pNiceMatrix}
   \end{align*}
 
-  \noindent we obtain the recognizer, $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
+  \noindent The northeasternmost entry $\Lambda^*_\sigma$ gives us the recognizer $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
 
   This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}, whose solutions are the set of all syntactically valid strings consistent with the input string.
 
@@ -588,7 +588,7 @@
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ captures a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
@@ -750,7 +750,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \begin{equation}
   \Gamma(T) \mapsto \begin{cases}
-        \Gamma\big(\text{Multi} \big(\texttt{children}(T), \mathbf{p}\big)\big) & \text{ if $T: \mathbb{T}_2$ } \\
+        \texttt{BTree}\Big(\texttt{root}(T), \Gamma\big(\text{Multi}(\texttt{children}(T), \mathbf{p})\big)\Big) & \text{ if $T: \mathbb{T}_2$ } \\
         \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
   \end{cases}
 \end{equation}
@@ -811,7 +811,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Dataset}
 
-  In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise aligned of (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are shorter than four lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$), and adapt the Python grammar from SeqParse.
+  In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are less than five lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$).
 
   The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
 
@@ -820,7 +820,72 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       \begin{axis}[
       ybar,
       bar width=5pt,
-      xlabel={Beginning of snippet $\longleftrightarrow$ End of snippet},
+      xlabel={Length},
+      ylabel={Frequency},
+      title={Snippet Length},
+      axis x line*=bottom,
+      axis y line*=left,
+      ymin=0,
+      ymax=65,
+      xtick=data,
+      xticklabels={,\leq 20,,\leq 40,,\leq 60,,\leq 80,,\leq 100},
+      ymajorgrids=true,
+      grid style=dashed,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+
+      \addplot table {
+        X Y
+        1 7.60
+        2 14.52
+        3 22.01
+        4 30.54
+        5 37.82
+        6 44.30
+        7 49.68
+        8 55.21
+        9 59.75
+        10 63.59
+      };
+      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}
+      \begin{axis}[
+        ybar,
+        bar width=5pt,
+        title={Human Repair Size},
+        xlabel={$\Delta(\err\sigma, \sigma)$},
+        ylabel={Frequency},
+        axis x line*=bottom,
+        axis y line*=left,
+        xtick=data,
+        ymajorgrids=true,
+        grid style=dashed,
+        xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
+        width=0.45\textwidth,
+        height=0.3\textwidth
+      ]
+        \addplot table {
+          X Y
+          1  31.48
+          2  47.52
+          3  54.89
+          4  60.44
+          5  63.88
+          6  66.38
+          7  68.02
+          8  70.04
+          9  71.49
+          10 72.22
+        };
+      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}
+      \begin{axis}[
+      ybar,
+      bar width=5pt,
+      xlabel={Beginning $\longleftrightarrow$ End},
       ylabel={Frequency},
       title={Normalized edit locations},
       axis x line*=bottom,
@@ -882,6 +947,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
         };
       \end{axis}
     \end{tikzpicture}
+    \caption{Statistics on properties of each repair, across the StackOverflow pairwise dataset.}\label{fig:patch_stats}
   \end{figure}
 
   In the first set of experiments, we measure the precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
@@ -952,9 +1018,9 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Synthetic repair benchmark}\label{sec:latency}
 
-  Pairwise naturally-occuring errors and human fixes are the most authentic data set, but can be difficult to obtain in as great a quantity as we would like. An alternative nearly as good is to collect a dataset of clean code, and synthetically corrupt it. The original source code then becomes the ground truth repair for the synthetically introduced typo, and the target for evaluating the precision of our repair procedure.
+  Pairwise naturally-occurring errors and human fixes are the most authentic dataset, but can be difficult to obtain in as great a quantity as we would like. An alternative nearly as good is to collect a dataset of clean code, and synthetically corrupt it. The original source code then becomes the ground truth repair for the synthetically introduced typo, and the target for evaluating the precision of our repair procedure.
 
-  In our synthetic repair bechmark, we evaluate synthetically corrupted BIFI good code snippets according to an context-aware corruption. To do so, we train a contextual edit model on a pairwise dataset by computing the Levenshtein alignment, then approximating the conditional probability of each edit given the local context. We then sample a corruption of a good string matching the distribution of typos in the dataset, and measure the precision at recovering the originally valid string.
+  In our synthetic repair bechmark, we synthetically corrupt BIFI code snippets using a learned corruption model. To train the model computing the Levenshtein alignment on a pairwise dataset, then approximating the conditional probability of each edit given the local context. We then sample a corruption of a good string matching the distribution of typos in the dataset, and measure the precision at recovering the originally valid string.
 
   Suppose we have a dataset of single token edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
 
@@ -1143,7 +1209,7 @@ Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
 
 %The literature on parsers is vast and deep, covering far more ground than we could possibly hope to survey. We take inspiration from their findings, but restrict ourselves to a dozen most closely related papers, in four major research areas: (1) formal language theory, (2) constraint satisfaction (3) program synthesis, and (4) error correction. We survey each of these areas in turn.
 %
-%It was Noam Chomsky himself who first developed the algebraic theory of \textit{context-free grammars} (CFGs) in 1959~\cite{chomsky1959algebraic}, and since then, CFGs have been the subject of extensive research in formal language theory and program analysis. In particular, we take inspiration from Leslie Valiant~\cite{valiant1975general} who first discovered the connection to matrix multiplication in 1975 and Alexander Okhotin~\cite{okhotin2001conjunctive} who later introduced the idea of \textit{conjunctive grammars} in 2001. More recently, Azimov \& Grigorev~\cite{azimov2018cfpq} and Qirun Zhang shed light into the practical applicability of these ideas and made the theory of CFG reachability more accessible to the general public. In our work, we show how to compile their ideas onto a SAT solver to fix syntax errors, which seems like a perfectly natural extension, but was heretofore previously never considered to the best of our knowledge.
+%It was Noam Chomsky who first developed the algebraic theory of \textit{context-free grammars} (CFGs) in 1959~\cite{chomsky1959algebraic}, and since then, CFGs have been the subject of extensive research in formal language theory and program analysis. In particular, we take inspiration from Leslie Valiant~\cite{valiant1975general} who first discovered the connection to matrix multiplication in 1975 and Alexander Okhotin~\cite{okhotin2001conjunctive} who later introduced the idea of \textit{conjunctive grammars} in 2001. More recently, Azimov \& Grigorev~\cite{azimov2018cfpq} and Qirun Zhang shed light into the practical applicability of these ideas and made the theory of CFG reachability more accessible to the general public. In our work, we show how to compile their ideas onto a SAT solver to fix syntax errors, which seems like a perfectly natural extension, but was heretofore previously never considered to the best of our knowledge.
 
   \subsection{Classical program synthesis}
 
