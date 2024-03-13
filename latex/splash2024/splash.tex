@@ -40,7 +40,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated within a small edit distance then ranked within a short amount of time. Furthermore, we place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we reduce CFL recognition onto Boolean tensor completion, then model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the solutions, we then sample trees without replacement from the intersection grammar, which yields valid repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then ranked within a short amount of time. Furthermore, we place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we reduce CFL recognition onto Boolean tensor completion, then model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To decode the solutions, we then sample trees without replacement from the intersection grammar, which yields valid repairs within a certain Levenshtein distance. Finally, we rank all repairs discovered within 60 seconds by a Markov chain.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 %
@@ -81,7 +81,49 @@
 
   \pagebreak
 
-  \input{example_contents}
+  \section{Example}
+
+  Consider the following Python snippet, which contains a small syntax error:\\
+
+  \noindent\texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+
+  We can fix it by inserting a colon after the function definition, yielding:\\
+
+  \noindent\texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+
+  A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
+%  Consider the following Kotlin snippet:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
+%
+%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
+
+  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just one hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
+
+%\setlength{\columnsep}{-10pt}
+%\setlength{\columnseprule}{-10pt}
+%\noindent\begin{multicols}{3}
+%  \begin{enumerate}
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
+%    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
+%    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
+%  \end{enumerate}
+%\end{multicols}
+  \begin{figure}[h!]
+    \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
+    (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\\\
+    (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})} \\
+    \end{tabular}
+  \end{figure}
+
+  With some typing information, we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
+
+  The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible d-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
 
   \section{Problem}
 
@@ -169,6 +211,7 @@
         \end{tikzpicture}
       }
     \end{center}
+    \vspace{-0.1cm}
     \caption{Flowchart of our proposed method.}\label{fig:flowchart}
     \vspace{-1cm}
   \end{wrapfigure}
@@ -181,7 +224,7 @@
     \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
   \end{enumerate}
 
-  When ambiguous, we use an n-gram model to rank and return the top-k results by likelihood. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide a method for extracting explicit repairs from it.
+  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within it (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}
 
@@ -622,11 +665,13 @@
 
   Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the admissible set, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
 
+  \subsection{An algebraic datatype for context-free parse forests}\label{sec:ptree}
+
   This procedure generates solutions satisfying the matrix fixpoint, but forgets their provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural structure of the parsing domain.
 
-  \begin{wrapfigure}{r}{0.45\textwidth}
+  \begin{wrapfigure}{r}{0.47\textwidth}
     \vspace{-5pt}
-    \resizebox{0.45\textwidth}{!}{
+    \resizebox{0.47\textwidth}{!}{
       \begin{tikzpicture}
       [
         grow                    = right,
@@ -676,14 +721,14 @@
         edge from parent node [above] };
       \end{tikzpicture}
     }
-    \caption{A partial $\mathbb{T}_2$ for the grammar $P=\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
+    \caption{A partial $\mathbb{T}_2$ corresponding to the grammar $\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
     \label{fig:ptree}
     \vspace{-10pt}
   \end{wrapfigure}
 
-  We will now describe a datatype for compactly representing candidate parse forests, then redefine the semiring algebra over indexed parse forests. This construction is particularly convenient for tracking provenance under ambiguity, Parikh mapping, counting the size of a finite CFL, and sampling trees with replacement using a PCFG, or without replacement using an integer pairing function.
+  We will now describe a datatype for compactly representing CFL parse forests, then redefine the semiring algebra over this domain. This construction is especially convenient for tracking provenance under ambiguity, Parikh mapping, counting the size of a finite CFL, and sampling trees either with replacement using a PCFG, or without replacement using an integer pairing function.
 
-  We first define a datatype $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees that can be generated by a CFG in CNF, consistent with a finite-length porous string. We may also interpret $\mathbb{T}_2$ as as an algebraic data type corresponding to the fixpoints of the following recurrence, which tells us that each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence consisting of nonterminal pairs and their two children:\vspace{-10pt}
+  We first define a datatype $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees that can be generated by a CFG in CNF, consistent with a finite-length porous string. Structurally, we may interpret $\mathbb{T}_2$ as an algebraic data type corresponding to the fixpoints of the following recurrence. This tells us each $\mathbb{T}_2$ can be a terminal, nonterminal, or a nonterminal and a sequence of nonterminal pairs and their two children:\vspace{-10pt}
 
   \begin{equation}
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
@@ -711,8 +756,7 @@
 
 These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary of $\mathbb{T}_2$, indexed by their root nonterminals.
 
-
-  $\mathbb{T}_2$ is a convenient datatype for many operations. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
+  $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
 
 \begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -738,13 +782,13 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   %infix fun IntRange.join(other: IntRange) =
   %  (first + other.first)..(last + other.last)
 
-  \noindent where $\oplus, \otimes: \Pi \times \Pi \rightarrow \Pi$ are defined as follows:
+  \noindent where the operations over Parikh maps $\oplus, \otimes: \Pi \times \Pi \rightarrow \Pi$ are defined respectively as follows:
 
   \begin{align}
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the Parikh interval for a CFG up to finite length bounds, we abstractly parse the string $(\_)^n$ for all $n \in [1, l_{\max}]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, representing every repair length in the Levenshtein ball.
+  To obtain the Parikh interval for a CFG up to finite length bounds, we abstractly parse the string $(\_)^n$ for all $n \in [1, l_{\max}]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, which subsumes every valid repair in the Levenshtein ball.
 
   $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$. Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
 
@@ -793,7 +837,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
 If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This procedure is the basis for our sampling algorithm and the method we use to decode repairs from the intersection grammar.
 
-  \subsection{Ranked Repair}
+  \subsection{Ranked Repair}\label{sec:ranking}
 
   Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of strings, and we need an ordering over them. We note that any metric is sufficient, such as the perplexity of the string under a large language model, or the probability of the string under a PCFG. We the simplest possible solution: the negative log likelihood of the string computed by a variable-order Markov chain. This is a simple, fast, and effective metric for ranking strings, and as we will show, already yields competitive results in practice.
 
@@ -807,9 +851,9 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, n-gram order)
   \end{itemize}
 
-  For our evaluation, we use the StackOverflow dataset from~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
-
   \subsection{Dataset}
+
+  For our evaluation, we use the StackOverflow dataset from~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
 
   In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are less than five lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$).
 
@@ -822,7 +866,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       bar width=5pt,
       xlabel={Length},
       ylabel={Frequency},
-      title={Snippet Length},
+      title={Snippet length},
       axis x line*=bottom,
       axis y line*=left,
       ymin=0,
@@ -848,13 +892,14 @@ If the language is suffiently small, instead of sampling trees, we can sample in
         9 59.75
         10 63.59
       };
+      \draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
       \end{axis}
     \end{tikzpicture}
     \begin{tikzpicture}
       \begin{axis}[
         ybar,
         bar width=5pt,
-        title={Human Repair Size},
+        title={Human repair distance},
         xlabel={$\Delta(\err\sigma, \sigma)$},
         ylabel={Frequency},
         axis x line*=bottom,
@@ -879,6 +924,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
           9  71.49
           10 72.22
         };
+      \draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
       \end{axis}
     \end{tikzpicture}
     \begin{tikzpicture}
@@ -947,12 +993,14 @@ If the language is suffiently small, instead of sampling trees, we can sample in
         };
       \end{axis}
     \end{tikzpicture}
-    \caption{Statistics on properties of each repair, across the StackOverflow pairwise dataset.}\label{fig:patch_stats}
+    \caption{Repair statistics across the StackOverflow dataset, of which our method can handle about half in $\sim$30s and $\sim$140GB. Larger repairs and Levenshtein radii are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
   \end{figure}
 
-  In the first set of experiments, we measure the precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
-
   In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing syntax errors sampled from a distribution trained from the StackOverflow dataset. We then measure the precision@k of our repair procedure at recovering the original, uncorrupted snippet.
+
+  \subsection{Experimental Setup}
+
+  We measure the precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
 
   To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
 
@@ -963,11 +1011,11 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
 
   \begin{figure}[h!]
-%  \input{sample_efficiency}
-    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii.}\label{fig:sample_efficiency}
+  \input{sample_efficiency}
+    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually saturate the admissible set for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
   \end{figure}
 
-  Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, using an n-gram likelihood model.
+  Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, based on n-gram likelihood.
 
   \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
@@ -983,7 +1031,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
 %  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
-  Previously, we used an adaptive sampler, which was much worse, because it did not sample directly from the admissible set, but the entire Levenshtein ball. We present the results from the earlier evaluation for comparison below.
+  Previously, we used a rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold, the average time required to attain a fixed precision is much higher. We present the results from the earlier evaluation for comparison below.
 
   \begin{figure}[H]
     \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
@@ -1005,22 +1053,22 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \vspace{-10pt}
   \end{wrapfigure}
 
-  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
+  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma) \in [1, 4]$ before timeout. As Seq2Parse only generates one syntactically valid repair per string, we do not report its throughput.
 
   \begin{wrapfigure}{l}{0.35\textwidth}
     \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
     \caption{End-to-end repair timings across snippet length.}
     \label{fig:timings}
-    \vspace{-25pt}
+    \vspace{-20pt}
   \end{wrapfigure}
 
   In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the time until the sampler locates the exact human repair. For each code snippet, we measure the total time taken, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.
 
   \subsection{Synthetic repair benchmark}\label{sec:latency}
 
-  Pairwise naturally-occurring errors and human fixes are the most authentic dataset, but can be difficult to obtain in as great a quantity as we would like. An alternative nearly as good is to collect a dataset of clean code, and synthetically corrupt it. The original source code then becomes the ground truth repair for the synthetically introduced typo, and the target for evaluating the precision of our repair procedure.
+  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
-  In our synthetic repair bechmark, we synthetically corrupt BIFI code snippets using a learned corruption model. To train the model computing the Levenshtein alignment on a pairwise dataset, then approximating the conditional probability of each edit given the local context. We then sample a corruption of a good string matching the distribution of typos in the dataset, and measure the precision at recovering the originally valid string.
+  In our synthetic repair benchmark, we synthetically corrupt BIFI code snippets using a learned corruption model. To train the model we compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid code sequence.
 
   Suppose we have a dataset of single token edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
 
