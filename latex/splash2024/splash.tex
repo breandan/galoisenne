@@ -811,7 +811,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Dataset}
 
-  In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise aligned of (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are shorter than four lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) < 4$), and adapt the Python grammar from SeqParse.
+  In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise aligned of (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are shorter than four lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$), and adapt the Python grammar from SeqParse.
 
   The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
 
@@ -931,17 +931,18 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
 %  While adaptive sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
 
-  \begin{wrapfigure}{r}{0.3\textwidth}
-    \resizebox{.3\textwidth}{!}{\input{throughput}}
+  \begin{wrapfigure}{r}{0.35\textwidth}
+    \vspace{-10pt}
+    \resizebox{.35\textwidth}{!}{\input{throughput}}
     \caption{Total repairs found in 30s.}
     \label{fig:throughput}
-    \vspace{-20pt}
+    \vspace{-10pt}
   \end{wrapfigure}
 
   End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for 1- and 2-edit repairs before timeout. As the Seq2Parse baseline is unable to generate more than one syntactically valid repair per string, we do not report its throughput.
 
   \begin{wrapfigure}{l}{0.35\textwidth}
-    \resizebox{.3\textwidth}{!}{\input{experiments/timings}}
+    \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
     \caption{End-to-end repair timings across snippet length.}
     \label{fig:timings}
     \vspace{-25pt}

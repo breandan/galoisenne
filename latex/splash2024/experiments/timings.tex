@@ -1,9 +1,7 @@
 % This file was created with tikzplotlib v0.10.1.
 \begin{tikzpicture}
 
-\definecolor{darkgray176}{RGB}{176,176,176}
 \definecolor{green}{RGB}{0,128,0}
-\definecolor{violet}{RGB}{238,130,238}
 
 \begin{axis}[
 log basis y={10},
@@ -38,7 +36,7 @@ yticklabels={
 \addlegendentry{\footnotesize{$\Delta = 4$}}
 \addlegendentry{\footnotesize{$\Delta = 2$}}
 \addlegendentry{\footnotesize{$\Delta = 3$}}
-\addplot [draw=red, fill=red, mark=*, only marks]
+\addplot [draw=green, fill=green, mark=*, only marks]
 table{%
 x  y
 32 5148
@@ -387,7 +385,7 @@ x  y
 23 618
 15 532
 };
-\addplot [draw=violet, fill=violet, mark=*, only marks]
+\addplot [draw=orange, fill=orange, mark=*, only marks]
 table{%
 x  y
 20 58108
@@ -850,7 +848,7 @@ x  y
 15 6672
 14 4076
 };
-\addplot [draw=green, fill=green, mark=*, only marks]
+\addplot [draw=red, fill=red, mark=*, only marks]
 table{%
 x  y
 40 42016
