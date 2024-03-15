@@ -525,7 +525,7 @@
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
 
-  \subsection{Repair as idempotent matrix completion}
+  \subsection{Repair as idempotent matrix completion}\label{sec:matrix_completion}
 
   Now that we have a language that recognizes local repairs, we need a method to extract the repairs themselves. We impose specific criteria on such a procedure: it must generate (1) only valid repairs and (2) all repairs in the langauge. We also require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
@@ -747,7 +747,7 @@
   \end{footnotesize}
 \end{equation}
 
-\noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
+\noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ in the same manner described in \S~\ref{sec:matrix_completion} by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
 \begin{align}
   X \oplus Z &\mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}\\
@@ -1300,6 +1300,9 @@ Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
 
   \section{Conclusion}\label{sec:conclusion}
 
+  Our work, while a case study on syntax repair, is part of a broader trend in program synthesis that investigates how to combine the strengths of formal language theory and machine learning to build more powerful and flexible programming tools. One approach is to filter the outputs of a generative langauge model to satisfy a formal specification, typically by constrained sampling. Alternatively, some attempt to use a formal language to guide the search for valid programs via a reinforcement learning or hybrid neurosymbolic approach.
+
+  In our work, we take a more pragmatic tack - by incorporating the similarity metric into our formal language, we try to exhaustively enumerate repairs by increasing distance, then use the stochastic language model to rank the resulting solutions by naturalness. The more constraints we can encode into the formal language, the more efficient sampling becomes, and the more precise control we have over the output. This reduces the need for training a large, expensive language model to relearn syntax, and allows us to leverage compute for more efficient search.
 
   The great compromise in program synthesis is one of efficiency versus expressiveness. The more expressive a language, the more concise and varied the programs it can represent, but the harder those programs are to synthesize without resorting to domain-specific heuristics. Likewise, the simpler a language is to synthesize, the weaker its concision and expressive power.
 
