@@ -37,6 +37,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   // TODO: Use weighted choice mechanism
   val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
+  val totalTreesStr by lazy { totalTrees.toString() }
   val totalTrees: BigInteger by lazy {
     if (branches.isEmpty()) BigInteger.ONE
     else branches.map { (l, r) -> l.totalTrees * r.totalTrees }

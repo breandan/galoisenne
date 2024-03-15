@@ -77,7 +77,7 @@
     \item Finally, we rerank all repairs found before a fixed timeout by n-gram perplexity.
   \end{enumerate}
 
-  Though simple, this technique outperforms SoTA syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often the langauge of small repairs is surpisingly small compared with the langauge of all possible edits, enabling us to efficiently synthesize and score every possible solution. This offers a significant advantage over memoryless sampling techniques.
+  Though simple, this technique outperforms SoTA syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often the language of small repairs is surprisingly small compared with the language of all possible edits, enabling us to efficiently synthesize and score every possible solution. This offers a significant advantage over memoryless sampling techniques.
 
   \pagebreak
 
@@ -147,7 +147,7 @@
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new langauges. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As our work demonstrates, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likliehood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
+  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As our work demonstrates, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
@@ -216,7 +216,7 @@
     \vspace{-1cm}
   \end{wrapfigure}
 
-  The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the langauge syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
+  The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the language syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
 
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
@@ -249,7 +249,7 @@
     \vspace{-0.5cm}
   \end{wrapfigure}
 
-  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adpot a nominal form which supports infinite alphabets and considerably simplifies the langauge intersection. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\Delta(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$.
+  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adpot a nominal form which supports infinite alphabets and considerably simplifies the language intersection. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\Delta(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$.
 
   \noindent Alternatively, this transition system can be viewed as a kind of proof system in an unlabeled lattice. This is equivalent to Schultz and Mihov's automaton, but more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and uses skip connections to represent consecutive deletions.
 
@@ -473,7 +473,7 @@
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
-  This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical langauges and code snippets can generate hundreds of trillions of productions for even moderately sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many unreachable productions in the case of Levenshtein intersection.
+  This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical languages and code snippets can generate hundreds of trillions of productions for even moderately sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many unreachable productions in the case of Levenshtein intersection.
 
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar, $P_\cap$, matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
@@ -527,7 +527,7 @@
 
   \subsection{Repair as idempotent matrix completion}\label{sec:matrix_completion}
 
-  Now that we have a language that recognizes local repairs, we need a method to extract the repairs themselves. We impose specific criteria on such a procedure: it must generate (1) only valid repairs and (2) all repairs in the langauge. We also require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
+  Now that we have a language that recognizes local repairs, we need a method to extract the repairs themselves. We impose specific criteria on such a procedure: it must generate (1) only valid repairs and (2) all repairs in the language. We also require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
   In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, amenability to parallelization, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
@@ -1091,142 +1091,16 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in the dataset. We then measure the precision at recovering the originally valid string.
 
-  In addition to the StackOverflow dataset, we also evaluate our approach on two datasets containing synthetic strings generated by a Dyck language, and bracketing errors of synthetic and organic provenance in organic source code. The first dataset contains length-50 strings sampled from various Dyck languages, i.e., the Dyck language containing n different types of balanced parentheses. The second contains abstracted Java and Python source code mined from GitHub repositories. The Dyck languages used in the remaining experiments are defined by the following context-free grammar(s):
+  Here, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. the enumerative sampler. In both experiments, we run the corresponding sampler for 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
 
-  \begin{wholetidyinput}
-    Dyck-1 -> ( ) | ( Dyck-1 ) | Dyck-1 Dyck-1
-Dyck-2 -> Dyck-1 | [ ] | ( Dyck-2 ) | [ Dyck-2 ] | Dyck-2 Dyck-2
-Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
-  \end{wholetidyinput}
-
-  \noindent In experiment (1a), we sample a random valid string $\sigma \sim \Sigma^{50} \cap \mathcal{L}_{\text{Dyck-n}}$, then replace a fixed number of indices in $[0, |\sigma|)$ with holes and measure the average time required to decode ten syntactically-admissible repairs across 100 trial runs. In experiment (1b), we sample a random valid string as before, but delete p tokens at random and rather than provide their location(s), ask our model to solve for both the location(s) and repair by sampling uniformly from all n-token HCs, then measure the total time required to decode the first admissible repair. Note the logarithmic scale on the y-axis.
-
-  \begin{figure}[H]
-    \begin{minipage}{.48\textwidth}
-      \begin{center}\footnotesize\textbf{Synthetic bracket language}\end{center}
-    \end{minipage}
-    \begin{minipage}{.48\textwidth}
-      \begin{center}\footnotesize\textbf{Organic bracket language}\end{center}
-    \end{minipage}\\
-    \vspace{10pt}
-    \hspace{-0.25cm}\begin{tikzpicture}[scale=0.35]
-    \begin{axis}[
-      width=8.3cm,
-      height=7cm,
-      title={\hspace{-1cm}\textbf{(1a) Latency with known locations}},
-      ybar,
-      bar width=6pt,
-      xlabel={Number of holes},
-      ylabel={ms to synthesize 10 repairs},
-      xtick=data,
-      axis x line*=bottom,
-      axis y line*=left,
-      ytick pos=left,
-      xticklabels from table={\loctimings}{holes},
-      ymajorgrids,
-      legend pos=north west,
-      legend columns=2,
-      error bars/y dir=both,
-      error bars/y explicit
-    ]
-      \addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
-      \addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
-      \addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
-      \addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
-      \legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
-    \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.35]
-      \begin{axis}[
-        width=8.3cm,
-        height=7cm,
-        title={\hspace{-1cm}\textbf{(1b) Latency with unknown locations}},
-        ybar,
-        bar width=20pt,
-        xlabel={Number of errors},
-%ylabel={ms to synthesize 1 repair},
-        xtick=data,
-        axis x line*=bottom,
-        axis y line*=left,
-        enlarge x limits={abs=0.5},
-        ymode=log,
-        ytick pos=left,
-        xticklabels from table={\unloctimings}{errors},
-        ymajorgrids,
-        legend pos=north west,
-        error bars/y dir=both,
-        error bars/y explicit
-      ]
-        \addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-        \addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-        \legend{Dyck-1, Dyck-2, Dyck-3}
-      \end{axis}
-    \end{tikzpicture}
-    \hspace{20pt}
-    \begin{tikzpicture}[scale=0.35]
-      \begin{axis}[
-      width=8.3cm,
-      height=7cm,
-%    title={\hspace{-1cm}\textbf{Java Brackets}},
-      ybar,
-      bar width=10pt,
-      xlabel={$|\Sigma^*|$},
-      ylabel={Top-1 parser acceptance},
-      title={\textbf{(2a) Synthetic Java bracket error correction}},
-      xtick=data,
-      axis x line*=bottom,
-      axis y line*=left,
-      enlarge x limits={abs=0.5},
-      ytick pos=left,
-      xticklabels from table={\syntheticerrors}{len},
-      ymajorgrids,
-      legend pos=north east,
-      legend columns=3,
-      error bars/y dir=both,
-      error bars/y explicit
-      ]
-      \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
-      \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
-      \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
-      \legend{10s, 30s, 60s}
-      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.35]
-      \begin{axis}[
-      width=8.3cm,
-      height=7cm,
-      title={\textbf{(2b) Organic Python bracket error correction}},
-      ybar,
-      bar width=10pt,
-      xlabel={$|\Sigma^*|$},
-%ylabel={Parser acceptance},
-      xtick=data,
-      axis x line*=bottom,
-      axis y line*=left,
-      enlarge x limits={abs=0.5},
-      ytick pos=left,
-      xticklabels from table={\naturalerrors}{len},
-      ymajorgrids,
-      y tick label style={/pgf/number format/.cd,%
-      scaled y ticks = false,
-      set thousands separator={},
-      fixed},
-      legend pos=north east,
-      legend columns=3,
-      error bars/y dir=both,
-      error bars/y explicit
-      ]
-      \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
-      \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
-      \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
-      \legend{10s, 30s, 60s}
-      \end{axis}
-    \end{tikzpicture}
-    \caption{Benchmarking bracket correction latency and accuracy across two bracketing languages, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
+  \begin{figure}[h]
+    \input{experiments/ablation_enumeration_only.tex}
+    \input{experiments/ablation_pcfg_only.tex}
   \end{figure}
 
-  In the second set of experiments, we analyze bracketing errors in a dataset of Java and Python code snippets mined from open-source repositories on GitHub using the Dyck-nw\footnote{Using the Dyck-n grammar augmented with a single additional production, \texttt{Dyck-1} {\color{blue}\texttt{->}} \texttt{w} {\color{blue}\texttt{|}} \texttt{Dyck-1}. Contiguous non-bracket characters are substituted with a single placeholder token, \texttt{w}, and restored verbatim after bracket repair.}, in which all source code tokens except brackets are replaced with a \texttt{w} token. For Java (2a), we sample valid single-line statements with bracket nesting more than two levels deep, synthetically delete one bracket uniformly at random, and repair using Tidyparse, then take the top-1 repair after $t$ seconds, and validate using ANTLR's Java 8 parser. For Python (2b), we sample invalid code fragments uniformly from the imbalanced bracket category of the Break-It-Fix-It (BIFI) dataset~\cite{yasunaga2021break}, a dataset of organic Python errors, which we repair using Tidyparse, take the top-1 repair after $t$ seconds, and validate repairs using Python's \texttt{ast.parse()} method. Since the Java and Python datasets do not have a ground-truth human fix, we report the percentage of repairs that are accepted by the language's official parser for repairs generated under a fixed time cutoff. Although the Java and Python datasets are not directly comparable, we observe that Tidyparse can detect and repair a significant fraction of bracket errors in both languages with a relatively unsophisticated grammar.
+  While the overall precision is notably lower for PCFG sampling than enumeration, the average number of samples drawn is also significantly lower, indicating a relatively higher sample efficiency. This illustrates the tradeoff between sample efficiency and diversity, and suggests that a hybrid approach may be the most effective. When the repair language is very large, a PCFG offers a more informed prior, albeit at the cost of lower coverage.
+
+  In general enumeration has an advantage when the CFL is small. For example, if the CFL contains 2,000 sentences, enumeration will recover all 2,000, whereas PCFG sampling may only recover 100 of the most likely samples. However, if the CFL has 200,000 sentences, enumeration may only be able to recover 10,000 uniform random samples and the PCFG may only recover 5,000, but due to the higher sample efficiency, the PCFG samples are more likely to contain the human repair.
 
   \section{Related Work}\label{sec:related}
 
@@ -1300,7 +1174,7 @@ Dyck-3 -> Dyck-2 | { } | ( Dyck-3 ) | [ Dyck-3 ] | { Dyck-3 } | Dyck-3 Dyck-3
 
   \section{Conclusion}\label{sec:conclusion}
 
-  Our work, while a case study on syntax repair, is part of a broader trend in program synthesis that investigates how to combine the strengths of formal language theory and machine learning to build more powerful and flexible programming tools. One approach is to filter the outputs of a generative langauge model to satisfy a formal specification, typically by constrained sampling. Alternatively, some attempt to use a formal language to guide the search for valid programs via a reinforcement learning or hybrid neurosymbolic approach.
+  Our work, while a case study on syntax repair, is part of a broader trend in program synthesis that investigates how to combine the strengths of formal language theory and machine learning to build more powerful and flexible programming tools. One approach is to filter the outputs of a generative language model to satisfy a formal specification, typically by constrained sampling. Alternatively, some attempt to use a formal language to guide the search for valid programs via a reinforcement learning or hybrid neurosymbolic approach.
 
   In our work, we take a more pragmatic tack - by incorporating the similarity metric into our formal language, we try to exhaustively enumerate repairs by increasing distance, then use the stochastic language model to rank the resulting solutions by naturalness. The more constraints we can encode into the formal language, the more efficient sampling becomes, and the more precise control we have over the output. This reduces the need for training a large, expensive language model to relearn syntax, and allows us to leverage compute for more efficient search.
 
