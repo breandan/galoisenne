@@ -537,30 +537,30 @@
     X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries, which \vspace{-10pt}
+  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries, which are computed as follows:\vspace{-10pt}
 
   \begin{align*}
     M_0\coloneqq
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
-      \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
-      &          &             &        & \varnothing\\
-      &          &             &        & \hat\sigma_n \\
-      \varnothing & \Cdots   &             &        & \varnothing
+      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
+                  &              &             &        & \varnothing\\
+                  &              &             &        & \hat\sigma_n \\
+      \varnothing & \Cdots       &             &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
-      \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-      &          &         &        & \Lambda\\
-      &          &         &        & \hat\sigma_n \\
-      \varnothing & \Cdots   &         &        & \varnothing
+      \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+                  &              &         &        & \Lambda\\
+                  &              &         &        & \hat\sigma_n \\
+      \varnothing & \Cdots       &         &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
-      \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-      &          &         &        & \Lambda\\
-      &          &         &        & \hat\sigma_n \\
-      \varnothing & \Cdots   &         &        & \varnothing
+      \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+                  &              &         &        & \Lambda\\
+                  &              &         &        & \hat\sigma_n \\
+      \varnothing & \Cdots       &         &        & \varnothing
     \end{pNiceMatrix}
   \end{align*}
 
@@ -853,7 +853,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Dataset}
 
-  For our evaluation, we use the StackOverflow dataset from~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
+  For our evaluation, we use the StackOverflow dataset from Hindle et al.~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
 
   In the following experiments, we use two datasets of Python snippets. The first is a set of 5,600 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 40 lexical tokens, whose patch sizes are less than five lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$).
 
