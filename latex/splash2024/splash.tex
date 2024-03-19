@@ -224,7 +224,7 @@
     \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
   \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within it (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within it's language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}
 
@@ -1011,8 +1011,17 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
 
   \begin{figure}[h!]
-  \input{sample_efficiency}
+    \input{sample_efficiency}
     \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually saturate the admissible set for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+  \end{figure}
+
+  We can also plot this for two other SoTA models, S2P and BIFI across length and distance.
+
+  \begin{figure}[h!]
+    \resizebox{.32\textwidth}{!}{\input{len_dist_s2p}}
+    \resizebox{.32\textwidth}{!}{\input{len_dist_s2p}}
+    \resizebox{.32\textwidth}{!}{\input{len_dist_bifi}}
+    \caption{Tidyparse, Seq2Parse and BIFI precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
   \end{figure}
 
   Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, based on n-gram likelihood.

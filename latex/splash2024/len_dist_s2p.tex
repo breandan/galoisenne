@@ -1,0 +1,20 @@
+\begin{tikzpicture}
+  \begin{axis}[
+    xlabel={$|\sigma|$},
+    ylabel={Precision@1},
+    title={Seq2Parse Repair Precision},
+    ybar,
+    axis lines*=left,
+    xtick={0, 10, 20, 30, 40, 50, 60, 70},
+    ytick={0, 0.1, 0.2, 0.3, 0.4},
+    ymax=0.4,
+    bar width=4pt,
+  ]
+
+    \addplot[green, fill=green] coordinates {(0, 0.368078) (10, 0.416931) (20, 0.393548) (30, 0.387001) (40, 0.3125) (50, 0.289926) (60, 0.258278) (70, 0.198157)};
+    \addplot[blue, fill=blue] coordinates {(0, 0.127450) (10, 0.131627) (20, 0.133111) (30, 0.107287) (40, 0.099537) (50, 0.104729) (60, 0.100418) (70, 0.123762)};
+    \addplot[orange, fill=orange] coordinates {(0, 0.037735) (10, 0.072) (20, 0.086093) (30, 0.08125) (40, 0.088235) (50, 0.022727) (60, 0.054945) (70, 0.061538)};
+
+    \legend{Δ=1,Δ=2,Δ=3}
+  \end{axis}
+\end{tikzpicture}
