@@ -1026,7 +1026,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
+    \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
   \end{figure}
 
 %  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
