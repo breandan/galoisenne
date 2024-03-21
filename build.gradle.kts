@@ -7,7 +7,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.0.0-Beta2"
+  kotlin("multiplatform") version "2.0.0-Beta5"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-2"
@@ -120,10 +120,10 @@ kotlin {
         implementation("org.graalvm.js:js:23.0.3")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-RC2")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.2.0")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.6.0")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -206,7 +206,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0-RC.2")
       }
     }
   }
