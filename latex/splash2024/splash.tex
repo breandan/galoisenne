@@ -141,13 +141,13 @@
   \begin{definition}[Ranked repair]\label{def:ranked-repair}
     Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
+      R(A, P_\theta) \coloneqq \argmax_{\bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As our work demonstrates, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
+  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As we will demonstrate, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
@@ -837,21 +837,23 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Ranked Repair}\label{sec:ranking}
 
-  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of strings, and we need an ordering over them. We note that any metric is sufficient, such as the perplexity of the string under a large language model, or the probability of the string under a PCFG. We turn to simplest possible solution: the negative log likelihood of the string computed by a variable-order Markov chain. This is a simple, fast, and effective metric for ranking strings, and as we will show, already yields competitive results in practice.
+  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log likelihood of the repair under a large language model, Markov chain perplexity, or the probability under a PCFG. We turn to simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, already yields competitive results in practice.
 
-  Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P(\sigma)$ as a product of conditional probabilities $P(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$ for some $n \in \mathbb{N}$. To compute the score, we use the length-normalized negative log likelihood:
+  Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
 
-  \begin{equation}
-    \text{NLL}(\sigma) \coloneqq -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
-  \end{equation}
-
-  Then, for each $\sigma \in A(\err\sigma)$, we compute $\text{NLL}(\sigma)$ and return the set of strings in ascending order of their scores. That is, we want a ranked list of strings in $A(\err\sigma)$, where the first string is the most likely repair, and the last string is the least likely repair. To evaluate the quality of our ranked repairs, we primarily use P@k, which is the frequency of repairs in the top $k$ ranked repairs that are lexically equivalent to the human repair.
-
-  Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$, and a set of test cases $\mathcal{D}_{\text{test}}$, we define the Precision@k as:
+  To score the repairs, we use the conventional length-normalized negative log likelihood:
 
   \begin{equation}
-    \text{P@k} = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} 1\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| = k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+    \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
   \end{equation}
+
+  Then, for each $\sigma \in A(\err\sigma)$, we score the repair and return the admissible set in ascending order. That is, we impose an ordering over $A(\err\sigma)$, where the first repair is most likely under the model, and the last is least likely. To evaluate the accuracy of our ranking, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
+
+  \begin{equation}
+    \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+  \end{equation}
+
+  This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems.
 
   \section{Evaluation}
 
@@ -859,7 +861,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \begin{itemize}
     \item \textbf{RQ 1}: What properties do natural repairs exhibit? (e.g., error frequency, edit distance)
-    \item \textbf{RQ 2}: How precise is our technique at fixing syntax errors? (Precision@k vs. Seq2Parse)
+    \item \textbf{RQ 2}: How precise is our technique at fixing syntax errors? (i.e, vs. Seq2Parse and BIFI)
     \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, n-gram order)
   \end{itemize}
 
