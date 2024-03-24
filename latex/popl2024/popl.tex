@@ -34,7 +34,7 @@
 %% Bibliography style
 \bibliographystyle{acmart}
 
-\input{preamble.tex}
+\input{preamble}
 \begin{document}
 
 %% Title information
@@ -323,7 +323,7 @@ The Levenshtein ball is finite and therefor context-free, however materializing 
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-5pt}
-  \resizebox{.5\textwidth}{!}{\input{nfa_cfg.tex}}
+  \resizebox{.5\textwidth}{!}{\input{nfa_cfg}}
   \caption{Levenshtein reachability from $\Sigma^n$ can be described as an NFA, or a left-linear CFG.}
 \end{wrapfigure}
 
@@ -337,7 +337,7 @@ Levenshtein reachability, then, is recognizable by the nondeterministic infinite
 
 \begin{wrapfigure}{r}{0.33\textwidth}
   \vspace{-10pt}
-  \resizebox{0.33\textwidth}{!}{\input{leven_reach.tex}}
+  \resizebox{0.33\textwidth}{!}{\input{leven_reach}}
   \caption{LED is computed gradually by incrementing $d$ until $\mathcal{L}^\cap_{d}\neq \varnothing$.}
 \end{wrapfigure}
 
@@ -425,9 +425,9 @@ We can overapproximate the set of possible nonterminals by comparing the Parikh 
 
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-20pt}
-  \resizebox{0.4\textwidth}{!}{\input{expr_simpl.tex}}
+  \resizebox{0.4\textwidth}{!}{\input{expr_simpl}}
   \caption{When is this reduction admissible?}\label{fig:mat_simpl}
-  \begin{center}\resizebox{0.35\textwidth}{!}{\input{mat_simpl.tex}}\end{center}
+  \begin{center}\resizebox{0.35\textwidth}{!}{\input{mat_simpl}}\end{center}
   \caption{We can inspect $\bm\Lambda_\alpha^\shri, \bm\Lambda_\alpha^\shup$ to find out.}
 \end{wrapfigure}
 
@@ -560,7 +560,7 @@ Since there are $\Sigma_{d=1}^q{n \choose d}$ total hole templates, each with $|
   \vspace{-10pt}
   \scalebox{0.5}{
   \begin{minipage}{\textwidth}
-  \input{prob_reach.tex}
+  \input{prob_reach}
   \end{minipage}
   }
 \end{wrapfigure}
@@ -676,7 +676,7 @@ Due to Chomsky normalization however, the resulting forests are full of trees th
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-15pt}
-  \begin{center}\resizebox{0.45\textwidth}{!}{\input{curtains.tex}}\end{center}
+  \begin{center}\resizebox{0.45\textwidth}{!}{\input{curtains}}\end{center}
   \caption{Parsing and repair share the same grammar.}
 \end{wrapfigure}
 
@@ -702,7 +702,7 @@ For valid strings, the fixpoint search is sure to converge in at most $|\sigma| 
 
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-13pt}
-  \resizebox{.4\textwidth}{!}{\input{incrementalization.tex}}
+  \resizebox{.4\textwidth}{!}{\input{incrementalization}}
   \caption{Incremental reparsing only requires computing submatrices affected by an edit.}
   \label{fig:incremental}
 \end{wrapfigure}
@@ -717,10 +717,10 @@ The problem of incremental parsing is closely related to \textit{dynamic matrix 
 
 \begin{wrapfigure}{R}{0.4\textwidth}
   \vspace{-20pt}
-  \resizebox{0.4\textwidth}{!}{\input{binary_trees.tex}}
+  \resizebox{0.4\textwidth}{!}{\input{binary_trees}}
   \caption{The matrix $M^*$ contains all admissible binary trees of a fixed breadth.}\label{fig:binary_trees}
   \begin{center}
-  \resizebox{.35\textwidth}{!}{\input{error_recovery.tex}}
+  \resizebox{.35\textwidth}{!}{\input{error_recovery}}
   \end{center}
   \caption{We can recover the partial subtrees for invalid strings by inspecting $M^*$.}\label{fig:peaks}
 \end{wrapfigure}
@@ -776,7 +776,7 @@ These branches are located on peaks of the upper triangular (UT) matrix ridge. A
 
 \pagebreak\section{Usage examples}\label{sec:examples}
 
-\input{example.tex}
+\input{example}
 
 \pagebreak\section{Related Work}\label{sec:related}
 
@@ -853,11 +853,11 @@ Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4
 Below, we plot the precision of the uniform sampling procedure described in \S\ref{sec:dsi} against human repairs of varying edit distances and latency cutoffs. Repairs discovered before the latency cutoff are reranked based on their tokenwise perplexity and compared for an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but rather provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.
 
 \begin{figure}[H]
-\resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
-\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-\resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+\resizebox{.3\textwidth}{!}{\input{repair1-3_plot}}
+\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
+\resizebox{.3\textwidth}{!}{\input{repair2_plot}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot}}
 \caption{Human repair benchmark. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
 \end{figure}
 
@@ -912,10 +912,10 @@ Despite the high-latency, this demonstrates a uniform prior with post-timeout re
 In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
 \begin{figure}[H]
-\resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
-\resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
-\resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
-\resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
+\resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
+\resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
+\resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
+\resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
 \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
 \end{figure}
 
@@ -927,7 +927,7 @@ While adapting sampling is able to saturate the admissible set for 1- and 2-edit
 
 \begin{wrapfigure}{r}{0.3\textwidth}
   \vspace{-15pt}
-  \resizebox{.3\textwidth}{!}{\input{throughput.tex}}
+  \resizebox{.3\textwidth}{!}{\input{throughput}}
   \label{fig:throughput}
 \end{wrapfigure}
 

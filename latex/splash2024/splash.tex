@@ -40,7 +40,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work comes from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding all valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram perplexity.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding all valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram likelihood.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 %
@@ -66,18 +66,18 @@
 
   \section{Introduction}
 
-  Syntax repair is the problem of modifying an invalid sentence so it conforms to some grammar. Prior work has been devoted to fixing syntax errors using handcrafted heuristics. This work features a variety of approaches including rule-based systems and statistical language models. However, these techniques are often brittle, and are susceptible to misgeneralization. In a prior paper published in SPLASH, the authors sample production rules from an error correcting grammar. While theoretically sound, this technique is incomplete, i.e., not guaranteed to sample all edits within a certain Levenshtein distance, and no more. In this paper, we demonsrate it is possible to attain a significant advantage by synthesizing and scoring all repairs within a certain Levenshtein distance. Not only does this technique guarantee perfect generalization, but also helps with precision.
+  Syntax repair is the problem of modifying an invalid sentence so it conforms to some grammar. Prior work has been devoted to fixing syntax errors using a variety of handcrafted heuristics including rule-based systems and statistical language models. However, these techniques are often brittle, and are susceptible to misgeneralization. In a prior paper~\cite{sakkas2022seq2parse} published in SPLASH, the authors sample production rules from an error correcting grammar. While theoretically sound, this technique is incomplete, i.e., does not guarantee finding a small repair, if one exists. In this paper, we demonstrate it is possible to attain a significant advantage by synthesizing and scoring all repairs within a certain Levenshtein distance. Not only does this technique guarantee completeness and perfect length-generalization, it also aids precision when ranking by naturalness.
 
   We take a first-principles approach making no assumptions about the sentence or grammar and focus on correctness and end-to-end latency. Our technique is simple:
 
   \begin{enumerate}
     \item We model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections.
-    \item We construct an algebraic datatype via idempotent matrix completion that compactly represents the intersection language. This ADT is used to keep track of parse forests and significantly reduce the number of generated productions in the intersection grammar.
-    \item To extract the repairs, we sample trees without replacement from the ADT by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. This offers parallel decomposability of the enumeration problem and yields concrete repairs within a certain Levenshtein distance.
-    \item Finally, we rerank all repairs found before a fixed timeout by n-gram perplexity.
+    \item We construct a data structure via idempotent matrix completion that compactly represents the intersection language. This data structure is used to index valid parse forests and significantly reduce relevant productions from the intersection grammar.
+    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. This offers parallel decomposability of the enumeration problem and yields concrete repairs within a certain Levenshtein distance.
+    \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood.
   \end{enumerate}
 
-  Though simple, this technique outperforms SoTA syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often, the language of small repairs is surprisingly small compared with the language of all possible edits, enabling us to efficiently synthesize and score every possible solution via enumeration. This technique confers a significant advantage over memoryless sampling techniques.
+  Though simple, this technique outperforms state-of-the-art syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often, the language of small repairs is surprisingly small relative to the language of all possible edits, enabling us to efficiently synthesize and score every possible solution via enumeration. Enumeration confers a significant advantage over memoryless sampling techniques, allowing us to synthesize the most natural repair with far less data and compute than would otherwise be required by a large language model.
 
   \pagebreak
 
@@ -100,7 +100,7 @@
 %
 %  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
 
-  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just one hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
+  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
 
 %\setlength{\columnsep}{-10pt}
 %\setlength{\columnseprule}{-10pt}
@@ -130,7 +130,7 @@
   We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -147,17 +147,17 @@
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair is typically solved by learning a distribution over strings, however this approach can be sample-inefficient and generalize poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As we will demonstrate, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
+  The problem of ranked repair can be solved by learning a distribution over strings, however this approach is highly sample-inefficient and generalizes poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As we will demonstrate, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
   \section{Method}
 
-  \begin{wrapfigure}{r}{0.45\textwidth}
+  \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
-    \vspace{-1.2cm}
+    \vspace{-0.4cm}
     \begin{center}
-      \resizebox{0.45\textwidth}{!}{
+      \resizebox{0.35\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop] {Start};
           \node (pro1) [process, below of=start, yshift=-0.5cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
@@ -211,17 +211,16 @@
         \end{tikzpicture}
       }
     \end{center}
-    \vspace{-0.1cm}
     \caption{Flowchart of our proposed method.}\label{fig:flowchart}
-    \vspace{-1cm}
+    \vspace{-0.3cm}
   \end{wrapfigure}
 
   The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the language syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
 
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
-    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Enumeration is tractable for $\sim 80\%$ of the dataset in $\leq 90$s.
-    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim20\%$ of the dataset.
+    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Enumeration is tractable for $\sim$~80\% of the dataset in $\leq 90$s.
+    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim$~20\% of the dataset.
   \end{enumerate}
 
   As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
@@ -232,7 +231,7 @@
 
   \begin{table}[H]
     \begin{tabular}{llll}
-      $G\coloneqq\big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
+      $G = \big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow G' = \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
     \end{tabular}
   \end{table}\vspace{-8pt}
 
@@ -245,29 +244,29 @@
     \begin{center}
       \input{nfa_cfg.tex}
     \end{center}
-    \caption{NFA recognizing Levenshtein $\Delta(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
+    \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
     \vspace{-0.5cm}
   \end{wrapfigure}
 
-  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\Delta(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system in an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system in an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
   \begin{prooftree}
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
     \RightLabel{$\duparrow$}
     \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
     \RightLabel{$\ddiagarrow$}
     \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
   \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
     \RightLabel{$\drightarrow$}
     \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
     \RightLabel{$\knightarrow$}
     \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
@@ -278,7 +277,7 @@
     \DisplayProof
     \hskip 1.5em
     \AxiomC{$q_{i, j}$}
-    \AxiomC{$|n-i+j| \leq k$}
+    \AxiomC{$|n-i+j| \leq d_{\max}$}
     \RightLabel{$\textsc{Done}$}
     \BinaryInfC{$q_{i, j}\in F$}
   \end{prooftree}
@@ -389,7 +388,7 @@
     }
   }
 
-  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions, $\duparrow$ handles insertions and $\knightarrow$ handles deletions of one or more terminals. Let us consider some illustrative cases.
+  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of one or more terminals. Let us consider some illustrative cases.
 
   \begin{table}[h!]
     \begin{tabular}{ccccccc}
@@ -414,7 +413,7 @@
     \end{tabular}
   \end{table}
 
-  Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ such that Levenshtein distance of $\Delta(\sigma, \sigma') \leq d_\max$.
+  Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
 
   To avoid creating a parallel bundle of arcs for each insertion and substutition point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
 
@@ -439,7 +438,7 @@
     \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
 
-  Nominalizing the NFA eliminates the creation of $e=|\Sigma - 1|\cdot|\sigma|\cdot2d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the size of the construction to follow, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
+  Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the size of the construction to follow, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
 
   \subsection{Levenshtein-Bar-Hillel Construction}\label{sec:lev_bh}
 
@@ -473,12 +472,19 @@
 
   This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical languages and code snippets can generate hundreds of trillions of productions for even modestly-sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many superfluous productions in the case of Levenshtein intersection, greatly reducing the size of the intersection grammar, $G_\cap$.
 
+%  \begin{wrapfigure}{r}{0.3\textwidth}
+%    \vspace{-10pt}
+%    \resizebox{0.3\textwidth}{!}{\input{leven_reach}}
+%    \caption{$G_\cap$ is gradually expanded by increasing $d$ until $\mathcal{L}(G_\cap)\neq \varnothing$.}
+%    \vspace{-10pt}
+%  \end{wrapfigure}
+
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
   To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
 
-  \begin{definition}[Parikh mapping of a nonterminal]
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \Pi$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(s) \in \pi(v)$.
+  \begin{definition}[Parikh mapping of a nonterminal]\label{def:parikh}
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \Pi$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
   \end{definition}
 
   In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
@@ -487,7 +493,7 @@
     We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
-  Next, we will define a measure on Parikh intervals, which will represent the minimum total edits required to transform a string in one Parikh interval to a string in another, across all string pairs.
+  Next, we will define a measure on Parikh intervals representing the minimum total edits required to transform a string in one Parikh interval to a string in another, across all such pairings.
 
   \begin{definition}[Parikh divergence]
     Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
@@ -499,7 +505,7 @@
     Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
   \end{definition}
 
-  We define the modified Bar-Hillel construction for nominal Levenshtein automata as:
+  Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:
 
 \begin{prooftree}
   \def\defaultHypSeparation{\hskip 0.15cm}
@@ -516,7 +522,7 @@
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-  Finally, once $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller. When this grammar is sufficiently small, it is possible to extract all repairs from it, otherwise we sample it to obtain a subset of admissible repairs.
+  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller. When this grammar is sufficiently small, it is possible to extract all repairs from it, otherwise we sample it to obtain a subset of admissible repairs.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
@@ -527,7 +533,7 @@
 
   Now that we have a language to recognize local repairs, we need a method to extract the repairs themselves. We impose specific criteria on such a procedure: it must generate (1) only valid repairs and (2) all repairs in the language. We also require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
-  In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, amenability to parallelization, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
+  In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
   Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
@@ -564,7 +570,7 @@
 
   \noindent The northeasternmost entry $\Lambda^*_\sigma$ gives us the recognizer $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
 
-  This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}, whose solutions are the set of all syntactically valid strings consistent with the input string.
+  This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all syntactically valid strings consistent with the template.
 
   \begin{definition}[Porous completion]
     Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
@@ -754,7 +760,7 @@
 
 These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary of $\mathbb{T}_2$, indexed by their root nonterminals.
 
-  $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map, we may use the following recurrence,
+  $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map (Def.~\ref{def:parikh}), we may use the following recurrence,
 
 \begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -786,9 +792,13 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the Parikh interval for a CFG up to finite length bounds, we abstractly parse the string $(\_)^n$ for all $n \in [1, l_{\max}]$ and take the union of the intervals across $[|\err\sigma| - d_{\max}, |\err\sigma| + d_{\max}]$, which subsumes every valid repair in the Levenshtein ball.
+  To obtain the full Parikh map of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, this function can be precomputed and cached for all $v: V$, and small values of $n, d: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-$\langle v, n, d\rangle$ Parikh map for any invalid string $\err\sigma$ of length $n$ in constant time:
 
-  $\mathbb{T}_2$ also allows us to sample whole parse trees by obtaining $(\Lambda_\sigma^* \circ S): \mathbb{T}_2$. Given a probabilistic CFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (this may be uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively samples children according to a Multinoulli distribution:
+  \begin{equation}
+  \pi(G: \mathcal{G}, v: V, n: \mathbb{N}, d: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [n-d, n+d]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
+  \end{equation}
+
+  $\mathbb{T}_2$ also allows us to sample whole parse trees by constructing $(\Lambda^*(\sigma) \circ S): \mathbb{T}_2$ from the bottom-up and sampling top-down. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
 
 \begin{equation}
   \Gamma(T) \mapsto \begin{cases}
@@ -797,7 +807,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-This is closely related to the generating function for the ordinary Boltzmann sampler from analytic combinatorics,
+\noindent This method is closely related to the generating function for the ordinary Boltzmann sampler,
 
 \begin{equation}
   \Gamma C(x) \mapsto \begin{cases}
@@ -806,10 +816,9 @@ This is closely related to the generating function for the ordinary Boltzmann sa
   \end{cases}
 \end{equation}
 
-\noindent however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees contained in $\mathbb{T}_2$ will necessarily be the same width.
+\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ will necessarily be the same width.
 
-
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string $\sigma = (\_)^n$, letting $T=\Lambda_{\sigma}^* \circ S$, then use the recurrence below to compute the total number of trees:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of trees:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
