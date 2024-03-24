@@ -99,6 +99,7 @@ val CFG.unitReachability by cache {
 }
 
 val CFG.noNonterminalStubs: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet().freeze()
     .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
@@ -106,6 +107,7 @@ val CFG.noNonterminalStubs: CFG by cache {
 }
 
 val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
   println("Disabling nonterminal stubs!")
   filter { it.RHS.none { it.isNonterminalStubIn(this) } }
     .filter { "ε" !in it.toString() }.toSet().freeze()

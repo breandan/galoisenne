@@ -792,7 +792,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the full Parikh map of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, this function can be precomputed and cached for all $v: V$, and small values of $n, d: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-$\langle v, n, d\rangle$ Parikh map for any invalid string $\err\sigma$ of length $n$ in constant time:
+  To obtain the full Parikh map of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, this function can be precomputed and cached for all $v: V$, and small values of $n, d: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-$d$ Parikh$\langle v, n\rangle $ map for any invalid string $\err\sigma$ of length $n$ in constant time:
 
   \begin{equation}
   \pi(G: \mathcal{G}, v: V, n: \mathbb{N}, d: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [n-d, n+d]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
