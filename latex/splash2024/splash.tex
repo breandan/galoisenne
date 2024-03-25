@@ -43,7 +43,7 @@
     We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding all valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram likelihood.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
-%
+
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
@@ -60,26 +60,27 @@
 %  \email{\{breandan.considine@mail, jguo@cs\}.mcgill.ca}\and
 %  University of Toronto, Toronto, ON, M5S 1A1 Canada\\
 %  \email{six@utoronto.ca}}
-%
-  \maketitle              % typeset the header of the contribution
 
+  \maketitle
 
   \section{Introduction}
 
-  Syntax repair is the problem of modifying an invalid sentence so it conforms to some grammar. Prior work has been devoted to fixing syntax errors using a variety of handcrafted heuristics including rule-based systems and statistical language models. However, these techniques are often brittle, and are susceptible to misgeneralization. In a prior paper~\cite{sakkas2022seq2parse} published in SPLASH, the authors sample production rules from an error correcting grammar. While theoretically sound, this technique is incomplete, i.e., does not guarantee finding a small repair, if one exists. In this paper, we demonstrate it is possible to attain a significant advantage by synthesizing and scoring all repairs within a certain Levenshtein distance. Not only does this technique guarantee completeness and perfect length-generalization, it also aids precision when ranking by naturalness.
+  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error is tiny, but manual correction can interrupt the author's train of thought and disrupt productivity. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
 
-  We take a first-principles approach making no assumptions about the sentence or grammar and focus on correctness and end-to-end latency. Our technique is simple:
+  Most prior work on syntax repair can be divided into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+
+  In this work, we take a pragmatic approach to syntax repair by embracing the inherent ambiguity of the problem. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively searching nearby repairs. Not only does this approach guarantee completeness and perfect length-generalization, it also aids precision when ranking by naturalness. Our technique is straightforward:
 
   \begin{enumerate}
-    \item We model syntax correction as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections.
-    \item We construct a data structure via idempotent matrix completion that compactly represents the intersection language. This data structure is used to index valid parse forests and significantly reduce relevant productions from the intersection grammar.
+    \item We model syntax repair as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections.
+    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees significantly reduce the size of the intersection grammar.
     \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. This offers parallel decomposability of the enumeration problem and yields concrete repairs within a certain Levenshtein distance.
     \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood.
   \end{enumerate}
 
-  Though simple, this technique outperforms state-of-the-art syntax repair techniques. Its efficacy owes to the fact it does not sample edits or nor productions, but unique, fully formed repairs within a certain Levenshtein distance. It is sound and complete up to a Levenshtein bound - i.e., it will find all repairs within an arbitrary Levenshtein distance, and no more. Often, the language of small repairs is surprisingly small relative to the language of all possible edits, enabling us to efficiently synthesize and score every possible solution via enumeration. Enumeration confers a significant advantage over memoryless sampling techniques, allowing us to synthesize the most natural repair with far less data and compute than would otherwise be required by a large language model.
+  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages.
 
-  \pagebreak
+  As we will show, this technique outperforms state-of-the-art neural syntax repair techniques. Its efficacy owes to the fact it does not sample edits, but unique, fully formed repairs. It is sound and complete up to a Levenshtein bound -- i.e., will find every repair within an arbitrary Levenshtein distance, and no more. As we will see, the language of small repairs can often be surprisingly small relative to the language of all possible edits, enabling us to efficiently retrieve and score every possible solution with far less data and compute than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}
 
@@ -223,7 +224,8 @@
     \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim$~20\% of the dataset.
   \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa}, \ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+
 
   \subsection{Preliminaries}
 
@@ -880,7 +882,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   In the following experiments, we use two datasets of Python snippets. The first is a set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than five lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$).
 
-  The StackOverflow dataset is comprised of 500k Python code snippets, each of which has been annotated with a human repair. We depict the normalized edit loations relative to the snippet length below.
+  The StackOverflow dataset is comprised of 500k invalid Python code snippets and a human repair. We depict the normalized edit locations relative to the snippet length below.
 
   \begin{figure}[h!]
     \begin{tikzpicture}
@@ -1022,6 +1024,8 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing syntax errors sampled from a distribution trained from the StackOverflow dataset. We then measure the precision@k of our repair procedure at recovering the original, uncorrupted snippet.
 
   \subsection{Experimental Setup}
+
+  We make some simplifying assumptions. First, we assume the program can be abstracted as a sequence of lexical tokens. This effectively removes names, but retains keywords. Second, we assume the program is shorter 80 tokens or single line, which represents slightly over half the dataset. Lexical equality is determined using using exact string matching.
 
   We measure the precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
 
