@@ -65,22 +65,20 @@
 
   \section{Introduction}
 
-  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error is tiny, but manual correction can interrupt the author's train of thought and disrupt productivity. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
+  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error itself is tiny, but manual correction can disrupt the author's train of thought. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
 
   Most prior work on syntax repair can be divided into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
-  In this work, we take a pragmatic approach to syntax repair by embracing the inherent ambiguity of the problem. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively searching nearby repairs. Not only does this approach guarantee completeness and perfect length-generalization, it also aids precision when ranking by naturalness. Our technique is straightforward:
+  In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections.
     \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees significantly reduce the size of the intersection grammar.
-    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. This offers parallel decomposability of the enumeration problem and yields concrete repairs within a certain Levenshtein distance.
+    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees.
     \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood.
   \end{enumerate}
 
-  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages.
-
-  As we will show, this technique outperforms state-of-the-art neural syntax repair techniques. Its efficacy owes to the fact it does not sample edits, but unique, fully formed repairs. It is sound and complete up to a Levenshtein bound -- i.e., will find every repair within an arbitrary Levenshtein distance, and no more. As we will see, the language of small repairs can often be surprisingly small relative to the language of all possible edits, enabling us to efficiently retrieve and score every possible solution with far less data and compute than would otherwise be required by a large language model to attain the same precision.
+  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not synthesize probable edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}
 
@@ -124,7 +122,7 @@
 
   With some typing information, we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
 
-  The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible d-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
+  The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
 
   \section{Problem}
 
@@ -237,7 +235,7 @@
     \end{tabular}
   \end{table}\vspace{-8pt}
 
-  Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will use this notation in the following sections.
+  Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
   \pagebreak\subsection{The Nominal Levenshtein Automaton}\label{sec:lev_nfa}
 
