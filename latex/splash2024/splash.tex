@@ -1133,8 +1133,8 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   Here, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. the enumerative sampler. In both experiments, we run the corresponding sampler for 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
 
   \begin{figure}[h]
-    \input{experiments/ablation_enumeration_only.tex}
-    \input{experiments/ablation_pcfg_only.tex}
+    \input{experiments/ablation_enumeration_only}
+    \input{experiments/ablation_pcfg_only}
   \end{figure}
 
   While the overall precision is notably lower for PCFG sampling than enumeration, the average number of samples drawn is also significantly lower, indicating a relatively higher sample efficiency. This illustrates the tradeoff between sample efficiency and diversity, and suggests that a hybrid approach may be the most effective. When the repair language is very large, a PCFG offers a more informed prior, albeit at the cost of lower coverage.
