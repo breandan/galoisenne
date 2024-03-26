@@ -65,17 +65,17 @@
 
   \section{Introduction}
 
-  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error itself is tiny, but manual correction can disrupt the author's train of thought. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
+  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error itself is tiny, but manual correction can divert the author's train of thought. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
 
   Most prior work on syntax repair can be divided into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
   In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
 
   \begin{enumerate}
-    \item We model syntax repair as a language intersection problem between a Levenshtein automaton and a context-free grammar, which we explicitly materialize using a specialized version of the Bar-Hillel construction to Levenshtein intersections.
-    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees significantly reduce the size of the intersection grammar.
-    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees.
-    \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood.
+    \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
+    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion}, \ref{sec:ptree})
+    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. (\S~\ref{sec:ptree})
+    \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
 
   Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not synthesize probable edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
@@ -129,7 +129,7 @@
   We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) \coloneqq \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -140,7 +140,7 @@
   \begin{definition}[Ranked repair]\label{def:ranked-repair}
     Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P_\theta) \coloneqq \argmax_{\bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
+      R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma\mid\err\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
@@ -160,8 +160,11 @@
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop] {Start};
           \node (pro1) [process, below of=start, yshift=-0.5cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
+          \node [above=0.1cm of pro1] {(\S~\ref{sec:lev_bh},~\ref{sec:matrix_completion})};
           \node (pcfg) [io, left of=pro1, xshift=-3cm] {[P]CFG};
+          \node [below=0.1cm of pcfg] {(\S~\ref{sec:prelim})};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-WFA};
+          \node [above=0.1cm of lnfa, xshift=0.7cm] {(\S~\ref{sec:lev_bh})};
 
           \node (code) [io, right of=start,xshift=3cm] {Code};
           \node (synt) [io, left of=start,xshift=-3cm] {Syntax};
@@ -173,10 +176,13 @@
           \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(G_\cap)|$};
 
           \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+          \node [above=0.1cm of samp1] {(\S~\ref{sec:ptree})};
           \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
+          \node [above=0.1cm of samp2] {(\S~\ref{sec:ptree})};
 
           \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
           \node (vlmc) [io, above of=rank, yshift=-0.1cm] {VLMC};
+          \node [below=0.2cm of vlmc, xshift=0.7cm] {(\S~\ref{sec:ranking})};
 
 %  \node (out1) [io, below of=pro2a] {Output};
           \node (stop) [startstop, below of=rank] {Done};
@@ -225,7 +231,7 @@
   As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
 
-  \subsection{Preliminaries}
+  \subsection{Preliminaries}\label{sec:prelim}
 
   Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
@@ -237,7 +243,7 @@
 
   Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \pagebreak\subsection{The Nominal Levenshtein Automaton}\label{sec:lev_nfa}
+  \pagebreak\subsection{The nominal Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -481,10 +487,10 @@
 
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
-  To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh map of all terminals.
+  To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
   \begin{definition}[Parikh mapping of a nonterminal]\label{def:parikh}
-    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. Let $\pi: V \rightarrow \Pi$ be a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
+    Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. We define the Parikh map, $\pi: V \rightarrow \Pi$, as a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
   \end{definition}
 
   In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
@@ -522,29 +528,30 @@
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller. When this grammar is sufficiently small, it is possible to extract all repairs from it, otherwise we sample it to obtain a subset of admissible repairs.
+  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
+  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map, and a method for sampling parse trees from the language with or without replacement.
+
+%  If so, we require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
   \subsection{Repair as idempotent matrix completion}\label{sec:matrix_completion}
-
-  Now that we have a language to recognize local repairs, we need a method to extract the repairs themselves. We impose specific criteria on such a procedure: it must generate (1) only valid repairs and (2) all repairs in the language. We also require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
   In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
   Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
-    X \otimes Z \coloneqq \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+    X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\hat\sigma_r \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) \coloneqq \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries, which are computed as follows:\vspace{-10pt}
+  \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries, which are computed as follows:\vspace{-10pt}
 
   \begin{align*}
-    M_0\coloneqq
+    M_0=
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
       \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
@@ -568,69 +575,69 @@
     \end{pNiceMatrix}
   \end{align*}
 
-  \noindent The northeasternmost entry $\Lambda^*_\sigma$ gives us the recognizer $R(G', \sigma) \coloneqq [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
+  \noindent The northeasternmost entry $\Lambda^*_\sigma$ gives us the recognizer $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
 
-  This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all syntactically valid strings consistent with the template.
+  This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
 
   \begin{definition}[Porous completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+    Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
-  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
 
   \begin{small}
   {\renewcommand{\arraystretch}{1.2}
   \noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
-                          \hline
-                          & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
-                          $M_0$ & \begin{pmatrix}
-                                    \phantom{V} & \tiny{\{N\}} &         &             \\
-                                    &              & \{N,O\} &             \\
-                                    &              &         & \{N,O\} \\
-                                    &              &         &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws &              &              \\
-                                            &              & \ws\bs\bs\ws &              \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} &          &          \\
-                                            &          & V_{1, 2} &          \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix} \\\hline
-                          $M_1$ & \begin{pmatrix}
-                                    \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
-                                    &              & \{N,O\}     & \{L\}   \\
-                                    &              &             & \{N,O\} \\
-                                    &              &             &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
-                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
-                                            &          & V_{1, 2} & V_{1, 3} \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix} \\\hline
-                          $M_\infty$ & \begin{pmatrix}
-                                         \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
-                                         &              & \{N,O\}     & \{L\}   \\
-                                         &              &             & \{N,O\} \\
-                                         &              &             &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
-                                            &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                                            &              &              & \ws\bs\bs\ws \\
-                                            &              &              &
-                          \end{pmatrix} & \begin{pmatrix}
-                                            \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
-                                            &          & V_{1, 2} & V_{1, 3} \\
-                                            &          &          & V_{2, 3} \\
-                                            &          &          &
-                          \end{pmatrix}\\\hline
+    \hline
+    & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+    $M_0$ & \begin{pmatrix}
+              \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws &              &              \\
+                      &              & \ws\bs\bs\ws &              \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} &          &          \\
+                      &          & V_{1, 2} &          \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix} \\\hline
+    $M_1$ & \begin{pmatrix}
+              \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                      &          & V_{1, 2} & V_{1, 3} \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix} \\\hline
+    \begin{tabular}{@{}c@{}}$M_2$\\$=$\\$M_\infty$\end{tabular} & \begin{pmatrix}
+                   \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+                   &              & \{N,O\}     & \{L\}   \\
+                   &              &             & \{N,O\} \\
+                   &              &             &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                      &              &              & \ws\bs\bs\ws \\
+                      &              &              &
+    \end{pmatrix} & \begin{pmatrix}
+                      \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                      &          & V_{1, 2} & V_{1, 3} \\
+                      &          &          & V_{2, 3} \\
+                      &          &          &
+    \end{pmatrix}\\\hline
   \end{tabular}\\
   }
   \end{small}
@@ -792,7 +799,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the full Parikh map of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, this function can be precomputed and cached for all $v: V$, and small values of $n, d: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-$d$ Parikh$\langle v, n\rangle $ map for any invalid string $\err\sigma$ of length $n$ in constant time:
+  To obtain the full Parikh map of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, this function can be precomputed and cached for all $v: V$, and small values of $n, d: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-$d$ Parikh-$\langle v, n\rangle $ map for any invalid string $\err\sigma$ of length $n$ in constant time:
 
   \begin{equation}
   \pi(G: \mathcal{G}, v: V, n: \mathbb{N}, d: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [n-d, n+d]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
@@ -818,7 +825,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ will necessarily be the same width.
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of trees:
+The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -844,9 +851,9 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
 If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This procedure is the basis for our sampling algorithm and the method we use to decode repairs from the intersection grammar.
 
-  \subsection{Ranked Repair}\label{sec:ranking}
+  \subsection{Ranked repair}\label{sec:ranking}
 
-  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log likelihood of the repair under a large language model, Markov chain perplexity, or the probability under a PCFG. We turn to simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, already yields competitive results in practice.
+  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log likelihood of the repair under a large language model, Markov chain perplexity, or the probability under a PCFG. We turn to simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, already yields competitive results in practice.
 
   Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
 
@@ -864,6 +871,43 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems.
 
+  \section{Experimental Setup}
+
+  We conduct two sets of experiments, one on naturally occurring syntax repairs, and the other on synthetic repairs. In both cases, we evaluate the precision of our repair model at recovering the true repair, and compare it to a baseline model.
+
+  For both sets of experiments, we make some simplifying assumptions. First, we assume the program can be abstracted as a sequence of lexical tokens. This effectively abstracts names and numbers, but retains all other keywords. Second, we assume the program is shorter 80 tokens or single line, which represents slightly over half the dataset. Lexical equality is determined using using exact string matching.
+
+  We measure the Precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
+
+  To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
+
+  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
+
+  In our synthetic repair benchmark, we synthetically corrupt Python code snippets using a learned corruption model. To train the model, we compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid lexical sequence.
+
+  Suppose we have a dataset of Levenshtein edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+
+  \begin{enumerate}
+    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) = \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
+    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
+    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
+  \end{enumerate}
+
+  For example, suppose we have the following patch in our initial dataset:\\
+
+  \texttt{BOS \hlred{def} NAME ( NAME ) : NEWLINE \hlred{INDENT} return \hlorange{NAME} NEWLINE \hlgreen{INDENT} NEWLINE EOS}\\
+
+  From this patch, the following contextual typo probabilities will be incremented:
+
+  \begin{align*}
+    P(\texttt{BOS \hlred{def} NAME}) &\mathrel{+}= 1 &P(\texttt{NEWLINE \hlred{INDENT} return}) &\mathrel{+}= 1\\
+    P(\texttt{return \hlorange{NAME} NEWLINE}) &\mathrel{+}= 1 & P(\texttt{NEWLINE \hlgreen{INDENT} NEWLINE}) &\mathrel{+}= 1
+  \end{align*}
+
+  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
+
+  Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. We measure the precision using abstract lexical matching, following the Seq2Parse~\cite{sakkas2022seq2parse} evaluation, and give a baseline for their approach on the same dataset.
+
   \section{Evaluation}
 
   We consider the following research questions for our evaluation:
@@ -876,11 +920,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Dataset}
 
-  For our evaluation, we use the StackOverflow dataset from Hindle et al.~\cite{hindle2012naturalness}. We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance, in which all Python snippets whose broken form is fewer than 80 lexical tokens and whose human fix is under four Levenshtein edits is retained.
-
-  In the following experiments, we use two datasets of Python snippets. The first is a set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than five lexical tokens ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \ell) \leq 4$).
-
-  The StackOverflow dataset is comprised of 500k invalid Python code snippets and a human repair. We depict the normalized edit locations relative to the snippet length below.
+  In the following experiments, we use two datasets of Python snippets. The first is a set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than five lexical tokens, ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \sigma') \leq 4$). We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance and depict the cutoffs in the figure below.
 
   \begin{figure}[h!]
     \begin{tikzpicture}
@@ -1019,19 +1059,9 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \caption{Repair statistics across the StackOverflow dataset, of which our method can handle about half in $\sim$30s and $\sim$140GB. Larger repairs and Levenshtein radii are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
   \end{figure}
 
-  In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing syntax errors sampled from a distribution trained from the StackOverflow dataset. We then measure the precision@k of our repair procedure at recovering the original, uncorrupted snippet.
+  In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet.
 
-  \subsection{Experimental Setup}
-
-  We make some simplifying assumptions. First, we assume the program can be abstracted as a sequence of lexical tokens. This effectively removes names, but retains keywords. Second, we assume the program is shorter 80 tokens or single line, which represents slightly over half the dataset. Lexical equality is determined using using exact string matching.
-
-  We measure the precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
-
-  To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
-
-  Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. We measure the precision using abstract lexical matching, following the Seq2Parse~\cite{sakkas2022seq2parse} evaluation, and give a baseline for their approach on the same dataset.
-
-  \subsection{StackOverflow Evaluation}
+  \subsection{StackOverflow evaluation}
 
   For our first experiment, we run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii.
 
@@ -1063,7 +1093,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
   \end{figure}
 
-%  In the following benchmark, we measure the precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
+%  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
   Previously, we used a rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold, the average time required to attain a fixed precision is much higher. We present the results from the earlier evaluation for comparison below.
 
@@ -1072,12 +1102,12 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
-    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
+    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1 on the same dataset. Since it only supports generating one repair, we do not report Precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
   \end{figure}
 
-  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports precision@1 repairs, and so we only report Seq2parse precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
+  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
 
-%  While adaptive sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our precision@all remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
+%  While adaptive sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our Precision@All remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
 
   \begin{wrapfigure}{r}{0.35\textwidth}
     \vspace{-10pt}
@@ -1098,32 +1128,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the time until the sampler locates the exact human repair. For each code snippet, we measure the total time taken, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.
 
-  \subsection{Synthetic repair benchmark}\label{sec:latency}
-
-  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
-
-  In our synthetic repair benchmark, we synthetically corrupt Python code snippets using a learned corruption model. To train the model, we compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid lexical sequence.
-
-  Suppose we have a dataset of Levenshtein edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
-
-  \begin{enumerate}
-    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) \coloneqq \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
-    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
-    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
-  \end{enumerate}
-
-  For example, suppose we have the following patch in our initial dataset:\\
-
-  \texttt{BOS \hlred{def} NAME ( NAME ) : NEWLINE \hlred{INDENT} return \hlorange{NAME} NEWLINE \hlgreen{INDENT} NEWLINE EOS}\\
-
-  From this patch, the following contextual typo probabilities will be incremented:
-
-  \begin{align*}
-    P(\texttt{BOS \hlred{def} NAME}) &\mathrel{+}= 1 &P(\texttt{NEWLINE \hlred{INDENT} return}) &\mathrel{+}= 1\\
-    P(\texttt{return \hlorange{NAME} NEWLINE}) &\mathrel{+}= 1 & P(\texttt{NEWLINE \hlgreen{INDENT} NEWLINE}) &\mathrel{+}= 1
-  \end{align*}
-
-  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in the dataset. We then measure the precision at recovering the originally valid string.
+  \subsection{Synthetic repair evaluation}\label{sec:latency}
 
   Here, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. the enumerative sampler. In both experiments, we run the corresponding sampler for 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
 
@@ -1135,6 +1140,22 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   While the overall precision is notably lower for PCFG sampling than enumeration, the average number of samples drawn is also significantly lower, indicating a relatively higher sample efficiency. This illustrates the tradeoff between sample efficiency and diversity, and suggests that a hybrid approach may be the most effective. When the repair language is very large, a PCFG offers a more informed prior, albeit at the cost of lower coverage.
 
   In general enumeration has an advantage when the CFL is small. For example, if the CFL contains 2,000 sentences, enumeration will recover all 2,000, whereas PCFG sampling may only recover 100 of the most likely samples. However, if the CFL has 200,000 sentences, enumeration may only be able to recover 10,000 uniform random samples and the PCFG may only recover 5,000, but due to the higher sample efficiency, the PCFG samples are more likely to contain the human repair.
+
+  We also compare the completeness of Seq2Parse versus BIFI using the Precision@All metric.
+
+  \section{Discussion}\label{sec:discussion}
+
+  The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability.
+
+  Our primary insight leading to SoTA Precision@{1} is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating it carefully we can achieve a significant improvement over na\"ive sampling. We note this heuristic may not be applicable to all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
+
+  Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to determine a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
+
+  Tidyparse in its current form has several other technical shortcomings: firstly, it does not incorporate any neural language modeling technology at present, an omission we hope to address. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs. We also hope to explore the use of Metropolis-Hastings and determinantal point processes to encourage sampling diversity.
+
+  Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be semantically valid. This can be partly alleviated by filtering the results through an incremental compiler or linter, however, the latency introduced may be non-negligible. It is also possible to encode type-based semantic constraints into the solver and we intend to explore this direction more fully in future work.
+
+  We envision a few primary use cases for our tool: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers. Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for benchmarking and testing.
 
   \section{Related Work}\label{sec:related}
 
@@ -1190,19 +1211,6 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   The recent success of deep learning has lead to a variety of work on neural program repair~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ Transformer-based neural language models (NLMs) and model the problem as a sequence-to-sequence transformation. Although recent work on circuit lower bounds have cast doubt on the ability of Transformers to truly learn formal languages~\cite{merrill2022saturated, chiang2023tighter}, expressivity aside, these models have been widely adopted for practical program repair tasks. In particular, two papers stand out being most closely related to our own: Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised machine translation to generate synthetic errors in clean code and fixes them. This reduces the amount of pairwise training data, but may generalize poorly to natural errors. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest multiple repairs with much lower latency, do not require a pairwise repair dataset, and can fix syntax errors in any language with a well-defined grammar. We note our approach is complementary to existing work in neural program repair, and may be used to generate synthetic repairs for training or employ a NLM model to rank its repairs.
 
-  \section{Discussion}\label{sec:discussion}
-
-  The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability.
-
-  Our primary insight leading to SoTA Precision@{1} is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating it carefully we can achieve a significant improvement over na\"ive sampling. We note this heuristic may not be applicable to all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
-
-  Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to determine a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
-
-  Tidyparse in its current form has several other technical shortcomings: firstly, it does not incorporate any neural language modeling technology at present, an omission we hope to address. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs. We also hope to explore the use of Metropolis-Hastings and determinantal point processes to encourage sampling diversity.
-
-  Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be semantically valid. This can be partly alleviated by filtering the results through an incremental compiler or linter, however, the latency introduced may be non-negligible. It is also possible to encode type-based semantic constraints into the solver and we intend to explore this direction more fully in future work.
-
-  We envision a few primary use cases for our tool: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers. Featuring a grammar editor and built-in SAT solver, Tidyparse helps developers navigate the language design space, visualize syntax trees, debug parsing errors and quickly generate simple examples and counterexamples for benchmarking and testing.
 
   \section{Conclusion}\label{sec:conclusion}
 
