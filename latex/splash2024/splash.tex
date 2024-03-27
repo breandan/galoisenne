@@ -67,7 +67,7 @@
 
   The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error itself is tiny, but manual correction can divert the author's train of thought. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
 
-  Most prior work on syntax repair can be divided into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+  Most prior work on syntax repair falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
   In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
 
@@ -163,7 +163,7 @@
           \node [above=0.1cm of pro1] {(\S~\ref{sec:lev_bh},~\ref{sec:matrix_completion})};
           \node (pcfg) [io, left of=pro1, xshift=-3cm] {[P]CFG};
           \node [below=0.1cm of pcfg] {(\S~\ref{sec:prelim})};
-          \node (lnfa) [io, right of=pro1, xshift=3cm] {L-WFA};
+          \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
           \node [above=0.1cm of lnfa, xshift=0.7cm] {(\S~\ref{sec:lev_bh})};
 
           \node (code) [io, right of=start,xshift=3cm] {Code};
@@ -181,7 +181,7 @@
           \node [above=0.1cm of samp2] {(\S~\ref{sec:ptree})};
 
           \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
-          \node (vlmc) [io, above of=rank, yshift=-0.1cm] {VLMC};
+          \node (vlmc) [io, above of=rank, yshift=-0.1cm] {Markov Chain};
           \node [below=0.2cm of vlmc, xshift=0.7cm] {(\S~\ref{sec:ranking})};
 
 %  \node (out1) [io, below of=pro2a] {Output};
@@ -224,11 +224,11 @@
 
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
-    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Enumeration is tractable for $\sim$~80\% of the dataset in $\leq 90$s.
-    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for $\sim$~20\% of the dataset.
+    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of syntax repairs.
+    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for a minority of remaining cases.
   \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+  As long as we have done our job correctly, the intersection language should contain nearly every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
 
   \subsection{Preliminaries}\label{sec:prelim}
@@ -873,40 +873,41 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \section{Experimental Setup}
 
-  We conduct two sets of experiments, one on naturally occurring syntax repairs, and the other on synthetic repairs. In both cases, we evaluate the precision of our repair model at recovering the true repair, and compare it to a baseline model.
+  We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Precision is determined by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
-  For both sets of experiments, we make some simplifying assumptions. First, we assume the program can be abstracted as a sequence of lexical tokens. This effectively abstracts names and numbers, but retains all other keywords. Second, we assume the program is shorter 80 tokens or single line, which represents slightly over half the dataset. Lexical equality is determined using using exact string matching.
+  We compare Tidyparse against two separate baselines, Seq2Parse (2022) and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and two datasets. The first dataset~\cite{wong2019syntax} consists of 10k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and the second consists of synthetically generated errors in natural Python snippets~\cite{yasunaga2021break}. We compare precision at recovering the ground truth repair across varying edit distances, snippet lengths and latency cutoffs.
 
-  We measure the Precision@k of our repair procedure at recovering human repairs of varying edit distances and latency cutoffs, where both the broken and fixed code are written by a human.
+  We preprocess the data by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than four Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3 parser. In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-  To train the scoring function, we use a length-5 variable-order Markov (VOM) chain implemented using a count-min sketch based on Apache Datasketches~\cite{apache2022datasketches}. Training on 55 million StackOverflow tokens took roughly 10 minutes, after which calculating perplexity is nearly instantaneous. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
+  The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the model predict the top-k repairs, for $k=\{1, 5, 10, 20\times10^5\}$.
 
-  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
+  The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. To train our scoring function, we use a length-5 variable-order Markov (VOM) chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
 
-  In our synthetic repair benchmark, we synthetically corrupt Python code snippets using a learned corruption model. To train the model, we compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid lexical sequence.
+%  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
-  Suppose we have a dataset of Levenshtein edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+  %  We compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid lexical sequence.
 
-  \begin{enumerate}
-    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) = \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
-    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
-    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
-  \end{enumerate}
+%  Suppose we have a dataset of Levenshtein edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+%
+%  \begin{enumerate}
+%    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) = \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
+%    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
+%    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
+%  \end{enumerate}
+%
+%  For example, suppose we have the following patch in our initial dataset:\\
+%
+%  \texttt{BOS \hlred{def} NAME ( NAME ) : NEWLINE \hlred{INDENT} return \hlorange{NAME} NEWLINE \hlgreen{INDENT} NEWLINE EOS}\\
+%
+%  From this patch, the following contextual typo probabilities will be incremented:
+%
+%  \begin{align*}
+%    P(\texttt{BOS \hlred{def} NAME}) &\mathrel{+}= 1 &P(\texttt{NEWLINE \hlred{INDENT} return}) &\mathrel{+}= 1\\
+%    P(\texttt{return \hlorange{NAME} NEWLINE}) &\mathrel{+}= 1 & P(\texttt{NEWLINE \hlgreen{INDENT} NEWLINE}) &\mathrel{+}= 1
+%  \end{align*}
+%
+%  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
 
-  For example, suppose we have the following patch in our initial dataset:\\
-
-  \texttt{BOS \hlred{def} NAME ( NAME ) : NEWLINE \hlred{INDENT} return \hlorange{NAME} NEWLINE \hlgreen{INDENT} NEWLINE EOS}\\
-
-  From this patch, the following contextual typo probabilities will be incremented:
-
-  \begin{align*}
-    P(\texttt{BOS \hlred{def} NAME}) &\mathrel{+}= 1 &P(\texttt{NEWLINE \hlred{INDENT} return}) &\mathrel{+}= 1\\
-    P(\texttt{return \hlorange{NAME} NEWLINE}) &\mathrel{+}= 1 & P(\texttt{NEWLINE \hlgreen{INDENT} NEWLINE}) &\mathrel{+}= 1
-  \end{align*}
-
-  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
-
-  Both sets of experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 16 GB of RAM, running bytecode compiled for JVM 17.0.2. We measure the precision using abstract lexical matching, following the Seq2Parse~\cite{sakkas2022seq2parse} evaluation, and give a baseline for their approach on the same dataset.
 
   \section{Evaluation}
 
@@ -920,7 +921,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Dataset}
 
-  In the following experiments, we use two datasets of Python snippets. The first is a set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than five lexical tokens, ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \sigma') \leq 4$). We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance and depict the cutoffs in the figure below.
+  In the following experiments, we use two datasets of Python snippets. The first is a set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from Wong et al.'s StackOverflow dataset~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than four lexical tokens, ($|\Sigma| = 50, |\err{\sigma}| \leq 40, \Delta(\err{\sigma}, \sigma') < 4$). We preprocess the dataset to lexicalize both the broken and fixed code snippets, then filter the dataset by length and edit distance and depict the cutoffs in the figure below.
 
   \begin{figure}[h!]
     \begin{tikzpicture}
@@ -990,76 +991,76 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       \draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
       \end{axis}
     \end{tikzpicture}
-    \begin{tikzpicture}
-      \begin{axis}[
-      ybar,
-      bar width=5pt,
-      xlabel={Beginning $\longleftrightarrow$ End},
-      ylabel={Frequency},
-      title={Normalized edit locations},
-      axis x line*=bottom,
-      axis y line*=left,
-      ymin=0,
-      ymax=35,
-      xtick=data,
-      xticklabels={,20\%,,40\%,,60\%,,80\%,,100\%},
-      ymajorgrids=true,
-      grid style=dashed,
-      width=0.45\textwidth,
-      height=0.3\textwidth
-      ]
-
-      \addplot table {
-        X Y
-        10 11.6539
-        20 5.7252
-        30 6.2087
-        40 5.9542
-        50 5.5980
-        60 7.9389
-        70 7.0738
-        80 6.9466
-        90 12.4173
-        100 30.4835
-      };
-      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}
-      \begin{axis}[
-        ybar,
-        bar width=5pt,
-        title={Intra-patch edit distance},
-        xlabel={Caret distance},
-        ylabel={Frequency},
-        axis x line*=bottom,
-        axis y line*=left,
-        xtick=data,
-        ymajorgrids=true,
-        grid style=dashed,
-        xticklabels={1,2,3,4,5,6,7,8,9,10+},
-        width=0.45\textwidth,
-        height=0.3\textwidth
-      ]
-
-        \addplot table {
-          X Y
-          1 40.66
-          2 15.00
-          3 5.80
-          4 4.86
-          5 4.26
-          6 2.98
-          7 2.05
-          8 2.73
-          9 1.62
-          10 13.64
-        };
-      \end{axis}
-    \end{tikzpicture}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%      ybar,
+%      bar width=5pt,
+%      xlabel={Beginning $\longleftrightarrow$ End},
+%      ylabel={Frequency},
+%      title={Normalized edit locations},
+%      axis x line*=bottom,
+%      axis y line*=left,
+%      ymin=0,
+%      ymax=35,
+%      xtick=data,
+%      xticklabels={,20\%,,40\%,,60\%,,80\%,,100\%},
+%      ymajorgrids=true,
+%      grid style=dashed,
+%      width=0.45\textwidth,
+%      height=0.3\textwidth
+%      ]
+%
+%      \addplot table {
+%        X Y
+%        10 11.6539
+%        20 5.7252
+%        30 6.2087
+%        40 5.9542
+%        50 5.5980
+%        60 7.9389
+%        70 7.0738
+%        80 6.9466
+%        90 12.4173
+%        100 30.4835
+%      };
+%      \end{axis}
+%    \end{tikzpicture}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        ybar,
+%        bar width=5pt,
+%        title={Intra-patch edit distance},
+%        xlabel={Caret distance},
+%        ylabel={Frequency},
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        xtick=data,
+%        ymajorgrids=true,
+%        grid style=dashed,
+%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+%        width=0.45\textwidth,
+%        height=0.3\textwidth
+%      ]
+%
+%        \addplot table {
+%          X Y
+%          1 40.66
+%          2 15.00
+%          3 5.80
+%          4 4.86
+%          5 4.26
+%          6 2.98
+%          7 2.05
+%          8 2.73
+%          9 1.62
+%          10 13.64
+%        };
+%      \end{axis}
+%    \end{tikzpicture}
     \caption{Repair statistics across the StackOverflow dataset, of which our method can handle about half in $\sim$30s and $\sim$140GB. Larger repairs and Levenshtein radii are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
   \end{figure}
 
-  In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet.
+  In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet. This set is effectively unlimited as we can generate as many synthetic errors as needed, across a range of edit distances and snippet lengths.
 
   \subsection{StackOverflow evaluation}
 
@@ -1147,7 +1148,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability.
 
-  Our primary insight leading to SoTA Precision@{1} is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating it carefully we can achieve a significant improvement over na\"ive sampling. We note this heuristic may not be applicable to all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
+  Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking all repairs found we can achieve a significant improvement. We note this heuristic may not apply all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
 
   Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to determine a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
 
@@ -1167,7 +1168,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   General CFL parsing allows ambiguity (non-unique trees) and can be formulated as a dynamic programming problem, as shown by Cocke-Younger-Kasami (CYK)~\cite{sakai1961syntax}, Earley~\cite{earley1970efficient} and others. These parsers have roughly cubic complexity with respect to the length of the input string.
 
-  As shown by Valiant~\cite{valiant1975general}, Lee~\cite{lee2002fast} and others, general CFL recognition is in some sense equivalent to binary matrix multiplication, another well-studied combinatorial problem with broad applications, known to be at worst subcubic. This reduction unlocks the door to a wide range of complexity-theoretic and practical speedups to CFL recognition and fast general parsing algorithms.
+  As shown by Valiant~\cite{valiant1975general}, Lee~\cite{lee2002fast} and others, general CFL recognition is in some sense equivalent to binary matrix multiplication, another well-studied combinatorial problem with broad applications, known to be at worst subcubic. This reduction unlocks the door to a range of complexity-theoretic speedups to CFL recognition and fast general parsing algorithms.
 
   Okhotin (2001)~\cite{okhotin2001conjunctive} extends CFGs with language conjunction in \textit{conjunctive grammars}, followed by Zhang \& Su (2017)~\cite{zhang2017context} who apply conjunctive language reachability to dataflow analysis.
 
@@ -1205,7 +1206,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{Error correcting codes}
 
-  Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain event space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for our work.
+  Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for our work.
 
   \subsection{Neural program repair}
 
