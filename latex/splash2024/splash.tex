@@ -65,15 +65,15 @@
 
   \section{Introduction}
 
-  The first hurdle in writing a valid program is passing the syntax checker. Syntax errors are a familiar nuisance for novice and experienced developers, arising due to a confluence of factors, from unfamiliarity, typographic mistakes, to cognitive load. Often the error itself is tiny, but manual correction can divert the author's train of thought. Syntax repair is the problem of automatically modifying a syntactically invalid program to conform to the grammar.
+  Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic mistakes, to cognitive load. Often the mistake is simple to fix, but manual correction temporarily disrupts one's concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Most prior work on syntax repair falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which typically use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+  Most prior work on syntax repair falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
   In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
-    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion}, \ref{sec:ptree})
+    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion},~\ref{sec:ptree})
     \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. (\S~\ref{sec:ptree})
     \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
@@ -1062,25 +1062,26 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   In the second set of experiments, we use a dataset of valid Python snippets from BIFI~\cite{yasunaga2021break}, then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet. This set is effectively unlimited as we can generate as many synthetic errors as needed, across a range of edit distances and snippet lengths.
 
-  \subsection{StackOverflow evaluation}
+  \subsection{StackOverflow evaluation}\label{sec:stackoverflow}
 
-  For our first experiment, we sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying sizes.
+  For our first experiment, we sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance from the original, broken string.
 
   \begin{figure}[h!]
     \input{sample_efficiency}
     \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually saturate the admissible set for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
   \end{figure}
 
-  Next, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We sample the StackOverflow dataset balancing sample sizes across each length interval and edit distance and compare Precision@1 of our method against Seq2Parse and BIFI.
+  Next, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at 20k distinct samples.
 
   \begin{figure}[h!]
-    \resizebox{.32\textwidth}{!}{\input{len_dist_tidy}}
-    \resizebox{.32\textwidth}{!}{\input{len_dist_s2p}}
-    \resizebox{.32\textwidth}{!}{\input{len_dist_bifi}}
-    \caption{Tidyparse, Seq2Parse and BIFI top-1 repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
+    \resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
+    \resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
+    \resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
+    \resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
+    \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
   \end{figure}
 
-  The precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. We also measure the precision of our method at various latency cutoffs, and compare it against Seq2Parse and BIFI.
+  As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the raw data from these experiments in Appendix~\ref{sec:appendix}.
 
   \pagebreak
   \begin{wrapfigure}{r}{0.35\textwidth}
@@ -1130,8 +1131,6 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
 
 %  While adaptive sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our Precision@All remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
-
-
 
   \subsection{Synthetic repair evaluation}\label{sec:latency}
 
@@ -1258,4 +1257,41 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 %
 %  \bibliographystyle{splncs04}
   \bibliography{../bib/acmart}
+
+\pagebreak \appendix
+
+  \section{Raw data} \label{sec:appendix}
+
+  Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:stackoverflow}.
+
+  \begin{table}[!h]
+    \centering
+    \begin{tabular}{c|c|cccccccc}
+      \hline\hline
+      & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
+      $|\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+      Tidyparse
+      & 1 & 1.00 & 1.00 & 0.98 & 0.98 & 1.00 & 1.00 & 0.95 & 0.90 \\
+      & 2 & 0.51 & 0.36 & 0.24 & 0.26 & 0.24 & 0.23 & 0.12 & 0.10 \\
+      & 3 & 0.38 & 0.26 & 0.37 & 0.25 & 0.22 & 0.16 & 0.14 & 0.08 \\ \hline\
+      Seq2Parse
+      & 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
+      & 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
+      & 3 & 0.03 & 0.07 & 0.08 & 0.09 & 0.09 & 0.02 & 0.07 & 0.06 \\ \hline
+      BIFI
+      & 1 & 0.20 & 0.33 & 0.32 & 0.27 & 0.21 & 0.21 & 0.25 & 0.18 \\
+      & 2 & 0.18 & 0.18 & 0.21 & 0.19 & 0.19 & 0.18 & 0.11 & 0.11 \\
+      & 3 & 0.02 & 0.02 & 0.03 & 0.02 & 0.03 & 0.05 & 0.03 & 0.02 \\ \hline
+      & & \multicolumn{8}{c}{Precision@All} \\ \hline
+      Tidyparse
+      & 1 & 1.00 & 1.00 & 0.98 & 0.98 & 1.00 & 1.00 & 1.00 & 0.91 \\
+      & 2 & 0.91 & 0.89 & 0.85 & 0.82 & 0.68 & 0.82 & 0.58 & 0.50 \\
+      & 3 & 0.50 & 0.37 & 0.53 & 0.40 & 0.44 & 0.27 & 0.34 & 0.22 \\ \hline
+      BIFI
+      & 1 & 0.65 & 0.67 & 0.70 & 0.65 & 0.60 & 0.62 & 0.60 & 0.64 \\
+      & 2 & 0.52 & 0.41 & 0.37 & 0.32 & 0.27 & 0.27 & 0.21 & 0.24 \\
+      & 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
+    \end{tabular}
+  \end{table}
+
 \end{document}
