@@ -1086,7 +1086,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   \pagebreak
   \begin{wrapfigure}{r}{0.35\textwidth}
     \resizebox{.35\textwidth}{!}{\input{throughput}}
-    \caption{Total repairs found in 30s.}
+    \caption{Distinct repairs found in 30s.}
     \label{fig:throughput}
   \end{wrapfigure}
 
@@ -1145,7 +1145,13 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   In general enumeration has an advantage when the CFL is small. For example, if the CFL contains 2,000 sentences, enumeration will recover all 2,000, whereas PCFG sampling may only recover 100 of the most likely samples. However, if the CFL has 200,000 sentences, enumeration may only be able to recover 10,000 uniform random samples and the PCFG may only recover 5,000, but due to the higher sample efficiency, the PCFG samples are more likely to contain the human repair.
 
-  We also compare the completeness of Seq2Parse versus BIFI using the Precision@All metric.
+  \begin{wrapfigure}{r}{0.4\textwidth}
+    \input{experiments/parallel_speedup}
+    \caption{Observed improvement in throughput relative to total CPU cores assigned.}
+    \label{fig:speedup}
+  \end{wrapfigure}
+
+  We also measure the relative improvement in throughput (measured by the number of distinct repairs found after a fixed timeout) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe the relative increases logarithmically with the number of additional CPU cores and at least four CPU cores are needed to offset the overhead of synchronization. We recommend using as many CPU cores as possible to maximize latency and throughput. Further speedups may be possible to realize by rewriting the sampler in CUDA, which we leave for future work.
 
   \section{Discussion}\label{sec:discussion}
 

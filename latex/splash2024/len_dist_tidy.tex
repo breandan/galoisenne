@@ -2,7 +2,7 @@
   \begin{axis}[
     xlabel={$|\sigma|$},
     ylabel={Precision@1},
-    title={Tidyparse Repair Precision@1},
+    title={\textbf{Tidyparse Repair Precision@1}},
     ybar,
     axis lines*=left,
     xtick={0, 10, 20, 30, 40, 50, 60, 70},
@@ -14,9 +14,9 @@
     bar width=4pt,
   ]
 
-  \addplot[green, fill=green] coordinates { (0, 1.0) (10, 1.0) (20, 0.975) (30, 0.98) (40, 1.0) (50, 1.0) (60, 0.95) (70, 0.9) };
-  \addplot[blue, fill=blue] coordinates { (0, 0.51) (10, 0.36) (20, 0.24) (30, 0.26) (40, 0.24) (50, 0.23) (60, 0.12) (70, 0.1) };
-  \addplot[orange, fill=orange] coordinates { (0, 0.38) (10, 0.26) (20, 0.37) (30, 0.25) (40, 0.22) (50, 0.16) (60, 0.14) (70, 0.08) };
+  \addplot[green, fill=green!50] coordinates { (0, 1.0) (10, 1.0) (20, 0.975) (30, 0.98) (40, 1.0) (50, 1.0) (60, 0.95) (70, 0.9) };
+  \addplot[blue, fill=blue!50] coordinates { (0, 0.51) (10, 0.36) (20, 0.24) (30, 0.26) (40, 0.24) (50, 0.23) (60, 0.12) (70, 0.1) };
+  \addplot[orange, fill=orange!50] coordinates { (0, 0.38) (10, 0.26) (20, 0.37) (30, 0.25) (40, 0.22) (50, 0.16) (60, 0.14) (70, 0.08) };
 
 %  \legend{Δ=1,Δ=2,Δ=3}
   \end{axis}
