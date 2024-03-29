@@ -65,9 +65,9 @@
 
   \section{Introduction}
 
-  Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic mistakes, to cognitive load. Often the mistake is simple to fix, but manual correction temporarily disrupts one's concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
+  Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic mistakes, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Most prior work on syntax repair falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+  Prior work on syntax repair generally falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
   In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
 
@@ -126,10 +126,10 @@
 
   \section{Problem}
 
-  We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language.
+  We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will be used to denote a syntactically invalid string.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL $\ell$ and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -233,7 +233,7 @@
 
   \subsection{Preliminaries}\label{sec:prelim}
 
-  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, in which every production takes one of two forms, either $w \rightarrow xz$, or $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -485,7 +485,7 @@
 %    \vspace{-10pt}
 %  \end{wrapfigure}
 
-  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ considers the intersection between every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
+  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
   To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
@@ -534,7 +534,7 @@
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
-  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map, and a method for sampling parse trees from the language with or without replacement.
+  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary but fixed timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map, and a method for sampling parse trees from the language with or without replacement.
 
 %  If so, we require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
@@ -881,7 +881,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the model predict the top-k repairs, for $k=\{1, 5, 10, 20\times10^5\}$.
 
-  The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 140 GB of RAM, running bytecode compiled for JVM 17.0.2. To train our scoring function, we use a length-5 variable-order Markov (VOM) chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs.
+  The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 140 GB of RAM, running bytecode compiled for JVM 17.0.2. To train our scoring function, we use a length-5 variable-order Markov (VOM) chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs. We apply a 30-second latency cutoff for our sampler.
 
 %  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
@@ -1064,12 +1064,14 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \subsection{StackOverflow evaluation}\label{sec:stackoverflow}
 
-  For our first experiment, we sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance from the original, broken string.
+  For our first experiment, we sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance.
 
   \begin{figure}[h!]
     \input{sample_efficiency}
-    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually saturate the admissible set for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
   \end{figure}
+
+  The advantage of using an enumerative sampler is that it can terminate early, since it knows, after drawing $|\mathbb{T}_2(\mathcal{G}_\cap)|$ distinct repairs, it has exhausted the admissible set. This also provides a way to calibrate the threshold for how to sample given a fixed budget: if, for example, we can only afford to sample a small fraction of the admissible set, we should clearly sample with replacement. Otherwise, if we can saturate the admissible set, we should sample without replacement.
 
   Next, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at 20k distinct samples.
 
@@ -1081,7 +1083,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
   \end{figure}
 
-  As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the raw data from these experiments in Appendix~\ref{sec:appendix}.
+  As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the full data from these experiments in Appendix~\ref{sec:appendix}.
 
   \pagebreak
   \begin{wrapfigure}{r}{0.35\textwidth}
@@ -1090,7 +1092,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \label{fig:throughput}
   \end{wrapfigure}
 
-  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with language edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma) \in [1, 4]$ before timeout.
+  End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before a syntactically valid edit is discovered. We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactically valid repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma) \in [1, 4]$ before timeout.
 
   \begin{wrapfigure}{l}{0.35\textwidth}
     \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
@@ -1098,9 +1100,9 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \label{fig:timings}
   \end{wrapfigure}
 
-  In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the time until the sampler locates the exact human repair. For each code snippet, we measure the total time taken, for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis.  Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, while 3+-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores.
+  In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the wallclock time until the sampler retrieves the human repair. For each code snippet, we measure the total time taken for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, while 3+-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball approaches a volume of $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores.
 
-  Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, P@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair of $\Delta=\{1, 2, 3, 4\}$ edits found in $\leq p$ seconds that were matched within the top-k results, based on n-gram likelihood.
+  Next, measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, Precision@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair that was located within the top-k results, based on n-gram likelihood.
 
   \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
@@ -1111,12 +1113,14 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges.}\label{fig:human}
+    \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
   \end{figure}
 
-  As we can see, our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however takes significantly longer for 2- and 3-edit repairs. We note however, that it uses a significantly smaller model and requires no training data. We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-performance tradeoff.
+  As can be seen in Fig.~\ref{fig:human}, our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however takes significantly longer for 2- and 3-edit repairs. We note however, that it uses a significantly smaller model and requires no training data. We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-performance tradeoff.
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
+
+  \subsection{Subcomponent ablation}\label{sec:ablation}
 
   Previously, we used a rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball using a contextual prior, then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold, i.e., a few seconds, the average time required to attain a fixed precision is much higher. We present the results from the earlier evaluation for comparison below.
 
@@ -1132,9 +1136,8 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
 %  While adaptive sampling is able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, 3-edit throughput is heavily constrained by compute around 16 lexical tokens, when Python's Levenshtein ball has a volume of roughly $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. Despite the high computational cost of sampling multi-edit repairs, our Precision@All remains competitive with the Seq2Parse neurosymbolic baseline at the same latency. We provide some qualitative examples of repairs in Table~\ref{sec:appendix}.
 
-  \subsection{Synthetic repair evaluation}\label{sec:latency}
 
-  Here, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. the enumerative sampler. In both experiments, we run the corresponding sampler for 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
+  Next, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. the enumerative sampler. In both experiments, we run the corresponding sampler for 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
 
   \begin{figure}[h]
     \input{experiments/ablation_enumeration_only}
@@ -1143,7 +1146,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   While the overall precision is notably lower for PCFG sampling than enumeration, the average number of samples drawn is also significantly lower, indicating a relatively higher sample efficiency. This illustrates the tradeoff between sample efficiency and diversity, and suggests that a hybrid approach may be the most effective. When the repair language is very large, a PCFG offers a more informed prior, albeit at the cost of lower coverage.
 
-  In general enumeration has an advantage when the CFL is small. For example, if the CFL contains 2,000 sentences, enumeration will recover all 2,000, whereas PCFG sampling may only recover 100 of the most likely samples. However, if the CFL has 200,000 sentences, enumeration may only be able to recover 10,000 uniform random samples and the PCFG may only recover 5,000, but due to the higher sample efficiency, the PCFG samples are more likely to contain the human repair.
+  In general, enumeration has an advantage when the CFL is small. For example, if the CFL contains 2,000 sentences, enumeration will recover all 2,000, whereas PCFG sampling may only recover 100 of the most likely samples. However, if the CFL has 200,000 sentences, enumeration may only be able to recover 10,000 uniform random samples and the PCFG may only recover 5,000, but due to the higher sample efficiency, the PCFG samples are more likely to contain the human repair.
 
   \begin{wrapfigure}{r}{0.4\textwidth}
     \input{experiments/parallel_speedup}
@@ -1151,17 +1154,17 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \label{fig:speedup}
   \end{wrapfigure}
 
-  We also measure the relative improvement in throughput (measured by the number of distinct repairs found after a fixed timeout) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe the relative increases logarithmically with the number of additional CPU cores and at least four CPU cores are needed to offset the overhead of synchronization. We recommend using as many CPU cores as possible to maximize latency and throughput. Further speedups may be possible to realize by rewriting the sampler in CUDA, which we leave for future work.
+  We also measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups may be possible to realize by rewriting the sampler in CUDA, which we leave for future work.
 
   \section{Discussion}\label{sec:discussion}
 
   The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability.
 
-  Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking all repairs found we can achieve a significant improvement. We note this heuristic may not apply all grammars, and it may be possible to construct less natural counterexamples where this heuristic fails, although we consider these unlikely in practice.
+  Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking all repairs found we can achieve a significant improvement over one-shot neural repair. We note this approach may not succeed in all languages, and it may be possible to construct pathological cases where the metastability heuristic fails.
 
-  Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to determine a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
+  Latency can vary depending on many factors including string length and grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation because as the number of edits grows, the admissible set grows rapidly and the number of valid repairs may become too large to be useful without a good metric, depending on the language and source code snippet under repair.
 
-  Tidyparse in its current form has several other technical shortcomings: firstly, it does not incorporate any neural language modeling technology at present, an omission we hope to address. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs. We also hope to explore the use of Metropolis-Hastings and determinantal point processes to encourage sampling diversity.
+  Tidyparse in its current form has several other technical shortcomings: firstly, it does not incorporate any neural language modeling technology at present, an omission we hope to address. Training a language model to predict likely repair locations and rank admissible results could lead to lower overall latency and more natural repairs. We also hope to explore the use of sequential Monte-Carlo~\cite{lew2023sequential} to encourage constrained sampling with diversity.
 
   Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be semantically valid. This can be partly alleviated by filtering the results through an incremental compiler or linter, however, the latency introduced may be non-negligible. It is also possible to encode type-based semantic constraints into the solver and we intend to explore this direction more fully in future work.
 
