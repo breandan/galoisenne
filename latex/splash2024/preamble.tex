@@ -96,13 +96,13 @@
 
 \usepackage[skins,breakable,listings]{tcolorbox}
 
-\lstdefinelanguage{kotlin}{
+\lstdefinelanguage{python}{
   comment=[l]{//},
   commentstyle={\color{gray}\ttfamily},
   emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
   numberstyle=\noncopyable,
   identifierstyle=\color{black},
-  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
+  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified, from, import, def, yield, lambda, as, in, return, else, pass},
   keywordstyle={\bfseries},
   morecomment=[s]{/*}{*/},
   morestring=[b]",
@@ -114,6 +114,7 @@
   literate={`}{{\char0}}1,
   escapeinside={(*@}{@*)}
 }
+
 \lstdefinelanguage{tidy}{
   comment=[l]{//},
   commentstyle={\color{gray}\ttfamily},

@@ -243,7 +243,7 @@
 
   Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \pagebreak\subsection{The nominal Levenshtein automaton}\label{sec:lev_nfa}
+  \pagebreak\subsection{Modeling code edits with the Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -446,7 +446,7 @@
 
   Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the size of the construction to follow, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
 
-  \subsection{Levenshtein-Bar-Hillel Construction}\label{sec:lev_bh}
+  \subsection{Recognizing syntactically valid code changes via language intersection}\label{sec:lev_bh}
 
   We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a regular and a context-free language, then specialize it to Levenshtein intersections.
 
@@ -1265,20 +1265,115 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 % References will then be sorted and formatted in the correct style.
 %
 %  \bibliographystyle{splncs04}
-  \bibliography{../bib/acmart}
+  \pagebreak\bibliography{../bib/acmart}
 
-\pagebreak \appendix
+  \pagebreak\appendix
 
-  \section{Raw data} \label{sec:appendix}
+  \section{Example Repairs}\label{sec:exaple_repairs}
 
-  Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:stackoverflow}.
+  Below, we provide a few examples of broken code snippets and their corresponding human repairs that were successfully discovered and ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
+
+  \begin{figure}[H]
+      \begin{tabular}{|m{6.6cm}|m{6.6cm}|}
+        \hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  (*@\hlorange{form}@*) sympy import *
+  x = Symbol('x', real=True)
+  x, re(x), im(x)
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  (*@\hlorange{\textbf{from}}@*) sympy import *
+  x = Symbol('x', real=True)
+  x, re(x), im(x)
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  result = (*@\hlorange{yeald}@*) From(item.create())
+  raise Return(result)
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
+  raise Return(result)
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  return 1/sum_p if sum_p \
+  (*@\hlorange{\textbf{return}}@*) 0 (*@\hlred{\textbf{else}}@*)
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  return 1/sum_p if sum_p \
+  (*@\hlorange{\textbf{else}}@*) 0
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  sum(len(v) for v items.values())(*@\hlred{)}@*)
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  import numpy (*@\hlorange{ad}@*) np
+  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  import numpy (*@\hlorange{\textbf{as}}@*) np
+  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+
+        \end{lstlisting} \\\hline
+        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  class MixIn(object)
+    def m():
+      pass
+
+  class classA(MixIn):
+
+  class classB(MixIn):
+
+        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+
+  class MixIn(object)(*@\hlgreen{:}@*)
+    def m():
+      pass
+
+  class classA(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+  class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+        \end{lstlisting} \\\hline
+      \end{tabular}
+  \end{figure}
+
+  \clearpage\section{Raw data}\label{sec:raw_prec_data}
+
+  Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:stackoverflow}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens.
 
   \begin{table}[!h]
     \centering
     \begin{tabular}{c|c|cccccccc}
       \hline\hline
       & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
-      $|\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+      $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
       Tidyparse
       & 1 & 1.00 & 1.00 & 0.98 & 0.98 & 1.00 & 1.00 & 0.95 & 0.90 \\
       & 2 & 0.51 & 0.36 & 0.24 & 0.26 & 0.24 & 0.23 & 0.12 & 0.10 \\
@@ -1302,5 +1397,6 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       & 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
     \end{tabular}
   \end{table}
-
 \end{document}
+
+
