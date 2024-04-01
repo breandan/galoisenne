@@ -65,11 +65,11 @@
 
   \section{Introduction}
 
-  Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic mistakes, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
+  Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic error, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Prior work on syntax repair generally falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors (e.g.,~\cite{aho1972minimum}), and (2) \textit{machine learning}, which use neural language models to repair code (e.g.~\cite{yasunaga2021break, sakkas2022seq2parse}). The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+  Prior work on syntax repair generally falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors~\cite{aho1972minimum}, and (2) \textit{machine learning}, which use neural language models to repair code~\cite{yasunaga2021break, sakkas2022seq2parse}. The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
 
-  In this work, we take a pragmatic approach to syntax repair by embracing the problem's inherent ambiguity. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every nearby repair and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed technique is straightforward:
+  In this work, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
@@ -80,7 +80,7 @@
 
   Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not synthesize probable edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
-  \section{Example}
+  \clearpage\section{Example}
 
   Consider the following Python snippet, which contains a small syntax error:\\
 
@@ -124,7 +124,7 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
 
-  \section{Problem}
+  \clearpage\section{Problem}
 
   We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will be used to denote a syntactically invalid string.
 
@@ -150,14 +150,15 @@
 
   Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
 
-  \section{Method}
+  \clearpage\section{Method}
 
-  At a very high level, the method we describe in this paper takes as input the invalid source code, and returns a set of plausible repairs. We assume the target syntax and a small distribution of lexical n-grams is provided, and optionally, a PCFG for improved efficiency. Our method can decomposed into three primary steps: (1) language intersection, (2) repair extraction, and (3) reranking.
+  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into three main steps: (1) language intersection, (2) repair extraction, and (3) reranking.
 
+  \begin{figure}[h!]
   \begin{center}
     \resizebox{0.8\textwidth}{!}{
       \begin{tikzpicture}[node distance=5cm]
-        \node (start) [io] {Broken Code};
+        \node (start) [io] {Broken code};
         \node (node1) [plain, right of=start] {\phantom{...}Language intersection\phantom{...}};
         \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
         \node (node2) [plain, right of=node1] {Repair extraction};
@@ -175,22 +176,25 @@
       \end{tikzpicture}
     }
   \end{center}
+%  \caption{Line chart of our proposed method.}\label{fig:linechart}
+  \end{figure}
 
-First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code. During extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, in the reranking step, we rank all repairs by n-gram likelihood. More specifically, we depict this as a flowchart in Fig.~\ref{fig:flowchart}.
+First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code. During extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, in the reranking step, we rank all repairs by n-gram likelihood. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
 
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
     \vspace{-0.4cm}
     \begin{center}
-      \resizebox{0.35\textwidth}{!}{
+      \resizebox{0.39\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
-          \node (start) [startstop] {Start};
-          \node (pro1) [process, below of=start, yshift=-0.5cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
-          \node [above=0.1cm of pro1] {(\S~\ref{sec:lev_bh},~\ref{sec:matrix_completion})};
+          \node (start) [startstop, draw=none];
+          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
+          \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
           \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
-          \node [below=0.1cm of pcfg] {(\S~\ref{sec:prelim})};
+          \node [below=0.07cm of pcfg] {(\S~\ref{sec:prelim})};
+          \node [below=2.3cm of pcfg, xshift=-0.23cm] {\textbf{Language intersection}};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
-          \node [above=0.1cm of lnfa, xshift=0.7cm] {(\S~\ref{sec:lev_bh})};
+          \node [above=0.07cm of lnfa, xshift=1cm] {(\S~\ref{sec:lev_nfa})};
 
           \node (code) [io, right of=start,xshift=3cm] {Code};
           \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
@@ -199,26 +203,37 @@ First, we generate a synthetic grammar representing the intersection between the
 
           \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-          \node (dec2) [decision, below of=dec1, yshift=-1cm] {$|\mathcal{L}(G_\cap)|$};
+          \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.7)$) rectangle ($(pro2b.south east)+(0.3,-0.6)$);
+
+          \node (const) [process, below of=dec1, yshift=-1.1cm] {Construct $\mathbb{T}_2$};
+          \node [above=0.07cm of const, xshift=1.5cm] {(\S~\ref{sec:matrix_completion})};
+
+          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
 
           \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
-          \node [above=0.1cm of samp1] {(\S~\ref{sec:ptree})};
+          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
+          \node [above=2.3cm of samp1,xshift=-0.6cm] {\textbf{Repair extraction}};
           \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
-          \node [above=0.1cm of samp2] {(\S~\ref{sec:ptree})};
+          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
 
-          \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
-          \node (vlmc) [io2, above of=rank, yshift=-0.1cm] {Markov chain};
-          \node [below=0.2cm of vlmc, xshift=0.7cm] {(\S~\ref{sec:ranking})};
+          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
+
+          \node (rank) [process, below of=dec2, yshift=-1.5cm] {Select top-$k$ by $L_\theta(\sigma')$};
+          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
+          \node [below=0.01cm of rank, xshift=-6cm] {\textbf{Reranking}};
+          \node [above=0.1cm of rank, xshift=1cm] {(\S~\ref{sec:ranking})};
+          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,0.8)$) rectangle ($(rank.south east)+(5.3,-0.9)$);
 
 %  \node (out1) [io, below of=pro2a] {Output};
-          \node (stop) [startstop, below of=rank] {Done};
+          \node (stop) [startstop, below of=rank, yshift=-0.6cm];
 
 %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
 
-          \draw [->,thick] (0, 1.3) -- (start);
+%          \draw [->,thick] (-5, 1.3) -- (synt);
+%          \draw [->,thick] (5, 1.3) -- (code);
 
-          \draw [arrow] (start) -- (code);
-          \draw [arrow] (start) -- (synt);
+%          \draw [arrow] (start) -- (code);
+%          \draw [arrow] (start) -- (synt);
           \draw [arrow] (code) -- (lnfa);
           \draw [arrow] (synt) -- (pcfg);
           \draw [arrow] (lnfa) -- (pro1);
@@ -227,14 +242,15 @@ First, we generate a synthetic grammar representing the intersection between the
 %  \draw [arrow] (in1) -- (pro1);
           \draw [arrow] (pro1) -- (dec1);
           \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
-          \draw [arrow] (dec1) -- node[anchor=east] {no} (dec2);
+          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.3cm] {no} (const);
+          \draw [arrow] (const) -- (dec2);
           \draw [arrow] (pro2b) -- (lnfa);
           \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
           \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
           \draw [arrow] (vlmc) -- (rank);
-          \draw [arrow] (samp1) |- (rank);
-          \draw [arrow] (samp2) |- (rank);
+          \draw [arrow] (samp1) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
           \draw [arrow] (rank) -- (stop);
 %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
@@ -242,8 +258,9 @@ First, we generate a synthetic grammar representing the intersection between the
         \end{tikzpicture}
       }
     \end{center}
+    \vspace{-0.7cm}
     \caption{Flowchart of our proposed method.}\label{fig:flowchart}
-    \vspace{-0.3cm}
+    \vspace{-0.7cm}
   \end{wrapfigure}
 
   Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the language's syntax ($G$) and an automaton recognizing the Levenshtein ball of a given radius, $L(\err\sigma, d)$. As CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
@@ -268,7 +285,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \clearpage\subsection{Modeling code edits with the Levenshtein automaton}\label{sec:lev_nfa}
+  \clearpage\subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -279,7 +296,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \vspace{-0.5cm}
   \end{wrapfigure}
 
-  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system in an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+  Levenshtein edits are recognized by an automaton known as the Levenshtein automaton. As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
   \begin{prooftree}
     \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
@@ -471,7 +488,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the size of the construction to follow, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
 
-  \subsection{Recognizing syntactically valid code changes via language intersection}\label{sec:lev_bh}
+  \subsection{Recognizing syntactically valid edits via language intersection}\label{sec:lev_bh}
 
   We now describe the Bar-Hillel construction, which generates a grammar recognizing the intersection between a regular and a context-free language, then specialize it to Levenshtein intersections.
 
@@ -553,7 +570,7 @@ First, we generate a synthetic grammar representing the intersection between the
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap^*$, which is usually several orders of magnitude smaller.
+  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap'$, which is usually several orders of magnitude smaller.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
@@ -563,7 +580,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %  If so, we require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
-  \subsection{Repair as idempotent matrix completion}\label{sec:matrix_completion}
+  \subsection{Abstract parsing with holes as idempotent matrix completion}\label{sec:matrix_completion}
 
   In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
@@ -770,13 +787,13 @@ First, we generate a synthetic grammar representing the intersection between the
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
   \end{equation}
 
-  Given a $\sigma: \underline\Sigma$, we construct $\mathbb{T}_2$ from the bottom-up, and sample from the top-down. Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}.
+  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and compute the fixpoint for each slice.
 
-  We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+  Given a $\sigma: \underline\Sigma^n$, we construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
 \vspace{-10pt}\begin{equation}
   \begin{footnotesize}
-\Lambda(s: \underline\Sigma) \mapsto \begin{cases}
+\Lambda(s: \underline\Sigma^n) \mapsto \begin{cases}
 \bigoplus_{s'\in \Sigma} \Lambda(s') & \text{if $s$ is a hole,} \vspace{5pt}\\
 \big\{\mathbb{T}_2\big(w, \big[\langle\mathbb{T}_2(s), \mathbb{T}_2(\varepsilon)\rangle\big]\big) \mid (w \rightarrow s)\in P\big\} & \text{otherwise.}
 \end{cases}
@@ -786,13 +803,13 @@ First, we generate a synthetic grammar representing the intersection between the
 \noindent This initializes the superdiagonal entries, enabling us to compute the fixpoint $M_\infty$ in the same manner described in \S~\ref{sec:matrix_completion} by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
 \begin{align}
-  X \oplus Z &\mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\Big\}\\
-  X \otimes Z &\mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\Big\}
+  X \oplus Z &\mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{\phantom{.}k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\phantom{.}\Big\}\\
+  X \otimes Z &\mapsto \bigoplus_{\mathclap{(w\rightarrow xz) \in P}}\Big\{\phantom{.}\mathbb{T}_2\Big(w, \big[\langle X\circ x, Z\circ z\rangle\big]\Big) \mid x \in \pi_1(X), z \in \pi_1(Z)\phantom{.}\Big\}
 \end{align}
 
 These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary of $\mathbb{T}_2$, indexed by their root nonterminals.
 
-  $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map (Def.~\ref{def:parikh}), we may use the following recurrence,
+  $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map of a CFG (Def.~\ref{def:parikh}), we may use the following recurrence,
 
 \begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
@@ -1096,7 +1113,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
   \end{figure}
 
-  The advantage of using an enumerative sampler is that it can terminate early, since it knows, after drawing $|\mathbb{T}_2(\mathcal{G}_\cap)|$ distinct repairs, it has exhausted the admissible set. This also provides a way to calibrate the threshold for how to sample given a fixed budget: if, for example, we can only afford to sample a small fraction of the admissible set, we should clearly sample with replacement. Otherwise, if we can saturate the admissible set, we should sample without replacement.
+  The advantage of using an enumerative sampler is that it can terminate early, since it knows, after drawing $|\mathbb{T}_2(G_\cap)|$ distinct repairs, it has exhausted the admissible set. This also provides a way to calibrate the threshold for how to sample given a fixed budget: if, for example, we can only afford to sample a small fraction of the admissible set, we should clearly sample with replacement. Otherwise, if we can saturate the admissible set, we should sample without replacement.
 
   Next, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at 20k distinct samples.
 

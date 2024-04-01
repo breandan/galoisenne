@@ -431,7 +431,7 @@
 
 %======== Arrows =========
 
-\usetikzlibrary{decorations.pathreplacing,automata,calc,positioning,matrix,fit,decorations.pathmorphing}
+\usetikzlibrary{decorations.pathreplacing,automata,calc,positioning,matrix,chains,fit,decorations.pathmorphing}
 
 \usepackage{wrapfig}
 
@@ -584,8 +584,8 @@ minimum width=3cm,
 minimum height=1cm,
 thick,
 text centered,
-draw=black,
-fill=red!30]
+draw=none,
+]
 
 \tikzstyle{plain} = [
 rectangle,
@@ -625,8 +625,8 @@ draw=black,
 fill=orange!30]
 
 \tikzstyle{decision} = [diamond,
-minimum width=3cm,
-minimum height=1cm,
+minimum width=2.5cm,
+minimum height=0.5cm,
 thick,
 text centered,
 draw=black,
