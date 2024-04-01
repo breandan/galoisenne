@@ -152,6 +152,32 @@
 
   \section{Method}
 
+  At a very high level, the method we describe in this paper takes as input the invalid source code, and returns a set of plausible repairs. We assume the target syntax and a small distribution of lexical n-grams is provided, and optionally, a PCFG for improved efficiency. Our method can decomposed into three primary steps: (1) language intersection, (2) repair extraction, and (3) reranking.
+
+  \begin{center}
+    \resizebox{0.8\textwidth}{!}{
+      \begin{tikzpicture}[node distance=5cm]
+        \node (start) [io] {Broken Code};
+        \node (node1) [plain, right of=start] {\phantom{...}Language intersection\phantom{...}};
+        \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
+        \node (node2) [plain, right of=node1] {Repair extraction};
+%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
+        \node (node3) [plain, right of=node2] {Reranking};
+        \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
+        \node (node4) [io, right of=node3] {Repairs};
+        \draw [arrow] (start) -- (node1);
+        \draw [arrow] (gram1) -- (node1);
+        \draw [arrow] (node1) -- (node2);
+        \draw [arrow] (node2) -- (node3);
+        \draw [arrow] (node3) -- (node4);
+        \draw [arrow] (ngram) -- (node3);
+%        \draw [arrow] (ptree) -- (node2);
+      \end{tikzpicture}
+    }
+  \end{center}
+
+First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code. During extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, in the reranking step, we rank all repairs by n-gram likelihood. More specifically, we depict this as a flowchart in Fig.~\ref{fig:flowchart}.
+
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
     \vspace{-0.4cm}
@@ -161,13 +187,13 @@
           \node (start) [startstop] {Start};
           \node (pro1) [process, below of=start, yshift=-0.5cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
           \node [above=0.1cm of pro1] {(\S~\ref{sec:lev_bh},~\ref{sec:matrix_completion})};
-          \node (pcfg) [io, left of=pro1, xshift=-3cm] {[P]CFG};
+          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
           \node [below=0.1cm of pcfg] {(\S~\ref{sec:prelim})};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
           \node [above=0.1cm of lnfa, xshift=0.7cm] {(\S~\ref{sec:lev_bh})};
 
           \node (code) [io, right of=start,xshift=3cm] {Code};
-          \node (synt) [io, left of=start,xshift=-3cm] {Syntax};
+          \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
 
           \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
 
@@ -181,7 +207,7 @@
           \node [above=0.1cm of samp2] {(\S~\ref{sec:ptree})};
 
           \node (rank) [process, below of=dec2, yshift=-2.5cm] {Rerank by $L_\theta(\sigma')$};
-          \node (vlmc) [io, above of=rank, yshift=-0.1cm] {Markov Chain};
+          \node (vlmc) [io2, above of=rank, yshift=-0.1cm] {Markov chain};
           \node [below=0.2cm of vlmc, xshift=0.7cm] {(\S~\ref{sec:ranking})};
 
 %  \node (out1) [io, below of=pro2a] {Output};
@@ -220,7 +246,7 @@
     \vspace{-0.3cm}
   \end{wrapfigure}
 
-  The syntax of most programming languages is context-free. Our proposed method is simple. We construct a context-free grammar representing the intersection between the language syntax and an automaton recognizing the Levenshtein ball of a given radius. Since CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
+  Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the language's syntax ($G$) and an automaton recognizing the Levenshtein ball of a given radius, $L(\err\sigma, d)$. As CFLs are closed under intersection with regular languages, this is admissible. Three outcomes are possible:
 
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
@@ -228,8 +254,7 @@
     \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for a minority of remaining cases.
   \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain nearly every repair within a certain Levenshtein distance, and no invalid repairs. This procedure is depicted in Fig.~\ref{fig:flowchart}. In the following section, we will describe how we construct the intersecection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, provide an explicit technique for extracting all repairs contained within its language (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
-
+  As long as we have done our job correctly, the intersection language should contain nearly every repair within a certain Levenshtein distance, and no invalid repairs. We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure that compactly represents its language, allowing us to efficiently extract all repairs contained within (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}\label{sec:prelim}
 
@@ -243,7 +268,7 @@
 
   Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \pagebreak\subsection{Modeling code edits with the Levenshtein automaton}\label{sec:lev_nfa}
+  \clearpage\subsection{Modeling code edits with the Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -1366,7 +1391,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \clearpage\section{Raw data}\label{sec:raw_prec_data}
 
-  Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:stackoverflow}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens.
+  Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:stackoverflow}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the admissible set or a timeout of 30s is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20000 samples.
 
   \begin{table}[!h]
     \centering
@@ -1377,7 +1402,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       Tidyparse
       & 1 & 1.00 & 1.00 & 0.98 & 0.98 & 1.00 & 1.00 & 0.95 & 0.90 \\
       & 2 & 0.51 & 0.36 & 0.24 & 0.26 & 0.24 & 0.23 & 0.12 & 0.10 \\
-      & 3 & 0.38 & 0.26 & 0.37 & 0.25 & 0.22 & 0.16 & 0.14 & 0.08 \\ \hline\
+      & 3 & 0.38 & 0.26 & 0.37 & 0.25 & 0.22 & 0.16 & 0.14 & 0.08 \\ \hline
       Seq2Parse
       & 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
       & 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
@@ -1397,6 +1422,24 @@ If the language is suffiently small, instead of sampling trees, we can sample in
       & 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
     \end{tabular}
   \end{table}
+
+  Synthetic evaluation
+
+  \begin{table}[!h]
+    \centering
+    \begin{tabular}{c|c|cccccccc}
+      \hline\hline
+      & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
+      $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+      Tidyparse
+      & 1 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 0.98 \\
+      & 2 & 0.80 & 0.62 & 0.63 & 0.72 & 0.65 & 0.81 & 0.64 & 0.62 \\
+      & 3 & 0.32 & 0.16 & 0.25 & 0.42 & 0.29 & 0.39 & 0.38 & 0.32 \\ \hline
+      & & \multicolumn{8}{c}{Precision@All} \\ \hline
+      Tidyparse
+      & 1 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 0.98 & 1.00 \\
+      & 2 & 1.00 & 0.99 & 0.92 & 0.95 & 0.98 & 0.97 & 0.89 & 0.90 \\
+      & 3 & 1.00 & 0.96 & 0.93 & 0.85 & 0.87 & 0.90 & 0.84 & 0.72 \\ \hline\hline
+    \end{tabular}
+  \end{table}
 \end{document}
-
-
