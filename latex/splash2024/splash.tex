@@ -957,8 +957,8 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   \begin{itemize}
     \item \textbf{RQ 1}: What statistical properties do natural repairs exhibit? (e.g., length, edit distance)
-    \item \textbf{RQ 2}: How precise is our technique at fixing syntax errors? (e.g., vs. Seq2Parse and BIFI)
-    \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, n-gram order)
+    \item \textbf{RQ 2}: How performant is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
+    \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, parallelism)
   \end{itemize}
 
   We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural Python repair lengths and distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on repair precision.
@@ -1135,17 +1135,17 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   \end{figure}
 
   \begin{wrapfigure}{r}{0.4\textwidth}
-    \vspace{-1.7cm}
-    \hspace{-0.5cm}
-    \resizebox{.5\textwidth}{!}{\input{sankey}}
+    \vspace{-1.5cm}
+    \hspace{-0.8cm}
+    \resizebox{.53\textwidth}{!}{\input{sankey}}
     \vspace{-1.8cm}
-    \caption{Common repair outcomes.}
+    \caption{Outcomes in the repair pipeline.}
     \label{fig:sankey}
   \end{wrapfigure}
 
   %We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
 
-  We present a Sankey diagram of the repair dataflow in Fig.~\ref{fig:sankey}. We sampled 967 repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma) < 4$) with a timeout of 30s and tracked the outcomes of each repair. 13 cases threw an error generating the intersection grammar, in 4 cases the repair was not recognized, in 153 cases the sampler timed out before drawing the human repair, in 312 cases the human repair was drawn but not ranked first, and in the remaining 485 cases, the human repair was ranked first.
+  We present a Sankey diagram of the repair pipeline in Fig.~\ref{fig:sankey}. We drew 967 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked the outcomes of each repair. In 87 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 4 cases the repair was not recognized, in 153 cases the sampler timed out before drawing the human repair, in 238 cases the human repair was drawn but not ranked first, and in the remaining 485 cases, the human repair was ranked first.
 
   \clearpage We sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance.
 
@@ -1174,23 +1174,23 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \vspace{-0.4cm}
   \end{wrapfigure}
 
-  In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the wallclock time until the sampler retrieves the human repair. For each code snippet, we measure the total time taken for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, while 3+-edit throughput is heavily constrained by compute around 40 lexical tokens, when Python's Levenshtein ball approaches a volume of $6\times 10^8$ edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores.
+  In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings across snippet length. To measure the timings, we collect 1000 repair samples of varying lengths and edit distances, then measure the wallclock time until the sampler retrieves the human repair. For each code snippet, we measure the total time taken for repairs between 1-4 Levenshtein edits. Note the logarithmic scale on the y-axis. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before the timeout elapses, while 4+-edit throughput starts to become constrained by compute at a 10s latency, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. We expect that a delay of longer than 30s will tax the patience of most users, and so we consider this a reasonable upper bound for repair latency. Latency can be improved by doing rejection sampling, albeit at the cost of naturalness and sample efficiency.
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
   \clearpage\subsection{Subcomponent ablation}\label{sec:rq3}
 
-  Previously, we used a rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball using a contextual prior, then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold, i.e., a few seconds, the average time required to attain a fixed precision is much higher. We present the results from the earlier evaluation for comparison below.
+  Previously, we used a rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, and then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold to return admissible repairs, i.e., a few seconds at most, the average time required to attain a desired precision on human repairs is much higher. We present the results from the rejection-based evaluation for comparison below.
 
   \begin{figure}[H]
     \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
     \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
-    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1 on the same dataset. Since it only supports generating one repair, we do not report Precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
+    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1 on the same dataset, and the orange indicates BIFI's precision at single-shot repair.}\label{fig:adaptive}
   \end{figure}
 
-  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse also produces syntactically incorrect repairs and so we report the percentage of repairs matching the human repair for both our method and Seq2Parse. Seq2Parse latency varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset.
+  We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
 
   Next, we conduct an ablation study to compare the effectiveness of PCFG sampling vs. enumeration. In both experiments, we run the repair extractor for up to 30 seconds (either enumerative or PCFG), then rerank all repairs by n-gram perplexity and measure the Precision@1 for each each across varying edit distances.
 
