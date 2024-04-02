@@ -1120,7 +1120,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the full data from these experiments in Appendix~\ref{sec:raw_prec_data}.
 
-  Next, we measure the precision at various ranking cutoffs for varying wall-clock timeouts. Here, Precision@\{k=1, 5, 10, All\} indicates the percentage of syntax errors with a human repair that was located within the top-k results, based on n-gram likelihood.
+  Next, we measure the precision at various ranking cutoffs for varying wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 
   \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
@@ -1134,9 +1134,20 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
   \end{figure}
 
-  As can be seen in Fig.~\ref{fig:human}, our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however takes significantly longer for 2- and 3-edit repairs. We note however, that it uses a significantly smaller model and requires no training data. We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
+  \begin{wrapfigure}{r}{0.4\textwidth}
+    \vspace{-1.7cm}
+    \hspace{-0.5cm}
+    \resizebox{.5\textwidth}{!}{\input{sankey}}
+    \vspace{-1.8cm}
+    \caption{Common repair outcomes.}
+    \label{fig:sankey}
+  \end{wrapfigure}
 
-  \pagebreak We sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance.
+  %We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
+
+  We present a Sankey diagram of the repair dataflow in Fig.~\ref{fig:sankey}. We sampled 967 repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma) < 4$) with a timeout of 30s and tracked the outcomes of each repair. 13 cases threw an error generating the intersection grammar, in 4 cases the repair was not recognized, in 153 cases the sampler timed out before drawing the human repair, in 312 cases the human repair was drawn but not ranked first, and in the remaining 485 cases, the human repair was ranked first.
+
+  \clearpage We sample the StackOverflow dataset, and run the sampler until the human repair is detected, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This gives a sense of how many samples are required on average to saturate the admissible set for repairs of varying Levenshtein distance.
 
   \begin{figure}[h!]
     \input{sample_efficiency}
