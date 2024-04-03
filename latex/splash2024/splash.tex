@@ -126,7 +126,7 @@
 
   \clearpage\section{Problem statement}
 
-  We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will be used to denote a syntactically invalid string.
+  Source code in a programming language can be treated a string over a finite alphabet, $\Sigma$. We will use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
     Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
@@ -148,15 +148,17 @@
 
   A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
 
-  As we will demonstrate, the ranked repair problem can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar that soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+  As we will demonstrate, the ranked repair problem can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
 
-  Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with high probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
+  Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 
   \begin{definition}[Maximal retrieval]\label{def:maximal-retieval}
-    Given a CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, x]}|\bm{\varphi}(i)| \propto x$.
+    Given a CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
   \end{definition}
 
-  To satisfy Def.~\ref{def:maximal-retieval}, we will construct a bijection from syntax trees to integers, sample integers uniformly without replacement, then decode them as trees. Assuming the grammar is unambiguous, each tree will correspond to a unique string in the language. As long as $|\ell_\cap|$ is sufficiently small and we draw enough samples, $\bm\varphi$ is sure to include the most natural repairs and terminate quickly. Then, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be done with a low-order Markov model or any suitable scoring function of the implementer's choice.
+  To satisfy Def.~\ref{def:maximal-retieval}, we construct a bijection between syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
+
+  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity.
 
   \clearpage\section{Method}
 
@@ -276,10 +278,10 @@ First, we generate a synthetic grammar representing the intersection between the
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
     \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of syntax repairs.
-    \item $\mathcal{L}(G_\cap)$ is too large to enumerate, so we sample from the intersection grammar $G_\cap$. Sampling is necessary for a minority of remaining cases.
+    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
   \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain every or nearly every plausible repair within a certain Levenshtein distance, and no invalid repairs. We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure that compactly represents its language, allowing us to efficiently extract all repairs contained within (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+  As long as we have done our job correctly, the intersection language should contain every plausible repair within a certain Levenshtein distance, and no invalid repairs. We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently extract all repairs contained within (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}\label{sec:prelim}
 
@@ -624,7 +626,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \end{pNiceMatrix}
   \end{align*}
 
-  \noindent The northeasternmost entry $\Lambda^*_\sigma$ gives us the recognizer $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}.
+  Once obtained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(\mathcal{G})]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring}.
 
   This procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
 
@@ -632,7 +634,7 @@ First, we generate a synthetic grammar representing the intersection between the
     Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
-  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:\\
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:
 
   \begin{small}
   {\renewcommand{\arraystretch}{1.2}
