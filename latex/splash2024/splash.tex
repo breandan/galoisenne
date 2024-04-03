@@ -40,7 +40,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding all valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram likelihood.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram likelihood.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 
@@ -74,7 +74,7 @@
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
     \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion},~\ref{sec:ptree})
-    \item To extract the repairs, we sample trees without replacement by constructing a bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. (\S~\ref{sec:ptree})
+    \item To extract the repairs, primarily we sample trees without replacement by constructing an explicit bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. (\S~\ref{sec:ptree})
     \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
 
@@ -124,12 +124,12 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
 
-  \clearpage\section{Problem}
+  \clearpage\section{Problem statement}
 
   We can model syntax repair as a language intersection problem between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will be used to denote a syntactically invalid string.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -146,9 +146,17 @@
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  The problem of ranked repair can be solved by learning a distribution over strings, however this approach is highly sample-inefficient and generalizes poorly to new languages. Representing the problem as a distribution over $\Sigma^*$ forces the language model to jointly learn syntax and stylometry. As we will demonstrate, this problem can be factorized into a bilevel objective: first retrieval, then ranking. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the admissible set can be achieved with a much simpler, syntax-oblivious language model.
+  A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
 
-  Even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many large language models. Instead, we will explicitly construct a grammar generating $\ell \cap L(\err\sigma, d)$, sample from it, then rerank all repairs after a fixed timeout. So long as $|\ell_\cap|$ is sufficiently small and recognizes all and only small repairs, our sampler is sure to retrieve the most natural repair and terminate quickly.
+  As we will demonstrate, the ranked repair problem can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar that soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+
+  Assuming we have a CFL that recognizes the Levenshtein intersection, the question then becomes, how to retrieve the maximum number of valid sentences with a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so exponentially slowly. Due to practical considerations including latency, we require the sampler to converge linearly. This motivates the need for a specialized generating function. More precisely,
+
+  \begin{definition}[Maximal retrieval]\label{def:maximal-retieval}
+    Given a CFL, $\ell$, we want a randomized generating function, $\varphi: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, x]}|\varphi(i)| \propto x$.
+  \end{definition}
+
+  By constructing a function that satisfies Def.~\ref{def:maximal-retieval}, assuming $|\ell_\cap|$ is sufficiently small and we draw enough samples, $\varphi$ is sure to include the most natural repair and terminate quickly. Then, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be done with a low-order Markov model or any natural scoring function of the implementer's choice.
 
   \clearpage\section{Method}
 
@@ -578,9 +586,8 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary but fixed timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map, and a method for sampling parse trees from the language with or without replacement.
 
-%  If so, we require the sampler to have (3) parallel decomposability and generate samples (4) uniformly, both (5) with and (6) without replacement in (7) constant time and space. These requirements motivate the need for a specialized generating function.
 
-  \subsection{Abstract parsing with holes as idempotent matrix completion}\label{sec:matrix_completion}
+  \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
 
   In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
 
@@ -891,7 +898,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{cases}
 \end{equation}
 
-If the language is suffiently small, instead of sampling trees, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into trees using $\varphi$. This procedure is the basis for our sampling algorithm and the method we use to decode repairs from the intersection grammar.
+Then, instead of top-down incremental sampling, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into whole parse trees using $\varphi$. If the language is sufficiently small, we can enumerate every tree, otherwise, we sample them uniformly without replacement, or with replacement using a PCFG. This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
   \subsection{Ranked repair}\label{sec:ranking}
 
@@ -1482,18 +1489,18 @@ If the language is suffiently small, instead of sampling trees, we can sample in
     The language edit distance (LED) is the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance.
   \end{definition}
 
-  We seek to find the set of strings $S$ such that $\forall \tilde{\sigma}\in S, \Delta(\err{\sigma}, \tilde{\sigma}) \leq q$, where $q$ is the maximum number of edits greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
+  We seek to find the set of strings $S$ such that $\forall \sigma'\in S, \Delta(\err{\sigma}, \sigma') \leq q$, where $q$ is greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
 
   \begin{lemma}\label{lemma:upper-bound}
-  For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+  For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\sigma', m)$ such that $\sigma' \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
   \end{lemma}
 
   \begin{proof}
-    Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m\coloneqq|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+    Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\sigma'$ be the smallest such member. Since $\sigma'$ is a valid sentence in $\ell$, by definition it must be that $|\sigma'|<\infty$. Let $m\coloneqq|\sigma'|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\sigma' = \varepsilon$, or $0 < |\sigma'|$:
 
     \begin{itemize}
-      \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
-      \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+      \item If $\sigma' = \varepsilon$, then $\Delta(\err{\sigma}, \sigma') = n$ by full erasure of $\err{\sigma}$, or
+      \item If $0 < m$, then $\Delta(\err{\sigma}, \sigma') \leq \max(m, n)$ by overwriting.
     \end{itemize}
 
     In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
@@ -1502,7 +1509,7 @@ If the language is suffiently small, instead of sampling trees, we can sample in
   Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
 
   \begin{lemma}\label{lemma:interleaving}
-  The complexity of searching $A$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
+  The complexity of enumerating $A$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
   \end{lemma}
 
   \begin{proof}
@@ -1511,6 +1518,6 @@ If the language is suffiently small, instead of sampling trees, we can sample in
 
   We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions. In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
 
-%  In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\tilde{\sigma}\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
+%  In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\sigma'\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
 
 \end{document}
