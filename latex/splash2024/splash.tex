@@ -67,9 +67,13 @@
 
   Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic error, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Prior work on syntax repair generally falls into two high-level categories: (1) \textit{formal methods}, which use handcrafted rules to fix common syntax errors~\cite{aho1972minimum}, and (2) \textit{machine learning}, which use neural language models to repair code~\cite{yasunaga2021break, sakkas2022seq2parse}. The former can be effective but typically produces a single repair, while the latter generates more natural edits, but is costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter.
+  Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections, but instead find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
-  In this work, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee soundness, completeness and perfect length-generalization, it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
+  More recently, probabilistic repair techniques have been introduced using neural language models to predict the most likely correction~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. While these techniques generate far more natural edits, they are often costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
+
+  Recent work by Merrill et al.~\cite{merrill2022saturated} and Chiang et al.~\cite{chiang2023tighter} suggest that the issue may be more foundational: transformer-based language models, a popular class of neural language models used in probabilistic program repair, are fundamentally less expressive than context-free grammars, which formally describe the syntax of most programming languages. This suggests such models, despite their useful approximation properties, are ill-suited for the task of end-to-end syntax repair. Yet, they may still be useful for resolving ambiguity between valid repairs of differing likelihood.
+
+  In this work, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
@@ -80,15 +84,15 @@
 
   Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not synthesize probable edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
-  \clearpage\section{Example}
+  \section{Example}
 
-  Consider the following Python snippet, which contains a small syntax error:\\
+  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strongly locality constraints on space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\\
 
-  \noindent\texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
 
   We can fix it by inserting a colon after the function definition, yielding:\\
 
-  \noindent\texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
 
   A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
 %  Consider the following Kotlin snippet:\\
@@ -122,7 +126,7 @@
 
   With some typing information, we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
 
-  The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid ones -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We need a more efficient procedure for sampling all and only small valid repairs.
+  The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
   \clearpage\section{Problem statement}
 
@@ -277,7 +281,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \begin{enumerate}
     \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
-    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of syntax repairs.
+    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of all syntax repairs.
     \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
   \end{enumerate}
 
@@ -586,7 +590,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
-  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary but fixed timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map, and a method for sampling parse trees from the language with or without replacement.
+  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary but fixed timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
 
 
   \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
@@ -1340,7 +1344,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 
   \section{Example Repairs}\label{sec:exaple_repairs}
 
-  Below, we provide a few examples of broken code snippets and their corresponding human repairs that were successfully discovered and ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
+  Below, we provide a few representative examples of broken code snippets and the corresponding human repairs that were successfully ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
 
   \begin{figure}[H]
       \begin{tabular}{|m{6.6cm}|m{6.6cm}|}
@@ -1371,15 +1375,24 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
         \end{lstlisting} \\\hline
         \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  return 1/sum_p if sum_p \
-  (*@\hlorange{\textbf{return}}@*) 0 (*@\hlred{\textbf{else}}@*)
+  df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
 
         \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  return 1/sum_p if sum_p \
-  (*@\hlorange{\textbf{else}}@*) 0
+  df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
 
         \end{lstlisting} \\\hline
+%        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{ad}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{\textbf{as}}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} \\\hline
         \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
   sum(len(v) for v items.values())(*@\hlred{)}@*)
@@ -1391,22 +1404,36 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
         \end{lstlisting} \\\hline
         \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    (*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
+      return (-3+2+8-1)/4
 
         \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    (*@\hlorange{elif}@*) values == (-3,2,8,-1):
+      return (-3+2+8-1)/4
 
         \end{lstlisting} \\\hline
         \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  import numpy (*@\hlorange{ad}@*) np
-  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+  dict = {
+     "Jan": 1
+     "January": 1
+     "Feb": 2 # and so on
+  }
 
         \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 
-  import numpy (*@\hlorange{\textbf{as}}@*) np
-  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+  dict = {
+     "Jan": 1(*@\hlgreen{,}@*)
+     "January": 1(*@\hlgreen{,}@*)
+     "Feb": 2 # and so on
+  }
 
         \end{lstlisting} \\\hline
         \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
