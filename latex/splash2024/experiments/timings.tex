@@ -4,6 +4,8 @@
 \definecolor{green}{RGB}{0,128,0}
 
 \begin{axis}[
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, legend columns=-1, legend pos=south east},
 log basis y={10},
 tick align=outside,
 tick pos=left,
@@ -20,7 +22,6 @@ ymin=65.2014650905023, ymax=509998.877384793,
 ymode=log,
 mark size=1.2pt,
 ytick style={color=black},
-legend style={fill opacity=0.8, draw opacity=1, text opacity=1, legend columns=2, legend pos=south east},
 yticklabels={
   \(\displaystyle {10^{0}}\),
   \(\displaystyle {10^{1}}\),
@@ -32,10 +33,12 @@ yticklabels={
   \(\displaystyle {10^{7}}\)
 }
 ]
-\addlegendentry{\footnotesize{$\Delta = 1$}}
-\addlegendentry{\footnotesize{$\Delta = 4$}}
-\addlegendentry{\footnotesize{$\Delta = 2$}}
-\addlegendentry{\footnotesize{$\Delta = 3$}}
+\addlegendimage{empty legend}
+\addlegendentry{$\Delta=$}
+\addlegendentry{\footnotesize{$1,$}}
+\addlegendentry{\footnotesize{$2,$}}
+\addlegendentry{\footnotesize{$3,$}}
+\addlegendentry{\footnotesize{$4$}}
 \addplot [draw=green, fill=green, mark=*, only marks]
 table{%
 x  y

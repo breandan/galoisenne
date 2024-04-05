@@ -1,6 +1,8 @@
 % This file was created with tikzplotlib v0.10.1.
 \begin{tikzpicture}[scale=0.75]
 \begin{axis}[
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north west},
 width=\textwidth,
 height=.4\textwidth,
 log basis x={10},
@@ -8,7 +10,6 @@ tick align=outside,
 tick pos=left,
 axis lines*=left,
 title={\textbf{Sample Efficiency}},
-legend style={fill opacity=0.8, draw opacity=1, text opacity=1, legend columns=1, legend pos=north west, at={(0.055, 0.96)}},
 x grid style={darkgray176},
 xlabel={Samples drawn (log scale)},
 xmin=0.34892211545542, xmax=1001,
@@ -31,8 +32,14 @@ ymin=0, ymax=101,
 ytick={0,20,40,60,80,100}
 ]
 \draw[draw=none,fill=green!80] (axis cs:-0.5,0) rectangle (axis cs:0.9,100);
+\addlegendimage{empty legend}
+\addlegendentry{$\Delta=$}
 \addlegendimage{ybar,ybar legend,draw=none,fill=green!80}
-\addlegendentry{$\Delta_L=1$}
+\addlegendentry{\footnotesize{$1,$}}
+\addlegendimage{ybar,ybar legend,draw=none,fill=blue!80}
+\addlegendentry{\footnotesize{$2,$}}
+\addlegendimage{ybar,ybar legend,draw=none,fill=orange!80}
+\addlegendentry{\footnotesize{$3$}}
 
 \draw[draw=none,fill=green!80] (axis cs:0.1,0) rectangle (axis cs:1.9,100);
 \draw[draw=none,fill=green!80] (axis cs:1.1,0) rectangle (axis cs:2.9,100);
@@ -118,9 +125,6 @@ ytick={0,20,40,60,80,100}
 \draw[draw=none,fill=green!80] (axis cs:81.1,0) rectangle (axis cs:82.9,100);
 \draw[draw=none,fill=green!80] (axis cs:82.1,0) rectangle (axis cs:83.9,100);
 
-\addlegendimage{ybar,ybar legend,draw=none,fill=blue!80}
-\addlegendentry{$\Delta_L=2$}
-
 \draw[draw=none,fill=blue!80] (axis cs:0.1,0) rectangle (axis cs:1.9,19.7452229299363);
 \draw[draw=none,fill=blue!80] (axis cs:1.1,0) rectangle (axis cs:2.9,26.7515923566879);
 \draw[draw=none,fill=blue!80] (axis cs:2.1,0) rectangle (axis cs:3.9,31.5286624203822);
@@ -200,8 +204,6 @@ ytick={0,20,40,60,80,100}
 \draw[draw=none,fill=blue!80] (axis cs:76.1,28) rectangle (axis cs:77.9,99.3630573248408);
 \draw[draw=none,fill=blue!80] (axis cs:77.1,28) rectangle (axis cs:78.9,99.6815286624204);
 \draw[draw=none,fill=blue!80] (axis cs:78.1,30) rectangle (axis cs:786.9,100);
-\addlegendimage{ybar,ybar legend,draw=none,fill=orange!80}
-\addlegendentry{$\Delta_L=3$}
 
 \draw[draw=none,fill=orange!80] (axis cs:12.0,0) rectangle (axis cs:14.99,2);
 \draw[draw=none,fill=orange!80] (axis cs:14.0,0) rectangle (axis cs:15.99,4);
