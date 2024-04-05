@@ -987,9 +987,9 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
       \begin{axis}[
       ybar,
       bar width=5pt,
-      xlabel={Length},
+      xlabel={$|\err\sigma|$},
       ylabel={Frequency},
-      title={Snippet length},
+      title={Cumulative length distribution},
       axis x line*=bottom,
       axis y line*=left,
       ymin=0,
@@ -1121,41 +1121,42 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
     \begin{tikzpicture}[scale=0.57]
       \begin{axis}[
         legend cell align={left},
-        legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north west, at={(0.02,1.1)}},
+        legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=south east},
         xlabel={$|\err\sigma|$},
-        ylabel={Stable fraction},
+        ylabel={Stable region},
         title={Stability profile},
         ybar,
         axis lines*=left,
-        xtick={0, 5, 10, 15, 20, 25, 30, 35, 40},
+        xtick={0, 10, 20, 30, 40, 50, 60, 70},
         ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
-        xticklabels={{(}0{,}5{)}, , {[}10{,}15{)}, , {[}20{,}25{)}, , {[}30{,}35{)}, , {[}40{,}45{)}},
+        xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
         yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
         x tick label style={font=\scriptsize},
         ymax=1.0,
         ymin=0.0,
-        bar width=4pt,
+        bar width=3pt,
         grid style=dashed,
         ymajorgrids=true,
         width=0.45\textwidth,
         height=0.3\textwidth
       ]
       \addlegendimage{empty legend}
-      \addlegendentry{Δ=}
+      \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
       \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
       \addlegendentry{1,}
       \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
-      \addlegendentry{2}
-%      \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
-%      \addlegendentry{3}
-      \addplot[green, fill=green!50] coordinates {(0, 0.75) (5, 0.58) (10, 0.74) (15, 0.81) (20, 0.88) (25, 0.92) (30, 0.94) (35, 0.95) (40, 0.95)};
-      \addplot[blue, fill=blue!50] coordinates {(0, 0.0) (5, 0.02) (10, 0.12) (15, 0.22) (20, 0.38) (25, 0.37) (30, 0.45) (35, 0.56) (40, 0.56)};
+      \addlegendentry{2,}
+      \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+      \addlegendentry{3}
+      \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.97) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+      \addplot[blue, fill=blue!50] coordinates {(0, 0.36) (10, 0.55) (20, 0.78) (30, 0.71) (40, 0.71) (50, 0.76) (60, 0.83) (70, 0.87)};
+      \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.49) (20, 0.62) (30, 0.69) (40, 0.69) (50, 0.79) (60, 0.86) (70, 0.84)};
       \end{axis}
     \end{tikzpicture}
     \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
   \end{figure}
 
-  For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the Levenshtein ball. For example, on average roughly a third of the string is stable for 1-edit syntax repairs in the $[0-10)$ token range, whereas 2-edit repairs of the same length could modify almost any location. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
+  For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L(\err\sigma, \Delta(\err\sigma, \sigma'))$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
 
 %  We also use a second training set of valid Python snippets from Yasunaga et al.~\cite{yasunaga2021break} on which BIFI was trained and we also use to train our scoring function. We lexicalize the dataset in the same way as StackOverflow, annotate each snippet with a \texttt{BOS} and \texttt{EOS} token, and train a 5-gram Markov model on a small subset. This model is used to score synthetic repairs generated by Tidyparse on repair instances in the StackOverflow dataset. No filtering criteria are applied to this dataset.
 
@@ -1173,7 +1174,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
     \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
   \end{figure}
 
-  As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the full data from these experiments in Appendix~\ref{sec:raw_prec_data}.
+  As we can see, the precision of our method is highly competitive with Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the raw data from these experiments in Appendix~\ref{sec:raw_prec_data}.
 
   Next, we measure the precision at various ranking cutoffs for varying wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 
@@ -1361,6 +1362,10 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 
   We have implemented our approach as an IDE plugin and demonstrated its viability as a practical tool for realtime programming. A considerable amount of effort was devoted to supporting fast error correction functionality. Tidyparse is capable of generating repairs for invalid code in a range of practical languages with very little downstream language integration required. We plan to continue expanding its grammar and autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness.
 
+  \section*{Data-Availability Statement}
+
+  An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}} While the browser demo is current single-threaded and does not support ranking repairs by naturalness, it is capable of automatically suggesting repairs to syntax errors in context-free languages. The data and source code for the experiments in this paper will be made available upon publication.
+
 %\subsection{Ranking}
 %
 %Since the number of solutions can be very large, we can use a language model to rank the results maximizing likelihood, or minimizing perplexity, subject to the constraints. This ranking can be used to guide the propagation, sample the choice function, sample hole locations or as a post-processing step after a fixed timeout has expired.
@@ -1378,7 +1383,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 % References will then be sorted and formatted in the correct style.
 %
 %  \bibliographystyle{splncs04}
-  \pagebreak\bibliography{../bib/acmart}
+  \clearpage\bibliography{../bib/acmart}
 
   \pagebreak\appendix
 
