@@ -930,9 +930,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 
   We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Precision is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
-  We compare Tidyparse against two separate baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow. We compare precision at recovering the ground truth repair across varying edit distances, snippet lengths and latency cutoffs.
-
-  We preprocess all data by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than four Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs of each length and distance.
+  We compare our method against two separate baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow and is used compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
@@ -980,7 +978,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 
   \subsection{Dataset}\label{sec:rq1}
 
-  In the following experiments, we use two datasets of Python snippets. The first is a test set of 20,500 pairwise-aligned (broken, fixed) Python code snippets from StackOverflow~\cite{wong2019syntax} shorter than 80 lexical tokens, whose patch sizes are less than four lexical tokens, ($|\Sigma| = 50, |\err{\sigma}| \leq 80, \Delta(\err{\sigma}, \sigma') \leq 4$). We preprocess the dataset to lexicalize all code snippets, then filter the dataset by length and edit distance, and depict the length, edit distance and normalized edit locations in Fig.~\ref{fig:patch_stats}.
+  In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length shorter than 80 lexical tokens, and edit distance, i.e., where the distance from the error to the repair is under five Levenshtein edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
 
   \begin{figure}[h!]
     \begin{tikzpicture}[scale=0.57]
@@ -995,7 +993,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
       ymin=0,
       ymax=65,
       xtick=data,
-      xticklabels={,\leq 20,,\leq 40,,\leq 60,,\leq 80,,\leq 100},
+      xticklabels={,<20,,<40,,<60,,<80,,<100},
       ymajorgrids=true,
       grid style=dashed,
       width=0.45\textwidth,
@@ -1207,7 +1205,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
 
   \begin{figure}[h!]
     \input{sample_efficiency}
-    \caption{Sample efficiency of LBH sampler at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
   \end{figure}
 
 %  The advantage of using an enumerative sampler is that it can terminate early, since it knows, after drawing $|\mathbb{T}_2(G_\cap)|$ distinct repairs, it has exhausted the admissible set. This also provides a way to calibrate the threshold for how to sample given a fixed budget: if, for example, we can only afford to sample a small fraction of the admissible set, we should clearly sample with replacement. Otherwise, if we can saturate the admissible set, we should sample without replacement.
