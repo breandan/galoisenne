@@ -67,7 +67,7 @@
 
   Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic error, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections, but instead find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
+  Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections. Instead they find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
   More recently, probabilistic repair techniques have been introduced using neural language models to predict the most likely correction~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. While these techniques generate far more natural edits, they are often costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
@@ -156,11 +156,11 @@
 
   Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 
-  \begin{definition}[Maximal retrieval]\label{def:maximal-retieval}
-    Given a CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
+  \begin{definition}[Linear convergence]\label{def:maximal-retieval}
+    Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
   \end{definition}
 
-  To satisfy Def.~\ref{def:maximal-retieval}, we construct a bijection between syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
+  To satisfy Def.~\ref{def:maximal-retieval}, we construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
 
   Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity.
 
@@ -510,17 +510,17 @@ First, we generate a synthetic grammar representing the intersection between the
   For any context-free language $\ell$ and finite state automaton $\alpha$, there exists a context-free grammar $G_\cap$ such that $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. See Bar-Hillel~\cite{bar1961formal}.
   \end{lemma}
 
-  \noindent Although Bar-Hillel~\cite{bar1961formal} lacks an explicit construction, Beigel and Gasarch~\cite{beigelproof} construct $G_\cap$ like so:
+  \noindent Although Bar-Hillel~\cite{bar1961formal} lacks an explicit construction, Beigel and Gasarch~\cite{beigelproof} construct $G_\cap$ like so:\vspace{-2pt}
 
   \begin{prooftree}
     \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \RightLabel{$\downarrow$}
     \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
     \DisplayProof
     \hskip 1em
     \AxiomC{$(A \rightarrow a) \in P$}
     \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
-%  \RightLabel{$\varepsilon^+\textsc{-int}$}
+    \RightLabel{$\uparrow$}
     \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
     \DisplayProof
     \hskip 1em
@@ -530,7 +530,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \AxiomC{$p,q,r \in Q$}
     \RightLabel{\Join}
     \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}
+  \end{prooftree}\vspace{2pt}
 
   This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical languages and code snippets can generate hundreds of trillions of productions for even modestly-sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many superfluous productions in the case of Levenshtein intersection, greatly reducing the size of the intersection grammar, $G_\cap$.
 
@@ -541,7 +541,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \vspace{-10pt}
 %  \end{wrapfigure}
 
-  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar matches a substring simultaneously recognized by (1) a pair of states in the original NFA and (2) a nonterminal in the original CFG. A key observation is that $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
+  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar $\langle q, v, q'\rangle$ matches a substring simultaneously recognized by (1) a pair of states $q, q'$ in the original NFA and (2) a nonterminal, $v$, in the original CFG. A key observation is that $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
   To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
@@ -567,22 +567,23 @@ First, we generate a synthetic grammar representing the intersection between the
     Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
   \end{definition}
 
-  Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:
+  Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
 
-\begin{prooftree}
-  \def\defaultHypSeparation{\hskip 0.15cm}
-  \AxiomC{$(A \rightarrow a) \in P$}
-  \AxiomC{$\color{orange}S.a$}
-  \AxiomC{$(q\overset{{\color{orange}S}}{\rightarrow}r) \in \delta$}
-%  \RightLabel{$\varepsilon^+\textsc{-int}$}
-  \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
-  \DisplayProof
-  \AxiomC{$\vphantom{\overset{S}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
-  \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-  \AxiomC{$p,q,r \in Q$}
-  \RightLabel{\Join}
-  \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-\end{prooftree}
+  \begin{prooftree}
+    \hskip -0.9em
+    \def\defaultHypSeparation{\hskip 0.14cm}
+    \AxiomC{$(A \rightarrow a) \in P$}
+    \AxiomC{$(q\overset{{\color{orange}[\cdot]}}{\rightarrow}r) \in \delta$}
+    \AxiomC{$\color{orange}a[\cdot]$}
+    \RightLabel{$\uparrow$}
+    \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+    \DisplayProof
+    \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
+    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+    \AxiomC{$p,q,r \in Q$}
+    \RightLabel{\Join}
+    \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}\vspace{2pt}
 
   After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap'$, which is usually several orders of magnitude smaller.
 
@@ -595,7 +596,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
 
-  In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, parser, generator, Parikh map and other convenient structures for working with CFLs.
+  In this section, we will introduce the porous completion problem and show how it can be translated to a kind of idempotent matrix completion, whose roots are valid strings in a context-free language. This technique is convenient for its geometric interpretability, parallelizability, and generalizability to any CFG, regardless of finitude or ambiguity. We will see how, by redefining the algebraic operations $\oplus, \otimes$ over different carrier sets, one can obtain a recognizer, porous synthesizer, parser, generator, Parikh map and other convenient structures for CFL intersection and membership.
 
   Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
@@ -638,7 +639,7 @@ First, we generate a synthetic grammar representing the intersection between the
     Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
-  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column:
+  Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the context-free grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This grammar will first be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the powerset algebra we just defined, the matrix fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column below:
 
   \begin{small}
   {\renewcommand{\arraystretch}{1.2}
@@ -697,11 +698,11 @@ First, we generate a synthetic grammar representing the intersection between the
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one $\sigma' \in A$, but $M_\infty$ does not reveal its identity.
+  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A$, but $M_\infty$ does not explicitly reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-  In order to extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$ as follows:
+  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:
 
   \begin{small}
   \begin{align*}
@@ -712,15 +713,15 @@ First, we generate a synthetic grammar representing the intersection between the
   \end{align*}
   \end{small}
 
-  Now we solve for the corner entry $V_{0, 3}$ by taking the bitwise dot product between the first row and last column, yielding:
+  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:
 
   \begin{align*}
-    V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = V_{0, 1} \boxtimes V_{1, 3} \boxplus V_{0, 2} \boxtimes V_{2, 3}\\
+    V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
 %  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
     &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
   \end{align*}
 
-  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, so we can ignore the first three entries and solve for:
+  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:
 
   \begin{align*}
     V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
@@ -729,7 +730,7 @@ First, we generate a synthetic grammar representing the intersection between the
     &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
   \end{align*}
 
-  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the admissible set, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
+  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$, but in general, there can be multiple valid parse trees.
 
   \subsection{An algebraic datatype for context-free parse forests}\label{sec:ptree}
 
@@ -880,7 +881,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ will necessarily be the same width.
 
-The number of binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
+The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -1241,7 +1242,7 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
     \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
     \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
-    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1 on the same dataset, and the orange indicates BIFI's precision at single-shot repair.}\label{fig:adaptive}
+    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1, and the orange indicates BIFI's precision at single-shot repair, all three of which were evaluated on the exact same repairs.}\label{fig:adaptive}
   \end{figure}
 
   We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
