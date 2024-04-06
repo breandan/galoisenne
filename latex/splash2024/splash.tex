@@ -132,7 +132,7 @@
 
   Source code in a programming language can be treated a string over a finite alphabet, $\Sigma$. We will use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
-  \begin{definition}[Bounded Levenshtein-CFL reachability]
+  \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
     Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
@@ -156,11 +156,11 @@
 
   Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 
-  \begin{definition}[Linear convergence]\label{def:maximal-retieval}
+  \begin{definition}[Linear convergence]\label{def:linear-convergence}
     Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
   \end{definition}
 
-  To satisfy Def.~\ref{def:maximal-retieval}, we construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
+  To satisfy Def.~\ref{def:linear-convergence}, we construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
 
   Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity.
 
@@ -564,7 +564,7 @@ First, we generate a synthetic grammar representing the intersection between the
   Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
 
   \begin{definition}[Levenshtein-Parikh compatibility]
-    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $(q, v, q'): Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
+    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $\langle q, v, q'\rangle: Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
   \end{definition}
 
   Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
@@ -585,7 +585,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}\vspace{2pt}
 
-  After $G_\cap$ is constructed, we then renormalize it by removing all unreachable and non-generating productions following~\cite{firsov2015certified} to obtain $G_\cap'$, which is usually several orders of magnitude smaller.
+  \noindent Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = A$, satisfying Def.~\ref{def:bcflr}.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
@@ -905,11 +905,11 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{cases}
 \end{equation}
 
-Then, instead of top-down incremental sampling, we can sample integers uniformly without replacement from $\mathbb{Z}_{|T|}$ then decode them into whole parse trees using $\varphi$. If the language is sufficiently small, we can enumerate every tree, otherwise, we sample them uniformly without replacement, or with replacement using a PCFG. This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
+  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$ and decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \varphi'(T, j)$ will satisfy Def.~\ref{def:linear-convergence} by construction. If the language being sampled is sufficiently small, we can enumerate every tree, otherwise, sample them uniformly without replacement, or with replacement using a PCFG. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
   \subsection{Ranked repair}\label{sec:ranking}
 
-  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log likelihood of the repair under a large language model or the probability under a PCFG and turn to simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
+  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
 
   Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
 
@@ -919,7 +919,9 @@ Then, instead of top-down incremental sampling, we can sample integers uniformly
     \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
   \end{equation}
 
-  Then, for each $\sigma \in A(\err\sigma)$, we score the repair and return the admissible set in ascending order. That is, we impose an ordering over $A(\err\sigma)$, where the first repair is most likely under the model, and the last is least likely. To evaluate the accuracy of our ranking, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
+  Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by score. If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$.
+
+  To evaluate the quality of our ranking, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
 
   \begin{equation}
     \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
