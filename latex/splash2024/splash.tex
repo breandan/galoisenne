@@ -905,7 +905,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{cases}
 \end{equation}
 
-  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$ and decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \varphi'(T, j)$ will satisfy Def.~\ref{def:linear-convergence} by construction. If the language being sampled is sufficiently small, we can enumerate every tree, otherwise, sample them uniformly without replacement, or with replacement using a PCFG. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
+  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$ and decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. If the language being sampled is sufficiently small, we can enumerate every tree, otherwise, sample them uniformly without replacement, or with replacement using a PCFG. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
   \subsection{Ranked repair}\label{sec:ranking}
 
@@ -1149,9 +1149,9 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
       \addlegendentry{2,}
       \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
       \addlegendentry{3}
-      \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.97) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
-      \addplot[blue, fill=blue!50] coordinates {(0, 0.36) (10, 0.55) (20, 0.78) (30, 0.71) (40, 0.71) (50, 0.76) (60, 0.83) (70, 0.87)};
-      \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.49) (20, 0.62) (30, 0.69) (40, 0.69) (50, 0.79) (60, 0.86) (70, 0.84)};
+      \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+      \addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
+      \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
       \end{axis}
     \end{tikzpicture}
     \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
