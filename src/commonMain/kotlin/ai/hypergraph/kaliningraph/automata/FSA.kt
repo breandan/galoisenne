@@ -11,6 +11,7 @@ typealias TSA = Set<Arc>
 fun Arc.pretty() = "$π1 -<$π2>-> $π3"
 fun Σᐩ.coords(): Pair<Int, Int> =
   (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
+// Triple representing (1) the global index of the state in the LA and the (2) x, (3) y coordinates
 typealias STC = Triple<Int, Int, Int>
 fun STC.coords() = π2 to π3
 
@@ -38,6 +39,14 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
 
   val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
+  val validPairs by lazy { stateCoords.let { it * it }.filter { it.isValidStatePair() }.toSet() }
+
+  fun Π2A<STC>.isValidStatePair(): Boolean {
+    fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
+      first <= other.first && second <= other.second
+
+    return first.coords().dominates(second.coords())
+  }
 
   fun Π3A<STC>.isValidStateTriple(): Boolean {
     fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =

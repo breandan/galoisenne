@@ -51,10 +51,16 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val prods = nonterminalProductions
-    .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
+  val prods: Set<Pair<Int, List<Int>>> = nonterminalProductions
+    .map { (a, bc) -> ntMap[a]!! to bc.map { ntMap[it]!! } }.toSet()
   val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
+
+  val ct = prods.map { it.first }.toSet().flatMap { fsa.validPairs * setOf(it) }
+  val ct1: Map<Triple<Int, Int, Int>, Boolean> =
+    ct.associate { Pair(it.π1.π1 to it.π3 to it.π2.π1, lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2))) }
+  val ct2: Map<Triple<Int, Int, Int>, Boolean> =
+    ct.associate { Pair(it.π1.π1 to it.π3 to it.π2.π1, fsa.obeys(it.π1, it.π2, it.π3, parikhMap)) }
 
   val binaryProds =
     prods.map {
@@ -63,8 +69,9 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache) }
-        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
+        .filter { it.checkCT(A to B to C, ct1) }
+        .filter { it.checkCT(A to B to C, ct2) }
+//        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
           "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
@@ -247,7 +254,7 @@ fun Π3A<STC>.isValidStateTriple(): Boolean {
 //      && obeys(second, third, nts.third)
 //}
 
-private fun FSA.obeys(a: STC, b: STC, nt: Int, parikhMap: ParikhMap): Bln {
+fun FSA.obeys(a: STC, b: STC, nt: Int, parikhMap: ParikhMap): Bln {
   val sl = levString.size <= max(a.second, b.second) // Part of the LA that handles extra
 
   if (sl) return true
@@ -268,15 +275,20 @@ private fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): In
   (second.second - first.second).absoluteValue + (second.first - first.first).absoluteValue
 
 // Range of the shortest path to the longest path, i.e., Manhattan distance
-private fun FSA.SPLP(a: STC, b: STC) =
+fun FSA.SPLP(a: STC, b: STC) =
   (APSP[a.π1 to b.π1] ?: Int.MAX_VALUE)..//.also { /*if (Random.nextInt(100000) == 3) if(it == Int.MAX_VALUE) println("Miss! ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") else */
 //    if (it != Int.MAX_VALUE) println("Hit: ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") }..
       manhattanDistance(a.coords(), b.coords())
 
-private fun IntRange.overlaps(other: IntRange) =
+fun IntRange.overlaps(other: IntRange) =
   (other.first in first..last) || (other.last in first..last)
 
 fun Π3A<STC>.isCompatibleWith(nts: Π3A<Int>, fsa: FSA, lengthBounds: List<IntRange>): Boolean =
     lengthBounds[nts.first].overlaps(fsa.SPLP(first, third))
       && lengthBounds[nts.second].overlaps(fsa.SPLP(first, second))
       && lengthBounds[nts.third].overlaps(fsa.SPLP(second, third))
+
+fun Π3A<STC>.checkCT(nts: Π3A<Int>, ct: Map<Π3A<Int>, Boolean>): Boolean =
+  true == ct[π1.π1 to nts.π1 to π3.π1] &&
+    true == ct[π1.π1 to nts.π2 to π2.π1] &&
+    true == ct[π2.π1 to nts.π3 to π3.π1]

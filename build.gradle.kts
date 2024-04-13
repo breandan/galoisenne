@@ -1,6 +1,7 @@
 import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 
@@ -80,7 +81,7 @@ repositories {
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
 
 rootProject.plugins.withType<NodeJsRootPlugin> {
-  rootProject.the<NodeJsRootExtension>().nodeVersion = "16.0.0"
+  rootProject.the<NodeJsRootExtension>().version = "16.0.0"
 }
 
 kotlin {
@@ -256,7 +257,7 @@ kotlin {
 
 tasks {
   withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 
   withType<Test> {
@@ -286,7 +287,8 @@ tasks {
 
   listOf(
     "Rewriter", "PrefAttach",
-    "rewriting.CipherSolver", "RegexDemo", "smt.TestSMT",
+    "rewriting.CipherSolver",
+    "RegexDemo", "smt.TestSMT"
   ).forEach { fileName ->
     register(fileName, org.gradle.api.tasks.JavaExec::class) {
       mainClass = "ai.hypergraph.kaliningraph.${fileName}Kt"
