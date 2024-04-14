@@ -167,13 +167,17 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods = nonterminalProductions
     .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
-  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it] ?: 0..0 } }
-  val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
+//  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it] ?: 0..0 } }
+  val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }
 
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
-  ct.filter { lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) && fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
-    .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
+  ct.parallelStream()
+    .filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
+    .toList().also {
+      val fraction = it.size.toDouble() / (fsa.states.size * nonterminals.size * fsa.states.size)
+      println("Fraction of valid triples: $fraction")
+    }.forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
   val elimCounter = AtomicInteger(0)
   val counter = AtomicInteger(0)
@@ -182,17 +186,17 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
     prods.parallelStream().flatMap {
       if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      val trip = A to B to C
+      val trip = arrayOf(A, B, C)
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
 //        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (!it) elimCounter.incrementAndGet() } }
 //        .filter { it.checkCT(trip, ct1).also { if (!it) elimCounter.incrementAndGet() } }
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (!it) elimCounter.incrementAndGet() } }
-        .filter { it.checkCT(trip, ct2).also { if (!it) elimCounter.incrementAndGet() } }
+        .filter { it.checkCompatibility(trip, ct2).also { if (!it) elimCounter.incrementAndGet() } }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
-          val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
+          val (p, q, r)  = fsa.stateLst[a] to fsa.stateLst[b] to fsa.stateLst[c]
           "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
         }
     }.toList()

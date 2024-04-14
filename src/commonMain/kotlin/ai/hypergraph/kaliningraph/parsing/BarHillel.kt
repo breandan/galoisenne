@@ -1,12 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.hash
 import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.*
-import kotlin.random.Random
 import kotlin.time.TimeSource
 
 /**
@@ -53,8 +51,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods: Set<Pair<Int, List<Int>>> = nonterminalProductions
     .map { (a, bc) -> ntMap[a]!! to bc.map { ntMap[it]!! } }.toSet()
-  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
-  val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
+//  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
+  val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }.toTypedArray()
 
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
 //  val ct1 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
@@ -68,15 +66,15 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
     prods.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      val trip = A to B to C
+      val trip = arrayOf(A, B, C)
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
 //        .filter { it.checkCT(trip, ct1) }
-        .filter { it.checkCT(trip, ct2) }
+        .filter { it.checkCompatibility(trip, ct2) }
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
-          val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
+          val (p, q, r)  = fsa.stateLst[a] to fsa.stateLst[b] to fsa.stateLst[c]
           "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
         }.toList()
     }.flatten().filterRHSInNTS()
@@ -291,7 +289,7 @@ fun Π3A<STC>.isCompatibleWith(nts: Π3A<Int>, fsa: FSA, lengthBounds: List<IntR
       && lengthBounds[nts.second].overlaps(fsa.SPLP(first, second))
       && lengthBounds[nts.third].overlaps(fsa.SPLP(second, third))
 
-fun Π3A<STC>.checkCT(nts: Π3A<Int>, ct: Array<Array<Array<Boolean>>>): Boolean =
-    ct[π1.π1][nts.π1][π3.π1] &&
-    ct[π1.π1][nts.π2][π2.π1] &&
-    ct[π2.π1][nts.π3][π3.π1]
+fun Array<Int>.checkCompatibility(nts: Array<Int>, ct: Array<Array<Array<Boolean>>>): Boolean =
+  ct[this[0]][nts[0]][this[2]] &&
+  ct[this[0]][nts[1]][this[1]] &&
+  ct[this[1]][nts[2]][this[2]]
