@@ -171,14 +171,9 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
-  val ct1: Map<Triple<Int, Int, Int>, Boolean> = ct.parallelStream()
-      .filter { lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) }
-      .map { Pair(it.π1.π1 to it.π3 to it.π2.π1, true) }
-      .collect(Collectors.toMap({ it.first }, { it.second }))
-  val ct2: Map<Triple<Int, Int, Int>, Boolean> = ct.parallelStream()
-      .filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
-      .map { Pair(it.π1.π1 to it.π3 to it.π2.π1, true) }
-      .collect(Collectors.toMap({ it.first }, { it.second }))
+  val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+  ct.filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
+    .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
   val elimCounter = AtomicInteger(0)
   val counter = AtomicInteger(0)
@@ -187,13 +182,14 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
     prods.parallelStream().flatMap {
       if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${nts.size} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
+      val trip = A to B to C
       validTriples.stream()
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
 //        .filter { it.isCompatibleWith(A to B to C, fsa, lengthBoundsCache).also { if (!it) elimCounter.incrementAndGet() } }
-        .filter { it.checkCT(A to B to C, ct1).also { if (!it) elimCounter.incrementAndGet() } }
+//        .filter { it.checkCT(trip, ct1).also { if (!it) elimCounter.incrementAndGet() } }
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap).also { if (!it) elimCounter.incrementAndGet() } }
-        .filter { it.checkCT(A to B to C, ct2).also { if (!it) elimCounter.incrementAndGet() } }
+        .filter { it.checkCT(trip, ct2).also { if (!it) elimCounter.incrementAndGet() } }
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
           val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]

@@ -56,21 +56,24 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
   val validTriples: List<Triple<STC, STC, STC>> = fsa.validTriples
 
-  val ct = prods.map { it.first }.toSet().flatMap { fsa.validPairs * setOf(it) }
-  val ct1: Map<Triple<Int, Int, Int>, Boolean> =
-    ct.associate { Pair(it.π1.π1 to it.π3 to it.π2.π1, lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2))) }
-  val ct2: Map<Triple<Int, Int, Int>, Boolean> =
-    ct.associate { Pair(it.π1.π1 to it.π3 to it.π2.π1, fsa.obeys(it.π1, it.π2, it.π3, parikhMap)) }
+  val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
+//  val ct1 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+//  ct.filter { lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) }
+//    .forEach { ct1[it.π1.π1][it.π3][it.π2.π1] = true }
+  val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+  ct.filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
+    .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
   val binaryProds =
     prods.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
+      val trip = A to B to C
       validTriples
         // CFG ∩ FSA - in general we are not allowed to do this, but it works
         // because we assume a Levenshtein FSA, which is monotone and acyclic.
-        .filter { it.checkCT(A to B to C, ct1) }
-        .filter { it.checkCT(A to B to C, ct2) }
+//        .filter { it.checkCT(trip, ct1) }
+        .filter { it.checkCT(trip, ct2) }
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = fsa.stateLst[a.π1] to fsa.stateLst[b.π1] to fsa.stateLst[c.π1]
@@ -288,7 +291,7 @@ fun Π3A<STC>.isCompatibleWith(nts: Π3A<Int>, fsa: FSA, lengthBounds: List<IntR
       && lengthBounds[nts.second].overlaps(fsa.SPLP(first, second))
       && lengthBounds[nts.third].overlaps(fsa.SPLP(second, third))
 
-fun Π3A<STC>.checkCT(nts: Π3A<Int>, ct: Map<Π3A<Int>, Boolean>): Boolean =
-  true == ct[π1.π1 to nts.π1 to π3.π1] &&
-    true == ct[π1.π1 to nts.π2 to π2.π1] &&
-    true == ct[π2.π1 to nts.π3 to π3.π1]
+fun Π3A<STC>.checkCT(nts: Π3A<Int>, ct: Array<Array<Array<Boolean>>>): Boolean =
+    ct[π1.π1][nts.π1][π3.π1] &&
+    ct[π1.π1][nts.π2][π2.π1] &&
+    ct[π2.π1][nts.π3][π3.π1]
