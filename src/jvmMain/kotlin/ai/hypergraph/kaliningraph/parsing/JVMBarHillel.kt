@@ -172,7 +172,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
-  ct.filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
+  ct.filter { lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) && fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
     .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
   val elimCounter = AtomicInteger(0)
@@ -242,7 +242,7 @@ tailrec fun CFG.jvmElimVarUnitProds(
 fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
   val counter = AtomicInteger(0)
-  val nts: Set<Σᐩ> = ConcurrentSkipListSet<Σᐩ>().also { set -> asSequence().asStream().parallel().forEach { set.add(it.first) } }
+  val nts: Set<Σᐩ> = asSequence().asStream().parallel().map { it.first }.collect(Collectors.toSet())
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
       if (counter.incrementAndGet() % 10 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout!")
