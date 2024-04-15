@@ -80,10 +80,6 @@ repositories {
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
 
-rootProject.plugins.withType<NodeJsRootPlugin> {
-  rootProject.the<NodeJsRootExtension>().version = "16.0.0"
-}
-
 kotlin {
   jvm()
   js(IR) {
