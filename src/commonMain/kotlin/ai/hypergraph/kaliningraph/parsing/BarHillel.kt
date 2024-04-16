@@ -62,6 +62,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
   ct.filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
     .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
+  val states = fsa.stateLst
+  val allsym = ntLst
   val binaryProds =
     prods.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
@@ -74,8 +76,8 @@ private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
         .filter { it.checkCompatibility(trip, ct2) }
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
-          val (p, q, r)  = fsa.stateLst[a] to fsa.stateLst[b] to fsa.stateLst[c]
-          "[$p~${ntLst[A]}~$r]".also { nts.add(it) } to listOf("[$p~${ntLst[B]}~$q]", "[$q~${ntLst[C]}~$r]")
+          val (p, q, r)  = states[a] to states[b] to states[c]
+          "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
         }.toList()
     }.flatten().filterRHSInNTS()
 

@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.time.*
+import kotlin.time.Duration.Companion.seconds
 
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
