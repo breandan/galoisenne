@@ -98,44 +98,6 @@
       \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
       \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
 
-  form sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{form}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\hlorange{from}! sympy import *
-  x = Symbol('x', real=True)
-  x, re(x), im(x)
-
-      \end{lstlisting} \\\hline
-    \end{tabular}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
-      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
   newlist = []
   i = set([5, 3, 1)]
   z = set([5, 0, 4)]
@@ -175,9 +137,11 @@
       \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
       \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
 
-  my_list = []
-  for i in range(10);
-    my_list.append(2*i)
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    else if values == (-3,2):
+      return (-3+2+8-1)/4
 
       \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
 
@@ -192,15 +156,19 @@
       \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
       \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
 
-  my_list = []
-  for i in range(10)!\hlorange{;}!
-    my_list.append(2*i)
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    !\hlorange{else}! !\hlred{if}! values == (-3,2):
+      return (-3+2+8-1)/4
 
       \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
 
-  my_list = []
-  for i in range(10)!\hlorange{:}!
-    my_list.append(2*i)
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    !\hlorange{elif}! values == (-3,2):
+      return (-3+2+8-1)/4
 
       \end{lstlisting} \\\hline
     \end{tabular}
@@ -342,7 +310,7 @@
     \item They both see the same grammar, $\mathcal{G}$ and invalid string $\err\sigma \notin \mathcal{L}(\mathcal{G})$.
     % Both players move simultaneously after a short period of deliberation. As soon as Player A repairs $\err\sigma$, Player B must move immediately.
     \item Author moves by modifying $\err\sigma$ to produce a valid string, $\sigma \in \mathcal{L}(\mathcal{G})$.
-    \item Editor moves continuously, sampling a set $\tilde{\bm\sigma} \in \mathcal{P}\big(\mathcal{L}(\mathcal{G})\big)$.
+    \item Editor moves continuously, sampling a set $\tilde{\bm\sigma} \subseteq \mathcal{L}(\mathcal{G})$.
     \item As soon as Author repairs $\err\sigma$, the turn immediately ends.
     \item Neither player sees the other's move(s) before making their own.
     \item If Editor anticipates Author's move, i.e., $\sigma \in \tilde{\bm\sigma}$, they both win.
@@ -408,209 +376,368 @@
   \textit{Rapidly finds syntactically valid edits within a small neighborhood, ranked by tokenwise similarity and statistical likliehood.}
 \end{frame}
 
-\begin{frame}[fragile]{Bounded Levenshtein Reachability}
+\begin{frame}[fragile]{Problem Statement}
   Syntax repair can be treated as a language intersection problem between a context-free language (CFL) and a regular language.
 
-  \begin{definition}[Bounded Levenshtein-CFL reachability]
-    Given a CFL $\ell$ and an invalid string $\err{\sigma}: \bar\ell$, the BCFLR problem is to find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., we seek $L(\err\sigma, d) \cap \ell$ where $L(\err\sigma, d) \coloneqq \{\sigma \mid \Delta(\err{\sigma}, \sigma) \leq d\}$ and $\Delta$ is the Levenshtein metric.
+  \begin{definition}[Reachable edits]
+    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the edit ball, we seek $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
-  To solve this problem, we will first pose a simpler problem that only considers localized edits, then turn our attention back to BCFLR.
-
-  \begin{definition}[Porous completion]
-    Let $\underline\Sigma \coloneqq \Sigma \cup \{\hole\}$, where \hole denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
-  \end{definition}
-\end{frame}
-
-\begin{frame}[fragile]{Ranked repair under realtime constraints}
-  $A(\sigma)$ is often a very large-cardinality set, so we want a procedure which prioritizes likely repairs first, without exhaustive enumeration. Specifically,
   \begin{definition}[Ranked repair]
-    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
-    \begin{equation}
-      R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
-    \end{equation}
-    % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
-    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and total latency.
-  \end{definition}
+  Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
+  \begin{equation}
+    R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+  \end{equation}
+    \end{definition}
 
-  Since $R$ is intractable in general, we want a procedure that approximates it for a representative sampling of natural context-free grammars and strings, i.e., real-world programming languages and source code snippets.
+%  To solve this problem, we will first pose a simpler problem that only considers localized edits, then turn our attention back to BCFLR.
+%
+%  \begin{definition}[Porous completion]
+%    Let $\underline\Sigma \coloneqq \Sigma \cup \{\hole\}$, where \hole denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma' \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically admissible inhabitants, i.e., $A(\sigma)\coloneqq\text{H}(\sigma)\cap\ell$.
+%  \end{definition}
 \end{frame}
 
-\begin{frame}[fragile]{From CFL Reachability to Real World Program Repair}
-  To fix real code, we needed to overcome a variety of interesting challenges:\vspace{10pt}
+%\begin{frame}[fragile]{Ranked repair under realtime constraints}
+%  $A(\sigma)$ is often a very large-cardinality set, so we want a procedure which prioritizes likely repairs first, without exhaustive enumeration. Specifically,
+%  \begin{definition}[Ranked repair]
+%    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $P_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ repairs by likelihood under the language model. That is,
+%    \begin{equation}
+%      R(\ell_\cap, P_\theta) \coloneqq \argmax_{\{\bm{\sigma} \mid \bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k\}} \sum_{\sigma \in \bm{\sigma}}\text{P}(\sigma\mid\err\sigma, \theta)
+%    \end{equation}
+%    % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+%    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and total latency.
+%  \end{definition}
+%
+%  Since $R$ is intractable in general, we want a procedure that approximates it for a representative sampling of natural context-free grammars and strings, i.e., real-world programming languages and source code snippets.
+%\end{frame}
 
-  \begin{itemize}
-    \item \textbf{Syntax mismatch}: The syntax of real-world programming languages does not exactly correspond to the theory of formal languages.
-    \item \textbf{Source code $\approx$ PL}: Most of the time, source code in the wild is incomplete or only loosely approximates a programming language.
-    \item \textbf{Responsiveness}: The usefulness of synthetic repairs is inversely proportional to the amount of time required to generate them.
-    \item \textbf{Edit generation}: How do we generate edits that are (1) syntactically admissible (2) statistically plausible and (3) semantically meaningful?
-    \item \textbf{Evaluation}: Big code and version control is too coarse-grained, contains irrelevant edits, not representative of small errors/fixes.
-  \end{itemize}
-\end{frame}
+%\begin{frame}[fragile]{From CFL Reachability to Real World Program Repair}
+%  To fix real code, we needed to overcome a variety of interesting challenges:\vspace{10pt}
+%
+%  \begin{itemize}
+%    \item \textbf{Syntax mismatch}: The syntax of real-world programming languages does not exactly correspond to the theory of formal languages.
+%    \item \textbf{Source code $\approx$ PL}: Most of the time, source code in the wild is incomplete or only loosely approximates a programming language.
+%    \item \textbf{Responsiveness}: The usefulness of synthetic repairs is inversely proportional to the amount of time required to generate them.
+%    \item \textbf{Edit generation}: How do we generate edits that are (1) syntactically admissible (2) statistically plausible and (3) semantically meaningful?
+%    \item \textbf{Evaluation}: Big code and version control is too coarse-grained, contains irrelevant edits, not representative of small errors/fixes.
+%  \end{itemize}
+%\end{frame}
 
-\begin{frame}[fragile]{Design Criteria}
-  \begin{itemize}
-    \item First and foremost, the framework must be \textbf{sound} and \textbf{complete}. It must (1) accept arbitrary CFGs, and (2) recognize all and only syntactically valid strings within a fixed edit distance of a given string.
-    \item Second, we strongly prefer repairs to be \textbf{plausible} and \textbf{consistent}, i.e., likely to be expressed in practice and consistent with the author's intent and surrounding context (e.g., stylistically, semantically)
-    \item Third, recommendations must be \textbf{efficient} and \textbf{responsive}. We must be able to recognize valid strings in subcubic time, and generate repairs in (at worst) polynomial time. These criteria are necessary to provide real-time feedback whilst the user is typing.
-    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. Ceteris paribus, the framework should be robust to multiple errors, handle large grammars and scale linearly with additional processors.
-  \end{itemize}
-\end{frame}
+%\begin{frame}[fragile]{Design Criteria}
+%  \begin{itemize}
+%    \item First and foremost, the framework must be \textbf{sound} and \textbf{complete}. It must (1) accept arbitrary CFGs, and (2) recognize all and only syntactically valid strings within a fixed edit distance of a given string.
+%    \item Second, we strongly prefer repairs to be \textbf{plausible} and \textbf{consistent}, i.e., likely to be expressed in practice and consistent with the author's intent and surrounding context (e.g., stylistically, semantically)
+%    \item Third, recommendations must be \textbf{efficient} and \textbf{responsive}. We must be able to recognize valid strings in subcubic time, and generate repairs in (at worst) polynomial time. These criteria are necessary to provide real-time feedback whilst the user is typing.
+%    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. Ceteris paribus, the framework should be robust to multiple errors, handle large grammars and scale linearly with additional processors.
+%  \end{itemize}
+%\end{frame}
 
 \begin{frame}[fragile]{High-level architecture overview}
-  \begin{center}
-    \includegraphics[width=0.9\linewidth]{../figures/architecture_overview.pdf}
-  \end{center}
-  \vspace{-10pt}
-  \begin{footnotesize}
-    Our framework consists of three components, (2) a solver, (4) ranker and (3) sampler. Given an invalid string and grammar (1), we first compile them into a multilinear system of equations which can be solved directly, yielding a set of repairs that are ranked using a suitable scoring function (4). Optionally, we may introduce stochastic edits to the string using the Levenshtein ball sampler (3) and extract the solutions incrementally (5).
-  \end{footnotesize}
+  \vspace{0.4cm}
+  \begin{figure}[h!]
+    \vspace{-1cm}
+    \begin{center}
+      \resizebox{0.8\textwidth}{!}{
+        \begin{tikzpicture}[node distance=5cm]
+          \node (start) [io] {Broken code};
+          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
+          \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
+          \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
+%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
+          \node (node3) [plain, right of=node2] {\textbf{Reranking}};
+          \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
+          \node (node4) [io, right of=node3] {Repairs};
+          \draw [arrow] (start) -- (node1);
+          \draw [arrow] (gram1) -- (node1);
+          \draw [arrow] (node1) -- (node2);
+          \draw [arrow] (node2) -- (node3);
+          \draw [arrow] (node3) -- (node4);
+          \draw [arrow] (ngram) -- (node3);
+%        \draw [arrow] (ptree) -- (node2);
+        \end{tikzpicture}
+      }
+    \end{center}
+  \end{figure}
+
+  \vspace{0.4cm}
+
+  \begin{wrapfigure}{r}{0.4\textwidth}
+%\begin{figure}[h!]
+    \vspace{-0.7cm}
+    \begin{center}
+      \resizebox{0.39\textwidth}{!}{
+        \begin{tikzpicture}[node distance=2cm]
+          \node (start) [startstop, draw=none];
+          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
+          \node [above=0.07cm of pro1] {};
+          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
+          \node [below=0.07cm of pcfg] {};
+          \node [below=2.3cm of pcfg, xshift=0.4cm] {\Large\textbf{Language intersection}};
+          \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
+          \node [above=0.07cm of lnfa, xshift=1cm] {};
+
+          \node (code) [io, right of=start,xshift=3cm] {Code};
+          \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
+
+          \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
+
+          \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
+
+          \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.7)$) rectangle ($(pro2b.south east)+(0.3,-0.6)$);
+
+          \node (const) [process, below of=dec1, yshift=-1.1cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
+          \node [above=0.07cm of const, xshift=1.5cm] {};
+
+          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+
+          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+          \node [above=0.07cm of samp1] {};
+          \node [above=2.3cm of samp1,xshift=-0.2cm] {\Large\textbf{Repair extraction}};
+          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
+          \node [above=0.07cm of samp2] {};
+
+          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
+
+          \node (rank) [process, below of=dec2, yshift=-1.5cm] {Select top-$k$ by $L_\theta(\sigma')$};
+          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
+          \node [below=0.01cm of rank, xshift=-6cm] {\Large\textbf{Reranking}};
+          \node [above=0.1cm of rank, xshift=1cm] {};
+          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,0.8)$) rectangle ($(rank.south east)+(5.3,-0.9)$);
+
+%  \node (out1) [io, below of=pro2a] {Output};
+          \node (stop) [startstop, below of=rank, yshift=-0.6cm];
+
+%  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
+
+%          \draw [->,thick] (-5, 1.3) -- (synt);
+%          \draw [->,thick] (5, 1.3) -- (code);
+
+%          \draw [arrow] (start) -- (code);
+%          \draw [arrow] (start) -- (synt);
+          \draw [arrow] (code) -- (lnfa);
+          \draw [arrow] (synt) -- (pcfg);
+          \draw [arrow] (lnfa) -- (pro1);
+          \draw [arrow] (pcfg) -- (pro1);
+
+%  \draw [arrow] (in1) -- (pro1);
+          \draw [arrow] (pro1) -- (dec1);
+          \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
+          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.3cm] {no} (const);
+          \draw [arrow] (const) -- (dec2);
+          \draw [arrow] (pro2b) -- (lnfa);
+          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
+          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+
+          \draw [arrow] (vlmc) -- (rank);
+          \draw [arrow] (samp1) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+%  \draw [arrow] (pro2a) -- (out1);
+          \draw [arrow] (rank) -- (stop);
+%          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
+
+        \end{tikzpicture}
+      }
+    \end{center}
+  \end{wrapfigure}
+
+  Our syntax repair procedure can be described in three high-level steps. First, we generate a synthetic grammar $(G_\cap)$ representing the intersection between the syntax $(G)$ and Levenshtein ball around the source code $\big(\Delta(\err\sigma, d)\big)$. During repair extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, we rank all repairs discovered by likelihood.
+
 \end{frame}
 
-\begin{frame}[fragile]{Uniform sampling benchmark on natural syntax errors}
-  \begin{figure}[H]
-    \resizebox{.3\textwidth}{!}{\input{repair1-3_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-    \resizebox{.3\textwidth}{!}{\input{repair2_plot.tex}}
+\begin{frame}[fragile]{Characteristics of the repair dataset}
+  \begin{figure}[h!]
+    \begin{tikzpicture}[scale=0.52]
+      \begin{axis}[
+      ybar,
+      bar width=5pt,
+      xlabel={Length $(|\err\sigma|)$},
+      ylabel={Frequency},
+      title={Cumulative length distribution},
+      axis x line*=bottom,
+      axis y line*=left,
+      ymin=0,
+      ymax=65,
+      xtick=data,
+      xticklabels={,,<30,,,<60,,,<90,},
+      ymajorgrids=true,
+      grid style=dashed,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+
+      \addplot[fill=black!30] table {
+        X Y
+        1 7.60
+        2 14.52
+        3 22.01
+        4 30.54
+        5 37.82
+        6 44.30
+        7 49.68
+        8 55.21
+        9 59.75
+        10 63.59
+      };
+      \draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
+      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}[scale=0.52]
+      \begin{axis}[
+      ybar,
+      bar width=5pt,
+      title={Human repair distance},
+      xlabel={Edits, $\Delta(\err\sigma, \sigma')$},
+      ylabel={Frequency},
+      axis x line*=bottom,
+      axis y line*=left,
+      xtick=data,
+      ymajorgrids=true,
+      grid style=dashed,
+      xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
+      ytick={0, 20, 40, 60, 80, 100},
+      ymin=0,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+      \addplot[fill=black!30] table {
+        X Y
+        1  31.48
+        2  47.52
+        3  54.89
+        4  60.44
+        5  63.88
+        6  66.38
+        7  68.02
+        8  70.04
+        9  71.49
+        10 72.22
+      };
+      \draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
+      \end{axis}
+    \end{tikzpicture}
+    \begin{tikzpicture}[scale=0.52]
+      \begin{axis}[
+      ybar,
+      bar width=5pt,
+      xlabel={Beginning $\longleftrightarrow$ End},
+      ylabel={Frequency},
+      title={Normalized edit locations},
+      axis x line*=bottom,
+      axis y line*=left,
+      ymin=0,
+      ymax=35,
+      xtick=data,
+      xticklabels={0\%,,,,,,,,,100\%},
+      ymajorgrids=true,
+      grid style=dashed,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+
+      \addplot[fill=black!30] table {
+        X Y
+        10 11.6539
+        20 5.7252
+        30 6.2087
+        40 5.9542
+        50 5.5980
+        60 7.9389
+        70 7.0738
+        80 6.9466
+        90 12.4173
+        100 30.4835
+      };
+      \end{axis}
+    \end{tikzpicture}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        ybar,
+%        bar width=5pt,
+%        title={Intra-patch edit distance},
+%        xlabel={Caret distance},
+%        ylabel={Frequency},
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        xtick=data,
+%        ymajorgrids=true,
+%        grid style=dashed,
+%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+%        width=0.45\textwidth,
+%        height=0.3\textwidth
+%      ]
+%
+%        \addplot table {
+%          X Y
+%          1 40.66
+%          2 15.00
+%          3 5.80
+%          4 4.86
+%          5 4.26
+%          6 2.98
+%          7 2.05
+%          8 2.73
+%          9 1.62
+%          10 13.64
+%        };
+%      \end{axis}
+%    \end{tikzpicture}
+    \begin{tikzpicture}[scale=0.52]
+      \begin{axis}[
+      legend cell align={left},
+      legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east, legend style={at={(0.5,1.8)},anchor=north}},
+      xlabel={$|\err\sigma|$},
+      ylabel={Stable region},
+      title={Stability profile},
+      ybar,
+      axis lines*=left,
+      xtick={0, 10, 20, 30, 40, 50, 60, 70},
+      ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+      xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
+      yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+      x tick label style={font=\scriptsize},
+      ymax=1.0,
+      ymin=0.0,
+      bar width=3pt,
+      grid style=dashed,
+      ymajorgrids=true,
+      width=0.45\textwidth,
+      height=0.3\textwidth
+      ]
+      \addlegendimage{empty legend}
+      \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+      \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+      \addlegendentry{1,}
+      \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+      \addlegendentry{2,}
+      \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+      \addlegendentry{3}
+      \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+      \addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
+      \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
+      \end{axis}
+    \end{tikzpicture}
+    \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory. The stability profile measures the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball across repairs of varying length and distance.}\label{fig:patch_stats}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Precision and latency comparison}
+  \begin{figure}[h!]
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_tidy}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_bifi_all}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_s2p}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_bifi}}
+    \caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+  \end{figure}
+  \begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_1}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_2}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_3}}
+    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Repairs discovered before the latency cutoff are reranked based on their tokenwise perplexity and compared for an exact lexical match with the human repair at or below rank k. We note that the uniform sampling procedure is not intended to be used in practice, but provides a baseline for the empirical density of the admissible set, and an upper bound on the latency required to attain a given precision.}\label{fig:human}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Adaptive sampling benchmark on natural syntax errors}
-  \begin{figure}[H]
-    \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot.tex}}
-    \resizebox{.25\textwidth}{!}{\input{repair1_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair2_10s_plot.tex}}
-    \resizebox{.24\textwidth}{!}{\input{repair3_10s_plot.tex}}
-    \caption{Adaptive sampling repairs. The red line indicates Seq2Parse precision@1 on the same dataset. Since it only supports generating one repair, we do not report precision@k or the intermediate latency cutoffs.}\label{fig:adaptive}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Precision on Error Correction in Synthetic Language}
-  \begin{figure}[H]
-\begin{tikzpicture}[scale=0.41]
-\begin{axis}[
-width=8.3cm,
-height=7cm,
-title={\hspace{-1cm}\textbf{(1a) Latency with known locations}},
-ybar,
-bar width=6pt,
-xlabel={Number of holes},
-ylabel={ms to synthesize 10 repairs},
-xtick=data,
-axis x line*=bottom,
-axis y line*=left,
-ytick pos=left,
-xticklabels from table={\loctimings}{holes},
-ymajorgrids,
-legend pos=north west,
-legend columns=2,
-error bars/y dir=both,
-error bars/y explicit
-]
-\addplot table [x expr=\coordindex, y=d1, y error=d1err]{\loctimings};
-\addplot table [x expr=\coordindex, y=d2, y error=d2err]{\loctimings};
-\addplot table [x expr=\coordindex, y=d3, y error=d3err]{\loctimings};
-\addplot table [x expr=\coordindex, y=d4, y error=d4err]{\loctimings};
-\legend{Dyck-1, Dyck-2, Dyck-3, Dyck-4}
-\end{axis}
-\end{tikzpicture}
-\begin{tikzpicture}[scale=0.41]
-\begin{axis}[
-width=8.3cm,
-height=7cm,
-title={\hspace{-1cm}\textbf{(1b) Latency with unknown locations}},
-ybar,
-bar width=20pt,
-xlabel={Number of errors},
-%ylabel={ms to synthesize 1 repair},
-xtick=data,
-axis x line*=bottom,
-axis y line*=left,
-enlarge x limits={abs=0.5},
-ymode=log,
-ytick pos=left,
-xticklabels from table={\unloctimings}{errors},
-ymajorgrids,
-legend pos=north west,
-error bars/y dir=both,
-error bars/y explicit
-]
-\addplot table [x expr=\coordindex, y=d1]{\unloctimings};
-\addplot table [x expr=\coordindex, y=d2]{\unloctimings};
-\addplot table [x expr=\coordindex, y=d3]{\unloctimings};
-\legend{Dyck-1, Dyck-2, Dyck-3}
-\end{axis}
-\end{tikzpicture}\\
-\begin{tikzpicture}[scale=0.41]
-  \begin{axis}[
-  width=8.3cm,
-  height=7cm,
-%    title={\hspace{-1cm}\textbf{Java Brackets}},
-  ybar,
-  bar width=10pt,
-  xlabel={$|\Sigma^*|$},
-  ylabel={Top-1 parser acceptance},
-  title={\textbf{(2a) Synthetic Java bracket error correction}},
-  xtick=data,
-  axis x line*=bottom,
-  axis y line*=left,
-  enlarge x limits={abs=0.5},
-  ytick pos=left,
-  xticklabels from table={\syntheticerrors}{len},
-  ymajorgrids,
-  legend pos=north east,
-  legend columns=3,
-  error bars/y dir=both,
-  error bars/y explicit
-  ]
-  \addplot table [x expr=\coordindex, y=10s]{\syntheticerrors};
-  \addplot table [x expr=\coordindex, y=30s]{\syntheticerrors};
-  \addplot table [x expr=\coordindex, y=60s]{\syntheticerrors};
-  \legend{10s, 30s, 60s}
-  \end{axis}
-\end{tikzpicture}
-\begin{tikzpicture}[scale=0.41]
-  \begin{axis}[
-  width=8.3cm,
-  height=7cm,
-  title={\textbf{(2b) Organic Python bracket error correction}},
-  ybar,
-  bar width=10pt,
-  xlabel={$|\Sigma^*|$},
-%ylabel={Parser acceptance},
-  xtick=data,
-  axis x line*=bottom,
-  axis y line*=left,
-  enlarge x limits={abs=0.5},
-  ytick pos=left,
-  xticklabels from table={\naturalerrors}{len},
-  ymajorgrids,
-  y tick label style={/pgf/number format/.cd,%
-  scaled y ticks = false,
-  set thousands separator={},
-  fixed},
-  legend pos=north east,
-  legend columns=3,
-  error bars/y dir=both,
-  error bars/y explicit
-  ]
-  \addplot table [x expr=\coordindex, y=10s]{\naturalerrors};
-  \addplot table [x expr=\coordindex, y=30s]{\naturalerrors};
-  \addplot table [x expr=\coordindex, y=60s]{\naturalerrors};
-  \legend{10s, 30s, 60s}
-  \end{axis}
-\end{tikzpicture}
-  \caption{Benchmarking bracket correction latency and accuracy across two bracketing langauges, one generated from Dyck-n, and the second uses an abstracted source code snippet with imbalanced parentheses.}
-\end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Uniform sampling benchmark}
-  \begin{figure}
-    \resizebox{.5\textwidth}{!}{\input{throughput.tex}}
-    \caption{We evaluate throughput by sampling edits across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset of varying length, and measure the total number of syntactically valid edits discovered, as a function of string length and language edit distance $\Delta\in[1, 3]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs.}
+    \caption{Latency benchmarks. Note the varying y-axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
   \end{figure}
 \end{frame}
 
