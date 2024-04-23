@@ -343,7 +343,7 @@
   \begin{columns}[T]
     \begin{column}{0.9\textwidth}
       \begin{itemize}
-        \item Pioneered in the 19th century by Pierce, James, Dewey, et al.
+        \item Pioneered in the 19th century by Peirce, James, Dewey, et al.
         \item Wittgenstein was a pragmatist, early work on language games.
         \item Pragmatism is a philosophy of language that emphasizes the role of intent in human communication.
         \item Language is a tool for communication, \\not just a arbitrary set of rules.
@@ -2432,179 +2432,179 @@
   \end{center}
 \end{frame}
 
-\begin{frame}[fragile]{Chomsky Denormalization}
-  Chomksy normalization is needed for matrix-based parsing, however produces lopsided parse trees. We can denormalize them using a simple recusive procedure to restore the natural shape of the original CFG:\vspace{0.5cm}\\
-
-  \begin{minipage}[l]{6cm}
-    \vspace{0.3cm}\resizebox{\textwidth}{!}{
-      \begin{tabular}{ll}
-        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
-%    \Tree [.S [.NP John ] [.VP [.\tikz\node(v1){V}; sleeps ] ] ]
-        \hspace{-2cm}
-        &
-        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\
-%    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
-        \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
-      \end{tabular}
-      \begin{tikzpicture}[overlay]
-%    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
-        \draw [red,dashed,-stealth] (v3) to[bend left] (v4);
-%    \draw [red,dashed,-stealth] (v5) to[bend left] (v6);
-        \draw [red,dashed,-stealth] (v7) to[bend left] (v8);
-%    \draw [red,dashed,-stealth] (v9) to[bend right] (v10);
-        \draw [red,dashed,-stealth] (v11) to[bend right] (v12);
-      \end{tikzpicture}
-    }
-%    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
-  \end{minipage}
-  \hspace{-0.7cm}\scalebox{0.6}{
-    \begin{minipage}[l]{10cm}
-      \begin{algorithm}[H]
-        \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
-        \begin{algorithmic}
-          \Procedure{Cut}{\texttt{t: Tree}}
-            \State $\texttt{stems} \leftarrow \{\:\textsc{Cut}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
-            \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
-              \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
-            \Else%\Comment{Graft the denormalized children on root.}
-              \State \textbf{return } $\{\:\texttt{Tree(t.root, stems)}\:\}$
-            \EndIf
-          \EndProcedure
-        \end{algorithmic}
-      \end{algorithm}
-    \end{minipage}
-  }
-
-  \vspace{1cm}All synthetic nonterminals are excised during Chomsky denormalization. Rewriting improves legibility but does not alter the underlying semantics.
-\end{frame}
-
-\begin{frame}[fragile]{Incremental parsing}
-  Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
-  \begin{center}
-    \begin{tabular}{ c c c c c }
-      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
-      Append                               & & Delete                                       & & Insert                                       \\
-      $\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
-    \end{tabular}
-  \end{center}
-  Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
-\end{frame}
-
-%\begin{frame}{Error Recovery}
-%  \begin{figure}[H]
-%    \adjustbox{scale=0.75,center}{%
-%    \hspace{-0.5cm}\begin{minipage}[l]{6cm}
-%      \[
-%        \begin{NiceMatrix}
-%              \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
-%                         &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
-%          \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
-%                    \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
-%                    \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
-%                         &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
-%                         &      &      &      &      &      & \pcd & \cdd &      & C    \\
-%                         &      &      &      &      &      &      &      & T_C  & \vdd \\
-%                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
-%                         &      &      &      &      &      &      &      &      & \\
-%                         &      &      &      &      &      &      &      &      & \\
-%                         &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
-%                    \vno & \cdd &      &      &      &      &      &      & \vno &
-%        \end{NiceMatrix}
-%      \]
-%    \end{minipage}
-%    }
-%    \hspace{1cm}
+%\begin{frame}[fragile]{Chomsky Denormalization}
+%  Chomksy normalization is needed for matrix-based parsing, however produces lopsided parse trees. We can denormalize them using a simple recusive procedure to restore the natural shape of the original CFG:\vspace{0.5cm}\\
 %
-%    \caption{By recursing over upper diagonals of decreasing elevation and discarding subtrees that fall under the shadow of another's canopy, we can recover parseable subtrees.}
+%  \begin{minipage}[l]{6cm}
+%    \vspace{0.3cm}\resizebox{\textwidth}{!}{
+%      \begin{tabular}{ll}
+%        \Tree [.\texttt{S} \tikz\node(v1){\texttt{true}} [.$\ccancel{\texttt{and.S}}$ \tikz\node(v3){\texttt{and}} [.\texttt{S} \tikz\node(v5){\texttt{(}} [.$\ccancel{\texttt{S.)}}$ [.\texttt{S} \tikz\node(v9){\texttt{false}} [.$\ccancel{\texttt{or.S}}$ \tikz\node(v11){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] ] \tikz\node(v7){\texttt{)}} ] ] ] ]
+%%    \Tree [.S [.NP John ] [.VP [.\tikz\node(v1){V}; sleeps ] ] ]
+%        \hspace{-2cm}
+%        &
+%        \Tree [.\texttt{S} \tikz\node(v2){\texttt{true}} \tikz\node(v4){\texttt{and}} [.\texttt{S} \tikz\node(v6){\texttt{(}} [.\texttt{S} \tikz\node(v10){\texttt{false}} \tikz\node(v12){\texttt{or}} [.\texttt{S} \texttt{!} \texttt{true} ] ] \tikz\node(v8){\texttt{)}} ] ]\\\\
+%%    \Tree [.\tikz\node(v2){V}; [.\tikz\node(v3){V}; ] [.Adv {a lot} ] ]
+%        \hspace{1cm}\huge{Pre-Denormalization} & \hspace{3cm}\huge{Post-Denormalization}
+%      \end{tabular}
+%      \begin{tikzpicture}[overlay]
+%%    \draw [red,dashed,-stealth] (v1) to[bend left] (v2);
+%        \draw [red,dashed,-stealth] (v3) to[bend left] (v4);
+%%    \draw [red,dashed,-stealth] (v5) to[bend left] (v6);
+%        \draw [red,dashed,-stealth] (v7) to[bend left] (v8);
+%%    \draw [red,dashed,-stealth] (v9) to[bend right] (v10);
+%        \draw [red,dashed,-stealth] (v11) to[bend right] (v12);
+%      \end{tikzpicture}
+%    }
+%%    \caption{Result of applying Algorithm~\ref{alg:cap} to the tree obtained by parsing the string: \texttt{true and ( false or ! true )}.}
+%  \end{minipage}
+%  \hspace{-0.7cm}\scalebox{0.6}{
+%    \begin{minipage}[l]{10cm}
+%      \begin{algorithm}[H]
+%        \caption{Rewrite procedure for tree denormalization}\label{alg:cap}
+%        \begin{algorithmic}
+%          \Procedure{Cut}{\texttt{t: Tree}}
+%            \State $\texttt{stems} \leftarrow \{\:\textsc{Cut}(\texttt{c}) \mid \texttt{c} \in \texttt{t.children}\:\}$
+%            \If{$\texttt{t.root} \in (V_{\mathcal{G}'} \setminus V_{\mathcal{G}})$}
+%              \State \textbf{return } \texttt{stems} %\Comment{Drop synthetic nonterminals.}
+%            \Else%\Comment{Graft the denormalized children on root.}
+%              \State \textbf{return } $\{\:\texttt{Tree(t.root, stems)}\:\}$
+%            \EndIf
+%          \EndProcedure
+%        \end{algorithmic}
+%      \end{algorithm}
+%    \end{minipage}
+%  }
+%
+%  \vspace{1cm}All synthetic nonterminals are excised during Chomsky denormalization. Rewriting improves legibility but does not alter the underlying semantics.
+%\end{frame}
+%
+%\begin{frame}[fragile]{Incremental parsing}
+%  Should only need to recompute submatrices affected by individual edits. In the worst case, each edit requires quadratic complexity in terms of $|\Sigma^*|$, assuming $\mathcal{O}(1)$ cost for each CNF-nonterminal subset join, $\mathbf{V}'_1\otimes \mathbf{V}'_2$.
+%  \begin{center}
+%    \begin{tabular}{ c c c c c }
+%      \scalebox{0.32}{\mkTrellisAppend{7}} & & \scalebox{0.32}{\mkTrellisInsert{6}}         & & \scalebox{0.32}{\mkTrellisInsert{7}}         \\
+%      Append                               & & Delete                                       & & Insert                                       \\
+%      $\mathcal{O}(n+1)$                     & & $\mathcal{O}\left(\frac{1}{4}(n-1)^2\right)$ & & $\mathcal{O}\left(\frac{1}{4}(n+1)^2\right)$ \\
+%    \end{tabular}
+%  \end{center}
+%  Related to \textbf{dynamic matrix inverse} and \textbf{incremental transitive closure} with vertex updates. With a careful encoding, we can incrementally update SAT constraints as new keystrokes are received to eliminate redundancy.
+%\end{frame}
+%
+%%\begin{frame}{Error Recovery}
+%%  \begin{figure}[H]
+%%    \adjustbox{scale=0.75,center}{%
+%%    \hspace{-0.5cm}\begin{minipage}[l]{6cm}
+%%      \[
+%%        \begin{NiceMatrix}
+%%              \leftarrow & \nse & \nsi & \nfi & \nfo & \nth & \ntw & \non & \leftarrow & \ppp \\
+%%                         &      & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ddd & \ppp \\
+%%          \sigma_1^\shri & \cdd &      & A    &      &      &      &      &      & \ppp \\
+%%                    \vno & \ddd &  T_A & \vdd &      &      &      &      &      & \ppp \\
+%%                    \vdd & \ddd &      & \pcd & \cdd &      & B    &      &      & \ppp \\
+%%                         &      &      &      &      & T_B  & \vdd &      &      & \ppp \\
+%%                         &      &      &      &      &      & \pcd & \cdd &      & C    \\
+%%                         &      &      &      &      &      &      &      & T_C  & \vdd \\
+%%                         &      &      &      &      &      &      & \text{\emoji{cross-mark}} &      & \\
+%%                         &      &      &      &      &      &      &      &      & \\
+%%                         &      &      &      &      &      &      &      &      & \\
+%%                         &      &      &      &      &      &      &      & \ppp & \sigma_n^\shup \\
+%%                    \vno & \cdd &      &      &      &      &      &      & \vno &
+%%        \end{NiceMatrix}
+%%      \]
+%%    \end{minipage}
+%%    }
+%%    \hspace{1cm}
+%%
+%%    \caption{By recursing over upper diagonals of decreasing elevation and discarding subtrees that fall under the shadow of another's canopy, we can recover parseable subtrees.}
+%%  \end{figure}
+%%\end{frame}
+%
+%\begin{frame}[fragile]{Conjunctive parsing}
+%  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_2}$:
+%
+%  \begin{table}[H]
+%    \begin{tabular}{llll}
+%      $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt} \\
+%      $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
+%    \end{tabular}
+%  \end{table}
+%
+%  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. To encode $\mathcal{L}_\cap$, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ as follows:\vspace{-5pt}
+%
+%  \begin{align}
+%    \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
+%  \end{align}
+%  % Generated by cfl4_intersection.vox, open with https://voxelator.com/
+%  \begin{figure}[H]
+%    \includegraphics[height=0.093\textwidth]{../figures/angle1.png}\hspace{-5pt}
+%    \includegraphics[height=0.093\textwidth]{../figures/angle2.png}\hspace{-5pt}
+%    \includegraphics[height=0.093\textwidth]{../figures/angle5.png}\hspace{-5pt}
+%    \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
+%    \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
 %  \end{figure}
 %\end{frame}
-
-\begin{frame}[fragile]{Conjunctive parsing}
-  It is well-known that the family of CFLs is not closed under intersection. For example, consider $\mathcal{L}_\cap := \mathcal{L}_{\mathcal{G}_1} \cap \mathcal{L}_{\mathcal{G}_2}$:
-
-  \begin{table}[H]
-    \begin{tabular}{llll}
-      $P_1 := \big\{\;S \rightarrow L R,$ & $L \rightarrow a b \mid a L b,$ & $R \rightarrow c \mid c R\;\big\}$\vspace{5pt} \\
-      $P_2 := \big\{\;S \rightarrow L R,$ & $R \rightarrow b c \mid b R c,$ & $L \rightarrow a \mid a L\;\big\}$
-    \end{tabular}
-  \end{table}
-
-  \noindent Note that $\mathcal{L}_\cap$ generates the language $\big\{\;a^d b^d c^d \mid d > 0\;\big\}$, which according to the pumping lemma is not context-free. To encode $\mathcal{L}_\cap$, we intersect all terminals $\Sigma_\cap := \bigcap_{i=1}^c \Sigma_i$, then for each $t_\cap \in \Sigma_\cap$ and CFG, construct an equivalence class $E(t_\cap, \mathcal{G}_i) = \{ w_i \mid (w_i \rightarrow t_\cap) \in P_i\}$ as follows:\vspace{-5pt}
-
-  \begin{align}
-    \bigwedge_{t\in\Sigma_\cap}\bigwedge_{j = 1}^{c-1}\bigwedge_{i=1}^{|\sigma|} E(t_{\cap}, \mathcal{G}_j) \equiv_{\sigma_i} E(t_{\cap}, \mathcal{G}_{j+1})
-  \end{align}
-  % Generated by cfl4_intersection.vox, open with https://voxelator.com/
-  \begin{figure}[H]
-    \includegraphics[height=0.093\textwidth]{../figures/angle1.png}\hspace{-5pt}
-    \includegraphics[height=0.093\textwidth]{../figures/angle2.png}\hspace{-5pt}
-    \includegraphics[height=0.093\textwidth]{../figures/angle5.png}\hspace{-5pt}
-    \includegraphics[height=0.093\textwidth]{../figures/angle3.png}\hspace{-3pt}
-    \includegraphics[height=0.093\textwidth]{../figures/angle4.png}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{An Simple Reachability Proof}
-  \begin{lemma}
-    For any nonempty language $\ell: \mathcal{L}(\mathcal{G})$ and invalid string $\err{\sigma}: \Sigma^n$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$, where $\Delta$ denotes the Levenshtein edit distance.\\
-  \end{lemma}
-
-  \begin{proof}
-    Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m:=|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
-
-    \begin{itemize}
-      \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
-      \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
-    \end{itemize}
-
-    In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
-  \end{proof}
-\end{frame}
-
-\begin{frame}[fragile]{Probabilistic repair generation}
-  \resizebox{\textwidth}{!}{
-    \begin{minipage}{1.4\textwidth}
-      \input{prob_reach.tex}
-    \end{minipage}
-  }
-\end{frame}
-
-\begin{frame}[fragile]{Multicore Scaling Results (aarch64)}
-  \begin{tikzpicture}
-    \begin{axis}[
-      ybar,
-      enlargelimits=0.15,
-      legend style={at={(0.03,0.97)},anchor=north west},
-      title={\textbf{Relative Total Distinct Solutions Found vs. Single Core}},
-      x=1cm,
-      ylabel={Relative improvement},
-      xlabel={Number of assigned cores},
-      symbolic x coords={2,3,4,5,6,7,8,9,10},
-      xtick=data,
-      bar width=3pt,
-    ]
-      \addplot coordinates {
-        (2,0.1343) (3,0.1955) (4,0.2249) (5,0.2475)
-        (6,0.2760) (7,0.2994) (8,0.3073) (9,0.3151) (10,0.3229)
-      };
-      \addplot coordinates {
-        (2,0.2655) (3,0.4353) (4,0.5614) (5,0.6644)
-        (6,0.7462) (7,0.7783) (8,0.8347) (9,0.8005) (10,0.7798)
-      };
-      \addplot coordinates {
-        (2,0.3972) (3,0.6928) (4,0.9327) (5,1.1834)
-        (6,1.3138) (7,1.3988) (8,1.6039) (9,1.5500) (10,1.5691)
-      };
-      \addplot coordinates {
-        (2,0.4863) (3,0.8326) (4,1.1368) (5,1.3879)
-        (6,1.5873) (7,1.7494) (8,1.8802) (9,1.9059) (10,1.9625)
-      };
-      \addplot coordinates {
-        (2,0.4315) (3,0.7583) (4,1.0122) (5,1.2593)
-        (6,1.4586) (7,1.6349) (8,1.7813) (9,1.8324) (10,1.8695)
-      };
-      \legend{Holes=2,Holes=3,Holes=4,Holes=5,Holes=6}
-    \end{axis}
-  \end{tikzpicture}
-\end{frame}
+%
+%\begin{frame}[fragile]{An Simple Reachability Proof}
+%  \begin{lemma}
+%    For any nonempty language $\ell: \mathcal{L}(\mathcal{G})$ and invalid string $\err{\sigma}: \Sigma^n$, there exists an $(\tilde{\sigma}, m)$ such that $\tilde{\sigma} \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$, where $\Delta$ denotes the Levenshtein edit distance.\\
+%  \end{lemma}
+%
+%  \begin{proof}
+%    Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\tilde{\sigma}$ be the smallest such member. Since $\tilde{\sigma}$ is a valid sentence in $\ell$, by definition it must be that $|\tilde{\sigma}|<\infty$. Let $m:=|\tilde{\sigma}|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\tilde{\sigma} = \varepsilon$, or $0 < |\tilde{\sigma}|$:
+%
+%    \begin{itemize}
+%      \item If $\tilde{\sigma} = \varepsilon$, then $\Delta(\err{\sigma}, \tilde{\sigma}) = n$ by full erasure of $\err{\sigma}$, or
+%      \item If $0 < m$, then $\Delta(\err{\sigma}, \tilde{\sigma}) \leq \max(m, n)$ by overwriting.
+%    \end{itemize}
+%
+%    In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+%  \end{proof}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Probabilistic repair generation}
+%  \resizebox{\textwidth}{!}{
+%    \begin{minipage}{1.4\textwidth}
+%      \input{prob_reach.tex}
+%    \end{minipage}
+%  }
+%\end{frame}
+%
+%\begin{frame}[fragile]{Multicore Scaling Results (aarch64)}
+%  \begin{tikzpicture}
+%    \begin{axis}[
+%      ybar,
+%      enlargelimits=0.15,
+%      legend style={at={(0.03,0.97)},anchor=north west},
+%      title={\textbf{Relative Total Distinct Solutions Found vs. Single Core}},
+%      x=1cm,
+%      ylabel={Relative improvement},
+%      xlabel={Number of assigned cores},
+%      symbolic x coords={2,3,4,5,6,7,8,9,10},
+%      xtick=data,
+%      bar width=3pt,
+%    ]
+%      \addplot coordinates {
+%        (2,0.1343) (3,0.1955) (4,0.2249) (5,0.2475)
+%        (6,0.2760) (7,0.2994) (8,0.3073) (9,0.3151) (10,0.3229)
+%      };
+%      \addplot coordinates {
+%        (2,0.2655) (3,0.4353) (4,0.5614) (5,0.6644)
+%        (6,0.7462) (7,0.7783) (8,0.8347) (9,0.8005) (10,0.7798)
+%      };
+%      \addplot coordinates {
+%        (2,0.3972) (3,0.6928) (4,0.9327) (5,1.1834)
+%        (6,1.3138) (7,1.3988) (8,1.6039) (9,1.5500) (10,1.5691)
+%      };
+%      \addplot coordinates {
+%        (2,0.4863) (3,0.8326) (4,1.1368) (5,1.3879)
+%        (6,1.5873) (7,1.7494) (8,1.8802) (9,1.9059) (10,1.9625)
+%      };
+%      \addplot coordinates {
+%        (2,0.4315) (3,0.7583) (4,1.0122) (5,1.2593)
+%        (6,1.4586) (7,1.6349) (8,1.7813) (9,1.8324) (10,1.8695)
+%      };
+%      \legend{Holes=2,Holes=3,Holes=4,Holes=5,Holes=6}
+%    \end{axis}
+%  \end{tikzpicture}
+%\end{frame}
 \end{document}
