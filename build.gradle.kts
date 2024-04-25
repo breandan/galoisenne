@@ -119,7 +119,7 @@ kotlin {
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.0")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.0-rc1")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
@@ -186,7 +186,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.7.1" }
+        val tinkerpopVersion by extra { "3.7.2" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
