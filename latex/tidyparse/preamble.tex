@@ -79,16 +79,6 @@
 \DeclareRobustCommand{\hlred}[1]{{\sethlcolor{pink}\hl{#1}}}
 \usepackage{fontspec}
 
-\setmonofont[Scale=0.8]{JetBrainsMono}[
-    Contextuals={Alternate},
-    Path=./font/,
-    Extension = .ttf,
-    UprightFont=*-Regular,
-    BoldFont=*-Bold,
-    ItalicFont=*-Italic,
-    BoldItalicFont=*-BoldItalic
-]
-
 \usepackage[skins,breakable,listings]{tcolorbox}
 
 \usepackage[dvipsnames, table]{xcolor}
@@ -610,3 +600,72 @@
         \draw [-to] (0pt,0pt) -- (12pt,6pt);
     }
 }
+
+\usetikzlibrary{shapes.geometric, arrows}
+
+\tikzstyle{startstop} = [rectangle, rounded corners,
+minimum width=3cm,
+minimum height=1cm,
+thick,
+text centered,
+draw=none,
+]
+
+\tikzstyle{plain} = [
+rectangle,
+rounded corners,
+minimum width=3.5cm,
+minimum height=1cm,
+thick,
+text centered,
+draw=black
+]
+
+\tikzstyle{io} = [trapezium,
+trapezium stretches=true, % A later addition
+thick,
+trapezium left angle=70,
+trapezium right angle=110,
+minimum width=3cm,
+minimum height=1cm, text centered,
+draw=black, fill=blue!30]
+
+\tikzstyle{io2} = [trapezium,
+trapezium stretches=true, % A later addition
+thick,
+trapezium left angle=70,
+trapezium right angle=110,
+minimum width=3cm,
+minimum height=1cm, text centered,
+draw=black, fill=black!30]
+
+\tikzstyle{process} = [rectangle,
+minimum width=3.5cm,
+minimum height=1cm,
+thick,
+text centered,
+text width=4cm,
+draw=black,
+fill=orange!30]
+
+\tikzstyle{decision} = [diamond,
+minimum width=2.5cm,
+minimum height=0.5cm,
+thick,
+text centered,
+draw=black,
+fill=green!30]
+\tikzstyle{arrow} = [->,thick]
+
+%\usetikzlibrary{external}
+%\tikzexternalize[prefix=figures/]
+\definecolor{green}{RGB}{0,128,0}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkviolet1270255}{RGB}{127,0,255}
+\definecolor{deepskyblue3176236}{RGB}{3,176,236}
+\definecolor{dodgerblue45123246}{RGB}{45,123,246}
+\definecolor{lightgray204}{RGB}{204,204,204}
+\definecolor{royalblue8762253}{RGB}{87,62,253}
+
+\usepackage{sankey}
+\usepackage{wrapfig}
