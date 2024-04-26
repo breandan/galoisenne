@@ -398,6 +398,15 @@ class SetValiantTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testHardestCFL"
+*/
+  @Test
+  fun testHardestCFL() {
+    Grammars.hardestCFL.enumSeqSmart(List(10){ "_" }).distinct()
+      .forEach { println(it) }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testLevenshteinAutomata"
 */
   @Test

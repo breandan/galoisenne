@@ -86,6 +86,34 @@ object Grammars {
     term -> id | int | paren_expr
   """.parseCFG().freeze()
 
+//  https://aclanthology.org/2020.conll-1.41.pdf#page=12
+  val hardestCFL: CFG = """
+    S' -> R ${'$'} Q S L ;
+    L -> L' , U
+    L' -> , V L'
+    L' -> ε
+    R -> U , R'
+    R' -> R' V ,
+    R' -> ε
+    U -> W U
+    U -> ε
+    V -> W V
+    V -> W
+    W -> (
+    W -> )
+    W -> [
+    W -> ]
+    W -> ${'$'}
+    Q -> L ; R
+    Q -> ε
+    S -> S Q T
+    S -> T
+    T -> ( Q S Q )
+    T -> [ Q S Q ]
+    T -> ( Q )
+    T -> [ Q ]
+  """.trimIndent().parseCFG().noNonterminalStubs
+
   val seq2parsePythonCFG: CFG = """
     START -> Stmts_Or_Newlines
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
