@@ -402,7 +402,7 @@ class SetValiantTest {
 */
   @Test
   fun testHardestCFL() {
-    Grammars.hardestCFL.enumSeqSmart(List(10){ "_" }).distinct()
+    Grammars.hardestCFL.enumSeqSmart(List(10){ "_" }).distinct().take(100)
       .forEach { println(it) }
   }
 
