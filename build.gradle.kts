@@ -137,6 +137,8 @@ kotlin {
         // MPJ (required for Poon's SPN)
 //  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
+        implementation(files("$projectDir/jautomata-0.0.1-SNAPSHOT.jar"))
+
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
         implementation("org.sosy-lab:java-smt:4.1.1")
 

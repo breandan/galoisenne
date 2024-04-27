@@ -139,6 +139,9 @@ fun CFG.jvmIntersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
 
+fun CFG.makeLevPTree(toRepair: Σᐩ, levDist: Int = 3, parikhMap: ParikhMap = this.parikhMap): PTree =
+  jvmIntersectLevFSAP(makeLevFSA(toRepair, levDist), parikhMap).toPTree()
+
 val BH_TIMEOUT = 9.minutes
 val MINFREEMEM = 1000000000L
 val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB

@@ -60,6 +60,16 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     else branches.maxOf { (l, r) -> maxOf(l.depth, r.depth) + 1 }
   }
 
+  fun <T> propagator(
+    both: (T?, T?) -> T?,
+    either: (T?, T?) -> T?,
+    unit: (PTree) -> T?
+  ): T? =
+    if (branches.isEmpty()) if("ε" in root) null else unit(this)
+    else branches.map { (l, r) ->
+      both(l.propagator(both, either, unit), r.propagator(both, either, unit))
+    }.reduce { acc, t -> either(acc, t) }
+
   private val choice by lazy {
     if (branches.isEmpty()) listOf(epsStr)
     else shuffledBranches.flatMap { (l, r) ->
