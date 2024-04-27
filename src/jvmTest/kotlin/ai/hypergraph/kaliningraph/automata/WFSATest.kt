@@ -39,8 +39,9 @@ class WFSATest {
   @Test
   fun testLBHRepair() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
-    Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, 2)
-      .propagator<Automaton<String, Double>>(
+    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, 2)
+    measureTimedValue {
+      pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
         either = { a, b -> if (a == null) b else if (b == null) a else Union(a, b) },
         unit = { a ->
@@ -50,9 +51,10 @@ class WFSATest {
             val s2 = addState(0.0, 1.0)
             addTransition(s1, s2, a.root, 1.0)
           }
-       }
+        }
       ).also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
        .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") } }
-       .forEach { println(levenshteinAlign(toRepair, it).paintANSIColors()) }
+    }.also { it.value.forEach { println(levenshteinAlign(toRepair, it).paintANSIColors()) } }
+     .also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
   }
 }
