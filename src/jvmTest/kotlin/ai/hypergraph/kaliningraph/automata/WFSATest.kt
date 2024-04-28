@@ -39,7 +39,7 @@ class WFSATest {
   @Test
   fun testLBHRepair() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
-    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, 2)
+    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, 1)
     measureTimedValue {
       pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
