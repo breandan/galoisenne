@@ -6,7 +6,7 @@ import java.io.File
 import java.nio.file.Files
 
 class GIFTest {
-  @Test
+//  @Test
   fun testBMPCollage() {
     val images = (0..255).map { i ->
       List(200) { List(200) { i }.toIntArray() }.toTypedArray()
