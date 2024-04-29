@@ -1,14 +1,12 @@
 package ai.hypergraph.kaliningraph.automata
 
+import Grammars
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import io.kotest.matchers.types.shouldHaveSameHashCodeAs
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
 import net.jhoogland.jautomata.operations.*
 import net.jhoogland.jautomata.semirings.RealSemiring
-import kotlin.system.measureTimeMillis
-import kotlin.test.Test
+import kotlin.test.*
 import kotlin.time.measureTimedValue
 
 
@@ -54,7 +52,11 @@ class WFSATest {
         }
       ).also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
        .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") } }
-    }.also { it.value.forEach { println(levenshteinAlign(toRepair, it).paintANSIColors()) } }
-     .also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
+    }.also {
+      it.value.forEach {
+        println(levenshteinAlign(toRepair, it).paintANSIColors())
+        assertTrue(it in Grammars.seq2parsePythonCFG.language)
+      }
+    }.also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
   }
 }

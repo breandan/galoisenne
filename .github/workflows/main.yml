@@ -18,4 +18,4 @@ jobs:
         with:
           java-version: 17
       - name: Build with Gradle
-        run: ./gradlew -PleaseExcludeBenchmarks allTests --stacktrace
+        run: ./gradlew -Dorg.gradle.jvmargs=-XX:+UseContainerSupport -PleaseExcludeBenchmarks allTests --stacktrace --no-daemon
