@@ -4,6 +4,8 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
+import kotlin.time.*
+import kotlin.time.DurationUnit.MILLISECONDS
 
 plugins {
   signing
@@ -253,6 +255,12 @@ kotlin {
   }
 }
 
+data class TestDuration(val name: String, val duration: Duration) {
+  override fun toString() = "$name: $duration"
+}
+
+val testDurations = mutableListOf<TestDuration>()
+
 tasks {
   withType<KotlinCompile> {
     compilerOptions.jvmTarget = JvmTarget.JVM_17
@@ -274,6 +282,21 @@ tasks {
       showCauses = true
       showStackTraces = true
       showStandardStreams = true
+    }
+
+    afterTest(
+      KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+        println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
+        testDurations.add(TestDuration(
+          name = "${desc.className}.${desc.name}",
+          duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
+        ))
+      })
+    )
+
+    doLast {
+      println("Longest 10 tests")
+      testDurations.sortedBy { it.duration }.reversed().take(10).forEach { println(it) }
     }
 
     if (project.hasProperty("leaseExcludeBenchmarks")) exclude("**/**Benchmarks.class")
