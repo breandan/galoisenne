@@ -39,6 +39,8 @@ class WFSATest {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 1
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius)
+    val repairs = pt.sampleStrWithoutReplacement().distinct().take(100).toSet()
+    println("Found ${repairs.size} repairs by enumerating PTree")
     measureTimedValue {
       pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
@@ -52,8 +54,10 @@ class WFSATest {
           }
         }
       ).also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
-       .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") } }
+       .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") }.toSet() }
     }.also {
+      println("Found ${it.value.size} repairs by decoding WFSA")
+      assertEquals(it.value, repairs)
       it.value.forEach {
         println(levenshteinAlign(toRepair, it).paintANSIColors())
         assertTrue(levenshtein(toRepair, it) <= radius)
