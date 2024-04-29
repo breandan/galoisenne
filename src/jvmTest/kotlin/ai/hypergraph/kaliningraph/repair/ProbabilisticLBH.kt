@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
+import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.*
@@ -115,7 +116,7 @@ class ProbabilisticLBH {
 
     val clock = TimeSource.Monotonic.markNow()
     val levBall = makeLevFSA(source.tokenizeByWhitespace(), levDist)
-    val intGram = gram.jvmIntersectLevFSA(levBall)
+    val intGram = gram.jvmIntersectLevFSA(levBall, shortS2PParikhMap)
     println("Finished ${intGram.size}-prod ∩-grammar in ${clock.elapsedNow()}")
     val lbhSet = intGram.toPTree().sampleDirectlyWOR()
       .takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.collect(Collectors.toSet())

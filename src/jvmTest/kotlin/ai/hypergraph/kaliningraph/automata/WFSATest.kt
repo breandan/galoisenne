@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.automata
 
 import Grammars
+import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.parsing.*
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
@@ -38,7 +39,7 @@ class WFSATest {
   fun testLBHRepair() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 1
-    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius)
+    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
     val repairs = pt.sampleStrWithoutReplacement().distinct().take(100).toSet()
     println("Found ${repairs.size} repairs by enumerating PTree")
     measureTimedValue {

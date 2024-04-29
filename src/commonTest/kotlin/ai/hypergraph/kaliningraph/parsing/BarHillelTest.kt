@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
+import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
 import kotlin.test.*
@@ -319,7 +320,7 @@ class BarHillelTest {
     println(levBall.states.size)
 //  println(levBall.toDot())
 //  throw Exception("")
-    val intGram = gram.intersectLevFSA(levBall)
+    val intGram = gram.intersectLevFSA(levBall, shortS2PParikhMap)
 
     val clock = TimeSource.Monotonic.markNow()
 

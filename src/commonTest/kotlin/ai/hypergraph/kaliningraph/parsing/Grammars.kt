@@ -114,6 +114,7 @@ object Grammars {
     T -> [ Q ]
   """.trimIndent().parseCFG().noNonterminalStubs
 
+  val shortS2PParikhMap by lazy { ParikhMap(seq2parsePythonCFG, 20) }
   val seq2parsePythonCFG: CFG = """
     START -> Stmts_Or_Newlines
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines

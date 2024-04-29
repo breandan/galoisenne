@@ -14,7 +14,8 @@ import kotlin.time.TimeSource
 
 infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
 
-infix fun CFG.intersectLevFSA(fsa: FSA): CFG = intersectLevFSAP(fsa)
+fun CFG.intersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG =
+  intersectLevFSAP(fsa, parikhMap)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 
@@ -26,7 +27,7 @@ fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
 
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
-private infix fun CFG.intersectLevFSAP(fsa: FSA): CFG {
+private fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =

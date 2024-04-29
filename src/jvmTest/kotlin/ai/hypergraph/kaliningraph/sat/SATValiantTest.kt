@@ -598,10 +598,10 @@ class SATValiantTest {
     """.trimIndent().parseCFG()
 
   /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevensheteinIntersection"
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sat.SATValiantTest.testLevenshteinIntersection"
   */
   @Test
-  fun testLevensheteinIntersection() {
+  fun testLevenshteinIntersection() {
     val cfg = sumCFG.noNonterminalStubs
     val strWithParseErr = "1 + 2 + + +".tokenizeByWhitespace()
     val dist = 2
