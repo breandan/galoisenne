@@ -37,7 +37,8 @@ class WFSATest {
   @Test
   fun testLBHRepair() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
-    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, 1)
+    val radius = 1
+    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius)
     measureTimedValue {
       pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
@@ -55,6 +56,7 @@ class WFSATest {
     }.also {
       it.value.forEach {
         println(levenshteinAlign(toRepair, it).paintANSIColors())
+        assertTrue(levenshtein(toRepair, it) <= radius)
         assertTrue(it in Grammars.seq2parsePythonCFG.language)
       }
     }.also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
