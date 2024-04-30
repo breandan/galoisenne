@@ -75,6 +75,13 @@ open class LabeledGraph constructor(override val vertices: Set<LGVertex> = setOf
   var accumuator = mutableSetOf<String>()
   var description = ""
 
+  override fun reversed(): LabeledGraph =
+    (vertices.associateWith { setOf<LabeledEdge>() } +
+        vertices.flatMap { src ->
+          src.outgoing.map { edge -> edge.target to LabeledEdge(edge.target, src, edge.label) }
+        }.groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.toSet() })
+      .map { (k, v) -> V(k) { v } }.toSet().let { G(it) }
+
   fun S() = BooleanMatrix(vertices.size, 1) { i, j -> this[i].occupied }
 
   fun rewrite(substitution: V2<String>) =

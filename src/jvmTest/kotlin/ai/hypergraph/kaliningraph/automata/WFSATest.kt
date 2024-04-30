@@ -2,7 +2,9 @@ package ai.hypergraph.kaliningraph.automata
 
 import Grammars
 import Grammars.shortS2PParikhMap
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.visualization.alsoCopy
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
 import net.jhoogland.jautomata.operations.*
@@ -32,6 +34,25 @@ class WFSATest {
         .also { println("Took ${it.duration} to decode ${it.value.size} best strings") }
   }
 
+  fun Automaton<String, Double>.toDot(processed: MutableSet<Any> = mutableSetOf()) =
+    LabeledGraph {
+      val stateQueue = mutableListOf<Any>()
+      initialStates().forEach { stateQueue.add(it) }
+      while (true) {
+        if (stateQueue.isEmpty()) break
+        val state = stateQueue.removeAt(0)
+        transitionsOut(state).forEach {
+          val label = label(it) + "/" + transitionWeight(it).toString().take(4)
+          val next = this@toDot.to(it)
+          state.hashCode().toString()[label] = next.hashCode().toString()
+          if (next !in processed) {
+            processed.add(next)
+            stateQueue.add(next)
+          }
+        }
+      }
+    }.toDot().replace("Mrecord\"", "Mrecord\", label=\"\"")
+
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testLBHRepair"
   */
@@ -54,7 +75,8 @@ class WFSATest {
             addTransition(s1, s2, a.root, 1.0)
           }
         }
-      ).also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
+      )?.also { println("\n" + Operations.determinizeER(it).toDot().alsoCopy() + "\n") }
+        .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
        .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") }.toSet() }
     }.also {
       println("Found ${it.value.size} repairs by decoding WFSA")
