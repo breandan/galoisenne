@@ -320,7 +320,7 @@ class BarHillelTest {
     println(levBall.states.size)
 //  println(levBall.toDot())
 //  throw Exception("")
-    val intGram = gram.intersectLevFSA(levBall, shortS2PParikhMap)
+    val intGram = gram.intersectLevFSA(levBall)
 
     val clock = TimeSource.Monotonic.markNow()
 
