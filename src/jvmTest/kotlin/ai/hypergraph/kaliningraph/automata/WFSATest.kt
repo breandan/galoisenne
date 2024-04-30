@@ -4,7 +4,7 @@ import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.visualization.alsoCopy
+import ai.hypergraph.kaliningraph.visualization.*
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
 import net.jhoogland.jautomata.operations.*
@@ -44,14 +44,24 @@ class WFSATest {
         transitionsOut(state).forEach {
           val label = label(it) + "/" + transitionWeight(it).toString().take(4)
           val next = this@toDot.to(it)
-          state.hashCode().toString()[label] = next.hashCode().toString()
+          val initws = initialWeight(state)
+          val finalws = finalWeight(state)
+          val initwn = initialWeight(next)
+          val finalwn = finalWeight(next)
+          (state.hashCode().toString() + "#$initws/$finalws")[label] = next.hashCode().toString() + "#$initwn/$finalwn"
           if (next !in processed) {
             processed.add(next)
             stateQueue.add(next)
           }
         }
       }
-    }.toDot().replace("Mrecord\"", "Mrecord\", label=\"\"")
+    }.toDot()
+      // States are typically unlabeled in FSA diagrams
+      .replace("Mrecord\"", "Mrecord\", label=\"\"")
+      // Final states are suffixed with /1.0 and drawn as double circles
+      .replace("/1.0\" [\"shape\"=\"Mrecord\"", "/1.0\" [\"shape\"=\"doublecircle\"")
+      .replace("Mrecord", "circle") // FSA states should be circular
+      .replace("null", "ε") // null label = ε-transition
 
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testLBHRepair"
@@ -75,7 +85,7 @@ class WFSATest {
             addTransition(s1, s2, a.root, 1.0)
           }
         }
-      )?.also { println("\n" + Operations.determinizeER(it).toDot().alsoCopy() + "\n") }
+      )?.also { println("\n" + it.toDot().alsoCopy() + "\n") }
         .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
        .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") }.toSet() }
     }.also {
