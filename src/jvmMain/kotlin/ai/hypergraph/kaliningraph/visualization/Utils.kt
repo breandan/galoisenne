@@ -29,9 +29,11 @@ fun MutableGraph.render(format: Format, layout: Engine = DOT): Renderer =
    toGraphviz().apply { engine(layout) }.render(format)
 
 fun String.alsoCopy() = also {
-  StringSelection(this).let {
-    Toolkit.getDefaultToolkit().systemClipboard.setContents(it, it)
-  }
+  try {
+    StringSelection(this).let {
+      Toolkit.getDefaultToolkit().systemClipboard.setContents(it, it)
+    }
+  } catch (e: Exception) { println("Error copying to clipboard: $e") }
 }
 
 fun String.show() = File.createTempFile("" + hashCode(), ".html")
