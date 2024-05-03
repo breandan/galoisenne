@@ -912,7 +912,29 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$ and decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. If the language being sampled is sufficiently small, we can enumerate every tree, otherwise, sample them uniformly without replacement, or with replacement using a PCFG. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
-  \subsection{Ranked repair}\label{sec:ranking}
+  The previous technique will exhaustively enumerate all parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, it can be improved for large finite languages by decoding repairs in order of likelihood. To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of automata, each automata $A$ indexed by the nonterminal $v: V$ as follows:
+
+  \begin{align}
+    X \oplus Z &\mapsto \bigcup_{v \in V}\big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[v]) \cup \mathcal{L}(Z[v])\big\}\\
+    X \otimes Z &\mapsto \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[x]) \times \mathcal{L}(Z[z]), (v \rightarrow xz) \in P\big\}
+  \end{align}\\
+
+  where the unit nonterminals occupying the first upper diagonal are constructed as follows:
+
+  \begin{equation}
+    \begin{footnotesize}
+      \Lambda(s: \underline\Sigma^n) \mapsto \Big\{\langle v, A_v\rangle\mid v: V, \mathcal{L}(A_v) = \{\varepsilon\}\Big\} \otimes \begin{cases}
+        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \Sigma \big\} & \text{if $s$ is a hole,} \vspace{5pt}\\
+        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \{s\}, (v \rightarrow s)\in P\big\} & \text{otherwise.}
+      \end{cases}
+    \end{footnotesize}
+  \end{equation}
+
+  Constructively, letting $+, *: \mathcal{M}\times \mathcal{M} \rightarrow \mathcal{M}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that NFA are closed under these operations.
+
+  Given a PCFG with known transition probabilities, $\Lambda^* \circ S$ would then yield an equivalent WFSA recognizing $\Sigma^n\cap\mathcal{L}(G)$, which can be determinized into a labeled transition system (LTS) and decoded using k-best paths to obtain the top-k maximum likelihood repairs. While this procedure requires a more complex datastructure, it is more sample efficient than the tree sampler and does not require a separate reranking step.
+
+  \clearpage\subsection{Ranked repair}\label{sec:ranking}
 
   Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
 

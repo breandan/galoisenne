@@ -64,12 +64,12 @@ class WFSATest {
       .replace("null", "ε") // null label = ε-transition
 
   /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testLBHRepair"
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testPTreeVsWFSA"
   */
   @Test
-  fun testLBHRepair() {
-    val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
-    val radius = 1
+  fun testPTreeVsWFSA() {
+    val toRepair = "NAME = NAME ( STRING ) NEWLINE NAME = NAME ( STRING ) NEWLINE NAME = NAME ( STRING NUMBER NAME = [ NAME , NAME , NAME ] NEWLINE"
+    val radius = 2
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
     val repairs = pt.sampleStrWithoutReplacement().distinct().take(100).toSet()
     println("Found ${repairs.size} repairs by enumerating PTree")
@@ -85,7 +85,7 @@ class WFSATest {
             addTransition(s1, s2, a.root, 1.0)
           }
         }
-      )?.also { println("\n" + it.toDot().alsoCopy() + "\n") }
+      )?.also { println("\n" + Operations.determinizeER(it).toDot().alsoCopy() + "\n") }
         .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
        .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") }.toSet() }
     }.also {
