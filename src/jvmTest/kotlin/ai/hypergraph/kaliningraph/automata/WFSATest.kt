@@ -68,8 +68,8 @@ class WFSATest {
   */
   @Test
   fun testPTreeVsWFSA() {
-    val toRepair = "NAME = NAME ( STRING ) NEWLINE NAME = NAME ( STRING ) NEWLINE NAME = NAME ( STRING NUMBER NAME = [ NAME , NAME , NAME ] NEWLINE"
-    val radius = 2
+    val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
+    val radius = 1
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
     val repairs = pt.sampleStrWithoutReplacement().distinct().take(100).toSet()
     println("Found ${repairs.size} repairs by enumerating PTree")
