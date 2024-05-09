@@ -209,9 +209,8 @@ First, we generate a synthetic grammar representing the intersection between the
           \node (start) [startstop, draw=none];
           \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
           \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
-          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
-          \node [below=0.07cm of pcfg] {(\S~\ref{sec:prelim})};
-          \node [below=2.3cm of pcfg, xshift=0.05cm] {\Large\textbf{Language intersection}};
+          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[PHO]CFG};
+          \node [above=0.07cm of pcfg, xshift=1cm] {(\S~\ref{sec:prelim})};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
           \node [above=0.07cm of lnfa, xshift=1cm] {(\S~\ref{sec:lev_nfa})};
 
@@ -222,26 +221,26 @@ First, we generate a synthetic grammar representing the intersection between the
 
           \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-          \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.7)$) rectangle ($(pro2b.south east)+(0.3,-0.6)$);
+          \node [below=0.7cm of pro2b, xshift=0.05cm] {\Large\textbf{Language intersection}};
+          \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-          \node (const) [process, below of=dec1, yshift=-1.1cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
+          \node (const) [process, below of=dec1, yshift=-1.8cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
           \node [above=0.07cm of const, xshift=1.5cm] {(\S~\ref{sec:matrix_completion})};
 
-          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+%          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+%
+%          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+%          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
+%          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
+%          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
 
-          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
-          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
-          \node [above=2.3cm of samp1,xshift=-0.4cm] {\Large\textbf{Repair extraction}};
-          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
-          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
+%          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
 
-          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
-
-          \node (rank) [process, below of=dec2, yshift=-1.5cm] {Select top-$k$ by $L_\theta(\sigma')$};
-          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-          \node [below=0.01cm of rank, xshift=-6cm] {\Large\textbf{Reranking}};
-          \node [above=0.1cm of rank, xshift=1cm] {(\S~\ref{sec:ranking})};
-          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,0.8)$) rectangle ($(rank.south east)+(5.3,-0.9)$);
+          \node (rank) [process, below of=const, yshift=-0.5cm] {Decode top-$k$ by $L_\theta(\sigma')$};
+%          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
+          \node [below=0.01cm of rank, xshift=5.5cm] {\Large\textbf{Repair decoding}};
+          \node [above=0.1cm of rank, xshift=1.5cm] {(\S~\ref{sec:ranking})};
+          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,3.2)$) rectangle ($(rank.south east)+(5.3,-0.8)$);
 
 %  \node (out1) [io, below of=pro2a] {Output};
           \node (stop) [startstop, below of=rank, yshift=-0.6cm];
@@ -261,15 +260,15 @@ First, we generate a synthetic grammar representing the intersection between the
 %  \draw [arrow] (in1) -- (pro1);
           \draw [arrow] (pro1) -- (dec1);
           \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
-          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.3cm] {no} (const);
-          \draw [arrow] (const) -- (dec2);
+          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.5cm] {no} (const);
+          \draw [arrow] (const) -- (rank);
           \draw [arrow] (pro2b) -- (lnfa);
-          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
-          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+%          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
+%          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
-          \draw [arrow] (vlmc) -- (rank);
-          \draw [arrow] (samp1) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
-          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+%          \draw [arrow] (vlmc) -- (rank);
+          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+%          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
           \draw [arrow] (rank) -- (stop);
 %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
