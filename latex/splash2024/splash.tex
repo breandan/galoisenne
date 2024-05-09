@@ -171,7 +171,7 @@
 
   \clearpage\section{Method}
 
-  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into three main steps: (1) language intersection, (2) repair extraction, and (3) reranking.
+  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into three main steps: (1) language intersection, (2) k-best decoding, and (3) reranking.
 
   \begin{figure}[h!]
   \begin{center}
@@ -180,15 +180,14 @@
         \node (start) [io] {Broken code};
         \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
         \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
-        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
+%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
 %        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-        \node (node3) [plain, right of=node2] {\textbf{Reranking}};
-        \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
+        \node (node3) [plain, right of=node1] {\textbf{k-best decoding}};
+        \node (ngram) [io2, above of=node3, yshift=-3cm] {PCFG};
         \node (node4) [io, right of=node3] {Repairs};
         \draw [arrow] (start) -- (node1);
         \draw [arrow] (gram1) -- (node1);
-        \draw [arrow] (node1) -- (node2);
-        \draw [arrow] (node2) -- (node3);
+        \draw [arrow] (node1) -- (node3);
         \draw [arrow] (node3) -- (node4);
         \draw [arrow] (ngram) -- (node3);
 %        \draw [arrow] (ptree) -- (node2);
@@ -278,18 +277,20 @@ First, we generate a synthetic grammar representing the intersection between the
     \end{center}
     \vspace{-0.7cm}
     \caption{Dataflow of our proposed method.}\label{fig:flowchart}
-    \vspace{-0.7cm}
+    \vspace{-0.5cm}
   \end{wrapfigure}
 
-  Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the language's syntax ($G$) and an automaton recognizing the Levenshtein ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, this is admissible. Three outcomes are possible:
+  Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decode repairs.
 
-  \begin{enumerate}
-    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
-    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of all syntax repairs.
-    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
-  \end{enumerate}
+%  \begin{enumerate}
+%    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
+%    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of all syntax repairs.
+%    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
+%  \end{enumerate}
 
-  As long as we have done our job correctly, the intersection language should contain every plausible repair within a certain Levenshtein distance, and no invalid repairs. We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently extract all repairs contained within (\S~\ref{sec:ptree}). Finally, we use an n-gram model to rank and return the top-k results by likelihood (\S~\ref{sec:ranking}).
+  To decode the repairs, we use a technique called cube pruning, which has been shown to be effective for decoding likely sentences from PCFGs~\cite{huang2005better}. If the language is sufficiently small, it will generate every possible repair, otherwise, it will draw a representative subset containing with high probability the top-k most likely repairs under the PCFG.
+
+  We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to rerank the repairs by a more sophisticated language model, such as a neural network, to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}\label{sec:prelim}
 
