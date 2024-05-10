@@ -898,7 +898,7 @@ The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2
 
 To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, that we define as follows:
 
-\begin{equation}
+\begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
   \text{Let } b = |\texttt{children}(T)|,\\
@@ -1049,9 +1049,9 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
     \caption{CFGs are hypergraphs witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions.\vspace{-10pt}}
   \end{wrapfigure}
 
-  In the probabilistic setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This PCFG induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ with identical probability as sampling the PCFG, top-down. A key issue however, is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
+  In the distributional setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ equal probability as sampling the PCFG from the top-down. A key issue with this approach is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
 
-   A more suitable decoding method is possible by considering a related technique called cube-pruning~\cite{huang2005better} that operates over hypergraphs, which are equiexpressive with both CFGs and ADTs. If we consider the PCFG in CNF, each production corresponds to a weighted hyperedge with at most two neighbors. This technique avoids the complexity of determinization and renormalization and while strictly more expressive than necessary to represent finite languages, cube pruning over context-free hypergraphs is capable of decoding top-k lists far more efficiently than k-longest paths over a WA. A further advantage of this representation is that we can decode likely subpaths from $\mathbb{T}_2$ directly.
+   A more suitable decoding method is possible by considering a related technique called cube-pruning~\cite{huang2005better} that operates over hypergraphs, which are equiexpressive with both CFGs and ADTs. If we consider the PCFG in CNF, each production corresponds to a weighted hyperedge with at most two neighbors. While strictly more expressive than necessary to represent finite languages, cube pruning over context-free hypergraphs is capable of decoding top-k lists far more efficiently than k-longest paths over a WA. A further advantage of this representation is that we can decode likely subpaths from $\mathbb{T}_2$ directly, without translating it to a weighted automaton, minimizing, renormalizing transition weights, and then solving for the top-k best paths. The disadvantage however, is that CFGs are not as algebraically well-behaved, lacking the closure and decidability benefits of WAs under intersection.
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
@@ -1457,7 +1457,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   \clearpage\section{Related Work}\label{sec:related}
 
-  Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, and finally (6) neural program repair.
+  Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, (6) decoding and finally (7) neural program repair.
 
   \subsection{Parsing}
 
@@ -1502,6 +1502,18 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \subsection{Error correcting codes}
 
   Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
+
+  \subsection{Decoding}
+
+Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, its goal is find the maximum likelihood samples. A classic example is Viterbi decoding, which is used to find the most likely sequence of hidden states in a hidden Markov model and is closely related to the CYK algorithm for parsing. For PCFGs, the problem is more challenging, as the total support can be exponentially larger relative to the number of transitions.
+
+In particular, we care about the problem of \textit{top-k decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing likelihood. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic PCFGs is often intractable, but we can approximate it using a beam search or cube-pruning technique.
+
+A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, huang2007forest, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it with a probabilistic higher-order grammar (PHOG)~\cite{bielik2016phog}. Our approach is similar to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
+
+  An alternate approach would be to use MCMC or sequential Monte Carlo method to steer a transformer-based large langauge model (LLM), as proposed by Lew et al.~\cite{lew2023sequential}. This technique is particularly useful for constrained sampling from LLMs, and could be adapted to our setting to improve sample efficiency. The downside is that it introduces a dependency on an LLM, which requires a very large dataset to train and is more computationally expensive than cube-pruning. Furthermore, distinct sampling is unclear how to do properly, as LLMs are not trained to generate unique samples, and sampling without replacement is a fundamentally non-Markovian process. One potential solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can require a significant latency overhead.
+
+  Our approach is complementary to existing work in constrained decoding. The bijection proposed in Eq.~\ref{eq:pairing} guarantees that all repairs are well-formed and converge linearly to the exact top-k maximum likelihood samples. This method is completely stateless and can be used to enumerate a bounded Levenshtein ball with linear parallelization speedup. Alternately, in the case of approximate ranked repair over a very large sample space, this technique can be adapted to sample with high probability a representative subset of the most likely sentences in a finite but large PCFG.
 
   \subsection{Neural program repair}
 
