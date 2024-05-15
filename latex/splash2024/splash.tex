@@ -1009,49 +1009,87 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 %       \pder{s}{o} & \pder{s}{r} & \pder{s}{s}
 %    \end{pmatrix}
     \hspace{-0.1cm}\begin{minipage}[r]{4cm}
-                     \scalebox{0.8}{\begin{tikzpicture}
-                                      \clip (-3,-2.5) rectangle (3,2.5);
-                                      \begin{scope}[tdplot_main_coords]
-                                        \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                                        \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                                        \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
-                                        \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
-                                          \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
-                                            \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
-                                            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                                            \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                                            \ifshowcellnumber
-                                            \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
-                                            \fi
-                                            \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
-                                            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                                            \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                                            \ifshowcellnumber
-                                            \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
-                                            \fi
-                                            \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
-                                            \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
-                                            \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
-                                            \ifshowcellnumber
-                                            \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
-                                            \fi
-                                          }
-                                        }
-                                        \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
-                                        (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
-                                        \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-                                        (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_z$};
-                                        \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
-                                        (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
-                                      \end{scope}
-                     \end{tikzpicture}}
+       \scalebox{0.8}{\begin{tikzpicture}
+          \clip (-3,-2.5) rectangle (3,2.5);
+          \begin{scope}[tdplot_main_coords]
+            \filldraw [canvas is yz plane at x=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \filldraw [canvas is xz plane at y=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \filldraw [canvas is yx plane at z=1.5] (-1.5,-1.5) rectangle (1.5,1.5);
+            \foreach \X [count=\XX starting from 0] in {-1.5,-0.5,0.5}{
+              \foreach \Y [count=\YY starting from 0] in {-1.5,-0.5,0.5}{
+                \pgfmathtruncatemacro{\Z}{\XX+3*(2-\YY)}
+                \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                \draw [thick,canvas is yz plane at x=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                \ifshowcellnumber
+                \node[canvas is yz plane at x=1.5,shift={(\X+0.5,\Y+0.5)}] {\Z};
+                \fi
+                \pgfmathtruncatemacro{\Z}{2-\XX+3*(2-\YY)+9}
+                \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                \draw [thick,canvas is xz plane at y=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                \ifshowcellnumber
+                \node[canvas is xz plane at y=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1] {\Z};
+                \fi
+                \pgfmathtruncatemacro{\Z}{2-\YY+3*\XX+18}
+                \pgfmathsetmacro{\mycolor}{\myarray[\Z]}
+                \draw [thick,canvas is yx plane at z=1.5,shift={(\X,\Y)},fill=\mycolor] (0.5,0) -- ({1-\radius},0) arc (-90:0:\radius) -- (1,{1-\radius}) arc (0:90:\radius) -- (\radius,1) arc (90:180:\radius) -- (0,\radius) arc (180:270:\radius) -- cycle;
+                \ifshowcellnumber
+                \node[canvas is yx plane at z=1.5,shift={(\X+0.5,\Y+0.5)},xscale=-1,rotate=-90] {\Z};
+                \fi
+              }
+            }
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt,mirror},yshift=0pt, line width=1.25pt]
+            (3,0) -- (3,3) node [black,midway,xshift=-8pt, yshift=-14pt] {\footnotesize $V_x$};
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+            (3,0) -- (0,-3) node [black,midway,xshift=-16pt, yshift=0pt] {\footnotesize $V_z$};
+            \draw [decorate,decoration={calligraphic brace,amplitude=10pt},yshift=0pt, line width=1.25pt]
+            (0,-3) -- (-3,-3) node [black,midway,xshift=-8pt, yshift=14pt] {\footnotesize $V_w$};
+          \end{scope}
+       \end{tikzpicture}}
     \end{minipage}
     \caption{CFGs are hypergraphs witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions.\vspace{-10pt}}
   \end{wrapfigure}
 
-  In the distributional setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ equal probability as sampling the PCFG from the top-down. A key issue with this approach is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
+  In the distributional setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ equal probability as sampling the PCFG from the top, down. A key issue with this approach is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
 
    A more suitable decoding method is possible by considering a related technique called cube-pruning~\cite{huang2005better} that operates over hypergraphs, which are equiexpressive with both CFGs and ADTs. If we consider the PCFG in CNF, each production corresponds to a weighted hyperedge with at most two neighbors. While strictly more expressive than necessary to represent finite languages, cube pruning over context-free hypergraphs is capable of decoding top-k lists far more efficiently than k-longest paths over a WA. A further advantage of this representation is that we can decode likely subpaths from $\mathbb{T}_2$ directly, without translating it to a weighted automaton, minimizing, renormalizing transition weights, and then solving for the top-k best paths. The disadvantage however, is that CFGs are not as algebraically well-behaved, lacking the closure and decidability benefits of WAs under intersection.
+
+  The question then becomes how to efficiently decode the top-k most likely repairs from a PCFG in CNF. Here, we propose a simple method that extracts the production from the intersection grammar $G_\cap$, scores subtrees, then returns the top-k most likely repairs.
+
+ For every nonterminal in the intersection grammar $qvq' \in V_\cap$, we have $v \in V$. Since we do not use a weighted NFA, we may ignore the states $q, q'$ and treat every intersection nonterminal as the original nonterminal from the PCFG. By avoiding the NFA states, this simplifies the probability table. Let's consider a few illustrative examples using . We use upper case to denote a generic nonterminal, and lower case to denote its concrete instantiation:
+
+  \begin{table}[h!]
+
+    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+        \node[obs] (z) {$W$};%
+        \node[latent,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+        \node[latent,below=of z,xshift=1cm] (y) {$Z$}; %
+        \edge {z} {x,y}
+      \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(W\rightarrow XZ) &= P\big((pwr) \rightarrow (pxq)(qzr)\big) \\ &= P(X=x, Z=z \mid W=w)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{x', z'}P(X=x', Z=z' \mid W)} \end{align*}\end{minipage}
+  \end{table}
+
+Likewise, we can perform this same computation with higher-order dependencies, where $W$ stands for a generic grandparent, and $X, Z$ being the generic parent and pibling:
+
+  \begin{table}[h!]
+    \begin{minipage}{4cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+       \node[obs] (z) {$W$};%
+       \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+       \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
+       \node[latent,below=of x,xshift=-1cm] (r) {$R$}; %
+       \node[latent,below=of x,xshift=1cm] (t) {$T$}; %
+       \edge {z} {x,y}
+       \edge {x} {r,t}
+    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow RT \mid W\rightarrow XZ) &= P(R=r, T=t \mid W, X, Z)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{r', t'}P(R=r', T=t' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
+  \begin{table}[h!]
+    \begin{minipage}{4cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+                           \node[obs] (z) {$W$};%
+                           \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+                           \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
+                           \node[latent,below=of x,xshift=1cm] (u) {$U$}; %
+                           \node[latent,below=of x,xshift=3cm] (v) {$V$}; %
+                           \edge {z} {x,y}
+                           \edge {y} {u,v}
+    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(Z\rightarrow UV \mid W\rightarrow XZ) &= P(U=u, V=v \mid W, X, Z)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{r', t'}P(U=u', V=v' \mid W, X, Z)} \end{align*}\end{minipage}\\
+  \end{table}
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
