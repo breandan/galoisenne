@@ -1055,7 +1055,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   The question then becomes how to efficiently decode the top-k most likely repairs from a PCFG in CNF. Here, we propose a simple method that extracts the production from the intersection grammar $G_\cap$, scores subtrees, then returns the top-k most likely repairs.
 
- For every nonterminal in the intersection grammar $qvq' \in V_\cap$, we have $v \in V$. Since we do not use a weighted NFA, we may ignore the states $q, q'$ and treat every intersection nonterminal as the original nonterminal from the PCFG. By avoiding the NFA states, this simplifies the probability table. Let's consider a few illustrative examples using . We use upper case to denote a generic nonterminal, and lower case to denote its concrete instantiation:
+ For every nonterminal in the intersection grammar $qvq' \in V_\cap$, we have $v \in V$. Since we do not use a weighted NFA, we may ignore the states $q, q'$ and treat every intersection nonterminal as the original nonterminal from the PCFG. By avoiding the NFA states, this simplifies the conditional probability table. Let's consider a few illustrative examples using graphical model notation. We use upper case to denote a generic nonterminal, and lower case to denote its concrete instantiation, $P$ to denote the normalized probability and $C$ to denote the coincidence count of a tuple. We can compute the probability of a production $W\rightarrow XZ$ with $W$ observed as follows:
 
   \begin{table}[h!]
 
@@ -1064,31 +1064,34 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
         \node[latent,below=of z,xshift=-1cm,fill] (x) {$X$}; %
         \node[latent,below=of z,xshift=1cm] (y) {$Z$}; %
         \edge {z} {x,y}
-      \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(W\rightarrow XZ) &= P\big((pwr) \rightarrow (pxq)(qzr)\big) \\ &= P(X=x, Z=z \mid W=w)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{x', z'}P(X=x', Z=z' \mid W)} \end{align*}\end{minipage}
+      \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(W\rightarrow XZ) &= P\big((pwr) \rightarrow (pxq)(qzr)\big) \\ &= P(X=x, Z=z \mid W=w)\\ &= \frac{C(X=x, Z=z \mid W)}{\sum_{x', z'}C(X=x', Z=z' \mid W)} \end{align*}\end{minipage}
   \end{table}
 
-Likewise, we can perform this same computation with higher-order dependencies, where $W$ stands for a generic grandparent, and $X, Z$ being the generic parent and pibling:
+Likewise, we can perform this same computation with higher-order dependencies, where $W$ stands for a generic grandparent, $X, Z$ are the generic parent and pibling, and all three are observed:
 
   \begin{table}[h!]
-    \begin{minipage}{4cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
        \node[obs] (z) {$W$};%
        \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
        \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
-       \node[latent,below=of x,xshift=-1cm] (r) {$R$}; %
-       \node[latent,below=of x,xshift=1cm] (t) {$T$}; %
+       \node[latent,below=of x,xshift=-1cm] (k) {$K$}; %
+       \node[latent,below=of x,xshift=1cm] (l) {$L$}; %
        \edge {z} {x,y}
-       \edge {x} {r,t}
-    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow RT \mid W\rightarrow XZ) &= P(R=r, T=t \mid W, X, Z)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{r', t'}P(R=r', T=t' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
+       \edge {x} {k,l}
+    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow KL \mid W\rightarrow XZ) &= P\big((\cdot x \cdot) \rightarrow (\cdot k \cdot)(\cdot l \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(K=k, L=l \mid W, X, Z)\\ &= \frac{C(K=k, L=l \mid W, X, Z)}{\sum_{k', l'}C(K=k', L=l' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
+
+  Since the parent can be a left- or right-sibling, we also consider a symmetric case:
+
   \begin{table}[h!]
-    \begin{minipage}{4cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
-                           \node[obs] (z) {$W$};%
-                           \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
-                           \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
-                           \node[latent,below=of x,xshift=1cm] (u) {$U$}; %
-                           \node[latent,below=of x,xshift=3cm] (v) {$V$}; %
-                           \edge {z} {x,y}
-                           \edge {y} {u,v}
-    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(Z\rightarrow UV \mid W\rightarrow XZ) &= P(U=u, V=v \mid W, X, Z)\\ &= \frac{P(W=w, X=x, Z=z)}{\sum_{r', t'}P(U=u', V=v' \mid W, X, Z)} \end{align*}\end{minipage}\\
+    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+        \node[obs] (z) {$W$};%
+        \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+        \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
+        \node[latent,below=of x,xshift=1cm] (m) {$M$}; %
+        \node[latent,below=of x,xshift=3cm] (n) {$N$}; %
+        \edge {z} {x,y}
+        \edge {y} {m,n}
+    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(Z\rightarrow MN \mid W\rightarrow XZ) &= P\big((\cdot z \cdot) \rightarrow (\cdot m \cdot)(\cdot n \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(M=m, N=n \mid W, X, Z)\\ &= \frac{C(M=m, N=n \mid W, X, Z)}{\sum_{m', n'}C(M=m', N=n' \mid W, X, Z)} \end{align*}\end{minipage}\\
   \end{table}
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
