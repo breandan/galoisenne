@@ -44,6 +44,13 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       .reduce { acc, it -> acc + it }
   }
 
+  val ranges: List<Pair<BigInteger, BigInteger>> by lazy {
+    if (branches.isEmpty()) listOf(BigInteger.ZERO to BigInteger.ONE)
+    else branches.map { (l, r) -> l.totalTrees + r.totalTrees }
+      .fold(listOf(BigInteger.ZERO)) { acc, it -> acc + (acc.last() + it) }
+      .windowed(2) { (a, b) -> a to b - 1 }
+  }
+
   // e.g., if we want to prioritize shorter strings we can sort by total epsilons
   val numEpsilons: BigInteger by lazy {
     if (branches.isEmpty()) if (root == "ε") BigInteger.ONE else BigInteger.ZERO
@@ -65,7 +72,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     either: (T?, T?) -> T?,
     unit: (PTree) -> T?
   ): T? =
-    if (branches.isEmpty()) if("ε" in root) null else unit(this)
+    if (branches.isEmpty()) if ("ε" in root) null else unit(this)
     else branches.map { (l, r) ->
       both(l.propagator(both, either, unit), r.propagator(both, either, unit))
     }.reduce { acc, t -> either(acc, t) }
@@ -88,25 +95,51 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   fun choose(): Sequence<String> = choice.asSequence()
 
+  private fun newDecoder(i: BigInteger): String {
+    if (branches.isEmpty()) return epsStr
+//    println("Decoding $i")
+//    println(ranges.first().first)
+//    println(ranges.last().first)
+    val t =
+      if (i < ranges.first().first) 0
+      else if (i > ranges.last().first) branches.size - 1
+      else ranges.indexOfFirst { it.first <= i && i <= it.second }
+    val (l, r) = branches[t]
+    val range = l.totalTrees * r.totalTrees
+    val mod = i mod range
+//    val q = i - ranges[t].first
+//    val ratio = (l.totalTrees * 10000) / r.totalTrees
+//    val iLeft = (mod * ratio) / 10000
+//    val iRight = i - numLeft
+//    val (iLeft, iRight) = q.divrem(r.totalTrees)
+    val iLeft = mod
+    val iRight = range - mod
+//    val (iLeft, iRight) = mod.divrem(r.totalTrees)
+
+    val left = l.newDecoder(iLeft)
+    val right = r.newDecoder(iRight)
+    return if (left.isEmpty()) right else if (right.isEmpty()) left else "$left $right"
+  }
+
   // Average time: 436.96ms, total time 43696.959ms (testRandomCFG)
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
-    if (branches.isEmpty()) return (epsStr) to i
+    if (branches.isEmpty()) return epsStr to i
     val (quotient1, remainder) = i.divrem(branches.size.toBigInteger())
     val (lb, rb) = shuffledBranches[remainder.intValue()]
     val (l, quotient2) = lb.decodeString(quotient1)
     val (r, quotient3) = rb.decodeString(quotient2)
-    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
+    val concat = (if (l.isEmpty()) r else if (r.isEmpty()) l else "$l $r")
     return concat to quotient3
   }
 
   // Average time: 328.99ms, total time 32899.708ms (testRandomCFG)
   private fun decodeStringFast(i: Long): Pair<String, Long> {
-    if (branches.isEmpty()) return (epsStr) to i
+    if (branches.isEmpty()) return epsStr to i
     val (quotient1, remainder) = i / branches.size.toLong() to (i % branches.size.toLong())
     val (lb, rb) = shuffledBranches[remainder.toInt()]
     val (l, quotient2) = lb.decodeStringFast(quotient1)
     val (r, quotient3) = rb.decodeStringFast(quotient2)
-    val concat = (if(l.isEmpty()) r else if(r.isEmpty()) l else "$l $r")
+    val concat = (if (l.isEmpty()) r else if (r.isEmpty()) l else "$l $r")
     return concat to quotient3
   }
 
@@ -130,6 +163,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     sequence {
       var i = BigInteger.ZERO
       while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
+//      while (i < 9 * totalTrees) yield(newDecoder(i++ * stride + offset))
     }
 
   fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =

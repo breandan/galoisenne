@@ -71,8 +71,10 @@ class WFSATest {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 1
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
-    val repairs = pt.sampleStrWithoutReplacement().distinct().take(100).toSet()
-    println("Found ${repairs.size} repairs by enumerating PTree")
+    println(pt.totalTrees.toString())
+    val maxResults = 10_000
+    val repairs = pt.sampleStrWithoutReplacement()
+      .distinct().take(maxResults).toSet()
     measureTimedValue {
       pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
@@ -85,17 +87,46 @@ class WFSATest {
             addTransition(s1, s2, a.root, 1.0)
           }
         }
-      )?.also { println("\n" + Operations.determinizeER(it).toDot().alsoCopy() + "\n") }
-        .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
-       .let { Automata.bestStrings(it, 1000).map { it.label.joinToString(" ") }.toSet() }
+      )
+//        ?.also { println("\n" + Operations.determinizeER(it).toDot().alsoCopy() + "\n") }
+//        .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
+        .let { Automata.bestStrings(it, maxResults).map { it.label.joinToString(" ") }.toSet() }
     }.also {
-      println("Found ${it.value.size} repairs by decoding WFSA")
-      assertEquals(it.value, repairs)
+      println("Found ${it.value.size} unique repairs by decoding WFSA")
+      println("Found ${repairs.size} unique repairs by enumerating PTree")
+
+//      // Print side by side comparison of repairs
+//      repairs.sorted().forEach {
+//        val a = it
+//        val b = if (it in repairs) it else ""
+//        val colorA = levenshteinAlign(toRepair, a).paintANSIColors()
+//        val colorB = if (b.isEmpty()) "" else levenshteinAlign(toRepair, b).paintANSIColors()
+//        println("$colorA\n$colorB\n")
+//      }
+
+      assertEquals(it.value.size, repairs.size)
       it.value.forEach {
         println(levenshteinAlign(toRepair, it).paintANSIColors())
         assertTrue(levenshtein(toRepair, it) <= radius)
         assertTrue(it in Grammars.seq2parsePythonCFG.language)
       }
     }.also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testBijection"
+*/
+  @Test
+  fun testBijection() {
+    val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME ( STRING ) NEWLINE"
+    val radius = 2
+    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
+    println(pt.totalTrees.toString())
+    val maxResults = 10_000
+    val repairs = pt.sampleStrWithoutReplacement().take(maxResults).toList()
+    println("Found ${repairs.size} total repairs by enumerating PTree")
+    val distinct = repairs.toSet().size
+    // Why so many duplicates? A true bijection should have no duplicates
+    println("Found $distinct unique repairs by enumerating PTree")
   }
 }

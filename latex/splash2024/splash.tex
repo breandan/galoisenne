@@ -208,7 +208,7 @@ First, we generate a synthetic grammar representing the intersection between the
           \node (start) [startstop, draw=none];
           \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
           \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
-          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[PHO]CFG};
+          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
           \node [above=0.07cm of pcfg, xshift=1cm] {(\S~\ref{sec:prelim})};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
           \node [above=0.07cm of lnfa, xshift=1cm] {(\S~\ref{sec:lev_nfa})};
@@ -806,7 +806,7 @@ First, we generate a synthetic grammar representing the intersection between the
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
   \end{equation}
 
-  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and compute the fixpoint for each slice.
+  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and compute the fixpoint for each slice.
 
   Given a porous string $\sigma: \underline\Sigma^n$ representing the slice, we can construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
@@ -1080,7 +1080,7 @@ Likewise, we can perform this same computation with higher-order dependencies, w
        \edge {x} {k,l}
     \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow KL \mid W\rightarrow XZ) &= P\big((\cdot x \cdot) \rightarrow (\cdot k \cdot)(\cdot l \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(K=k, L=l \mid W, X, Z)\\ &= \frac{C(K=k, L=l \mid W, X, Z)}{\sum_{k', l'}C(K=k', L=l' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
 
-  Since the parent can be a left- or right-sibling, we also consider a symmetric case:
+  Since the parent can be a left- or right-sibling, we should also consider the symmetric case:
 
   \begin{table}[h!]
     \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}

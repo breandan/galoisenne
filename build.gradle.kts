@@ -10,7 +10,7 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.0.0-RC3"
+  kotlin("multiplatform") version "2.0.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-2"
