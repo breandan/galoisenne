@@ -46,7 +46,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   val ranges: List<Pair<BigInteger, BigInteger>> by lazy {
     if (branches.isEmpty()) listOf(BigInteger.ZERO to BigInteger.ONE)
-    else branches.map { (l, r) -> l.totalTrees + r.totalTrees }
+    else branches.map { (l, r) -> l.totalTrees * r.totalTrees }
       .fold(listOf(BigInteger.ZERO)) { acc, it -> acc + (acc.last() + it) }
       .windowed(2) { (a, b) -> a to b - 1 }
   }
@@ -97,25 +97,10 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 
   private fun newDecoder(i: BigInteger): String {
     if (branches.isEmpty()) return epsStr
-//    println("Decoding $i")
-//    println(ranges.first().first)
-//    println(ranges.last().first)
-    val t =
-      if (i < ranges.first().first) 0
-      else if (i > ranges.last().first) branches.size - 1
-      else ranges.indexOfFirst { it.first <= i && i <= it.second }
+    val t = ranges.indexOfFirst { it.first <= i && i <= it.second }
     val (l, r) = branches[t]
-    val range = l.totalTrees * r.totalTrees
-    val mod = i mod range
-//    val q = i - ranges[t].first
-//    val ratio = (l.totalTrees * 10000) / r.totalTrees
-//    val iLeft = (mod * ratio) / 10000
-//    val iRight = i - numLeft
-//    val (iLeft, iRight) = q.divrem(r.totalTrees)
-    val iLeft = mod
-    val iRight = range - mod
-//    val (iLeft, iRight) = mod.divrem(r.totalTrees)
-
+    val q = i - ranges[t].first
+    val (iLeft, iRight) = q.divrem(r.totalTrees)
     val left = l.newDecoder(iLeft)
     val right = r.newDecoder(iRight)
     return if (left.isEmpty()) right else if (right.isEmpty()) left else "$left $right"
@@ -160,10 +145,16 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun sampleStrWithoutReplacement(stride: Int = 1, offset: Int = 0): Sequence<String> =
-    sequence {
+    if (BigInteger(Int.MAX_VALUE) < totalTrees) // Uses LFSR to shuffle the sequence online
+      randomSequenceWithoutRepetition(0..totalTrees.intValue(false))
+        .mapIndexedNotNull { index, i -> if (index % stride == offset) newDecoder(i.toBigInteger()) else null }
+//        .map { newDecoder(it.toBigInteger() * stride + offset) }
+    else sequence {
       var i = BigInteger.ZERO
-      while (i < 9 * totalTrees) yield(decodeString(i++ * stride + offset).first)
-//      while (i < 9 * totalTrees) yield(newDecoder(i++ * stride + offset))
+      while (i < totalTrees) {
+        if (i % stride.toBigInteger() == offset.toBigInteger()) yield(newDecoder(i))
+        i++
+      }
     }
 
   fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =

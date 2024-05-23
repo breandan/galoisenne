@@ -69,7 +69,7 @@ class WFSATest {
   @Test
   fun testPTreeVsWFSA() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
-    val radius = 1
+    val radius = 2
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
     println(pt.totalTrees.toString())
     val maxResults = 10_000
@@ -92,9 +92,6 @@ class WFSATest {
 //        .also { println("Total: ${Automata.transitions(it).size} arcs, ${Automata.states(it).size}") }
         .let { Automata.bestStrings(it, maxResults).map { it.label.joinToString(" ") }.toSet() }
     }.also {
-      println("Found ${it.value.size} unique repairs by decoding WFSA")
-      println("Found ${repairs.size} unique repairs by enumerating PTree")
-
 //      // Print side by side comparison of repairs
 //      repairs.sorted().forEach {
 //        val a = it
@@ -104,12 +101,16 @@ class WFSATest {
 //        println("$colorA\n$colorB\n")
 //      }
 
-      assertEquals(it.value.size, repairs.size)
+      assertEquals(it.value, repairs)
+
       it.value.forEach {
         println(levenshteinAlign(toRepair, it).paintANSIColors())
         assertTrue(levenshtein(toRepair, it) <= radius)
         assertTrue(it in Grammars.seq2parsePythonCFG.language)
       }
+
+      println("Found ${it.value.size} unique repairs by decoding WFSA")
+      println("Found ${repairs.size} unique repairs by enumerating PTree")
     }.also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
   }
 
