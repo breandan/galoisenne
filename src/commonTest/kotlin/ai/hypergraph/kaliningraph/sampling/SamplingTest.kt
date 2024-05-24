@@ -94,4 +94,21 @@ class SamplingTest {
       .also { assertEquals(totalKCombinations * totalTuples, it.size) }
       .also { assertEquals(it, it.distinct()) }
   }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testBigIntegerLFSR"
+*/
+
+  @Test
+  fun testBigIntegerLFSR() {
+    val lfsr = bigLFSRSequence(9295)
+    val list = lfsr.toList()
+    val distinct = list.distinct()
+    println("Total: ${list.size}")
+    println("Distinct: ${distinct.size}")
+    assertEquals(list.size, distinct.size)
+//    println("5: ${list.size + 1} / ${2.0.pow(5).toInt()}")
+//    assertEquals(2.0.pow(5).toInt(), list.size + 1)
+//    assertEquals(2.0.pow(5).toInt(), distinct.size + 1)
+  }
 }

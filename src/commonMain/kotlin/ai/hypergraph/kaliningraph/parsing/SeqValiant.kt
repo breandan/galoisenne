@@ -7,7 +7,7 @@ import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
 import kotlin.jvm.JvmName
-import kotlin.random.Random
+import kotlin.random.*
 import kotlin.time.measureTimedValue
 
 
@@ -145,17 +145,8 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun sampleStrWithoutReplacement(stride: Int = 1, offset: Int = 0): Sequence<String> =
-    if (BigInteger(Int.MAX_VALUE) < totalTrees) // Uses LFSR to shuffle the sequence online
-      randomSequenceWithoutRepetition(0..totalTrees.intValue(false))
-        .mapIndexedNotNull { index, i -> if (index % stride == offset) newDecoder(i.toBigInteger()) else null }
-//        .map { newDecoder(it.toBigInteger() * stride + offset) }
-    else sequence {
-      var i = BigInteger.ZERO
-      while (i < totalTrees) {
-        if (i % stride.toBigInteger() == offset.toBigInteger()) yield(newDecoder(i))
-        i++
-      }
-    }
+    bigLFSRSequence(totalTrees)
+      .mapIndexedNotNull { index, i -> if (index % stride == offset) newDecoder(i) else null }
 
   fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG5(pcfgTable)) }

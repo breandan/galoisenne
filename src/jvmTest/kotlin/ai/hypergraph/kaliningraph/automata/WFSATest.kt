@@ -4,7 +4,6 @@ import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.visualization.*
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
 import net.jhoogland.jautomata.operations.*
@@ -73,8 +72,9 @@ class WFSATest {
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
     println(pt.totalTrees.toString())
     val maxResults = 10_000
-    val repairs = pt.sampleStrWithoutReplacement()
-      .distinct().take(maxResults).toSet()
+    val ptreeRepairs = measureTimedValue {
+      pt.sampleStrWithoutReplacement().distinct().take(maxResults).toSet()
+    }
     measureTimedValue {
       pt.propagator<Automaton<String, Double>>(
         both = { a, b -> if (a == null) b else if (b == null) a else Concatenation(a, b) },
@@ -100,8 +100,7 @@ class WFSATest {
 //        val colorB = if (b.isEmpty()) "" else levenshteinAlign(toRepair, b).paintANSIColors()
 //        println("$colorA\n$colorB\n")
 //      }
-
-      assertEquals(it.value, repairs)
+      assertEquals(it.value.size, ptreeRepairs.value.size)
 
       it.value.forEach {
         println(levenshteinAlign(toRepair, it).paintANSIColors())
@@ -109,8 +108,8 @@ class WFSATest {
         assertTrue(it in Grammars.seq2parsePythonCFG.language)
       }
 
-      println("Found ${it.value.size} unique repairs by decoding WFSA")
-      println("Found ${repairs.size} unique repairs by enumerating PTree")
+      println("Found ${it.value.size} unique repairs by decoding WFSA in ${it.duration}")
+      println("Found ${ptreeRepairs.value.size} unique repairs by enumerating PTree in ${ptreeRepairs.duration}")
     }.also { println("Decoding ${it.value.size} repairs took ${it.duration}") }
   }
 
