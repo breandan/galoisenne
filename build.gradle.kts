@@ -116,13 +116,13 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:23.0.3")
+        implementation("org.graalvm.js:js:23.0.4")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.0-rc1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.0")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.2")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.2")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -152,7 +152,7 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
-        implementation("org.logicng:logicng:2.4.1")
+        implementation("org.logicng:logicng:2.5.0")
 
         val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
@@ -162,11 +162,6 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        // Property-based testing
-        val kotestVersion = "5.5.5" // Unable to update?
-        implementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-        implementation("io.kotest:kotest-assertions-core:$kotestVersion")
-        implementation("io.kotest:kotest-property:$kotestVersion")
         implementation("org.junit.jupiter:junit-jupiter:5.10.2")
 
         implementation("junit:junit:4.13.2")
@@ -207,7 +202,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0-RC.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
       }
     }
   }

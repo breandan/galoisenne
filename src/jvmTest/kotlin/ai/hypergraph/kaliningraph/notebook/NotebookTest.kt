@@ -4,6 +4,7 @@ package ai.hypergraph.kaliningraph.notebook
 //import org.intellij.lang.annotations.Language
 //import org.jetbrains.kotlinx.jupyter.testkit.JupyterReplTestCase
 //import org.junit.jupiter.api.Test
+//import kotlin.test.*
 //
 ///*
 //./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.notebook.RenderingTests"
@@ -15,7 +16,7 @@ package ai.hypergraph.kaliningraph.notebook
 //    val html = execHtml(
 //      """LabeledGraph { a - b - c - a }""".trimIndent()
 //    )
-//    html shouldContain "polygon"
+//    assertTrue("polygon" in html)
 //  }
 //
 //  @Test
@@ -24,7 +25,7 @@ package ai.hypergraph.kaliningraph.notebook
 //    val html = execHtml(
 //      """LabeledGraph { a - b - c - a - d - c }.A""".trimIndent()
 //    )
-//    html shouldContain "data:image/bmp;base64,"
+//    assertTrue("data:image/bmp;base64," in html)
 //  }
 //
 //  @Test
@@ -33,6 +34,6 @@ package ai.hypergraph.kaliningraph.notebook
 //    val html = execHtml(
 //      """randomMatrix(200, 200)""".trimIndent()
 //    )
-//    html shouldContain "data:image/bmp;base64,"
+//    assertTrue("data:image/bmp;base64," in html)
 //  }
 //}
