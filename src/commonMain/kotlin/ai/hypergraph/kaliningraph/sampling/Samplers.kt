@@ -297,7 +297,7 @@ class BigLFSR(primitivePoly: BigInteger, val start: BigInteger = BigInteger.ONE)
       val shiftedOutA1: Boolean = last.bitAt(0)
       next = last.shr(1)
       if (shiftedOutA1) { next = next.xor(taps) }
-      if (next == start) break else yield(next)
+      if (next == start) { yield(BigInteger.ZERO); break } else yield(next)
       last = next
     }
   }

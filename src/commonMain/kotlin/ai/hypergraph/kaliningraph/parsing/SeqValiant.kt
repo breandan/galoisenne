@@ -145,11 +145,12 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     }
 
   fun sampleStrWithoutReplacement(stride: Int = 1, offset: Int = 0): Sequence<String> =
-    if (totalTrees.bitLength() < 5) sequence {
+    if (6 < totalTrees.bitLength())
+      bigLFSRSequence(totalTrees).mapIndexedNotNull { index, i -> if (index % stride == offset) newDecoder(i) else null }
+    else sequence {
       var i = BigInteger.ZERO
       while (i < totalTrees) { yield(newDecoder(i)); i++}
-    } else bigLFSRSequence(totalTrees)
-      .mapIndexedNotNull { index, i -> if (index % stride == offset) newDecoder(i) else null }
+    }
 
   fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG5(pcfgTable)) }
