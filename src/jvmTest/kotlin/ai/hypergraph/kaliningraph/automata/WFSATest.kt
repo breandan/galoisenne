@@ -103,7 +103,7 @@ class WFSATest {
       assertEquals(it.value.size, ptreeRepairs.value.size)
 
       it.value.forEach {
-        println(levenshteinAlign(toRepair, it).paintANSIColors())
+//        println(levenshteinAlign(toRepair, it).paintANSIColors())
         assertTrue(levenshtein(toRepair, it) <= radius)
         assertTrue(it in Grammars.seq2parsePythonCFG.language)
       }
