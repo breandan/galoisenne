@@ -258,7 +258,7 @@ val testDurations = mutableListOf<TestDuration>()
 
 tasks {
   withType<KotlinCompile> {
-    compilerOptions.jvmTarget = JvmTarget.JVM_17
+    compilerOptions.jvmTarget = JvmTarget.JVM_21
   }
 
   withType<Test> {
