@@ -147,12 +147,13 @@ class BarHillelTest {
     val origStr = "T and ! ( F )"
     val levCFG = arithCFGNoEps.intersectLevFSA(makeLevFSA(origStr, 1))
 
-    val lbhSet = levCFG.toPTree().sampleStrWithoutReplacement().toSet()//.onEach { println(it) }
+    val lbhSet = levCFG.toPTree().sampleStrWithoutReplacement().toSet()
+      .onEach { println(levenshteinAlign(it, origStr).paintANSIColors()) }
       .also { println("Found ${it.size} solutions using Levenshtein/Bar-Hillel") }
 
     val efset = arithCFG.solveSeq(List(8) { "_" }).toList()
       .filter { levenshtein(it, origStr) < 2 }.toSet()
-//      .onEach { println(it) }
+      .onEach { println(levenshteinAlign(it, origStr).paintANSIColors()) }
       .also { println("Found ${it.size} solutions using enumerative filtering") }
 
     assertEquals(lbhSet, efset, "Levenshtein/Bar-Hillel and enumerative filtering should return the same solutions")
