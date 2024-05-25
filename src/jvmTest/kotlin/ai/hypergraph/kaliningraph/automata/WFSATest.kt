@@ -126,7 +126,6 @@ class WFSATest {
     val repairs = pt.sampleStrWithoutReplacement().take(maxResults).toList()
     println("Found ${repairs.size} total repairs by enumerating PTree")
     val distinct = repairs.toSet().size
-    // Why so many duplicates? A true bijection should have no duplicates
     println("Found $distinct unique repairs by enumerating PTree")
   }
 }
