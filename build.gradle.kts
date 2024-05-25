@@ -166,7 +166,7 @@ kotlin {
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:24.1.0")
-        implementation("org.slf4j:slf4j-simple:2.0.9")
+        implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
         // implementation(files("$projectDir/libs/grez.jar"))
