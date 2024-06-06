@@ -1,0 +1,168 @@
+OOPSLA 2024 Paper #570 Reviews and Comments
+===========================================================================
+Paper #570 Syntax Repair as Language Intersection
+
+
+Review #570A
+===========================================================================
+
+Overall Merit
+-------------
+2. reject - will argue to reject
+
+Reviewer Expertise
+------------------
+X. Expert
+
+Paper Summary
+-------------
+This paper presents Tidyparse, a method for addressing syntax errors. Tidyparse initially generates a set of potential repairs by sampling from the intersection language of the context-free grammar and the Levenshtein automaton. Subsequently, these repairs are ranked based on n-gram likelihood. During the sampling process, Tidyparse constructs a data structure using idempotent matrix completion to reduce the size of the intersection grammar.
+
+Comments for the Authors
+------------------------
+The paper is well-written, targeting an important problem with an interpretable algorithm (in contrast to uninterpretable machine learning).
+
+However, this paper has the following significant drawbacks.
+
+First, in terms of non-machine-learning approaches, the paper discusses only very old approaches [25,2], and misses almost all related papers within the past 50 years [a-h]. In particular, the newest paper [h] proposes an algorithm to find the syntactically and type correct repair with the smallest Levenshtein distance, and can be trivially extended to find top N repairs with the smallest Levenshtein distance, which is a stronger version of the problem that the core contribution of the paper tries to resolve.
+
+Second, the evaluation does not control the variables, and the comparison mixes different factors. Basically, several factors affect the quality of the repairs, especially (1) whether Levenshtain is used, or (2) what probabilistic model is used. However, the experiments only compare complex systems with many variables, and these two factors are never individually evaluated. As a result, it is not clear what factor contributes to the better performance of Tidyparse.
+
+Third, baselines are missing for the core contribution of the paper. The core contribution of this paper is an approximating algorithm that selects the repair with a small Levenshtain distance and the highest probability. However, the evaluation only reports the repair latency of Tidyparse, but does not compare this contribution with any baseline.
+At least the approaches in recent studies should be compared. For example, the above related work [h] could be a baseline. The beam search algorithm used in the neural network approaches could be another baseline (we can filter out the candidates whose Levenshtain distance is higher than the threshold). Also, the original Bar-Hillel construction should be compared.
+
+Fourth, the benchmark selection process imposes a significant threat to the validity of the result. The dataset used in the experiments only contains programs with repair Levenshtein distances of four or fewer, which may bias the results in favor of Tidyparse. Tidyparse is effective in handling cases with small Levenshtein distances. The dataset selection method employed seems to focus solely on experimental data that Tidyparse handles well, comprising approximately 60% of all programs in the original dataset. What about the performance on the remaining 40%?
+
+Minor issues:
+* One of the main contribution of this paper is the data structure to reduce the size of the intersection grammar, which involves computing $\Lambda^*(\{\_\}^i)$. However, computing $\Lambda^*(\{\_\}^i)$ seems to be computationally expensive, since it requires symbolically parsing all possible words within $\Lambda^*(\{\_\}^i)$. Alternatively, we can skip this computation and perform random sampling.
+It would be great if the paper could evaluate whether the benefit of computing Lambda^*({_^i}) always outperforms its cost.
+
+* It is surprising to see that using only a 5-gram model with Levenshtain distance could yield a very high Precision@1. It would be great if the paper could give some explanations on this issue.
+
+* Unclear points in the approach and the evaluation.
+  - In experiments, it is unclear how to determine the maximum Levenshtein distance for a sample. Given a program with syntax errors, what is the maximum Levenshtein distance to sample?
+
+  - In line 293, in the definition of Levenshtein-Parikh compatibility, $(\pi(v) ||\pi(q, q’))$ should be zero to ensure compatibility between the Lev-NFA and the context-free grammar. The distance between $\pi(v)$ and $\pi(\sigma[h..j])$ should be less than or equal to k-i, and the distance between $\pi(v)$ and the Lev-NFA should be zero.
+
+  - In line 404, the definition of $\mathbb{T}_3$ seems incorrect. To be consistent with its subsequent usage, $\mathbb{T}_3$ should be defined as $(N \cup \Sigma) \rightharpoonup 2^{\mathbb{T}_2}$.
+
+  - In line 420, "s" should be in $\underline{\Sigma}$ rather than $\underline{\Sigma}^n$.
+
+  - In Section 4.5, it is unclear whether $\mathbb{T}_2$ refers to the context-free grammar of the original programming language or the context-free grammar of the intersection language. It appears that when computing Parikh maps, $\mathbb{T}_2$ refers to the context-free grammar of the original programming language, and during the computation of the number of unique trees and sampling, $\mathbb{T}_2$ refers to the context-free grammar of the intersection language.
+
+  - Many symbols are used without description, such as $\mathbb{N}, p, a, \pi_1, \pi_2$.
+
+
+[a] K. Hammond and V. J. Rayward-Smith, “A survey on syntactic error
+recovery and repair,” Comput. Lang., vol. 9, no. 1, pp. 51–67, 1984.
+[b] C. N. Fischer and J. Mauney, “A simple, fast, and effective LL(1) error
+repair algorithm,” Acta Informatica, vol. 29, no. 2, pp. 109–120, 1992.
+[c] R. Corchuelo, J. A. Perez, A. R. Cort ´ es, and M. Toro, “Repairing ´
+syntax errors in LR parsers,” ACM Trans. Program. Lang. Syst.,
+vol. 24, no. 6, pp. 698–710, 2002.
+[d] G. V. Cormack, “An LR substring parser for noncorrecting syntax
+error recovery,” in SIGPLAN, 1989.
+[e] B. J. McKenzie, C. Yeatman, and L. D. Vere, “Error repair in shift-reduce
+parsers,” ACM Trans. Program. Lang. Syst., vol. 17, no. 4, pp. 672–689,
+1995.
+[f] I. Kim and K. Choe, “Error repair with validation in lr-based parsing,”
+ACM Trans. Program. Lang. Syst., vol. 23, no. 4, pp. 451–471, 2001.
+[g] L. Diekmann and L. Tratt, “Don’t Panic! Better, Fewer, Syntax Errors for
+LR Parsers”, in ECOOP, 2020.
+[h] W. Zhang, G. Wang, and et al., “OrdinalFix: Fixing Compilation Errors via
+Shortest-Path CFL Reachability,” in ASE, 2023.
+
+
+
+Review #570B
+===========================================================================
+
+Overall Merit
+-------------
+3. weak reject - lean negative, but will not argue to reject
+
+Reviewer Expertise
+------------------
+Y. Knowledgeable
+
+Paper Summary
+-------------
+Syntax repair is the process of correcting errors in the input when it fails conform to the specification with a minimal amount of data loss. Previous work attempts to find the closest correct input and guarantee correctness. However, it does not try to find all nearby corrections. While machine learning methods can be used they are difficult to train, and can go wrong, at worst, with no information on how to fix the model. Furthermore, they are incapable of representing languages at context-free level.
+
+This paper proposes to re-frame the problem of input repair as a language intersection problem between the Leveinshtein bounded language and the inner context-free language. The paper also proposes a new datastructure that can compactly describe syntax trees.
+
+The key idea is that many small scale repairs are constrained by the language specification to be small in number, authors call this meta-stable. The idea is, given a language $L$ and an invalid string $\sigma \in L^{C} $  find all strings reachable within d edits of $ \sigma $, and to do that the paper generates a grammar $L \cap L(\sigma, d)$  which is the intersection of Levenshtein automata extending $ d $  from $ \sigma $ and the given language with ranking information.
+
+The steps are to first generate a synthetic grammar, representing the intersection between the CFG and the Levenshtein automata near the input, then extract possible repairs, and then finally rank the repairs. For construction the intersection, the Bar-Hillel construction is used.
+
+The experimental evaluation consisted of trying to fix Python syntax errors. The comparison is made against two baselines seq2parse and Break-It-Fix-It. This consist of 20k naturally occurring Python errors and their corresponding human fixes. Comparisons were only made for 80 lexical tokens and under 5 edits.
+
+Tidyparse has highly competitive precision vs its competition.
+
+Comments for the Authors
+------------------------
+This is a great paper, and has a strongly formal approach to the problem of input repair, which is appreciated. While in the formal treatment, I have nothing to complain against, I note that the evaluation does not include comparisons with the standard techniques used in many parsers, for example, error correction in LR parsing (e.g. https://tratt.net/laurie/blog/2020/automatic_syntax_error_recovery.html) or ANTLR based error correction etc. This is important because the comparisons are all done in the deterministic grammar of Python which is not beyond LR. Finally, I would also have strongly preferred the error correcting Earley parser to be the baseline, or at least compared. This is a serious lack, which I hope gets rectified.
+
+Questions for the Authors
+-------------------------
+1. How does this algorithm compare against error correction in LR parsers and ANTLR error correction?
+2. How does the algorithm perform in highly non-deterministic grammars such as E = E + E | E - E | digit? (The abstract mentions arbitrary CFG).
+
+
+
+Review #570C
+===========================================================================
+
+Overall Merit
+-------------
+4. weak accept - lean positive, but will not argue to accept
+
+Reviewer Expertise
+------------------
+Z. Outsider
+
+Paper Summary
+-------------
+This paper introduces Tidyparse, a technique for correcting context-free
+language syntax errors. It models the problem as the intersection of a
+programming language's context-free grammar and a d degree Levenshtein
+automaton for a syntactically invalid string for that language.  The resulting
+grammar represents all valid strings within d edits of the invalid string.  It
+then samples, or, if the grammar is small enough, enumerates the grammar for
+repairs, reranking them by their naturalness measured by their likelihood under
+an n-gram model.
+
+The baselines for comparison are Seq2Parse and Break-It-Fix-It (BIFI). The
+dataset consists of Python data of 20,500 pairs of syntax errors and their
+corresponding fixes sourced from StackOverflow. Eyeballing Figure 5, Tidyparse
+looks to achieve a precision@1 of approximately 95% for identifying 1-edit
+repairs across various token lengths, compared to Seq2Parse's 35% and BIFI's
+25%. Tidyparse even surpasses BIFI's precision@20k, which is 65%. Tidyparse
+achieves this performance without requiring expensive pretraining or
+fine-tuning.
+
+Comments for the Authors
+------------------------
+TidyParse is a very interesting pipeline for building a tractable search space for syntactic repairs.
+
+Figures 5, 6, 8, 11, and 12 are not discussed in the text.
+
+Figure 5's obscures the comparison with the baselines:  it would be better if it were re-organised to devote a subfigure to each edit distance and unite TidyParse's result with each of the baselines at that edit distance, rather than forcing the reader to glance back and forth between the figures.
+
+Line 537 describes balancing the dataset by length and number of repairs. This introduces an unacknowledged threat to the external validity of the results.  It would have been interesting to see results that were uniformly sampled from entire data set from those shorter than 80 with fewer than 5 edits, in addition to, or perhaps in place of, the balanced results.
+
+The evaluation has two problems:
+
+1. k > 1 edit syntactic repairs are not well-motivated.  In playing with the excellent TidyParse demo, the single edit repairs were all good and yet I found none of the k > 1 to be convincing.  For example, the demo "repairs" 'if ( true ) + then' to '( true ) xor true', dropping the if.  It seems highly implausible to me that a developer typo-ed the 'if'.  This is, of course, my subjective assessment;  that said, the work would be stronger if the authors explicitly made the case for k > 1 edits.
+
+2. The inference cost (aka latency) of TidyParse deserves more attention than this single sentence: "The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta = 1$ to 2.7s for $\Delta = 3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.".  This implies TidyParse is an order magnitude solwer than the BIFI baseline.  In any case, the paper would be stronger if it included a "latency" comparison with both baselines and visualised these results in a table or figure.
+
+The timings reported in Figures 9 and 10 concern only TidyParse, and are undermined by the fact that it's not clear that k > 1 repairs are useful in practice.
+
+At line 683, the text states "we consider 30s a reasonable upper bound for repair latency".  It strains credulity to assume that many developers would be willing to wait anywhere near this long for a syntactic repair.
+
+Questions for the Authors
+-------------------------
+1. What evidence can you provide that syntactic repairs that require more than a single edit are useful?
+
+2. Can you quantify exactly how much slower TidyParse is than the baselines on k > 1 repairs?
