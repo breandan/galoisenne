@@ -806,7 +806,7 @@ First, we generate a synthetic grammar representing the intersection between the
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
   \end{equation}
 
-  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and compute the fixpoint for each slice.
+  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and solve the fixpoint for each slice $n \in [2, n]$.
 
   Given a porous string $\sigma: \underline\Sigma^n$ representing the slice, we can construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
