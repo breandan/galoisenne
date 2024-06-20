@@ -121,7 +121,7 @@ kotlin {
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.2")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.3")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.2")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
