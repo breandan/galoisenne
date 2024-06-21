@@ -38,3 +38,6 @@ build
 temp*.svg
 kotlin-js-store
 *.cf
+*.auxlock
+*.dpth
+*.md5

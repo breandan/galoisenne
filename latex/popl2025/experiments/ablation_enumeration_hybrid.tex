@@ -1,0 +1,27 @@
+\begin{tikzpicture}[scale=0.9]
+  \begin{axis}[
+  ybar,
+  xlabel={$\Delta(\err\sigma, \sigma)$},
+  ylabel={Precision@1},
+  title={Hybrid},
+  axis x line*=bottom,
+  axis y line*=left,
+  ymin=0,
+  ymax=1,
+  xtick=data,
+  xticklabels={1, 2, 3, 4},
+  width=5cm,
+  height=4cm,
+  enlarge x limits=0.15,
+  legend style={at={(0.5,-0.15)},
+  anchor=north,legend columns=-1},
+  ]
+  \addplot[fill=black!30] table[x=Lev, y=P@1] {
+    Lev P@1
+    1 0.98
+    2 0.66
+    3 0.42
+    4 0.35
+  };
+  \end{axis}
+\end{tikzpicture}
