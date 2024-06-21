@@ -119,7 +119,7 @@ open class MarkovChain<T>(
   val dists: LRUCache<List<Int>, Dist> = LRUCache()
 
   // Computes perplexity of a sequence normalized by sequence length (lower is better)
-  fun score(seq: List<T>): Double =
+  fun score(seq: List<T?>): Double =
     if (memory < seq.size) -seq.windowed(memory)
       .map { (getAtLeastOne(it) + 1) / (getAtLeastOne(it.dropLast(1) + null) + dictionary.size) }
       .sumOf { ln(it) } / seq.size
@@ -257,14 +257,21 @@ open class MarkovChain<T>(
       var total = 0L
       lines.map { it.substringBefore(CSVSEP).split(" ") to it.substringAfter(CSVSEP).toLong() }
         .forEach { (ngram, count) ->
-          total += count
-          nrmCounts.update(ngram, count)
+          val padding = List(memory - 1) { null }
+          val windows = (padding + ngram + padding).windowed(memory, 1)
+          total += count * windows.size
+          windows.forEach { nrmCounts.update(it, count) }
           ngram.forEach { rawCounts.update(it, count) }
         }
       return MarkovChain(
-        train = sequenceOf(),
+        train = sequenceOf(), // Empty since we already know the counts, no need to retrain
         memory = memory,
-        Counter(total = AtomicInteger(total.toInt()), memory = memory, rawCounts = rawCounts, nrmCounts = nrmCounts)
+        Counter(
+          total = AtomicInteger(total.toInt()),
+          memory = memory,
+          rawCounts = rawCounts,
+          nrmCounts = nrmCounts
+        )
       )
     }
   }

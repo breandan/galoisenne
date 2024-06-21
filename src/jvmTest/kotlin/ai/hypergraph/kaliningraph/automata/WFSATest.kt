@@ -4,6 +4,7 @@ import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.markovian.mcmc.MarkovChain
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.Automaton
 import net.jhoogland.jautomata.operations.*
@@ -63,6 +64,20 @@ class WFSATest {
       .replace("null", "ε") // null label = ε-transition
 
   /*
+   * Returns a sequence trajectories through a DFA sampled using the Markov chain.
+   * The DFA is expected to be deterministic. We use the Markov chain to steer the
+   * random walk through the DFA by sampling the best transitions conditioned on the
+   * previous n-1 transitions, i.e., q' ~ argmax_{q'} P(q' | q_{t-1}, ..., q_{t-n+1})
+   */
+
+  fun <S, K> Automaton<S, K>.randomWalk(mc: MarkovChain<S>, topK: Int = 1000): Sequence<S> {
+    val init = initialStates().first()
+    val padding = List(mc.memory - 1) { null }
+    val ts = transitionsOut(init).map { (it as BasicTransition<S, K>).label() }.map { it to mc.score(padding + it) }
+    return TODO()
+  }
+
+  /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testPTreeVsWFSA"
   */
   @Test
@@ -70,7 +85,7 @@ class WFSATest {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 2
     val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
-    println(pt.totalTrees.toString())
+    println("Total trees: " + pt.totalTrees.toString())
     val maxResults = 10_000
     val ptreeRepairs = measureTimedValue {
       pt.sampleStrWithoutReplacement().distinct().take(maxResults).toSet()
