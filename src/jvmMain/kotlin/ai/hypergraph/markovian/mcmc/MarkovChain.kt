@@ -129,6 +129,9 @@ open class MarkovChain<T>(
     if (variables.size == 1) counter.rawCounts.getEstimate(variables[0]) / counter.total.toDouble()
     else get(*variables.mapIndexed { i, t -> i to t }.toTypedArray())
 
+  fun scoreChunk(seq: List<T?>): Double =
+    -ln((getAtLeastOne(seq) + 1) / (getAtLeastOne(seq.dropLast(1) + null) + dictionary.size))
+
   private fun getAtLeastOne(variables: List<T?>): Double =
 //    variables.allMasks().sumOf { mask ->
     (counter.nrmCounts.getEstimate(variables) + 1).toDouble() / counter.total.toDouble()
@@ -143,8 +146,7 @@ open class MarkovChain<T>(
       }
 
   // https://www.cs.utah.edu/~jeffp/papers/merge-summ.pdf
-  operator fun plus(mc: MarkovChain<T>) =
-    MarkovChain<T>(memory = memory, counter = counter + mc.counter)
+  operator fun plus(mc: MarkovChain<T>) = MarkovChain<T>(memory = memory, counter = counter + mc.counter)
 
   /**
    * TODO: construct [Dist] using precomputed normalization constants [Counter.nrmCounts]
