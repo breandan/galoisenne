@@ -129,3 +129,6 @@ const val ANSI_BLUE_BACKGROUND = "\u001B[44m"
 const val ANSI_PURPLE_BACKGROUND = "\u001B[45m"
 const val ANSI_CYAN_BACKGROUND = "\u001B[46m"
 const val ANSI_WHITE_BACKGROUND = "\u001B[47m"
+
+fun Char.toUnicodeEscaped() = "\\u${code.toString(16).padStart(4, '0')}"
+fun Σᐩ.replaceAll(tbl: Map<String, String>) = tbl.entries.fold(this) { acc, (k, v) -> acc.replace(k, v) }
