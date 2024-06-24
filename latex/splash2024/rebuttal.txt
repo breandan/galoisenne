@@ -1,0 +1,106 @@
+We thank all reviewers for thoughtfully and thoroughly examining our SPLASH submission. We are gratified they found it "well-written", "strongly formal", and "a very interesting pipeline". We will respond to each reviewer in turn.
+
+# Reviewer A
+
+## More literature and baseline comparisons
+
+Most of these baselines suggested are not designed to handle natural repairs, only generate a single admissible fix. Admissible fixes are much easier to find than natural fixes. OrdinalFix also does not compare with the more recent Seq2Parse, only the older BIFI, and chooses a much easier evaluation benchmark: passing the compiler. Finally, OrdinalFix generates mutations synthetically and does not evaluate on human errors and fixes. Thus, we consider it an inappropriate baseline for a conference that focuses on human factors in programming.
+
+Aho and Peterson’s error-correcting Earley parser [a] solves a narrower problem. It returns *a* smallest repair by Levenshtein distance and not *the* most likely repair within a given Levenshtein radius. The human repair is seldom unique within its Levenshtein radius, and Aho's algorithm is not designed to handle probabilistic languages. The closest variant is Seq2Parse, which adapts Earley's algorithm using neural networks, but is incomplete, i.e., does not exhaustively search the Levenshtein ball. Our algorithm is designed to find every repair within a given Levenshtein distance, ranked by naturalness.
+
+## Experimental design
+
+We do our best to carefully control each variable. When the reviewer says, "Complex systems with many variables," it is unclear whether they refer to the models themselves, the hardware, or the experimental settings. We use the author-provided default settings for each baseline and consider three primary factors: (1) accuracy, (2) latency and (3) distinct repair throughput. Even though we evaluate Tidyparse on weaker hardware, it has competitive accuracy and latency for small repairs and outstanding throughput. It is unclear what, "Levenshtain [sic] is used," means (perhaps Levenshtein automata?). We evaluate our method against repairs of varying Levenshtein distance and no existing syntax repair methods employ Levenshtein automata.
+
+## Biased benchmark / Dataset selection
+
+Our work demonstrates competitive performance on the bona fide benchmark: *natural syntax repair*, i.e., blind recovery of ground-truth human fixes from a parallel corpus of human errors and fixes. We consider "syntax repair" to encompass repairs with a small Levenshtein distance (roughly <5 edits) and larger repairs are out of scope. Names and types are also out of scope. Naturalness is essential. We regard all other benchmarks using synthetic data as unconvincing.
+
+We use Wong et al.'s dataset [b], and focus on repairs below a certain length and Levenshtein distance for computational reasons, consistent with the evaluation criteria in prior work. OrdinalFix, although they do not evaluate naturalness, only consider edit distances up to 5, so if the reviewer insists on comparing with OrdinalFix, should concede the edit distance limitation. Finally, our benchmark is unbiased; we evaluate all baselines on the same dataset.
+
+## Minor remarks
+
+Please see Appendix.
+
+# Reviewer B
+
+> How does this algorithm compare against error correction in LR parsers and ANTLR?
+
+These solve a narrower version of the Levenshtein-CFL reachability problem. ANTLR and LR parsers cannot handle arbitrary CFGs and return *a* minimal-distance repair, not *the* most likely repair in a given Levenshtein radius. Neither ANTLR nor Aho's error-correcting Earley parser use any probabilistic information and thus will perform very poorly on our benchmark. Seq2Parse adapts Aho's approach using a hybrid neurosymbolic approach, so that would be the nearest relative, which we do compare against.
+
+> How does the algorithm perform in highly non-deterministic grammars?
+
+We have evaluated Tidyparse on highly nondeterministic grammars including Greibach's "Hardest CFL" [c] and will provide experimental results in our amended manuscript. Such nondeterminism rarely occurs outside natural language processing.
+
+# Reviewer C
+
+## Usefulness of multi-edit repairs
+
+> What evidence can you provide that syntactic repairs that require more than a single edit are useful?
+
+Wong et al.'s dataset [b] contains many natural multi-edit syntax repairs, and which our method can recover blindly with high probability.
+
+> In playing with the excellent TidyParse demo, the single edit repairs were all good and yet I found none of the k > 1 to be convincing
+
+Please note the web demo displays admissible solutions in arbitrary order and does not sort the results by naturalness.
+
+## Concerns regarding latency / inference cost
+
+Inference cost is high variance, and depends primarily on the language edit distance and snippet length. Most repairs take nowhere near the maximum latency threshold. We can roughly estimate the inference time based on the grammar size, length and maximum Levenshtein distance. Neural program repair models are lower latency, but offer different tradeoffs. First, they cannot scale compute efficiently - there is no way to trade additional inference time for increased accuracy. Second, they do not necessarily guarantee repairs are valid. And third, they require a lot more data to train.
+
+Short of exhausting every possible repair within a given Levenshtein distance, we have no way of knowing when the true repair was retrieved to terminate the search. For 1-edit repairs, exhaustion typically takes just a few seconds, while multi-edit repairs search can be interrupted at any time, but exhaustion takes much longer. The stopping time can be user-initiated or a hardcoded implementation choice - to choose a stopping time, select a desired precision on a representative dataset, then use the minimum time taken to attain that precision with high confidence. This is exactly what Fig. 7 depicts.
+
+Our current prototype is CPU-based, however the pipeline is embarassingly parallelizable and we expect significant speedups when implemented on a GPU. Even in its current form, Tidyparse can be run as a background job on a CI server to generate higher precision repairs than a SoTA GPU-based neural syntax repair.
+
+> Can you quantify exactly how much slower TidyParse is than the baselines on k > 1 repairs?
+
+The neural baselines average 1-2 second wall-clock latency with low variance. On average, Tidyparse needs 5-10 times longer than the baselines to attain the same top-1 precision for multi-edit repairs, but can achieve 2-10 times the precision of the next-best baseline while only using a CPU.
+
+# Appendix / Minor Remarks
+
+> the original Bar-Hillel construction should be compared.
+
+This is not possible, as the original Bar-Hillel construction is intractable for Python and would take years to obtain statistical significance on our benchmark. Our method produces an equivalent grammar and is significantly more efficient at Levenshtein-Bar-Hillel intersections.
+
+> However, computing $\Lambda^*(\{\_\}^i)$ seems to be computationally expensive.
+
+This is precomputed exactly once per grammar and can be reused for all subsequent syntax repairs - it takes a few minutes for $\{\_\}^{[1, 120]}$.
+
+> It is surprising to see that using only a 5-gram model with Levenshtain [sic] distance could yield a very high Precision@1. It would be great if the paper could give some explanations on this issue.
+
+People tend to underestimate n-gram models. They are extremely low latency, accurately model local dependencies, and are trivial to parallelize. The key is that repairs must be lexically well-aligned. Since the grammar enforces validity, we need only measure local lexical alignment and do not care much about global consistency, since we know each repair candidate will already be syntactically valid. See Liu et al. [d] for a recent paper on why n-gram models are still relevant.
+
+> Given a program with syntax errors, what is the maximum Levenshtein distance to sample?
+
+We use the first nonempty language intersection, i.e., the language edit distance, however this is a flexible implementation choice. A few alternatives include: (1) a fixed constant (2) LED + n (3) a time-dependent upper bound.
+
+> $(\pi(v) \parallel \pi(q, q'))$ should be zero to ensure compatibility... the distance between $\pi(v)$ and $\pi(\sigma[h\ldots j])$ should be less than or equal to $k-i$.
+
+$(\pi(v) \parallel \pi(q, q')) = 0$ is sufficient but not necessary. $\pi(\sigma[h\ldots j])$ is not meaningful, as we only define $\pi$ over (1) nonterminal inputs (Def. 4.2) or (2) NFA state pairs (Def. 4.3).
+
+> In Section 4.5, it is unclear whether…
+
+$\mathbb{T}_2$ as we define it is isomorphic to an acyclic CFG in Chomsky Normal Form, i.e., a finite CFL. It is not specific to the Levenshtein Bar-Hillel construction. $\mathbb{T}_3$ is a dictionary of nonterminals to $\mathbb{T}_2$, so each element of the matrix will be a dictionary of nonterminals to $\mathbb{T}_2$. $\oplus, \otimes$ will regroup or "pack" the children to avoid duplicates, somewhat akin to the SPPF representation [e], but without cycles. Since the original programming language is infinite, there is no direct translation, however $\mathbb{T}_2$ can encode $\Sigma^n$ slices of that grammar, as well as LBH grammars, since these are both finite languages.
+
+> In line 420, "s" should be in $\underline{\Sigma}$ not $\underline{\Sigma}^n$
+
+Thank you for pointing out this mistake. It will be fixed in the amended manuscript.
+
+> Many symbols are used without description, such as $\mathbb{N}, p, a, \pi_2, \pi_2$.
+
+- $\mathbb{N}$ is standard notation for the natural numbers.
+- $\pi_{1, 2}$ is standard notation for the first and second projection of an ordered pair.
+- $p$ is defined in Def. 4.2.
+- $a$ is context-dependent. We use it for the RHS of a unit nonterminal in Sec. 4.3, or the lower bound in a Parikh image, or the type variable in the nested datatype, $\mathbb{T}_2$.
+
+# Bibliography
+
+[a] Aho, Alfred and Peterson, Thomas. 1972. A Minimum Distance Error-Correcting Parser for Context-Free Languages. In SIAM Journal on Computing. SIAM, 305-312.
+
+[b] Alexander William Wong, Amir Salimi, Shaiful Chowdhury, and Abram Hindle. 2019. Syntax and Stack Overflow: A methodology for extracting a corpus of syntax errors and fixes. In 2019 IEEE International Conference on Software Maintenance and Evolution (ICSME). IEEE, 318–322.
+
+[c] DuSell, Brian and Chiang, David. 2020. Learning Context-Free Languages with Nondeterministic Stack RNNs. In Proceedings of the 24th Conference on Computational Natural Language Learning. ACL, 507–519.
+
+[d] Liu, Jiacheng et al. Infini-gram: Scaling Unbounded n-gram Language Models to a Trillion Tokens. Arxiv Preprint. https://arxiv.org/abs/2401.17377
+
+[e] Scott, Elizabeth and Johnstone, Adrian. 2009. Recognition is not parsing — SPPF-style parsing from cubic recognisers. In Science of Computer Programming. Volume 75, Issues 1–2, Pages 55-70.
