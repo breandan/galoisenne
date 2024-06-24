@@ -41,7 +41,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we model error correction as a language intersection problem between a Levenshtein automaton and a context-free grammar. To extract the repairs, we sample trees from the intersection grammar, yielding valid repairs within a certain Levenshtein distance. Finally, we rank those repairs by n-gram likelihood.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we construct a grammar representing the language intersection between a Levenshtein automaton and a context-free grammar, then decode it in order of n-gram likelihood.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 
@@ -83,11 +83,34 @@
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
     \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion},~\ref{sec:ptree})
-    \item To extract the repairs, primarily we sample trees without replacement by constructing an explicit bijection between syntax trees and integers, sample integers uniformly without replacement from a finite range, then decode them as trees. (\S~\ref{sec:ptree})
-    \item Finally, we rerank all repairs found before a fixed timeout by n-gram likelihood. (\S~\ref{sec:ranking})
+    \item We construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov model. (\S~\ref{sec:ranking})
   \end{enumerate}
 
-  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not synthesize probable edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+  \begin{figure}[h!]
+    \begin{center}
+      \resizebox{0.8\textwidth}{!}{
+        \begin{tikzpicture}[node distance=5cm]
+          \node (start) [io] {Broken code};
+          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
+          \node (gram1) [io2, above of=node1, yshift=-3cm] {Grammar};
+%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
+%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
+          \node (node3) [plain, right of=node1] {\textbf{k-best decoding}};
+          \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
+          \node (node4) [io, right of=node3] {Repairs};
+          \draw [arrow] (start) -- (node1);
+          \draw [arrow] (gram1) -- (node1);
+          \draw [arrow] (node1) -- (node3);
+          \draw [arrow] (node3) -- (node4);
+          \draw [arrow] (ngram) -- (node3);
+%        \draw [arrow] (ptree) -- (node2);
+        \end{tikzpicture}
+      }
+    \end{center}
+%  \caption{Line chart of our proposed method.}\label{fig:linechart}
+  \end{figure}
+
+  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not guess likely edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}
 
@@ -171,31 +194,7 @@
 
   \clearpage\section{Method}
 
-  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into three main steps: (1) language intersection, (2) k-best decoding, and (3) reranking.
-
-  \begin{figure}[h!]
-  \begin{center}
-    \resizebox{0.8\textwidth}{!}{
-      \begin{tikzpicture}[node distance=5cm]
-        \node (start) [io] {Broken code};
-        \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
-        \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
-%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
-%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-        \node (node3) [plain, right of=node1] {\textbf{k-best decoding}};
-        \node (ngram) [io2, above of=node3, yshift=-3cm] {PCFG};
-        \node (node4) [io, right of=node3] {Repairs};
-        \draw [arrow] (start) -- (node1);
-        \draw [arrow] (gram1) -- (node1);
-        \draw [arrow] (node1) -- (node3);
-        \draw [arrow] (node3) -- (node4);
-        \draw [arrow] (ngram) -- (node3);
-%        \draw [arrow] (ptree) -- (node2);
-      \end{tikzpicture}
-    }
-  \end{center}
-%  \caption{Line chart of our proposed method.}\label{fig:linechart}
-  \end{figure}
+  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) k-best decoding.
 
 First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code. During extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, in the reranking step, we rank all repairs by n-gram likelihood. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
 
@@ -208,7 +207,7 @@ First, we generate a synthetic grammar representing the intersection between the
           \node (start) [startstop, draw=none];
           \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
           \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
-          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
+          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
           \node [above=0.07cm of pcfg, xshift=1cm] {(\S~\ref{sec:prelim})};
           \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
           \node [above=0.07cm of lnfa, xshift=1cm] {(\S~\ref{sec:lev_nfa})};
@@ -266,7 +265,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
 %          \draw [arrow] (vlmc) -- (rank);
-          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+%          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
 %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
           \draw [arrow] (rank) -- (stop);
@@ -288,7 +287,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
 %  \end{enumerate}
 
-  To decode the repairs, we use a technique called cube pruning, which has been shown to be effective for decoding likely sentences from PCFGs~\cite{huang2005better}. If the language is sufficiently small, it will generate every possible repair, otherwise, it will draw a representative subset containing with high probability the top-k most likely repairs under the PCFG.
+  To decode the repairs, we translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached. If the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt.
 
   We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to rerank the repairs by a more sophisticated language model, such as a neural network, to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
 
@@ -907,8 +906,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \phantom{\text{Let }} q=i - F(F^{-1}(i)),\\
   \phantom{\text{Let }} l, r = \texttt{children}[t],\\
   \phantom{\text{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
-  \phantom{\text{Let }} T_1 = \varphi(l, q_1),\\
-  \phantom{\text{Let }} T_2 = \varphi(r, q_2) \text{ in } \\
+  \phantom{\text{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \text{ in } \\
   \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
   \end{cases}
 \end{equation}
@@ -917,7 +915,19 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   \subsection{Decoding repairs in order of maximal likelihood}\label{sec:decoding}
 
-  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, it can be improved for large finite languages by decoding repairs in order of likelihood. To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
+  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, this can be improved for larger languages by enumerating repairs in order of decreasing likelihood. First, we observe the following:
+
+  \begin{lemma}\label{lemma:upper-bound}
+    The intersection grammar, $G_\cap$, is acyclic.
+  \end{lemma}
+
+  \begin{proof}
+    Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
+  \end{proof}
+
+  Since $G_\cap$ is acyclic, it can be translated straightforwardly into a finite state automaton. This representation has many advantages, particularly, it can be efficiently minimized, unlike CFGs. It is also more easily steerable than a PCFG sampler, and can be used to decode repairs in order of n-gram likelihood using an autoregressive language model.
+
+  To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
 
   \begin{align}
     X \oplus Z &\mapsto \bigcup_{v \in V}\big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[v]) \cup \mathcal{L}(Z[v])\big\}\\
@@ -936,6 +946,35 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \end{equation}
 
   Constructively, let $+, *: \mathcal{M}\times \mathcal{M} \rightarrow \mathcal{M}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that NFA are closed under these operations. $\Lambda^* \circ S$ would then yield an NFA recognizing $\Sigma^n\cap\mathcal{L}(G)$, which can be determinized and decoded using k-best paths to obtain the top-k maximum likelihood repairs.
+
+  The steerable DFA walk takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to a final state, in order of the most likely partial trajectories. It maintains a priority queue of of partial trajectories, ranked by length-normalized log likelihood and which are speculatively extended by the most likely next transition.
+
+\begin{algorithm}[H]
+\caption{Steerable DFA walk}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$ DFA, $\texttt{mc}: \Sigma^d \rightarrow \mathbb{N}$ Markov chain
+
+\State $\mathcal{T} \gets \varnothing, \mathcal{P} \gets \{[I]\}$ \Comment{Initialize priority queue of total and partial trajectories.}
+\Repeat
+\If {$\mathcal{Q} = \varnothing$ or \textbf{Rand}(0, 1) $< \epsilon$}
+\State $\hat\sigma \gets \varphi^{-1}\left(\langle\kappa, \rho\rangle^{-1}(U^{ci+p}Y), \err{\sigma}\right), i \gets i + 1$ \Comment{Sample WoR using the leapfrog method.}
+\Else
+\State $\hat\sigma \sim \mathcal{Q} + \textbf{Noise}(\mathcal{Q})$ \Comment{Sample replay buffer with additive noise.}
+\EndIf
+\State $\mathcal{R} \gets \mathcal{R} \cup \{\hat\sigma\}$ \Comment{Insert repair candidate $\hat\sigma$ into reservoir $\mathcal{R}$.}
+\If{$\mathcal{R}$ is full}
+\State $\hat\sigma \gets \argmin_{\hat\sigma \in \mathcal{R}} PP(\hat\sigma)$ \Comment{Select lowest perplexity repair candidate.}
+\If{$\hat\sigma \in \mathcal{L}(\mathcal{G})$}
+\State $\mathcal{Q} \gets \mathcal{Q} \cup \{\hat\sigma\}$ \Comment{Insert successful repair into replay buffer.}
+\EndIf
+\State $\mathcal{R} \gets \mathcal{R} \setminus \{\hat\sigma\}$ \Comment{Remove checked sample from the reservoir.}
+\EndIf
+\State $\epsilon \leftarrow \textbf{Schedule}\big((t_{\text{now}} - t_0) / t_{\text{total}}\big)$ \Comment{Update exploration/exploitation rate.}
+\Until{$t_{\text{total}}$ elapses.}
+\State \Return $\tilde\sigma \in \mathcal{Q}$ ranked by $PP(\tilde\sigma)$.
+\end{algorithmic}
+\end{algorithm}
 
 %  \definecolor{R}{RGB}{202,65,55}
 %  \definecolor{G}{RGB}{151,216,56}
@@ -1051,50 +1090,50 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 %    \caption{CFGs are hypergraphs witnessed by a rank-3 tensor, whose nonempty inhabitants indicate CNF productions.\vspace{-10pt}}
 %  \end{wrapfigure}
 
-  In the distributional setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ equal probability as sampling the PCFG from the top, down. A key issue with this approach is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
-
-   A more suitable decoding method is possible by considering a related technique called cube-pruning~\cite{huang2005better} that operates over hypergraphs, which are equiexpressive with both CFGs and ADTs. If we consider the PCFG in CNF, each production corresponds to a weighted hyperedge with at most two neighbors. While strictly more expressive than necessary to represent finite languages, cube pruning over context-free hypergraphs is capable of decoding top-k lists far more efficiently than k-longest paths over a WA. A further advantage of this representation is that we can decode likely subpaths from $\mathbb{T}_2$ directly, without translating it to a weighted automaton, minimizing, renormalizing transition weights, and then solving for the top-k best paths. The disadvantage however, is that CFGs are not as algebraically well-behaved, lacking the closure and decidability benefits of WAs under intersection.
-
-  The question then becomes how to efficiently decode the top-k most likely repairs from a PCFG in CNF. Here, we propose a simple method that extracts the production from the intersection grammar $G_\cap$, scores subtrees, then returns the top-k most likely repairs.
-
- For every nonterminal in the intersection grammar $qvq' \in V_\cap$, we have $v \in V$. Since we do not use a weighted NFA, we may ignore the states $q, q'$ and treat every intersection nonterminal as the original nonterminal from the PCFG. By avoiding the NFA states, this simplifies the conditional probability table. Let's consider a few illustrative examples using graphical model notation. We use upper case to denote a generic nonterminal, and lower case to denote its concrete instantiation, $P$ to denote the normalized probability and $C$ to denote the coincidence count of a tuple. We can compute the probability of a production $W\rightarrow XZ$ with $W$ observed as follows:
-
-  \begin{table}[h!]
-
-    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
-        \node[obs] (z) {$W$};%
-        \node[latent,below=of z,xshift=-1cm,fill] (x) {$X$}; %
-        \node[latent,below=of z,xshift=1cm] (y) {$Z$}; %
-        \edge {z} {x,y}
-      \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(W\rightarrow XZ) &= P\big((pwr) \rightarrow (pxq)(qzr)\big) \\ &= P(X=x, Z=z \mid W=w)\\ &= \frac{C(X=x, Z=z \mid W)}{\sum_{x', z'}C(X=x', Z=z' \mid W)} \end{align*}\end{minipage}
-  \end{table}
-
-Likewise, we can perform this same computation with higher-order dependencies, where $W$ stands for a generic grandparent, $X, Z$ are the generic parent and pibling, and all three are observed:
-
-  \begin{table}[h!]
-    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
-       \node[obs] (z) {$W$};%
-       \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
-       \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
-       \node[latent,below=of x,xshift=-1cm] (k) {$K$}; %
-       \node[latent,below=of x,xshift=1cm] (l) {$L$}; %
-       \edge {z} {x,y}
-       \edge {x} {k,l}
-    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow KL \mid W\rightarrow XZ) &= P\big((\cdot x \cdot) \rightarrow (\cdot k \cdot)(\cdot l \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(K=k, L=l \mid W, X, Z)\\ &= \frac{C(K=k, L=l \mid W, X, Z)}{\sum_{k', l'}C(K=k', L=l' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
-
-  Since the parent can be a left- or right-sibling, we should also consider the symmetric case:
-
-  \begin{table}[h!]
-    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
-        \node[obs] (z) {$W$};%
-        \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
-        \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
-        \node[latent,below=of x,xshift=1cm] (m) {$M$}; %
-        \node[latent,below=of x,xshift=3cm] (n) {$N$}; %
-        \edge {z} {x,y}
-        \edge {y} {m,n}
-    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(Z\rightarrow MN \mid W\rightarrow XZ) &= P\big((\cdot z \cdot) \rightarrow (\cdot m \cdot)(\cdot n \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(M=m, N=n \mid W, X, Z)\\ &= \frac{C(M=m, N=n \mid W, X, Z)}{\sum_{m', n'}C(M=m', N=n' \mid W, X, Z)} \end{align*}\end{minipage}\\
-  \end{table}
+%  In the distributional setting, suppose we have a PCFG, $G$, such that $|\mathcal{L}(G)|<\infty$. This induces a distribution $F_G: \mathcal{L}(G) \rightarrow \mathbb{R}$ which can be bisimulated by a weighted automaton (WA), $A$, where $F_A: \mathcal{L}(A) \rightarrow \mathbb{R}$ such that $F_G \sim F_A$, i.e., sampling paths through $A$ yields members of $\mathcal{L}(G)$ equal probability as sampling the PCFG from the top, down. A key issue with this approach is that $|P_G| \ll |\delta_A|$ for bisimilar $G, A$, and renormalizing the transition weights can be computationally infeasible for large $\delta_A$.
+%
+%   A more suitable decoding method is possible by considering a related technique called cube-pruning~\cite{huang2005better} that operates over hypergraphs, which are equiexpressive with both CFGs and ADTs. If we consider the PCFG in CNF, each production corresponds to a weighted hyperedge with at most two neighbors. While strictly more expressive than necessary to represent finite languages, cube pruning over context-free hypergraphs is capable of decoding top-k lists far more efficiently than k-longest paths over a WA. A further advantage of this representation is that we can decode likely subpaths from $\mathbb{T}_2$ directly, without translating it to a weighted automaton, minimizing, renormalizing transition weights, and then solving for the top-k best paths. The disadvantage however, is that CFGs are not as algebraically well-behaved, lacking the closure and decidability benefits of WAs under intersection.
+%
+%  The question then becomes how to efficiently decode the top-k most likely repairs from a PCFG in CNF. Here, we propose a simple method that extracts the production from the intersection grammar $G_\cap$, scores subtrees, then returns the top-k most likely repairs.
+%
+% For every nonterminal in the intersection grammar $qvq' \in V_\cap$, we have $v \in V$. Since we do not use a weighted NFA, we may ignore the states $q, q'$ and treat every intersection nonterminal as the original nonterminal from the PCFG. By avoiding the NFA states, this simplifies the conditional probability table. Let's consider a few illustrative examples using graphical model notation. We use upper case to denote a generic nonterminal, and lower case to denote its concrete instantiation, $P$ to denote the normalized probability and $C$ to denote the coincidence count of a tuple. We can compute the probability of a production $W\rightarrow XZ$ with $W$ observed as follows:
+%
+%  \begin{table}[h!]
+%
+%    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+%        \node[obs] (z) {$W$};%
+%        \node[latent,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+%        \node[latent,below=of z,xshift=1cm] (y) {$Z$}; %
+%        \edge {z} {x,y}
+%      \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(W\rightarrow XZ) &= P\big((pwr) \rightarrow (pxq)(qzr)\big) \\ &= P(X=x, Z=z \mid W=w)\\ &= \frac{C(X=x, Z=z \mid W)}{\sum_{x', z'}C(X=x', Z=z' \mid W)} \end{align*}\end{minipage}
+%  \end{table}
+%
+%Likewise, we can perform this same computation with higher-order dependencies, where $W$ stands for a generic grandparent, $X, Z$ are the generic parent and pibling, and all three are observed:
+%
+%  \begin{table}[h!]
+%    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+%       \node[obs] (z) {$W$};%
+%       \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+%       \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
+%       \node[latent,below=of x,xshift=-1cm] (k) {$K$}; %
+%       \node[latent,below=of x,xshift=1cm] (l) {$L$}; %
+%       \edge {z} {x,y}
+%       \edge {x} {k,l}
+%    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(X\rightarrow KL \mid W\rightarrow XZ) &= P\big((\cdot x \cdot) \rightarrow (\cdot k \cdot)(\cdot l \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(K=k, L=l \mid W, X, Z)\\ &= \frac{C(K=k, L=l \mid W, X, Z)}{\sum_{k', l'}C(K=k', L=l' \mid W, X, Z)} \end{align*}\end{minipage}\end{table}
+%
+%  Since the parent can be a left- or right-sibling, we should also consider the symmetric case:
+%
+%  \begin{table}[h!]
+%    \begin{minipage}{3cm}\resizebox{.6\textwidth}{!}{\begin{tikzpicture}
+%        \node[obs] (z) {$W$};%
+%        \node[obs,below=of z,xshift=-1cm,fill] (x) {$X$}; %
+%        \node[obs,below=of z,xshift=1cm] (y) {$Z$}; %
+%        \node[latent,below=of x,xshift=1cm] (m) {$M$}; %
+%        \node[latent,below=of x,xshift=3cm] (n) {$N$}; %
+%        \edge {z} {x,y}
+%        \edge {y} {m,n}
+%    \end{tikzpicture}}\end{minipage}\begin{minipage}{5cm}\begin{align*} P(Z\rightarrow MN \mid W\rightarrow XZ) &= P\big((\cdot z \cdot) \rightarrow (\cdot m \cdot)(\cdot n \cdot) \mid (\cdot w \cdot) \rightarrow (\cdot x \cdot)(\cdot z \cdot)\big) \\ &= P(M=m, N=n \mid W, X, Z)\\ &= \frac{C(M=m, N=n \mid W, X, Z)}{\sum_{m', n'}C(M=m', N=n' \mid W, X, Z)} \end{align*}\end{minipage}\\
+%  \end{table}
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
