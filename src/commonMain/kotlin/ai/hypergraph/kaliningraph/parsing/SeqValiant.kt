@@ -24,10 +24,12 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     (1 + branches.sumOf { (l, r) -> l.branchRatio.second + r.branchRatio.second })
   }
 
-  val allTerminals: Set<String> by lazy {
+  val allTerminals: Set<Σᐩ> by lazy {
     if (branches.isEmpty()) setOf(root)
     else branches.map { (l, r) -> l.allTerminals + r.allTerminals }.flatten().toSet()
   }
+
+  val termDict by lazy { TermDict(allTerminals) }
 
   // Σ^n/|T(n)|, if < 1 then we know the grammar is surely ambiguous
   val inverseDensity by lazy {

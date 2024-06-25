@@ -21,6 +21,7 @@ class WFSATest {
 //  readBIFIContents()
     val csv = File(File("").absolutePath + "/src/jvmTest/resources/ngrams_BIFI_$MARKOV_MEMORY.csv")
     MarkovChain.deserialize(csv.readText())
+      .apply { scorePrefix = listOf("BOS", "NEWLINE"); scoreSuffix = listOf("EOS") }
       .also { println("Loaded ${it.counter.total} BIFI $MARKOV_MEMORY-grams from ${csv.absolutePath}") }
   }
 
@@ -29,6 +30,7 @@ class WFSATest {
   val P_PY150: MarkovChain<Σᐩ> by lazy {
     val csv = File(File("").absolutePath + "/src/jvmTest/resources/ngrams_PY150_$MARKOV_MEMORY.csv")
     MarkovChain.deserialize(csv.readText())
+      .apply { scorePrefix = listOf("BOS", "NEWLINE"); scoreSuffix = listOf("EOS") }
       .also { println("Loaded ${it.counter.total} PY150 $MARKOV_MEMORY-grams from ${csv.absolutePath}") }
   }
 
@@ -88,7 +90,7 @@ class WFSATest {
     val ptreeRepairs = measureTimedValue {
       pt.sampleStrWithoutReplacement().distinct().take(maxResults).toSet()
     }
-    measureTimedValue { pt.decodeDFA(P_BIFI_PY150) }.also {
+    measureTimedValue { pt.toDFA()!!.decodeDFA(P_BIFI_PY150, dec = pt.termDict, parallelize = true) }.also {
       assertTrue(groundTr in it.value, "Ground truth not found in ${it.value.size} repairs")
       println("Index: ${it.value.indexOf(groundTr)}")
 //      // Print side by side comparison of repairs

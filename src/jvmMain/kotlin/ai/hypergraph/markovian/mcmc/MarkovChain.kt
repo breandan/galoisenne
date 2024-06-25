@@ -67,7 +67,9 @@ val maxUniques: Int = 2000
 open class MarkovChain<T>(
   train: Sequence<T> = sequenceOf(),
   val memory: Int = 3,
-  val counter: Counter<T> = Counter(train, memory)
+  val counter: Counter<T> = Counter(train, memory),
+  var scorePrefix: List<T> = listOf(),
+  var scoreSuffix: List<T> = listOf()
 ) {
   private val mgr = ResettableLazyManager()
 
@@ -120,7 +122,7 @@ open class MarkovChain<T>(
 
   // Computes perplexity of a sequence normalized by sequence length (lower is better)
   fun score(seq: List<T?>): Double =
-    if (memory < seq.size) -seq.windowed(memory)
+    if (memory < seq.size) -(scorePrefix + seq + scoreSuffix).windowed(memory)
       .map { (getAtLeastOne(it) + 1) / (getAtLeastOne(it.dropLast(1) + null) + dictionary.size) }
       .sumOf { ln(it) } / seq.size
     else (seq.sumOf { counter.rawCounts.getEstimate(it) } + 1).toDouble() / counter.total.toDouble()
@@ -146,7 +148,10 @@ open class MarkovChain<T>(
       }
 
   // https://www.cs.utah.edu/~jeffp/papers/merge-summ.pdf
-  operator fun plus(mc: MarkovChain<T>) = MarkovChain<T>(memory = memory, counter = counter + mc.counter)
+  operator fun plus(mc: MarkovChain<T>) = MarkovChain<T>(
+    memory = memory, counter = counter + mc.counter,
+    scorePrefix = scorePrefix, scoreSuffix = scoreSuffix
+  )
 
   /**
    * TODO: construct [Dist] using precomputed normalization constants [Counter.nrmCounts]

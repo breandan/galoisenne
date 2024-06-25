@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
+import kotlin.random.Random
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -389,3 +390,12 @@ fun CFG.jsonify() = "cfg = {\n" +
       it.joinToString(", ", "(", ")") { "\"$it\"" }
     }}],")
   } + "\n}"
+
+class TermDict(
+  val terms: Set<Σᐩ>,
+  val dict: Map<Char, Σᐩ> = terms.associateBy { Random(it.hashCode()).nextInt().toChar() },
+  val revDict: Map<Σᐩ, Char> = dict.entries.associate { (k, v) -> v to k }
+) : Map<Char, Σᐩ> by dict {
+  fun encode(str: String) = str.tokenizeByWhitespace().map { revDict[it]!! }.joinToString("")
+  fun encode(str: List<String>) = str.map { revDict[it]!! }.joinToString("")
+}
