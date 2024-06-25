@@ -147,7 +147,7 @@ fun BAutomaton.decodeDFA(
 
 //  println("Top 10 trajectories:")
 //  fullTrajectories.take(10).forEach { println(it.score.toString().take(5) + ": $it") }
-  println("Took ${startTime.elapsedNow()} to decode ${fullTrajectories.size} trajectories")
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories")
 
   return deduped
 }
