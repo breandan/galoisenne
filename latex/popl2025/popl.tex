@@ -74,7 +74,7 @@
 
   Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections. Instead they find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
-  More recently, probabilistic repair techniques have been introduced using neural language models to predict the most likely correction~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. While these techniques generate far more natural edits, they are often costly to train, prone to misgeneralization, and difficult to incorporate new constraints thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
+  More recently, probabilistic repair techniques have been introduced using neural language models to predict the most likely correction~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. While these techniques generate far more natural edits, they are prone to misgeneralization, costly to train, and challenging to incorporate new constraints thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
   Recent work by Merrill et al.~\cite{merrill2022saturated} and Chiang et al.~\cite{chiang2023tighter} suggest that the issue may be more foundational: transformer-based language models, a popular class of neural language models used in probabilistic program repair, are fundamentally less expressive than context-free grammars, which formally describe the syntax of most programming languages. This suggests such models, despite their useful approximation properties, are ill-suited for the task of end-to-end syntax repair. Yet, they may still be useful for resolving ambiguity between valid repairs of differing likelihood.
 
@@ -83,19 +83,25 @@
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
     \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion},~\ref{sec:ptree})
-    \item We construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov model. (\S~\ref{sec:ranking})
+%    \item We present three ways to decode repairs from the data structure.
+%    \begin{enumerate}
+%    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
+%    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
+%    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
+    \item We decode the data structure, returning a stream of concrete syntax repairs which is guaranteed to halt but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
+    \end{enumerate}
   \end{enumerate}
 
   \begin{figure}[h!]
     \begin{center}
-      \resizebox{0.8\textwidth}{!}{
+      \resizebox{0.7\textwidth}{!}{
         \begin{tikzpicture}[node distance=5cm]
           \node (start) [io] {Broken code};
           \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
           \node (gram1) [io2, above of=node1, yshift=-3cm] {Grammar};
 %        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
 %        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-          \node (node3) [plain, right of=node1] {\textbf{k-best decoding}};
+          \node (node3) [plain, right of=node1] {\textbf{Repair decoding}};
           \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
           \node (node4) [io, right of=node3] {Repairs};
           \draw [arrow] (start) -- (node1);
@@ -110,9 +116,9 @@
 %  \caption{Line chart of our proposed method.}\label{fig:linechart}
   \end{figure}
 
-  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in context-free languages. The efficacy of our technique owes to the fact it does not guess likely edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in finite context-free languages. The efficacy of our technique owes to the fact it does not suggest likely edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
-  \section{Example}
+  \section{Example}\label{sec:example}
 
   Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\\
 
@@ -185,7 +191,7 @@
   Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 
   \begin{definition}[Linear convergence]\label{def:linear-convergence}
-    Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{<|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
+    Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{\leq|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
   \end{definition}
 
   To satisfy Def.~\ref{def:linear-convergence}, we construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all sentences.
@@ -194,9 +200,9 @@
 
   \clearpage\section{Method}
 
-  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) k-best decoding.
+  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) repair decoding.
 
-First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code. During extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, in the reranking step, we rank all repairs by n-gram likelihood. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
+First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code, then during extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
 
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
@@ -287,7 +293,9 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
 %  \end{enumerate}
 
-  To decode the repairs, we translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached. If the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt.
+  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with PCFG transitions using cube pruning, then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached.
+
+  In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (A-C) differ, essentially, in the order which they retrieve repairs, and the likelihood model they use to rank them.
 
   We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to rerank the repairs by a more sophisticated language model, such as a neural network, to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
 
@@ -900,13 +908,13 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \vspace{5pt}\\
-  \text{Let } r = |\texttt{children}(T)|,\\
-  \phantom{\text{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
-  \phantom{\text{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
-  \phantom{\text{Let }} q=i - F(F^{-1}(i)),\\
-  \phantom{\text{Let }} l, r = \texttt{children}[t],\\
-  \phantom{\text{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
-  \phantom{\text{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \text{ in } \\
+  \textbf{let } r = |\texttt{children}(T)|,\\
+  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
+  \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
+  \phantom{\textbf{Let }} q=i - F(F^{-1}(i)),\\
+  \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
+  \phantom{\textbf{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
+  \phantom{\textbf{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
   \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
   \end{cases}
 \end{equation}
@@ -947,32 +955,44 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   Constructively, let $+, *: \mathcal{M}\times \mathcal{M} \rightarrow \mathcal{M}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that NFA are closed under these operations. $\Lambda^* \circ S$ would then yield an NFA recognizing $\Sigma^n\cap\mathcal{L}(G)$, which can be determinized and decoded using k-best paths to obtain the top-k maximum likelihood repairs.
 
-  The steerable DFA walk takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to a final state, in order of the most likely partial trajectories. It maintains a priority queue of of partial trajectories, ranked by length-normalized log likelihood and which are speculatively extended by the most likely next transition.
+Let us return to the second example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into a equivalent DFA. After Brzozowski minimization, this will take the following form:
+
+% Insert exampleDFA.pdf
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{exampleDFA.pdf}
+  \caption{Minimal DFA recognizing the language $L(\texttt{NAME = NAME . NAME ( NUM : , NUM : )}, 2) \cap \ell_\text{Python}$.}
+  \label{fig:exampleDFA}
+\end{figure}
+
+At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely path according to path length-normalized log likelihood. A beam search decoder is also possible, which we leave as an exercise for the reader.
+
+  The steerable DFA walk takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to a final state, in order of the most likely partial trajectories. It maintains a priority queue of of partial trajectories, ranked by length-normalized log likelihood and which are speculatively extended by the most likely available transition.
 
 \begin{algorithm}[H]
 \caption{Steerable DFA walk}
 \label{alg:adaptive}
 \begin{algorithmic}[1]
-\Require $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$ DFA, $\texttt{mc}: \Sigma^d \rightarrow \mathbb{N}$ Markov chain
+\Require $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$ DFA, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
 
-\State $\mathcal{T} \gets \varnothing, \mathcal{P} \gets \{[I]\}$ \Comment{Initialize priority queue of total and partial trajectories.}
+\State $\mathcal{T} \gets \varnothing, \mathcal{P} \gets \big[\langle \varepsilon, i, 0\rangle \mid i \in I\big]$ \Comment{Initialize priority queue of total and partial trajectories.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \Repeat
-\If {$\mathcal{Q} = \varnothing$ or \textbf{Rand}(0, 1) $< \epsilon$}
-\State $\hat\sigma \gets \varphi^{-1}\left(\langle\kappa, \rho\rangle^{-1}(U^{ci+p}Y), \err{\sigma}\right), i \gets i + 1$ \Comment{Sample WoR using the leapfrog method.}
-\Else
-\State $\hat\sigma \sim \mathcal{Q} + \textbf{Noise}(\mathcal{Q})$ \Comment{Sample replay buffer with additive noise.}
+\State \textbf{Let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
+%\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
+% For loop:
+\State \phantom{\textbf{Let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma + \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
+\For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
+\If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
+\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to priority queue.}
 \EndIf
-\State $\mathcal{R} \gets \mathcal{R} \cup \{\hat\sigma\}$ \Comment{Insert repair candidate $\hat\sigma$ into reservoir $\mathcal{R}$.}
-\If{$\mathcal{R}$ is full}
-\State $\hat\sigma \gets \argmin_{\hat\sigma \in \mathcal{R}} PP(\hat\sigma)$ \Comment{Select lowest perplexity repair candidate.}
-\If{$\hat\sigma \in \mathcal{L}(\mathcal{G})$}
-\State $\mathcal{Q} \gets \mathcal{Q} \cup \{\hat\sigma\}$ \Comment{Insert successful repair into replay buffer.}
+\If {$q \in F$}
+\State $\mathcal{T} \gets \mathcal{T} \oplus T$ \Comment{Accepting state reached, add trajectory into total queue.}
 \EndIf
-\State $\mathcal{R} \gets \mathcal{R} \setminus \{\hat\sigma\}$ \Comment{Remove checked sample from the reservoir.}
-\EndIf
-\State $\epsilon \leftarrow \textbf{Schedule}\big((t_{\text{now}} - t_0) / t_{\text{total}}\big)$ \Comment{Update exploration/exploitation rate.}
-\Until{$t_{\text{total}}$ elapses.}
-\State \Return $\tilde\sigma \in \mathcal{Q}$ ranked by $PP(\tilde\sigma)$.
+\EndFor
+\Until{interrupted or $\mathcal{P}=\varnothing$.}
+\State \Return $\big[\sigma_{|\sigma|..1} \mid \langle \sigma, q, \gamma \rangle = T \in \mathcal{T}\big]$ \Comment{Reverse string and return in order of likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
