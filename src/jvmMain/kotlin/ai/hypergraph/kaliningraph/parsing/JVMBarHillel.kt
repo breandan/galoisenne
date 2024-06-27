@@ -292,14 +292,15 @@ fun CFG.jvmRemoveUselessSymbols(
   reachable: Set<Σᐩ> = jvmReachSym()
 ): CFG =
   asSequence().asStream().parallel()
-    .filter { (s, _) -> s in reachable && s in generating }
+//    .filter { (s, _) -> s in reachable && s in generating }
+    .filter { (s, r) -> s in reachable && s in generating && r.all { it in reachable && (r.size == 1 || it in generating) } }
     .collect(Collectors.toSet())
 
 private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
   val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
   val nextReachable: MutableSet<Σᐩ> = mutableSetOf(from)
   val NDEPS =
-    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>().apply {
+    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>(size).apply {
       this@jvmReachSym.asSequence().asStream().parallel()
         .forEach { (l, r) -> getOrPut(l) { ConcurrentSkipListSet() }.addAll(r) }
     }
@@ -330,7 +331,7 @@ private fun CFG.jvmGenSym(
   val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
   val TDEPS =
-    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>().apply {
+    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>(size).apply {
       this@jvmGenSym.asSequence().asStream().parallel()
         .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentSkipListSet() }.add(l) } }
     }

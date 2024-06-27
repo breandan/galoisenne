@@ -141,9 +141,9 @@ fun BAutomaton.decodeDFA(
 
   if (parallelize) (0..<NUM_CORES).toList().parallelStream().forEach { task(it) } else task(0)
 
-  // Deduplicate and resort by final score
-  val deduped = fullTrajectories.parallelStream().map { it.toString() to mc.score(it.tokens) }
-    .distinct().toList().sortedBy { it.second }.map { it.first }
+  val deduped = fullTrajectories.map { it.toString() }.distinct().toList()
+//    .map { it.toString() to mc.score(it.tokens) }
+//    .distinct().toList().sortedBy { it.second }.map { it.first }
 
 //  println("Top 10 trajectories:")
 //  fullTrajectories.take(10).forEach { println(it.score.toString().take(5) + ": $it") }

@@ -223,13 +223,15 @@ First, we generate a synthetic grammar representing the intersection between the
 
           \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
 
+          \node (t2) [process, left of=dec1, xshift=-3cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
+
           \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
           \node [below=0.7cm of pro2b, xshift=0.05cm] {\Large\textbf{Language intersection}};
           \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-          \node (const) [process, below of=dec1, yshift=-1.8cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
-          \node [above=0.07cm of const, xshift=1.5cm] {(\S~\ref{sec:matrix_completion})};
+          \node (const) [process, below of=dec1, yshift=-1.8cm] {Enumerate $\mathbb{T}_2$ and rerank};
+          \node [above=0.07cm of const, xshift=1.5cm] {(Algorithm A, \S~\ref{sec:matrix_completion})};
 
 %          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
 %
@@ -240,14 +242,18 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
 
-          \node (rank) [process, below of=const, yshift=-0.5cm] {Decode top-$k$ by $L_\theta(\sigma')$};
+          \node (grwa) [process, below of=const, yshift=-0.5cm] {Sample PCFG top-down};
+          \node [above=0.07cm of grwa, xshift=1.5cm] {(Algorithm B, \S~\ref{sec:ptree})};
+          \node (rank) [process, below of=grwa, yshift=-0.5cm] {Convert to DFA and walk};
+          \node [above=0.1cm of rank, xshift=1.5cm] {(Algorithm C, \S~\ref{sec:decoding})};
 %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
           \node [below=0.01cm of rank, xshift=5.5cm] {\Large\textbf{Repair decoding}};
-          \node [above=0.1cm of rank, xshift=1.5cm] {(\S~\ref{sec:ranking})};
-          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,3.2)$) rectangle ($(rank.south east)+(5.3,-0.8)$);
+          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,5.8)$) rectangle ($(rank.south east)+(5.3,-0.8)$);
 
 %  \node (out1) [io, below of=pro2a] {Output};
-          \node (stop) [startstop, below of=rank, yshift=-0.6cm];
+          \node (stop) [startstop, right of=rank, xshift=3cm];
+          \node (stop1) [startstop, right of=grwa, xshift=3cm];
+          \node (stop2) [startstop, right of=const, xshift=3cm];
 
 %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
 
@@ -264,23 +270,28 @@ First, we generate a synthetic grammar representing the intersection between the
 %  \draw [arrow] (in1) -- (pro1);
           \draw [arrow] (pro1) -- (dec1);
           \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
-          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.5cm] {no} (const);
-          \draw [arrow] (const) -- (rank);
+          \draw [arrow] (dec1) -- node[anchor=south] {no} (t2);
+%          \draw [arrow] (const) -- (rank);
           \draw [arrow] (pro2b) -- (lnfa);
 %          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
 %          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
+          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]const.west)--(const.west);
+          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
+          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
 %          \draw [arrow] (vlmc) -- (rank);
 %          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
 %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
           \draw [arrow] (rank) -- (stop);
+          \draw [arrow] (grwa) -- (stop1);
+          \draw [arrow] (const) -- (stop2);
 %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
 
         \end{tikzpicture}
       }
     \end{center}
-    \vspace{-0.7cm}
+%    \vspace{-0.7cm}
     \caption{Dataflow of our proposed method.}\label{fig:flowchart}
     \vspace{-0.5cm}
   \end{wrapfigure}
@@ -293,9 +304,9 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
 %  \end{enumerate}
 
-  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with PCFG transitions using cube pruning, then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached.
+  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with PCFG transitions using cube pruning, and then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached. We describe (A) in \S~\ref{sec:matrix_completion}, (B) in \S~\ref{sec:ptree}, and (C) in \S~\ref{sec:decoding}.
 
-  In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (A-C) differ, essentially, in the order which they retrieve repairs, and the likelihood model they use to rank them.
+  In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (A-C) differ in the order which they retrieve repairs, and the likelihood model they use to rank them.
 
   We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to rerank the repairs by a more sophisticated language model, such as a neural network, to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
 
@@ -982,7 +993,7 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 \State \textbf{Let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
 %\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
 % For loop:
-\State \phantom{\textbf{Let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma + \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
+\State \phantom{\textbf{Let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
 \For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
 \If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
 \State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to priority queue.}
