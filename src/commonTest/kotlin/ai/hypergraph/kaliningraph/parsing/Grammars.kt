@@ -25,6 +25,8 @@ object Grammars {
     S -> X | Y | Z
   """.parseCFG().noNonterminalStubs
 
+  val deadSimple = """S -> N | S + S | S % S""".parseCFG().noNonterminalStubs
+
   val ocamlCFG = """
     S -> X
     X -> A | V | ( X , X ) | X X | ( X )

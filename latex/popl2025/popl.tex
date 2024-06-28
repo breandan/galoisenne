@@ -98,11 +98,11 @@
         \begin{tikzpicture}[node distance=5cm]
           \node (start) [io] {Broken code};
           \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
-          \node (gram1) [io2, above of=node1, yshift=-3cm] {Grammar};
+          \node (gram1) [io2, above of=node1, yshift=-3.2cm] {Grammar};
 %        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
 %        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-          \node (node3) [plain, right of=node1] {\textbf{Repair decoding}};
-          \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
+          \node (node3) [plain, right of=node1, xshift=0.5cm] {\textbf{Repair decoding}};
+          \node (ngram) [io2, above of=node3, yshift=-3.2cm] {Markov chain};
           \node (node4) [io, right of=node3] {Repairs};
           \draw [arrow] (start) -- (node1);
           \draw [arrow] (gram1) -- (node1);
@@ -113,20 +113,20 @@
         \end{tikzpicture}
       }
     \end{center}
-%  \caption{Line chart of our proposed method.}\label{fig:linechart}
+  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a set of likely repairs.}\label{fig:arch_simp}
   \end{figure}
 
-  Our primary technical contributions are threefold: (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair (2) a theoretical connection between idempotent matrix completion and CFL parsing with holes, and (3) an algebraic datatype and integer bijection for enumerating or sampling valid sentences in finite context-free languages. The efficacy of our technique owes to the fact it does not suggest likely edits, but unique, fully formed repairs within a certain edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+  Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness, as seen in Fig.~\ref{fig:arch_simp}. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}\label{sec:example}
 
-  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\\
+  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.3cm}
 
-  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.3cm}
 
   We can fix it by inserting a colon after the function definition, yielding:\\
 
-  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\\
+  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.3cm}
 
   A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
 %  Consider the following Kotlin snippet:\\
@@ -154,13 +154,66 @@
   \begin{figure}[h!]
     \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
     (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\\\
-    (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})} \\
+    (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
     \end{tabular}
   \end{figure}
 
   With some typing information, we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
+
+%  By means of illustration, consider a simple grammar, $G = \{S \rightarrow N \mid S + S \mid S \times S\}$. For convenience, $G$ can be converted to an equivalent form, $G'= \{S \rightarrow N, S \rightarrow S L, O \rightarrow + \mid \times, L \rightarrow O N\}$. Suppose we have a sequence, \texttt{a + * b}, which in lexical form, becomes \texttt{N + * N}. We first construct an automaton, recognizing every single edit as follows:
+%
+%\begin{figure}[h!]
+%  \resizebox{0.5\textwidth}{!}{
+%  \begin{tikzpicture}[
+%%->, % makes the edges directed
+%    >=stealth',
+%    node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+%    initial text=$ $, % sets the text that appears on the start arrow
+%  ]
+%    \node[state, initial]                (00) {$q_{0,0}$};
+%    \node[state, right of=00]            (10) {$q_{1,0}$};
+%    \node[state, right of=10]            (20) {$q_{2,0}$};
+%    \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+%    \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+%
+%    \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+%    \node[state, right of=01]                     (11) {$q_{1,1}$};
+%    \node[state, right of=11]                     (21) {$q_{2,1}$};
+%    \node[state, right of=21]                     (31) {$q_{3,1}$};
+%    \node[accepting, state, right of=31]          (41) {$q_{4,1}$};
+%
+%    \draw [->] (00) edge[below] node{$\texttt{N}$} (10);
+%    \draw [->] (10) edge[below] node{$\texttt{+}$} (20);
+%    \draw [->] (20) edge[below] node{$\texttt{*}$} (30);
+%    \draw [->] (30) edge[below] node{$\texttt{N}$} (40);
+%
+%    \draw [->] (01) edge[below] node{$\texttt{N}$}                       (11);
+%    \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{+}$} (21);
+%    \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{*}$} (31);
+%    \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{N}$} (41);
+%
+%    \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{N}]$}} (11);
+%    \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{+}]$}} (21);
+%    \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{*}]$}} (31);
+%    \draw [->] (30) edge[left] node{\tiny{$[\neq \texttt{N}]$}} (41);
+%
+%    \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{N}]$}} (01);
+%    \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{+}]$}} (11);
+%    \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{*}]$}} (21);
+%    \draw [->] (30) edge[bend left=10, left] node{\tiny{$[\neq \texttt{N}]$}} (31);
+%    \draw [->] (40) edge[bend left=10, left] node{\tiny{$[.^{\ast}]$}} (41);
+%
+%
+%    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{+}$}    (21);
+%    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{*}$}    (31);
+%    \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{N}$}    (41);
+%  \end{tikzpicture}
+%  }
+%  \caption{Levenshtein automaton recognizing every single edit of a string.}\label{fig:lev_automaton}
+%\end{figure}
 
   \clearpage\section{Problem statement}
 
@@ -208,7 +261,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %\begin{figure}[h!]
     \vspace{-0.4cm}
     \begin{center}
-      \resizebox{0.39\textwidth}{!}{
+      \resizebox{0.4\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop, draw=none];
           \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
@@ -230,7 +283,7 @@ First, we generate a synthetic grammar representing the intersection between the
           \node [below=0.7cm of pro2b, xshift=0.05cm] {\Large\textbf{Language intersection}};
           \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-          \node (const) [process, below of=dec1, yshift=-1.8cm] {Enumerate $\mathbb{T}_2$ and rerank};
+          \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate $\mathbb{T}_2$ and rerank};
           \node [above=0.07cm of const, xshift=1.5cm] {(Algorithm A, \S~\ref{sec:matrix_completion})};
 
 %          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
@@ -247,9 +300,10 @@ First, we generate a synthetic grammar representing the intersection between the
           \node (rank) [process, below of=grwa, yshift=-0.5cm] {Convert to DFA and walk};
           \node [above=0.1cm of rank, xshift=1.5cm] {(Algorithm C, \S~\ref{sec:decoding})};
 %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-          \node [below=0.01cm of rank, xshift=5.5cm] {\Large\textbf{Repair decoding}};
-          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,5.8)$) rectangle ($(rank.south east)+(5.3,-0.8)$);
+          \node [below=0.3cm of rank, xshift=2.7cm] {\Large\textbf{Repair decoding}};
+          \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(2.5,-1.1)$);
 
+          \node (results) [io, right of=grwa,xshift=5.2cm] {Repairs};
 %  \node (out1) [io, below of=pro2a] {Output};
           \node (stop) [startstop, right of=rank, xshift=3cm];
           \node (stop1) [startstop, right of=grwa, xshift=3cm];
@@ -267,6 +321,10 @@ First, we generate a synthetic grammar representing the intersection between the
           \draw [arrow] (lnfa) -- (pro1);
           \draw [arrow] (pcfg) -- (pro1);
 
+          \draw [arrow] (grwa) -- (results);
+          \draw [line width=0.8pt] (stop.west) -- (stop1.west);
+          \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
+
 %  \draw [arrow] (in1) -- (pro1);
           \draw [arrow] (pro1) -- (dec1);
           \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
@@ -283,9 +341,9 @@ First, we generate a synthetic grammar representing the intersection between the
 %          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
 %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
-          \draw [arrow] (rank) -- (stop);
-          \draw [arrow] (grwa) -- (stop1);
-          \draw [arrow] (const) -- (stop2);
+          \draw [line width=0.8pt] (rank) -- (stop);
+          \draw [line width=0.8pt] (grwa) -- (stop1);
+          \draw [line width=0.8pt] (const) -- (stop2);
 %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
 
         \end{tikzpicture}
