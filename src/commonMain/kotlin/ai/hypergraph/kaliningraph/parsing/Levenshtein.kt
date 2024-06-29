@@ -53,6 +53,7 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
 
 fun makeLevFSA(str: Σᐩ, dist: Int): FSA = makeLevFSA(str.tokenizeByWhitespace(), dist)
 
+/** Uses nominal arc predicates. See [NOM] for denominalization. */
 fun makeLevFSA(
   str: List<Σᐩ>,
   dist: Int,
@@ -82,12 +83,12 @@ fun makeLevFSA(
 private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 
 /**
-   TODO: upArcs and diagArcs are the most expensive operations taking ~O(2n|Σ|) to construct.
+     upArcs and diagArcs are the most expensive operations taking ~O(2n|Σ|) to construct.
      Later, the Bar-Hillel construction creates a new production for every triple QxQxQ, so it
-     increases the size of generated grammar by (2n|Σ|)^3. To fix this, we must instead create
+     increases the size of generated grammar by (2n|Σ|)^3. To fix this, we instead create
      a nominal or parametric CFG with arcs which denote infinite alphabets.
 
-     See: [ai.hypergraph.kaliningraph.repair.CEAProb]
+     See also: [ai.hypergraph.kaliningraph.repair.CEAProb]
 *//*
   References
     - https://arxiv.org/pdf/1402.0897.pdf#section.7
@@ -100,10 +101,38 @@ private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
  (q_i,j−1 -s→ q_i,j)∈δ
 */
 
+/*
+Precision@All
+=============
+|σ|∈[0, 10): Top-1/total: 28 / 28 = 1.0
+|σ|∈[10, 20): Top-1/total: 41 / 41 = 1.0
+|σ|∈[20, 30): Top-1/total: 45 / 46 = 0.9782608695652174
+|σ|∈[30, 40): Top-1/total: 41 / 41 = 1.0
+|σ|∈[40, 50): Top-1/total: 9 / 11 = 0.8181818181818182
+Δ(1)= Top-1/total: 57 / 58 = 0.9827586206896551
+Δ(2)= Top-1/total: 57 / 58 = 0.9827586206896551
+Δ(3)= Top-1/total: 50 / 51 = 0.9803921568627451
+(|σ|∈[0, 10), Δ=1): Top-1/total: 11 / 11 = 1.0
+(|σ|∈[0, 10), Δ=2): Top-1/total: 11 / 11 = 1.0
+(|σ|∈[0, 10), Δ=3): Top-1/total: 6 / 6 = 1.0
+(|σ|∈[10, 20), Δ=1): Top-1/total: 12 / 12 = 1.0
+(|σ|∈[10, 20), Δ=2): Top-1/total: 11 / 11 = 1.0
+(|σ|∈[10, 20), Δ=3): Top-1/total: 18 / 18 = 1.0
+(|σ|∈[20, 30), Δ=1): Top-1/total: 18 / 18 = 1.0
+(|σ|∈[20, 30), Δ=2): Top-1/total: 13 / 13 = 1.0
+(|σ|∈[20, 30), Δ=3): Top-1/total: 14 / 15 = 0.9333333333333333
+(|σ|∈[30, 40), Δ=1): Top-1/total: 11 / 11 = 1.0
+(|σ|∈[30, 40), Δ=2): Top-1/total: 19 / 19 = 1.0
+(|σ|∈[30, 40), Δ=3): Top-1/total: 11 / 11 = 1.0
+(|σ|∈[40, 50), Δ=1): Top-1/total: 5 / 6 = 0.8333333333333334
+(|σ|∈[40, 50), Δ=2): Top-1/total: 3 / 4 = 0.75
+(|σ|∈[40, 50), Δ=3): Top-1/total: 1 / 1 = 1.0
+ */
+
 fun upArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
-  ((0..<str.size + dist).toSet() * (1..dist).toSet())
+  ((0..str.size).toSet() * (1..dist).toSet())
 //    .filter { (i, _, s) -> str.size <= i || str[i] != s }
-    .filter { (i, j) -> i <= str.size || i - str.size < j }
+//    .filter { (i, j) -> i <= str.size || i - str.size < j }
     .map { (i, j) -> i to j to if (i < str.size) str[i] else "###" }
     .map { (i, j, s) -> i to j - 1 to "[!=]$s" to i to j }
     .postProc(digits)
@@ -115,10 +144,10 @@ fun upArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
 */
 
 fun diagArcs(str: List<Σᐩ>, dist: Int, digits: Int): TSA =
-  ((1..<str.size + dist).toSet() * (1..dist).toSet())
+  ((1..str.size).toSet() * (1..dist).toSet())
 //    .filter { (i, _, s) -> str.size <= i - 1 || str[i - 1] != s }
     .filter { (i, j) -> i <= str.size || i - str.size <= j }
-    .map { (i, j) -> i to j to if (str.size <= i - 1) "###" else str[i - 1] }
+    .map { (i, j) -> i to j to str[i - 1] }
     .map { (i, j, s) -> i - 1 to j - 1 to "[!=]$s" to i to j }
     .postProc(digits)
 

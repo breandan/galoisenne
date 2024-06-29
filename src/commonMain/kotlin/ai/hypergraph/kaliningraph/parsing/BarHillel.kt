@@ -92,7 +92,7 @@ private fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap
 // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
 fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
   (unitProductions * fsa.nominalize().flattenedTriples)
-    .filter { (_, σ, arc) -> (arc.π2)(σ) }
+    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
     .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
 
 fun CFG.postProcess() =
@@ -201,6 +201,8 @@ val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
   map
 }
 
+val CFG.lengthBoundsCache by cache { lengthBounds.let { lb -> nonterminals.map { lb[it] ?: 0..0 } } }
+
 fun Π3A<STC>.isValidStateTriple(): Boolean {
   fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
     first <= other.first && second <= other.second
@@ -262,6 +264,7 @@ fun FSA.obeys(a: STC, b: STC, nt: Int, parikhMap: ParikhMap): Bln {
   val sl = levString.size <= max(a.second, b.second) // Part of the LA that handles extra
 
   if (sl) return true
+  // y-difference between Levenshtein levels of a and b, i.e., relaxation in case we are outside Parikh bounds
   val margin = (b.third - a.third).absoluteValue
   val length = (b.second - a.second)
   val range = (length - margin).coerceAtLeast(1)..(length + margin)

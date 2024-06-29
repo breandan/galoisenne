@@ -167,9 +167,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val prods = nonterminalProductions
-    .map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
-  val lengthBoundsCache = lengthBounds.let { lb -> nonterminals.map { lb[it] ?: 0..0 } }
+  val prods = nonterminalProductions.map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
   val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }
 
   val ctClock = TimeSource.Monotonic.markNow()
@@ -187,7 +185,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 
   val states = fsa.stateLst
   val allsym = ntLst
-  val counter = LongAdder()
+  var counter = 0
   val lpClock = TimeSource.Monotonic.markNow()
   val binaryProds =
     prods.parallelStream().flatMap {
@@ -202,8 +200,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .filter { it.checkCompatibility(trip, ct2) }
         .map { (a, b, c) ->
-          counter.increment()
-          if (MAX_PRODS < counter.sum()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
+          if (MAX_PRODS < counter++) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
           val (p, q, r)  = states[a] to states[b] to states[c]
           "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
         }
@@ -257,45 +254,48 @@ tailrec fun CFG.jvmElimVarUnitProds(
 
 // TODO: Incomplete / untested
 // Based on: https://zerobone.net/blog/cs/non-productive-cfg-rules/
+// Precondition: The CFG must be binarized, i.e., almost CNF but may have useless productions
+// Postcondition: The CFG is in Chomsky Normal Form (CNF)
 fun CFG.jdvpNew(): CFG {
   println("Total productions: $size")
   val timer = TimeSource.Monotonic.markNow()
   val counter = ConcurrentHashMap<Set<Σᐩ>, LongAdder>()
 
+  // Maps each nonterminal to the set of RHS sets that contain it
   val UDEPS = ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Set<Σᐩ>>>(size)
+  // Maps the set of symbols on the RHS of a production to the production
   val NDEPS = ConcurrentHashMap<Set<Σᐩ>, ConcurrentLinkedQueue<Production>>(size).apply {
     put(emptySet(), ConcurrentLinkedQueue())
     this@jdvpNew.asSequence().asStream().parallel().forEach {
-      val v = it.second.toSet()
+      val v = it.second.toSet() // RHS set, i.e., the set of NTs on the RHS of a production
+      // If |v| is 1, then the production must be a unit production, i.e, A -> a, b/c A -> B is not binarized
       getOrPut(if(it.second.size == 1) emptySet() else v) { ConcurrentLinkedQueue() }.add(it)
       v.forEach { s -> UDEPS.getOrPut(s) { ConcurrentLinkedQueue() }.add(v) }
       if (v.size == 2) counter.putIfAbsent(v, LongAdder().apply { add(2L) })
     }
   }
 
-  println("Constructed dependency graph in ${timer.elapsedNow()}")
+  println("Built graph in ${timer.elapsedNow()}: ${counter.size} conjuncts, ${UDEPS.size + NDEPS.size} edges")
 
-  val visited = mutableSetOf<Production>()
   val nextReachable: LinkedHashSet<Set<Σᐩ>> = LinkedHashSet<Set<Σᐩ>>().apply { add(emptySet()) }
 
   val productive = mutableSetOf<Production>()
   do {
-    println("Next reachable: ${nextReachable.size}, Visited: ${visited.size}, Productive: ${productive.size}")
+//    println("Next reachable: ${nextReachable.size}, Productive: ${productive.size}")
     val q = nextReachable.removeFirst()
-    if (q.size == 2) { // Conjunct
+    if (counter[q]?.sum() == 0L || NDEPS[q]?.all { it in productive } == true) continue
+    else if (q.size == 2) { // Conjunct
       val dec = counter[q]!!.apply { decrement() }
       if (dec.sum() == 0L) { // Seen both
         NDEPS[q]?.forEach {
-          visited += it
-          UDEPS[it.LHS]?.forEach { st -> NDEPS[st]?.forEach { if (it !in visited) nextReachable += st } }
           productive.add(it)
+          UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
         }
-      } else nextReachable += q // Always add back if sum not zero
+      } else nextReachable.addLast(q) // Always add back if sum not zero
     } else {
       NDEPS[q]?.forEach {
-        visited += it
-        UDEPS[it.LHS]?.forEach { st -> NDEPS[st]?.forEach { if (it !in visited) nextReachable += st } }
         productive.add(it)
+        UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
       }
     }
   } while (nextReachable.isNotEmpty())
@@ -330,18 +330,19 @@ fun CFG.jdvpNew(): CFG {
 
 fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
-  val counter = LongAdder()
+  var counter = 0
   val nts: Set<Σᐩ> = asSequence().asStream().parallel().map { it.first }.collect(Collectors.toSet())
   val rw = asSequence().asStream().parallel()
     .filter { prod ->
-     counter.increment()
-     if (counter.toInt() % 10 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout! ${clock.elapsedNow()}")
+     if (counter++ % 1000 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout! ${clock.elapsedNow()}")
       // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
       prod.RHS.all { !(it.first() == '[' && 1 < it.length) || it in nts }
     }
     .collect(Collectors.toSet())
     .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
-    .freeze().jvmRemoveUselessSymbols()
+    .freeze()
+    .jvmRemoveUselessSymbols()
+  //.jdvpNew()
 
   println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
@@ -375,22 +376,22 @@ private fun CFG.jvmReachSym(from: Σᐩ = START_SYMBOL): Set<Σᐩ> {
   val allReachable: MutableSet<Σᐩ> = mutableSetOf(from)
   val nextReachable: MutableSet<Σᐩ> = mutableSetOf(from)
   val NDEPS =
-    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>(size).apply {
+    ConcurrentHashMap<Σᐩ, MutableSet<Σᐩ>>(size).apply {
       this@jvmReachSym.asSequence().asStream().parallel()
-        .forEach { (l, r) -> getOrPut(l) { ConcurrentSkipListSet() }.addAll(r) }
+        .forEach { (l, r) -> getOrPut(l) { ConcurrentHashMap.newKeySet() }.addAll(r) }
     }
 //    this@jvmReachSym.asSequence().asStream().parallel()
 //      .flatMap { (l, r) -> r.stream().map { l to it } }
 //      // List of second elements grouped by first element
 //      .collect(Collectors.groupingByConcurrent({ it.first }, Collectors.mapping({ it.second }, Collectors.toSet())))
 
-  do {
+  while (nextReachable.isNotEmpty()) {
     val t = nextReachable.first()
     nextReachable.remove(t)
     allReachable += t
     nextReachable += (NDEPS[t]?: emptyList())
       .filter { it !in allReachable && it !in nextReachable }
-  } while (nextReachable.isNotEmpty())
+  }
 
 //  println("TERM: ${allReachable.any { it in terminals }} ${allReachable.size}")
 
@@ -406,22 +407,22 @@ private fun CFG.jvmGenSym(
   val allGenerating: MutableSet<Σᐩ> = mutableSetOf()
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
   val TDEPS =
-    ConcurrentHashMap<Σᐩ, ConcurrentSkipListSet<Σᐩ>>(size).apply {
+    ConcurrentHashMap<Σᐩ, MutableSet<Σᐩ>>(size).apply {
       this@jvmGenSym.asSequence().asStream().parallel()
-        .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentSkipListSet() }.add(l) } }
+        .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentHashMap.newKeySet() }.add(l) } }
     }
 //    this@jvmGenSym.asSequence().asStream().parallel()
 //      .flatMap { (l, r) -> r.asSequence().asStream().map { it to l } }
 //      // List of second elements grouped by first element
 //      .collect(Collectors.groupingByConcurrent({ it.first }, Collectors.mapping({ it.second }, Collectors.toList())))
 
-  do {
+  while (nextGenerating.isNotEmpty()) {
     val t = nextGenerating.first()
     nextGenerating.remove(t)
     allGenerating += t
     nextGenerating += (TDEPS[t] ?: emptyList())
       .filter { it !in allGenerating && it !in nextGenerating }
-  } while (nextGenerating.isNotEmpty())
+  }
 
 //  println("START: ${START_SYMBOL in allGenerating} ${allGenerating.size}")
 

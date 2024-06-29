@@ -563,7 +563,7 @@ First, we generate a synthetic grammar representing the intersection between the
   \begin{prooftree}
     \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
     \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}

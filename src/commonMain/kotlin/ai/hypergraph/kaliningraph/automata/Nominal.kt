@@ -15,7 +15,9 @@ class NOM(override val Q: TSA, override val init: Set<Σᐩ>, override val final
   }
 
   fun Σᐩ.predicate(): (Σᐩ) -> Boolean =
-    if (startsWith("[!=]")) { s: Σᐩ -> s != drop(4) } else { s: Σᐩ -> s == this }
+    if (this == "[.*]") { s: Σᐩ -> true }
+    else if (startsWith("[!=]")) { s: Σᐩ -> s != drop(4) }
+    else { s: Σᐩ -> s == this }
 
   val mapF: Map<Σᐩ, List<Π2<StrPred, Σᐩ>>> by lazy {
     Q.map { q -> q.first to q.second.predicate() to q.third }.groupBy { it.first }
