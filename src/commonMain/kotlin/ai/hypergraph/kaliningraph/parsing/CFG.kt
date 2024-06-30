@@ -19,7 +19,7 @@ typealias CFG = Set<Production>
 val Production.LHS: Σᐩ get() = first
 val Production.RHS: List<Σᐩ> get() = second
 // Not sure why this was added, but we don't have time for it in production
-//  second.let { if (it.size == 1) it.map(Σᐩ::stripEscapeChars) else it }
+//  second.let { if (it.size == 1 && 2 < it.first().length && it.first().first() == '`') it.map(Σᐩ::stripEscapeChars) else it }
 
 /**
  * "Freezes" the enclosed CFG, making it immutable and caching its hashCode for

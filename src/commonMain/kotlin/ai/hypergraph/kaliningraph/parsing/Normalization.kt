@@ -23,6 +23,7 @@ fun CFG.normalize(): CFG =
   mutableListOf<CFG>().let { rewrites ->
     addGlobalStartSymbol()
       .expandOr()
+      .unescape()
       .also { rewrites.add(it) } /** [originalForm] */
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
@@ -108,6 +109,9 @@ fun CFG.expandOr(): CFG =
       else (acc.dropLast(1) + listOf(acc.last() + s))
     }.map { prod.LHS to it }
   }.toSet()
+
+fun CFG.unescape(): CFG =
+  map { (l, r) -> l to r.map { it.stripEscapeChars() } }.toSet()
 
 // Adds V -> εV | Vε to every unit production [V -> v] in CFG
 // so that holes can be [optionally] elided by the SAT solver.

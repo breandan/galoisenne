@@ -279,7 +279,8 @@ fun Σᐩ.parseCFG(
     line.splitProd().let { it[0] to it[1].tokenizeByWhitespace() }
   }.toSet().let { if (normalize) it.normalForm else it }
 
-fun Σᐩ.stripEscapeChars(escapeSeq: Σᐩ = "`"): Σᐩ = replace(escapeSeq, "")
+fun Σᐩ.stripEscapeChars(c: Char = '`'): Σᐩ =
+  if (first() == c && last() == c) drop(1).dropLast(1) else this
 
 val PRODCFG = Regex("\\s*[^|]+\\s+->\\s+([^|]+\\s+\\|\\s+)*[^|]+\\s*")
 fun Σᐩ.isValidProd() = lines().filter { "->" in it }.all { l -> l.matches(PRODCFG) }
