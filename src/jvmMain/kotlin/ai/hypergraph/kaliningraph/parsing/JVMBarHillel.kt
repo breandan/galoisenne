@@ -12,7 +12,7 @@ import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
+import java.util.concurrent.atomic.*
 
 fun CFG.parallelEnumSeqMinimalWOR(
   prompt: List<String>,
@@ -145,7 +145,7 @@ fun CFG.makeLevPTree(toRepair: Σᐩ, levDist: Int = 3, parikhMap: ParikhMap = t
 val BH_TIMEOUT = 9.minutes
 val MINFREEMEM = 1000000000L
 val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB
-val MAX_PRODS = 200_000_000
+val MAX_PRODS = 150_000_000
 
 // We pass pm and lbc because cache often flushed forcing them to be reloaded
 // and we know they will usually be the same for all calls to this function.
@@ -188,7 +188,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
 
   val states = fsa.stateLst
   val allsym = ntLst
-  var counter = 0
+  val counter = AtomicInteger(0)
   val lpClock = TimeSource.Monotonic.markNow()
   val binaryProds =
     prods.parallelStream().flatMap {
@@ -203,8 +203,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .filter { it.checkCompatibility(trip, ct2) }
         .map { (a, b, c) ->
-          if (MAX_PRODS < counter++) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
-          val (p, q, r)  = states[a] to states[b] to states[c]
+          if (MAX_PRODS < counter.incrementAndGet()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
+          val (p, q, r) = states[a] to states[b] to states[c]
           "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
         }
     }.toList()
