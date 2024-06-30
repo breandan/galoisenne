@@ -134,8 +134,7 @@ fun CFG.parallelEnumListWOR(
  * the intersection grammar since we are on the JVM, resulting in a ~10x speedup.
  */
 
-fun CFG.jvmIntersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG =
-  jvmIntersectLevFSAP(fsa, parikhMap)
+fun CFG.jvmIntersectLevFSA(fsa: FSA): CFG = jvmIntersectLevFSAP(fsa)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 //    .intersectLevFSAP(fsa)
@@ -148,7 +147,11 @@ val MINFREEMEM = 1000000000L
 val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB
 val MAX_PRODS = 200_000_000
 
-private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
+// We pass pm and lbc because cache often flushed forcing them to be reloaded
+// and we know they will usually be the same for all calls to this function.
+fun CFG.jvmIntersectLevFSAP(fsa: FSA,
+                            parikhMap: ParikhMap = this.parikhMap,
+                            lbc: List<IntRange> = this.lengthBoundsCache): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
@@ -175,7 +178,7 @@ private fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap): CFG {
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
   ct.parallelStream()
     .filter {
-      lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) &&
+      lbc[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) &&
         fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
     }.toList().also {
       val fraction = it.size.toDouble() / (fsa.states.size * nonterminals.size * fsa.states.size)
