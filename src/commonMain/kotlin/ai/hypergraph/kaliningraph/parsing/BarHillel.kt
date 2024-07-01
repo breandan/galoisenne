@@ -282,10 +282,11 @@ private fun manhattanDistance(first: Pair<Int, Int>, second: Pair<Int, Int>): In
   (second.second - first.second).absoluteValue + (second.first - first.first).absoluteValue
 
 // Range of the shortest path to the longest path, i.e., Manhattan distance
-fun FSA.SPLP(a: STC, b: STC) =
-  (APSP[a.π1 to b.π1] ?: Int.MAX_VALUE)..//.also { /*if (Random.nextInt(100000) == 3) if(it == Int.MAX_VALUE) println("Miss! ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") else */
-//    if (it != Int.MAX_VALUE) println("Hit: ${hash(a.π1, b.π1)} / ${a.first} / ${b.first}") }..
-      manhattanDistance(a.coords(), b.coords())
+fun FSA.SPLP(a: STC, b: STC): IntRange {
+  val rng = APSP[a.π1 to b.π1]
+  return if (rng == null) Int.MAX_VALUE..Int.MAX_VALUE
+  else rng..manhattanDistance(a.coords(), b.coords())
+}
 
 fun IntRange.overlaps(other: IntRange) =
   (other.first in first..last) || (other.last in first..last)

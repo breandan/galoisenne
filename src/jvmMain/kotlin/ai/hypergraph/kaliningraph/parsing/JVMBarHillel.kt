@@ -178,7 +178,14 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
   ct.parallelStream()
     .filter {
-      lbc[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) &&
+      // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
+      // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
+      // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
+      lbc[it.π3].overlaps(
+        fsa.SPLP(it.π1, it.π2)
+      ) &&
+        // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.
+        // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
         fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
     }.toList().also {
       val fraction = it.size.toDouble() / (fsa.states.size * nonterminals.size * fsa.states.size)
@@ -344,7 +351,7 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
     .collect(Collectors.toSet())
     .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
     .freeze()
-    .jvmRemoveUselessSymbols()
+    .jvmRemoveUselessSymbols(nts)
   //.jdvpNew()
 
   println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
@@ -367,7 +374,8 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
  */
 
 fun CFG.jvmRemoveUselessSymbols(
-  generating: Set<Σᐩ> = jvmGenSym(),
+  nonterminals: Set<Σᐩ>,
+  generating: Set<Σᐩ> = jvmGenSym(nonterminals),
   reachable: Set<Σᐩ> = jvmReachSym()
 ): CFG =
   asSequence().asStream().parallel()
