@@ -941,6 +941,8 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \pi(G: \mathcal{G}, v: V, n: \mathbb{N}, d: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [n-d, n+d]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
   \end{equation}
 
+\subsection{Sampling parse trees from $\mathbb{T}_2$ with and without replacement}
+
   $\mathbb{T}_2$ also allows us to sample whole parse trees by constructing $(\Lambda^*(\sigma) \circ S): \mathbb{T}_2$ from the bottom-up and sampling top-down. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
 
 \begin{equation}
@@ -961,7 +963,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ will necessarily be the same width.
 
-The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensititive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
+The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensitive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -971,7 +973,7 @@ The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2
   \end{cases}
 \end{equation}
 
-To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, that we define as follows:
+To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production counting the size of its language relative to the size of the root nonterminal's language, assign a commensurate integer range and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, that recursively selects values within that range:
 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -989,9 +991,11 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$ and decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. If the language being sampled is sufficiently small, we can enumerate every tree, otherwise, sample them uniformly without replacement, or with replacement using a PCFG. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
-  \subsection{Decoding repairs in order of maximal likelihood}\label{sec:decoding}
+  This procedure has the advantage of enabling parallel communication-free sampling without replacement across an arbitrary number of processor cores.
 
-  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, this can be improved for larger languages by sampling repairs in order of decreasing likelihood. First, we observe the following:
+  \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
+
+  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order and does not guarantee string uniqueness, as the same string may have more than one parse tree, i.e., the CFG may be ambiguous. While sufficient for small finite CFLs, this becomes problematic for large finite CFLs and highly ambiguous CFGs. We can improve the rate of convergence for natural syntax repair in large or ambiguous grammars by sampling repair trajectories through a DFA in order of decreasing string likelihood. First, we make the following observation:
 
   \begin{lemma}\label{lemma:upper-bound}
     The intersection grammar, $G_\cap$, is acyclic.
@@ -1001,14 +1005,14 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. This decoding representation has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized. It is also more easily steerable than a PCFG sampler, and can be used to decode repairs in order of n-gram likelihood using a standard pretrained autoregressive language model.
+  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. This decoding representation has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converges linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
 Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 
 \begin{equation}
 \mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
-\alpha \mid \mathcal{L}(\alpha) = \{\texttt{root}(T)\} & T: \Sigma, \\
-\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL(V^2P(a)^2)
+\alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
+\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
 \end{cases}
 \begin{equation}
 
