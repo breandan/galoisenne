@@ -642,10 +642,10 @@ First, we generate a synthetic grammar representing the intersection between the
     Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
   \end{definition}
 
-  Now, we know that if the Parikh divergence between two intervals exceeds the Levenshtein margin between two states in a Lev-NFA, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
+  Now, we know that if the Parikh divergence between two intervals is nonzero, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
 
-  \begin{definition}[Levenshtein-Parikh compatibility]
-    Let $q = q_{h,i}, q'=q_{j,k}$ be two states in a Lev-NFA and V be a CFG nonterminal. We say that $\langle q, v, q'\rangle: Q\times V\times Q$ are compatible iff the Parikh divergence is bounded by the Levenshtein margin $k-i$, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) \leq k-i$.
+  \begin{definition}[Parikh compatibility]
+    Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) = 0$.
   \end{definition}
 
   Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
@@ -672,8 +672,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
-  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and all repairs in the language if possible, otherwise as many as can be sampled in an arbitrary but fixed timeout. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the Parikh map for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
-
+  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and eventually generate all repairs in the language, preferably in a natural order. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the length-bounded Parikh map for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
 
   \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
 
@@ -992,7 +991,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
   \subsection{Decoding repairs in order of maximal likelihood}\label{sec:decoding}
 
-  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, this can be improved for larger languages by enumerating repairs in order of decreasing likelihood. First, we observe the following:
+  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order. While sufficient for the purpose of decoding small finite languages, this can be improved for larger languages by sampling repairs in order of decreasing likelihood. First, we observe the following:
 
   \begin{lemma}\label{lemma:upper-bound}
     The intersection grammar, $G_\cap$, is acyclic.
@@ -1002,36 +1001,45 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic, it can be translated straightforwardly into a finite state automaton. This representation has many advantages, particularly, it can be efficiently minimized, unlike CFGs. It is also more easily steerable than a PCFG sampler, and can be used to decode repairs in order of n-gram likelihood using an autoregressive language model.
+  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. This decoding representation has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized. It is also more easily steerable than a PCFG sampler, and can be used to decode repairs in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
-  To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
+Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 
-  \begin{align}
-    X \oplus Z &\mapsto \bigcup_{v \in V}\big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[v]) \cup \mathcal{L}(Z[v])\big\}\\
-    X \otimes Z &\mapsto \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[x]) \times \mathcal{L}(Z[z]), (v \rightarrow xz) \in P\big\}
-  \end{align}
+\begin{equation}
+\mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
+\alpha \mid \mathcal{L}(\alpha) = \{\texttt{root}(T)\} & T: \Sigma, \\
+\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL(V^2P(a)^2)
+\end{cases}
+\begin{equation}
 
-  \noindent where the unit nonterminals occupying the first upper diagonal are constructed as follows:
+%  To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
+%
+%  \begin{align}
+%    X \oplus Z &\mapsto \bigcup_{v \in V}\big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[v]) \cup \mathcal{L}(Z[v])\big\}\\
+%    X \otimes Z &\mapsto \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \mathcal{L}(X[x]) \times \mathcal{L}(Z[z]), (v \rightarrow xz) \in P\big\}
+%  \end{align}
+%
+%  \noindent where the unit nonterminals occupying the first upper diagonal are constructed as follows:
+%
+%  \begin{equation}
+%    \begin{footnotesize}
+%      \Lambda(s: \underline\Sigma^n) \mapsto \Big\{\langle v, A_v\rangle\mid v: V, \mathcal{L}(A_v) = \{\varepsilon\}\Big\} \otimes \begin{cases}
+%        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \Sigma \big\} & \text{if $s$ is a hole,} \vspace{5pt}\\
+%        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \{s\}, (v \rightarrow s)\in P\big\} & \text{otherwise.}
+%      \end{cases}
+%    \end{footnotesize}
+%  \end{equation}
 
-  \begin{equation}
-    \begin{footnotesize}
-      \Lambda(s: \underline\Sigma^n) \mapsto \Big\{\langle v, A_v\rangle\mid v: V, \mathcal{L}(A_v) = \{\varepsilon\}\Big\} \otimes \begin{cases}
-        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \Sigma \big\} & \text{if $s$ is a hole,} \vspace{5pt}\\
-        \big\{\langle v, A_v \rangle \mid \mathcal{L}(A_v) = \{s\}, (v \rightarrow s)\in P\big\} & \text{otherwise.}
-      \end{cases}
-    \end{footnotesize}
-  \end{equation}
+  In the case of LBH intersection grammars, $\mathcal{Y}(G_\cap')$ would then yield an FSA recognizing $\ell\cap L(\err\sigma, d)$, which can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1964derivatives} and decoded using a k-best paths algorithm to obtain the top-k maximum likelihood repairs.
 
-  Constructively, let $+, *: \mathcal{M}\times \mathcal{M} \rightarrow \mathcal{M}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that NFA are closed under these operations. $\Lambda^* \circ S$ would then yield an NFA recognizing $\Sigma^n\cap\mathcal{L}(G)$, which can be determinized and decoded using k-best paths to obtain the top-k maximum likelihood repairs.
-
-Let us return to the second example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into a equivalent DFA. After Brzozowski minimization, this will take the following form:
+For example, let us return to the second example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
 
 % Insert exampleDFA.pdf
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.9\textwidth]{exampleDFA.pdf}
-  \caption{Minimal DFA recognizing the language $L(\texttt{NAME = NAME . NAME ( NUM : , NUM : )}, 2) \cap \ell_\text{Python}$.}
+  \caption{Minimal DFA recognizing the langauge $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
   \label{fig:exampleDFA}
 \end{figure}
 
@@ -1051,7 +1059,7 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 \State \textbf{Let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
 %\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
 % For loop:
-\State \phantom{\textbf{Let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
+\State \phantom{\textbf{let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
 \For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
 \If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
 \State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to priority queue.}
