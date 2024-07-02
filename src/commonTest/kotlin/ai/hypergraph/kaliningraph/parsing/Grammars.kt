@@ -117,7 +117,7 @@ object Grammars {
   """.trimIndent().parseCFG().noNonterminalStubs
 
   val shortS2PParikhMap by lazy { ParikhMap(seq2parsePythonCFG, 20) }
-  val seq2parsePythonCFG: CFG = """
+  val seq2parsePythonCFGStr = """
     START -> Stmts_Or_Newlines
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
     Stmt_Or_Newline -> Stmt | Newline
@@ -308,8 +308,10 @@ object Grammars {
 
     Yield_Expr -> Yield_Keyword | Yield_Keyword Yield_Arg
     Yield_Arg -> From_Keyword Test | Testlist_Endcomma 
-  """.parseCFG().noNonterminalStubs
+  """
 
+  val seq2parsePythonCFG: CFG = seq2parsePythonCFGStr.parseCFG().noNonterminalStubs
+  val seq2parsePythonVanillaCFG: CFG = seq2parsePythonCFGStr.parseCFG().noEpsilonOrNonterminalStubs
 
   val checkedArithCFG = """
     START -> S
