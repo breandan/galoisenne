@@ -88,7 +88,7 @@
 %    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
 %    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
 %    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
-    \item We decode the data structure, returning a stream of concrete syntax repairs which is guaranteed to halt but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
+    \item We decode the data structure, returning a stream of concrete syntax repairs which is guaranteed to halt, but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
     \end{enumerate}
   \end{enumerate}
 
@@ -264,7 +264,7 @@ First, we generate a synthetic grammar representing the intersection between the
       \resizebox{0.4\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop, draw=none];
-          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
+          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap\Delta(\err\sigma, d)$};
           \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
           \node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
           \node [above=0.07cm of pcfg, xshift=1cm] {(\S~\ref{sec:prelim})};
@@ -362,7 +362,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
 %  \end{enumerate}
 
-  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with PCFG transitions using cube pruning, and then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov Chain until a fixed timeout is reached. We describe (A) in \S~\ref{sec:matrix_completion}, (B) in \S~\ref{sec:ptree}, and (C) in \S~\ref{sec:decoding}.
+  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with learned PCFG transitions, and then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov chain until a fixed timeout is reached. We describe (A) in \S~\ref{sec:matrix_completion}, (B) in \S~\ref{sec:ptree}, and (C) in \S~\ref{sec:decoding}.
 
   In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (A-C) differ in the order which they retrieve repairs, and the likelihood model they use to rank them.
 
@@ -814,7 +814,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \subsection{An algebraic datatype for context-free parse forests}\label{sec:ptree}
 
-  The procedure described in \S~\ref{sec:matrix_completion} generates solutions satisfying the matrix fixpoint, but forgets provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural treelike structure.
+  The procedure described in \S~\ref{sec:matrix_completion} generates solutions satisfying the matrix fixpoint, but forgets provenance. The question naturally arises, is there a way to solve for the parse trees directly? This would allow us to handle ambiguous grammars, whilst preserving the natural arborescent structure.
 
   \begin{wrapfigure}{r}{0.47\textwidth}
     \vspace{-9pt}
@@ -951,7 +951,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \Gamma(T) \mapsto \begin{cases}
         \texttt{BTree}\Big(\texttt{root}(T), \Gamma\big(\text{Multi}(\texttt{children}(T), \mathbf{p})\big)\Big) & \text{ if $T: \mathbb{T}_2$ } \\
         \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
-  \end{cases}
+  \end{cases} \tag{\text{Algorithm A}}
 \end{equation}
 
 \noindent This method is closely related to the generating function for the ordinary Boltzmann sampler,
@@ -975,7 +975,7 @@ The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2
   \end{cases}
 \end{equation}
 
-To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production counting the size of its language relative to the size of the root nonterminal's language, assign a commensurate integer range and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$, that recursively selects values within that range:
+To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production counting the size of its language relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within that range:
 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -991,9 +991,39 @@ To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we pre
   \end{cases}
 \end{equation}
 
-  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$, then decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. This procedure is trivially parallelizable across an arbitrary number of processor cores, enabling communication-free sampling without replacement. If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
+  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$, then decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. This procedure is trivially parallelizable across an arbitrary number of processors, enabling communication-free sampling without replacement. If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly until interrupted. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
-  \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
+\subsection{Ranked repair}\label{sec:ranking}
+
+Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
+
+Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
+
+To score the repairs, we use the conventional length-normalized negative log likelihood:
+
+\begin{equation}
+\text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
+\end{equation}
+
+Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by score. If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$.
+
+\begin{algorithm}[H]
+\caption{Enumerative sampling with n-gram reranking}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
+\State $\mathcal{R} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\For{$\texttt{seed} < |T|$ and uninterrupted}
+\State $i \gets \texttt{RandomIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample integer uniformly without replacement.}
+\State $\mathcal{R} \gets \mathcal{R} + \varphi(T, i)$ \Comment{Decode fresh parse tree and add to retrieved set.}
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+\EndFor
+\State \Return $\mathcal{R} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$ \Comment{Flatten trees and rank by sentence perplexity.}
+\end{algorithmic}
+\end{algorithm}
+
+  \clearpage\subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
   The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order and does not guarantee string uniqueness, as the same string may have more than one parse tree, i.e., the CFG may be ambiguous. While sufficient for small finite CFLs, this becomes problematic for large finite CFLs and highly ambiguous CFGs. We can improve the rate of convergence for natural syntax repair in large or ambiguous grammars by sampling repair trajectories through a DFA in order of decreasing string likelihood. First, we make the following observation:
 
@@ -1060,7 +1090,7 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 \State $\mathcal{T} \gets \varnothing, \mathcal{P} \gets \big[\langle \varepsilon, i, 0\rangle \mid i \in I\big]$ \Comment{Initialize priority queue of total and partial trajectories.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \Repeat
-\State \textbf{Let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
+\State \textbf{let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
 %\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
 % For loop:
 \State \phantom{\textbf{let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$ \Comment{Extend partial trajectories.}
@@ -1238,31 +1268,19 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
-  \clearpage\subsection{Ranked repair}\label{sec:ranking}
 
-  Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
-
-  Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
-
-  To score the repairs, we use the conventional length-normalized negative log likelihood:
-
-  \begin{equation}
-    \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
-  \end{equation}
-
-  Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by score. If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$.
-
-  To evaluate the quality of our ranking, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
-
-  \begin{equation}
-    \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
-  \end{equation}
-
-  This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems.
 
   \section{Experimental Setup}
 
-  We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Precision is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
+  We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
+
+  To evaluate accuracy, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
+
+\begin{equation}
+\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+\end{equation}
+
+  This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems.
 
   We compare our method against two separate baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
