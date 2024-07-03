@@ -3,7 +3,7 @@
   ybar,
   xlabel={$\Delta(\err\sigma, \sigma)$},
   ylabel={Precision@1},
-  title={Enumeration Only},
+  title={Enumeration + Reranking (Alg. 1)},
   axis x line*=bottom,
   axis y line*=left,
   ymin=0,
@@ -18,10 +18,10 @@
   ]
   \addplot[fill=black!30] table[x=Lev, y=P@1] {
     Lev P@1
-    1 0.98
-    2 0.61
-    3 0.35
-    4 0.29
+    1 0.52
+    2 0.25
+    3 0.14
+    4 0.11
   };
   \end{axis}
 \end{tikzpicture}
