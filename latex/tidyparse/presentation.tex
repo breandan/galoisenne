@@ -509,27 +509,26 @@
   \vspace{0.4cm}
   \begin{figure}[h!]
     \vspace{-1cm}
-    \begin{center}
-      \resizebox{0.8\textwidth}{!}{
-        \begin{tikzpicture}[node distance=5cm]
-          \node (start) [io] {Broken code};
-          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
-          \node (gram1) [io2, above of=node1, yshift=-3cm] {Syntax};
-          \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
-%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-          \node (node3) [plain, right of=node2] {\textbf{Reranking}};
-          \node (ngram) [io2, above of=node3, yshift=-3cm] {Markov chain};
-          \node (node4) [io, right of=node3] {Repairs};
-          \draw [arrow] (start) -- (node1);
-          \draw [arrow] (gram1) -- (node1);
-          \draw [arrow] (node1) -- (node2);
-          \draw [arrow] (node2) -- (node3);
-          \draw [arrow] (node3) -- (node4);
-          \draw [arrow] (ngram) -- (node3);
-%        \draw [arrow] (ptree) -- (node2);
-        \end{tikzpicture}
+      \begin{center}
+      \resizebox{0.7\textwidth}{!}{
+      \begin{tikzpicture}[node distance=5cm]
+      \node (start) [io] {Broken code};
+      \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
+      \node (gram1) [io2, above of=node1, yshift=-3.2cm] {Grammar};
+      %        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
+      %        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
+      \node (node3) [plain, right of=node1, xshift=0.5cm] {\textbf{Repair decoding}};
+      \node (ngram) [io2, above of=node3, yshift=-3.2cm] {Markov chain};
+      \node (node4) [io, right of=node3] {Repairs};
+      \draw [arrow] (start) -- (node1);
+      \draw [arrow] (gram1) -- (node1);
+      \draw [arrow] (node1) -- (node3);
+      \draw [arrow] (node3) -- (node4);
+      \draw [arrow] (ngram) -- (node3);
+      %        \draw [arrow] (ptree) -- (node2);
+      \end{tikzpicture}
       }
-    \end{center}
+      \end{center}
   \end{figure}
 
   \vspace{0.4cm}
@@ -537,80 +536,90 @@
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
     \vspace{-0.7cm}
-    \begin{center}
-      \resizebox{0.39\textwidth}{!}{
-        \begin{tikzpicture}[node distance=2cm]
-          \node (start) [startstop, draw=none];
-          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \leftarrow G\cap\Delta(\err\sigma, d)$};
-          \node [above=0.07cm of pro1] {};
-          \node (pcfg) [io2, left of=pro1, xshift=-3cm] {[P]CFG};
-          \node [below=0.07cm of pcfg] {};
-          \node [below=2.3cm of pcfg, xshift=0.4cm] {\Large\textbf{Language intersection}};
-          \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
-          \node [above=0.07cm of lnfa, xshift=1cm] {};
+    \resizebox{0.4\textwidth}{!}{
+    \begin{tikzpicture}[node distance=2cm]
+    \node (start) [startstop, draw=none];
+    \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap\Delta(\err\sigma, d)$};
+    \node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
+    \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
 
-          \node (code) [io, right of=start,xshift=3cm] {Code};
-          \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
+    \node (code) [io, right of=start,xshift=3cm] {Code};
+    \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
 
-          \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
+    \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
 
-          \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
+    \node (t2) [process, left of=dec1, xshift=-3cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
 
-          \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.7)$) rectangle ($(pro2b.south east)+(0.3,-0.6)$);
+    \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-          \node (const) [process, below of=dec1, yshift=-1.1cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
-          \node [above=0.07cm of const, xshift=1.5cm] {};
+    \node [below=0.7cm of pro2b, xshift=-0.25cm] {\Large\textbf{Language intersection}};
+    \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+    \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate $\mathbb{T}_2$ and rerank};
+    \node [above=0.07cm of const, xshift=1.5cm] {(Algorithm A)};
 
-          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
-          \node [above=0.07cm of samp1] {};
-          \node [above=2.3cm of samp1,xshift=-0.2cm] {\Large\textbf{Repair extraction}};
-          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
-          \node [above=0.07cm of samp2] {};
+    %          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+    %
+    %          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+    %          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
+    %          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
+    %          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
 
-          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
+    %          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
 
-          \node (rank) [process, below of=dec2, yshift=-1.5cm] {Select top-$k$ by $L_\theta(\sigma')$};
-          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-          \node [below=0.01cm of rank, xshift=-6cm] {\Large\textbf{Reranking}};
-          \node [above=0.1cm of rank, xshift=1cm] {};
-          \draw[thick,dotted, rounded corners] ($(rank.north west)+(-5.3,0.8)$) rectangle ($(rank.south east)+(5.3,-0.9)$);
+    \node (grwa) [process, below of=const, yshift=-0.5cm] {Sample PCFG top-down};
+    \node [above=0.07cm of grwa, xshift=1.5cm] {(Algorithm B)};
+    \node (rank) [process, below of=grwa, yshift=-0.5cm] {Convert to DFA and walk};
+    \node [above=0.1cm of rank, xshift=1.5cm] {(Algorithm C)};
+    %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
+    \node [below=0.3cm of rank, xshift=2.5cm] {\Large\textbf{Repair decoding}};
+    \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(2.5,-1.1)$);
 
-%  \node (out1) [io, below of=pro2a] {Output};
-          \node (stop) [startstop, below of=rank, yshift=-0.6cm];
+    \node (results) [io, right of=grwa,xshift=5.2cm] {Repairs};
+    %  \node (out1) [io, below of=pro2a] {Output};
+    \node (stop) [startstop, right of=rank, xshift=3cm];
+    \node (stop1) [startstop, right of=grwa, xshift=3cm];
+    \node (stop2) [startstop, right of=const, xshift=3cm];
 
-%  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
+    %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
 
-%          \draw [->,thick] (-5, 1.3) -- (synt);
-%          \draw [->,thick] (5, 1.3) -- (code);
+    %          \draw [->,thick] (-5, 1.3) -- (synt);
+    %          \draw [->,thick] (5, 1.3) -- (code);
 
-%          \draw [arrow] (start) -- (code);
-%          \draw [arrow] (start) -- (synt);
-          \draw [arrow] (code) -- (lnfa);
-          \draw [arrow] (synt) -- (pcfg);
-          \draw [arrow] (lnfa) -- (pro1);
-          \draw [arrow] (pcfg) -- (pro1);
+    %          \draw [arrow] (start) -- (code);
+    %          \draw [arrow] (start) -- (synt);
+    \draw [arrow] (code) -- (lnfa);
+    \draw [arrow] (synt) -- (pcfg);
+    \draw [arrow] (lnfa) -- (pro1);
+    \draw [arrow] (pcfg) -- (pro1);
 
-%  \draw [arrow] (in1) -- (pro1);
-          \draw [arrow] (pro1) -- (dec1);
-          \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
-          \draw [arrow] (dec1) -- node[anchor=east,yshift=0.3cm] {no} (const);
-          \draw [arrow] (const) -- (dec2);
-          \draw [arrow] (pro2b) -- (lnfa);
-          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
-          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+    \draw [arrow] (grwa) -- (results);
+    \draw [line width=0.8pt] (stop.west) -- (stop1.west);
+    \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
 
-          \draw [arrow] (vlmc) -- (rank);
-          \draw [arrow] (samp1) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
-          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
-%  \draw [arrow] (pro2a) -- (out1);
-          \draw [arrow] (rank) -- (stop);
-%          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
+    %  \draw [arrow] (in1) -- (pro1);
+    \draw [arrow] (pro1) -- (dec1);
+    \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
+    \draw [arrow] (dec1) -- node[anchor=south] {no} (t2);
+    %          \draw [arrow] (const) -- (rank);
+    \draw [arrow] (pro2b) -- (lnfa);
+    %          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
+    %          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
-        \end{tikzpicture}
-      }
-    \end{center}
+    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]const.west)--(const.west);
+    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
+    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+    %          \draw [arrow] (vlmc) -- (rank);
+    %          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+    %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+    %  \draw [arrow] (pro2a) -- (out1);
+    \draw [line width=0.8pt] (rank) -- (stop);
+    \draw [line width=0.8pt] (grwa) -- (stop1);
+    \draw [line width=0.8pt] (const) -- (stop2);
+    %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
+
+    \end{tikzpicture}
+    }
   \end{wrapfigure}
 
   Our syntax repair procedure can be described in three high-level steps. First, we generate a synthetic grammar $(G_\cap)$ representing the intersection between the syntax $(G)$ and Levenshtein ball around the source code $\big(\Delta(\err\sigma, d)\big)$. During repair extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, we rank all repairs discovered by likelihood.
@@ -811,18 +820,18 @@
 
 \begin{frame}[fragile]{Precision and latency comparison}
   \begin{figure}[h!]
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_tidy}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_bifi_all}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_s2p}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/len_dist_bifi}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_s2p}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi}}
     \caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
   \end{figure}
   \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_1}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_2}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_3}}
-    \resizebox{.24\textwidth}{!}{\input{../splash2024/bar_hillel_repair_4}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_4}}
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
@@ -832,17 +841,17 @@
 
 \begin{frame}[fragile]{Results from sample efficiency experiments}
   \begin{figure}[h!]
-    \input{../splash2024/sample_efficiency}\\
+    \input{../popl2025/sample_efficiency}\\
 %    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
-    \resizebox{.35\textwidth}{!}{\input{../splash2024/throughput}}\hspace{1cm}
-    \resizebox{.35\textwidth}{!}{\input{../splash2024/experiments/timings}}
+    \resizebox{.35\textwidth}{!}{\input{../popl2025/throughput}}\hspace{1cm}
+    \resizebox{.35\textwidth}{!}{\input{../popl2025/experiments/timings}}
   \end{figure}
 \end{frame}
 
 \begin{frame}[fragile]{Outcomes in the syntax repair pipeline}
   \vspace{-1cm}
   \begin{figure}
-    \resizebox{.83\textwidth}{!}{\input{../splash2024/sankey}}
+    \resizebox{.83\textwidth}{!}{\input{../popl2025/sankey}}
     \vspace{-1cm}
     \caption{Sankey diagram of 967 total repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost snippet lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a sampling timeout of 30s per repair.}
   \end{figure}
@@ -1116,7 +1125,7 @@
   \begin{prooftree}
     \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
     \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
     \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
@@ -1277,13 +1286,13 @@
     \AxiomC{$(A \rightarrow a) \in P$}
     \AxiomC{$(q\overset{{\color{orange}[\cdot]}}{\rightarrow}r) \in \delta$}
     \AxiomC{$\color{orange}a[\cdot]$}
-    \RightLabel{$\uparrow$}
+    \RightLabel{$\hat\uparrow$}
     \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
     \DisplayProof
     \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \triangleleft pr \phantom{\land} x \triangleleft pq \phantom{\land} z \triangleleft qr$}
     \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
     \AxiomC{$p,q,r \in Q$}
-    \RightLabel{$\Join$}
+    \RightLabel{$\hat\Join$}
     \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
@@ -1572,17 +1581,93 @@
 
   To sample from $\mathbb{T}_2$ without replacement, we define a pairing function:
 
+% Small text
+\begin{footnotesize}
   \begin{equation*}
-    \varphi^{-1}(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-      \Big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\Big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
-      \text{Let } b = |\texttt{children}(T)|,\\
-      \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
-      \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
-      \phantom{\text{Let }} T_1, q_2 = \varphi^{-1}(lb, q_1),\\
-      \phantom{\text{Let }} T_2, q_3 = \varphi^{-1}(rb, q_2) \text{ in } \\
-      \Big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\Big\rangle & \text{otherwise.} \\
-    \end{cases}
+  \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+  \texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \vspace{5pt}\\
+  \textbf{let } r = |\texttt{children}(T)|,\\
+  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
+  \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
+  \phantom{\textbf{Let }} q=i - F\big(F^{-1}(i)\big),\\
+  \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
+  \phantom{\textbf{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
+  \phantom{\textbf{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
+  \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
+  \end{cases}
   \end{equation*}
+\end{footnotesize}
+\end{frame}
+
+\begin{frame}[fragile]{Enumerative search with reranking}
+Given $\sigma: \Sigma^*$, let $P_\theta(\sigma) = \prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$. This defines an ordering over $\Sigma^*$. Then, for each retrieved set $\sigma \in \hat{a} \subseteq A$ drawn before timeout, we score the repair and return $\hat{A}$ in ascending order:
+
+\begin{algorithm}[H]
+\caption{Enumerative sampling with n-gram reranking}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
+\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\For{$\texttt{seed} < |T|$ and uninterrupted}
+\State $i \gets \texttt{RandIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample $\mathbb{Z}_{|T|}$ uniformly WoR.}
+\State $\hat{a} \gets \hat{a} + \varphi(T, i)$ \Comment{Decode fresh tree and add.}
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+\EndFor
+\State \Return $\hat{a} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$
+\end{algorithmic}
+\end{algorithm}
+
+The issue is, the bijection is defined over labeled binary trees and does not guarantee unique strings, as the CFG may be ambiguous. In practice, this matters if we care about $\mathcal{O}(n)$ convergence!
+\end{frame}
+
+\begin{frame}[fragile]{Translating from $T_2$ to a DFA}
+Let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $\mathbb{T}_2$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, *$:
+
+\begin{equation*}
+\mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
+\alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
+\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
+\end{cases}
+\end{equation*}
+%
+In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathcal{A} \mid \mathcal{L}(\alpha) = \ell\cap L(\err\sigma, d)$, which can be minimized via Brzozowski's algorithm then decoded:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{../popl2025/exampleDFA.pdf}
+\caption{$L(\scriptsize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$}
+\label{fig:exampleDFA}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Decoding the DFA in order of normalized log likelihood}
+\vspace{-0.3cm}
+\begin{algorithm}[H]
+\caption{Steerable DFA walk}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$ DFA, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
+
+\State $\mathcal{T} \gets \varnothing \text{ total trajectories}, \mathcal{P} \gets \big[\langle \varepsilon, i, 0\rangle \mid i \in I\big] \text{ partial trajectories}$
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\Repeat
+\State \textbf{let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
+%\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
+% For loop:
+\State \phantom{\textbf{let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$
+\For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
+\If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
+\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to PQ.}
+\EndIf
+\If {$q \in F$}
+\State $\mathcal{T} \gets \mathcal{T} \oplus T$ \Comment{Accepting state reached, add to queue.}
+\EndIf
+\EndFor
+\Until{interrupted or $\mathcal{P}=\varnothing$.}
+\State \Return $\big[\sigma_{|\sigma|..1} \mid \langle \sigma, q, \gamma \rangle = T \in \mathcal{T}\big]$ \Comment{Return in sorted order}
+\end{algorithmic}
+\end{algorithm}
 \end{frame}
 
 %\begin{frame}[fragile]{A birds eye view of the algorithm}

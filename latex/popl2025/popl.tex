@@ -9,7 +9,7 @@
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
 %\documentclass[sigplan,nonacm]{acmart}
-\documentclass[sigplan,review,acmsmall,nonacm,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+\documentclass[sigplan,review,acmsmall,nonacm]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 
 %% Conference information
@@ -35,6 +35,9 @@
 %% Bibliography style
 \bibliographystyle{acmart}
 
+%\usepackage{draftwatermark}
+%\SetWatermarkLightness{0.7}
+%\SetWatermarkText{DRAFT}
 \input{preamble}
 \begin{document}
 %
@@ -1012,14 +1015,14 @@ Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a
 \label{alg:adaptive}
 \begin{algorithmic}[1]
 \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
-\State $\mathcal{R} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
 \State $i \gets \texttt{RandomIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample integer uniformly without replacement.}
-\State $\mathcal{R} \gets \mathcal{R} + \varphi(T, i)$ \Comment{Decode fresh parse tree and add to retrieved set.}
+\State $\hat{A} \gets \hat{A} + \varphi(T, i)$ \Comment{Decode fresh parse tree and add to retrieved set.}
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $\mathcal{R} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$ \Comment{Flatten trees and rank by sentence perplexity.}
+\State \Return $\hat{A} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$ \Comment{Flatten trees and rank by sentence perplexity.}
 \end{algorithmic}
 \end{algorithm}
 
@@ -2017,13 +2020,13 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
   The problem of syntax error correction under a finite number of typographic errors is reducible to the bounded Levenshtein-CFL reachability problem, which can be formally stated as follows:
 
   \begin{definition}
-    The language edit distance (LED) is the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell: \mathcal{L}$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance.
+    The language edit distance (LED) is the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance.
   \end{definition}
 
   We seek to find the set of strings $S$ such that $\forall \sigma'\in S, \Delta(\err{\sigma}, \sigma') \leq q$, where $q$ is greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
 
   \begin{lemma}\label{lemma:upper-bound}
-  For any nonempty language $\ell: \mathcal{L}$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\sigma', m)$ such that $\sigma' \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+  For any nonempty language $\ell$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\sigma', m)$ such that $\sigma' \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
   \end{lemma}
 
   \begin{proof}
