@@ -165,58 +165,124 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
-%  By means of illustration, consider a simple grammar, $G = \{S \rightarrow N \mid S + S \mid S \times S\}$. For convenience, $G$ can be converted to an equivalent form, $G'= \{S \rightarrow N, S \rightarrow S L, O \rightarrow + \mid \times, L \rightarrow O N\}$. Suppose we have a sequence, \texttt{a + * b}, which in lexical form, becomes \texttt{N + * N}. We first construct an automaton, recognizing every single edit as follows:
-%
-%\begin{figure}[h!]
-%  \resizebox{0.5\textwidth}{!}{
-%  \begin{tikzpicture}[
-%%->, % makes the edges directed
-%    >=stealth',
-%    node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
-%%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
-%    initial text=$ $, % sets the text that appears on the start arrow
-%  ]
-%    \node[state, initial]                (00) {$q_{0,0}$};
-%    \node[state, right of=00]            (10) {$q_{1,0}$};
-%    \node[state, right of=10]            (20) {$q_{2,0}$};
-%    \node[accepting, state, right of=20] (30) {$q_{3,0}$};
-%    \node[accepting, state, right of=30] (40) {$q_{4,0}$};
-%
-%    \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
-%    \node[state, right of=01]                     (11) {$q_{1,1}$};
-%    \node[state, right of=11]                     (21) {$q_{2,1}$};
-%    \node[state, right of=21]                     (31) {$q_{3,1}$};
-%    \node[accepting, state, right of=31]          (41) {$q_{4,1}$};
-%
-%    \draw [->] (00) edge[below] node{$\texttt{N}$} (10);
-%    \draw [->] (10) edge[below] node{$\texttt{+}$} (20);
-%    \draw [->] (20) edge[below] node{$\texttt{*}$} (30);
-%    \draw [->] (30) edge[below] node{$\texttt{N}$} (40);
-%
-%    \draw [->] (01) edge[below] node{$\texttt{N}$}                       (11);
-%    \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{+}$} (21);
-%    \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{*}$} (31);
-%    \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{N}$} (41);
-%
-%    \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{N}]$}} (11);
-%    \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{+}]$}} (21);
-%    \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{*}]$}} (31);
-%    \draw [->] (30) edge[left] node{\tiny{$[\neq \texttt{N}]$}} (41);
-%
-%    \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{N}]$}} (01);
-%    \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{+}]$}} (11);
-%    \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{*}]$}} (21);
-%    \draw [->] (30) edge[bend left=10, left] node{\tiny{$[\neq \texttt{N}]$}} (31);
-%    \draw [->] (40) edge[bend left=10, left] node{\tiny{$[.^{\ast}]$}} (41);
-%
-%
-%    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{+}$}    (21);
-%    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{*}$}    (31);
-%    \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.9cm)}]{$\texttt{N}$}    (41);
-%  \end{tikzpicture}
-%  }
-%  \caption{Levenshtein automaton recognizing every single edit of a string.}\label{fig:lev_automaton}
-%\end{figure}
+We will now give an intuitive overview of our approach, then proceed to formalize it in the following sections. By way of illustration, suppose we have string: $\texttt{( ) )}$ and want to find all repairs with a single edit. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We adapt this to remove some unnecessary edges, which does not affect its semantics.
+
+\begin{figure}[h!]
+  \resizebox{0.45\textwidth}{!}{
+  \begin{tikzpicture}[
+%->, % makes the edges directed
+    >=stealth',
+    node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+    initial text=$ $, % sets the text that appears on the start arrow
+  ]
+    \node[state, initial]                (00) {$q_{0,0}$};
+    \node[state, right of=00]            (10) {$q_{1,0}$};
+    \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+    \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+    \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+    \node[state, right of=01]                     (11) {$q_{1,1}$};
+    \node[state, right of=11]                     (21) {$q_{2,1}$};
+    \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+    \draw [->] (00) edge[below] node{$\texttt{(}$} (10);
+    \draw [->] (10) edge[below] node{$\texttt{)}$} (20);
+    \draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+
+    \draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
+    \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
+    \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+
+    \draw [->] (00) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+    \draw [->] (10) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+    \draw [->] (20) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+
+    \draw [->] (00) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (01);
+    \draw [->] (10) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+    \draw [->] (20) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+
+    \draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+    \draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+    \draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+    \draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (01);
+    \draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+    \draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+
+    \draw [->] (30) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+    \draw [->] (30) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
+    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+    \node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein Automaton};
+  \end{tikzpicture}
+  }
+  \resizebox{0.515\textwidth}{!}{
+    \begin{tikzpicture}[
+%->, % makes the edges directed
+      >=stealth',
+      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+      initial text=$ $, % sets the text that appears on the start arrow
+    ]
+      \draw[blue,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
+
+      \node[state, initial]                (00) {$q_{0,0}$};
+      \node[state, right of=00]            (10) {$q_{1,0}$};
+      \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+      \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+      \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+      \node[state, right of=01]                     (11) {$q_{1,1}$};
+      \node[state, right of=11]                     (21) {$q_{2,1}$};
+      \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+      \draw [->] (00) edge[below] node{$\texttt{(}$} (10);
+      \draw [->] (10) edge[below] node{$\texttt{)}$} (20);
+      \draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+
+      \draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
+      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
+      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+
+      \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+      \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+      \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+      \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+      \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
+      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+      \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein Automaton (ours)};
+    \end{tikzpicture}
+  }
+  \caption{Automaton recognizing every single 1-edit patch. We nominalize the original automata.}\label{fig:lev_automaton}
+\end{figure}
+
+Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L I, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. We will now proceed to stitch together the automaton and grammar to form a new grammar, $G_\cap$, recognizing every string in the intersection of their languages.
+
+This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It takes the following approach: for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\downarrow$, and leave it unchanged.
+
+Likewise, the BH construction also states for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} r$ in the automaton, there will be a production, $qAr\rightarrow a$ in the intersection grammar. We call this rule $\uparrow$. Here is where our approach, the Levenshtein Bar-Hillel (LBH) construction, begins to diverge: we will only add the unit production if it matches the arc predicate. We call this rule $\hat\uparrow$. So far, the intersection grammar $G_\cap$ will contain the following productions:\vspace{-8pt}
+
+\begin{table}[H]
+  \begin{tabular}{c|cccccc}
+    $\downarrow$ & $\hat\uparrow$ & & & & \\\hline
+    $S \rightarrow q_{00}Sq_{20}$ & $q_{00}Rq_{01} \rightarrow \texttt{)}$ & $q_{10}Lq_{11} \rightarrow \texttt{(}$ & $q_{20}Rq_{21} \rightarrow \texttt{)}$ & $q_{01}Lq_{11} \rightarrow \texttt{(}$ \\
+    $S \rightarrow q_{00}Sq_{30}$ & $q_{00}Rq_{11} \rightarrow \texttt{)}$ & $q_{10}Lq_{21} \rightarrow \texttt{(}$ & $q_{20}Rq_{31} \rightarrow \texttt{)}$ & $q_{11}Rq_{21} \rightarrow \texttt{)}$ \\
+    $S \rightarrow q_{00}Sq_{31}$ & $q_{00}Lq_{10} \rightarrow \texttt{(}$ & $q_{10}Rq_{20} \rightarrow \texttt{)}$ & $q_{20}Lq_{30} \rightarrow \texttt{(}$ & $q_{21}Rq_{31} \rightarrow \texttt{)}$ \\
+                                  & $q_{30}Lq_{31} \rightarrow \texttt{(}$ & $q_{10}Rq_{31} \rightarrow \texttt{)}$ & $q_{30}Rq_{31} \rightarrow \texttt{)}$ & $q_{00}Rq_{21} \rightarrow \texttt{)}$
+  \end{tabular}
+\end{table}\vspace{-8pt}
+
+Now, the rule we call $\Join$, and the most expensive of them all, states that for every $w \rightarrow xy$ in $G'$ and every state triplet $\langle p, q, r\rangle$, we will have $pwr \rightarrow (pxq)(qxr)$ in $G_\cap'$. Effectively, this is constructing a grammar that recognizes every combination of NFA states consistent with every nonterminal in every production. But most of these combinations are simply impossible. For example, we note that $q_{31}Sq_{00}$ is an impossible nonterminal, as there is no path from $q_{31}$ to $q_{00}$ in the automaton. Likewise, the terminal $q_{i, j}Iq_{i+1, j}$ is clearly impossible, as the nonterminal $I$ requires at least three tokens, and the only path between $q_{i, j}$ and $q_{i+1, j}$ has length 1. So we can safely ignore any productions containing these impossible nonterminals generated by the original BH $\Join$ rule.
+
+We will present a more precise heuristic for eliminating impossible productions from Bar-Hillel intersections, based on a sound overapproximation to the Parikh image. Nominalizing the automaton and refining the $\Join$ rule are the basic idea behind the Levenshtein Bar-Hillel construction, allowing us to scale up this technique to handle real-world programming languages and code snippets.
 
   \clearpage\section{Problem statement}
 

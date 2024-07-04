@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.repair
 
 import Grammars
 import Grammars.shortS2PParikhMap
+import ai.hypergraph.kaliningraph.automata.toDFA
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.*
@@ -432,6 +433,28 @@ class ProbabilisticLBH {
         println()
       }
     }
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testDeadSimple"
+  */
+  @Test
+  fun testDeadSimple() {
+    val prompt = "( ) )"
+    val ds = Grammars.dsNorm
+    val la = makeLevFSA(prompt.tokenizeByWhitespace(), 1)
+    val ig = ds.intersectLevFSA(la)
+
+    println(ig.prettyPrint())
+
+    assertTrue("( )" in ds.language)
+    assertFalse(prompt in ds.language)
+    assertFalse("( ) )" in ds.language)
+
+    val solutions = ig.toPTree().sampleStrWithoutReplacement().toSet()
+    solutions.forEach { println(it) }
+
+    println(ig.toPTree().toDFA(true)!!.toDot())
   }
 }
 

@@ -454,17 +454,4 @@ class BarHillelTest {
     allTriplesMinusOverwritten.forEach { println(it) }
     println("Found ${allTriplesMinusOverwritten.size} non-overwritten triples.")
   }
-
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.testDeadSimple"
-  */
-  @Test
-  fun testDeadSimple() {
-    val prompt = "N + % N"
-    val ds = Grammars.deadSimple
-
-    assertFalse("+ N" in ds.language)
-    assertFalse(prompt in ds.language)
-    assertTrue("N + N" in ds.language)
-  }
 }

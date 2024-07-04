@@ -25,7 +25,15 @@ object Grammars {
     S -> X | Y | Z
   """.parseCFG().noNonterminalStubs
 
-  val deadSimple = """S -> N | S + S | S % S""".parseCFG().noNonterminalStubs
+  val deadSimple = """S -> ( ) | ( S )""".parseCFG().noEpsilonOrNonterminalStubs
+  val dsNorm = """
+    START -> START START
+    START -> A B
+    START -> A C
+    A -> (
+    B -> )
+    C -> START B
+  """.parseCFG().noEpsilonOrNonterminalStubs
 
   val ocamlCFG = """
     S -> X

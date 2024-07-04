@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import Grammars.arith
 import Grammars.evalArith
+import Grammars.seq2parsePythonVanillaCFG
 import Grammars.tinyC
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
@@ -217,5 +218,13 @@ class SeqValiantTest {
     assertTrue("2 + 1 = 3".matches(cfg))
     assertTrue("1 + 1 + 1 = 3".matches(cfg))
     assertTrue("1 + 1 + 1 + 1 = 4".matches(cfg))
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SeqValiantTest.testBinaryMinimization"
+  */
+  @Test
+  fun testBinaryMinimization() {
+    println(seq2parsePythonVanillaCFG.size)
   }
 }
