@@ -165,7 +165,7 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
-We will now give an intuition behind of our approach, then proceed to formalize it in the following sections. By way of illustration, suppose we have string: $\texttt{( ) )}$ and wish to find all repairs with a single edit. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We adapt this to remove some unnecessary edges, which does not affect its semantics.\vspace{-4pt}
+We will now give an informal intuition behind of our method, then proceed to formalize it in the following sections. By way of illustration, suppose we have string $\texttt{( ) )}$, and wish to find nearby repairs. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We will use a variant that removes some unnecessary edges, but does not affect the generated language.\vspace{-4pt}
 
 \begin{figure}[h!]
   \resizebox{0.45\textwidth}{!}{
@@ -238,13 +238,13 @@ We will now give an intuition behind of our approach, then proceed to formalize 
       \node[state, right of=11]                     (21) {$q_{2,1}$};
       \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
 
-      \draw [->] (00) edge[below] node{$\texttt{(}$} (10);
-      \draw [->] (10) edge[below] node{$\texttt{)}$} (20);
-      \draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+      \draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+      \draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+      \draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
 
-      \draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
-      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
-      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+      \draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
 
       \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
       \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
@@ -256,8 +256,8 @@ We will now give an intuition behind of our approach, then proceed to formalize 
       \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
 
 
-      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
-      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{\tiny{$[= \texttt{(}]$}}    (21);
+      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{\tiny{$[= \texttt{(}]$}}    (31);
       \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
     \end{tikzpicture}
   }
@@ -266,23 +266,23 @@ We will now give an intuition behind of our approach, then proceed to formalize 
 
 Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L I, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
 
-This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\downarrow$, and leave it unchanged.
+This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\sqrt{\phantom{S}}$, and leave it unchanged.
 
-The second rule of the BH construction, $\uparrow$, states: for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} r$ in the automaton, there will be a production, $qAr\rightarrow a$ in the intersection grammar. Here is where our variation, the Levenshtein Bar-Hillel (LBH) construction, begins to diverge: we will only add the unit production if it matches the arc predicate shown in Fig.~\ref{fig:lev_automaton}. We call this rule $\hat\uparrow$.
+Next, the BH construction states: for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} q'$ in the automaton, there will be a production, $qAq'\rightarrow a$ in the intersection grammar. Here is where our variation, the Levenshtein Bar-Hillel (LBH) construction, now diverges: we only consider unit productions matching the nominal predicate depicted in Fig.~\ref{fig:lev_automaton}, and call this modified rule $\hat\uparrow$.
 
 So far, the intersection grammar will contain the following productions:\vspace{-5pt}
 
 \begin{table}[H]
-  \begin{tabular}{c|cccccc}
-    $\downarrow$ & $\hat\uparrow$ & & & & \\\hline
-    $S \rightarrow q_{00}Sq_{20}$ & $q_{00}Rq_{01} \rightarrow \texttt{)}$ & $q_{10}Lq_{11} \rightarrow \texttt{(}$ & $q_{20}Rq_{21} \rightarrow \texttt{)}$ & $q_{01}Lq_{11} \rightarrow \texttt{(}$ \\
-    $S \rightarrow q_{00}Sq_{30}$ & $q_{00}Rq_{11} \rightarrow \texttt{)}$ & $q_{10}Lq_{21} \rightarrow \texttt{(}$ & $q_{20}Rq_{31} \rightarrow \texttt{)}$ & $q_{11}Rq_{21} \rightarrow \texttt{)}$ \\
-    $S \rightarrow q_{00}Sq_{31}$ & $q_{00}Lq_{10} \rightarrow \texttt{(}$ & $q_{10}Rq_{20} \rightarrow \texttt{)}$ & $q_{20}Lq_{30} \rightarrow \texttt{(}$ & $q_{21}Rq_{31} \rightarrow \texttt{)}$ \\
-                                  & $q_{30}Lq_{31} \rightarrow \texttt{(}$ & $q_{10}Rq_{31} \rightarrow \texttt{)}$ & $q_{30}Rq_{31} \rightarrow \texttt{)}$ & $q_{00}Rq_{21} \rightarrow \texttt{)}$
+  \begin{tabular}{cc|ccccccccccccc}
+    $\sqrt{\phantom{S}}$ & & & & & & $\hat\uparrow$ & \\\hline
+    $S \rightarrow q_{00}Sq_{20}$ & & & $q_{00}Rq_{01} \rightarrow \texttt{)}$ & & $q_{10}Lq_{11} \rightarrow \texttt{(}$ & & $q_{20}Rq_{21} \rightarrow \texttt{)}$ & & $q_{01}Lq_{11} \rightarrow \texttt{(}$ \\
+    $S \rightarrow q_{00}Sq_{30}$ & & & $q_{00}Rq_{11} \rightarrow \texttt{)}$ & & $q_{10}Lq_{21} \rightarrow \texttt{(}$ & & $q_{20}Rq_{31} \rightarrow \texttt{)}$ & & $q_{11}Rq_{21} \rightarrow \texttt{)}$ \\
+    $S \rightarrow q_{00}Sq_{31}$ & & & $q_{00}Lq_{10} \rightarrow \texttt{(}$ & & $q_{10}Rq_{20} \rightarrow \texttt{)}$ & & $q_{20}Lq_{30} \rightarrow \texttt{(}$ & & $q_{21}Rq_{31} \rightarrow \texttt{)}$ \\
+                                  & & & $q_{30}Lq_{31} \rightarrow \texttt{(}$ & & $q_{10}Rq_{31} \rightarrow \texttt{)}$ & & $q_{30}Rq_{31} \rightarrow \texttt{)}$ & & $q_{00}Rq_{21} \rightarrow \texttt{)}$
   \end{tabular}
 \end{table}\vspace{-8pt}
 
-The final and most expensive rule of the BH construction, $\Join$, stipulates: for every $w \rightarrow xz$ in $G'$ and every state triplet $\langle p, q, r\rangle$, we will have $pwr \rightarrow (pxq)(qzr)$ in $G_\cap$. This rule creates a synthetic production recognizing every combination of NFA states consistent with every nonterminal in every production. Fortunately, most of these combinations are simply impossible. For example, we note that $q_{31}Sq_{00}$ is an impossible nonterminal, as there is no path from $q_{31}$ to $q_{00}$ in the automaton. Likewise, the terminal $q_{i, j}Iq_{i+1, j}$ is clearly impossible, as the nonterminal $I$ requires at least three tokens, and the only path from $q_{i, j}$ to $q_{i+1, j}$ has length 1. So we can safely ignore any productions containing such impossible synthetic nonterminals generated by the original BH $\Join$ rule.
+The final and most expensive rule of the BH construction, $\Join$, stipulates: for every $w \rightarrow xz$ in $G'$ and every state triplet $\langle p, q, r\rangle$, we will have $pwr \rightarrow (pxq)(qzr)$ in $G_\cap$. This rule creates a synthetic production recognizing every combination of NFA states consistent with every nonterminal in every production. Fortunately, most of these combinations are simply impossible. For example, we note that $q_{31}Sq_{00}$ is an impossible nonterminal, as there is no path from $q_{31}$ to $q_{00}$ in the Levenshtein automaton (Fig.~\ref{fig:lev_automaton}). Likewise, the nonterminal $q_{i, j}Iq_{i+1, j}$ is clearly impossible, as the nonterminal $I$ requires at least three tokens, and the only path from $q_{i, j}$ to $q_{i+1, j}$ has length one. Criteria such as these are essential for filtering out synthetic nonterminals generated by the original BH $\Join$ rule.
 
 %One useful heuristic is to precompute a table for each nonterminal in the grammar $G'$ of lower and upper bounds on the Parikh image, $[l, u]$, counting the number of terminals that any string of exactly length $n$, generated by a nonterminal $v$, must contain ($l$), and may contain ($u$). Once computed, this table can be reused for any repair. Leaving aside the precise details of its construction, we present the Parikh map for the grammar $G'$ below, for $n\in [1,4]$:
 %
@@ -297,7 +297,7 @@ The final and most expensive rule of the BH construction, $\Join$, stipulates: f
 %
 %Now, when considering the triple $q_{10}Iq_{21}$, we know that states $q_{10}, q_{21}$ have paths ranging from length 1 to 2, and the nonterminal $I$ can be no shorter than 3 terminals. Therefor $I$ is incompatible with $q_{10}, q_{21}$ by length, as is any synthetic production containing it.
 
-In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule which eliminates many impossible productions from BH intersection grammars, based on a sound overapproximation to Parikh images. Aggressively pruning synthetic productions from $G_\cap$ by (1) nominalizing the Levenshtein automaton and (2) refining the $\Join$ rule, are key insights to unlocking the full potential of the Bar-Hillel construction and scaling up this technique to handle real-world program repair scenarios.
+In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule which eliminates many impossible productions from BH intersection grammars by a sound overapproximation to the Parikh image. Aggressively pruning synthetic productions from $G_\cap$ by (1) nominalizing the Levenshtein automaton and (2) refining the $\Join$ rule, are key insights to unlocking the full potential of the Bar-Hillel construction and scaling up this technique to handle real-world program repair scenarios.
 
   \clearpage\section{Problem statement}
 
@@ -679,7 +679,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \begin{prooftree}
     \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-    \RightLabel{$\downarrow$}
+    \RightLabel{$\sqrt{\phantom{S}}$}
     \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
     \DisplayProof
     \hskip 1em
@@ -1119,7 +1119,7 @@ Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converge linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
+  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converges linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
 Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 

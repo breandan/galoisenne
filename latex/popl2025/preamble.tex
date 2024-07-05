@@ -85,54 +85,54 @@
 \usepackage{fontspec}
 
 \setmonofont[Scale=0.8]{JetBrainsMono}[
-  Contextuals={Alternate},
-  Path=./font/,
-  Extension = .ttf,
-  UprightFont=*-Regular,
-  BoldFont=*-Bold,
-  ItalicFont=*-Italic,
-  BoldItalicFont=*-BoldItalic
+Contextuals={Alternate},
+Path=./font/,
+Extension = .ttf,
+UprightFont=*-Regular,
+BoldFont=*-Bold,
+ItalicFont=*-Italic,
+BoldItalicFont=*-BoldItalic
 ]
 
 \usepackage[skins,breakable,listings]{tcolorbox}
 
 \lstdefinelanguage{python}{
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
-  numberstyle=\noncopyable,
-  identifierstyle=\color{black},
-  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified, from, import, def, yield, lambda, as, in, return, else, pass},
-  keywordstyle={\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
-  ndkeywordstyle={\bfseries},
-  sensitive=true,
-  stringstyle={\ttfamily},
-  literate={`}{{\char0}}1,
-  escapeinside={(*@}{@*)}
+comment=[l]{//},
+commentstyle={\color{gray}\ttfamily},
+emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
+numberstyle=\noncopyable,
+identifierstyle=\color{black},
+keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified, from, import, def, yield, lambda, as, in, return, else, pass},
+keywordstyle={\bfseries},
+morecomment=[s]{/*}{*/},
+morestring=[b]",
+morestring=[s]{"""*}{*"""},
+ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
+ndkeywordstyle={\bfseries},
+sensitive=true,
+stringstyle={\ttfamily},
+literate={`}{{\char0}}1,
+escapeinside={(*@}{@*)}
 }
 
 \lstdefinelanguage{tidy}{
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={|, ->, ---},
-  emphstyle={\color{red}},
-  identifierstyle=\color{black},
-  keywords={\|, ->, ---},
-  otherkeywords={|,->},
-  morekeywords={|,->},
-  keywordstyle={\color{blue}\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
-  ndkeywordstyle={\color{orange}\bfseries},
-  sensitive=true,
-  stringstyle={\color{green}\ttfamily},
-  literate={`}{{\char0}}1
+comment=[l]{//},
+commentstyle={\color{gray}\ttfamily},
+emph={|, ->, ---},
+emphstyle={\color{red}},
+identifierstyle=\color{black},
+keywords={\|, ->, ---},
+otherkeywords={|,->},
+morekeywords={|,->},
+keywordstyle={\color{blue}\bfseries},
+morecomment=[s]{/*}{*/},
+morestring=[b]",
+morestring=[s]{"""*}{*"""},
+ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
+ndkeywordstyle={\color{orange}\bfseries},
+sensitive=true,
+stringstyle={\color{green}\ttfamily},
+literate={`}{{\char0}}1
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
