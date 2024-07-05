@@ -226,7 +226,7 @@ We will now give an informal intuition behind of our method, then proceed to for
 %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
       initial text=$ $, % sets the text that appears on the start arrow
     ]
-      \draw[blue,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
+      \draw[orange,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
 
       \node[state, initial]                (00) {$q_{0,0}$};
       \node[state, right of=00]            (10) {$q_{1,0}$};
@@ -256,8 +256,8 @@ We will now give an informal intuition behind of our method, then proceed to for
       \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
 
 
-      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{\tiny{$[= \texttt{(}]$}}    (21);
-      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{\tiny{$[= \texttt{(}]$}}    (31);
+      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
       \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
     \end{tikzpicture}
   }
