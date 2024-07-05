@@ -165,7 +165,7 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
-We will now give an intuitive overview of our approach, then proceed to formalize it in the following sections. By way of illustration, suppose we have string: $\texttt{( ) )}$ and want to find all repairs with a single edit. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We adapt this to remove some unnecessary edges, which does not affect its semantics.
+We will now give an intuition behind of our approach, then proceed to formalize it in the following sections. By way of illustration, suppose we have string: $\texttt{( ) )}$ and wish to find all repairs with a single edit. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We adapt this to remove some unnecessary edges, which does not affect its semantics.\vspace{-4pt}
 
 \begin{figure}[h!]
   \resizebox{0.45\textwidth}{!}{
@@ -215,7 +215,7 @@ We will now give an intuitive overview of our approach, then proceed to formaliz
 
     \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
     \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
-    \node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein Automaton};
+    \node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein automaton};
   \end{tikzpicture}
   }
   \resizebox{0.515\textwidth}{!}{
@@ -258,17 +258,19 @@ We will now give an intuitive overview of our approach, then proceed to formaliz
 
       \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
       \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
-      \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein Automaton (ours)};
+      \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
     \end{tikzpicture}
   }
-  \caption{Automaton recognizing every single 1-edit patch. We nominalize the original automata.}\label{fig:lev_automaton}
+  \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upwards arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
 \end{figure}
 
-Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L I, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. We will now proceed to stitch together the automaton and grammar to form a new grammar, $G_\cap$, recognizing every string in the intersection of their languages.
+Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L I, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
 
-This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It takes the following approach: for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\downarrow$, and leave it unchanged.
+This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\downarrow$, and leave it unchanged.
 
-Likewise, the BH construction also states for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} r$ in the automaton, there will be a production, $qAr\rightarrow a$ in the intersection grammar. We call this rule $\uparrow$. Here is where our approach, the Levenshtein Bar-Hillel (LBH) construction, begins to diverge: we will only add the unit production if it matches the arc predicate. We call this rule $\hat\uparrow$. So far, the intersection grammar $G_\cap$ will contain the following productions:\vspace{-8pt}
+The second rule of the BH construction, $\uparrow$, states: for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} r$ in the automaton, there will be a production, $qAr\rightarrow a$ in the intersection grammar. Here is where our variation, the Levenshtein Bar-Hillel (LBH) construction, begins to diverge: we will only add the unit production if it matches the arc predicate shown in Fig.~\ref{fig:lev_automaton}. We call this rule $\hat\uparrow$.
+
+So far, the intersection grammar will contain the following productions:\vspace{-5pt}
 
 \begin{table}[H]
   \begin{tabular}{c|cccccc}
@@ -280,9 +282,22 @@ Likewise, the BH construction also states for every production $A\rightarrow a$ 
   \end{tabular}
 \end{table}\vspace{-8pt}
 
-Now, the rule we call $\Join$, and the most expensive of them all, states that for every $w \rightarrow xy$ in $G'$ and every state triplet $\langle p, q, r\rangle$, we will have $pwr \rightarrow (pxq)(qxr)$ in $G_\cap'$. Effectively, this is constructing a grammar that recognizes every combination of NFA states consistent with every nonterminal in every production. But most of these combinations are simply impossible. For example, we note that $q_{31}Sq_{00}$ is an impossible nonterminal, as there is no path from $q_{31}$ to $q_{00}$ in the automaton. Likewise, the terminal $q_{i, j}Iq_{i+1, j}$ is clearly impossible, as the nonterminal $I$ requires at least three tokens, and the only path between $q_{i, j}$ and $q_{i+1, j}$ has length 1. So we can safely ignore any productions containing these impossible nonterminals generated by the original BH $\Join$ rule.
+The final and most expensive rule of the BH construction, $\Join$, stipulates: for every $w \rightarrow xz$ in $G'$ and every state triplet $\langle p, q, r\rangle$, we will have $pwr \rightarrow (pxq)(qzr)$ in $G_\cap$. This rule creates a synthetic production recognizing every combination of NFA states consistent with every nonterminal in every production. Fortunately, most of these combinations are simply impossible. For example, we note that $q_{31}Sq_{00}$ is an impossible nonterminal, as there is no path from $q_{31}$ to $q_{00}$ in the automaton. Likewise, the terminal $q_{i, j}Iq_{i+1, j}$ is clearly impossible, as the nonterminal $I$ requires at least three tokens, and the only path from $q_{i, j}$ to $q_{i+1, j}$ has length 1. So we can safely ignore any productions containing such impossible synthetic nonterminals generated by the original BH $\Join$ rule.
 
-We will present a more precise heuristic for eliminating impossible productions from Bar-Hillel intersections, based on a sound overapproximation to the Parikh image. Nominalizing the automaton and refining the $\Join$ rule are the basic idea behind the Levenshtein Bar-Hillel construction, allowing us to scale up this technique to handle real-world programming languages and code snippets.
+%One useful heuristic is to precompute a table for each nonterminal in the grammar $G'$ of lower and upper bounds on the Parikh image, $[l, u]$, counting the number of terminals that any string of exactly length $n$, generated by a nonterminal $v$, must contain ($l$), and may contain ($u$). Once computed, this table can be reused for any repair. Leaving aside the precise details of its construction, we present the Parikh map for the grammar $G'$ below, for $n\in [1,4]$:
+%
+%\begin{table}[H]
+%  \begin{tabular}{|*{17}{c|}} \hline
+%    & \multicolumn{4}{c|}{n = 1} & \multicolumn{4}{c|}{n = 2} & \multicolumn{4}{c|}{n = 3} & \multicolumn{4}{c|}{n = 4} \\\cline{3-17}\hline
+%               & S        & L        & R        & I        &   S        & L        & R        & I        &    S        & L        & R        & I        &    S        & L        & R        & I        \\\hline
+%    \texttt{(} & $\varnothing$ & $[1, 1]$ & $\varnothing$ & $\varnothing$ &   $[1, 1]$ & $\varnothing$ & $\varnothing$ & $\varnothing$ &    $\varnothing$ & $\varnothing$ & $\varnothing$ & $[1, 1]$ &    $[2, 2]$ & $\varnothing$ & $\varnothing$ & $\varnothing$ \\\hline
+%    \texttt{)} & $\varnothing$ & $\varnothing$ & $[1, 1]$ & $\varnothing$ &   $[1, 1]$ & $\varnothing$ & $\varnothing$ & $\varnothing$ &    $\varnothing$ & $\varnothing$ & $\varnothing$ & $[2, 2]$ &    $[2, 2]$ & $\varnothing$ & $\varnothing$ & $\varnothing$ \\\hline
+%  \end{tabular}
+%\end{table}
+%
+%Now, when considering the triple $q_{10}Iq_{21}$, we know that states $q_{10}, q_{21}$ have paths ranging from length 1 to 2, and the nonterminal $I$ can be no shorter than 3 terminals. Therefor $I$ is incompatible with $q_{10}, q_{21}$ by length, as is any synthetic production containing it.
+
+In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule which eliminates many impossible productions from BH intersection grammars, based on a sound overapproximation to Parikh images. Aggressively pruning synthetic productions from $G_\cap$ by (1) nominalizing the Levenshtein automaton and (2) refining the $\Join$ rule, are key insights to unlocking the full potential of the Bar-Hillel construction and scaling up this technique to handle real-world program repair scenarios.
 
   \clearpage\section{Problem statement}
 
@@ -977,7 +992,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 \begin{equation}
   \pi(T: \mathbb{T}_2) \mapsto \begin{cases}
 %    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
-  \big[[1, 1] \text{ if } \texttt{root}(T) = s \text{ else } [0, 0]\big]_{s\in \Sigma}  & \text{if $T$ is a leaf,} \\
+  \big[[1, 1] \text{ if } \texttt{root}(T) = s \text{ else } \varnothing\big]_{s\in \Sigma}  & \text{if $T$ is a leaf,} \\
   \bigoplus_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \pi(T_1) \otimes \pi(T_2) & \text{otherwise.}
   \end{cases}
 \end{equation}
@@ -1104,7 +1119,7 @@ Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. This decoding representation has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converges linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
+  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converge linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
 Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 
