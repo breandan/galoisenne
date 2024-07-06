@@ -164,7 +164,7 @@
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
-We will now give an informal intuition behind of our method, then proceed to formalize it in the following sections. By way of illustration, suppose we have string $\texttt{( ) )}$, and wish to find nearby repairs. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We will use a variant that removes some unnecessary edges, but does not affect the generated language.\vspace{-4pt}
+We will now give an informal intuition behind of our method, then proceed to formalize it in the following sections. By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. There is a nondeterministic finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We will use a variant that removes some unnecessary edges, but does not affect the generated language.\vspace{-4pt}
 
 \begin{figure}[h!]
   \resizebox{0.45\textwidth}{!}{
@@ -267,9 +267,9 @@ Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid 
 
 This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\sqrt{\phantom{S}}$, and leave it unchanged.
 
-Next, the BH construction states: for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} q'$ in the automaton, there will be a production, $qAq'\rightarrow a$ in the intersection grammar. Here is where our variation, the Levenshtein Bar-Hillel (LBH) construction, now diverges: we only consider unit productions matching the nominal predicate depicted in Fig.~\ref{fig:lev_automaton}, and call this modified rule $\hat\uparrow$.
+Next, the BH construction states: for every production $A\rightarrow a$ and arc $q \overset{a}{\rightarrow} q'$ in the automaton, there will be a production, $qAq'\rightarrow a$ in the intersection grammar. Here is where our variation, the Levenshtein Bar-Hillel (LBH) construction, now diverges: we only consider unit productions matching the nominal predicate depicted in Fig.~\ref{fig:lev_automaton}, and will call this modified rule $\hat\uparrow$.
 
-So far, the intersection grammar will contain the following productions:\vspace{-5pt}
+So far, the intersection grammar now contains the following productions:\vspace{-5pt}
 
 \begin{table}[H]
   \begin{tabular}{cc|ccccccccccccc}
@@ -303,7 +303,7 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
   Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
-    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \ell^\complement$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -347,7 +347,7 @@ First, we generate a synthetic grammar representing the intersection between the
       \resizebox{0.4\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
           \node (start) [startstop, draw=none];
-          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap\Delta(\err\sigma, d)$};
+          \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap L(\err\sigma, d)$};
           \node [above=0.07cm of pro1] {(\S~\ref{sec:lev_bh})};
           \node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
           \node [above=0.07cm of pcfg, xshift=1cm] {(\S~\ref{sec:prelim})};
@@ -1034,7 +1034,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \Gamma(T) \mapsto \begin{cases}
         \texttt{BTree}\Big(\texttt{root}(T), \Gamma\big(\text{Multi}(\texttt{children}(T), \mathbf{p})\big)\Big) & \text{ if $T: \mathbb{T}_2$ } \\
         \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
-  \end{cases} \tag{\text{Algorithm A}}
+  \end{cases}
 \end{equation}
 
 \noindent This method is closely related to the generating function for the ordinary Boltzmann sampler,
@@ -1046,23 +1046,23 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ are constrained to fall within a small Levenshtein distance.
+\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2\cong\mathcal{G}_\cap'$ are destined to all be within a small Levenshtein distance of each other.
 
   \begin{algorithm}[H]
-    \caption{PCFG sampling}
+    \caption{Ordinary PCFG sampling}
     \label{alg:adaptive}
     \begin{algorithmic}[1]
-      \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \mathbb{T} \rightarrow \mathbb{R}$ PCFG
+      \Require $T: \mathbb{T}_2$ intersection grammar, $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ sampler, $P_\theta: \mathbb{T} \rightarrow \mathbb{R}$ PCFG
       \State $\hat{A} \gets \varnothing$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \Repeat
-\State $\hat{A} \gets \hat{A} \cup \big\langle \Gamma(T), P_\theta\big(\Gamma(T)\big)\big\rangle$ \Comment{Sample fresh parse tree and add to retrieved set.}
+\State $\hat{A} \gets \hat{A} \cup \big\{\Gamma(T)\big\}$ \Comment{Sample a parse tree and add to retrieved set.}
 \Until{interrupted.}
-\State \Return $\hat{A} \textbf{ ranked by } P_\theta(\cdot)$ \Comment{Rank by PCFG liklihood.}
+\State \Return $\hat{A} \textbf{ ranked by } P_\theta(\cdot)$ \Comment{Rank by PCFG likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
-  This sampler is simple and fast, but the main drawback is it does not guarantee uniformity over the set of all generable parse trees, and does not converge linearly, failing to satisfy Def.~\ref{def:linear-convergence}. To get around this issue, we will define an alternate sampler based on an integer bijection, sample integers without replacement, decode them into trees, and finally rerank by a Markov chain.
+  This sampler is simple and fast, but does not guarantee uniformity over the set of all generable parse trees, and does not converge linearly, failing to satisfy Def.~\ref{def:linear-convergence}. To get around this issue, we will define an alternate sampler based on an integer bijection, sample integers without replacement, decode them into trees, and finally rerank by a Markov chain.
 
 The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensitive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
@@ -1107,24 +1107,34 @@ To score the repairs, we use the conventional length-normalized negative log lik
 Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by score. If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$.
 
 \begin{algorithm}[H]
-\caption{Enumerative sampling with n-gram reranking}
+\caption{Enumerative tree sampling with n-gram reranking}
 \label{alg:adaptive}
 \begin{algorithmic}[1]
 \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-\For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $i \gets \texttt{RandomIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample integer uniformly without replacement.}
-\State $\hat{A} \gets \hat{A} \cup \{\varphi(T, i)\}$ \Comment{Decode fresh parse tree and add to retrieved set.}
+\For{$\texttt{seed++} < |T|$ and uninterrupted}
+\State $t \gets \varphi\big(T, \texttt{RandomIntWoR}(\texttt{seed}, |T|)}\big)$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $\hat{A} \gets \hat{A} \cup \{t\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $\hat{A} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$ \Comment{Flatten trees and rank by sentence perplexity.}
+\State \Return $\hat{A} \textbf{ ranked by } NLL\big(\text{\textleaf}(t)\big)$ \Comment{Defoliate and rank by n-gram likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
   \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
-  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order and does not guarantee string uniqueness, as the same string may have more than one parse tree, i.e., the CFG may be ambiguous. While sufficient for small finite CFLs, this becomes problematic for large finite CFLs and highly ambiguous CFGs. We can improve the rate of convergence for natural syntax repair in large or ambiguous grammars by sampling repair trajectories through a DFA in order of decreasing string likelihood. First, we make the following observation:
+  The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but does not guarantee string uniqueness, as the same string may have more than one parse, i.e., the CFG may be ambiguous. While potentially insignificant, this becomes problematic for large finite CFLs and language intersections involving highly ambiguous CFGs. First, we make the following observation:
+
+\begin{lemma}\label{lemma:ambiguity}
+If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
+\end{lemma}
+
+\begin{proof}
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+\end{proof}
+
+In practice, this means the tree sampler can produce multiple parse trees which represent the same string, impeding convergence. We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by translating $\mathbb{T}_2$ into a DFA, then sampling repair trajectories in order of decreasing string likelihood. First, let us note the following:
 
   \begin{lemma}\label{lemma:upper-bound}
     The intersection grammar, $G_\cap$, is acyclic.
@@ -1378,10 +1388,10 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
   To evaluate accuracy, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$, we define Precision@k as:
 
 \begin{equation}
-\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
 \end{equation}
 
-  This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems.
+  This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case, where $k=\infty$.
 
   We compare our method against two separate baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
