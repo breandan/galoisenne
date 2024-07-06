@@ -92,7 +92,6 @@
 %    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
 %    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
     \item We decode the data structure, returning a stream of concrete syntax repairs which is guaranteed to halt, but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
-    \end{enumerate}
   \end{enumerate}
 
   \begin{figure}[h!]
@@ -965,9 +964,9 @@ First, we generate a synthetic grammar representing the intersection between the
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V + V L\big(V^2P(a)^2\big)
   \end{equation}
 
-  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, we can translate it directly. If the language is infinite, we slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and solve the fixpoint for each slice $n \in [2, n]$.
+  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, then it can be translated directly. Since the RHS of CNF productions must each be nonterminals, we define $P(a)$ as $\Sigma + V + V L\big(V^2P(a)^2\big)$, otherwise, we could write $\Sigma + V + V L\big(P(a)^2\big)$ to allow productions containing mixed terminals and nonterminals.
 
-  Given a porous string $\sigma: \underline\Sigma^n$ representing the slice, we can construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
+  If the language is infinite, we first slice the CFL, $\mathcal{L}(G)\cap \Sigma^n$, and solve the fixpoint for each slice $n \in [2, n]$. Given a porous string $\sigma: \underline\Sigma^n$ representing the slice, we can construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. We construct the first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as follows:
 
 \vspace{-5pt}\begin{equation}
   \begin{footnotesize}
@@ -1019,7 +1018,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the parameterized Parikh map (PPM) of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, the following function can be precomputed and cached for all $v: V$, and reasonable values of $m, n: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-Parikh-$\langle v, m, n\rangle $ map in constant time:
+  To obtain the parameterized Parikh map (PPM) of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes the Parikh image of every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, the following function can be precomputed and cached for all $v: V$, and reasonable values of $m, n: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-Parikh-$\langle v, m, n\rangle $ map in constant time:
 
   \begin{equation}
   \pi(G: \mathcal{G}, v: V, m: \mathbb{N}, n: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [m, n]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
@@ -1029,7 +1028,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \subsection{Sampling parse trees from $\mathbb{T}_2$ with and without replacement}\label{sec:tree_sampling}
 
-  $\mathbb{T}_2$ also allows us to sample whole parse trees by constructing $(\Lambda^*(\sigma) \circ S): \mathbb{T}_2$ from the bottom-up and sampling top-down. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
+  Once we have a $T: \mathbb{T}_2$, one option would be to sample as a top-down generative model, using some form of PCFG sampling. Constructing a sampler for $\mathbb{T}_2$ is straightforward. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
 
 \begin{equation}
   \Gamma(T) \mapsto \begin{cases}
@@ -1047,7 +1046,23 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ will necessarily be the same width.
+\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2$ are constrained to fall within a small Levenshtein distance.
+
+  \begin{algorithm}[H]
+    \caption{PCFG sampling}
+    \label{alg:adaptive}
+    \begin{algorithmic}[1]
+      \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \mathbb{T} \rightarrow \mathbb{R}$ PCFG
+      \State $\hat{A} \gets \varnothing$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\Repeat
+\State $\hat{A} \gets \hat{A} \cup \big\langle \Gamma(T), P_\theta\big(\Gamma(T)\big)\big\rangle$ \Comment{Sample fresh parse tree and add to retrieved set.}
+\Until{interrupted.}
+\State \Return $\hat{A} \textbf{ ranked by } P_\theta(\cdot)$ \Comment{Rank by PCFG liklihood.}
+\end{algorithmic}
+\end{algorithm}
+
+  This sampler is simple and fast, but the main drawback is it does not guarantee uniformity over the set of all generable parse trees, and does not converge linearly, failing to satisfy Def.~\ref{def:linear-convergence}. To get around this issue, we will define an alternate sampler based on an integer bijection, sample integers without replacement, decode them into trees, and finally rerank by a Markov chain.
 
 The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensitive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
@@ -1077,9 +1092,9 @@ To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we pre
 
   Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$, then decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. This procedure is trivially parallelizable across an arbitrary number of processors, enabling communication-free sampling without replacement. If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly until interrupted. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
-\subsection{Ranked repair}\label{sec:ranking}
+%\subsection{Ranked repair}\label{sec:ranking}
 
-Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, and as we will show, yields competitive results in practice.
+Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, does not require a trained PCFG, and as we will show, yields competitive results in practice.
 
 Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
 
@@ -1100,14 +1115,14 @@ Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
 \State $i \gets \texttt{RandomIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample integer uniformly without replacement.}
-\State $\hat{A} \gets \hat{A} + \varphi(T, i)$ \Comment{Decode fresh parse tree and add to retrieved set.}
+\State $\hat{A} \gets \hat{A} \cup \{\varphi(T, i)\}$ \Comment{Decode fresh parse tree and add to retrieved set.}
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
 \State \Return $\hat{A} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$ \Comment{Flatten trees and rank by sentence perplexity.}
 \end{algorithmic}
 \end{algorithm}
 
-  \clearpage\subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
+  \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
   The previous technique will enumerate parse trees in a given $\mathbb{T}_2$, but in an arbitrary order and does not guarantee string uniqueness, as the same string may have more than one parse tree, i.e., the CFG may be ambiguous. While sufficient for small finite CFLs, this becomes problematic for large finite CFLs and highly ambiguous CFGs. We can improve the rate of convergence for natural syntax repair in large or ambiguous grammars by sampling repair trajectories through a DFA in order of decreasing string likelihood. First, we make the following observation:
 
@@ -1190,6 +1205,8 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 \State \Return $\big[\sigma_{|\sigma|..1} \mid \langle \sigma, q, \gamma \rangle = T \in \mathcal{T}\big]$ \Comment{Reverse string and return in order of likelihood.}
 \end{algorithmic}
 \end{algorithm}
+
+Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:linear-convergence} and Def.~\ref{def:ranked-repair} simultaneously, as each repair will be unique and in order of decreasing likelihood.
 
 %  \definecolor{R}{RGB}{202,65,55}
 %  \definecolor{G}{RGB}{151,216,56}
