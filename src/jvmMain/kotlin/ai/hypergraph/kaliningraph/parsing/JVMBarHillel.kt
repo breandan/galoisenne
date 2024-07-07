@@ -99,6 +99,18 @@ fun PTree.sampleDirectlyWOR(
       .asStream()
   }
 
+fun PTree.sampleDirectlyWORAndScore(
+  cores: Int = NUM_CORES,
+  stoppingCriterion: () -> Boolean = { true },
+  pcfgMap: Map<Π3A<Σᐩ>, Int>, pcfgNorm: Map<Σᐩ, Int>
+): Stream<Π2<String, Double>> =
+  (0..<cores).toList().parallelStream().flatMap { i ->
+    sampleStrWithoutReplacementAndScore(cores, i, pcfgMap, pcfgNorm)
+      .takeWhile { stoppingCriterion() }
+      .distinctBy { it.first }
+      .asStream()
+  }
+
 fun CFG.parallelEnumListWR(
   prompt: List<String>,
   cores: Int = NUM_CORES,

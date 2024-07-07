@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.graphs.LGVertex
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.tensor.FreeMatrix
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.ln
 
 typealias TreeMatrix = FreeMatrix<Forest>
 typealias Forest = Set<Tree>
@@ -39,10 +40,10 @@ class Tree constructor(
       children[0].quintuples(root, children[0].root + "*", children[1].root) +
       children[1].quintuples(root, children[0].root, children[1].root + "*")
 
-  fun logProb(pcfgMap: Map<Π3A<Σᐩ>, Int>): Double =
+  fun logProb(pcfgMap: Map<Π3A<Σᐩ>, Int>, pcfgNorm: Map<Σᐩ, Int>): Double =
     if (children.isEmpty()) 0.0
-    else (pcfgMap[root to children[0].root to children[1].root]?.toDouble() ?: 0.0) +
-      children.sumOf { it.logProb(pcfgMap) }
+    else ln((pcfgMap[root to children[0].root to children[1].root]?.toDouble() ?: 0.00001) / (pcfgNorm[root]?.toDouble() ?: 1.0)) +
+      children.sumOf { it.logProb(pcfgMap, pcfgNorm) }
 
   fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +

@@ -43,7 +43,8 @@ fun CFG.transformIntoCNF(): CFG =
   addEpsilonProduction()
     .refactorEpsilonProds()
     .elimVarUnitProds()
-    .binarizeRHSByFrequency()
+//    .binarizeRHSByFrequency()
+    .binarizeRHSByRightmost()
     .terminalsToUnitProds()
     .removeUselessSymbols()
 

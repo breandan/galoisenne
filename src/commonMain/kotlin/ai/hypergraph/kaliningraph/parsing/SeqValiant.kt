@@ -7,9 +7,9 @@ import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.*
 import kotlin.jvm.JvmName
+import kotlin.math.ln
 import kotlin.random.*
 import kotlin.time.measureTimedValue
-
 
 // Indexes a set of PTrees by their roots
 typealias PForest = Map<String, PTree> // ℙ₃
@@ -108,6 +108,20 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
     return if (left.isEmpty()) right else if (right.isEmpty()) left else "$left $right"
   }
 
+  private fun newDecoderWithProb(i: BigInteger, pcfgMap: Map<Π3A<Σᐩ>, Int>, pcfgNorm: Map<Σᐩ, Int>): Pair<String, Double> {
+    if (branches.isEmpty()) return epsStr to 0.0
+    val t = ranges.indexOfFirst { it.first <= i && i <= it.second }
+    val (l, r) = branches[t]
+    val q = i - ranges[t].first
+    val (iLeft, iRight) = q.divrem(r.totalTrees)
+    val (lroot, rroot) = l.rootName to r.rootName
+    val (left, leftScore) = l.newDecoderWithProb(iLeft, pcfgMap, pcfgNorm)
+    val (right, rightScore) = r.newDecoderWithProb(iRight, pcfgMap, pcfgNorm)
+    val myScore = ln((pcfgMap[root to lroot to rroot]?.toDouble() ?: 0.00001) / (pcfgNorm[root]?.toDouble() ?: 1.0)) +
+        leftScore + rightScore
+    return (if (left.isEmpty()) right else if (right.isEmpty()) left else "$left $right") to myScore
+  }
+
   // Average time: 436.96ms, total time 43696.959ms (testRandomCFG)
   private fun decodeString(i: BigInteger): Pair<String, BigInteger> {
     if (branches.isEmpty()) return epsStr to i
@@ -154,6 +168,20 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       while (i < totalTrees) { yield(newDecoder(i)); i++}
     }
 
+  // Returns trees WoR from the CFG and scores the strings with a PCFG-based log-likelihood
+  fun sampleStrWithoutReplacementAndScore(
+    stride: Int = 1, offset: Int = 0,
+    pcfgMap: Map<Π3A<Σᐩ>, Int>, pcfgNorm: Map<Σᐩ, Int>
+  ): Sequence<Π2<String, Double>> =
+    if (6 < totalTrees.bitLength())
+      bigLFSRSequence(totalTrees).mapIndexedNotNull { index, i ->
+        if (index % stride == offset) newDecoderWithProb(i, pcfgMap, pcfgNorm) else null
+      }
+    else sequence {
+      var i = BigInteger.ZERO
+      while (i < totalTrees) { yield(newDecoderWithProb(i, pcfgMap, pcfgNorm)); i++}
+    }
+
   fun sampleStrWithPCFG5(pcfgTable: Map<Int, Int>): Sequence<String> =
     sequence { while (true) yield(samplePCFG5(pcfgTable)) }
 
@@ -186,6 +214,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
       if (a.isEmpty()) b else if (b.isEmpty()) a else "$a $b"
     }
 
+  /** See [intersectLevFSAP], extracts original NT name from a synthetic ∩-NT. */
   fun Σᐩ.name() = if ('~' in this) split('~')[1] else this
   val triples : List<Π2A<Int>> by lazy { branches.map { it.first.ntIdx to it.second.ntIdx } }
   val rootName by lazy { root.name() }
@@ -199,7 +228,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 //      .also { if(Random.nextInt(10000) == 3) if (it == 1) println("$hash Miss"); else println("$hash Hit") }
       + 1 }
     val cdf = probs.runningReduce { acc, i -> acc + i }
-    val rnd = Random.nextInt(probs.sum())
+    val rnd = Random.nextInt(cdf.last())
     val childIdx = cdf.binarySearch { it.compareTo(rnd) }.let { if (it < 0) -it - 1 else it }
     val (l, r) = branches[childIdx]
     val (lr, rr) = l.ntIdx to r.ntIdx

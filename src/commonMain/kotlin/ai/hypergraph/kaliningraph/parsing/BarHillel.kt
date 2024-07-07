@@ -27,7 +27,7 @@ fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
 
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
-private fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
+fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   var clock = TimeSource.Monotonic.markNow()
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
