@@ -755,7 +755,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
-  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and eventually generate all repairs in the language, preferably in a natural order. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the length-bounded Parikh map for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
+  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and eventually generate all repairs in the language, preferably in a natural order. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the parameterized Parikh map (\S~\ref{sec:ppm}) for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
 
   \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
 
@@ -977,7 +977,7 @@ First, we generate a synthetic grammar representing the intersection between the
   \end{footnotesize}
 \end{equation}
 
-\noindent This initializes the superdiagonal entries of $M_0$, enabling us to compute the fixpoint $M_\infty$ in the same manner described in \S~\ref{sec:matrix_completion} by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
+\noindent This initializes the superdiagonal entries of $M_0$, enabling us to compute the fixpoint $M_\infty$ in the same manner described in \S~\ref{sec:matrix_completion}, by redefining $\oplus, \otimes: \mathbb{T}_3 \times \mathbb{T}_3 \rightarrow \mathbb{T}_3$ as:
 
 \vspace{-5pt}\begin{align}
   X \oplus Z &\mapsto \bigcup_{\mathclap{k\in \pi_1(X \cup Z)}}\Big\{\phantom{.}k \Rightarrow \mathbb{T}_2(k, x \cup z) \mid x \in \pi_2(X\circ k), z \in \pi_2(Z\circ k)\phantom{.}\Big\}\\
@@ -985,6 +985,8 @@ First, we generate a synthetic grammar representing the intersection between the
 \end{align}
 
 These operators group subtrees by their root nonterminal, then aggregate their children. Instead of tracking sets, each $\Lambda$ now becomes a dictionary of $\mathbb{T}_2$, indexed by their root nonterminals.
+
+  \subsection{Precomputing the parameterized Parikh map for a CFG}\label{sec:ppm}
 
   $\mathbb{T}_2$ is a convenient datatype for many operations involving CFGs. We can use it to approximate the Parikh image, compute the size of a finite CFG, and sample parse trees with or without replacement. For example, to obtain the Parikh map of a CFG (Def.~\ref{def:parikh}), we may use the following recurrence,
 
@@ -1018,7 +1020,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
       X \oplus Z &\mapsto \big[[\min(X_s \cup Z_s), \max(X_s \cup Z_s)]\big]_{s \in \Sigma}\\ X \otimes Z &\mapsto \big[[\min(X_s) + \min(Z_s), \max(X_s) + \max(Z_s)]\big]_{s \in \Sigma}
   \end{align}
 
-  To obtain the parameterized Parikh map (PPM) of a length-bounded CFG, we abstractly parse the porous string and take the union of all intervals, which subsumes the Parikh image of every repair in the Levenshtein ball. Given a specific programming language syntax, $G$, the following function can be precomputed and cached for all $v: V$, and reasonable values of $m, n: \mathbb{N}$ for the sake of efficiency, then used to retrieve the Levenshtein-Parikh-$\langle v, m, n\rangle $ map in constant time:
+  To obtain the parameterized Parikh map (PPM) of a length-bounded CFG, we abstractly parse the porous string and take the minimal cover of all intervals, which subsumes the Parikh image of every repair in the Levenshtein ball. Given a specific grammar, $G$, the following function can be precomputed and cached for all nonterminals $v: V$, and reasonable values of $m, n: \mathbb{N}$ for the sake of efficiency, then used to lookup the Levenshtein-Parikh-$\langle v, m, n\rangle $ map in constant time:
 
   \begin{equation}
   \pi(G: \mathcal{G}, v: V, m: \mathbb{N}, n: \mathbb{N}): \Pi = \bigoplus_{\mathclap{i\in [m, n]}}\pi\bigl(\Lambda^*(\{\_\}^i)\circ v\bigr)
@@ -1028,7 +1030,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
 \subsection{Sampling parse trees from $\mathbb{T}_2$ with and without replacement}\label{sec:tree_sampling}
 
-  Once we have a $T: \mathbb{T}_2$, one option would be to sample as a top-down generative model, using some form of PCFG sampling. Constructing a sampler for $\mathbb{T}_2$ is straightforward. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
+  One solution to decode repairs from $T: \mathbb{T}_2$ would be to treat it as a top-down generative model and perform some form of ancestral sampling. Constructing such a sampler for $\mathbb{T}_2$ is straightforward. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
 
 \begin{equation}
   \Gamma(T) \mapsto \begin{cases}
@@ -1062,7 +1064,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 \end{algorithmic}
 \end{algorithm}
 
-  This sampler is simple and fast, but does not guarantee uniformity over the set of all generable parse trees, and does not converge linearly, failing to satisfy Def.~\ref{def:linear-convergence}. To get around this issue, we will define an alternate sampler based on an integer bijection, sample integers without replacement, decode them into trees, and finally rerank by a Markov chain.
+  This sampler is readily simple and fast, but does not guarantee uniformity over the set of all generable parse trees, and has sub-linear convergence, failing to satisfy Def.~\ref{def:linear-convergence}. To circumvent this issue, we will instead define an alternate sampler based on an integer-tree bijection, sample and decode distinct integers as trees, and finally score and rerank all samples by a Markov chain.
 
 The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensitive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
 
@@ -1074,7 +1076,7 @@ The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2
   \end{cases}
 \end{equation}
 
-To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production counting the size of its language relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within that range:
+To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production, counting the size of its childrens' languages relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within that range:
 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -1082,7 +1084,7 @@ To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we pre
   \textbf{let } r = |\texttt{children}(T)|,\\
   \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
   \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
-  \phantom{\textbf{Let }} q=i - F(F^{-1}(i)),\\
+  \phantom{\textbf{Let }} q=i - F\big(F^{-1}(i)\big),\\
   \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
   \phantom{\textbf{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
   \phantom{\textbf{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
@@ -1134,7 +1136,7 @@ If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can
 Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
-In practice, this means the tree sampler can produce multiple parse trees which represent the same string, impeding convergence. We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by translating $\mathbb{T}_2$ into a DFA, then sampling repair trajectories in order of decreasing string likelihood. First, let us note the following:
+In practice, this means the tree sampler can produce multiple parse trees which represent the same string, impeding convergence. We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by translating $\mathbb{T}_2$ into a DFA, then sampling repair trajectories in order of decreasing string likelihood. To show this is possible, let us take note of the following:
 
   \begin{lemma}\label{lemma:upper-bound}
     The intersection grammar, $G_\cap$, is acyclic.
@@ -1144,7 +1146,7 @@ In practice, this means the tree sampler can produce multiple parse trees which 
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic, it can be directly translated into a $\mathbb{T}_2$ and thus an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and converges linearly regardless of syntactic ambiguity. It is also more easily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
+  Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and sampling converges linearly regardless of syntactic ambiguity. It is also more readily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
 Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 
@@ -1625,7 +1627,7 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 
   \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
-  For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at 20k distinct samples.
+  For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
 
   \begin{figure}[h!]
     \resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
@@ -1712,8 +1714,8 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
   Next, we conduct an ablation study to compare the effectiveness of PCFG sampling versus enumeration. In both experiments, we balance the StackOverflow dataset across edit distances and run the repair sampler for up to 30 seconds (in either enumerative or PCFG mode), then rerank all repairs by n-gram perplexity and measure the Precision@1 for sampling, enumeration, and the default hybrid approach, which uses enumeration if the intersection grammar size $|G_\cap'|$ contains fewer than 10,000 total productions, and PCFG sampling otherwise.
 
   \begin{figure}[h]
-    \input{experiments/ablation_enumeration_only}
     \input{experiments/ablation_pcfg_only}
+    \input{experiments/ablation_enumeration_only}
     \input{experiments/ablation_enumeration_hybrid}
   \end{figure}
 
