@@ -336,9 +336,9 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
 
   \clearpage\section{Method}
 
-  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a low-rank distribution of lexical n-grams to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) repair decoding.
+  The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a small dataset of valid programs to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) repair decoding.
 
-First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code, then during extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
+First, we generate a synthetic grammar representing the intersection between the syntax and the Levenshtein ball around the source code, then during the decoding process, retrieve as many repairs as possible from the intersection grammar via enumeration or trajectory sampling, then rerank all unique repairs by naturalness. This can be depicted in more detail as a flowchart (Fig.~\ref{fig:flowchart}).
 
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
@@ -366,8 +366,8 @@ First, we generate a synthetic grammar representing the intersection between the
           \node [below=0.7cm of pro2b, xshift=0.05cm] {\Large\textbf{Language intersection}};
           \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-          \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate $\mathbb{T}_2$ and rerank};
-          \node [above=0.07cm of const, xshift=1.5cm] {(Algorithm A, \S~\ref{sec:matrix_completion})};
+          \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate trees from $\mathbb{T}_2$};
+          \node [above=0.07cm of const, xshift=1.5cm] {(\S~\ref{sec:tree_sampling})};
 
 %          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
 %
@@ -378,18 +378,20 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
 
-          \node (grwa) [process, below of=const, yshift=-0.5cm] {Sample PCFG top-down};
-          \node [above=0.07cm of grwa, xshift=1.5cm] {(Algorithm B, \S~\ref{sec:ptree})};
-          \node (rank) [process, below of=grwa, yshift=-0.5cm] {Convert to DFA and walk};
-          \node [above=0.1cm of rank, xshift=1.5cm] {(Algorithm C, \S~\ref{sec:decoding})};
+          \node (rrpc) [process, below of=const, yshift=-0.5cm] {Rerank by PCFG score};
+          \node [above=0.07cm of rrpc, xshift=1.7cm] {(Algorithm 1, \S~\ref{sec:ranking})};
+          \node (rank) [process, below of=rrpc, yshift=-0.5cm] {Convert to DFA and walk};
+          \node [above=0.1cm of rank, xshift=1.7cm] {(Algorithm 3, \S~\ref{sec:decoding})};
 %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-          \node [below=0.3cm of rank, xshift=2.7cm] {\Large\textbf{Repair decoding}};
-          \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(2.5,-1.1)$);
+          \node [below=0.3cm of rank, xshift=-4cm] {\Large\textbf{Repair decoding}};
+          \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(6.8,-1.1)$);
 
-          \node (results) [io, right of=grwa,xshift=5.2cm] {Repairs};
+          \node (rrng) [process, right of=const, xshift=4.5cm] {Rerank by n-gram score};
+          \node [above=0.1cm of rrng, xshift=0.7cm] {(Algorithm 2, \S~\ref{sec:ranking})};
+          \node (results) [io, right of=rank, xshift=4.5cm] {Repairs};
 %  \node (out1) [io, below of=pro2a] {Output};
           \node (stop) [startstop, right of=rank, xshift=3cm];
-          \node (stop1) [startstop, right of=grwa, xshift=3cm];
+          \node (stop1) [startstop, right of=rrpc, xshift=3cm];
           \node (stop2) [startstop, right of=const, xshift=3cm];
 
 %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
@@ -400,33 +402,35 @@ First, we generate a synthetic grammar representing the intersection between the
 %          \draw [arrow] (start) -- (code);
 %          \draw [arrow] (start) -- (synt);
           \draw [arrow] (code) -- (lnfa);
+          \draw [arrow] (const) -- (rrng);
+          \draw [arrow] (rrng) -- (results);
           \draw [arrow] (synt) -- (pcfg);
           \draw [arrow] (lnfa) -- (pro1);
           \draw [arrow] (pcfg) -- (pro1);
 
-          \draw [arrow] (grwa) -- (results);
-          \draw [line width=0.8pt] (stop.west) -- (stop1.west);
-          \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
+%          \draw [arrow] (grwa) -- (results);
+%          \draw [line width=0.8pt] (stop.west) -- (stop1.west);
+%          \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
 
 %  \draw [arrow] (in1) -- (pro1);
           \draw [arrow] (pro1) -- (dec1);
           \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
           \draw [arrow] (dec1) -- node[anchor=south] {no} (t2);
-%          \draw [arrow] (const) -- (rank);
+          \draw [arrow] (const) -- (rrpc);
           \draw [arrow] (pro2b) -- (lnfa);
 %          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
 %          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
           \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]const.west)--(const.west);
-          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
+%          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
           \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
 %          \draw [arrow] (vlmc) -- (rank);
-%          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+          \draw [arrow] (rrpc) |- ([shift={(4.37cm,0)}]rrpc.east)--(results.north);
 %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
 %  \draw [arrow] (pro2a) -- (out1);
-          \draw [line width=0.8pt] (rank) -- (stop);
-          \draw [line width=0.8pt] (grwa) -- (stop1);
-          \draw [line width=0.8pt] (const) -- (stop2);
+          \draw [arrow] (rank) -- (results);
+%          \draw [line width=0.8pt] (grwa) -- (stop1);
+%          \draw [line width=0.8pt] (const) -- (stop2);
 %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
 
         \end{tikzpicture}
@@ -437,7 +441,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \vspace{-0.5cm}
   \end{wrapfigure}
 
-  Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decode repairs.
+  Since the syntax of most programming languages is context-free, we first construct a context-free grammar (CFG), $G_\cap$, that represents the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decoding the repairs.
 
 %  \begin{enumerate}
 %    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
@@ -445,11 +449,11 @@ First, we generate a synthetic grammar representing the intersection between the
 %    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
 %  \end{enumerate}
 
-  To decode the repairs, we present three basic methods: (A) enumerate the CFG, $G_\cap$, and rerank each sentence, (B) sample $G_\cap$ with learned PCFG transitions, and then rerank, or (C) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov chain until a fixed timeout is reached. We describe (Alg. A) and (Alg. B) in \S~\ref{sec:tree_sampling}, and (Alg. C) in \S~\ref{sec:decoding}.
+  We present three basic methods for repair decoding: enumerate parse trees from the CFG, $G_\cap$, and rerank each tree by either (1) PCFG score, or (2) Markov chain likelihood, or (3) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov chain until a fixed timeout is reached. We describe (Alg. 1) and (Alg. 2) in \S~\ref{sec:tree_sampling}, and (Alg. 3) in \S~\ref{sec:decoding}.
 
-  In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (A-C) differ in the order which they retrieve repairs, and the likelihood model they use to rank them.
+  In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (1-3) essentially differ in the order they retrieve repairs, and the likelihood model they use to rank them.
 
-  We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, describe a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to rerank the repairs by a more sophisticated language model, such as a neural network, to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
+  We will first describe how we generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, define a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Optionally, we can choose to either enumerate repairs from the CFG, or sample repairs from a DFA to improve the naturalness of the top-k repairs (\S~\ref{sec:ranking}).
 
   \subsection{Preliminaries}\label{sec:prelim}
 
@@ -861,11 +865,11 @@ First, we generate a synthetic grammar representing the intersection between the
   }
   \end{small}
 
-  The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A$, but $M_\infty$ does not explicitly reveal its identity.
+  \vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A$, but $M_\infty$ does not explicitly reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:
+  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:\vspace{-8pt}
 
   \begin{small}
   \begin{align*}
@@ -874,9 +878,9 @@ First, we generate a synthetic grammar representing the intersection between the
     &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
     &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
   \end{align*}
-  \end{small}
+  \end{small}\vspace{-8pt}
 
-  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:
+  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
 
   \begin{align*}
     V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
@@ -884,7 +888,7 @@ First, we generate a synthetic grammar representing the intersection between the
     &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
   \end{align*}
 
-  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:
+  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
 
   \begin{align*}
     V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
@@ -1092,7 +1096,7 @@ Then, instead of top-down incremental sampling, we can create a randomized $\var
 
 Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any statistical distance metric is sufficient, such as the log-likelihood of the repair under a large language model. We compare two simple ranking methods: (1) the PCFG score and (2) the likelihood of a low-order Markov chain.
 
-In the first method, we will use a reranking model based on PCFG log likelihood, which requires a treebank of parsed snippets in CNF and computes a log probability of each binary tree by the standard method, where $\alpha: V, \beta: V \mid V^2$ are amended nonterminals\footnote{n.b., To score trees from BH intersections, we first strip off adjacent states from all synthetic nonterminals, i.e., $qvq' \equiv v$.}, and Score$: \mathbb{T} \rightarrow \mathbb{R}$:
+In the first method, we will use a reranking model based on PCFG log likelihood, which requires a treebank of parsed snippets in CNF and computes a log probability of each binary tree by the standard method, where $\alpha: V, \beta: V \mid V^2$ are amended nonterminals\footnote{n.b., To score trees from LBH grammars, we first strip off adjacent states from all synthetic nonterminals, i.e., $qvq' \equiv v$.}, and Score$: \mathbb{T} \rightarrow \mathbb{R}$ is defined:
 
 \begin{equation}
 \text{Score}(t: \mathbb{T}) \mapsto \begin{cases}
@@ -1102,21 +1106,21 @@ In the first method, we will use a reranking model based on PCFG log likelihood,
 \end{cases}
 \end{equation}
 
-Then, after enumerating distinct parse trees, we can simply rerank them by score.
+Finally, after enumerating distinct parse trees, we can simply rerank by PCFG score.
 
 \begin{algorithm}[H]
 \caption{Enumerative tree sampling with PCFG reranking}
 \label{alg:adaptive}
 \begin{algorithmic}[1]
-\Require $T: \mathbb{T}_2$ intersection grammar, Score$: \mathbb{T} \rightarrow \mathbb{R}$
+\Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-\For{$\texttt{seed++} < |T|$ and uninterrupted}
-\State $t \gets \varphi\big(T, \texttt{RandomIntWoR}(\texttt{seed}, |T|)}\big)$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\For{$\texttt{seed} < |T|$ and uninterrupted}
+\State $t \gets \varphi'\big(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
 \State $\hat{A} \gets \hat{A} \cup \{t\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $\{\text{\textleaf}(a) \mid a \in \hat{A}\} \textbf{ ranked by}\text{Score}(a)$ \Comment{Defoliate and rank by PCFG likelihood.}
+\State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Defoliate and rank by PCFG likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
@@ -1130,23 +1134,25 @@ To score the repairs, we use the conventional length-normalized negative log lik
 \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
 \end{equation}
 
-Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by score. If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$.
+Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by NLL.
 
 \begin{algorithm}[H]
 \caption{Enumerative tree sampling with n-gram reranking}
 \label{alg:adaptive}
 \begin{algorithmic}[1]
 \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
-\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of repairs.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-\For{$\texttt{seed++} < |T|$ and uninterrupted}
-\State $t \gets \varphi\big(T, \texttt{RandomIntWoR}(\texttt{seed}, |T|)}\big)$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
-\State $\hat{A} \gets \hat{A} \cup \{t\}$
+\For{$\texttt{seed} < |T|$ and uninterrupted}
+\State $t \gets \varphi'(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $\hat{A} \textbf{ ranked by } NLL\big(\text{\textleaf}(t)\big)$ \Comment{Defoliate and rank by n-gram likelihood.}
+\State \Return $a \in \hat{A} \textbf{ ranked by } \text{NLL}(a)$ \Comment{Rank by n-gram likelihood.}
 \end{algorithmic}
 \end{algorithm}
+
+If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$, and how well the distribution $P_\theta$ approximates the true distribution of interest.
 
   \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
@@ -1212,7 +1218,7 @@ For example, let us return to the second example given in \S~\ref{sec:example}, 
   \label{fig:exampleDFA}
 \end{figure}
 
-At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely path according to path length-normalized log likelihood. A beam search decoder is also possible, which we leave as an exercise for the reader.
+At the first bifurcation, we have a choice: assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely path according to path length-normalized log likelihood. A beam search decoder is also possible, which we leave as an exercise for the reader.
 
   The steerable DFA walk takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to a final state, in order of the most likely partial trajectories. It maintains a priority queue of of partial trajectories, ranked by length-normalized log likelihood and which are speculatively extended by the most likely available transition.
 
@@ -1242,7 +1248,7 @@ At the first bifurcation, we have a choice. Assuming a 4-gram Markov chain, we e
 \end{algorithmic}
 \end{algorithm}
 
-Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:linear-convergence} and Def.~\ref{def:ranked-repair} simultaneously, as each repair will be unique and in order of decreasing likelihood.
+Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:linear-convergence} and Def.~\ref{def:ranked-repair} simultaneously, as each repair will be unique and all repairs will be sorted in order of decreasing likelihood.
 
 %  \definecolor{R}{RGB}{202,65,55}
 %  \definecolor{G}{RGB}{151,216,56}
