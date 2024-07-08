@@ -75,7 +75,7 @@
 
   Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic error, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by modifying a syntactically invalid program so that it conforms to the grammar, saving time and attention.
 
-  Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections. Instead they find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
+  Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections. Instead, they find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
   More recently, probabilistic repair techniques have been introduced using neural language models to predict the most likely correction~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. While these techniques generate far more natural edits, they are prone to misgeneralization, costly to train, and challenging to incorporate new constraints thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
@@ -755,7 +755,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %To generate edits from it, we can use the same procedure as before, but instead of interleaving $\err\sigma$ with $\varepsilon$ and introducing holes, we simply use $A\big((\_)^{|\err{\sigma}| + d}\big, G_\cap)$.
 
-  Now that we have a language to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and eventually generate all repairs in the language, preferably in a natural order. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the parameterized Parikh map (\S~\ref{sec:ppm}) for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
+  Now that we have a grammar to recognize nearby repairs, we will need a method to generate the repairs themselves. We impose specific criteria on such a procedure: it must generate only valid repairs and eventually generate all repairs in the language, preferably in a natural order. In the following sections, we will describe a constructor (\S~\ref{sec:matrix_completion}) for a data structure (\S~\ref{sec:ptree}) representing parse forests in a length-bounded CFL. Among other features, this data structure provides an explicit way to construct the parameterized Parikh map (\S~\ref{sec:ppm}) for the Levenshtein Bar-Hillel (LBH) construction, and a method for sampling the language with or without replacement.
 
   \subsection{Code completion as idempotent matrix completion}\label{sec:matrix_completion}
 
@@ -1032,7 +1032,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
 
   One solution to decode repairs from $T: \mathbb{T}_2$ would be to treat it as a top-down generative model and perform some form of ancestral sampling. Constructing such a sampler for $\mathbb{T}_2$ is straightforward. Given a PCFG whose productions indexed by each nonterminal are decorated with a probability vector $\mathbf{p}$ (uniform in the non-probabilistic case), we define a tree sampler $\Gamma: (\mathbb{T}_2 \mid \mathbb{T}_2^2) \rightsquigarrow \mathbb{T}$ which recursively draws children according to a Multinoulli distribution:
 
-\begin{equation}
+\begin{equation}\label{eq:pcfg_sampler}
   \Gamma(T) \mapsto \begin{cases}
         \texttt{BTree}\Big(\texttt{root}(T), \Gamma\big(\text{Multi}(\texttt{children}(T), \mathbf{p})\big)\Big) & \text{ if $T: \mathbb{T}_2$ } \\
         \big\langle \Gamma\big(\pi_1(T)\big), \Gamma\big(\pi_2(T)\big) \big\rangle & \text{ if $T: \mathbb{T}_2\times\mathbb{T}_2$ }
@@ -1048,25 +1048,9 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2\cong\mathcal{G}_\cap'$ are destined to all be within a small Levenshtein distance of each other.
+\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2\cong\mathcal{G}_\cap'$ are destined to be within a small Levenshtein distance of each other. This approach, while plausible at first glance, is not a viable solution for extracting repairs, as it does not guarantee uniformity over the set of all generable parse trees, and converges extremely poorly, failing to satisfy Def.~\ref{def:linear-convergence}.
 
-  \begin{algorithm}[H]
-    \caption{Ordinary PCFG sampling}
-    \label{alg:adaptive}
-    \begin{algorithmic}[1]
-      \Require $T: \mathbb{T}_2$ intersection grammar, $\Gamma: \mathbb{T}_2 \rightsquigarrow \mathbb{T}$ sampler, $P_\theta: \mathbb{T} \rightarrow \mathbb{R}$ PCFG
-      \State $\hat{A} \gets \varnothing$ \Comment{Initialize set of parse trees.}
-%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-\Repeat
-\State $\hat{A} \gets \hat{A} \cup \big\{\Gamma(T)\big\}$ \Comment{Sample a parse tree and add to retrieved set.}
-\Until{interrupted.}
-\State \Return $\hat{A} \textbf{ ranked by } P_\theta(\cdot)$ \Comment{Rank by PCFG likelihood.}
-\end{algorithmic}
-\end{algorithm}
-
-  This sampler is readily simple and fast, but does not guarantee uniformity over the set of all generable parse trees, and has sub-linear convergence, failing to satisfy Def.~\ref{def:linear-convergence}. To circumvent this issue, we will instead define an alternate sampler based on an integer-tree bijection, sample and decode distinct integers as trees, and finally score and rerank all samples by a Markov chain.
-
-The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2$ is sensitive to the number of nonterminals and rule expansions in the grammar. To obtain the total number of trees with breadth $n$, we abstractly parse the porous string, letting $T=\Lambda^*(\{\_\}^n) \circ S$, then use the recurrence below to compute the total number of unique trees in the language:
+  To circumvent this issue, we will instead define an improved replacement-free sampler based on an integer-tree bijection. To set up a proper bijection, we first need to compute the number of unique parse trees in the language represented by $T: \mathbb{T}_2$. This is a straightforward recurrence:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -1076,7 +1060,7 @@ The number of labeled binary trees inhabiting a single instance of $\mathbb{T}_2
   \end{cases}
 \end{equation}
 
-To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production, counting the size of its childrens' languages relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within that range:
+To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production, counting the size of its childrens' languages relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within each range:
 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -1092,11 +1076,51 @@ To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we pre
   \end{cases}
 \end{equation}
 
-  Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$, then decode them into whole parse trees. Assuming $\varphi(T, \cdot)$ is in fact bijective, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \{\varphi'(T, j)\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. This procedure is trivially parallelizable across an arbitrary number of processors, enabling communication-free sampling without replacement. If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly until interrupted. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
+Then, instead of top-down incremental sampling, we can create a randomized $\varphi'$ from $\varphi$ by sampling integers uniformly without replacement from $\mathbb{Z}_{|T|}$, then decode them into whole parse trees. Obtaining the concrete repair is then a simple matter of defoliating binary trees:
 
-%\subsection{Ranked repair}\label{sec:ranking}
+\begin{equation}
+\text{\textleaf}(t: \mathbb{T}) \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+\texttt{root}(t) & \text{if $t$ is a leaf,} \\
+\texttt{concatenate(left}(t), \texttt{right}(t)\texttt{)} & \text{otherwise.}
+\end{cases}
+\end{equation}
 
-Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any metric is sufficient, such as the log-likelihood of the repair under a large language model or the probability under a PCFG. We implement the simplest solution: the likelihood of a low-order Markov chain. This solution is computationally fast, does not require a trained PCFG, and as we will show, yields competitive results in practice.
+  This procedure will converge to the language much more quickly than Eq.~\ref{eq:pcfg_sampler}, as it never draws the same tree twice. Assuming the grammar is unambiguous, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \big\{\text{\textleaf}\big(\varphi'(T, j)\big)\big\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. Furthermore, this procedure is trivially parallelizable across an arbitrary number of processors, enabling communication-free sampling without replacement. %If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly until interrupted. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
+
+\subsection{Ranked repair}\label{sec:ranking}
+
+Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any statistical distance metric is sufficient, such as the log-likelihood of the repair under a large language model. We compare two simple ranking methods: (1) the PCFG score and (2) the likelihood of a low-order Markov chain.
+
+In the first method, we will use a reranking model based on PCFG log likelihood, which requires a treebank of parsed snippets in CNF and computes a log probability of each binary tree by the standard method, where $\alpha: V, \beta: V \mid V^2$ are amended nonterminals\footnote{n.b., To score trees from BH intersections, we first strip off adjacent states from all synthetic nonterminals, i.e., $qvq' \equiv v$.}, and Score$: \mathbb{T} \rightarrow \mathbb{R}$:
+
+\begin{equation}
+\text{Score}(t: \mathbb{T}) \mapsto \begin{cases}
+%    \big|\{s \mid \big(\texttt{root}(T) \rightarrow s\big) \in P^\cap\}\big| & \text{if $T$ is a leaf,} \\
+0 & \text{if $t$ is a leaf,} \\
+-\ln\frac{\text{Count}(\alpha \rightarrow \beta)}{\sum_{\gamma}\text{Count}(\alpha \rightarrow \gamma)} + \text{Score}\big(\texttt{left}(t)\big) + \text{Score}\big(\texttt{right}(t)\big) & \text{otherwise.}
+\end{cases}
+\end{equation}
+
+Then, after enumerating distinct parse trees, we can simply rerank them by score.
+
+\begin{algorithm}[H]
+\caption{Enumerative tree sampling with PCFG reranking}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $T: \mathbb{T}_2$ intersection grammar, Score$: \mathbb{T} \rightarrow \mathbb{R}$
+\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\For{$\texttt{seed++} < |T|$ and uninterrupted}
+\State $t \gets \varphi\big(T, \texttt{RandomIntWoR}(\texttt{seed}, |T|)}\big)$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+\EndFor
+\State \Return $\{\text{\textleaf}(a) \mid a \in \hat{A}\} \textbf{ ranked by}\text{Score}(a)$ \Comment{Defoliate and rank by PCFG likelihood.}
+\end{algorithmic}
+\end{algorithm}
+
+This sampler is readily simple and fast, but gathering a treebank to calibrate the score function can be tedious. A more general method is to use a low-order Markov chain to rerank the repairs, which only requires a corpus of syntactically valid strings to estimate the transition parameters.
 
 Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
 
@@ -1146,7 +1170,7 @@ In practice, this means the tree sampler can produce multiple parse trees which 
     Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
   \end{proof}
 
-  Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it does not require gathering a dataset of parse trees to calibrate the sampler and unlike CFGs, can be efficiently minimized and sampling converges linearly regardless of syntactic ambiguity. It is also more readily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
+  Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and sampling converges linearly regardless of syntactic ambiguity. It is also more readily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
 Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
 
@@ -1382,8 +1406,19 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
 
+\section{Evaluation}
 
-  \section{Experimental Setup}
+We call our method Tidyparse and consider the following research questions:
+
+\begin{itemize}
+\item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
+\item \textbf{RQ 2}: How performant is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
+\item \textbf{RQ 3}: Which design choices are most significant? (e.g., sampling, decoding, parallelism)
+\end{itemize}
+
+We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on repair precision.
+
+  \subsection{Experimental setup}
 
   We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
@@ -1394,6 +1429,8 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 \end{equation}
 
   This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case, where $k=\infty$.
+
+  The default setting uses the DFA decoder (Alg. 3), however, we also evaluate enumerative sampling with PCFG (Alg. 1) and n-gram (Alg. 2) reranking.
 
   We compare our method against two separate baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
@@ -1429,17 +1466,6 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 %  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
 
 
-  \section{Evaluation}
-
-  We call our method Tidyparse and consider the following research questions:
-
-  \begin{itemize}
-    \item \textbf{RQ 1}: What statistical properties do natural repairs exhibit? (e.g., length, edit distance)
-    \item \textbf{RQ 2}: How performant is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
-    \item \textbf{RQ 3}: Which design choices are most significant? (e.g., search vs. sampling, parallelism)
-  \end{itemize}
-
-  We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural Python repair lengths and distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on repair precision.
 
   \subsection{Dataset}\label{sec:rq1}
 
@@ -1711,17 +1737,17 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 
   We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
 
-  Next, we conduct an ablation study to compare the effectiveness of PCFG sampling versus enumeration. In both experiments, we balance the StackOverflow dataset across edit distances and run the repair sampler for up to 30 seconds (in either enumerative or PCFG mode), then rerank all repairs by n-gram perplexity and measure the Precision@1 for sampling, enumeration, and the default hybrid approach, which uses enumeration if the intersection grammar size $|G_\cap'|$ contains fewer than 10,000 total productions, and PCFG sampling otherwise.
+  Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg. 1, we use the enumerative sampler and rank all repairs by either PCFG score, in Alg. 2, we do the same but rank the repairs by n-gram log-likelihood, and in Alg. 3, we translate the intersection CFG into a DFA and sample trajectories according to a n-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 
   \begin{figure}[h]
-    \input{experiments/ablation_pcfg_only}
-    \input{experiments/ablation_enumeration_only}
-    \input{experiments/ablation_enumeration_hybrid}
+    \input{experiments/ablation_enumeration_pcfg}
+    \input{experiments/ablation_enumeration_markov}
+    \input{experiments/ablation_dfa_walker}
   \end{figure}
 
-  While the overall precision is notably lower for PCFG sampling than enumeration, the average number of samples drawn is also significantly lower, indicating a higher sample efficiency. This illustrates the tradeoff between sample efficiency and diversity, and suggests a hybrid approach is most effective at retrieval across density regimes. When the CFL is very large, uniform sampling is unlikely to retrieve the most natural samples, and top-down PCFG sampling offers a more informed prior, albeit at the cost of lower coverage on small languages.
+  In general, n-gram log-likelihood appears to have a significant advantage over bigram PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. The DFA walker has the best performance across all edit distances, but is also the most computationally expensive, requiring a full enumeration of the admissible set. The PCFG sampler is the most efficient, but also the least precise, as it does not consider the naturalness of the repair. The n-gram sampler is a good compromise between the two, offering a good balance between precision and efficiency.
 
-  In general, enumeration has an advantage when the CFL is very small. For example, if the CFL contains 2,000 sentences, enumeration is likely to recover all 2,000 before timeout, whereas PCFG sampling may only recover 100 of the most probable samples depending on the transition probabilities. However, if the CFL has 200,000 sentences, enumeration may only recover 10,000 uniform random samples in the time allotted and the PCFG sampler only 5,000, but due to its higher sample efficiency, is likely to contain a much higher proportion of natural repairs.
+  Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned.
 
   \begin{wrapfigure}{r}{0.4\textwidth}
     \input{experiments/parallel_speedup}
@@ -1729,7 +1755,7 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
     \label{fig:speedup}
   \end{wrapfigure}
 
-  We also measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups may be possible to realize by rewriting the sampler in CUDA, which we leave for future work.
+  We measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups may be possible to realize by rewriting the sampler in CUDA, which we leave for future work.
 
   \section{Discussion}\label{sec:discussion}
 
