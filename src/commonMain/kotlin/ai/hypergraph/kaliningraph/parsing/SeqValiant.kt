@@ -223,6 +223,7 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
   fun samplePCFG5(pcfgTable: Map<Int, Int>, upUp: Int = 0, upLeft: Int = 0, upRight: Int = 0): Σᐩ {
     if (isLeaf) return epsStr
     val probs = triples.map {
+      /** See [Tree.quintuples] */
       val hash = hash(upUp, upLeft, upRight, it.first, it.second)
       (pcfgTable[hash] ?: 1)
 //      .also { if(Random.nextInt(10000) == 3) if (it == 1) println("$hash Miss"); else println("$hash Hit") }
