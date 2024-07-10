@@ -177,7 +177,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
-  val unitProds = unitProdRules(fsa)
+  val unitProds = unitProdRules(fsa).toSet()
     .onEach { (a, _) -> nts.add(a) }
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
@@ -244,6 +244,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
     .jvmPostProcess(clock)
+    .expandNonterminalStubs(origCFG = this@jvmIntersectLevFSAP)
 //    .jdvpNew()
 }
 
@@ -254,6 +255,11 @@ fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
     .jvmElimVarUnitProds()
       .also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
       .freeze()
+
+fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
+  if (it.RHS.size != 1 || !it.RHS.first().isNonterminalStub()) listOf(it)
+  else origCFG.bimap.NDEPS[it.RHS.first().drop(1).dropLast(1)]!!.map { t -> it.LHS to listOf(t) }
+}.toSet().freeze().also { println("Expanded ${it.size - size} nonterminal stubs") }
 
 tailrec fun CFG.jvmElimVarUnitProds(
   toVisit: Set<Σᐩ> = nonterminals,

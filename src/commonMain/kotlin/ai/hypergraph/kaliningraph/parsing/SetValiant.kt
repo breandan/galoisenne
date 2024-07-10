@@ -199,7 +199,7 @@ val HOLE_MARKER = "_"
 fun Σᐩ.containsHole(): Bln = HOLE_MARKER in tokenizeByWhitespace()
 fun Σᐩ.isHoleTokenIn(cfg: CFG) = containsHole() || isNonterminalStubIn(cfg)
 //val ntRegex = Regex("<[^\\s>]*>")
-fun Σᐩ.isNonterminalStub() = isNotEmpty() && first() == '<' && last() == '>'
+fun Σᐩ.isNonterminalStub() = length > 3 && first() == '<' && last() == '>'
 fun Σᐩ.isNonterminalStubInNTs(nts: Set<Σᐩ>): Bln = isNonterminalStub() && drop(1).dropLast(1) in nts
 fun Σᐩ.isNonterminalStubIn(cfg: CFG): Bln = isNonterminalStub() && drop(1).dropLast(1) in cfg.nonterminals
 fun Σᐩ.isNonterminalStubIn(CJL: CJL): Bln = CJL.cfgs.map { isNonterminalStubIn(it) }.all { it }

@@ -1,9 +1,9 @@
 @file:Suppress("NonAsciiCharacters")
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.sampling.choose
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.random.Random
@@ -54,6 +54,8 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
   terminals.map { bimap[listOf(it)] to it }.groupBy { it.first }
     .mapValues { it.value.map { it.second }.toSet() }
 }
+
+val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).nextInt().toChar().toUnicodeEscaped() } }
 
 val CFG.ntLst by cache { (symbols + "ε").toList() }
 val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }

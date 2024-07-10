@@ -91,9 +91,14 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
 // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
 // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
 fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
-  (unitProductions * fsa.nominalize().flattenedTriples)
-    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+//  (unitProductions * fsa.nominalize().flattenedTriples)
+//    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+//    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+  (unitProductions * fsa.Q).map { (A, σ, arc) ->
+    if (arc.π2.startsWith("[!=]") && σ != arc.π2.drop(4)) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+    else if (arc.π2.startsWith("[.*]")) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+    else "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
+  }
 
 fun CFG.postProcess() =
     this.also { println("∩-grammar has ${it.size} total productions") }

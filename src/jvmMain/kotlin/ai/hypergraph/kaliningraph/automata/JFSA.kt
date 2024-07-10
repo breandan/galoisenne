@@ -65,10 +65,10 @@ fun PTree.toDFA(minimize: Boolean = false) =
     var j = 0
     propagator(
       both = { a, b -> if (a == null) b else if (b == null) a
-      // Only periodically minimize the automata during construction
-      else if (i++ % 13 == 0) a.concatenate(b).min() else a.concatenate(b) },
+        // Only periodically minimize the automata during construction
+        else if (i++ % 13 == 0) a.concatenate(b).min() else a.concatenate(b) },
       either = { a, b -> if (a == null) b else if (b == null) a
-      else if (j++ % 13 == 0) a.union(b).min() else a.union(b) },
+        else if (j++ % 13 == 0) a.union(b).min() else a.union(b) },
       unit = { a ->
         if ("ε" in a.root) null
         else BAutomaton.makeChar(Random(a.root.hashCode()).nextInt().toChar())

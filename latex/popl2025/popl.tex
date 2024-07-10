@@ -9,7 +9,7 @@
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
 %\documentclass[sigplan,nonacm]{acmart}
-\documentclass[sigplan,review,acmsmall,nonacm]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+\documentclass[sigplan,review,acmsmall,nonacm,screen,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 
 %% Conference information
@@ -733,7 +733,7 @@ First, we generate a synthetic grammar representing the intersection between the
   Now, we know that if the Parikh divergence between two intervals is nonzero, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
 
   \begin{definition}[Parikh compatibility]
-    Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff (\pi(v) \parallel \pi(q, q')) = 0$.
+    Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff \big(\pi(v) \parallel \pi(q, q')\big) = 0$.
   \end{definition}
 
   Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
