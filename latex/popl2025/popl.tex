@@ -81,7 +81,7 @@
 
   Taking inspiration from formal and statistical language modeling alike, we adapt a well-known construction from Bar-Hillel~\cite{bar1961formal} to the problem of ranked syntax repair. Our work shows this approach, while seemingly intractable, can be scaled to handle intersections with real-world programming languages and code snippets. We will then demonstrate how, by combining the Bar-Hillel construction with an efficient decoder, it is possible to accurately predict natural syntax repairs while retaining the correctness and interpretability of classical repair methods.
 
-  In particular, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
+  In particular, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate how to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
@@ -96,40 +96,41 @@
 
   \clearpage
   \begin{figure}[h!]
-    \begin{center}
-      \resizebox{0.7\textwidth}{!}{
-        \begin{tikzpicture}[node distance=5cm]
-          \node (start) [io] {Broken code};
-          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
-          \node (gram1) [io2, above of=node1, yshift=-3.2cm] {Grammar};
-%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
-%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-          \node (node3) [plain, right of=node1, xshift=0.5cm] {\textbf{Repair decoding}};
-          \node (ngram) [io2, above of=node3, yshift=-3.2cm] {Markov chain};
-          \node (node4) [io, right of=node3] {Repairs};
-          \draw [arrow] (start) -- (node1);
-          \draw [arrow] (gram1) -- (node1);
-          \draw [arrow] (node1) -- (node3);
-          \draw [arrow] (node3) -- (node4);
-          \draw [arrow] (ngram) -- (node3);
-%        \draw [arrow] (ptree) -- (node2);
-        \end{tikzpicture}
-      }
-    \end{center}
-  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a set of likely repairs.}\label{fig:arch_simp}
+%    \begin{center}
+%      \resizebox{0.7\textwidth}{!}{
+%        \begin{tikzpicture}[node distance=5cm]
+%          \node (start) [io] {Broken code};
+%          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
+%          \node (gram1) [io2, above of=node1, yshift=-3.2cm] {Grammar};
+%%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
+%%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
+%          \node (node3) [plain, right of=node1, xshift=0.5cm] {\textbf{Repair decoding}};
+%          \node (ngram) [io2, above of=node3, yshift=-3.2cm] {Markov chain};
+%          \node (node4) [io, right of=node3] {Repairs};
+%          \draw [arrow] (start) -- (node1);
+%          \draw [arrow] (gram1) -- (node1);
+%          \draw [arrow] (node1) -- (node3);
+%          \draw [arrow] (node3) -- (node4);
+%          \draw [arrow] (ngram) -- (node3);
+%%        \draw [arrow] (ptree) -- (node2);
+%        \end{tikzpicture}
+%      }
+%    \end{center}
+    \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
+  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a set of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
   \end{figure}
 
   Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness, as seen in Fig.~\ref{fig:arch_simp}. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}\label{sec:example}
 
-  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.3cm}
+  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.2cm}
 
-  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.3cm}
+  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.2cm}
 
-  We can fix it by inserting a colon after the function definition, yielding:\\
+  We can fix it by inserting a colon after the function definition, yielding:\vspace{0.3cm}
 
-  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.3cm}
+  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.2cm}
 
   A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
 %  Consider the following Kotlin snippet:\\
@@ -140,7 +141,7 @@
 %
 %  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
 
-  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
+  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:\vspace{-3pt}
 
 %\setlength{\columnsep}{-10pt}
 %\setlength{\columnseprule}{-10pt}
@@ -156,12 +157,12 @@
 %\end{multicols}
   \begin{figure}[h!]
     \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
-    (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\\\
-    (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
-    \end{tabular}
+    (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
+    \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
+    \end{tabular}\vspace{-5pt}
   \end{figure}
 
-  With some typing information, we could easily narrow the results, but even in the absence of semantic constraints, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
+  With some semantic constraints, we could easily narrow the results, but even in their absence, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is most natural. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by naturalness.
 
   The trouble is that any such procedure must be highly sample-efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
@@ -264,7 +265,7 @@ We will now give an informal intuition behind of our method, then proceed to for
   \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upwards arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
 \end{figure}
 
-Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L I, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
+Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
 
 This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\sqrt{\phantom{S}}$, and leave it unchanged.
 

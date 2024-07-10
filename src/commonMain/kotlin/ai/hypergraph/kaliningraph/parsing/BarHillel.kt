@@ -32,21 +32,16 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   val nts = mutableSetOf("START")
   fun Σᐩ.isSyntheticNT() =
     first() == '[' && last() == ']' && count { it == '~' } == 2
-  fun List<Production>.filterRHSInNTS() =
+  fun Iterable<Production>.filterRHSInNTS() =
     asSequence().filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
 
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
       .filterRHSInNTS()
 
-  val transits =
-    fsa.Q.map { (q, a, r) -> "[$q~$a~$r]".also { nts.add(it) } to listOf(a) }
-      .filterRHSInNTS()
-
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
-  val unitProds = unitProdRules(fsa)
-    .onEach { (a, _) -> nts.add(a) }.filterRHSInNTS()
+  val unitProds = unitProdRules(fsa).onEach { (a, _) -> nts.add(a) }
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
@@ -84,21 +79,28 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
-  return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
+  return (initFinal + binaryProds + unitProds).toSet().postProcess()
+    .expandNonterminalStubs(origCFG = this@intersectLevFSAP)
     .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }
 
 // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
 // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
 fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
-//  (unitProductions * fsa.nominalize().flattenedTriples)
-//    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-//    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
-  (unitProductions * fsa.Q).map { (A, σ, arc) ->
-    if (arc.π2.startsWith("[!=]") && σ != arc.π2.drop(4)) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
-    else if (arc.π2.startsWith("[.*]")) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
-    else "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
-  }
+  (unitProductions * fsa.nominalize().flattenedTriples)
+    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+//  (unitProductions * fsa.Q).map { (A, σ, arc) ->
+//    if (arc.π2.startsWith("[!=]") && σ != arc.π2.drop(4)) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+//    else if (arc.π2.startsWith("[.*]")) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+//    else "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
+//  }
+
+fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
+//  println("FM: $it / ${it.RHS.first()} / ${it.RHS.first().isNonterminalStub()}")
+  if (it.RHS.size != 1 || !it.RHS.first().isNonterminalStub()) listOf(it)
+  else origCFG.bimap.NDEPS[it.RHS.first().drop(1).dropLast(1)]!!.map { t -> it.LHS to listOf(t) }
+}.toSet().freeze().also { println("Expanded ${it.size - size} nonterminal stubs") }
 
 fun CFG.postProcess() =
     this.also { println("∩-grammar has ${it.size} total productions") }
