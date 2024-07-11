@@ -79,22 +79,21 @@
 
   More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and we observe the published models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their naturalness.
 
-  Taking inspiration from formal and statistical language modeling alike, we adapt a well-known construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntax repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by combining the Bar-Hillel construction with an efficient decoder, it is possible to predict human syntax repairs with the accuracy of neural repair models, while retaining the correctness and interpretability of classical repair algorithms.
+  Taking inspiration from formal and statistical language modeling alike, we adapt a well-known construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntax repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a Markov model, it is possible to predict human syntax repairs with the accuracy of large langauge models, while retaining the correctness and interpretability of classical repair algorithms.
 
   In particular, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate how to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
   \begin{enumerate}
     \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
-    \item We construct a data structure via idempotent matrix completion that compactly represents parse forests in context-free languages. This data structure is used to index syntax trees, significantly reducing the size of the intersection grammar. (\S~\ref{sec:matrix_completion},~\ref{sec:ptree})
+    \item We design a data structure that compactly represents finite context-free languages. This data structure is used to both eliminate useless productions (\S~\ref{sec:lev_bh},~\ref{sec:ppm}) from the intersection grammar and index parse trees in the resulting intersection language. (\S~\ref{sec:tree_sampling})
 %    \item We present three ways to decode repairs from the data structure.
 %    \begin{enumerate}
 %    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
 %    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
 %    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
-    \item We decode that data structure, returning a stream of concrete syntax repairs which is guaranteed to halt, but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
+    \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b) but compare both. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and the most likely repairs are ranked first. (\S~\ref{sec:ranking})
   \end{enumerate}
 
-  \clearpage
   \begin{figure}[h!]
 %    \begin{center}
 %      \resizebox{0.7\textwidth}{!}{
@@ -310,7 +309,7 @@ We will now give an informal intuition behind of our method, then proceed to for
   \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upwards arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
 \end{figure}
 
-Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, I \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
+Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
 
 This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\sqrt{\phantom{S}}$, and leave it unchanged.
 
@@ -504,7 +503,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   In all cases, if the language is sufficiently small, this will generate every possible repair and halt early. Otherwise, if the language is too large to exhaustively search, it will draw a representative subset containing the most likely repairs with high probability, then halt. The decoders (1-3) essentially differ in the order they retrieve repairs, and the likelihood model they use to rank them.
 
-  We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, define a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Finally, we will show how to enumerate repairs from the CFG (\S~\ref{sec:tree_sampling}), or sample them from an equivalent DFA (\S~\ref{sec:decoding}). As we build up our intuition for each component, we will periodically revisit the criteria from \S~\ref{sec:problem}, to ensure we are on track.
+  We will first describe how to generate the intersection grammar (\S~\ref{sec:lev_nfa},~\ref{sec:lev_bh}), then, define a data structure compactly representing its language, allowing us to efficiently decode all repairs contained within (\S~\ref{sec:ptree}). Finally, we will show how to enumerate repairs from the CFG (\S~\ref{sec:tree_sampling}), or sample them from an equivalent DFA (\S~\ref{sec:decoding}). As we build up our intuition for each component, we will periodically revisit the criteria from \S~\ref{sec:problem}, to ensure we remain on the right track.
 
   \subsection{Preliminaries}\label{sec:prelim}
 
@@ -1103,9 +1102,11 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2\cong\mathcal{G}_\cap'$ are destined to be within a small Levenshtein distance of each other. This approach, while plausible at first glance, is not a viable solution for extracting repairs, as it does not guarantee uniformity over the set of all generable parse trees, and converges extremely poorly, failing to satisfy Def.~\ref{def:linear-convergence}.
+\noindent from analytic combinatorics, however unlike Duchon et al.~\cite{duchon2004boltzmann}, our work does not depend on rejection to guarantee exact-size sampling, as all trees from $\mathbb{T}_2\cong\mathcal{G}_\cap'$ can be constrained to have the same size or fall within a small Levenshtein distance of each other.
 
-  To circumvent this issue, we will instead define an improved replacement-free sampler based on an integer-tree bijection. To set up a proper bijection, we first need to compute the number of unique parse trees in the language represented by $T: \mathbb{T}_2$. This is a straightforward recurrence:
+  However this approach, while plausible at first glance, is not a viable solution for decoding repairs, as it does not sample unique parse trees, nor guarantee uniformity over the set of all generable trees and converges extremely poorly to the language, failing to satisfy Def.~\ref{def:linear-convergence}.
+
+  To ameliorate this issue, we will instead define a replacement-free sampler based on an integer-tree bijection. To set up a proper bijection, we first need to compute the number of unique parse trees in the language represented by $T: \mathbb{T}_2$. This is a straightforward recurrence:
 
 \begin{equation}
   |T: \mathbb{T}_2| \mapsto \begin{cases}
@@ -1171,21 +1172,19 @@ Finally, after enumerating distinct parse trees, we can simply rerank by PCFG sc
 \State $\hat{A} \gets \hat{A} \cup \{t\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Defoliate and rank by PCFG likelihood.}
+\State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
 \end{algorithmic}
 \end{algorithm}
 
 This sampler is readily simple and fast, but gathering a treebank to calibrate the score function can be tedious. A more general method is to use a low-order Markov chain to rerank the repairs, which only requires a corpus of syntactically valid strings to estimate the Markov transition parameters.
 
-Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing.
-
-To score the repairs, we use the conventional length-normalized negative log likelihood:
+Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing. Then, to score the repairs, we use the conventional length-normalized negative log likelihood:
 
 \begin{equation}
 \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
 \end{equation}
 
-Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order by NLL.
+Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
 
 \begin{algorithm}[H]
 \caption{Enumerative tree sampling with n-gram reranking}
@@ -1199,7 +1198,7 @@ Then, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a
 \State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $a \in \hat{A} \textbf{ ranked by } \text{NLL}(a)$ \Comment{Rank by n-gram likelihood.}
+\State \Return $[a \in \hat{A} \textbf{ ranked by } \text{NLL}(a)]$ \Comment{Rank by n-gram likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
@@ -1267,9 +1266,9 @@ For example, let us return to the second example given in \S~\ref{sec:example}, 
   \label{fig:exampleDFA}
 \end{figure}
 
-At the first bifurcation, we have a choice: assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely path according to path length-normalized log likelihood. A beam search decoder is also possible, which we leave as an exercise for the reader.
+At the first bifurcation, we have a choice: assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely transition based on an ordering heuristic.
 
-  The steerable DFA walk takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to a final state, in order of the most likely partial trajectories. It maintains a priority queue of of partial trajectories, ranked by length-normalized log likelihood and which are speculatively extended by the most likely available transition.
+This procedure we call the steerable DFA walk (Alg.~\ref{alg:dfa_walk}). It takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to final states, in order of partial likelihood. During sampling, it maintains a priority queue of partial trajectories, ranked by length-normalized log likelihood, which are speculatively extended by the most likely available transition. A beam search and stochastic decoder is also feasible, however we omit them here for brevity.
 
 \begin{algorithm}[H]
 \caption{Steerable DFA walk}
@@ -1295,7 +1294,7 @@ At the first bifurcation, we have a choice: assuming a 4-gram Markov chain, we e
 \Until{interrupted or $\mathcal{P}=\varnothing$.}
 \State \Return $\big[\sigma_{|\sigma|..1} \mid \langle \sigma, q, \gamma \rangle = T \in \mathcal{T}\big]$ \Comment{Reverse string and return in order of likelihood.}
 \end{algorithmic}
-\end{algorithm}
+\end{algorithm}\vspace{-0.2cm}
 
 Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:linear-convergence} and Def.~\ref{def:ranked-repair} simultaneously, as each repair will be unique and all repairs will be sorted in order of decreasing likelihood.
 
@@ -1485,15 +1484,15 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
   This is a variation on a standard metric used in information retrieval, and a common way to measure the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case, where $k=\infty$.
 
-  Our default setting uses the DFA decoder (Alg. 3), however, we also compare a naive rejection-based sampler, enumerative sampling with PCFG (Alg. 1) and n-gram (Alg. 2) reranking.
+  By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison of a naive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and n-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
 
   We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-  The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+  The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
-  The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, running bytecode compiled for JVM 17.0.2. To train our scoring function, we use an order-5 Markov chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs. We apply a 30-second latency cutoff for our sampler.
+  The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, executing bytecode compiled for JVM 17.0.2. To train our scoring function, we use an order-5 Markov chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for varying latency cutoffs up to 90s, although it often exhausts the search space and halts before timeout.
 
 %  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
@@ -1519,8 +1518,6 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 %  \end{align*}
 %
 %  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
-
-
 
   \subsection{Dataset}\label{sec:rq1}
 
@@ -1818,21 +1815,19 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
   The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability.
 
-  Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking all repairs found we can achieve a significant improvement over one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be enumerated completely and ranked. For larger radii, we can still achieve competitive precision by using a PCFG to sample from the admissible set and reranking by perplexity.
+  Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking retrieved repairs can achieve a significant improvement over one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked. For larger radii, we can still achieve competitive precision by using an efficient decoding mechanism to sample the admissible set and rank it by likelihood.
 
-   Unexpectedly, we find that Precision@1 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the data and compute. This is likely because BIFI's training set does not cover the full space of syntactically valid repairs. As Tidyparse uses its own grammar, it can sample from the language directly, and does not require a training distribution to suggest valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which may be overlooked by neural models.
+  There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@1 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the data and compute for training and inference. As Tidyparse uses its own grammar, it can sample directly from the formal language specification and does not require a stochastic language model to suggest nearby valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which may be overlooked by neural models.
 
    Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the likelihood of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design (Def.~\ref{def:linear-convergence}) and evaluation (Fig.~\ref{fig:throughput}).
 
-   Rejection sampling can be a useful technique for quickly retrieving a subset of valid repairs, but has the disadvantage of converging very slowly, requiring far too many samples to achieve competitive precision on natural repairs. One avenue may be to use rejection sampling to find probable edit locations, then switch to an exhaustive method to retrieve all repairs in that region. This approach however, would not offer the same completeness guarantees as language intersection.
-
-  \subsection{Limitations and future work}
+  \clearpage\subsection{Limitations and future work}
 
 %  We identify three broad categories of limitations in evaluating Tidyparse and suggest directions for future work: naturalness, complexity, and semantics.
 
   \subsubsection{Naturalness}
 
-  Firstly, Tidyparse does not currently support intersections between weighted CFGs and weighted finite automata, a la Pasti et al.~\cite{pasti2023intersection}. This feature would allow us to put transition probabilities on the Levenshtein automaton corresponding to more likely edits and construct a weighted intersection grammar. It would be interesting to train a weighted intersection grammar and compare the precision versus vanilla PCFG sampling. We also hope to explore more incremental sampling strategies such as sequential Monte-Carlo~\cite{lew2023sequential}.
+  Firstly, Tidyparse does not currently support intersections between weighted CFGs and weighted finite automata, a la Pasti et al.~\cite{pasti2023intersection}. This feature would allow us to put transition probabilities on the Levenshtein automaton corresponding to edit likelihood then construct a weighted intersection grammar. With this, one could preemptively discard unlikely productions from $G_\cap$ to reduce the size complexity, but this would require relaxing completeness. We also hope to explore more incremental sampling strategies such as sequential Monte-Carlo~\cite{lew2023sequential}.
 
   The scoring function is currently computed over lexical tokens. We expect that a more precise scoring function could be constructed by splicing candidate repairs back into the original source code and then scoring plaintext, however this would require special handling for insertions and substitutions of names, numbers and identifiers that were absent from the original source code. For this reason, we currently perform the scoring in lexical space, which discards a useful signal, but even this coarse approximation is sufficient to achieve state-of-the-art precision.
 
@@ -1840,19 +1835,23 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
   \subsubsection{Complexity}
 
-  Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because in the absence of any contextual or statistical information, syntax and Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation, because as the number of edits grows, the admissible set expands rapidly and the number of valid repairs quickly becomes too large to be useful without a very precise naturalness metric to distinguish equidistant repairs.
+  Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, in the absence of any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation, because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
 
-  Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of grammar intersection. Managing the size of the intersection grammar during construction is a critical factor in scaling up this technique. Weighted intersections would also help to limit the size of the intersection grammar, as it would enable us to prune improbable productions without diminishing precision.
+  Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of grammar intersection. Therefor, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary synthetic productions is a critical factor in scaling up our technique.
 
   \subsubsection{Toolchain integration}
 
-  Lastly and perhaps most significantly, Tidyparse does not incorporate any semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be semantically valid. This can partly be alleviated by filtering the results through an incremental compiler or linter, however, the latency necessary to check every repair may be non-negligible. It may also be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs can naturally provide.
+  Lastly and perhaps most significantly, Tidyparse does not incorporate semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be type safe. It may be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs naturally provide.
 
-  Slicing is an important preprocessing consideration which has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage information from the programming environment to identify the boundaries of the code fragment to be repaired. This could be done with careful integration with the development environment or via ad hoc slicing. We leave this aspect for future work.
+  Program slicing is an important preprocessing consideration which has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage editor information to identify the boundaries of the repairable fragment. This could be achieved by analyzing historical editor states or via ad hoc slicing techniques.
 
-%  We envision a few primary use cases for our tool: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
+  Additionally, the generated repairs must be spliced back into the surrounding context, which requires careful editor integration. One approach would be to filter all repairs through an incremental compiler or linter, however, the latency necessary to check every repair may be non-negligible.
 
-  \clearpage\section{Related Work}\label{sec:related}
+%We leave this aspect for future work.
+
+  We envision a few primary use cases for Tidyparse: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
+
+  \section{Related Work}\label{sec:related}
 
   Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, (6) decoding and finally (7) neural program repair.
 
