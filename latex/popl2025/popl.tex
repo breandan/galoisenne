@@ -44,7 +44,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we construct a grammar representing the language intersection between a Levenshtein automaton and a context-free grammar, then decode it in order of n-gram likelihood.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we construct a grammar representing the language intersection between a Levenshtein automaton and a context-free grammar, then decode it in order of likelihood.
     \keywords{Error correction \and CFL reachability \and Langauge games.}
   \end{abstract}
 
@@ -1734,18 +1734,18 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
     \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
   \end{figure}
 
-  \begin{wrapfigure}{r}{0.4\textwidth}
-    \vspace{-1.5cm}
+  \begin{wrapfigure}{r}{0.38\textwidth}
+    \vspace{-1.2cm}
     \hspace{-0.8cm}
-    \resizebox{.53\textwidth}{!}{\input{sankey}}
-    \vspace{-1.8cm}
+    \resizebox{.47\textwidth}{!}{\input{sankey}}
+    \vspace{-1.4cm}
     \caption{Outcomes in the repair pipeline.}
     \label{fig:sankey}
   \end{wrapfigure}
 
   %We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
 
-  We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 967 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 87 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 4 cases the human repair was not recognized, in 153 cases the sampler timed out before drawing the human repair, in 238 cases the human repair was drawn but not ranked first, and in the remaining 485 cases the first prediction matched the human repair.
+  We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
   \clearpage The remaining experiments in this section were run on a 10-core ARM64 M1 with 16 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 
