@@ -77,9 +77,9 @@
 
   Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the nearest parse trees for an erroneous input. These methods guarantee correctness, but do not attempt to completely recover all nearby corrections. Instead, they find just one or a small number of corrections, which are not necessarily the most likely or natural repairs. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
-  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate very natural repairs, but are costly to train, prone to misgeneralization and we observe the published models often hallucinate false positive repairs. These failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their statistical efficiency.
+  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and we observe the published models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their naturalness.
 
-  Taking inspiration from formal and statistical language modeling alike, we adapt a well-known construction from Bar-Hillel~\cite{bar1961formal} to the problem of ranked syntax repair. Our work shows this approach, while seemingly intractable, can be scaled to handle intersections with real-world programming languages and code snippets. We will then demonstrate how, by combining the Bar-Hillel construction with an efficient decoder, it is possible to accurately predict natural syntax repairs while retaining the correctness and interpretability of classical repair methods.
+  Taking inspiration from formal and statistical language modeling alike, we adapt a well-known construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntax repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by combining the Bar-Hillel construction with an efficient decoder, it is possible to predict human syntax repairs with the accuracy of neural repair models, while retaining the correctness and interpretability of classical repair algorithms.
 
   In particular, we consider the problem of ranked syntax repair under finite Levenshtein bounds. We demonstrate how to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
@@ -91,7 +91,7 @@
 %    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
 %    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
 %    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
-    \item We decode the data structure, returning a stream of concrete syntax repairs which is guaranteed to halt, but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
+    \item We decode that data structure, returning a stream of concrete syntax repairs which is guaranteed to halt, but can be terminated at any time beforehand. The repairs are all sound, reachable within a few edits, and the most likely repairs are returned first. (\S~\ref{sec:ranking})
   \end{enumerate}
 
   \clearpage
@@ -169,7 +169,7 @@
 
   \section{Example}\label{sec:example}
 
-  Syntax errors are usually fixable with a small number of edits. If we assume the intended repair contains just a few edits, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.2cm}
+  Syntax errors can usually be fixed with a small number of edits. If we assume the intended repair is small, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.2cm}
 
   \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.2cm}
 
@@ -377,9 +377,13 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
     Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{\leq|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
   \end{definition}
 
-  To satisfy Def.~\ref{def:linear-convergence}, we construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language. As long as $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include the most natural repairs, and additionally, will terminate after exhausting all valid repairs.
+  \noindent This will ensure that if $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include a representative subset, and additionally, will terminate after exhausting all valid repairs.
 
-  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity.
+  To satisfy Def.~\ref{def:linear-convergence}, we can construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language.  Finally, sentences can be scored and ranked by likelihood under a language model.
+
+  Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
+
+%  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
 
   \clearpage\section{Method}
 
@@ -512,7 +516,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \end{tabular}
   \end{table}\vspace{-8pt}
 
-  Likewise, a finite state automaton is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
+  Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
   \clearpage\subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
 
@@ -1225,7 +1229,7 @@ In practice, this means the tree sampler can produce multiple parse trees which 
 
   Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and sampling converges linearly regardless of syntactic ambiguity. It is also more readily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
 
-Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to a finite state automaton $\mathcal{A}$ as follows:
+Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be the automata operators corresponding to language union and concatenation satisfying $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. This can be implemented using the standard textbook construction, recalling that FSAs are closed under these operations. We can translate the $\mathbb{T}_2$ ADT to an FSA, $\mathcal{A}$, as follows:
 
 \begin{equation}
 \mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
@@ -1252,11 +1256,9 @@ Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}
 %    \end{footnotesize}
 %  \end{equation}
 
-  In the case of LBH intersection grammars, $\mathcal{Y}(G_\cap')$ would then yield an FSA recognizing $\ell\cap L(\err\sigma, d)$, which can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1964derivatives} and decoded using a k-best paths algorithm to obtain the top-k maximum likelihood repairs.
+  In the case of LBH intersection grammars, $\mathcal{Y}(G_\cap')$ would then yield an NFA recognizing $\ell\cap L(\err\sigma, d)$, which can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1964derivatives} and decoded using a k-best paths algorithm to obtain the top-k maximum likelihood repairs.
 
 For example, let us return to the second example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
-
-% Insert exampleDFA.pdf
 
 \begin{figure}[H]
   \centering
@@ -1489,7 +1491,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-  The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the fixer model predict the top-k repairs, for $k=\{1, 5, 10, 20\times10^5\}$.
+  The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
   The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, running bytecode compiled for JVM 17.0.2. To train our scoring function, we use an order-5 Markov chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for samples at varying latency cutoffs. We apply a 30-second latency cutoff for our sampler.
 
