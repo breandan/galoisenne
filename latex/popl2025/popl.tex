@@ -162,7 +162,7 @@
     %  5 [shape=circle,label=""];
     %  5 -> 1 [label=""]
     %}
-  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a set of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
+  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a list of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
   \end{figure}
 
   Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness, as seen in Fig.~\ref{fig:arch_simp}. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
