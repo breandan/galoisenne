@@ -1144,7 +1144,7 @@ Then, instead of top-down incremental sampling, we can create a randomized $\var
 
   This procedure will converge to the language much more quickly than Eq.~\ref{eq:pcfg_sampler}, as it never draws the same tree twice. Assuming the grammar is unambiguous, then letting $\bm\varphi(i) = \bigcup_{j\in[1, i]} \big\{\text{\textleaf}\big(\varphi'(T, j)\big)\big\}$ will satisfy Def.~\ref{def:linear-convergence} by construction. Furthermore, this procedure is trivially parallelizable across an arbitrary number of processors, enabling communication-free sampling without replacement. %If allotted sufficient resources and $|T|$ is small, it will retrieve every parse tree, otherwise sample them uniformly until interrupted. %This procedure is the basis for our enumerate sampler and the method we use to decode repairs from the intersection grammar.
 
-\subsection{Ranked repair}\label{sec:ranking}
+\subsection{Scoring and reranking enumerated trees by likelihood}\label{sec:ranking}
 
 Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any statistical distance metric is sufficient, such as the log-likelihood of the repair under a large language model. We compare two simple ranking methods: (1) the PCFG score and (2) the likelihood of a low-order Markov chain.
 
