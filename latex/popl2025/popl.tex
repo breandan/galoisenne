@@ -77,14 +77,14 @@
 
   Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the smallest repair for an erroneous input. These methods guarantee correctness, but make no attempt to model naturalness, i.e., predict human edits. Instead, they find just one or a small number of repairs, which may not correspond to the author's intent. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
-  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and the released models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for ability to predict human intent.
+  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and the released models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their ability to predict human intent.
 
-  Taking inspiration from formal and statistical language modeling alike, we adapt a construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntax repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a Markov model, it is possible to predict human syntax repairs with the accuracy of large langauge models, while retaining the correctness and interpretability of classical repair algorithms.
+  Taking inspiration from formal and statistical language modeling alike, we adapt a construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntactic program repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a simple Markov model, it is possible to predict human syntax repairs with the accuracy of large language models, while retaining the correctness and interpretability of classical repair algorithms.
 
   In particular, we consider the problem of ranked syntax repair under a finite edit distance. We experimentally show it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
 
   \begin{enumerate}
-    \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a specialized version of the Bar-Hillel construction to Levenshtein intersections. (\S~\ref{sec:lev_bh})
+    \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a version of the Bar-Hillel construction that we specialize to handle large Levenshtein intersections. (\S~\ref{sec:lev_bh})
     \item We design a data structure that compactly represents finite context-free languages. This data structure is used to both eliminate useless productions (\S~\ref{sec:lev_bh},~\ref{sec:ppm}) from the intersection grammar and index parse trees in the resulting intersection language. (\S~\ref{sec:tree_sampling})
 %    \item We present three ways to decode repairs from the data structure.
 %    \begin{enumerate}
@@ -142,7 +142,7 @@
 
   The trouble is that any such procedure must be highly efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows exponentially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
 
-  We will now proceed to give an informal intuition behind of our method, then formalize it in the following sections. At a high level, our approach is to construct a language that represents all syntactically valid patches within a certain edit distance of the invalid code fragment. To do so, we first lexicalize the invalid source code, which simply abstracts over numbers and named identifiers.
+  We will now proceed to give an informal intuition behind our method, then formalize it in the following sections. At a high level, our approach is to construct a language that represents all syntactically valid patches within a certain edit distance of the invalid code fragment. To do so, we first lexicalize the invalid source code, which simply abstracts over numbers and named identifiers.
 
   From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. Then, we proceed to construct a synthetic grammar, recognizing all strings in the intersection of the programming language and the edit ball. Finally, this grammar is reduced to a normal form and decoded with the help of a statistical model to produce a list of suggested repairs.
 
@@ -213,14 +213,14 @@
     %  5 [shape=circle,label=""];
     %  5 -> 1 [label=""]
     %}
-    \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the langauge of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
+    \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
   \end{figure}
 
   \noindent This process is depicted in Fig.~\ref{fig:arch_simp}. We will now discuss the intersection step in slightly more detail.
 
   \clearpage
 
-  By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. To represent the language of small edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We use a variant that removes some unnecessary edges, but does not affect the generated language.
+  By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. To represent the language of small edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We use a variant that removes some unnecessary arcs but does not affect the generated language.
 
 \begin{figure}[h!]
   \resizebox{0.45\textwidth}{!}{
@@ -316,10 +316,10 @@
       \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
     \end{tikzpicture}
   }
-  \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upwards arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
+  \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upward arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
 \end{figure}
 
-Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
+Let us consider a very simple grammar: $G = \{S \rightarrow ( ) \mid ( S ) \mid S S\}$. For convenience, $G$ can be reduced into an equivalent normal form, $G'$, by refactoring the right-hand side of each production to be in either binary or unary form: $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Now, we proceed to stitch together the automaton and grammar into new grammar, $G_\cap$, that will recognize every string in the intersection of their respective languages, and no other string.
 
 This stitching process is known in the literature as the Bar-Hillel (BH) construction, and applies to any context-free grammar and nondeterministic finite automaton. It has three rules: first, for every initial state in the automaton (here there is just one, $q_{00}$) and every final state, ($q_{20}, q_{30}, q_{31}$), there will be a production $S\rightarrow q_{00}Sq_{xy}$. We call this rule $\sqrt{\phantom{S}}$, and leave it unchanged.
 
@@ -350,7 +350,7 @@ The final and most expensive rule of the BH construction, $\Join$, stipulates: f
 %  \end{tabular}
 %\end{table}
 %
-%Now, when considering the triple $q_{10}Iq_{21}$, we know that states $q_{10}, q_{21}$ have paths ranging from length 1 to 2, and the nonterminal $I$ can be no shorter than 3 terminals. Therefor $I$ is incompatible with $q_{10}, q_{21}$ by length, as is any synthetic production containing it.
+%Now, when considering the triple $q_{10}Iq_{21}$, we know that states $q_{10}, q_{21}$ have paths ranging from length 1 to 2, and the nonterminal $I$ can be no shorter than 3 terminals. Therefore $I$ is incompatible with $q_{10}, q_{21}$ by length, as is any synthetic production containing it.
 
 In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule which eliminates many impossible productions from BH intersection grammars by a sound overapproximation to the Parikh image. Aggressively pruning synthetic productions from $G_\cap$ by (1) nominalizing the Levenshtein automaton and (2) refining the $\Join$ rule, are key insights to unlocking the full potential of the Bar-Hillel construction and scaling up this technique to handle real-world program repair scenarios.
 
@@ -1158,7 +1158,7 @@ Then, instead of top-down incremental sampling, we can create a randomized $\var
 
 Returning to the ranked repair problem (Def.~\ref{def:ranked-repair}), the above procedure returns a set of syntactically consistent repairs, and we need an ordering over them. We note that any statistical distance metric is sufficient, such as the log-likelihood of the repair under a large language model. We compare two simple ranking methods: (1) the PCFG score and (2) the likelihood of a low-order Markov chain.
 
-In the first method, we will use a reranking model based on PCFG log likelihood, which requires a treebank of parsed snippets in CNF and computes a log probability of each binary tree by the standard method, where $\alpha: V, \beta: V \mid V^2$ are amended nonterminals\footnote{n.b., To score trees from LBH grammars, we first strip off adjacent states from all synthetic nonterminals, i.e., $qvq' \equiv v$.}, and Score$: \mathbb{T} \rightarrow \mathbb{R}$ is defined:
+In the first method, we will use a reranking model based on PCFG log-likelihood, which requires a treebank of parsed snippets in CNF and computes a log probability of each binary tree by the standard method, where $\alpha: V, \beta: V \mid V^2$ are amended nonterminals\footnote{n.b., To score trees from LBH grammars, we first strip off adjacent states from all synthetic nonterminals, i.e., $qvq' \equiv v$.}, and Score$: \mathbb{T} \rightarrow \mathbb{R}$ is defined:
 
 \begin{equation}
 \text{Score}(t: \mathbb{T}) \mapsto \begin{cases}
@@ -1188,7 +1188,7 @@ Finally, after enumerating distinct parse trees, we can simply rerank by PCFG sc
 
 This sampler is readily simple and fast, but gathering a treebank to calibrate the score function can be tedious. A more general method is to use a low-order Markov chain to rerank the repairs, which only requires a corpus of syntactically valid strings to estimate the Markov transition parameters.
 
-Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing. Then, to score the repairs, we use the conventional length-normalized negative log likelihood:
+Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P_\theta(\sigma)$ as a product of conditionals $\prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$, for some small $n \in \mathbb{N}$. To obtain the parameters $\theta$, we use the standard maximum likelihood estimator for Markov chains. We approximate the joint distribution $P(\Sigma^n)$ directly from data, then the conditionals by normalizing n-gram counts with Laplace smoothing. Then, to score the repairs, we use the conventional length-normalized negative log-likelihood:
 
 \begin{equation}
 \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
@@ -1212,7 +1212,7 @@ Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler befor
 \end{algorithmic}
 \end{algorithm}
 
-If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$, and how well the distribution $P_\theta$ approximates the true distribution of interest.
+If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise, it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$, and how well the distribution $P_\theta$ approximates the true distribution of interest.
 
   \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
@@ -1233,7 +1233,7 @@ In practice, this means the tree sampler can produce multiple parse trees which 
   \end{lemma}
 
   \begin{proof}
-    Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefor, $G_\cap$ must not be cyclic.
+    Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefore, $G_\cap$ must not be cyclic.
   \end{proof}
 
   Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and sampling converges linearly regardless of syntactic ambiguity. It is also more readily steerable than a PCFG sampler, and can be decoded in order of n-gram likelihood using a standard pretrained autoregressive language model.
@@ -1272,13 +1272,13 @@ For example, let us return to the example given in \S~\ref{sec:example}, where w
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.9\textwidth]{exampleDFA.pdf}
-  \caption{Minimal DFA recognizing the langauge $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
+  \caption{Minimal DFA recognizing the language $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
   \label{fig:exampleDFA}
 \end{figure}
 
 At the first bifurcation, we have a choice: assuming a 4-gram Markov chain, we estimate the probability of $P(\sigma_i \mid \sigma_{i-1..3}=\texttt{NAME . NAME})$ for $\sigma_i = \texttt{[}$ versus $\sigma_i = \texttt{(}$ by comparing the respective transition probabilities. At each subsequent junction, we clone the trajectory, estimate the likelihood of each branch, then greedily expand the most likely transition based on an ordering heuristic.
 
-This procedure we call the steerable DFA walk (Alg.~\ref{alg:dfa_walk}). It takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to final states, in order of partial likelihood. During sampling, it maintains a priority queue of partial trajectories, ranked by length-normalized log likelihood, which are speculatively extended by the most likely available transition. A beam search and stochastic decoder is also feasible, however we omit them here for brevity.
+This procedure we call the steerable DFA walk (Alg.~\ref{alg:dfa_walk}). It takes a DFA and a Markov chain, then samples trajectories through the DFA from the initial state to final states, in order of partial likelihood. During sampling, it maintains a priority queue of partial trajectories, ranked by length-normalized log-likelihood, which are speculatively extended by the most likely available transition. A beam search and stochastic decoder is also feasible, however we omit them here for brevity.
 
 \begin{algorithm}[H]
 \caption{Steerable DFA walk}
@@ -1469,7 +1469,6 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
-
 \section{Evaluation}
 
 We call our method Tidyparse and consider the following research questions:
@@ -1492,7 +1491,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{Score}(\sigma)\big]
 \end{equation}
 
-  This is a variation on a standard metric used in information retrieval, and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
+  This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
 
   By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison of a naive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and n-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
 
@@ -1529,7 +1528,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 %
 %  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
 
-  \subsection{Dataset}\label{sec:rq1}
+  \subsection{Dataset statistics}\label{sec:rq1}
 
   In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., where pairwise Levenshtein distance is under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
 
@@ -1809,7 +1808,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
     \input{experiments/ablation_dfa_walker}
   \end{figure}
 
-  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:enum_ngram} has the best performance across all edit distances and langauges, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
+  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:enum_ngram} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
 Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
 
@@ -1845,15 +1844,15 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
   \subsubsection{Complexity}
 
-  Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, in the absence of any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation, because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
+  Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, without any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
 
-  Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of grammar intersection. Therefor, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary synthetic productions is a critical factor in scaling up our technique.
+  Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary synthetic productions is a critical factor in scaling up our technique.
 
   \subsubsection{Toolchain integration}
 
   Lastly and perhaps most significantly, Tidyparse does not incorporate semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be type safe. It may be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs naturally provide.
 
-  Program slicing is an important preprocessing consideration which has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage editor information to identify the boundaries of the repairable fragment. This could be achieved by analyzing historical editor states or via ad hoc slicing techniques.
+  Program slicing is an important preprocessing consideration that has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage editor information to identify the boundaries of the repairable fragment. This could be achieved by analyzing historical editor states or via ad hoc slicing techniques.
 
   Additionally, the generated repairs must be spliced back into the surrounding context, which requires careful editor integration. One approach would be to filter all repairs through an incremental compiler or linter, however, the latency necessary to check every repair may be non-negligible.
 
@@ -1919,7 +1918,7 @@ In particular, we care about the problem of \textit{top-k decoding}, which attem
 
 A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, huang2007forest, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs. Our approach is also complementary to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
 
-  An alternate approach would be to use MCMC or sequential Monte Carlo method to steer a transformer-based large langauge model (LLM), as proposed by Lew et al.~\cite{lew2023sequential}. This technique is particularly useful for constrained sampling from LLMs, and could be adapted to our setting to improve sample efficiency. The downside is that it introduces a dependency on an LLM, which requires a very large dataset to train and is more computationally expensive than cube-pruning. Furthermore, distinct sampling is unclear how to do properly, as LLMs are not trained to generate unique samples, and sampling without replacement is a fundamentally non-Markovian process. One potential solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can introduce a significant latency overhead.
+  An alternate approach would be to use MCMC or sequential Monte Carlo method to steer a transformer-based large language model (LLM), as proposed by Lew et al.~\cite{lew2023sequential}. This technique is particularly useful for constrained sampling from LLMs, and could be adapted to our setting to improve sample efficiency. The downside is that it introduces a dependency on an LLM, which requires a very large dataset to train and is more computationally expensive than cube-pruning. Furthermore, distinct sampling is unclear how to do properly, as LLMs are not trained to generate unique samples, and sampling without replacement is a fundamentally non-Markovian process. One potential solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can introduce a significant latency overhead.
 
   Our approach is complementary to existing work in constrained decoding. The bijection proposed in Eq.~\ref{eq:pairing} guarantees that all repairs are well-formed and converge linearly to the exact top-k maximum likelihood samples. This method is completely stateless and can be used to enumerate a bounded Levenshtein ball with linear parallelization speedup. Alternately, in the case of approximate ranked repair over a very large sample space, this technique can be adapted to sample with high probability a representative subset of the most likely sentences in a finite but large PCFG.
 
@@ -1935,7 +1934,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   Our work, while a case study on syntax repair, is part of a broader line of inquiry in program synthesis that investigates how to weave formal language theory and machine learning into helpful programming tools for everyday developers. In some ways, syntax repair serves as a test bench for integrating learning and language theory, as it lacks the intricacies of type-checking and semantic analysis, but is still rich enough to be an interesting challenge. By starting with syntax repair, we hope to lay the foundation for more organic hybrid approaches to program synthesis.
 
-  Two high level codesign patterns have emerged to combine the naturalness of neural language models with the precision of formal methods. One seeks to filter the outputs of a generative language model to satisfy a formal specification, typically by some form of rejection sampling. Alternatively, some attempt to use language models to steer an incremental search for valid programs via a reinforcement learning or hybrid neurosymbolic approach. However, implementing these strategies is often painstaking and their generalization behavior can be difficult to analyze.
+  Two high-level codesign patterns have emerged to combine the naturalness of neural language models with the precision of formal methods. One seeks to filter the outputs of a generative language model to satisfy a formal specification, typically by some form of rejection sampling. Alternatively, some attempt to use language models to steer an incremental search for valid programs via a reinforcement learning or hybrid neurosymbolic approach. However, implementing these strategies is often painstaking and their generalization behavior can be difficult to analyze.
 
   In our work, we take a more pragmatic tack - by incorporating the distance metric into a formal language, we attempt to exhaustively enumerate repairs by increasing distance, then use the stochastic language model to sort the resulting solutions by naturalness. The more constraints we can incorporate into formal language, the more efficient sampling becomes, and the more precise control we have over the output. This reduces the need for training a large, expensive language model to relearn syntax, and allows us to leverage compute for more efficient search and ranking.
 
