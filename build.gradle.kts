@@ -13,7 +13,7 @@ plugins {
   kotlin("multiplatform") version "2.0.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.51.0"
-  id("io.github.gradle-nexus.publish-plugin") version "2.0.0-rc-2"
+  id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 // Stub secrets to let the project sync and build without the publication values set up
@@ -122,7 +122,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.3")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.2")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.3")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -143,7 +143,7 @@ kotlin {
         implementation("dk.brics:automaton:1.12-4")
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:4.1.1")
+        implementation("org.sosy-lab:java-smt:5.0.0")
 
         // val z3Version = "4.12.2-glibc_2.27"
         // runtimeOnly("org.sosy-lab:javasmt-solver-z3:$z3Version:com.microsoft.z3@jar")
