@@ -94,6 +94,58 @@
     \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b), but compare both methods. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and sorted by likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
 
+
+  Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+
+  \section{Example}\label{sec:example}
+
+  Syntax errors can usually be fixed with a small number of edits. If we assume the intended repair is small, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:\vspace{-3pt}
+%  , which contains a small syntax error:\vspace{0.2cm}
+%
+%  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.2cm}
+%
+%  We can fix it by inserting a colon after the function definition, yielding:\vspace{0.3cm}
+%
+%  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.2cm}
+%
+%  The observant reader will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
+%  Consider the following Kotlin snippet:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
+%
+%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
+
+%  Let us consider a slightly more ambiguous error:
+
+%\setlength{\columnsep}{-10pt}
+%\setlength{\columnseprule}{-10pt}
+%\noindent\begin{multicols}{3}
+%  \begin{enumerate}
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
+%    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
+%    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
+%  \end{enumerate}
+%\end{multicols}
+  \begin{figure}[h!]
+    \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
+    (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
+    \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
+    \end{tabular}\vspace{-5pt}
+  \end{figure}
+
+  With some semantic constraints, we could easily narrow the results, but even in their absence, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is the most likely repair. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by likelihood.
+
+  The trouble is that any such procedure must be highly efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows exponentially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
+
+  We will now proceed to give an informal intuition behind of our method, then formalize it in the following sections. At a high level, our approach is to construct a language that represents all syntactically valid patches within a certain edit distance of the invalid code fragment. To do so, we first lexicalize the code, which simply abstracts numbers and identifiers.
+
+  From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. Then, we proceed to construct a synthetic grammar, recognizing all strings in the intersection of the programming language and the edit ball. Finally, this grammar is reduced to a normal form and decoded with the help of a statistical model to produce a list of suggested repairs.
+
   \begin{figure}[h!]
 %    \begin{center}
 %      \resizebox{0.7\textwidth}{!}{
@@ -161,56 +213,14 @@
     %  5 [shape=circle,label=""];
     %  5 -> 1 [label=""]
     %}
-  \caption{Simplified dataflow. Given a grammar and broken code fragment, we return a list of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
+    \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the langauge of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
   \end{figure}
 
-  Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness, as seen in Fig.~\ref{fig:arch_simp}. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+  \noindent This process is depicted in Fig.~\ref{fig:arch_simp}. We will now discuss the intersection step in slightly more detail.
 
-  \section{Example}\label{sec:example}
+  \clearpage
 
-  Syntax errors can usually be fixed with a small number of edits. If we assume the intended repair is small, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet, which contains a small syntax error:\vspace{0.2cm}
-
-  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.2cm}
-
-  We can fix it by inserting a colon after the function definition, yielding:\vspace{0.3cm}
-
-  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.2cm}
-
-  A careful observer will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
-%  Consider the following Kotlin snippet:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
-%
-%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
-%
-%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
-
-  Let us consider a slightly more ambiguous error: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:\vspace{-3pt}
-
-%\setlength{\columnsep}{-10pt}
-%\setlength{\columnseprule}{-10pt}
-%\noindent\begin{multicols}{3}
-%  \begin{enumerate}
-%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
-%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
-%    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
-%    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
-%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
-%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
-%  \end{enumerate}
-%\end{multicols}
-  \begin{figure}[h!]
-    \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
-    (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
-    \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
-    \end{tabular}\vspace{-5pt}
-  \end{figure}
-
-  With some semantic constraints, we could easily narrow the results, but even in their absence, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is the most likely repair. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by likelihood.
-
-  The trouble is that any such procedure must be efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows superpolynomially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
-
-We will now give an informal intuition behind of our method, then proceed to formalize it in the following sections. By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. There is a finite automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We will use a variant that removes some unnecessary edges, but does not affect the generated language.\vspace{-4pt}
+  By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. To represent the language of small edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We use a variant that removes some unnecessary edges, but does not affect the generated language.
 
 \begin{figure}[h!]
   \resizebox{0.45\textwidth}{!}{
@@ -491,7 +501,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \vspace{-0.5cm}
   \end{wrapfigure}
 
-  More specifically, since the syntax of most programming languages is context-free, we construct a context-free grammar (CFG), $G_\cap$, representing the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decoding the repairs.
+  More specifically, since the syntax of most programming languages is context-free, we construct a context-free grammar (CFG), $G_\cap$, representing the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decode the repairs.
 
 %  \begin{enumerate}
 %    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
@@ -1257,7 +1267,7 @@ Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}
 
   In the case of LBH intersection grammars, $\mathcal{Y}(G_\cap')$ would then yield an NFA recognizing $\ell\cap L(\err\sigma, d)$, which can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1964derivatives} and decoded using a k-best paths algorithm to obtain the top-k maximum likelihood repairs.
 
-For example, let us return to the second example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
+For example, let us return to the example given in \S~\ref{sec:example}, where we have the syntactically invalid Python string, \texttt{v = df.iloc(5:, 2:)}. The CFG recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
 
 \begin{figure}[H]
   \centering
