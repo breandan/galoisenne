@@ -91,7 +91,7 @@
 %    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
 %    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
 %    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
-    \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b) but compare both. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and the most likely repairs are ranked first. (\S~\ref{sec:ranking})
+    \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b), but compare both methods. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and sorted by likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
 
   \begin{figure}[h!]
@@ -161,7 +161,7 @@
     %  5 [shape=circle,label=""];
     %  5 -> 1 [label=""]
     %}
-  \caption{Simplified architecture. Given a grammar and broken code fragment, we return a list of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we return a list of likely repairs.}\label{fig:arch_simp}\vspace{-1pt}
   \end{figure}
 
   Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness, as seen in Fig.~\ref{fig:arch_simp}. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
