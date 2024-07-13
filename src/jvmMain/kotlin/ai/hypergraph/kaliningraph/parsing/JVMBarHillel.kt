@@ -279,77 +279,77 @@ tailrec fun CFG.jvmElimVarUnitProds(
 // Based on: https://zerobone.net/blog/cs/non-productive-cfg-rules/
 // Precondition: The CFG must be binarized, i.e., almost CNF but may have useless productions
 // Postcondition: The CFG is in Chomsky Normal Form (CNF)
-fun CFG.jdvpNew(): CFG {
-  println("Total productions: $size")
-  val timer = TimeSource.Monotonic.markNow()
-  val counter = ConcurrentHashMap<Set<Σᐩ>, LongAdder>()
-
-  // Maps each nonterminal to the set of RHS sets that contain it
-  val UDEPS = ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Set<Σᐩ>>>(size)
-  // Maps the set of symbols on the RHS of a production to the production
-  val NDEPS = ConcurrentHashMap<Set<Σᐩ>, ConcurrentLinkedQueue<Production>>(size).apply {
-    put(emptySet(), ConcurrentLinkedQueue())
-    this@jdvpNew.asSequence().asStream().parallel().forEach {
-      val v = it.second.toSet() // RHS set, i.e., the set of NTs on the RHS of a production
-      // If |v| is 1, then the production must be a unit production, i.e, A -> a, b/c A -> B is not binarized
-      getOrPut(if(it.second.size == 1) emptySet() else v) { ConcurrentLinkedQueue() }.add(it)
-      v.forEach { s -> UDEPS.getOrPut(s) { ConcurrentLinkedQueue() }.add(v) }
-      if (v.size == 2) counter.putIfAbsent(v, LongAdder().apply { add(2L) })
-    }
-  }
-
-  println("Built graph in ${timer.elapsedNow()}: ${counter.size} conjuncts, ${UDEPS.size + NDEPS.size} edges")
-
-  val nextReachable: LinkedHashSet<Set<Σᐩ>> = LinkedHashSet<Set<Σᐩ>>().apply { add(emptySet()) }
-
-  val productive = mutableSetOf<Production>()
-  do {
-//    println("Next reachable: ${nextReachable.size}, Productive: ${productive.size}")
-    val q = nextReachable.removeFirst()
-    if (counter[q]?.sum() == 0L || NDEPS[q]?.all { it in productive } == true) continue
-    else if (q.size == 2) { // Conjunct
-      val dec = counter[q]!!.apply { decrement() }
-      if (dec.sum() == 0L) { // Seen both
-        NDEPS[q]?.forEach {
-          productive.add(it)
-          UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
-        }
-      } else nextReachable.addLast(q) // Always add back if sum not zero
-    } else {
-      NDEPS[q]?.forEach {
-        productive.add(it)
-        UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
-      }
-    }
-  } while (nextReachable.isNotEmpty())
-
-  println("Eliminated ${size - productive.size} unproductive productions in ${timer.elapsedNow()}")
-  println("Resulting in ${productive.size} productions.")
-
-  val QDEPS =
-    ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Production>>(size).apply {
-      productive.asSequence().asStream().parallel().forEach {
-        getOrPut(it.LHS) { ConcurrentLinkedQueue() }.add(it)
-      }
-    }
-
-  val done = mutableSetOf(START_SYMBOL)
-  val nextProd: MutableList<Σᐩ> = mutableListOf(START_SYMBOL)
-  val productiveAndReachable = mutableSetOf<Production>()
-
-  do {
-    val q = nextProd.removeFirst().also { done += it }
-    QDEPS[q]?.forEach { it ->
-      productiveAndReachable.add(it)
-      it.RHS.forEach { if (it !in done) nextProd += it }
-    }
-  } while (nextProd.isNotEmpty())
-
-  println("Eliminated ${productive.size - productiveAndReachable.size} unreachable productions in ${timer.elapsedNow()}")
-  println("Resulting in ${productiveAndReachable.size} productions.")
-
-  return productiveAndReachable.freeze()
-}
+//fun CFG.jdvpNew(): CFG {
+//  println("Total productions: $size")
+//  val timer = TimeSource.Monotonic.markNow()
+//  val counter = ConcurrentHashMap<Set<Σᐩ>, LongAdder>()
+//
+//  // Maps each nonterminal to the set of RHS sets that contain it
+//  val UDEPS = ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Set<Σᐩ>>>(size)
+//  // Maps the set of symbols on the RHS of a production to the production
+//  val NDEPS = ConcurrentHashMap<Set<Σᐩ>, ConcurrentLinkedQueue<Production>>(size).apply {
+//    put(emptySet(), ConcurrentLinkedQueue())
+//    this@jdvpNew.asSequence().asStream().parallel().forEach {
+//      val v = it.second.toSet() // RHS set, i.e., the set of NTs on the RHS of a production
+//      // If |v| is 1, then the production must be a unit production, i.e, A -> a, b/c A -> B is not binarized
+//      getOrPut(if(it.second.size == 1) emptySet() else v) { ConcurrentLinkedQueue() }.add(it)
+//      v.forEach { s -> UDEPS.getOrPut(s) { ConcurrentLinkedQueue() }.add(v) }
+//      if (v.size == 2) counter.putIfAbsent(v, LongAdder().apply { add(2L) })
+//    }
+//  }
+//
+//  println("Built graph in ${timer.elapsedNow()}: ${counter.size} conjuncts, ${UDEPS.size + NDEPS.size} edges")
+//
+//  val nextReachable: LinkedHashSet<Set<Σᐩ>> = LinkedHashSet<Set<Σᐩ>>().apply { add(emptySet()) }
+//
+//  val productive = mutableSetOf<Production>()
+//  do {
+////    println("Next reachable: ${nextReachable.size}, Productive: ${productive.size}")
+//    val q = nextReachable.removeFirst()
+//    if (counter[q]?.sum() == 0L || NDEPS[q]?.all { it in productive } == true) continue
+//    else if (q.size == 2) { // Conjunct
+//      val dec = counter[q]!!.apply { decrement() }
+//      if (dec.sum() == 0L) { // Seen both
+//        NDEPS[q]?.forEach {
+//          productive.add(it)
+//          UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
+//        }
+//      } else nextReachable.addLast(q) // Always add back if sum not zero
+//    } else {
+//      NDEPS[q]?.forEach {
+//        productive.add(it)
+//        UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
+//      }
+//    }
+//  } while (nextReachable.isNotEmpty())
+//
+//  println("Eliminated ${size - productive.size} unproductive productions in ${timer.elapsedNow()}")
+//  println("Resulting in ${productive.size} productions.")
+//
+//  val QDEPS =
+//    ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Production>>(size).apply {
+//      productive.asSequence().asStream().parallel().forEach {
+//        getOrPut(it.LHS) { ConcurrentLinkedQueue() }.add(it)
+//      }
+//    }
+//
+//  val done = mutableSetOf(START_SYMBOL)
+//  val nextProd: MutableList<Σᐩ> = mutableListOf(START_SYMBOL)
+//  val productiveAndReachable = mutableSetOf<Production>()
+//
+//  do {
+//    val q = nextProd.removeFirst().also { done += it }
+//    QDEPS[q]?.forEach { it ->
+//      productiveAndReachable.add(it)
+//      it.RHS.forEach { if (it !in done) nextProd += it }
+//    }
+//  } while (nextProd.isNotEmpty())
+//
+//  println("Eliminated ${productive.size - productiveAndReachable.size} unreachable productions in ${timer.elapsedNow()}")
+//  println("Resulting in ${productiveAndReachable.size} productions.")
+//
+//  return productiveAndReachable.freeze()
+//}
 
 fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
