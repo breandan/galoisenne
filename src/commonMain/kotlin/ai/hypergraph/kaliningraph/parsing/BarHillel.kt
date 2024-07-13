@@ -81,25 +81,37 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   clock = TimeSource.Monotonic.markNow()
   return (initFinal + binaryProds + unitProds).toSet().postProcess()
     .expandNonterminalStubs(origCFG = this@intersectLevFSAP)
+    .postProcess()
     .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }
 
 // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
 // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
 fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
-  (unitProductions * fsa.nominalize().flattenedTriples)
-    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
-//  (unitProductions * fsa.Q).map { (A, σ, arc) ->
-//    if (arc.π2.startsWith("[!=]") && σ != arc.π2.drop(4)) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
-//    else if (arc.π2.startsWith("[.*]")) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
-//    else "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
-//  }
+//  (unitProductions * fsa.nominalize().flattenedTriples)
+//    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+//    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+  (unitProductions * fsa.Q).mapNotNull { (A, σ, arc) ->
+    if (arc.π2.startsWith("[!=]") && σ != arc.π2.drop(4)) {
+//      if ((bimap.UNITS[A]!! - arc.π2.drop(4)).isEmpty()) null
+//      else "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A[!=]$σ>")
+      "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+    }
+    else if (arc.π2.startsWith("[.*]")) "[${arc.π1}~$A~${arc.π3}]" to listOf("<$A>")
+    else if (arc.π2 == σ) "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
+    else null
+  }
 
 fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
 //  println("FM: $it / ${it.RHS.first()} / ${it.RHS.first().isNonterminalStub()}")
   if (it.RHS.size != 1 || !it.RHS.first().isNonterminalStub()) listOf(it)
-  else origCFG.bimap.NDEPS[it.RHS.first().drop(1).dropLast(1)]!!.map { t -> it.LHS to listOf(t) }
+  else {
+//    val (nt, neq) = it.RHS.first().drop(1).dropLast(1).split("[!=]")
+//    println("Expanding nonterminal stub: ${it.LHS} -> $nt != $neq")
+//    val (nt, neq) = it.RHS.first().drop(1).dropLast(1) to "$$$"
+//    (origCFG.bimap.UNITS[nt]!! - neq).map { t -> it.LHS to listOf(t) }
+    origCFG.bimap.UNITS[it.RHS.first().drop(1).dropLast(1)]!!.map { t -> it.LHS to listOf(t) }
+  }
 }.toSet().freeze().also { println("Expanded ${it.size - size} nonterminal stubs") }
 
 fun CFG.postProcess() =
