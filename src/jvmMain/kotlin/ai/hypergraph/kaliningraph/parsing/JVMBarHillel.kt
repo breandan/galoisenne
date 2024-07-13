@@ -244,7 +244,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
     .jvmPostProcess(clock)
-    .expandNonterminalStubs(origCFG = this@jvmIntersectLevFSAP)
+//    .expandNonterminalStubs(origCFG = this@jvmIntersectLevFSAP)
 //    .jdvpNew()
 }
 

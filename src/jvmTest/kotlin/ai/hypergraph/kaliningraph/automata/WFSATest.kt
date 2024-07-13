@@ -8,7 +8,6 @@ import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.operations.Concatenation
 import net.jhoogland.jautomata.semirings.RealSemiring
 import java.io.File
-import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.measureTimedValue
 
@@ -83,7 +82,8 @@ class WFSATest {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val groundTr = "+ NAME : True NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 2
-    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
+    val gram = Grammars.seq2parsePythonCFG.run { jvmIntersectLevFSAP(makeLevFSA(toRepair, radius), parikhMap) }
+    val pt = gram.toPTree()
 
     println("Total trees: " + pt.totalTrees.toString())
     val maxResults = 10_000
