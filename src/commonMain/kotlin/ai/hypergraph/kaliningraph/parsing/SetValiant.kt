@@ -277,7 +277,7 @@ fun Σᐩ.parseCFG(
   lines().filter { "->" in it }.map { line ->
     if (validate && !line.isValidProd()) throw Exception("Invalid production: $line")
     line.splitProd().let { it[0] to it[1].tokenizeByWhitespace() }
-  }.toSet().let { if (normalize) it.normalForm else it }
+  }.toSet().let { if (normalize) it.normalForm else it.freeze() }
 
 fun Σᐩ.stripEscapeChars(c: Char = '`'): Σᐩ =
   if (first() == c && last() == c) drop(1).dropLast(1) else this
