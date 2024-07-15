@@ -139,6 +139,30 @@ fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: Blns, right: Blns): Blns {
   return result
 }
 
+fun <T> fastGenericJoin(
+  /**[vindex]*/vidx: Array<ℤⁿ>, strMap: List<Σᐩ>,
+  left: List<T?>, right: List<T?>,
+  t: (List<Pair<T, T>>, Σᐩ) -> T
+): List<T?> {
+  if (left.isEmpty() || right.isEmpty()) return listOf()
+
+  val result = MutableList<T?>(vidx.size) { null }
+  for ((i, indexArray) in vidx.withIndex()) {
+    var j = 0
+    val rt = strMap[i]
+    val ls = mutableListOf<Pair<T, T>>()
+    while (j < indexArray.size) {
+      val (l, r) = left[indexArray[j]] to right[indexArray[j + 1]]
+      if (l != null && r != null) ls += l to r
+      j += 2
+    }
+
+    if (ls.isNotEmpty()) result[i] = t(ls, rt)
+  }
+
+  return result
+}
+
 //  if (left.isEmpty() || right.isEmpty()) booleanArrayOf()
 //  else vindex.map { it.any { (B, C) -> left[B] and right[C] } }.toBooleanArray()
 
@@ -163,12 +187,28 @@ fun union(left: Blns, right: Blns): Blns {
   return result
 }
 
+fun ptreeUnion(left: List<PTree?>, right: List<PTree?>): List<PTree?> =
+  List(left.size) { i ->
+    if (left[i] == null || right[i] == null) left[i] ?: right[i]
+    else PTree(left[i]!!.root, left[i]!!.branches + right[i]!!.branches)
+  }
+
 val CFG.bitwiseAlgebra: Ring<Blns> by cache {
   vindex.let {
     Ring.of(
       nil = BooleanArray(nonterminals.size) { false },
       plus = { x, y -> union(x, y) },
       times = { x, y -> fastJoin(it, x, y) }
+    )
+  }
+}
+
+val CFG.ptreeListAlgebra: Ring<List<PTree?>> by cache {
+  vindex.let {
+    Ring.of(
+      nil = List(nonterminals.size) { null },
+      plus = { x, y -> ptreeUnion(x, y) },
+      times = { x, y -> fastGenericJoin(it, bindex.indexedNTs, x, y) { ls, rt -> PTree(rt, ls) } }
     )
   }
 }
@@ -277,7 +317,7 @@ fun Σᐩ.parseCFG(
   lines().filter { "->" in it }.map { line ->
     if (validate && !line.isValidProd()) throw Exception("Invalid production: $line")
     line.splitProd().let { it[0] to it[1].tokenizeByWhitespace() }
-  }.toSet().let { if (normalize) it.normalForm else it }
+  }.toSet().let { if (normalize) it.normalForm else it.freeze() }
 
 fun Σᐩ.stripEscapeChars(c: Char = '`'): Σᐩ =
   if (first() == c && last() == c) drop(1).dropLast(1) else this

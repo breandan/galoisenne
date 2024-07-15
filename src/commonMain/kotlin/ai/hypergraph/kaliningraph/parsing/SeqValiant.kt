@@ -275,12 +275,29 @@ class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()
 }
 
 fun CFG.startPTree(tokens: List<String>) = //measureTimedValue {
-  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
+//  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
 //}.also { println("Took ${it.duration} to compute parse forest") }.value
+  initPTreeListMat(tokens).seekFixpoint().diagonals.last()[0][bindex[START_SYMBOL]]
 
 // Instead of defining a special case, we instead represent the unit production
 // as a left child whose sibling is empty like so: Left child to Right child
 fun PSingleton(v: String): List<Π2A<PTree>> = listOf(PTree(v) to PTree())
+
+fun CFG.initPTreeListMat(tokens: List<String>): UTMatrix<List<PTree?>> =
+  UTMatrix(
+    ts = tokens.map { token ->
+      val ptreeList = MutableList<PTree?>(nonterminals.size) { null }
+      (if (token != HOLE_MARKER) bimap[listOf(token)] else unitNonterminals)
+        .associateWith { nt ->
+          if (token != HOLE_MARKER) PSingleton(token)
+          else bimap.UNITS[nt]?.map {
+            println("$token -> $it")
+            PSingleton(it) }?.flatten() ?: listOf()
+        }.forEach { (k, v) -> ptreeList[bindex[k]] = PTree(k, v) }
+      ptreeList
+    }.toTypedArray(),
+    algebra = ptreeListAlgebra
+  )
 
 fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
   UTMatrix(
@@ -419,8 +436,7 @@ fun CFG.fastRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): S
   }.flatMap { if (it.isEmpty()) sequenceOf(it) else minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
 
 fun CFG.barHillelRepair(tokens: List<String>): Sequence<String> =
-  generateSequence(1) { it + 1 }
-    .flatMap { radius ->
+  generateSequence(1) { it + 1 }.flatMap { radius ->
     try { intersectLevFSA(makeLevFSA(tokens, radius)).ifEmpty { null } }
     catch (e: Exception) { null }?.toPTree()?.sampleStrWithoutReplacement() ?: sequenceOf()
   }
