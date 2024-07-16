@@ -442,7 +442,7 @@ fun CFG.barHillelRepair(tokens: List<String>): Sequence<String> =
 
 // Note the repairs are not distinct as we try to avoid long delays between
 // repairs, so callees must remember to append .distinct() if they want this.
-fun CFG.fasterRepairSeq(tokens: List<String>, minimize: Boolean = false, spacing: Int = 2, holes: Int = 6): Sequence<String> {
+fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6, minimize: Boolean = false): Sequence<String> {
   println("Minimizing: $minimize")
   var levenshteinBlanket = tokens
   var blanketSeq = emptySequence<String>().iterator()
