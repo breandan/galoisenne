@@ -291,7 +291,6 @@ fun CFG.initPTreeListMat(tokens: List<String>): UTMatrix<List<PTree?>> =
         .associateWith { nt ->
           if (token != HOLE_MARKER) PSingleton(token)
           else bimap.UNITS[nt]?.map {
-            println("$token -> $it")
             PSingleton(it) }?.flatten() ?: listOf()
         }.forEach { (k, v) -> ptreeList[bindex[k]] = PTree(k, v) }
       ptreeList
@@ -443,7 +442,8 @@ fun CFG.barHillelRepair(tokens: List<String>): Sequence<String> =
 
 // Note the repairs are not distinct as we try to avoid long delays between
 // repairs, so callees must remember to append .distinct() if they want this.
-fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6): Sequence<String> {
+fun CFG.fasterRepairSeq(tokens: List<String>, minimize: Boolean = false, spacing: Int = 2, holes: Int = 6): Sequence<String> {
+  println("Minimizing: $minimize")
   var levenshteinBlanket = tokens
   var blanketSeq = emptySequence<String>().iterator()
   val uniformSeq = tokens.intersperse(spacing, "ε").let { prompt ->
@@ -451,6 +451,10 @@ fun CFG.fasterRepairSeq(tokens: List<String>, spacing: Int = 2, holes: Int = 6):
       .map { prompt.substituteIndices(it) { _, _ -> "_" } }
       // ifEmpty {...} is a hack to ensure the sequence emits values at a steady frequency
       .flatMap { sampleSWOR(it).take(100).ifEmpty { sequenceOf("ε") } }
+      .let {
+        if (!minimize) it
+        else it.flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
+      }
   }.iterator()
 
   val distinct1 = mutableSetOf<String>()
