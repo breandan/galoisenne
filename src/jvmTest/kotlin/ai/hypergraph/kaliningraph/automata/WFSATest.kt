@@ -4,6 +4,8 @@ import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.markovian.mcmc.MarkovChain
+import dk.brics.automaton.Automaton
+import dk.brics.automaton.RegExp
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.operations.Concatenation
 import net.jhoogland.jautomata.semirings.RealSemiring
@@ -128,5 +130,28 @@ class WFSATest {
     println("Found ${repairs.size} total repairs by enumerating PTree")
     val distinct = repairs.toSet().size
     println("Found $distinct unique repairs by enumerating PTree")
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testRepulsivePointProcess"
+  */
+  @Test
+  fun testRepulsivePointProcess() {
+    Automaton.setMinimization(Automaton.MINIMIZE_BRZOZOWSKI)
+    // One-hot vector where 1s are separated by at least three 0s
+    val a1 = RegExp("[01]{10}&(0*(10{3,})*1?0*)").toAutomaton().apply { minimize() }
+    println(a1.toDot())
+    a1.finiteStrings.forEach {
+      var minDist = Int.MAX_VALUE
+      var lastIdx = -4
+      it.forEachIndexed { idx, c ->
+        if (c == '1') {
+          minDist = minOf(minDist, idx - lastIdx)
+          lastIdx = idx
+        }
+      }
+
+      assertTrue(minDist >= 3)
+    }
   }
 }
