@@ -104,7 +104,7 @@ kotlin {
         implementation(kotlin("stdlib-common"))
         implementation(kotlin("reflect"))
 
-        implementation("com.ionspin.kotlin:bignum:0.3.9")
+        implementation("com.ionspin.kotlin:bignum:0.3.10")
       }
     }
 
@@ -116,7 +116,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:23.0.4")
+        implementation("org.graalvm.js:js:23.0.5")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
