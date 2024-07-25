@@ -1213,7 +1213,7 @@ Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler befor
 \State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $[a \in \hat{A} \textbf{ ranked by } \text{NLL}(a)]$ \Comment{Rank by n-gram likelihood.}
+\State \Return $[\sigma \in \hat{A} \textbf{ ranked by } \text{NLL}(\sigma)]$ \Comment{Rank by n-gram likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
@@ -1805,7 +1805,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
   We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
 
-  Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by either PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by n-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a n-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
+  Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by n-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a n-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 
   \begin{figure}[h]
     \input{experiments/ablation_enumeration_pcfg}
