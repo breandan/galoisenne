@@ -1498,7 +1498,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
   This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
 
-  By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison of a naive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and n-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
+  By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison with a na\"ive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and n-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
 
   We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
@@ -1813,7 +1813,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
     \input{experiments/ablation_dfa_walker}
   \end{figure}
 
-  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:enum_ngram} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
+  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
 Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
 
