@@ -710,7 +710,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
 
-  To avoid creating a parallel bundle of arcs for each insertion and substutition point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
+  To avoid creating a parallel bundle of arcs for each insertion and substitution point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
 
   \begin{prooftree}
     \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
@@ -1131,7 +1131,7 @@ These operators group subtrees by their root nonterminal, then aggregate their c
   \end{cases}
 \end{equation}
 
-To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production, counting the size of its childrens' languages relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within each range:
+To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we precompute a histogram for each production, counting the size of its children's languages relative to the size of the root nonterminal's language, assign a commensurate integer range, and then construct a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ that recursively selects values within each range:
 
 \begin{equation}\label{eq:pairing}
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -1879,7 +1879,7 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
 %  Okhotin~\cite{okhotin2001conjunctive} extends CFGs with language conjunction in \textit{conjunctive grammars}, followed by Zhang \& Su~\cite{zhang2017context} who apply conjunctive language reachability to dataflow analysis.
 
-  From a more applied perspective, parsers are ubiquituous in present-day software engineering, but none are designed to handle arbitrary CFGs or recover from arbitrary errors. Parr and Quong introduce ANTLR~\cite{parr1995antlr} which can handle LL(k) grammars and offers an IDE plugin with limited support for error recovery. Scott and Johnstone~\cite{scott2010gll} introduce GLL parsing, which supports linear-time parsing for LL grammars and cubic for arbitrary CFGs, but does not support error correction. Inspired by their work, we introduce a method for repairing small syntax errors in arbitrary CFLs.
+  From a more applied perspective, parsers are ubiquitous in present-day software engineering, but none are designed to handle arbitrary CFGs or recover from arbitrary errors. Parr and Quong introduce ANTLR~\cite{parr1995antlr} which can handle LL(k) grammars and offers an IDE plugin with limited support for error recovery. Scott and Johnstone~\cite{scott2010gll} introduce GLL parsing, which supports linear-time parsing for LL grammars and cubic for arbitrary CFGs, but does not support error correction. Inspired by their work, we introduce a method for repairing small syntax errors in arbitrary CFLs.
 
   \subsection{Language equations}
 
@@ -1929,7 +1929,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   \subsection{Neural program repair}
 
-  More recently, probabilistic repair techniques have been introduced using neural models to predict the most likely correction~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ large language models (LLMs) and treat the problem as a sequence-to-sequence transformation. While capable of generating natural repairs, these models are suceptible to misgeneralization, costly to train, and challenging to customize thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
+  More recently, probabilistic repair techniques have been introduced using neural models to predict the most likely correction~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ large language models (LLMs) and treat the problem as a sequence-to-sequence transformation. While capable of generating natural repairs, these models are susceptible to misgeneralization, costly to train, and challenging to customize thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
   In particular, two papers stand out being closely related to our own: Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised learning to generate synthetic errors in clean code and fixes them. This reduces the amount of pairwise training data, but tends to generalize poorly to lengthy or out-of-distribution repairs. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest multiple repairs at much higher precision, do not require a pairwise repair dataset, and can fix syntax errors in any language with a well-defined grammar. We note our approach is complementary to existing work in neural program repair, and may be used to generate synthetic repairs for training or employ an LLM for ranking.
 
