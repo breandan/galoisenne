@@ -2209,6 +2209,33 @@ To evaluate the quality of our ranking, we use the Precision@k statistic. Specif
 \end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{Feature comparison matrix}
+\begin{table}
+\begin{tabular}{c|cccccc}
+             & \textbf{Sound}   & \textbf{Complete} & \textbf{Natural} & \textbf{Theory} & ||      & \textbf{Tool} \\\hline
+Tidyparse    & \cmark           & \cmark            & \cmark           & CFG$_\cap$      & \cmark  & IDE-ready     \\
+Seq2Parse    & \cmark$^\dagger$ & \xmark            & \cmark           & CFG             & \xmark  & Python        \\
+BIFI         & \xmark           & \xmark            & \cmark           & $\Sigma^*$      & \xmark  & Python        \\
+OrdinalFix   & \cmark           & \xmark            & \xmark           & CFG+            & \xmark  & Rust          \\
+Outlines$^1$ & \cmark$^\dagger$ & \cmark$^\dagger$  & \cmark           & EBNF            & \xmark  & Python        \\
+SynCode$^1$  & \cmark           & \cmark            & \cmark           & EBNF            & \xmark  & Python        \\
+Aho/Irons    & \cmark           & \xmark            & \xmark           & CFG             & \xmark  & None          \\
+\end{tabular}
+\end{table}
+
+\textbf{Sound} $=$ generated repairs always syntactically valid.
+
+\textbf{Complete} $=$ all valid repairs are eventually generated.
+
+\textbf{Natural} $\approx$ statistically likely / designed to model human preferability.
+
+|| = Trivially parallelizable, i.e., designed to be executed on multiple cores.\\\vspace{0.3cm}
+
+$^1$ Not specifically intended for syntax repair, but can be adapted.
+
+$^\dagger$ Claimed by the authors, but counterexamples known to exist.
+\end{frame}
+
 \begin{frame}{Abbreviated history of algebraic parsing}
   \begin{itemize}
     \item \href{http://www-igm.univ-mlv.fr/~berstel/Mps/Travaux/A/1963-7ChomskyAlgebraic.pdf}{Chomsky \& Sch\"utzenberger (1959) - The algebraic theory of CFLs}
