@@ -99,7 +99,6 @@
     \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b), but compare both methods. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and sorted by likelihood. (\S~\ref{sec:ranking})
   \end{enumerate}
 
-
   Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
   \section{Example}\label{sec:example}

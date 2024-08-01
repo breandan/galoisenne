@@ -496,14 +496,6 @@
 %  \end{itemize}
 %\end{frame}
 
-%\begin{frame}[fragile]{Design Criteria}
-%  \begin{itemize}
-%    \item First and foremost, the framework must be \textbf{sound} and \textbf{complete}. It must (1) accept arbitrary CFGs, and (2) recognize all and only syntactically valid strings within a fixed edit distance of a given string.
-%    \item Second, we strongly prefer repairs to be \textbf{plausible} and \textbf{consistent}, i.e., likely to be expressed in practice and consistent with the author's intent and surrounding context (e.g., stylistically, semantically)
-%    \item Third, recommendations must be \textbf{efficient} and \textbf{responsive}. We must be able to recognize valid strings in subcubic time, and generate repairs in (at worst) polynomial time. These criteria are necessary to provide real-time feedback whilst the user is typing.
-%    \item Fourth, the framework must be \textbf{robust} and \textbf{scalable}. Ceteris paribus, the framework should be robust to multiple errors, handle large grammars and scale linearly with additional processors.
-%  \end{itemize}
-%\end{frame}
 
 \begin{frame}[fragile]{High-level architecture overview}
   \vspace{0.4cm}
@@ -533,328 +525,114 @@
 
   \vspace{0.4cm}
 
-  \begin{wrapfigure}{r}{0.4\textwidth}
+\begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
-    \vspace{-0.7cm}
-    \resizebox{0.4\textwidth}{!}{
-    \begin{tikzpicture}[node distance=2cm]
-    \node (start) [startstop, draw=none];
-    \node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap\Delta(\err\sigma, d)$};
-    \node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
-    \node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
+\vspace{-0.7cm}
+\resizebox{0.4\textwidth}{!}{
+\begin{tikzpicture}[node distance=2cm]
+\node (start) [startstop, draw=none];
+\node (pro1) [process, below of=start, yshift=-0.3cm] {$G_\cap \gets G\cap L(\err\sigma, d)$};
+\node (pcfg) [io2, left of=pro1, xshift=-3cm] {CFG};
+\node (lnfa) [io, right of=pro1, xshift=3cm] {L-NFA};
 
-    \node (code) [io, right of=start,xshift=3cm] {Code};
-    \node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
+\node (code) [io, right of=start,xshift=3cm] {Code};
+\node (synt) [io2, left of=start,xshift=-3cm] {Syntax};
 
-    \node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
+\node (dec1) [decision, below of=pro1, yshift=-0.5cm] {$[G_{\cap} = \varnothing]$};
 
-    \node (t2) [process, left of=dec1, xshift=-3cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
+\node (t2) [process, left of=dec1, xshift=-3cm] {Construct $\mathbb{T}_2$ from $G_\cap'$};
 
-    \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
+\node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-    \node [below=0.7cm of pro2b, xshift=-0.25cm] {\Large\textbf{Language intersection}};
-    \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
+\node [below=0.7cm of pro2b, xshift=-0.3cm] {\Large\textbf{Language intersection}};
+\draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
-    \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate $\mathbb{T}_2$ and rerank};
-    \node [above=0.07cm of const, xshift=1.5cm] {(Algorithm A)};
+\node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate trees from $\mathbb{T}_2$};
 
-    %          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
-    %
-    %          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
-    %          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
-    %          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
-    %          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
+%          \node (dec2) [decision, below of=const, yshift=-0.5cm] {$|\mathcal{L}(G_\cap)|$};
+%
+%          \node (samp1) [process, left of=dec2, xshift=-3cm] {Enumerate $\sigma' \in \mathcal{L}(G_\cap)$};
+%          \node [above=0.07cm of samp1] {(\S~\ref{sec:ptree})};
+%          \node (samp2) [process, right of=dec2, xshift=3cm] {Sample $\sigma' \sim P(G_\cap)$};
+%          \node [above=0.07cm of samp2] {(\S~\ref{sec:ptree})};
 
-    %          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
+%          \draw[thick,dotted, rounded corners] ($(const.north west)+(-5.3,0.7)$) rectangle ($(samp2.south east)+(0.3,-0.6)$);
 
-    \node (grwa) [process, below of=const, yshift=-0.5cm] {Sample PCFG top-down};
-    \node [above=0.07cm of grwa, xshift=1.5cm] {(Algorithm B)};
-    \node (rank) [process, below of=grwa, yshift=-0.5cm] {Convert to DFA and walk};
-    \node [above=0.1cm of rank, xshift=1.5cm] {(Algorithm C)};
-    %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-    \node [below=0.3cm of rank, xshift=2.5cm] {\Large\textbf{Repair decoding}};
-    \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(2.5,-1.1)$);
+\node (rrpc) [process, below of=const, yshift=-0.5cm] {Rerank by PCFG score};
+\node [above=0.07cm of rrpc, xshift=1.7cm] {(Algorithm 1)};
+\node (rank) [process, below of=rrpc, yshift=-0.5cm] {Convert to DFA and walk};
+\node [above=0.1cm of rank, xshift=1.7cm] {(Algorithm 3)};
+%          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
+\node [below=0.3cm of rank, xshift=-3.8cm] {\Large\textbf{Repair decoding}};
+\draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(6.8,-1.1)$);
 
-    \node (results) [io, right of=grwa,xshift=5.2cm] {Repairs};
-    %  \node (out1) [io, below of=pro2a] {Output};
-    \node (stop) [startstop, right of=rank, xshift=3cm];
-    \node (stop1) [startstop, right of=grwa, xshift=3cm];
-    \node (stop2) [startstop, right of=const, xshift=3cm];
+\node (rrng) [process, right of=const, xshift=4.5cm] {Rerank by n-gram score};
+\node [above=0.1cm of rrng, xshift=0.7cm] {(Algorithm 2)};
+\node (results) [io, right of=rank, xshift=4.5cm] {Repairs};
+%  \node (out1) [io, below of=pro2a] {Output};
+\node (stop) [startstop, right of=rank, xshift=3cm];
+\node (stop1) [startstop, right of=rrpc, xshift=3cm];
+\node (stop2) [startstop, right of=const, xshift=3cm];
 
-    %  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
+%  \draw [arrow] (dec0) -- node[anchor=east] {no} (pro1);
 
-    %          \draw [->,thick] (-5, 1.3) -- (synt);
-    %          \draw [->,thick] (5, 1.3) -- (code);
+%          \draw [->,thick] (-5, 1.3) -- (synt);
+%          \draw [->,thick] (5, 1.3) -- (code);
 
-    %          \draw [arrow] (start) -- (code);
-    %          \draw [arrow] (start) -- (synt);
-    \draw [arrow] (code) -- (lnfa);
-    \draw [arrow] (synt) -- (pcfg);
-    \draw [arrow] (lnfa) -- (pro1);
-    \draw [arrow] (pcfg) -- (pro1);
+%          \draw [arrow] (start) -- (code);
+%          \draw [arrow] (start) -- (synt);
+\draw [arrow] (code) -- (lnfa);
+\draw [arrow] (const) -- (rrng);
+\draw [arrow] (rrng) -- (results);
+\draw [arrow] (synt) -- (pcfg);
+\draw [arrow] (lnfa) -- (pro1);
+\draw [arrow] (pcfg) -- (pro1);
 
-    \draw [arrow] (grwa) -- (results);
-    \draw [line width=0.8pt] (stop.west) -- (stop1.west);
-    \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
+%          \draw [arrow] (grwa) -- (results);
+%          \draw [line width=0.8pt] (stop.west) -- (stop1.west);
+%          \draw [line width=0.8pt] (stop2.west) -- (stop1.west);
 
-    %  \draw [arrow] (in1) -- (pro1);
-    \draw [arrow] (pro1) -- (dec1);
-    \draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
-    \draw [arrow] (dec1) -- node[anchor=south] {no} (t2);
-    %          \draw [arrow] (const) -- (rank);
-    \draw [arrow] (pro2b) -- (lnfa);
-    %          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
-    %          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
+%  \draw [arrow] (in1) -- (pro1);
+\draw [arrow] (pro1) -- (dec1);
+\draw [arrow] (dec1) -- node[anchor=south] {yes} (pro2b);
+\draw [arrow] (dec1) -- node[anchor=south] {no} (t2);
+\draw [arrow] (const) -- (rrpc);
+\draw [arrow] (pro2b) -- (lnfa);
+%          \draw [arrow] (dec2) -- node[anchor=south] {small} (samp1);
+%          \draw [arrow] (dec2) -- node[anchor=south] {large} (samp2);
 
-    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]const.west)--(const.west);
-    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
-    \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
-    %          \draw [arrow] (vlmc) -- (rank);
-    %          \draw [arrow] (pcfg) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
-    %          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
-    %  \draw [arrow] (pro2a) -- (out1);
-    \draw [line width=0.8pt] (rank) -- (stop);
-    \draw [line width=0.8pt] (grwa) -- (stop1);
-    \draw [line width=0.8pt] (const) -- (stop2);
-    %          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
+\draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]const.west)--(const.west);
+%          \draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]grwa.west)--(grwa.west);
+\draw [arrow] (t2) |- ([shift={(-1.3cm,0)}]rank.west)--(rank.west);
+%          \draw [arrow] (vlmc) -- (rank);
+\draw [arrow] (rrpc) |- ([shift={(4.37cm,0)}]rrpc.east)--(results.north);
+%          \draw [arrow] (samp2) |- ([shift={(0,1.3cm)}]rank.north)--(rank.north);
+%  \draw [arrow] (pro2a) -- (out1);
+\draw [arrow] (rank) -- (results);
+%          \draw [line width=0.8pt] (grwa) -- (stop1);
+%          \draw [line width=0.8pt] (const) -- (stop2);
+%          \draw [arrow] (dec2) -- node[anchor=east] {1} (stop);
 
-    \end{tikzpicture}
-    }
-  \end{wrapfigure}
+\end{tikzpicture}
+}
+\end{wrapfigure}
 
   Our syntax repair procedure can be described in three high-level steps. First, we generate a synthetic grammar $(G_\cap)$ representing the intersection between the syntax $(G)$ and Levenshtein ball around the source code $\big(\Delta(\err\sigma, d)\big)$. During repair extraction, we retrieve as many repairs as possible from the intersection grammar via sampling or enumeration. Finally, we rank all repairs discovered by likelihood.
 
 \end{frame}
 
-\begin{frame}[fragile]{Characteristics of the repair dataset}
-  \begin{figure}[h!]
-    \begin{tikzpicture}[scale=0.52]
-      \begin{axis}[
-      ybar,
-      bar width=5pt,
-      xlabel={Length $(|\err\sigma|)$},
-      ylabel={Frequency},
-      title={Cumulative length distribution},
-      axis x line*=bottom,
-      axis y line*=left,
-      ymin=0,
-      ymax=65,
-      xtick=data,
-      xticklabels={,,<30,,,<60,,,<90,},
-      ymajorgrids=true,
-      grid style=dashed,
-      width=0.45\textwidth,
-      height=0.3\textwidth
-      ]
 
-      \addplot[fill=black!30] table {
-        X Y
-        1 7.60
-        2 14.52
-        3 22.01
-        4 30.54
-        5 37.82
-        6 44.30
-        7 49.68
-        8 55.21
-        9 59.75
-        10 63.59
-      };
-      \draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
-      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.52]
-      \begin{axis}[
-      ybar,
-      bar width=5pt,
-      title={Human repair distance},
-      xlabel={Edits, $\Delta(\err\sigma, \sigma')$},
-      ylabel={Frequency},
-      axis x line*=bottom,
-      axis y line*=left,
-      xtick=data,
-      ymajorgrids=true,
-      grid style=dashed,
-      xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
-      ytick={0, 20, 40, 60, 80, 100},
-      ymin=0,
-      width=0.45\textwidth,
-      height=0.3\textwidth
-      ]
-      \addplot[fill=black!30] table {
-        X Y
-        1  31.48
-        2  47.52
-        3  54.89
-        4  60.44
-        5  63.88
-        6  66.38
-        7  68.02
-        8  70.04
-        9  71.49
-        10 72.22
-      };
-      \draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
-      \end{axis}
-    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.52]
-      \begin{axis}[
-      ybar,
-      bar width=5pt,
-      xlabel={Beginning $\longleftrightarrow$ End},
-      ylabel={Frequency},
-      title={Normalized edit locations},
-      axis x line*=bottom,
-      axis y line*=left,
-      ymin=0,
-      ymax=35,
-      xtick=data,
-      xticklabels={0\%,,,,,,,,,100\%},
-      ymajorgrids=true,
-      grid style=dashed,
-      width=0.45\textwidth,
-      height=0.3\textwidth
-      ]
+\begin{frame}[fragile]{High-level architecture overview}
+This process can be depicted as series of staged transformations lowering the CFL intersection problem onto a finite automaton. Below, we consider a simplified version based on the language of balanced parentheses.
 
-      \addplot[fill=black!30] table {
-        X Y
-        10 11.6539
-        20 5.7252
-        30 6.2087
-        40 5.9542
-        50 5.5980
-        60 7.9389
-        70 7.0738
-        80 6.9466
-        90 12.4173
-        100 30.4835
-      };
-      \end{axis}
-    \end{tikzpicture}
-%    \begin{tikzpicture}
-%      \begin{axis}[
-%        ybar,
-%        bar width=5pt,
-%        title={Intra-patch edit distance},
-%        xlabel={Caret distance},
-%        ylabel={Frequency},
-%        axis x line*=bottom,
-%        axis y line*=left,
-%        xtick=data,
-%        ymajorgrids=true,
-%        grid style=dashed,
-%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
-%        width=0.45\textwidth,
-%        height=0.3\textwidth
-%      ]
-%
-%        \addplot table {
-%          X Y
-%          1 40.66
-%          2 15.00
-%          3 5.80
-%          4 4.86
-%          5 4.26
-%          6 2.98
-%          7 2.05
-%          8 2.73
-%          9 1.62
-%          10 13.64
-%        };
-%      \end{axis}
-%    \end{tikzpicture}
-    \begin{tikzpicture}[scale=0.52]
-      \begin{axis}[
-      legend cell align={left},
-      legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east, legend style={at={(0.5,1.8)},anchor=north}},
-      xlabel={$|\err\sigma|$},
-      ylabel={Stable region},
-      title={Stability profile},
-      ybar,
-      axis lines*=left,
-      xtick={0, 10, 20, 30, 40, 50, 60, 70},
-      ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
-      xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
-      yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
-      x tick label style={font=\scriptsize},
-      ymax=1.0,
-      ymin=0.0,
-      bar width=3pt,
-      grid style=dashed,
-      ymajorgrids=true,
-      width=0.45\textwidth,
-      height=0.3\textwidth
-      ]
-      \addlegendimage{empty legend}
-      \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
-      \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
-      \addlegendentry{1,}
-      \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
-      \addlegendentry{2,}
-      \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
-      \addlegendentry{3}
-      \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
-      \addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
-      \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
-      \end{axis}
-    \end{tikzpicture}
-    \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory. The stability profile measures the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball across repairs of varying length and distance.}\label{fig:patch_stats}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Ranked repair}
-  We train on lexical n-grams using the standard MLE for Markov chains. To score the repairs, we use the conventional length-normalized NLL:
-
-  \begin{equation}
-    \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
-  \end{equation}
-
-  For each retrieved set $\hat{A} \subseteq A$ drawn before a predetermined timeout and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
-
-  To evaluate the quality of our ranking, we use the Precision@k statistic. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a parallel corpus, $\mathcal{D}_{\text{test}}$, of errors ($\sigma^\dagger$) and repairs ($\sigma'$), we define Precision@k as:
-
-  \begin{equation}
-    \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
-  \end{equation}
-\end{frame}
-
-\begin{frame}[fragile]{Precision and latency comparison}
-  \begin{figure}[h!]
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_s2p}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi}}
-    \caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
-  \end{figure}
-  \begin{figure}[h!]
-%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
-    \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_4}}
-%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-    \caption{Latency benchmarks. Note the varying y-axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Results from sample efficiency experiments}
-  \begin{figure}[h!]
-    \input{../popl2025/sample_efficiency}\\
-%    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
-    \resizebox{.35\textwidth}{!}{\input{../popl2025/throughput}}\hspace{1cm}
-    \resizebox{.35\textwidth}{!}{\input{../popl2025/experiments/timings}}
-  \end{figure}
-\end{frame}
-
-\begin{frame}[fragile]{Outcomes in the syntax repair pipeline}
-  \vspace{-1cm}
-  \begin{figure}
-    \resizebox{.83\textwidth}{!}{\input{../popl2025/sankey}}
-    \vspace{-1cm}
-    \caption{Sankey diagram of 967 total repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost snippet lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a sampling timeout of 30s per repair.}
-  \end{figure}
+\vspace{0.3cm}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{flow_short.pdf}
+\vspace{0.1cm}
+\caption{Simplified dataflow of the language intersection pipeline. Given a grammar and broken code fragment, we (1) create a automaton generating the language of small edits, then (2) construct a grammar representing the intersection of the two languages. This grammar can be (3) converted into a finite automaton, (4) determinized, then (5) decoded to produce a list of repairs.}
+\label{fig:exampleDFA}
+\end{figure}
 \end{frame}
 
 \section{Formal Language Theory}\label{sec:fltheory}
@@ -946,6 +724,110 @@
       \end{tikzpicture}
     }
   \end{center}
+\end{frame}
+
+    \begin{frame}[fragile]{Levenshtein automaton customization}
+
+Consider the string $\err\sigma=$ \texttt{\scriptsize ( ) )} and the alphabet $\Sigma = \{\texttt{\scriptsize)}, \texttt{\scriptsize(}\}$. Every string within one edit of $\err\sigma$ is recognizing by an NFA with the following structure:
+
+\begin{figure}[h!]
+\resizebox{0.45\textwidth}{!}{
+\begin{tikzpicture}[
+%->, % makes the edges directed
+>=stealth',
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+initial text=$ $, % sets the text that appears on the start arrow
+]
+\node[state, initial]                (00) {$q_{0,0}$};
+\node[state, right of=00]            (10) {$q_{1,0}$};
+\node[accepting, state, right of=10] (20) {$q_{2,0}$};
+\node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+\node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+\node[state, right of=01]                     (11) {$q_{1,1}$};
+\node[state, right of=11]                     (21) {$q_{2,1}$};
+\node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+\draw [->] (00) edge[below] node{$\texttt{(}$} (10);
+\draw [->] (10) edge[below] node{$\texttt{)}$} (20);
+\draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+
+\draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
+\draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
+\draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+
+\draw [->] (00) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+\draw [->] (10) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+\draw [->] (20) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+
+\draw [->] (00) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (01);
+\draw [->] (10) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+\draw [->] (20) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+
+\draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+\draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+\draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+\draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (01);
+\draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+\draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+
+\draw [->] (30) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+\draw [->] (30) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+\draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
+\draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+\node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein automaton};
+\end{tikzpicture}
+}
+\resizebox{0.515\textwidth}{!}{
+\begin{tikzpicture}[
+%->, % makes the edges directed
+>=stealth',
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+initial text=$ $, % sets the text that appears on the start arrow
+]
+\draw[orange,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
+
+\node[state, initial]                (00) {$q_{0,0}$};
+\node[state, right of=00]            (10) {$q_{1,0}$};
+\node[accepting, state, right of=10] (20) {$q_{2,0}$};
+\node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+\node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+\node[state, right of=01]                     (11) {$q_{1,1}$};
+\node[state, right of=11]                     (21) {$q_{2,1}$};
+\node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+\draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+\draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+\draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
+
+\draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+\draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+\draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
+
+\draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+\draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+\draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+\draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+\draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+\draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+\draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+\draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+\draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+\node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
+\end{tikzpicture}
+}
+\caption{Automaton recognizing every single patch of the broken string \texttt{( ) )} within Levenshtein distance 1. We nominalize the original Levenshtein automaton, ensuring upward arcs denote a mutation, and replace terminals with a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
+\end{figure}
+\\
+\tiny{\url{https://fulmicoton.com/posts/levenshtein/#observations-lets-count-states}}
 \end{frame}
 
 \begin{frame}[fragile]{Levenshtein reachability}
@@ -1085,6 +967,160 @@
   \end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{Geometrically interpreting the edit calculus}
+
+Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of $\geq 1$ tokens. Consider some illustrative cases:
+
+\vspace{0.5cm}
+
+\newcommand{\substitutionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (24pt,8pt);
+\draw [-to] (24pt,8pt) -- (32pt,8pt);
+\draw [-to] (32pt,8pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\insertionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\fill[white] (16pt,0pt) circle [radius = 1.2pt];
+\fill[white] (24pt,8pt) circle [radius = 1.2pt];
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (24pt,0pt);
+\draw [-to] (24pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (32pt,8pt);
+\draw [-to] (32pt,8pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\deletionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (24pt,0pt);
+\draw [-to] (24pt,0pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\doubleDeletionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (24pt,16pt);
+\draw [-to] (24pt,16pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\subDelExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\subSubExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (24pt,16pt);
+\draw [-to] (24pt,16pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\insertDeleteExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40,48}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\fill[white] (16pt,16pt) circle [radius = 1.2pt];
+\fill[white] (8pt,0pt) circle [radius = 1.2pt];
+\fill[white] (16pt,8pt) circle [radius = 1.2pt];
+\draw [-to] (0pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (8pt,8pt);
+\draw [-to] (8pt,8pt) -- (24pt,8pt);
+\draw [-to] (24pt,8pt) -- (40pt,16pt);
+\draw [-to] (40pt,16pt) -- (48pt,16pt);
+}
+}
+
+\footnotesize{
+\begin{table}[h!]
+\begin{tabular}{ccccc}
+
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+\texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} \\
+
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+\texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} \\
+
+\substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample
+\end{tabular}
+\end{table}
+}
+
+\normalsize{Note that the same $\langle\err\sigma, \sigma'\rangle$ pair can have multiple Levenshtein alignments:}
+\vspace{0.5cm}
+
+\footnotesize{
+\begin{table}[h!]
+\begin{tabular}{cc}
+
+\texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+\texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+\texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+\texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+\subSubExample & \insertDeleteExample
+\end{tabular}
+\end{table}
+}
+
+\normalsize{Non-uniqueness of geodesics has implications for CFG $\cap$ L-NFA ambiguity.}
+\end{frame}
+
 \begin{frame}[fragile]{The nominal Levenshtein automaton}
   The original Levenshtein automaton (Schulz \& Stoyan, 2002):
 
@@ -1145,7 +1181,7 @@
 \end{frame}
 
 \begin{frame}{Background: Context-free grammars}
-  In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $n^\omega$, n.b. CFLs are \textbf{not} closed under intersection!\newline\\
+  In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $\mathcal{O}(n^\omega)$, n.b. CFLs are \textbf{not} closed under $\cap$!\newline\\
   %
   For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
   %
@@ -1244,13 +1280,13 @@
 
 
 \begin{frame}[fragile]{Background: Closure properties of formal languages}
-  Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $\star$ be Kleene star, and $\complement$ be complementation:\\
+  Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $*$ be Kleene star, and $\complement$ be complementation:\\
   \begin{table}
     \begin{tabular}{c|ccccc}
-      & $\cup$ & $\cap$ & $\cdot$ & $\star$ & $\complement$ \\\hline
+      & $\cup$ & $\cap$ & $\cdot$ & $*$ & $\complement$ \\\hline
       Finite$^1$                                  & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
       Regular$^1$                                 & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
-      \rowcolor{slightgray} Context-free$^{1, 2}$ & \cmark & \xmark$^*$ & \cmark  & \cmark  & \xmark \\
+      \rowcolor{slightgray} Context-free$^{1, 2}$ & \cmark & \xmark$^\dagger$ & \cmark  & \cmark  & \xmark \\
       Conjunctive$^{1,2}$                         & \cmark & \cmark     & \cmark  & \cmark  & ?      \\
       Context-sensitive$^2$                       & \cmark & \cmark     & \cmark  & +       & \cmark \\
       Recursively Enumerable$^2$                  & \cmark & \cmark     & \cmark  & \cmark  & \xmark \\
@@ -1258,7 +1294,7 @@
   \end{table}
   We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.\vspace{0.2cm}
 
-  $^*$ However, CFLs are closed under intersection with regular languages.
+  $^\dagger$ However, CFLs are closed under intersection with regular languages.
 \end{frame}
 
 \begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
@@ -1603,22 +1639,50 @@
 Given $\sigma: \Sigma^*$, let $P_\theta(\sigma) = \prod_{i=1}^{|\sigma|}P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})$. This defines an ordering over $\Sigma^*$. Then, for each retrieved set $\sigma \in \hat{a} \subseteq A$ drawn before timeout, we score the repair and return $\hat{A}$ in ascending order:
 
 \begin{algorithm}[H]
-\caption{Enumerative sampling with n-gram reranking}
-\label{alg:adaptive}
+\caption{Enumerative tree sampling with n-gram reranking}
+\label{alg:enum_ngram}
 \begin{algorithmic}[1]
 \Require $T: \mathbb{T}_2$ intersection grammar, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
-\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+\State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of repairs.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $i \gets \texttt{RandIntWoR}(\texttt{seed++}, |T|)}$ \Comment{Sample $\mathbb{Z}_{|T|}$ uniformly WoR.}
-\State $\hat{a} \gets \hat{a} + \varphi(T, i)$ \Comment{Decode fresh tree and add.}
+\State $t \gets \varphi'(T, \texttt{seed++})}$ \Comment{Decode fresh tree and add.}
+\State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
-\State \Return $\hat{a} \textbf{ ranked by } NLL\big(\cdot \Rightarrow \Sigma^* \big)$
+\State \Return $[\sigma \in \hat{A} \textbf{ ranked by } \text{NLL}(\sigma)]$ \Comment{Rerank by n-gram likelihood.}
 \end{algorithmic}
 \end{algorithm}
 
 The issue is, the bijection is defined over labeled binary trees and does not guarantee unique strings, as the CFG may be ambiguous. In practice, this matters if we care about $\mathcal{O}(n)$ convergence!
+\end{frame}
+
+\begin{frame}[fragile]{Potential ambiguity of Levenshtein-Bar-Hillel grammars}
+The previous technique enumerates parse trees in a given $\mathbb{T}_2$, but does not guarantee string uniqueness since the CFG may be ambiguous.
+
+\begin{lemma}\label{lemma:ambiguity}
+If the FSA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambiguous.
+\end{lemma}
+
+\begin{proof}
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+\end{proof}
+
+We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by first translating $\mathbb{T}_2$ into an FSA.
+\end{frame}
+
+\begin{frame}[fragile]{Existence of an FSA that generates $\mathcal{L}(G_\cap)$}
+There is an FSA generating $\mathcal{L}(G_\cap)$. We first show this non-constructively:
+
+\begin{lemma}\label{lemma:upper-bound}
+The intersection grammar, $G_\cap$, is acyclic.
+\end{lemma}
+
+\begin{proof}
+Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefore, $G_\cap$ must not be cyclic.
+\end{proof}
+
+Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and decoded in order of n-gram likelihood using a Markov chain or standard pretrained autoregressive language model.
 \end{frame}
 
 \begin{frame}[fragile]{Translating from $T_2$ to a DFA}
@@ -1913,6 +1977,237 @@ In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathca
 %    \end{tikzpicture}
 %  \end{figure}
 %\end{frame}
+
+\begin{frame}[fragile]{Characteristics of the repair dataset}
+\begin{figure}[h!]
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+xlabel={Length $(|\err\sigma|)$},
+ylabel={Frequency},
+title={Cumulative length distribution},
+axis x line*=bottom,
+axis y line*=left,
+ymin=0,
+ymax=65,
+xtick=data,
+xticklabels={,,<30,,,<60,,,<90,},
+ymajorgrids=true,
+grid style=dashed,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+
+\addplot[fill=black!30] table {
+X Y
+1 7.60
+2 14.52
+3 22.01
+4 30.54
+5 37.82
+6 44.30
+7 49.68
+8 55.21
+9 59.75
+10 63.59
+};
+\draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+title={Human repair distance},
+xlabel={Edits, $\Delta(\err\sigma, \sigma')$},
+ylabel={Frequency},
+axis x line*=bottom,
+axis y line*=left,
+xtick=data,
+ymajorgrids=true,
+grid style=dashed,
+xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
+ytick={0, 20, 40, 60, 80, 100},
+ymin=0,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+\addplot[fill=black!30] table {
+X Y
+1  31.48
+2  47.52
+3  54.89
+4  60.44
+5  63.88
+6  66.38
+7  68.02
+8  70.04
+9  71.49
+10 72.22
+};
+\draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+xlabel={Beginning $\longleftrightarrow$ End},
+ylabel={Frequency},
+title={Normalized edit locations},
+axis x line*=bottom,
+axis y line*=left,
+ymin=0,
+ymax=35,
+xtick=data,
+xticklabels={0\%,,,,,,,,,100\%},
+ymajorgrids=true,
+grid style=dashed,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+
+\addplot[fill=black!30] table {
+X Y
+10 11.6539
+20 5.7252
+30 6.2087
+40 5.9542
+50 5.5980
+60 7.9389
+70 7.0738
+80 6.9466
+90 12.4173
+100 30.4835
+};
+\end{axis}
+\end{tikzpicture}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        ybar,
+%        bar width=5pt,
+%        title={Intra-patch edit distance},
+%        xlabel={Caret distance},
+%        ylabel={Frequency},
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        xtick=data,
+%        ymajorgrids=true,
+%        grid style=dashed,
+%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+%        width=0.45\textwidth,
+%        height=0.3\textwidth
+%      ]
+%
+%        \addplot table {
+%          X Y
+%          1 40.66
+%          2 15.00
+%          3 5.80
+%          4 4.86
+%          5 4.26
+%          6 2.98
+%          7 2.05
+%          8 2.73
+%          9 1.62
+%          10 13.64
+%        };
+%      \end{axis}
+%    \end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+legend cell align={left},
+legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east, legend style={at={(0.5,1.8)},anchor=north}},
+xlabel={$|\err\sigma|$},
+ylabel={Stable region},
+title={Stability profile},
+ybar,
+axis lines*=left,
+xtick={0, 10, 20, 30, 40, 50, 60, 70},
+ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
+yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+x tick label style={font=\scriptsize},
+ymax=1.0,
+ymin=0.0,
+bar width=3pt,
+grid style=dashed,
+ymajorgrids=true,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+\addlegendimage{empty legend}
+\addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+\addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+\addlegendentry{1,}
+\addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+\addlegendentry{2,}
+\addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+\addlegendentry{3}
+\addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+\addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
+\addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
+\end{axis}
+\end{tikzpicture}
+\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory. The stability profile measures the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball across repairs of varying length and distance.}\label{fig:patch_stats}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Ranked repair}
+We train on lexical n-grams using the standard MLE for Markov chains. To score the repairs, we use the conventional length-normalized NLL:
+
+\begin{equation}
+\text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
+\end{equation}
+
+For each retrieved set $\hat{A} \subseteq A$ drawn before a predetermined timeout and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
+
+To evaluate the quality of our ranking, we use the Precision@k statistic. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a parallel corpus, $\mathcal{D}_{\text{test}}$, of errors ($\sigma^\dagger$) and repairs ($\sigma'$), we define Precision@k as:
+
+\begin{equation}
+\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+\end{equation}
+\end{frame}
+
+\begin{frame}[fragile]{Precision and latency comparison}
+\begin{figure}[h!]
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_s2p}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi}}
+\caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+\end{figure}
+\begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+\caption{Latency benchmarks. Note the varying y-axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Results from sample efficiency experiments}
+\begin{figure}[h!]
+\input{../popl2025/sample_efficiency}\\
+%    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+\resizebox{.35\textwidth}{!}{\input{../popl2025/throughput}}\hspace{1cm}
+\resizebox{.35\textwidth}{!}{\input{../popl2025/experiments/timings}}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Outcomes in the syntax repair pipeline}
+\vspace{-1cm}
+\begin{figure}
+\resizebox{.83\textwidth}{!}{\input{../popl2025/sankey}}
+\vspace{-1cm}
+\caption{Sankey diagram of 967 total repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost snippet lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a sampling timeout of 30s per repair.}
+\end{figure}
+\end{frame}
 
 \begin{frame}{Abbreviated history of algebraic parsing}
   \begin{itemize}
