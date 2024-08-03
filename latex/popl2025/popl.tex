@@ -970,54 +970,51 @@ First, we generate a synthetic grammar representing the intersection between the
   \begin{wrapfigure}{r}{0.47\textwidth}
     \vspace{-9pt}
     \resizebox{0.47\textwidth}{!}{
-      \begin{tikzpicture}
-      [
-        grow                    = right,
-        sibling distance        = 3em,
-        level distance          = 5em,
-        edge from parent/.style = {draw, -latex},
-        every node/.style       = {font=\footnotesize},
-        sloped,
-        treenode/.style = {shape=rectangle, rounded corners,
-        draw, align=center,
-        top color=white, bottom color=blue!20},
-        root/.style     = {treenode, font=\tiny, bottom color=red!30},
-        env/.style      = {treenode, font=\tiny},
-        dummy/.style    = {circle,draw}
-      ]
-        \node [root] {S}
-        child { node [env] {BC}
-        child { node [root] {B}
+   \begin{tikzpicture}
+   [
+     grow                    = right,
+     sibling distance        = 3em,
+     level distance          = 5em,
+     edge from parent/.style = {draw, -latex},
+     every node/.style       = {font=\footnotesize},
+     sloped,
+     treenode/.style = {shape=rectangle, rounded corners,
+     draw, align=center,
+     top color=white, bottom color=blue!20},
+     root/.style     = {treenode, font=\tiny, bottom color=red!30},
+     env/.style      = {treenode, font=\tiny},
+     dummy/.style    = {circle,draw}
+   ]
+    \node [root] {S}
+    child { node [env] {BC}
+      child { node [root] {B}
         child { node [env] {RD}
-        child { node [root] {R} edge from parent node [above] }
-        child { node [root] {D} edge from parent node [above] }
-        edge from parent node [above] }
-        edge from parent node [below] }
-        child { node [root] {C}
-        child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-%  child { edge from parent node [above] {\ldots} }
-        edge from parent node [below] }
-        edge from parent node [above] }
-        child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-        child { node [env] {AB}
-        child { node [root] {A}
+          child { node [root] {R} }
+          child { node [root] {D} }
+        }
+      }
+      child { node [root] {C}
+        child { node [env] {$\ldots\vphantom{BB}$} }
+      }
+    }
+    child { node [env] {$\ldots\vphantom{BB}$} }
+    child { node [env] {AB}
+      child { node [root] {A}
         child {
           node [env] {QC}
-          child { node [root] {Q} edge from parent node [above] }
-          child { node [root] {C} edge from parent node [above] }
-          edge from parent node [above]
+          child { node [root] {Q} }
+          child { node [root] {C} }
         }
-%    child { node [env] {ZQ} edge from parent node [above] }
-        child { node [env] {\ldots\vphantom{BB}} edge from parent node [below] }
-        edge from parent node [below] }
-        child { node [root] {B}
+        child { node [env] {$\ldots\vphantom{BB}$} }
+      }
+      child { node [root] {B}
         child { node [env] {RD}
-        child { node [root] {R} edge from parent node [above] }
-        child { node [root] {D} edge from parent node [above] }
-        edge from parent node [above] }
-        edge from parent node [below] }
-        edge from parent node [above] };
-      \end{tikzpicture}
+          child { node [root] {R}  }
+          child { node [root] {D}  }
+        }
+      }
+    };
+    \end{tikzpicture}
     }
     \caption{A partial $\mathbb{T}_2$ corresponding to the grammar $\{S \rightarrow BC \mid \ldots \mid AB, B\rightarrow RD \mid \ldots, A\rightarrow QC \mid \ldots\}$.}
     \label{fig:ptree}

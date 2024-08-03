@@ -1,12 +1,10 @@
-\usepackage{dsfont}
+
 \usepackage{stmaryrd}
-\usepackage{colortbl}
-\usepackage{hyperref}
 
 \usepackage{amsmath}
 \DeclareMathOperator*{\argmax}{argmax}
 \DeclareMathOperator*{\argmin}{argmin}
-\usepackage{amssymb}
+%\usepackage{amssymb}
 
 \usepackage{textcomp}
 
@@ -77,58 +75,8 @@
 % Packages
 \usepackage{listings}
 \DeclareRobustCommand{\hlred}[1]{{\sethlcolor{pink}\hl{#1}}}
-\usepackage{fontspec}
-
-\setmonofont[Scale=0.8]{JetBrainsMono}[
-  Contextuals={Alternate},
-  Path=./font/,
-  Extension = .ttf,
-  UprightFont=*-Regular,
-  BoldFont=*-Bold,
-  ItalicFont=*-Italic,
-  BoldItalicFont=*-BoldItalic
-]
 
 \usepackage[skins,breakable,listings]{tcolorbox}
-
-\usepackage[dvipsnames, table]{xcolor}
-\lstdefinelanguage{kotlin}{
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={delegate, filter, firstOrNull, forEach, it, lazy, mapNotNull, println, repeat, assert, with, head, tail, len, return@},
-  numberstyle=\noncopyable,
-  identifierstyle=\color{black},
-  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, open, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, catch, typealias, val, var, vararg, when, where, while, tailrec, reified},
-  keywordstyle={\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Boolean, Int, Integer, Iterable, Long, Runnable, Short, String, int},
-  ndkeywordstyle={\bfseries},
-  sensitive=true,
-  stringstyle={\ttfamily},
-  literate={`}{{\char0}}1,
-  escapeinside={(*@}{@*)}
-}
-\lstdefinelanguage{tidy}{
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={|, ->, ---, &&&},
-  emphstyle={\color{red}},
-  identifierstyle=\color{black},
-  keywords={\|, ->, ---,&&&},
-  otherkeywords={|,->,---,&&&},
-  morekeywords={|,->,---,&&&},
-  keywordstyle={\color{blue}\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Bool, Float, Int, Integer, Iterable, Long, Runnable, Short, String},
-  ndkeywordstyle={\color{orange}\bfseries},
-  sensitive=true,
-  stringstyle={\color{green}\ttfamily},
-  literate={`}{{\char0}}1
-}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -186,90 +134,6 @@
   \hl{\ttfamily\tiny #1}%
   \endgroup
 }
-
-\newtcblisting{halftidyinput}[1][]{%
-  left skip=0.7cm,
-  width=6cm,
-%  left=-0.01cm,
-  top=-0.1cm,
-  bottom=-0.35cm,
-  listing options={
-    language=tidy,
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  },
-  underlay unbroken and first={%
-    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
-  }
-}
-
-\newtcblisting{tidyinput}[1][]{%
-  width=8.5cm,
-  left=10pt,
-  top=1pt,
-  boxrule=1pt,
-  listing options={
-    language=tidy,
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  },
-  underlay unbroken and first={%
-    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
-  }
-}
-
-\newtcblisting{tidyoutput}[1][]{%
-  width=8.5cm,
-  left=10pt,
-  top=1pt,
-  boxrule=1pt,
-  listing options={
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  }
-}
-
-\lstdefinelanguage{Kotlin}{
-  basicstyle = \footnotesize\ttfamily,
-  comment=[l]{//},
-  commentstyle={\color{gray}\ttfamily},
-  emph={delegate, filter, lazy, println, return@, K, E, X, P, G, E, V},
-  emphstyle={\color{red}},
-  identifierstyle=\color{black},
-  keywords={abstract, actual, as, as?, break, by, class, companion, continue, data, do, dynamic, else, enum, expect, false, final, for, fun, get, if, import, in, infix, interface, internal, is, null, object, operator, override, package, private, public, return, sealed, set, super, suspend, this, throw, true, try, typealias, tailrec, val, var, vararg, when, where, while},
-  keywordstyle={\color{blue}\bfseries},
-  morecomment=[s]{/*}{*/},
-  morestring=[b]",
-  morestring=[s]{"""*}{*"""},
-  ndkeywords={@Deprecated, @JvmField, @JvmName, @JvmOverloads, @JvmStatic, @JvmSynthetic, Array, Byte, Double, Float, Int, Integer, Iterable, Long, Runnable, Short, String, Bool, Boolean},
-  ndkeywordstyle={\color{orange}\bfseries},
-  sensitive=true,
-  stringstyle={\color{green}\ttfamily},
-  showstringspaces=false,
-  escapechar=@
-}
-
 
 \definecolor{A}{RGB}{6,150,104}
 \definecolor{B}{RGB}{196,74,137}
@@ -338,7 +202,6 @@
 
 \usepackage{filecontents}
 \usepackage{pstricks-add}
-\usepackage{emoji}
 \usepackage{alltt}
 \usepackage{nicematrix}
 \usepackage{graphicx}
@@ -346,10 +209,6 @@
 \usepackage{upquote}
 \tikzstyle{every picture}+=[remember picture]
 \usepackage{menukeys}
-\pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
-\pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings
-\pgfplotstableread[col sep=comma,]{natural_errors.csv}\naturalerrors
-\pgfplotstableread[col sep=comma,]{synthetic_errors.csv}\syntheticerrors
 
 \makeatletter
 \DeclareRobustCommand{\cev}[1]{%
@@ -386,8 +245,6 @@
 
 \usepgfplotslibrary{fillbetween}
 \usetikzlibrary{patterns}
-\pgfmathdeclarefunction{gauss}{2}{\pgfmathparse{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}}
-\pgfmathdeclarefunction{nil}{1}{\pgfmathparse{0.001}}
 
 \usepackage[symbol,hang,flushmargin]{footmisc}
 
@@ -397,41 +254,41 @@
 
 \newcommand{\mkTrellis}[1]{
   \begin{tikzpicture}
-    \def\dx{20pt}
-    \def\dy{30pt}
-    \newcounter{i}
-    \stepcounter{i}
-    \node[circle, draw, fill=black!30] (\arabic{i}) at (0,0){};
-    \foreach [count=\i] \x in {2,...,#1}{
-      \pgfmathsetmacro{\lox}{\x-1}%
-      \pgfmathsetmacro{\loxt}{\x-3}%
-      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
-        \pgfmathsetmacro{\jj}{\j-1}%
-        \stepcounter{i}
-        \pgfmathsetmacro{\kk}{\xx-2}%
-        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
-        \ifnum\x<\kk
-        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \else
-        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \fi
-      }
+  \def\dx{20pt}
+  \def\dy{30pt}
+  \newcounter{i}
+  \stepcounter{i}
+  \node[circle, draw, fill=black!30] (\arabic{i}) at (0,0){};
+  \foreach [count=\i] \x in {2,...,#1}{
+    \pgfmathsetmacro{\lox}{\x-1}%
+    \pgfmathsetmacro{\loxt}{\x-3}%
+    \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+      \pgfmathsetmacro{\jj}{\j-1}%
+      \stepcounter{i}
+      \pgfmathsetmacro{\kk}{\xx-2}%
+      \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+      \ifnum\x<\kk
+      \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \else
+      \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \fi
     }
-    \newcounter{z}
-    \newcounter{xn}
-    \newcounter{xnn}
-    \pgfmathsetmacro{\maxx}{#1 - 1}
-    \foreach \x in {1,...,\maxx}{
-      \foreach \xx in {1,...,\x}{
-        \stepcounter{z}
-        \setcounter{xn}{\arabic{z}}
-        \addtocounter{xn}{\x}
-        \setcounter{xnn}{\arabic{xn}}
-        \stepcounter{xnn}
-        \draw [<-] (\arabic{z}) -- (\arabic{xn});
-        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
-      }
+  }
+  \newcounter{z}
+  \newcounter{xn}
+  \newcounter{xnn}
+  \pgfmathsetmacro{\maxx}{#1 - 1}
+  \foreach \x in {1,...,\maxx}{
+    \foreach \xx in {1,...,\x}{
+      \stepcounter{z}
+      \setcounter{xn}{\arabic{z}}
+      \addtocounter{xn}{\x}
+      \setcounter{xnn}{\arabic{xn}}
+      \stepcounter{xnn}
+      \draw [<-] (\arabic{z}) -- (\arabic{xn});
+      \draw [<-] (\arabic{z}) -- (\arabic{xnn});
     }
+  }
   \end{tikzpicture}
 }
 
@@ -443,83 +300,83 @@
 \newcounter{xnn}
 \newcommand{\mkTrellisAppend}[1]{
   \begin{tikzpicture}
-    \setcounter{i}{0}
-    \setcounter{z}{0}
-    \setcounter{xn}{0}
-    \setcounter{xnn}{0}
-    \stepcounter{i}
-    \node[circle, draw] (\arabic{i}) at (0,0){};
-    \foreach [count=\i] \x in {2,...,#1}{
-      \pgfmathsetmacro{\lox}{\x-1}%
-      \pgfmathsetmacro{\loxt}{\x-3}%
-      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
-        \pgfmathsetmacro{\jj}{\j-1}%
-        \stepcounter{i}
-        \pgfmathsetmacro{\kk}{\xx+2}%
-        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
-        \ifnum\x>\kk
-        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \else
-        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \fi
-      }
+  \setcounter{i}{0}
+  \setcounter{z}{0}
+  \setcounter{xn}{0}
+  \setcounter{xnn}{0}
+  \stepcounter{i}
+  \node[circle, draw] (\arabic{i}) at (0,0){};
+  \foreach [count=\i] \x in {2,...,#1}{
+    \pgfmathsetmacro{\lox}{\x-1}%
+    \pgfmathsetmacro{\loxt}{\x-3}%
+    \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+      \pgfmathsetmacro{\jj}{\j-1}%
+      \stepcounter{i}
+      \pgfmathsetmacro{\kk}{\xx+2}%
+      \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+      \ifnum\x>\kk
+      \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \else
+      \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \fi
     }
-    \pgfmathsetmacro{\maxx}{#1 - 1}
-    \foreach \x in {1,...,\maxx}{
-      \foreach \xx in {1,...,\x}{
-        \stepcounter{z}
-        \setcounter{xn}{\arabic{z}}
-        \addtocounter{xn}{\x}
-        \setcounter{xnn}{\arabic{xn}}
-        \stepcounter{xnn}
-        \draw [<-] (\arabic{z}) -- (\arabic{xn});
-        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
-      }
+  }
+  \pgfmathsetmacro{\maxx}{#1 - 1}
+  \foreach \x in {1,...,\maxx}{
+    \foreach \xx in {1,...,\x}{
+      \stepcounter{z}
+      \setcounter{xn}{\arabic{z}}
+      \addtocounter{xn}{\x}
+      \setcounter{xnn}{\arabic{xn}}
+      \stepcounter{xnn}
+      \draw [<-] (\arabic{z}) -- (\arabic{xn});
+      \draw [<-] (\arabic{z}) -- (\arabic{xnn});
     }
+  }
   \end{tikzpicture}
 }
 
 \newcommand{\mkTrellisInsert}[1]{
   \begin{tikzpicture}
-    \setcounter{i}{0}
-    \setcounter{z}{0}
-    \setcounter{xn}{0}
-    \setcounter{xnn}{0}
-    \stepcounter{i}
-    \node[circle, draw] (\arabic{i}) at (0,0){};
-    \foreach [count=\i] \x in {2,...,#1}{
-      \pgfmathsetmacro{\lox}{\x-1}%
-      \pgfmathsetmacro{\loxt}{\x-3}%
-      \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
-        \pgfmathsetmacro{\jj}{\j-1}%
-        \stepcounter{i}
-        \pgfmathsetmacro{\mp}{\xx+#1}%
-        \pgfmathsetmacro{\mq}{\xx+\x}%
-        \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
-        \ifnum\x>\mp
-        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \else
-        \ifnum#1<\mq
-        \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \else
-        \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
-        \fi
-        \fi
+  \setcounter{i}{0}
+  \setcounter{z}{0}
+  \setcounter{xn}{0}
+  \setcounter{xnn}{0}
+  \stepcounter{i}
+  \node[circle, draw] (\arabic{i}) at (0,0){};
+  \foreach [count=\i] \x in {2,...,#1}{
+    \pgfmathsetmacro{\lox}{\x-1}%
+    \pgfmathsetmacro{\loxt}{\x-3}%
+    \foreach [count=\j] \xx in {-\lox,-\loxt,...,\lox}{
+      \pgfmathsetmacro{\jj}{\j-1}%
+      \stepcounter{i}
+      \pgfmathsetmacro{\mp}{\xx+#1}%
+      \pgfmathsetmacro{\mq}{\xx+\x}%
+      \pgfmathsetmacro{\lbl}{\lox!/(\jj!*(\lox-\jj)!)}
+      \ifnum\x>\mp
+      \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \else
+      \ifnum#1<\mq
+      \pgfmath\node[circle, draw, fill=black!30]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \else
+      \pgfmath\node[circle, draw]  (\arabic{i}) at (\xx*\dx, -\lox*\dy) {};
+      \fi
+      \fi
 
-      }
     }
-    \pgfmathsetmacro{\maxx}{#1 - 1}
-    \foreach \x in {1,...,\maxx}{
-      \foreach \xx in {1,...,\x}{
-        \stepcounter{z}
-        \setcounter{xn}{\arabic{z}}
-        \addtocounter{xn}{\x}
-        \setcounter{xnn}{\arabic{xn}}
-        \stepcounter{xnn}
-        \draw [<-] (\arabic{z}) -- (\arabic{xn});
-        \draw [<-] (\arabic{z}) -- (\arabic{xnn});
-      }
+  }
+  \pgfmathsetmacro{\maxx}{#1 - 1}
+  \foreach \x in {1,...,\maxx}{
+    \foreach \xx in {1,...,\x}{
+      \stepcounter{z}
+      \setcounter{xn}{\arabic{z}}
+      \addtocounter{xn}{\x}
+      \setcounter{xnn}{\arabic{xn}}
+      \stepcounter{xnn}
+      \draw [<-] (\arabic{z}) -- (\arabic{xn});
+      \draw [<-] (\arabic{z}) -- (\arabic{xnn});
     }
+  }
   \end{tikzpicture}
 }
 
