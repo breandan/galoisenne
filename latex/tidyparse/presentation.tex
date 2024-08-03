@@ -403,6 +403,90 @@
   \end{itemize}
 \end{frame}
 
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\phantom{( ) )}
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+  ( ) ( )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+  ( ) ( )
+  ( ( ) )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
 \begin{frame}[fragile]{Problem Statement: Validity and naturalness}
   Syntax repair can be treated as a language intersection problem between a context-free language (CFL) and a regular language.
 
@@ -728,7 +812,7 @@ This process can be depicted as series of staged transformations lowering the CF
 
     \begin{frame}[fragile]{Levenshtein automaton customization}
 
-Consider the string $\err\sigma=$ \texttt{\scriptsize ( ) )} and the alphabet $\Sigma = \{\texttt{\scriptsize)}, \texttt{\scriptsize(}\}$. Every string within one edit of $\err\sigma$ is recognizing by an NFA with the following structure:
+Consider the string $\err\sigma=$ \texttt{\scriptsize ( ) )} and the alphabet $\Sigma = \{\texttt{\scriptsize)}, \texttt{\scriptsize(}\}$. Every string within one edit of $\err\sigma$ is recognized by an NFA with the following structure:
 
 \begin{figure}[h!]
 \resizebox{0.45\textwidth}{!}{
@@ -1226,6 +1310,19 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
       \end{tikzpicture}
     }
   \end{center}
+\end{frame}
+
+\begin{frame}{Background: CFGs as substructural logics}
+  Context-free grammars can also be viewed as a very weak substructural logic where exchange and contraction are disallowed. It has no type constructor and the only inference rule is cut.
+
+\vspace{0.5cm}
+
+  This can be enriched by considering categorial grammars, which associates to each symbol a set of types, however the resulting expressivity is (mostly) unchanged, as proven by Pentus in 1991, but Lambek argues the equivalent CFG is typically less comprehensible in practice.
+ % https://www.math.mcgill.ca/barr/lambek/pdffiles/logicandgr.pdf
+ % https://www.math.mcgill.ca/barr/papers/pga.pdf#page=53
+ % https://www.math.mcgill.ca/barr/papers/pga.pdf#page=65
+ % https://festschriften.illc.uva.nl/j50/contribs/kanazawa/kanazawa.pdf
+ % https://arxiv.org/pdf/2405.16662#page=4
 \end{frame}
 
 %\begin{frame}{Background: Conjunctive grammars}
