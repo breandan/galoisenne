@@ -1313,16 +1313,33 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \end{frame}
 
 \begin{frame}{Background: CFGs as substructural logics}
-  Context-free grammars can also be viewed as a very weak substructural logic where exchange and contraction are disallowed. It has no type constructor and the only inference rule is cut.
+  CFGs can also be viewed as a very weak substructural logic. The logic has no type constructor and the only inference rule is \textsc{Cut}. The goal of parsing is, given some string $\sigma: \Sigma^n$, to prove $\sigma \vdash [S, 0, n]$.
 
 \vspace{0.5cm}
 
-  This can be enriched by considering categorial grammars, which associates to each symbol a set of types, however the resulting expressivity is (mostly) unchanged, as proven by Pentus in 1991, but Lambek argues the equivalent CFG is typically less comprehensible in practice.
+\begin{figure}
+\begin{prooftree}
+\AxiomC{$(W\rightarrow\sigma_i) \in P$}
+\RightLabel{\textsc{Int}}
+\UnaryInfC{$[W, i, i+1]$}
+\DisplayProof
+\hskip 1.5em
+\AxiomC{$(W \rightarrow X Z) \in P$}
+\AxiomC{$[X, i, j]$}
+\AxiomC{$[Z, j, k]$}
+\RightLabel{\textsc{Cut}}
+\TrinaryInfC{$[W, i, k]$}
+\end{prooftree}
+\caption{Context-free parsing as a substructural logic.}
+\end{figure}
+
+  This logic can be enriched by considering categorial grammars, which associates to each nonterminal a set of types, however the resulting expressivity is (mostly) unchanged, as proven by Pentus in 1991. Lambek argues the equivalent CFG is typically less comprehensible in practice.
  % https://www.math.mcgill.ca/barr/lambek/pdffiles/logicandgr.pdf
  % https://www.math.mcgill.ca/barr/papers/pga.pdf#page=53
  % https://www.math.mcgill.ca/barr/papers/pga.pdf#page=65
  % https://festschriften.illc.uva.nl/j50/contribs/kanazawa/kanazawa.pdf
  % https://arxiv.org/pdf/2405.16662#page=4
+ % http://www.eecs.harvard.edu/~shieber/Biblio/Papers/infer.pdf
 \end{frame}
 
 %\begin{frame}{Background: Conjunctive grammars}
