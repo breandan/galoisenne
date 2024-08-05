@@ -76,8 +76,7 @@ fun PTree.toDFA(minimize: Boolean = false) =
     )
   }.also { println("Took ${it.duration} to build FSA") }.value
   ?.also { println("Original automata had ${it
-    .let { "${it.numberOfStates} states and ${it.numberOfTransitions} transitions"}}") }
-  ?.also {
+    .let { "${it.numberOfStates} states and ${it.numberOfTransitions} transitions"}}")
     if (minimize) measureTimedValue { BAutomaton.minimize(it) }
       .also { println("Minimization took ${it.duration}") }.value
 //            .also { it.toDot().replaceAll(stbl).alsoCopy() }
