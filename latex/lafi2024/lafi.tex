@@ -236,7 +236,7 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \texttt{BTree}\big(\texttt{root}(T)\big) \text{ if $T$ is a leaf,} \vspace{5pt}\\
   \textbf{let } r = |\texttt{children}(T)|,\\
-  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
+  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
   \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
   \phantom{\textbf{Let }} q=i - F\big(F^{-1}(i)\big),\\
   \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
