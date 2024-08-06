@@ -1414,20 +1414,20 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
   The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free language.
   \noindent\begin{prooftree}
-             \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-             \RightLabel{$\downarrow$}
-             \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
-             \DisplayProof
-             \hskip 2em
-             \AxiomC{$(A \rightarrow a) \in P$}
-             \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
-             \RightLabel{$\uparrow$}
-             \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
-             \DisplayProof
-             \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-             \AxiomC{$p,q,r \in Q$}
-             \RightLabel{$\Join$}
-             \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+    \RightLabel{$\sqrt{\phantom{S}}$}
+    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+    \DisplayProof
+    \hskip 2em
+    \AxiomC{$(A \rightarrow a) \in P$}
+    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+    \RightLabel{$\uparrow$}
+    \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+    \DisplayProof
+    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+    \AxiomC{$p,q,r \in Q$}
+    \RightLabel{$\Join$}
+    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
   We specialize the Bar-Hillel construction to nominal Levenshtein automata:
