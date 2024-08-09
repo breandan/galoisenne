@@ -233,17 +233,16 @@ To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, 
 
 \begin{small}
 \begin{equation*}\label{eq:pairing}
-  \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-  \texttt{BTree}\big(\texttt{root}(T)\big) \text{ if $T$ is a leaf,} \vspace{5pt}\\
-  \textbf{let } r = |\texttt{children}(T)|,\\
-  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
-  \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
-  \phantom{\textbf{Let }} q=i - F\big(F^{-1}(i)\big),\\
-  \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
-  \phantom{\textbf{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
-  \phantom{\textbf{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
-  \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) \text{ otherwise.} \\
-  \end{cases}
+\varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+\texttt{BTree}\big(\texttt{root}(T)\big) \text{if $T$ is a leaf,} \vspace{5pt}\\
+\textbf{let } F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
+\phantom{\textbf{let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
+\phantom{\textbf{let }} q=i - F\big(F^{-1}(i)\big),\\
+\phantom{\textbf{let }} l, r = \texttt{children}[t],\\
+\phantom{\textbf{let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
+\phantom{\textbf{let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
+\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) \text{otherwise.} \\
+\end{cases}
 \end{equation*}
 \end{small}
 
