@@ -37,7 +37,7 @@ if (keyId.isPresent && password.isPresent && secretKey.isPresent) {
 }
 
 if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
-  configure<NexusPublishExtension> {
+  nexusPublishing {
     repositories {
       sonatype {
         nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
