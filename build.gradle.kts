@@ -121,7 +121,7 @@ kotlin {
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.3.3")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.0")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.3")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
@@ -153,7 +153,7 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
-        implementation("org.logicng:logicng:2.5.0")
+        implementation("org.logicng:logicng:2.5.1")
 
         val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
