@@ -1178,7 +1178,7 @@ Finally, after enumerating distinct parse trees, we can simply rerank by PCFG sc
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $t \gets \varphi'\big(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
 \State $\hat{A} \gets \hat{A} \cup \{t\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
@@ -1204,7 +1204,7 @@ Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler befor
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of repairs.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $t \gets \varphi'(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $t \gets \varphi'(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
 \State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
@@ -1228,7 +1228,7 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 
 In practice, this means the tree sampler can produce multiple parse trees which represent the same string, impeding convergence. We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by translating $\mathbb{T}_2$ into a DFA, then sampling repair trajectories in order of decreasing string likelihood. To show this is possible, let us take note of the following:
 
-  \begin{lemma}\label{lemma:upper-bound}
+  \begin{lemma}\label{lemma:acyc_gram}
     The intersection grammar, $G_\cap$, is acyclic.
   \end{lemma}
 
@@ -1245,7 +1245,7 @@ Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}
 \alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
 \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
 \end{cases}
-\begin{equation}
+\end{equation}
 
 %  To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
 %
@@ -1988,39 +1988,39 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
   \begin{figure}[H]
       \begin{tabular}{|m{6.6cm}|m{6.6cm}|}
         \hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \begin{smallpy}
 
   (*@\hlorange{form}@*) sympy import *
   x = Symbol('x', real=True)
   x, re(x), im(x)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   (*@\hlorange{\textbf{from}}@*) sympy import *
   x = Symbol('x', real=True)
   x, re(x), im(x)
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   result = (*@\hlorange{yeald}@*) From(item.create())
   raise Return(result)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+      \end{smallpy} & \begin{smallpy}
 
   result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
   raise Return(result)
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+  \end{smallpy} & \begin{smallpy}
 
   df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
 
-        \end{lstlisting} \\\hline
+        \end{smallpy} \\\hline
 %        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 %
 %  import numpy (*@\hlorange{ad}@*) np
@@ -2032,16 +2032,16 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 %  A_concate = np.array([a_0, a_1, a_2,..., a_n])
 %
 %        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \begin{smallpy}
 
   sum(len(v) for v items.values())(*@\hlred{)}@*)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   def average(values):
     if values == (1,2,3):
@@ -2049,7 +2049,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
     (*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
       return (-3+2+8-1)/4
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+      \end{smallpy} & \begin{smallpy}
 
   def average(values):
     if values == (1,2,3):
@@ -2057,8 +2057,8 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
     (*@\hlorange{elif}@*) values == (-3,2,8,-1):
       return (-3+2+8-1)/4
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   dict = {
      "Jan": 1
@@ -2066,7 +2066,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
      "Feb": 2 # and so on
   }
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   dict = {
      "Jan": 1(*@\hlgreen{,}@*)
@@ -2074,8 +2074,8 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
      "Feb": 2 # and so on
   }
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   class MixIn(object)
     def m():
@@ -2085,7 +2085,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   class classB(MixIn):
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   class MixIn(object)(*@\hlgreen{:}@*)
     def m():
@@ -2095,7 +2095,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
 
-        \end{lstlisting} \\\hline
+        \end{smallpy} \\\hline
       \end{tabular}
   \end{figure}
 
