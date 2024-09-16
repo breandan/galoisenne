@@ -121,15 +121,15 @@ kotlin {
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.0")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.7.3")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.8.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:6.0.0")
+        implementation("org.apache.datasketches:datasketches-java:6.1.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -143,7 +143,7 @@ kotlin {
         implementation("dk.brics:automaton:1.12-4")
 
         implementation("org.sosy-lab:common:0.3000-529-g6152d88")
-        implementation("org.sosy-lab:java-smt:5.0.0")
+        implementation("org.sosy-lab:java-smt:5.0.1")
 
         // val z3Version = "4.12.2-glibc_2.27"
         // runtimeOnly("org.sosy-lab:javasmt-solver-z3:$z3Version:com.microsoft.z3@jar")
@@ -153,7 +153,7 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
-        implementation("org.logicng:logicng:2.5.1")
+        implementation("org.logicng:logicng:2.6.0")
 
         val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
@@ -203,7 +203,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
       }
     }
   }

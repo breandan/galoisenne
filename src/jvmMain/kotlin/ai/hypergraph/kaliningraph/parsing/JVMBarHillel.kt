@@ -163,7 +163,8 @@ val MAX_PRODS = 150_000_000
 // and we know they will usually be the same for all calls to this function.
 fun CFG.jvmIntersectLevFSAP(fsa: FSA,
                             parikhMap: ParikhMap = this.parikhMap,
-                            lbc: List<IntRange> = this.lengthBoundsCache): CFG {
+                            lbc: List<IntRange> = this.lengthBoundsCache
+                            ): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   var clock = TimeSource.Monotonic.markNow()
 
@@ -189,7 +190,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
   ct.parallelStream()
-    .filter {
+    .filter { it: Π3<STC, STC, Int> ->
       // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
       // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
       // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
@@ -240,6 +241,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
 
   clock = TimeSource.Monotonic.markNow()
   return Stream.concat(binaryProds.stream(), (initFinal + transits + unitProds).stream()).parallel()
+    // A production, e.g., * -> * [G], can be removed if the synthetic nonterminal [G] does not exist, i.e.,
+    // every instance of [G] -> * * was incompatible with the FSA, so the nonterminal [G] is "unproductive".
     .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
@@ -365,7 +368,7 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
     .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
     .freeze()
     .jvmRemoveUselessSymbols(nts)
-  //.jdvpNew()
+//  .jdvpNew()
 
   println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
