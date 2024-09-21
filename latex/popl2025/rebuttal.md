@@ -55,15 +55,15 @@ m-n
  ⋮                      ⋮                 ⋮                      ⋱
 ```
 
-We can think of this full PPM as a 4D lookup table. $π(v: V, m: \mathbb{Z}, n: \mathbb{Z}, s:\Sigma) \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}$ It stores the minimum and maximum number of each terminal that each nonterminal must and can generate, assuming it generates a string whose length falls between $m$ and $n$. This can be computed once for each grammar and cached for later use in the modified Bar-Hillel construction.
+We can think of this full PPM as a 4D lookup table, $π(v: V, m: \mathbb{Z}, n: \mathbb{Z}, s:\Sigma) \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}$. It stores the minimum and maximum number of each terminal that each nonterminal must and can generate, assuming it generates a string whose length falls between $m$ and $n$. This can be computed once for each grammar and cached for later use in the modified Bar-Hillel construction.
 
-Suppose we are given a broken string of length |σ| = 5, and we want to search a Levenshtein radius of d = 2. Then we would look up the parameterized Parikh map between length 3 and 7, representing the minimum and maximum number of each terminal that each nonterminal can generate, across all parsable strings between length 3 and 7.
+Suppose we are given a broken string of length $|\sigma| = 5$, and we want to search a Levenshtein radius of $d = 2$. Then we would look up the parameterized Parikh map between length 3 and 7, representing the minimum and maximum number of each terminal generates, across all strings in the nonterminal's language between length 3 and 7.
 
 This optimization eliminates the vast majority of all useless productions from the synthetic intersection grammar and allows us to scale up the Bar-Hillel construction to real-world syntax repairs, making it tractable to construct for large grammars (e.g., Python) and Levenshtein automata (~80x4 states). This contribution is the crux of the paper without which it would be impossible (or at least, very difficult) to implement repairs in the manner described.
 
 More generally, the porous completion technique can be used to fill in code containing syntactic holes, so it has applications outside of the specific problem we are addressing in this paper.
 
-Finally, we would like to point out an oversight the reviewers missed in the submitted manuscript. The pairing function (Eq. 14) should instead be defined as follows:
+Finally, we would like to point out an oversight the reviewers missed in the submitted manuscript. The pairing function (Eq. 14) should have been defined as follows:
 
 $$$
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
@@ -96,7 +96,7 @@ Please see our response to Reviewer #257C (What "fraction"?) for a back-of-the-e
 
 - I don't understand what the arrow between "Code edits" and "Edit automaton" refers to.
 
-This arrow indicates the edit automaton generates all single-token code edits. Strictly speaking, the only input to the edit automaton is the alphabet and the original, broken source code snippet. The arrow is not a transformation but depicts an equivalence relation; the set of code edits in Fig. 1 is simply artistic embellishment and is never actually materialized in this step.
+This arrow indicates the edit automaton generates all single-token code edits. Strictly speaking, the only input to the edit automaton is the alphabet ($\Sigma$) and the original source code snippet ($\sigma$). The arrow here is not a transformation but depicts an equivalence relation; the set of code edits in Fig. 1 is simply artistic embellishment and is never actually materialized.
 
 - The example at the top of Section 2 is appreciated but the details in the rest of this section are inscrutable at this point in the paper... What is the notation [= (] on the right hand side?
 
@@ -114,7 +114,7 @@ These remarks are helpful, thank you. $q_{i,j}$ should read $q_{i,j} \in Q$. Sec
 
 Seq2Parse and BIFI are both neural program repair models and approximately target the same problem, but use neural language models. They are the most recent and relevant models in neural program repair.
 
-Diekmann and Tratt's paper does handle arbitrary CFGs, nor guarantee completeness across all possible repairs in all locations, only a fixed location. It is only designed to work only with LR parsers. It could be a weak baseline to compare against for Python, their method would have a significant disadvantage in our comparison as it does not have any notion of "training data" or the naturalness of a repair sequence.
+Diekmann and Tratt's (2020) paper does handle arbitrary CFGs, nor guarantee completeness across all possible repairs in all locations, only a fixed location. It is only designed to work only with LR parsers. It could be a weak baseline to compare against for Python however the method they present would have an unfair disadvantage in our comparison as it has no notion of "training data" or "naturalness" of a repair sequence.
 
 - 775-781: describes "stability" of dataset repairs. why should we care about this?
 
@@ -122,7 +122,7 @@ Stability is an interesting concept as it relates to error localization. It tell
 
 - 741-752: different machines used for tidyparse compared to related work? no explanation?? 150GB RAM for tidyparse???
 
-The techniques are designed to be executed on fundamentally different computing platforms – in fact, we even gave an advantage to the neural repair models by evaluating on GPUs which have significantly more processing power. Please see our reply to Reviewer #257C (What "fraction"?) for a more detailed comparison of the energy consumption of our method relative to Seq2Parse and BIFI. We evaluated on both a standard MacBook and a server to simulate an offline and server deployment of the repair system.
+The neural techniques are designed to be executed on fundamentally different hardware architectures – in fact, we even gave an advantage to the neural repair models by evaluating on GPUs which have significantly more processing power. Please see our reply to Reviewer #257C (What "fraction"?) for a more detailed comparison of the energy consumption of our method relative to Seq2Parse and BIFI. We evaluated on both a standard MacBook and a server to simulate an offline and server deployment of the repair system.
 
 - "we rebalanced the...dataset...across each length interval and edit distance..." what does this mean? is data pruned?
 
@@ -130,12 +130,12 @@ Yes, data is pruned to ensure that each length interval and edit distance bucket
 
 - Fig 12: presumably being described in 853-866, but missing explicit reference. caption says 30s while text says 10 seconds. if the goal is to measure throughput, the plot suggests throughput increases as edit distance goes up, but surely that's just a function of there being fewer possible repairs at all for fewer edits?
 
-The text should read 30s, although this is the global timeout and each trial does not necessarily consume the entire time alloted - indeed, as result of there being fewer repairs to enumerate. This is the advantage of using a generating function: it gives you a "progress bar" and tells you once there are no further repairs to enumerate so one can terminate early.
+The text should read 30s, although this is the global timeout and each trial does not necessarily consume the whole time alloted - indeed, as result of there being fewer repairs to enumerate. This is the advantage of using a generating function: it serves as a "progress bar" and indicates once there are no further repairs to enumerate so one can terminate early.
 
 Review #257B
 ===========================================================================
 
-The content of this review is the most insightful of the three, irrespective of the expertise or merit assigned. We want to thank this reviewer for their curiosity, openness to engage with the content beyond a cosmetic level, attention to detail and thoughtful feedback.
+The content of this review is the most insightful of the three, irrespective of the expertise or merit assigned. We want to thank this reviewer for their open-minded curiosity, willingness to engage with the content beyond a cosmetic level, and thoughtful feedback.
 
 - Difference between $2^V$ and $\mathbb{Z}_2^{|V|}$ is that the former has the subset ordering and the latter has the lexicographic ordering?
 
