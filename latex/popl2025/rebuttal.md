@@ -61,11 +61,9 @@ Suppose we are given a broken string of length $|\sigma| = 5$, and we want to se
 
 This optimization eliminates the vast majority of all useless productions from the synthetic intersection grammar and allows us to scale up the Bar-Hillel construction to real-world syntax repairs, making it tractable to construct for large grammars (e.g., Python) and Levenshtein automata (~80x4 states). This contribution is the crux of the paper without which it would be impossible (or at least, very difficult) to implement repairs in the manner described.
 
-More generally, the porous completion technique can be used to fill in code containing syntactic holes, so it has applications outside of the specific problem we are addressing in this paper.
-
 Finally, we would like to point out an oversight the reviewers missed in the submitted manuscript. The pairing function (Eq. 14) should have been defined as follows:
 
-$$$
+$$
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \\
   \textbf{let } F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
@@ -77,7 +75,7 @@ $$$
   \phantom{\textbf{let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
   \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
   \end{cases}
-$$$
+$$
 
 Review #257A
 ===========================================================================
