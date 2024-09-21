@@ -112,7 +112,7 @@ These remarks are helpful, thank you. $q_{i,j}$ should read $q_{i,j} \in Q$. Sec
 
 Seq2Parse and BIFI are both neural program repair models and approximately target the same problem, but use neural language models. They are the most recent and relevant models in neural program repair.
 
-Diekmann and Tratt's (2020) paper does handle arbitrary CFGs, nor guarantee completeness across all possible repairs in all locations, only a fixed location. It is only designed to work only with LR parsers. It could be a weak baseline to compare against for Python however the method they present would have an unfair disadvantage in our comparison as it has no notion of "training data" or "naturalness" of a repair sequence.
+Diekmann and Tratt's (2020) paper does not handle arbitrary CFGs, nor guarantee completeness across all possible repairs in all locations, only a fixed location. It is only designed to work only with LR parsers. It could be a weak baseline to compare against for Python however the method they present would have an unfair disadvantage in our comparison as it has no notion of "training data" or "naturalness" of a repair sequence.
 
 - 775-781: describes "stability" of dataset repairs. why should we care about this?
 
@@ -163,7 +163,7 @@ The ADT definition is somewhat dissatisfying as the only constraint it enforces 
 
 (0) the CNF property of no mixed terminals and nonterminals, i.e., we want to forbid `S -> Bq`, where `B` is a nonterminal and `q` is a terminal. 
 
-The ADT does not enforce sharing, rather it is maintained externally by the implementation of $\otimes, \oplus$, which groups by the roots and aggregates their children at each step. A naive interpretation of the ADT does impose any constraints except (0), but three side conditions are necessary to be semantically meaningful in the context of CFG parsing:
+The ADT does not enforce sharing, rather it is maintained externally by the implementation of $\otimes, \oplus$, which groups by the roots and aggregates their children at each step. A naive interpretation of the ADT does not impose any constraints except (0), but three side conditions are necessary to be semantically meaningful in the context of CFG parsing:
 
 (1) it must conform to the productions of CFG in CNF, i.e., if `S -> BC` is the only productions whose left-hand side is `S`, then the following tree will typesafe, but semantically meaningless:
 
