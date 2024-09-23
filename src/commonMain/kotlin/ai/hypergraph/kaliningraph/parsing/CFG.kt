@@ -60,7 +60,8 @@ val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).next
 val CFG.ntLst by cache { (symbols + "ε").toList() }
 val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
 
-// Maps each nonterminal to the set of nonterminals that can generate it
+// Maps each nonterminal to the set of nonterminal pairs that can generate it,
+// which is then flattened to a list of adjacent pairs of nonterminal indices
 val CFG.vindex: Array<IntArray> by cache {
   Array(bindex.indexedNTs.size) { i ->
     bimap[bindex[i]].filter { it.size > 1 }

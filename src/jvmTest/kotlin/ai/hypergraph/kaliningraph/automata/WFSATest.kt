@@ -139,8 +139,13 @@ class WFSATest {
   fun testRepulsivePointProcess() {
     Automaton.setMinimization(Automaton.MINIMIZE_BRZOZOWSKI)
     // One-hot vector where 1s are separated by at least three 0s
-    val a1 = RegExp("[01]{10}&(0*(10{3,})*1?0*)").toAutomaton().apply { minimize() }
-    println(a1.toDot())
+    val a1 = RegExp("[01]{13}&(0{3,5}(10{3,5}){2,}1?0{3,5})").toAutomaton().apply { minimize() }
+    println(a1.toDot()
+      .replace("0-1", "□|■")
+      .replace("[label=\"", "[fontsize=\"20\", label=\"")
+      .replace("\"0\"", "\"□\"")
+      .replace("\"1\"", "\"■\"")
+    )
     a1.finiteStrings.forEach {
       var minDist = Int.MAX_VALUE
       var lastIdx = -4

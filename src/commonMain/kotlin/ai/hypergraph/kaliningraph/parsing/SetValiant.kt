@@ -122,6 +122,11 @@ fun CFG.toBitVec(nts: Set<Σᐩ>): Blns =
   else BooleanArray(nonterminals.size) { false }
     .also { if (1 == nts.size) it[bindex[nts.first()]] = true }
 
+// Takes list of adjacent pairs of indices for each nonterminal
+// 1: A, 2: B, 3: C
+// 1: 12 21 22 23 === [12212223, ...]
+//                     ^ index 1
+// This would represent A -> AB, A -> BA, A -> BB, A -> BC
 fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: Blns, right: Blns): Blns {
   if (left.isEmpty() || right.isEmpty()) return booleanArrayOf()
 
