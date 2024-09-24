@@ -196,28 +196,30 @@ If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then co
 \end{minipage}
 
 \begin{align*}
-M_0=
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\hspace{-0.5cm}\resizebox{.86\columnwidth}{!}{
+$M$_0 =
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
    \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
-   \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
-               &          &             &        & \varnothing\\
-               &          &             &        & \hat\sigma_n \\
-   \varnothing & \Cdots   &             &        & \varnothing
+   \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
+               &              &             &        & \varnothing\\
+               &              &             &        & \hat\sigma_n \\
+   \varnothing & \Cdots       &             &        & \varnothing
 \end{pNiceMatrix} \Rightarrow
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
   \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
-  \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-              &          &         &        & \Lambda\\
-              &          &         &        & \hat\sigma_n \\
-  \varnothing & \Cdots   &         &        & \varnothing
+  \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+              &              &         &        & \Lambda\\
+              &              &         &        & \hat\sigma_n \\
+  \varnothing & \Cdots       &         &        & \varnothing
 \end{pNiceMatrix} \Rightarrow \ldots \Rightarrow M_\infty =
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
    \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
-   \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-               &          &         &        & \Lambda\\
-               &          &         &        & \hat\sigma_n \\
-   \varnothing & \Cdots   &         &        & \varnothing
+   \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+               &              &         &        & \Lambda\\
+               &              &         &        & \hat\sigma_n \\
+   \varnothing & \Cdots       &         &        & \varnothing
 \end{pNiceMatrix}
+}
 \end{align*}
 
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
@@ -229,7 +231,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \mysection{Parsing Dynamics}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, and the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\vspace{0.5cm}
+      Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, with the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\vspace{0.5cm}
       \end{minipage}
 
       \null\hspace*{2.7cm}\begin{minipage}[c]{\columnwidth}
@@ -343,7 +345,7 @@ s_1\oplus s_2 = \big[s_1[v] \vee s_2[v]\big]_{v \in V} \\
 
 \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
 Initially, we have $M_0[r+1=c](G', \sigma) = {\sigma_r}$
-Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this has type GRE.
+Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this has type GRE, recognizing the finite CFL slice.
 \end{minipage}
 
 \jointspacing
@@ -383,20 +385,20 @@ Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{R
 \end{multicols}
 
     \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-    The key property we care about is that this allows us to lazily compute language intersections, without first materializing the automaton.
+    The key property we care about is, this formulation allows us to sample lazily from language intersections, without first materializing the product automaton.
     \end{minipage}
 
     \jointspacing
 
-      \mysection{Example: Determinantal Point Process}
+      \mysection{Example: Determinantal Point Processes}
 
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Consider a time series, $A$, whose points which are neither too close nor far apart, and $n \leq \sum_i^{|A|} A_i$. We want to sample the typical set using an LLM.\vspace{0.5cm}
+      Consider a time series, $A$, whose points which are not too close nor far apart, and $n \leq \sum_{i=1}^{|A|} [A_i = \bs]$. We want to sample the typical set using an LLM.\vspace{0.5cm}
 \begin{itemize}[leftmargin=2cm]
 \item The words are bitvectors of some length $T$, i.e., $A = \{\ws, \bs\}^T$
-\item Consecutive $\bs$ separated by $\ws^{[a,b]}$, i.e., $B = \ws^*(\bs\ws^{[a, b]})^{[2,\infty)}\{\bs,\epsilon\}\ws^*$
+\item Consecutive $\bs$ separated by $\ws^{[a,b]}$, i.e., $B = \ws^*(\bs\ws^{[a, b]})^{[n,\infty)}\{\bs,\epsilon\}\ws^*$
 \end{itemize}\vspace{0.5cm}
 
 The DPP language is regular. Let $C$ be an FSA such that $\mathcal{L}(C) = \mathcal{L}(A) \cap \mathcal{L}(B)$. For example, here is the minimal automaton for $T=13, a=3, b=5, n=2$.
@@ -412,8 +414,8 @@ The DPP language is regular. Let $C$ be an FSA such that $\mathcal{L}(C) = \math
 \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-This automaton can grow very large, and we may only need to sample a small subautomaton with probabilistic support.
-Question: Can we incrementally sample from $\mathcal{L}(C)$ while ensuring there is always a valid rightwards continuation?
+This automaton for $\mathcal{L}(C)$ can grow very large, and we may only need to sample a small sublanguage with probabilistic support.
+Question: Can we incrementally sample $\mathcal{L}(C)$ while ensuring there is always a valid rightwards continuation?
 \vspace{2cm}
       \end{minipage}
 
