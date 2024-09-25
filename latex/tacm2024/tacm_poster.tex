@@ -175,8 +175,8 @@
 
 \mysection{Motivation}
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-Suppose we want to force an autoregressive LLM to generate syntactically valid next tokens $P(x_n \mid x_1, \ldots, x_{n-1})$, under certain resource constraints. Here is a concrete example: ``generate a valid arithmetic expression in ten or fewer tokens''. If we sample the partial trajectory:
-\begin{center}\texttt{( a + ( c * }\underline{\texttt{(}}\end{center}\\
+Suppose we want to force an autoregressive LLM to generate syntactically valid next tokens $P(x_n \mid x_1, \ldots, x_{n-1})$, under certain resource constraints. Here is a concrete example: ``Generate an arithmetic expression with two or more variables in ten or fewer tokens.''. If we sample the partial trajectory,
+\begin{center}\texttt{( x + ( y * }\underline{\texttt{(}}\end{center}\\
 then we will spend quite a long time rejecting invalid completions, because this trajectory has past the point of no return. Even though \texttt{(} is a locally valid continuation, we need to avoid this scenario, because we would like a linear sampling delay and to guarantee this, we must avoid backtracking.
 \end{minipage}
 
@@ -184,7 +184,7 @@ then we will spend quite a long time rejecting invalid completions, because this
 
       \mysection{Semiring Parsing}
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-          Given a CFG $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{0.5cm}
+          Given a CFG, $G: \mathcal{G} = \langle V, \Sigma, P, S\rangle$, in Chomsky Normal Form (CNF), we may construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, where $0$ is $\varnothing$, $\oplus$ is $\cup$, and $\otimes$ be defined as:\vspace{1cm}
       \end{minipage}
 
       \[
@@ -192,7 +192,7 @@ then we will spend quite a long time rejecting invalid completions, because this
       \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
+If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G, \sigma) = \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
 \end{minipage}
 
 \begin{align*}
@@ -223,12 +223,12 @@ $M$_0 =
 \end{align*}
 
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
+CFL membership is recognized by $R(G, \sigma) = [S \in \Lambda^*_\sigma] \Leftrightarrow [\sigma \in \mathcal{L}(G)]$.
 \end{minipage}
 
       \jointspacing
 
-      \mysection{Parsing Dynamics}
+      \mysection{Porous Completion}
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
       Let us consider an example with two holes, $\sigma = 1$ \underline{\hspace{1cm}} \underline{\hspace{1cm}}, with the grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'=\{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$.\vspace{0.5cm}
@@ -304,7 +304,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-Regular expressions that permit union, intersection and concatenation are called generalized regular expressions (GREs) and can be constructed as follows:
+Regular expressions that permit union, intersection and concatenation are called generalized regular expressions (GREs). These can be constructed as follows:
 \end{minipage}
 
 \vspace{-2cm}
@@ -328,7 +328,7 @@ Regular expressions that permit union, intersection and concatenation are called
 \jointspacing
 
 \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-Finite slices of a CFL are finite and thus regular a fortiori. Just like sets, bitvectors and other datatypes, we can also propagate GREs through a parse chart. Here, the algebra will carry $\text{GRE}^{|V|}$, where 0 is $\varnothing$, and $\oplus, \otimes$ are defined:
+Finite slices of a CFL are finite and therefore regular a fortiori. Just like sets, bitvectors and other datatypes, we can also propagate GREs through a parse chart. Here, the algebra will carry $\text{GRE}^{|V|}$, where 0 is $\varnothing$, and $\oplus, \otimes$ are defined:
 \end{minipage}
 
 \vspace{-2cm}
@@ -339,13 +339,13 @@ Finite slices of a CFL are finite and thus regular a fortiori. Just like sets, b
 \hspace{3cm}s_1\otimes s_2 = \Big[\bigvee_{(v \rightarrow AB) \in P} s_1[A] \cdot s_2[B] \Big]_{v \in V} \\
 \end{eqnarray*} \break\vspace{-0.45cm}
 \begin{eqnarray*}
-s_1\oplus s_2 = \big[s_1[v] \vee s_2[v]\big]_{v \in V} \\
+\phantom{--}s_1\oplus s_2 = \big[s_1[v] \vee s_2[v]\big]_{v \in V} \\
 \end{eqnarray*}
 \end{multicols}
 
 \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-Initially, we have $M_0[r+1=c](G', \sigma) = {\sigma_r}$
-Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this has type GRE, recognizing the finite CFL slice.
+Initially, we have $M_0[r+1=c](G, \sigma) = \Sigma$.
+Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this will be a GRE recognizing the finite CFL slice.
 \end{minipage}
 
 \jointspacing
@@ -355,21 +355,21 @@ Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this has
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{Reg} \rightarrow \textsc{Reg}$, which slices the prefix off a language: $\partial_a S = \{b \in \Sigma^* \mid ab \in S\}$. The Brzozowski derivative over a GRE is a effectively a normalizing rewrite system:
+Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{Reg} \rightarrow \textsc{Reg}$, which slices a given prefix off a language: $\partial_a L = \{b \in \Sigma^* \mid ab \in L\}$. The Brzozowski derivative over a GRE is effectively a normalizing rewrite system:
       \end{minipage}
 
 \vspace{-1cm}
 \begin{multicols}{2}
 \begin{eqnarray*}
-\partial_a & \varnothing & = \varnothing                                           \\
-\partial_a & \varepsilon & = \varnothing                                           \\
-\partial_a & a           & = \varepsilon                                           \\
-\partial_a & b           & = \varnothing  \text{ for each } a \neq b               \\
-\partial_a & R^*         & = (\partial_x R)\cdot R^*                               \\
-\partial_a & \neg R      & = \neg \partial_a R                                     \\
-\partial_a & R\cdot S    & = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
-\partial_a & R\vee S     & = \partial_a R \vee \partial_a S                        \\
-\partial_a & R\land S    & = \partial_a R \land \partial_a S
+\phantom{--}\partial_a & \varnothing & = \varnothing                                           \\
+\phantom{--}\partial_a & \varepsilon & = \varnothing                                           \\
+\phantom{--}\partial_a & a           & = \varepsilon                                           \\
+\phantom{--}\partial_a & b           & = \varnothing  \text{ for each } a \neq b               \\
+\phantom{--}\partial_a & R^*         & = (\partial_x R)\cdot R^*                               \\
+\phantom{--}\partial_a & \neg R      & = \neg \partial_a R                                     \\
+\phantom{--}\partial_a & R\cdot S    & = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
+\phantom{--}\partial_a & R\vee S     & = \partial_a R \vee \partial_a S                        \\
+\phantom{--}\partial_a & R\land S    & = \partial_a R \land \partial_a S
 \end{eqnarray*} \break\vspace{-0.45cm}
 \begin{eqnarray*}
 \delta(& \varnothing &)= \varnothing                                      \\
@@ -395,9 +395,9 @@ Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{R
       \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Consider a time series, $A$, whose points which are not too close nor far apart, and $n \leq \sum_{i=1}^{|A|} [A_i = \bs]$. We want to sample the typical set using an LLM.\vspace{0.5cm}
+      Consider a time series, $A$, whose points which are not too close nor far apart, and $n \leq \sum_{i=1}^{|A|} \mathbf{1}[A_i = \bs]$. We want to sample the typical set using an LLM.\vspace{0.5cm}
 \begin{itemize}[leftmargin=2cm]
-\item The words are bitvectors of some length $T$, i.e., $A = \{\ws, \bs\}^T$
+\item The words are bitvectors of some length, $T$, i.e., $A = \{\ws, \bs\}^T$
 \item Consecutive $\bs$ separated by $\ws^{[a,b]}$, i.e., $B = \ws^*(\bs\ws^{[a, b]})^{[n,\infty)}\{\bs,\epsilon\}\ws^*$
 \end{itemize}\vspace{0.5cm}
 
@@ -414,8 +414,8 @@ The DPP language is regular. Let $C$ be an FSA such that $\mathcal{L}(C) = \math
 \jointspacing
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-This automaton for $\mathcal{L}(C)$ can grow very large, and we may only need to sample a small sublanguage with probabilistic support.
-Question: Can we incrementally sample $\mathcal{L}(C)$ while ensuring there is always a valid rightwards continuation?
+This automaton for $\mathcal{L}(C)$ can grow very large, and we may only need to sample a small sublanguage with distributional support.
+Question: Can we incrementally subsample $\mathcal{L}(C)$ while ensuring partial trajectories always lead to acceptance?
 \vspace{2cm}
       \end{minipage}
 

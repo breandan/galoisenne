@@ -7,7 +7,7 @@ Porous completion is a general technique for abstract parsing with holes that we
 
 > To obtain the parameterized Parikh map (PPM) of a length-bounded CFG, we abstractly parse the porous string and take the minimal cover of all intervals, which subsumes the Parikh image of every repair in the Levenshtein ball.
 
-To restate this in more explicit terms, we precompute $\mathbb{T}_3$ for porous strings up to some large number, i.e, {`_`, `_ _`, `_ _ _`, ...}. Recall $\mathbb{T}_3$ is simply a dictionary mapping each participating nonterminal $v_i: V$ to a $T: \mathbb{T}_2$, the ADT representing all parse forests sharing the root $v$. This will produce a lookup table of string lengths and nonterminals to $\mathbb{T}_2$ instances. 
+To restate this in more explicit terms, we precompute $\mathbb{T}_3$ for porous strings up to some large number, i.e., {`_`, `_ _`, `_ _ _`, ...}. Recall $\mathbb{T}_3$ is simply a dictionary mapping each participating nonterminal $v_i: V$ to a $T: \mathbb{T}_2$, the ADT representing all parse forests sharing the root $v$. This will produce a lookup table of string lengths and nonterminals to $\mathbb{T}_2$ instances. 
 
 ```
       V      v1       v2        v3     …
