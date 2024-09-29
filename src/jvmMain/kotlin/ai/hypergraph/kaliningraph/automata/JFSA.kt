@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.automata
 
-import NUM_CORES
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.markovian.mcmc.MarkovChain

@@ -5,8 +5,6 @@ import ai.hypergraph.kaliningraph.repair.TIMEOUT_MS
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import org.junit.jupiter.api.Test
-import parallelize
-import repairInParallel
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.test.*
