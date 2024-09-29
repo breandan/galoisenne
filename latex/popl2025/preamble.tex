@@ -115,6 +115,13 @@ literate={`}{{\char0}}1,
 escapeinside={(*@}{@*)}
 }
 
+\lstnewenvironment{smallpy}
+{\lstset{
+  basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi,
+  language=python
+}}
+{}
+
 \lstdefinelanguage{tidy}{
 comment=[l]{//},
 commentstyle={\color{gray}\ttfamily},

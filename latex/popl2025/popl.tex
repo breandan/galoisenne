@@ -9,8 +9,7 @@
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
 %\documentclass[sigplan,nonacm]{acmart}
-\documentclass[sigplan,review,acmsmall,nonacm,screen,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
-
+\documentclass[sigplan,acmsmall,nonacm,screen]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
@@ -37,12 +36,12 @@
 
 \input{preamble}
 
-%\usepackage{draftwatermark}
-%\SetWatermarkLightness{0.7}
-%\SetWatermarkText{DRAFT}
-%\makeatletter
-%\let\@authorsaddresses\@empty
-%\makeatother
+\usepackage{draftwatermark}
+\SetWatermarkLightness{0.75}
+\SetWatermarkText{DRAFT}
+\makeatletter
+\let\@authorsaddresses\@empty
+\makeatother
 
 \begin{document}
 %
@@ -363,18 +362,18 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
   Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
   \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
-    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $A = L(\err\sigma, d) \cap \ell$.
+    Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
   \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
 %
 
-  As the admissible set $A$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
+  As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
 
   \begin{definition}[Ranked repair]\label{def:ranked-repair}
-    Given a finite language $A = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
+    Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq A, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+      R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
@@ -521,7 +520,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \subsection{Preliminaries}\label{sec:prelim}
 
-  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -570,7 +569,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \UnaryInfC{$q_{0,0} \in I$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$q_{i, j}$}
+    \AxiomC{$q_{i, j} \in Q$}
     \AxiomC{$|n-i+j| \leq d_{\max}$}
     \RightLabel{$\textsc{Done}$}
     \BinaryInfC{$q_{i, j}\in F$}
@@ -712,22 +711,22 @@ First, we generate a synthetic grammar representing the intersection between the
   To avoid creating a parallel bundle of arcs for each insertion and substitution point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
 
   \begin{prooftree}
-    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
     \RightLabel{$\duparrow$}
     \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
     \RightLabel{$\ddiagarrow$}
     \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
   \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
     \RightLabel{$\drightarrow$}
     \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
     \DisplayProof
     \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
     \RightLabel{$\knightarrow$}
     \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
@@ -817,7 +816,7 @@ First, we generate a synthetic grammar representing the intersection between the
     \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}\vspace{2pt}
 
-  \noindent Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = A$, satisfying Def.~\ref{def:bcflr}. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization.
+  \noindent Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = \ell_\cap$, satisfying Def.~\ref{def:bcflr}. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization.
 
 %Specifically, we compute Parikh intervals generated by every path though the Levenshtein automaton, then intersect the Parikh intervals for the candidate nonterminals in question. For example, suppose we have a $p, q, r: Q$ and $w \rightarrow x z$. Let's check...
 
@@ -929,7 +928,7 @@ First, we generate a synthetic grammar representing the intersection between the
   }
   \end{small}
 
-  \vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A$, but $M_\infty$ does not explicitly reveal its identity.
+  \vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A(\sigma)$, but $M_\infty$ does not explicitly reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
@@ -1133,10 +1132,11 @@ To sample all trees in a $T: \mathbb{T}_2$ uniformly without replacement, we pre
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \vspace{5pt}\\
   \textbf{let } F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
-  \phantom{\textbf{let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
-  \phantom{\textbf{let }} q=i - F\big(F^{-1}(i)\big),\\
+  \phantom{\textbf{let }} F^{-1}(u) = \inf \big\{x \mid u \leq F(x)\big\},\\
+  \phantom{\textbf{let }} t = F\big(F^{-1}(i)\big),\\
+  \phantom{\textbf{let }} q = i - t,\\
   \phantom{\textbf{let }} l, r = \texttt{children}[t],\\
-  \phantom{\textbf{let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
+  \phantom{\textbf{let }} q_1, q_2 = \big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
   \phantom{\textbf{let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
   \texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
   \end{cases}
@@ -1178,7 +1178,7 @@ Finally, after enumerating distinct parse trees, we can simply rerank by PCFG sc
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $t \gets \varphi'\big(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
 \State $\hat{A} \gets \hat{A} \cup \{t\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
@@ -1194,7 +1194,7 @@ Specifically, given a string $\sigma: \Sigma^*$, we factorize the probability $P
 \text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
 \end{equation}
 
-Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
+Finally, for each retrieved set $\hat{A} \subseteq \ell_\cap$ drawn by the sampler before a predetermined timeout elapses and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
 
 \begin{algorithm}[H]
 \caption{Enumerative tree sampling with n-gram reranking}
@@ -1204,7 +1204,7 @@ Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler befor
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of repairs.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $t \gets \varphi'(T, \texttt{seed++})}$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+\State $t \gets \varphi'(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
 \State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
@@ -1212,7 +1212,7 @@ Finally, for each retrieved set $\hat{A} \subseteq A$ drawn by the sampler befor
 \end{algorithmic}
 \end{algorithm}
 
-If $\hat{A} = A$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise, it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$, and how well the distribution $P_\theta$ approximates the true distribution of interest.
+If $\hat{A} = \ell_\cap$ and the Markov chain is itself the language model being maximized, then this procedure satisfies Def.~\ref{def:ranked-repair}. Otherwise, it is a heuristic, and the quality of the ranking will depend on the quality of $\hat{A}$, and how well the distribution $P_\theta$ approximates the true distribution of interest.
 
   \subsection{Decoding repairs in order of maximal likelihood using an FSA}\label{sec:decoding}
 
@@ -1228,7 +1228,7 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 
 In practice, this means the tree sampler can produce multiple parse trees which represent the same string, impeding convergence. We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by translating $\mathbb{T}_2$ into a DFA, then sampling repair trajectories in order of decreasing string likelihood. To show this is possible, let us take note of the following:
 
-  \begin{lemma}\label{lemma:upper-bound}
+  \begin{lemma}\label{lemma:acyc_gram}
     The intersection grammar, $G_\cap$, is acyclic.
   \end{lemma}
 
@@ -1245,7 +1245,7 @@ Constructively, let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}
 \alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
 \sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
 \end{cases}
-\begin{equation}
+\end{equation}
 
 %  To decode the top-k maximum likelihood results without extracting all repairs and reranking, one can instead define an automata algebra over $\mathcal{M}^{|V|}$, propagating a vector of NFAs, $A$ indexed by the nonterminal $v: V$:
 %
@@ -1918,7 +1918,9 @@ In particular, we care about the problem of \textit{top-k decoding}, which attem
 
 A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, huang2007forest, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs. Our approach is also complementary to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
 
-  An alternate approach would be to use MCMC or a sequential Monte Carlo method to steer a transformer-based LLM, as proposed by Lew et al.~\cite{lew2023sequential}. This technique is particularly useful for constrained sampling from LLMs, and could be adapted to our setting to improve sample efficiency. The downside is that it introduces a dependency on an LLM, which requires a very large dataset to train and is more computationally expensive than cube-pruning. Furthermore, distinct sampling is unclear how to do properly, as LLMs are not trained to generate unique samples, and sampling without replacement is a fundamentally non-Markovian process. One potential solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can introduce a significant latency overhead.
+  An alternate line of work originates from combinatorics~\cite{hickey1983uniform, gore1997quasi} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. Unlike our method, distinctness or convergence guarantees for arbitrary finite CFLs are not provided.
+
+  Another approach would be to use MCMC or sequential Monte Carlo (SMC) to steer a transformer-based LLM, as proposed by Lew et al.~\cite{lew2023sequential}. This technique shows promise for constrained sampling from LLMs, and could be adapted to improve sample efficiency. The downside is that distinct sampling an LLM is unclear how to do properly, being a fundamentally non-Markovian process. One solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can introduce a significant latency overhead.
 
   Our approach is complementary to existing work in constrained decoding. The bijection proposed in Eq.~\ref{eq:pairing} guarantees that all repairs are well-formed and converge linearly to the exact top-k maximum likelihood samples. This method is completely stateless and can be used to enumerate a bounded Levenshtein ball with linear parallelization speedup. Alternately, in the case of approximate ranked repair over a very large sample space, this technique can be adapted to sample with high probability a representative subset of the most likely sentences in a finite but large PCFG.
 
@@ -1988,39 +1990,39 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
   \begin{figure}[H]
       \begin{tabular}{|m{6.6cm}|m{6.6cm}|}
         \hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \begin{smallpy}
 
   (*@\hlorange{form}@*) sympy import *
   x = Symbol('x', real=True)
   x, re(x), im(x)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   (*@\hlorange{\textbf{from}}@*) sympy import *
   x = Symbol('x', real=True)
   x, re(x), im(x)
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   result = (*@\hlorange{yeald}@*) From(item.create())
   raise Return(result)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+      \end{smallpy} & \begin{smallpy}
 
   result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
   raise Return(result)
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+  \end{smallpy} & \begin{smallpy}
 
   df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
 
-        \end{lstlisting} \\\hline
+        \end{smallpy} \\\hline
 %        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
 %
 %  import numpy (*@\hlorange{ad}@*) np
@@ -2032,16 +2034,16 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 %  A_concate = np.array([a_0, a_1, a_2,..., a_n])
 %
 %        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \begin{smallpy}
 
   sum(len(v) for v items.values())(*@\hlred{)}@*)
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   def average(values):
     if values == (1,2,3):
@@ -2049,7 +2051,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
     (*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
       return (-3+2+8-1)/4
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+      \end{smallpy} & \begin{smallpy}
 
   def average(values):
     if values == (1,2,3):
@@ -2057,8 +2059,8 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
     (*@\hlorange{elif}@*) values == (-3,2,8,-1):
       return (-3+2+8-1)/4
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   dict = {
      "Jan": 1
@@ -2066,7 +2068,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
      "Feb": 2 # and so on
   }
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   dict = {
      "Jan": 1(*@\hlgreen{,}@*)
@@ -2074,8 +2076,8 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
      "Feb": 2 # and so on
   }
 
-        \end{lstlisting} \\\hline
-        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} \\\hline
+        \begin{smallpy}
 
   class MixIn(object)
     def m():
@@ -2085,7 +2087,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   class classB(MixIn):
 
-        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+        \end{smallpy} & \begin{smallpy}
 
   class MixIn(object)(*@\hlgreen{:}@*)
     def m():
@@ -2095,7 +2097,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
 
-        \end{lstlisting} \\\hline
+        \end{smallpy} \\\hline
       \end{tabular}
   \end{figure}
 
@@ -2247,14 +2249,14 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
     In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
   \end{proof}
 
-  Let us now consider the maximum growth rate of the \textit{admissible set}, $A \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $A$.
+  Let us now consider the maximum growth rate of the \textit{admissible set}, $\ell_\cap \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $\ell_\cap$.
 
   \begin{lemma}\label{lemma:interleaving}
-  The complexity of enumerating $A$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
+  The complexity of enumerating $\ell_\cap$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
   \end{lemma}
 
   \begin{proof}
-    We can overestimate the size of $A$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
+    We can overestimate the size of $\ell_\cap$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
   \end{proof}
 
   We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions. In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
