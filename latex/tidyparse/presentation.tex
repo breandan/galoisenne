@@ -88,9 +88,9 @@
   \titlepage
 \end{frame}
 
-%\begin{frame}{Overview}
-%  \tableofcontents
-%\end{frame}
+\begin{frame}{Overview}
+  \tableofcontents
+\end{frame}
 
 \begin{frame}[fragile]{Can you spot the error?}
   \begin{center}
@@ -1545,7 +1545,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \end{frame}
 
 \begin{frame}[fragile]{Satisfiability + holes}
-  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
+  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
 
   \resizebox{\textwidth}{!}{
 {\renewcommand{\arraystretch}{1.2}
@@ -1737,9 +1737,9 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
   \texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \vspace{5pt}\\
   \textbf{let } r = |\texttt{children}(T)|,\\
-  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}}|l|\cdot|r|,\\
+  \phantom{\textbf{Let }} F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
   \phantom{\textbf{Let }} F^{-1}(u)=\inf \big\{x \mid u \leq F(x)\big\},\\
-  \phantom{\textbf{Let }} q=i - F\big(F^{-1}(i)\big),\\
+  \phantom{\textbf{Let }} q = i - F\big(F^{-1}(i)\big),\\
   \phantom{\textbf{Let }} l, r = \texttt{children}[t],\\
   \phantom{\textbf{Let }} q_1, q_2 =\big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
   \phantom{\textbf{Let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
@@ -1760,7 +1760,7 @@ Given $\sigma: \Sigma^*$, let $P_\theta(\sigma) = \prod_{i=1}^{|\sigma|}P_\theta
 \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of repairs.}
 %\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
 \For{$\texttt{seed} < |T|$ and uninterrupted}
-\State $t \gets \varphi'(T, \texttt{seed++})}$ \Comment{Decode fresh tree and add.}
+\State $t \gets \varphi'(T, \texttt{seed++})$ \Comment{Decode fresh tree and add.}
 \State $\hat{A} \gets \hat{A} \cup \{\text{\textleaf}(t)\}$
 %\Until{interrupted or $\texttt{seed} = |T|$.}
 \EndFor
@@ -1815,7 +1815,6 @@ In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathca
 \centering
 \includegraphics[width=0.9\textwidth]{../popl2025/exampleDFA.pdf}
 \caption{$L(\scriptsize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$}
-\label{fig:exampleDFA}
 \end{figure}
 \end{frame}
 
