@@ -180,32 +180,34 @@
       \]
 
       \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\vspace{0.5cm}
+If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with unit nonterminals on the superdiagonal, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$ the fixpoint $M_{i+1} = M_i + M_i^2$ is fully determined by the first diagonal:\\
 \end{minipage}
 
 \begin{align*}
-M_0=
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\hspace{-0.5cm}\resizebox{.86\columnwidth}{!}{
+$M$_0 =
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
    \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
-   \Vdots      & \Ddots   & \Ddots      & \Ddots & \Vdots\\
-               &          &             &        & \varnothing\\
-               &          &             &        & \hat\sigma_n \\
-   \varnothing & \Cdots   &             &        & \varnothing
+   \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
+               &              &             &        & \varnothing\\
+               &              &             &        & \hat\sigma_n \\
+   \varnothing & \Cdots       &             &        & \varnothing
 \end{pNiceMatrix} \Rightarrow
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
   \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
-  \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-              &          &         &        & \Lambda\\
-              &          &         &        & \hat\sigma_n \\
-  \varnothing & \Cdots   &         &        & \varnothing
+  \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+              &              &         &        & \Lambda\\
+              &              &         &        & \hat\sigma_n \\
+  \varnothing & \Cdots       &         &        & \varnothing
 \end{pNiceMatrix} \Rightarrow \ldots \Rightarrow M_\infty =
-\begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+\begin{pNiceMatrix}[xdots/line-style=loosely dotted]
    \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
-   \Vdots      & \Ddots   & \Ddots  & \Ddots & \Vdots\\
-               &          &         &        & \Lambda\\
-               &          &         &        & \hat\sigma_n \\
-   \varnothing & \Cdots   &         &        & \varnothing
+   \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
+               &              &         &        & \Lambda\\
+               &              &         &        & \hat\sigma_n \\
+   \varnothing & \Cdots       &         &        & \varnothing
 \end{pNiceMatrix}
+}
 \end{align*}
 
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
@@ -327,7 +329,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
 
       \jointspacing
 
-      \hspace*{10cm}\resizebox{0.5\columnwidth}{!}{
+      \hspace*{12cm}\resizebox{0.4\columnwidth}{!}{
         \begin{tikzpicture}
         [
           grow                    = right,
@@ -375,7 +377,7 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       \vspace{1.5cm}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Morally, $\mathbb{T}_2$ denotes an implicit set of possible trees sharing the same root, where $\mathbb{T}_3$ is a dictionary of possible $\mathbb{T}_2$ values indexed by possible roots, given by a specific CFG and porous string. Instead of $\hat\sigma_r$, we initialize using $\Lambda(\sigma_r)$:
+      Morally, $\mathbb{T}_2$ denotes an implicit set of possible trees sharing the same root, given by a specific CFG and porous string. Instead of $\hat\sigma_r$, we initialize using $\Lambda(\sigma_r)$:
       \end{minipage}
 
       \[
@@ -446,20 +448,22 @@ CFL membership is recognized by $R(G', \sigma) = [S \in \Lambda^*_\sigma] \Leftr
       To sample all trees in a given $T: \mathbb{T}_2$ uniformly without replacement, we define a modular pairing function $\varphi: \mathbb{T}_2 \rightarrow \mathbb{Z}_{|T|} \rightarrow \texttt{BTree}$ using the construction:
       \end{minipage}
 
-      \begin{equation*}
-        \varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
-          \big\langle\texttt{BTree}\big(\texttt{root}(T)\big), i\big\rangle & \text{if $T$ is a leaf,} \vspace{5pt}\\
-          \text{Let } b = |\texttt{children}(T)|,\\
-          \phantom{\text{Let }} q_1, r=\big\langle\lfloor\frac{i}{b}\rfloor, i \pmod{b}\big\rangle,\\
-          \phantom{\text{Let }} lb, rb = \texttt{children}[r],\\
-          \phantom{\text{Let }} T_1, q_2 = \varphi(lb, q_1),\\
-          \phantom{\text{Let }} T_2, q_3 = \varphi(rb, q_2) \text{ in } \\
-          \big\langle\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big), q_3\big\rangle & \text{otherwise.} \\
-        \end{cases}
-      \end{equation*}
+\begin{equation*}
+\varphi(T: \mathbb{T}_2, i: \mathbb{Z}_{|T|}) \mapsto \begin{cases}
+\texttt{BTree}\big(\texttt{root}(T)\big) & \text{if $T$ is a leaf,} \vspace{5pt}\\
+\textbf{let } F(n) = \sum_{\langle l, r\rangle \in \texttt{children}[0 \ldots n]}|l|\cdot|r|,\\
+\phantom{\textbf{let }} F^{-1}(u) = \inf \big\{x \mid u \leq F(x)\big\},\\
+\phantom{\textbf{let }} t = F\big(F^{-1}(i)\big),\\
+\phantom{\textbf{let }} q = i - t,\\
+\phantom{\textbf{let }} l, r = \texttt{children}[t],\\
+\phantom{\textbf{let }} q_1, q_2 = \big\langle\lfloor\frac{q}{|r|}\rfloor, q \pmod{|r|}\big\rangle,\\
+\phantom{\textbf{let }} T_1, T_2 = \big\langle\varphi(l, q_1), \varphi(r, q_2)\big\rangle \textbf{ in } \\
+\texttt{BTree}\big(\texttt{root}(T), T_1, T_2\big) & \text{otherwise.} \\
+\end{cases}
+\end{equation*}
 
       \hspace*{2cm}\begin{minipage}[c]{0.90\columnwidth}
-      Then instead of sampling trees, we can simply sample integers WoR from $\mathbb{Z}_{|T|}$.\vspace{1.8cm}
+\vspace{1cm}
       \end{minipage}
 
       \jointspacing

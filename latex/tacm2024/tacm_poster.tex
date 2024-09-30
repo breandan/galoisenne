@@ -160,7 +160,7 @@
 
       \vspace*{-1cm}
       \null\hspace*{2.5cm}\begin{minipage}[c]{0.88\columnwidth}
-      \renewcommand\labelitemi{$\vcenter{\hbox{\small$\bullet$}}$}
+      \renewcommand\labelitemi{$\vcenter{\hbox{\small\bullet}}$}
       \begin{itemize}
 %        \item Sampling with rejection is unnecessary if you can map onto a simpler distribution
         \item \phantom{\small{.}} Language models have trouble with single-shot constraint satisfaction
@@ -177,7 +177,7 @@
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
 Suppose we want to force an autoregressive LLM to generate syntactically valid next tokens $P(x_n \mid x_1, \ldots, x_{n-1})$, under certain resource constraints. Here is a concrete example: ``Generate an arithmetic expression with two or more variables in ten or fewer tokens.''. If we sample the partial trajectory,
 \begin{center}\texttt{( x + ( y * }\underline{\texttt{(}}\end{center}\\
-then we will spend quite a long time rejecting invalid completions, because this trajectory has past the point of no return. Even though \texttt{(} is a locally valid continuation, we need to avoid this scenario, because we would like a linear sampling delay and to guarantee this, we must avoid backtracking.
+then we will spend quite a long time rejecting invalid completions, because this trajectory has passed the point of no return. Even though \texttt{(} is a locally valid continuation, we need to avoid this scenario, because we would like a linear sampling delay and to guarantee this, we must avoid backtracking.
 \end{minipage}
 
       \jointspacing
