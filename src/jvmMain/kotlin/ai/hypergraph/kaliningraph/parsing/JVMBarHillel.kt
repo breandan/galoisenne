@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import NUM_CORES
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.minimizeFix
