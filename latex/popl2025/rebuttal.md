@@ -57,9 +57,9 @@ m-n
 
 We can think of this full PPM as a 4D lookup table, $π(v: V, m: \mathbb{Z}, n: \mathbb{Z}, s:\Sigma) \rightarrow \{[a, b] \in \mathbb{N} \times \mathbb{N} \mid a \leq b\}$. It stores the minimum and maximum number of each terminal that each nonterminal must and can generate, assuming it generates a string whose length falls between $m$ and $n$. This can be computed once for each grammar and cached for later use in the modified Bar-Hillel construction.
 
-Suppose we are given a broken string of length $|\sigma| = 5$, and we want to search a Levenshtein radius of $d = 2$. Then we would look up the parameterized Parikh map between length 3 and 7, representing the minimum and maximum number of each terminal generates, across all strings in the nonterminal's language between length 3 and 7.
+Suppose we are given a broken string of length $|\sigma| = 5$, and we want to search a Levenshtein radius of $d = 2$. Then we would look up the parameterized Parikh map between length 3 and 7, representing the minimum and maximum number of each terminal generated, across all strings in the nonterminal's language between length 3 and 7.
 
-This optimization eliminates the vast majority of all useless productions from the synthetic intersection grammar and allows us to scale up the Bar-Hillel construction to real-world syntax repairs, making it tractable to construct for large grammars (e.g., Python) and Levenshtein automata (~80x4 states). This contribution is the crux of the paper without which it would be impossible (or at least, very difficult) to implement repairs in the manner described.
+This optimization eliminates the vast majority of all useless productions from the synthetic intersection grammar and allows us to scale up the Bar-Hillel construction to real-world syntax repairs, making it tractable to construct for large grammars (e.g., Python) and Levenshtein automata (~80x4 states). This contribution is the crux of the paper without which it would be impossible (or at least very difficult) to implement repairs in the manner described.
 
 Finally, we would like to point out an oversight the reviewers missed in the submitted manuscript. The pairing function (Eq. 14) should have been defined as follows:
 

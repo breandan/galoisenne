@@ -765,13 +765,6 @@ First, we generate a synthetic grammar representing the intersection between the
 
   This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical languages and code snippets can generate hundreds of trillions of productions for even modestly-sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many superfluous productions, greatly reducing the number of synthetic productions in the intersection grammar, $G_\cap$.
 
-%  \begin{wrapfigure}{r}{0.3\textwidth}
-%    \vspace{-10pt}
-%    \resizebox{0.3\textwidth}{!}{\input{leven_reach}}
-%    \caption{$G_\cap$ is gradually expanded by increasing $d$ until $\mathcal{L}(G_\cap)\neq \varnothing$.}
-%    \vspace{-10pt}
-%  \end{wrapfigure}
-
   Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar $\langle q, v, q'\rangle$ matches a substring simultaneously recognized by (1) a pair of states $q, q'$ in the original NFA and (2) a nonterminal, $v$, in the original CFG. A key observation is that $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
   To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
