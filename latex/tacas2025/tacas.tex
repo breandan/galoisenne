@@ -1,79 +1,56 @@
-%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
-%\documentclass[sigplan,10pt,review,anonymous]{acmart}
-%\settopmatter{printfolios=false,printccs=false,printacmref=false}
-%% For double-blind review submission, w/ CCS and ACM Reference
-%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
-%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
-%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
-%% For single-blind review submission, w/ CCS and ACM Reference
-%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
-%% For final camera-ready submission, w/ required CCS and ACM Reference
-%\documentclass[sigplan,nonacm]{acmart}
-\documentclass[sigplan,acmsmall,nonacm,screen]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
-
-%% Conference information
-%% Supplied to authors by publisher for camera-ready submission;
-%% use defaults for review submission.
-%\acmConference[SPLASH'24]{ACM SIGPLAN conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 22-27, 2024}{Pasadena, California, United States}
-%\acmConference{}{}{}
-%\acmYear{2018}
-%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
-%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
-%\startPage{1}
-
-%% Copyright information
-%% Supplied to authors (based on authors' rights management selection;
-%% see authors.acm.org) by publisher for camera-ready submission;
-%% use 'none' for review submission.
-\setcopyright{none}
-%\setcopyright{acmcopyright}
-%\setcopyright{acmlicensed}
-%\setcopyright{rightsretained}
-%\copyrightyear{2018}           %% If different from \acmYear
-
-%% Bibliography style
-\bibliographystyle{acmart}
-
-\input{preamble}
-
-\usepackage{draftwatermark}
-\SetWatermarkLightness{0.75}
-\SetWatermarkText{DRAFT}
-\makeatletter
-\let\@authorsaddresses\@empty
-\makeatother
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+%\usepackage{color}
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+%\urlstyle{rm}
+%
+\input{preamble.tex}
 
 \begin{document}
 %
-  \title{Syntax Repair as Language Intersection}
-  %
-  \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we construct a grammar representing the language intersection between a Levenshtein automaton and a context-free grammar, then decode it in order of likelihood.
-    \keywords{Error correction \and CFL reachability \and Langauge games.}
-  \end{abstract}
-
-%\titlerunning{Abbreviated paper title}
+\title{Let's wrap this up! Incremental structured decoding with resource constraints}
+%
+\titlerunning{Let's wrap this up!}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-  \author{Breandan Considine}
-  \email{bre@ndan.co}
+\author{Breandan Considine\inst{1} \and
+Jin Guo\inst{1}\and
+Xujie Si\inst{2}}
 %
-%  \authorrunning{Considine et al.}
+\authorrunning{Considine et al.}
 % First names are abbreviated in the running head.
 % If there are more than two authors, 'et al.' is used.
 %
-%  \institute{McGill University, Montr\'eal, QC H2R 2Z4, Canada\\
-%  \email{{breandan.considine@mail, jguo@cs}.mcgill.ca}\and
-%  University of Toronto, Toronto, ON, M5S 1A1 Canada\\
-%  \email{six@utoronto.ca}}
-
-  \author{Jin Guo}
-  \email{jguo@cs.mcgill.ca}
-  \author{Xujie Si}
-  \email{six@utoronto.ca}
-
-  \maketitle
+\institute{McGill University, Montr\'eal, QC H2R 2Z4, Canada\\
+\email{\{breandan.considine@mail, jguo@cs\}.mcgill.ca}\and
+University of Toronto, Toronto, ON, M5S 1A1 Canada\\
+\email{six@utoronto.ca}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. We place a heavy emphasis on precision: the enumerated set must contain every possible repair within a few edits and no invalid repairs. To do so, we construct a grammar representing the language intersection between a Levenshtein automaton and a context-free grammar, then decode it in order of likelihood.
+  \keywords{Error correction \and CFL reachability \and Langauge games.}
+\end{abstract}
+%
+%
+%
 
   \section{Introduction}
 
@@ -81,7 +58,7 @@
 
   Early work on syntax repair by Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} use techniques from dynamic programming to find the smallest repair for an erroneous input. These methods guarantee correctness, but make no attempt to model naturalness, i.e., predict human edits. Instead, they find just one or a small number of repairs, which may not correspond to the author's intent. Nevertheless, these methods are appealing for their interpretability and well-understood algorithmic properties.
 
-  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self, yasunaga2021break, sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and the released models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their ability to predict human intent.
+  More recently, probabilistic repair techniques based on neural language models have been introduced~\cite{allamanis2021self,yasunaga2021break,sakkas2022seq2parse}. These techniques can generate more natural repairs, but are costly to train, prone to misgeneralization and the released models often hallucinate false positive repairs. Such failures can be challenging to debug or interpret, and the models themselves are often too large to properly verify. Nonetheless, they are highly appealing for their ability to predict human intent.
 
   Taking inspiration from formal and statistical language modeling alike, we adapt a construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntactic program repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a simple Markov model, it is possible to predict human syntax repairs with the accuracy of large language models, while retaining the correctness and interpretability of classical repair algorithms.
 
@@ -134,7 +111,7 @@
 %    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
 %  \end{enumerate}
 %\end{multicols}
-  \begin{figure}[h!]
+  \begin{figure}[H]
     \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
     (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
     \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
@@ -220,8 +197,6 @@
   \end{figure}
 
   \noindent This process is depicted in Fig.~\ref{fig:arch_simp}. We will now discuss the intersection step in slightly more detail.
-
-  \clearpage
 
   By way of illustration, suppose we have a string $\texttt{( ) )}$, and wish to find nearby repairs. To represent the language of small edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We use a variant that removes some unnecessary arcs but does not affect the generated language.
 
@@ -331,6 +306,7 @@ Next, the BH construction states: for every production $A\rightarrow a$ and arc 
 So far, the intersection grammar now contains the following productions:\vspace{-5pt}
 
 \begin{table}[H]
+  \centering
   \begin{tabular}{cc|ccccccccccccc}
     $\sqrt{\phantom{S}}$ & & & & & & $\hat\uparrow$ & \\\hline
     $S \rightarrow q_{00}Sq_{20}$ & & & $q_{00}Rq_{01} \rightarrow \texttt{)}$ & & $q_{10}Lq_{11} \rightarrow \texttt{(}$ & & $q_{20}Rq_{21} \rightarrow \texttt{)}$ & & $q_{01}Lq_{11} \rightarrow \texttt{(}$ \\
@@ -357,7 +333,7 @@ The final and most expensive rule of the BH construction, $\Join$, stipulates: f
 
 In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule which eliminates many impossible productions from BH intersection grammars by a sound overapproximation to the Parikh image. Aggressively pruning synthetic productions from $G_\cap$ by (1) nominalizing the Levenshtein automaton and (2) refining the $\Join$ rule, are key insights to unlocking the full potential of the Bar-Hillel construction and scaling up this technique to handle real-world program repair scenarios.
 
-  \clearpage\section{Problem statement}\label{sec:problem}
+  \section{Problem statement}\label{sec:problem}
 
   Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
@@ -397,7 +373,7 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
 
 %  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
 
-  \clearpage\section{Method}
+  \section{Method}
 
   The method we describe in this paper takes as input the invalid code fragment, and returns a set of plausible repairs. We assume to know the target syntax and a small dataset of valid programs to estimate the likelihood of candidate repairs. At a high level, our method can be decomposed into two main steps: (1) language intersection, (2) repair decoding.
 
@@ -530,7 +506,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \clearpage\subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
+  \subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -829,23 +805,25 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. The fixedpoint iteration proceeds as follows:\vspace{-10pt}
 
+\hspace{-0.5cm}\resizebox{\textwidth}{!}{
+\begin{minipage}{\linewidth}
   \begin{align*}
     M_0=
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
       \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
                   &              &             &        & \varnothing\\
                   &              &             &        & \hat\sigma_n \\
       \varnothing & \Cdots       &             &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
       \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
                   &              &         &        & \Lambda\\
                   &              &         &        & \hat\sigma_n \\
       \varnothing & \Cdots       &         &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
       \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
                   &              &         &        & \Lambda\\
@@ -853,6 +831,8 @@ First, we generate a synthetic grammar representing the intersection between the
       \varnothing & \Cdots       &         &        & \varnothing
     \end{pNiceMatrix}
   \end{align*}
+  \end{minipage}
+}
 
   Once obtained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(\mathcal{G})]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring}.
 
@@ -925,18 +905,20 @@ First, we generate a synthetic grammar representing the intersection between the
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:\vspace{-8pt}
+  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we first compute $V_{0, 2}, V_{1, 3}$:
 
-  \begin{small}
+\hspace{-0.5cm}\resizebox{\textwidth}{!}{
+\begin{minipage}{\linewidth}
   \begin{align*}
     V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}                         &  V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
     &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]                                           &  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
     &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
     &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
   \end{align*}
-  \end{small}\vspace{-8pt}
+  \end{minipage}
+}
 
-  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
+  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column:\vspace{-8pt}
 
   \begin{align*}
     V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
@@ -944,7 +926,7 @@ First, we generate a synthetic grammar representing the intersection between the
     &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
   \end{align*}
 
-  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
+  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can now solve for it directly:\vspace{-8pt}
 
   \begin{align*}
     V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
@@ -1015,7 +997,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   We will now describe a datatype for compactly representing CFL parse forests, then redefine the matrix algebra over this domain. This datatype is particularly convenient for tracking provenance under ambiguity, constructing the Parikh map for a CFG, counting the size of a finite CFL, and sampling parse trees with or without replacement.
 
-  We first define a datatype $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{Given a $T:\mathbb{T}_2$, we may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees that can be generated by a CFG in CNF, consistent with a finite-length porous string. Structurally, we may interpret $\mathbb{T}_2$ as an algebraic data type corresponding to the fixpoints of the following recurrence, which tells us each $\mathbb{T}_2$ can be a terminal, or a nonterminal and a (possibly empty) sequence of nonterminal pairs and their two children:\vspace{-10pt}
+  We first define a datatype $\mathbb{T}_3 = (V \cup \Sigma) \rightharpoonup \mathbb{T}_2$ where $\mathbb{T}_2 = (V \cup \Sigma) \times (\mathbb{N} \rightharpoonup \mathbb{T}_2\times\mathbb{T}_2)$\footnote{We may also refer to $\pi_1(T), \pi_2(T)$ as $\texttt{root}(T)$ and $\texttt{children}(T)$ respectively.}. Morally, we can think of $\mathbb{T}_2$ as an implicit set of possible trees that can be generated by a CFG in CNF, consistent with a finite-length porous string. Structurally, we may interpret $\mathbb{T}_2$ as an algebraic data type corresponding to the fixpoints of the following recurrence, which tells us each $\mathbb{T}_2$ can be a terminal, or a nonterminal and a (possibly empty) sequence of nonterminal pairs and their two children:\vspace{-10pt}
 
   \begin{equation}
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V L\big(V^2P(a)^2\big)
@@ -1265,7 +1247,7 @@ For example, let us return to the example given in \S~\ref{sec:example}, where w
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.9\textwidth]{exampleDFA.pdf}
-  \caption{Minimal DFA recognizing the language $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
+  \caption{Minimal DFA for $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
   \label{fig:exampleDFA}
 \end{figure}
 
@@ -1736,7 +1718,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   \end{figure}
 
   \begin{wrapfigure}{r}{0.38\textwidth}
-    \vspace{-1.2cm}
+    \vspace{-0.6cm}
     \hspace{-0.8cm}
     \resizebox{.47\textwidth}{!}{\input{sankey}}
     \vspace{-1.4cm}
@@ -1748,7 +1730,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
   We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
-  \clearpage The remaining experiments in this section were run on a 10-core ARM64 M1 with 16 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
+  The remaining experiments in this section were run on a 10-core ARM64 M1 with 16 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 
   \begin{figure}[h!]
     \input{sample_efficiency}
@@ -1758,11 +1740,11 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 %  The advantage of using an enumerative sampler is that it can terminate early, since it knows, after drawing $|\mathbb{T}_2(G_\cap)|$ distinct repairs, it has exhausted the admissible set. This also provides a way to calibrate the threshold for how to sample given a fixed budget: if, for example, we can only afford to sample a small fraction of the admissible set, we should clearly sample with replacement. Otherwise, if we can saturate the admissible set, we should sample without replacement.
 
   \begin{wrapfigure}{r}{0.35\textwidth}
-    \vspace{-0.4cm}
+    \vspace{-1cm}
     \resizebox{.35\textwidth}{!}{\input{throughput}}
     \caption{Distinct repairs found in 30s.}
     \label{fig:throughput}
-    \vspace{-0.4cm}
+    \vspace{-1.5cm}
   \end{wrapfigure}
 
   End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
@@ -1779,9 +1761,9 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
-  \clearpage\subsection{Subcomponent ablation}\label{sec:rq3}
+  \subsection{Subcomponent ablation}\label{sec:rq3}
 
-  Originally, we used an adaptive rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, and then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold to return admissible repairs, i.e., a few seconds at most, the average time required to attain a desired precision on human repairs is much higher. We present the results from the rejection-based evaluation for comparison below.
+  Originally, we used an adaptive rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, and then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold to return admissible repairs, i.e., a few seconds at most, the average time required to attain a desired precision on human repairs is much higher. We present the results from the rejection-based evaluation below.
 
   \begin{figure}[H]
     \resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
@@ -1796,22 +1778,24 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by n-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a n-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 
   \begin{figure}[h]
+      \resizebox{\textwidth}{!}{
     \input{experiments/ablation_enumeration_pcfg}
     \input{experiments/ablation_enumeration_markov}
     \input{experiments/ablation_dfa_walker}
+      }
   \end{figure}
 
-  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \input{experiments/parallel_speedup}
+  \caption{Observed improvement in throughput relative to total CPU cores assigned.}
+  \label{fig:speedup}
+\end{wrapfigure}
 
-Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
+  In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
-  \begin{wrapfigure}{r}{0.4\textwidth}
-    \input{experiments/parallel_speedup}
-    \caption{Observed improvement in throughput relative to total CPU cores assigned.}
-    \label{fig:speedup}
-  \end{wrapfigure}
+  Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
 
-  We measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups are likely possible to realize by rewriting the sampler in CUDA, an engineering challenge which we leave for future work.
+  We measure the relative improvement in throughput (in terms of the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups are likely possible to realize by rewriting the sampler in CUDA, an engineering challenge which we leave for future work.
 
   \section{Discussion}\label{sec:discussion}
 
@@ -1823,7 +1807,7 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
    Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the likelihood of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design (Def.~\ref{def:linear-convergence}) and evaluation (Fig.~\ref{fig:throughput}).
 
-  \clearpage\subsection{Limitations and future work}
+  \subsection{Limitations and future work}
 
 %  We identify three broad categories of limitations in evaluating Tidyparse and suggest directions for future work: naturalness, complexity, and semantics.
 
@@ -1873,7 +1857,7 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
   Language equations are a powerful tool for reasoning about formal languages and their inhabitants. First proposed by Ginsburg et al.~\cite{ginsburg1962two} for the ALGOL language, language equations are essentially systems of inequalities with variables representing \textit{holes}, i.e., unknown values, in the language or grammar. Solutions to these equations can be obtained using various fixpoint techniques, yielding members of the language. This insight reveals the true algebraic nature of CFLs and their cousins.
 
-  Being an algebraic formalism, language equations naturally give rise to a kind of calculus, vaguely reminiscent of Leibniz' and Newton's. First studied by Brzozowski~\cite{brzozowski1964derivatives, brzozowski1980equations} and Antimirov~\cite{antimirov1996partial}, one can take the derivative of a language equation, which can be interpreted as a kind of continuation or language quotient, revealing the suffixes that complete a given prefix. This technique leads to an elegant family of algorithms for incremental parsing~\cite{might2011parsing, adams2016complexity} and automata minimization~\cite{brzozowski1962canonical}.
+  Being an algebraic formalism, language equations naturally give rise to a kind of calculus, vaguely reminiscent of Leibniz' and Newton's. First studied by Brzozowski~\cite{brzozowski1964derivatives,brzozowski1980equations} and Antimirov~\cite{antimirov1996partial}, one can take the derivative of a language equation, which can be interpreted as a kind of continuation or language quotient, revealing the suffixes that complete a given prefix. This technique leads to an elegant family of algorithms for incremental parsing~\cite{might2011parsing,adams2016complexity} and automata minimization~\cite{brzozowski1962canonical}.
 
   Bar-Hillel~\cite{bar1961formal} establishes the closure of CFLs under intersection with regular languages, but does not elaborate on how to construct the corresponding grammar in order to recognize it. Beigel~\cite{beigelproof} and Pasti et al.~\cite{pasti2023intersection} provide helpful insights into the construction of the intersection grammar, and Nederhof and Satta~\cite{nederhof2004language} specifically consider finite CFL intersections, but neither considers Levenshtein intersections. Our work specializes Bar-Hillel intersections to Levenshtein automata in particular, and more generally acyclic automata using a refinement of Beigel's construction.
 
@@ -1901,7 +1885,7 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 
   \subsection{Error correcting codes}
 
-  Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
+  Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming,dong2023number} or Levenshtein~\cite{levenshtein1966binary,becerra2008learning,barlev2021levenshtein} balls, from which we draw inspiration for this work.
 
   \subsection{Decoding}
 
@@ -1909,9 +1893,9 @@ Decoding is a key problem in machine translation, speech recognition, and other 
 
 In particular, we care about the problem of \textit{top-k decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing likelihood. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic PCFGs is often intractable, but we can approximate it using a beam search or cube-pruning technique.
 
-A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, huang2007forest, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs. Our approach is also complementary to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
+A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better,huang2007forest,chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs. Our approach is also complementary to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
 
-  An alternate line of work originates from combinatorics~\cite{hickey1983uniform, gore1997quasi} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. Unlike our method, distinctness or convergence guarantees for arbitrary finite CFLs are not provided.
+  An alternate line of work originates from combinatorics~\cite{hickey1983uniform,gore1997quasi} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. Unlike our method, distinctness or convergence guarantees for arbitrary finite CFLs are not provided.
 
   Another approach would be to use MCMC or sequential Monte Carlo (SMC) to steer a transformer-based LLM, as proposed by Lew et al.~\cite{lew2023sequential}. This technique shows promise for constrained sampling from LLMs, and could be adapted to improve sample efficiency. The downside is that distinct sampling an LLM is unclear how to do properly, being a fundamentally non-Markovian process. One solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however their solution is not stateless and can introduce a significant latency overhead.
 
@@ -1919,13 +1903,13 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   \subsection{Neural program repair}
 
-  More recently, probabilistic repair techniques have been introduced using neural models to predict the most likely correction~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ large language models (LLMs) and treat the problem as a sequence-to-sequence transformation. While capable of generating natural repairs, these models are susceptible to misgeneralization, costly to train, and challenging to customize thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
+  More recently, probabilistic repair techniques have been introduced using neural models to predict the most likely correction~\cite{allamanis2021self,chirkova2021empirical,drain2021generating}. These approaches typically employ large language models (LLMs) and treat the problem as a sequence-to-sequence transformation. While capable of generating natural repairs, these models are susceptible to misgeneralization, costly to train, and challenging to customize thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
   In particular, two papers stand out being closely related to our own: Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised learning to generate synthetic errors in clean code and fixes them. This reduces the amount of pairwise training data, but tends to generalize poorly to lengthy or out-of-distribution repairs. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest multiple repairs at much higher precision, do not require a pairwise repair dataset, and can fix syntax errors in any language with a well-defined grammar. We note our approach is complementary to existing work in neural program repair, and may be used to generate synthetic repairs for training or employ an LLM for ranking.
 
   Recent work by Merrill et al.~\cite{merrill2022saturated} and Chiang et al.~\cite{chiang2023tighter} suggest that the issue with generalization may be more foundational: transformer-based language models, a popular class of neural language models used in probabilistic program repair, are fundamentally less expressive than context-free grammars, which formally describe the syntax of most programming languages. This suggests such models, despite their useful approximation properties, are ill-suited for the task of end-to-end syntax repair. Yet, they may still be useful for resolving ambiguity between valid repairs of differing likelihood or searching a large sample space for the most likely repair.
 
-\clearpage\section{Conclusion}\label{sec:conclusion}
+  \section{Conclusion}\label{sec:conclusion}
 
   Our work, while a case study on syntax repair, is part of a broader line of inquiry in program synthesis that investigates how to weave formal language theory and machine learning into helpful programming tools for everyday developers. In some ways, syntax repair serves as a test bench for integrating learning and language theory, as it lacks the intricacies of type-checking and semantic analysis, but is still rich enough to be an interesting challenge. By starting with syntax repair, we hope to lay the foundation for more organic hybrid approaches to program synthesis.
 
@@ -1965,16 +1949,22 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 %  (v_1 \times w_2 + y_3 + 1) \Leftrightarrow [S \in Y] \Leftrightarrow [Q R \in L(G)]
 %\]
 
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+  \bibliographystyle{splncs04}
   \clearpage\bibliography{../bib/acmart}
 
   \pagebreak\appendix
 
   \section{Example Repairs}\label{sec:exaple_repairs}
 
-  Below, we provide a few representative examples of broken code snippets and the corresponding human repairs that were successfully ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
+%  Below, we provide a few representative examples of broken code snippets and the corresponding human repairs that were successfully ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
 
-  \begin{figure}[H]
-      \begin{tabular}{|m{6.6cm}|m{6.6cm}|}
+    \begin{tabular}{|m{6cm}|m{6cm}|}
         \hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
         \begin{smallpy}
 
@@ -1998,15 +1988,6 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
   result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
   raise Return(result)
-
-        \end{smallpy} \\\hline
-        \begin{smallpy}
-
-  df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
-
-  \end{smallpy} & \begin{smallpy}
-
-  df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
 
         \end{smallpy} \\\hline
 %        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
@@ -2085,7 +2066,6 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
         \end{smallpy} \\\hline
       \end{tabular}
-  \end{figure}
 
   \clearpage\section{Raw data}\label{sec:raw_prec_data}
 
@@ -2210,7 +2190,7 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 %    \end{tabular}
 %  \end{table}
 
-\clearpage\section{Supplemental Proofs}
+\section{Supplemental Proofs}
 
   The problem of syntax error correction under a finite number of typographic errors is reducible to the bounded Levenshtein-CFL reachability problem, which can be formally stated as follows:
 
