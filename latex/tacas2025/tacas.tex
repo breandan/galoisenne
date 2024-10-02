@@ -1444,6 +1444,67 @@ Regardless of grammatical ambiguity, this procedure satisfies Def.~\ref{def:line
 
 %  This method can be extended using a probabilistic higher-order grammar (PHOG). PHOGs are a generalization of PCFGs that allow for local dependencies between neighboring nonterminals, and increase the calibration of sampled trajectories.
 
+\clearpage\section{Incrementalizing the DFA Walker}
+
+The trouble with DFA decoding is that it requires an expensive preprocessing step. We would to incrementally expand the representative DFA so that we can decode next-tokens with an autoregressive language model, without fully materializing the intersection grammar before decoding paths.
+
+Let us consider a concrete example: ``Generate an arithmetic expression with two or more variables in ten or fewer tokens.''. If we sample the partial trajectory, \texttt{( x + ( y * }\underline{\texttt{(}}, then we will spend quite a long time rejecting invalid completions, because this trajectory has passed the point of no return. %Even though \texttt{(} is a locally valid continuation, we need to avoid this scenario at all costs.
+
+To achieve this, we will require the notion of a regular expression. Regular expressions that permit union, intersection and concatenation are called generalized regular expressions (GREs). These are defined inductively as follows:\vspace{-0.5cm}
+
+\begin{multicols}{2}
+  \begin{eqnarray*}
+    \mathcal{L}(& \varnothing & ) = \varnothing \\
+    \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
+    \mathcal{L}(& a           & ) = \{a\}\\
+    \mathcal{L}(& R\cdot S    & ) = \mathcal{L}(R) \times \mathcal{L}(S)
+  \end{eqnarray*} \break\vspace{-0.45cm}
+  \begin{eqnarray*}
+    \mathcal{L}(& R^*         & ) = \{\varepsilon\} \cup \mathcal{L}(R\cdot R^*)\\
+    \mathcal{L}(& R\vee S     & ) = \mathcal{L}(R) \cup \mathcal{L}(S)\\
+    \mathcal{L}(& R\land S    & ) = \mathcal{L}(R) \cap \mathcal{L}(S)\\
+    \mathcal{L}(& \neg R      & ) = \Sigma^* \setminus \mathcal{L}(R)
+  \end{eqnarray*}
+\end{multicols}
+
+Finite slices of a CFL are finite and therefore regular a fortiori. Just like sets, bitvectors and other datatypes, we can also propagate GREs through a parse chart. Here, the algebra will carry $\text{GRE}^{|V|}$, where 0 is $\varnothing$, and $\oplus, \otimes$ are defined:
+
+\begin{equation*}
+  s_1\otimes s_2 = \Big[\bigvee_{(v \rightarrow AB) \in P} s_1[A] \cdot s_2[B] \Big]_{v \in V} \phantom{----}
+  s_1\oplus s_2 = \big[s_1[v] \vee s_2[v]\big]_{v \in V} \\
+\end{equation*}
+
+%Initially, we have $M_0[r+1=c](G, \sigma) = \Sigma$. Now after computing the fixpoint, when we unpack $\Lambda^*_\sigma[S]$, this will be a GRE recognizing the finite CFL slice.
+
+Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{Reg} \rightarrow \textsc{Reg}$, which slices a given prefix off a language: $\partial_a L = \{b \in \Sigma^* \mid ab \in L\}$. The Brzozowski derivative over a GRE is effectively a normalizing rewrite system:\vspace{-0.5cm}
+
+\begin{multicols}{2}
+  \begin{eqnarray*}
+    \phantom{--}\partial_a & \varnothing & = \varnothing                                           \\
+    \phantom{--}\partial_a & \varepsilon & = \varnothing                                           \\
+    \phantom{--}\partial_a & a           & = \varepsilon                                           \\
+    \phantom{--}\partial_a & b           & = \varnothing  \text{ for each } a \neq b               \\
+    \phantom{--}\partial_a & R^*         & = (\partial_x R)\cdot R^*                               \\
+    \phantom{--}\partial_a & \neg R      & = \neg \partial_a R                                     \\
+    \phantom{--}\partial_a & R\cdot S    & = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
+    \phantom{--}\partial_a & R\vee S     & = \partial_a R \vee \partial_a S                        \\
+    \phantom{--}\partial_a & R\land S    & = \partial_a R \land \partial_a S
+  \end{eqnarray*} \break\vspace{-0.45cm}
+  \begin{eqnarray*}
+    \delta(& \varnothing &)= \varnothing                                      \\
+    \delta(& \varepsilon &)= \varepsilon                                      \\
+    \delta(& a           &)= \varnothing                                      \\
+    \delta(& R^*         &)= \varepsilon                                      \\
+    \delta(& \neg R      &)= \varepsilon \text{ if } \delta(R) = \varnothing  \\
+    \delta(& \neg R      &)= \varnothing \text{ if } \delta(R) = \varepsilon  \\
+    \delta(& R\cdot S    &)= \delta(R) \land \delta(S)                        \\
+    \delta(& R\vee S     &)= \delta(R) \vee  \delta(S)                        \\
+    \delta(& R\land S    &)= \delta(R) \land \delta(S)
+  \end{eqnarray*}
+\end{multicols}
+
+The key property we care about is, this formulation allows us to sample lazily from language intersections, without first materializing the product automaton.
+
 \section{Evaluation}
 
 We call our method Tidyparse and consider the following research questions:
