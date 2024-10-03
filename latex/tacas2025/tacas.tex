@@ -62,18 +62,7 @@ University of Toronto, Toronto, ON, M5S 1A1 Canada\\
 
   Taking inspiration from formal and statistical language modeling alike, we adapt a construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntactic program repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a simple Markov model, it is possible to predict human syntax repairs with the accuracy of large language models, while retaining the correctness and interpretability of classical repair algorithms.
 
-  In particular, we consider the problem of ranked syntax repair under a finite edit distance. We experimentally show it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness. Our proposed solution is straightforward:
-
-  \begin{enumerate}
-    \item We model syntax repair as a language intersection problem between the Levenshtein ball and a context-free language, then materialize the grammar using a version of the Bar-Hillel construction that we specialize to handle large Levenshtein intersections. (\S~\ref{sec:lev_bh})
-    \item We design a data structure that compactly represents finite context-free languages. This data structure is used to both eliminate useless productions (\S~\ref{sec:lev_bh},~\ref{sec:ppm}) from the intersection grammar and index parse trees in the resulting intersection language. (\S~\ref{sec:tree_sampling})
-%    \item We present three ways to decode repairs from the data structure.
-%    \begin{enumerate}
-%    \item Enumerate every repair within a fixed distance and rerank by likelihood. (\S~\ref{sec:ranking})
-%    \item Sample repairs from using a probabilistic CFG, then rerank by n-gram likelihood. (\S~\ref{sec:ranking})
-%    \item Construct a DFA recognizing the intersection language, minimize it, then decode the top-$k$ maximum likelihood repairs based on a low-order Markov chain. (\S~\ref{sec:ranking})
-    \item We can decode the data structure by either (a) sampling parse trees and reranking them by likelihood or (b) translating to a DFA and decoding trajectories. We default to (b), but compare both methods. In either case, this returns a stream of concrete syntax repairs which are all sound, reachable within a few edits, and sorted by likelihood. (\S~\ref{sec:ranking})
-  \end{enumerate}
+  In particular, we consider the problem of ranked syntax repair under a finite edit distance. We experimentally show it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness.
 
   Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
 
@@ -349,15 +338,15 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
   \begin{definition}[Ranked repair]\label{def:ranked-repair}
     Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
     \begin{equation}
-      R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+      R(\ell_\cap, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
     \end{equation}
     % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
   \end{definition}
 
-  A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable ($\sigma \notin L(\err\sigma, d)$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+  A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
 
-  As we will demonstrate, the ranked repair problem can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+  As we will demonstrate, ranked repair can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
 
   Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 
@@ -369,7 +358,7 @@ In Sec.~\ref{sec:lev_bh}, we will consider a refinement to the $\Join$ rule whic
 
   To satisfy Def.~\ref{def:linear-convergence}, we can construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language.  Finally, sentences can be scored and ranked by likelihood under a language model.
 
-  Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
+  Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell_\cap$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
 
 %  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
 
@@ -381,7 +370,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   \begin{wrapfigure}{r}{0.4\textwidth}
 %\begin{figure}[h!]
-    \vspace{-0.4cm}
+    \vspace{-1.0cm}
     \begin{center}
       \resizebox{0.4\textwidth}{!}{
         \begin{tikzpicture}[node distance=2cm]
@@ -402,7 +391,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
           \node (pro2b) [process, right of=dec1, xshift=3cm] {Increase radius, $d$};
 
-          \node [below=0.7cm of pro2b, xshift=0.05cm] {\Large\textbf{Language intersection}};
+          \node [below=0.7cm of pro2b, xshift=-0.55cm] {\Large\textbf{Language intersection}};
           \draw[thick,dotted, rounded corners] ($(pcfg.north west)+(-1.9,0.8)$) rectangle ($(pro2b.south east)+(0.3,-1.5)$);
 
           \node (const) [process, below of=dec1, yshift=-1.8cm, xshift=-1.5cm] {Enumerate trees from $\mathbb{T}_2$};
@@ -422,7 +411,7 @@ First, we generate a synthetic grammar representing the intersection between the
           \node (rank) [process, below of=rrpc, yshift=-0.5cm] {Convert to DFA and walk};
           \node [above=0.1cm of rank, xshift=1.7cm] {(Algorithm 3, \S~\ref{sec:decoding})};
 %          \node (vlmc) [io2, right of=rank, xshift=3cm] {Markov chain};
-          \node [below=0.3cm of rank, xshift=-4cm] {\Large\textbf{Repair decoding}};
+          \node [below=0.3cm of rank, xshift=-3.5cm] {\Large\textbf{Repair decoding}};
           \draw [thick,dotted, rounded corners] ($(rank.north west)+(-3.8,5.8)$) rectangle ($(rank.south east)+(6.8,-1.1)$);
 
           \node (rrng) [process, right of=const, xshift=4.5cm] {Rerank by n-gram score};
@@ -475,9 +464,9 @@ First, we generate a synthetic grammar representing the intersection between the
         \end{tikzpicture}
       }
     \end{center}
-%    \vspace{-0.7cm}
-    \caption{Dataflow of our proposed method.}\label{fig:flowchart}
-    \vspace{-0.5cm}
+    \vspace{-0.2cm}
+    \caption{Syntax repair dataflow.}\label{fig:flowchart}
+    \vspace{-1cm}
   \end{wrapfigure}
 
   More specifically, since the syntax of most programming languages is context-free, we construct a context-free grammar (CFG), $G_\cap$, representing the intersection between the programming language syntax ($G$) and an automaton recognizing the Levenshtein edit ball of a given radius, $L(\err\sigma, d)$. As the CFL family is closed under intersection with regular languages, the intersection language $\mathcal{L}(G_\cap)$ should contain every repair within a given Levenshtein distance and no invalid repairs. Either the grammar will be empty, in which case there are no repairs within the given radius, or it will be nonempty, in which case we can directly proceed to decode the repairs.
@@ -485,7 +474,7 @@ First, we generate a synthetic grammar representing the intersection between the
 %  \begin{enumerate}
 %    \item $G_\cap$ is empty, in which case there is no repair within the given radius. In this case, we simply increase the radius and try again.
 %    \item $\mathcal{L}(G_\cap)$ is small, in which case we enumerate all possible repairs. Complete enumeration is tractable for the majority of all syntax repairs.
-%    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases.
+%    \item $\mathcal{L}(G_\cap)$ is too large to completely enumerate, so we sample instead from $G_\cap$, top-down. Sampling is necessary for a minority of remaining cases
 %  \end{enumerate}
 
   We present three basic methods for repair decoding: enumerate parse trees from the CFG, $G_\cap$, and rerank each tree by either (1) PCFG score, or (2) Markov chain likelihood, or (3) translate $G_\cap$ to an equivalent DFA, $\mathcal{A}_\cap$, minimize it using Brzozowski's algorithm to produce $\mathcal{A}_\cap^*$, then sample trajectories without replacement through the DFA according to a Markov chain until a fixed timeout is reached. We use (3) by default but will present a comparison of (1-3) in \S~\ref{sec:rq3}.
@@ -506,7 +495,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  \subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
+  \clearpage\subsection{Modeling lexical edits with the nominal Levenshtein automaton}\label{sec:lev_nfa}
 
   \begin{wrapfigure}{r}{0.5\textwidth}
     \vspace{-0.3cm}
@@ -741,7 +730,7 @@ First, we generate a synthetic grammar representing the intersection between the
 
   This, now standard, Bar-Hillel construction applies to any CFL and REG language intersection, but generates a grammar whose cardinality is approximately $|P_\cap|=|I|\cdot|F| + |P|\cdot|\Sigma|\cdot|\sigma|\cdot2d_{\max} + |P|\cdot|Q|^3$. Applying the BH construction directly to practical languages and code snippets can generate hundreds of trillions of productions for even modestly-sized grammars and Levenshtein automata. Instead, we will describe a kind of reachability analysis that elides many superfluous productions, greatly reducing the number of synthetic productions in the intersection grammar, $G_\cap$.
 
-  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar $\langle q, v, q'\rangle$ matches a substring simultaneously recognized by (1) a pair of states $q, q'$ in the original NFA and (2) a nonterminal, $v$, in the original CFG. A key observation is that $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
+  Consider $\Join$, the most expensive rule. What $\Join$ tells us is each nonterminal in the intersection grammar $\langle q, v, q'\rangle$ matches a substring simultaneously recognized by (1) a pair of states $q, q'$ in the original NFA and (2) a nonterminal, $v$, in the original CFG. Crucially, $\Join$ generates the Cartesian product of every such triple, but this is a gross overapproximation for most NFAs and CFGs, as the vast majority of all state pairs and nonterminals recognize no strings in common.
 
   To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
@@ -752,7 +741,7 @@ First, we generate a synthetic grammar representing the intersection between the
   In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
 
   \begin{definition}[Parikh mapping of NFA states]
-    We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
+    We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval s.t. $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
   \end{definition}
 
   Next, we will define a measure on Parikh intervals representing the minimum total edits required to transform a string in one Parikh interval to a string in another, across all such pairings.
@@ -767,7 +756,7 @@ First, we generate a synthetic grammar representing the intersection between the
     Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff \big(\pi(v) \parallel \pi(q, q')\big) = 0$.
   \end{definition}
 
-  Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
+  Finally, we redefine the $\hat\uparrow$ and $\hat\Join$ rules for the modified Bar-Hillel construction for nominal Levenshtein automata in the following manner:\vspace{-2pt}
 
   \begin{prooftree}
     \hskip -0.9em
@@ -1003,7 +992,7 @@ First, we generate a synthetic grammar representing the intersection between the
     L(p) = 1 + p L(p) \phantom{addspace} P(a) = \Sigma + V L\big(V^2P(a)^2\big)
   \end{equation}
 
-  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, then it can be translated directly. Since the RHS of CNF productions must be nonterminals, we define $P(a)$ as $\Sigma + V L\big(V^2P(a)^2\big)$, otherwise, we could write $\Sigma + VL\big(P(a)^2\big)$ to allow productions containing mixed $\Sigma$ and $V$.
+  Depicted in Fig.~\ref{fig:ptree} is a partial $\mathbb{T}_2$, where red nodes are \texttt{root}s and blue nodes are \texttt{children}. The shape of type $\mathbb{T}_2$ is congruent with an acyclic CFG in Chomsky Normal Form, i.e., $\mathbb{T}_2\cong\mathcal{G}'$, so assuming the CFG recognizes a finite language, as is the case for $G_\cap'$, then it can be translated directly.% Since the RHS of CNF productions must be nonterminals, we define $P(a)$ as $\Sigma + V L\big(V^2P(a)^2\big)$, otherwise, we could write $\Sigma + VL\big(P(a)^2\big)$ to allow productions containing mixed $\Sigma$ and $V$.
 
   It is also possible to construct $\mathbb{T}_2$ for infinite languages by using the matrix fixpoint technique. If the CFG is cyclic, we can slice the language, $\mathcal{L}(G)\cap \Sigma^n$, and solve the fixpoint for each slice $n \in [2, n]$. Given a porous string $\sigma: \underline\Sigma^n$ representing the slice, we construct $\mathbb{T}_2$ from the bottom-up, and read off structures from the top-down. Here, we define first upper diagonal $\hat\sigma_r = \Lambda(\sigma_r)$ as:
 
@@ -1803,9 +1792,9 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   \begin{wrapfigure}{r}{0.35\textwidth}
     \vspace{-1cm}
     \resizebox{.35\textwidth}{!}{\input{throughput}}
-    \caption{Distinct repairs found in 30s.}
+    \caption{Repair throughput.}
     \label{fig:throughput}
-    \vspace{-1.5cm}
+    \vspace{-1.2cm}
   \end{wrapfigure}
 
   End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
@@ -1813,7 +1802,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   \begin{wrapfigure}{l}{0.35\textwidth}
     \vspace{-0.4cm}
     \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
-    \caption{End-to-end repair timings.}
+    \caption{End-to-end timings.}
     \label{fig:timings}
     \vspace{-0.4cm}
   \end{wrapfigure}
@@ -1847,14 +1836,17 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   \end{figure}
 
 \begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-0.7cm}
   \input{experiments/parallel_speedup}
+  \vspace{-0.5cm}
   \caption{Observed improvement in throughput relative to total CPU cores assigned.}
   \label{fig:speedup}
+  \vspace{-1.0cm}
 \end{wrapfigure}
 
   In general, n-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
-  Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
+  Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which are used to both construct the intersection grammar and sample from it.
 
   We measure the relative improvement in throughput (in terms of the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls. Further speedups are likely possible to realize by rewriting the sampler in CUDA, an engineering challenge which we leave for future work.
 
