@@ -116,7 +116,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:23.0.5")
+        implementation("org.graalvm.js:js:24.1.0")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
@@ -163,10 +163,10 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("org.junit.jupiter:junit-jupiter:5.10.2")
+        implementation("org.junit.jupiter:junit-jupiter:5.11.2")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:24.1.0")
+        implementation("org.jetbrains:annotations:25.0.0")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
