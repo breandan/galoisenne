@@ -1,0 +1,66 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+%\usepackage{color}
+%\renewcommand\UrlFont{\color{blue}\rmfamily}
+%\urlstyle{rm}
+%
+\input{preamble.tex}
+
+\begin{document}
+%
+\title{Let's wrap this up! Realtime incremental syntax repair with resource constraints}
+%
+\titlerunning{Let's wrap this up!}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Breandan Considine\inst{1} \and
+Jin Guo\inst{1}\and
+Xujie Si\inst{2}}
+%
+\authorrunning{Considine et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{McGill University, Montr\'eal, QC H2R 2Z4, Canada\\
+\email{\{breandan.considine@mail, jguo@cs\}.mcgill.ca}\and
+University of Toronto, Toronto, ON, M5S 1A1 Canada\\
+\email{six@utoronto.ca}}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+  We describe the implementation of a tool for real-time syntax correction in an IDE. Upon activation, our tool takes a syntactically invalid source code fragment around the caret position, and produces a small set of suggested repairs. We model the problem of syntax repair as a structured prediction task, whose goal is to generate the most likely valid repair in a small edit distance of the invalid code fragment.
+  \keywords{Error correction \and CFL reachability \and Langauge games.}
+\end{abstract}
+
+\section{Introduction}
+
+Syntax errors are a familiar nuisance for software developers. Whenever a syntax error is detected, the IDE typically flags the offending code fragment, but offers little guidance on how it should be fixed. The developer must inspect the code and manually apply the appropriate fix through a process of trial and error. This process can be time-consuming and frustrating, especially for novice developers. In this paper, we describe a tool for automatic syntax repair in an IDE.
+
+Our repair tool is an interweaving of two off-the-shelf components that are widely available today: grammars and language models. The grammar formally specifies a programming language's syntax, while the language model approximately generates the language. At first glance, these two components are not compatible: the grammar is a deterministic, formal model of the language, while the language model is only an approximate model of linguistic patterns. However, we show that by carefully integrating them, we can generate a set of repairs that are always correct and highly natural.
+
+Language models are statistical models that generate sequences of tokens. These models are trained on large text corpora and output probable sequences, but make no guarantees about the validity of the generated text. Given a sequence of previous tokens, $\sigma_{0}, \ldots, \sigma_{n-1}$, an autoregressive language model outputs a distribution over the alphabet, for the next most likely token, $\sigma_n$.
+
+Almost every programming language ever developed is syntactically context-free, which means the syntax of the language can be expressed as a context-free grammar (CFG). This can be used to effectively ``repair'' a pretrained autoregressive language model by forcing it during inference to generate only syntactically valid sequences. Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using language intersection techniques.
+
+Our approach uses a pretrained language model to sample repair candidates from the synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
+
+Prior work on syntax repair only attempts to find a valid repair, but does not guarantee validity (i.e., may produce an invalid repair) or completeness (i.e., may not produce any repair).
+
+\end{document}
