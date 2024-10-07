@@ -29,6 +29,7 @@
 \DeclareRobustCommand{\hlorange}[1]{{\sethlcolor{lorange}\hl{#1}}}
 \DeclareRobustCommand{\hlgreen}[1]{{\sethlcolor{lgreen}\hl{#1}}}
 
+\usepackage{bussproofs}
 \usepackage{ulem}
 
 
@@ -56,6 +57,113 @@
 \usepackage{inconsolata}
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows}
+
+\usepackage{listings}
+\usepackage[skins,breakable,listings]{tcolorbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Color boxes
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tcbset{
+  enhanced jigsaw,
+  breakable,
+  listing only,
+%  boxsep=-1pt,
+%  top=-1pt,
+  bottom=0.1cm,
+  right=0.5cm,
+  overlay first={
+    \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+  },
+  overlay middle={
+    \node[black!50] (S) at (frame.south) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
+    \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+  },
+  overlay last={
+    \node[black!50] (S) at (frame.north) {\Large\ding{34}};
+    \draw[dashed,black!50] (frame.north west) -- (S) -- (frame.north east);
+  },
+  before={\par\vspace{5pt}},
+  after={\par\vspace{\parskip}\noindent}
+}
+
+\definecolor{slightgray}{rgb}{0.90, 0.90, 0.90}
+
+\usepackage{soul}
+\makeatletter
+\def\SOUL@hlpreamble{%
+  \setul{}{3.0ex}%
+  \let\SOUL@stcolor\SOUL@hlcolor%
+  \SOUL@stpreamble%
+}
+\makeatother
+
+\newcommand{\inline}[1]{%
+  \begingroup%
+  \sethlcolor{slightgray}%
+  \hl{\ttfamily\footnotesize #1}%
+  \endgroup
+}
+
+\newcommand{\tinline}[1]{%
+  \begingroup%
+  \sethlcolor{slightgray}%
+  \hl{\ttfamily\tiny #1}%
+  \endgroup
+}
+
+\newtcblisting{halftidyinput}[1][]{%
+  left skip=0.7cm,
+  left=0.35cm,
+  width=6cm,
+%  left=-0.01cm,
+  top=-0.1cm,
+  bottom=-0.35cm,
+  listing options={
+    language=tidy,
+    basicstyle=\ttfamily\small,
+%numberstyle=\footnotesize,
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  },
+  underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
+  }
+}
+
+\newtcblisting{wholetidyinput}[1][]{%
+  left skip=0.7cm,
+  left=0.35cm,
+  top=0.1cm,
+  middle=0mm,
+  boxsep=0mm,
+  listing options={
+    language=tidy,
+    basicstyle=\ttfamily\small,
+%numberstyle=\footnotesize,
+    showstringspaces=false,
+    tabsize=2,
+    breaklines=true,
+    numbers=none,
+    inputencoding=utf8,
+    escapeinside={(*@}{@*)},
+    #1
+  },
+  underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+  }
+}
 
 %\usepackage{sourcecodepro}
 %\usepackage{newtxtt}
@@ -140,45 +248,253 @@ Let us consider an example. Suppose the user has written the following code frag
 
 To generate the repairs, we first construct an automaton that recognizes every string within a certain edit distance of the input. We then construct an intersection grammar, which recognizes all and only valid sequences within a certain edit distance of the input. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
 
-Now that we have a high-level overview of our approach, we will formalize the problem and describe the implementation details in the following sections.
+Now that we have a high-level overview of our approach, we will give a demonstrate of some of the capabilities of our tool.
 
-\section{Problem statement}\label{sec:problem}
+\section{Usage examples}
 
-Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
+Tidyparse offers a user interface featuring a text editor, a grammar editor and a parse tree viewer for interactive prototyping. For example, suppose we have the following context-free grammar:
 
-\begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
-Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
-\end{definition}
+\begin{wholetidyinput}
+  S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
+\end{wholetidyinput}
 
-%  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
+\noindent This grammar will automatically be rewritten into Chomsky Normal Form:
+
+\begin{wholetidyinput}
+ F.! (*@$\rightarrow$@*) !        S.) (*@$\rightarrow$@*) S F.)     and.S (*@$\rightarrow$@*) F.and S
+F.( (*@$\rightarrow$@*) (      F.xor (*@$\rightarrow$@*) xor       xor.S (*@$\rightarrow$@*) F.xor S
+F.) (*@$\rightarrow$@*) )      F.and (*@$\rightarrow$@*) and           S (*@$\rightarrow$@*) S xor.S
+  S (*@$\rightarrow$@*) <S>        S (*@$\rightarrow$@*) false         S (*@$\rightarrow$@*) true
+  S (*@$\rightarrow$@*) F.! S      S (*@$\rightarrow$@*) F.( S.)       S (*@$\rightarrow$@*) S and.S
+  S (*@$\rightarrow$@*) S (*@$\varepsilon$@*)+      (*@$\varepsilon$@*)+ (*@$\rightarrow$@*) (*@$\varepsilon$@*)+ (*@$\varepsilon$@*)+         (*@$\varepsilon$@*)+ (*@$\rightarrow$@*) (*@$\varepsilon$@*)
+\end{wholetidyinput}
+
+%\noindent We can visualize the CFG as either a graph or a matrix:
 %
+%\begin{figure}[H]
+%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_graph.png}
+%    \hspace{20pt}
+%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
+%\end{figure}
 
-As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
+\noindent Given a string containing holes, our tool will return several completions in a few milliseconds:
 
-\begin{definition}[Ranked repair]\label{def:ranked-repair}
-Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum probability repairs under the language model, i.e.,
-\begin{equation}
-  R(\ell_\cap, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
-\end{equation}
-  % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
-%    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
-\end{definition}
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+2. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+3. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+4. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
+...
+\end{lstlisting}
+\end{tcolorbox}
 
-%A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+\noindent Similarly, if provided with a string containing various errors, it will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
-%As we will demonstrate, ranked repair can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+true and ( false or and true false(*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1. true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*)
+2. true and ( false or (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
+3. true and ( false or (*@\hlorange{(}@*) true (*@\hlorange{)}@*) (*@\hlgreen{)}@*)
+...
+9. true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
+\end{lstlisting}
+\end{tcolorbox}
 
-Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
+%Since CFLs are closed under homomorphisms, it is possible to unify lexing and parsing, however most languages explicitly define a separate lexer, which we avail to substitute named identifiers with their type. Given an invalid string, the tool will first abstract the raw characters, generate edits in the abstract token space, then remap successful repairs back to character space as shown below:
+%
+%\hspace{-0.4cm}\begin{minipage}[t]{0.485\textwidth}
+%                 \begin{tcolorbox}[
+%                 left skip=0.7cm,
+%                 left=0.35cm,
+%                 right=0cm,
+%                 top=0.1cm,
+%                 middle=0mm,
+%                 boxsep=0mm,
+%                 underlay unbroken and first={%
+%                   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%                 }]
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%d = sum([foo(i] for i in vals))(*@\caret{ }@*)
+%                 \end{lstlisting}
+%                 \tcblower
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%1. d = sum([foo(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%2. d = sum([(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%3. d = sum([foo(*@\hlorange{.}@*)i for i in vals(*@\hlorange{]}@*))
+%4. d = sum([foo((*@\hlgreen{+}@*)i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%                 \end{lstlisting}
+%                 \end{tcolorbox}
+%\end{minipage}
+%\hspace{0.05cm}
+%\begin{minipage}[t]{0.51\textwidth}
+%  \begin{tcolorbox}[
+%  left skip=0.7cm,
+%  left=0.35cm,
+%  right=0cm,
+%  top=0.1cm,
+%  middle=0mm,
+%  boxsep=0mm,
+%  underlay unbroken and first={%
+%    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%  }]
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%w = w ( [ w ( w ] for w in w ) )
+%  \end{lstlisting}
+%  \tcblower
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%1. w = w ( [ w ( i (*@\hlorange{)}@*) for i in w (*@\hlorange{]}@*) )
+%2. w = w ( [ (*@\hlred{w}@*) ( w (*@\hlorange{)}@*) for w in w (*@\hlorange{]}@*) )
+%3. w = w ( [ w (*@\hlorange{.}@*) w (*@\hlred{)}@*)  for w in w (*@\hlorange{]}@*) )
+%4. w = w ( [ w ( (*@\hlgreen{+}@*) w (*@\hlorange{)}@*) for w in w (*@\hlorange{)}@*) )
+%  \end{lstlisting}
+%  \end{tcolorbox}
+%\end{minipage}
 
-\begin{definition}[Linear convergence]\label{def:linear-convergence}
-Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{\leq|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
-\end{definition}
+For simplicity, it is also possible to define a grammar and string side-by-side, as shown in the untyped $\lambda$-calculus example below:
 
-\noindent This will ensure that if $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include a representative subset, and additionally, will terminate after exhausting all valid repairs.
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+sxp -> (*@$\lambda$@*) var . sxp | sxp sxp | var | ( sxp )
+var -> a | b | c | f | x | y | z
+---
+( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x x ) (*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) (*@\hlorange{)}@*) (*@$\lambda$@*) x . f ( x x )
+2. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) (*@$\lambda$@*) x . f ( x x )
+3. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
+\end{lstlisting}
+\end{tcolorbox}
 
-To satisfy Def.~\ref{def:linear-convergence}, we can construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language.  Finally, sentences can be scored and ranked by likelihood under a language model.
-
-%Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell_\cap$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
+\noindent Name resolution and scope checking is also possible but requires a more sophisticated grammar.
 
 
+\subsection{Grammar assistance}
+
+Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG does not parse, will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
+
+  \begin{tcolorbox}[
+  left skip=0.7cm,
+  left=0.35cm,
+  right=0cm,
+  top=0.1cm,
+  middle=0mm,
+  boxsep=0mm,
+  underlay unbroken and first={%
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+  }]
+  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+B ::= true | false | (*@\caret{ }@*)
+  \end{lstlisting}
+  \tcblower
+  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1. B (*@\hlorange{->}@*) true | false (*@\hlred{ }@*)
+2. B (*@\hlorange{->}@*) true | false (*@\hlorange{<RHS>}@*)
+3. B (*@\hlorange{->}@*) true | false | (*@\hlgreen{<RHS>}@*)
+  \end{lstlisting}
+  \end{tcolorbox}
+
+\subsection{Interactive nonterminal expansion}
+
+Users can interactively build up a complex expression by placing the caret over a nonterminal they wish to expand, then pressing \keys{\ctrl + \SPACE} to receive a list of possible substitutions.
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+true and ( false or <(*@\caret{S}@*)> and true )
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+1. true and ( false or (*@\hlorange{true}@*) and true )
+2. true and ( false or (*@\hlorange{false}@*) and true )
+3. true and ( false or (*@\hlorange{! <S>}@*) and true )
+\end{lstlisting}
+\end{tcolorbox}
+
+\subsection{Nonterminal stubs}
+
+Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-sub}$, allows the user to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG representing some finite type and its inhabitants. $\alpha\textsc{-sub}$ replaces all productions containing $\langle\alpha\rangle$ with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$. The second rule, $\alpha\textsc{-int}$, introduces homonymous terminals for each user-defined nonterminal.
+
+\begin{figure}[h!]
+  \begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
+    \AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
+    \RightLabel{$\alpha\textsc{-sub}$}
+    \BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$\mathcal{G} \vdash v \in V$}
+    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
+    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
+  \end{prooftree}
+\end{figure}
+
+Tidyparse can also perform a limited form of type checking. Typed expressions are automatically expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule, for example when parsing an expression of the form $x + y$, the grammar will recognize \texttt{true + false} and \texttt{1 + 2}, but not \texttt{1 + true}.
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
+X -> Int | Bool
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
+E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
+\end{lstlisting}
+\end{tcolorbox}
+
+\subsection{Syntax highlighting}
+
+Subsequences which can be partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
+
+\begin{tcolorbox}[left skip=0.7cm,
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+(*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
+\end{lstlisting}
+\end{tcolorbox}
 \end{document}
