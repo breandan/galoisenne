@@ -10,6 +10,7 @@
 % Other font encondings may result in incorrect characters.
 %
 \usepackage{graphicx}
+\usepackage{menukeys}
 \usepackage{xcolor, soul}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
@@ -186,7 +187,7 @@
 %
 \title{Realtime syntax repair with resource constraints}
 %
-\titlerunning{Let's wrap this up!}
+\titlerunning{Realtime syntax repair with resource constraints}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
@@ -248,11 +249,11 @@ Let us consider an example. Suppose the user has written the following code frag
 
 To generate the repairs, we first construct an automaton that recognizes every string within a certain edit distance of the input. We then construct an intersection grammar, which recognizes all and only valid sequences within a certain edit distance of the input. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
 
-Now that we have a high-level overview of our approach, we will give a demonstrate of some of the capabilities of our tool.
+Now that we have a high-level overview of our approach, we will demonstrate a few of the capabilities of our tool by means of some usage examples.
 
 \section{Usage examples}
 
-Tidyparse offers a user interface featuring a text editor, a grammar editor and a parse tree viewer for interactive prototyping. For example, suppose we have the following context-free grammar:
+Tidyparse offers a convenient user interface featuring a text editor, a grammar editor and a parse tree viewer for interactive prototyping. For example, suppose we have the following context-free grammar:
 
 \begin{wholetidyinput}
   S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
@@ -484,7 +485,7 @@ E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
 
 \subsection{Syntax highlighting}
 
-Subsequences which can be partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
+Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
 
 \begin{tcolorbox}[left skip=0.7cm,
 top=0.1cm,
