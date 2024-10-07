@@ -10,6 +10,7 @@
 % Other font encondings may result in incorrect characters.
 %
 \usepackage{graphicx}
+\usepackage{xcolor, soul}
 % Used for displaying a sample figure. If possible, figure files should
 % be included in EPS format.
 %
@@ -19,11 +20,63 @@
 %\renewcommand\UrlFont{\color{blue}\rmfamily}
 %\urlstyle{rm}
 %
-\input{preamble.tex}
+%\input{preamble.tex}
+
+\colorlet{lred}{red!30}
+\colorlet{lorange}{orange!30}
+\colorlet{lgreen}{green!30}
+\DeclareRobustCommand{\hlred}[1]{{\sethlcolor{lred}\hl{#1}}}
+\DeclareRobustCommand{\hlorange}[1]{{\sethlcolor{lorange}\hl{#1}}}
+\DeclareRobustCommand{\hlgreen}[1]{{\sethlcolor{lgreen}\hl{#1}}}
+
+\usepackage{ulem}
+
+
+\makeatletter
+\def\squigglyred{\bgroup \markoverwith{\textcolor{red}{\lower3\p@\hbox{\sixly \char58}}}\ULon}
+\makeatother
+
+\makeatletter
+\def\squigglyblu{\bgroup \markoverwith{\textcolor{blue}{\lower3\p@\hbox{\sixly \char58}}}\ULon}
+\makeatother
+
+\makeatletter
+\def\squigglyora{\bgroup \markoverwith{\textcolor{orange}{\lower3\p@\hbox{\sixly \char58}}}\ULon}
+\makeatother
+
+\newcommand{\err}[1]{\smash{\squigglyred{#1}{}}}
+\newcommand{\erb}[1]{\smash{\squigglyblu{#1}{}}}
+\newcommand{\ero}[1]{\smash{\squigglyora{#1}{}}}
+\newcommand{\stirlingii}{\genfrac{\{}{\}}{0pt}{}}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+\usepackage{amssymb}
+
+\usepackage{inconsolata}
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows}
+
+%\usepackage{sourcecodepro}
+%\usepackage{newtxtt}
+%\usepackage{zi4}
+%\usepackage{FiraMono}
+%\usepackage{DejaVuSansMono}
+
+%\usepackage{fontspec}
+%\setmonofont[Scale=0.8]{JetBrainsMono}[
+%  Contextuals={Alternate},
+%  Path=./font/,
+%  Extension = .ttf,
+%  UprightFont=*-Regular,
+%  BoldFont=*-Bold,
+%  ItalicFont=*-Italic,
+%  BoldItalicFont=*-BoldItalic
+%]
 
 \begin{document}
 %
-\title{Let's wrap this up! Realtime incremental syntax repair with resource constraints}
+\title{Realtime syntax repair with resource constraints}
 %
 \titlerunning{Let's wrap this up!}
 % If the paper title is too long for the running head, you can set
@@ -51,16 +104,81 @@ University of Toronto, Toronto, ON, M5S 1A1 Canada\\
 
 \section{Introduction}
 
-Syntax errors are a familiar nuisance for software developers. Whenever a syntax error is detected, the IDE typically flags the offending code fragment, but offers little guidance on how it should be fixed. The developer must inspect the code and manually apply the appropriate fix through a process of trial and error. This process can be time-consuming and frustrating, especially for novice developers. In this paper, we describe a tool for automatic syntax repair in an IDE.
+Syntax errors are a familiar nuisance for software developers. Whenever a syntax error is detected, the IDE typically flags the offending code fragment, but offers little guidance on how it should be fixed. The developer must inspect the code and manually apply the appropriate fix through a process of trial and error. This process can be distracting and time-consuming, especially for novice developers. In this paper, we describe a tool for automatic syntax repair in an IDE.
 
-Our repair tool is an interweaving of two off-the-shelf components that are widely available today: grammars and language models. The grammar formally specifies a programming language's syntax, while the language model approximately generates the language. At first glance, these two components are not compatible: the grammar is a deterministic, formal model of the language, while the language model is only an approximate model of linguistic patterns. However, we show that by carefully integrating them, we can generate a set of repairs that are always correct and highly natural.
+We propose a new approach to syntax repair and accompanying tool that suggests a small set of repairs to the user, which are guaranteed to be valid, minimal and natural. Our repair tool is a fusion of two widely available components: grammars and language models. At first glance, these two models are not obviously synergistic: the grammar is a deterministic, formal model of the language, while the language model is only an approximate generator of linguistic patterns. However, we show that by carefully integrating them, it is possible to generate repairs that are always correct and highly natural.
 
-Language models are statistical models that generate sequences of tokens. These models are trained on large text corpora and output probable sequences, but make no guarantees about the validity of the generated text. Given a sequence of previous tokens, $\sigma_{0}, \ldots, \sigma_{n-1}$, an autoregressive language model outputs a distribution over the alphabet, for the next most likely token, $\sigma_n$.
+Language models are statistical models that generate natural sequences of text, however, these models make no guarantees about the validity of the generated text. Given a sequence of previous tokens, $\sigma_{0}, \ldots, \sigma_{n-1}$, an autoregressive language model outputs a distribution over the next most likely token, $\sigma_n$.
 
-Almost every programming language ever developed is syntactically context-free, which means the syntax of the language can be expressed as a context-free grammar (CFG). This can be used to effectively ``repair'' a pretrained autoregressive language model by forcing it during inference to generate only syntactically valid sequences. Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using language intersection techniques.
+Almost every programming language ever developed is syntactically context-free, which means the syntax of the language can be expressed as a context-free grammar (CFG). This grammar can be used to recognize the validity of a given input sequence, or force an autoregressive language model to generate only syntactically valid sequences by blocking out invalid tokens during inference.
 
-Our approach uses a pretrained language model to sample repair candidates from the synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
+Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using language intersection techniques. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
 
-Prior work on syntax repair only attempts to find a valid repair, but does not guarantee validity (i.e., may produce an invalid repair) or completeness (i.e., may not produce any repair).
+Let us consider an example. Suppose the user has written the following code fragment: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
+
+\begin{figure}[h!]
+  \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
+  (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
+  \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
+  \end{tabular}\vspace{-5pt}
+\end{figure}
+
+\noindent To find these repairs, we first lexicalize the input as follows:
+
+\begin{verbatim}
+  v = df.iloc(5:, 2:)
+  v    = df   . iloc ( 5      : , 2      : )
+  NAME = NAME . NAME ( NUMBER : , NUMBER : )
+\end{verbatim}
+
+\noindent Next, we will construct an automaton that recognizes every string within a certain edit distance of the input. We will depict the process for a simpler example, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.
+
+\begin{figure}[h!]
+  \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then intersect it with the grammar to produce an intersection grammar, which can be simplified to a DFA and decoded.}\label{fig:arch_simp}
+\end{figure}
+
+To generate the repairs, we first construct an automaton that recognizes every string within a certain edit distance of the input. We then construct an intersection grammar, which recognizes all and only valid sequences within a certain edit distance of the input. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
+
+Now that we have a high-level overview of our approach, we will formalize the problem and describe the implementation details in the following sections.
+
+\section{Problem statement}\label{sec:problem}
+
+Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
+
+\begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
+Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
+\end{definition}
+
+%  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
+%
+
+As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
+
+\begin{definition}[Ranked repair]\label{def:ranked-repair}
+Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum probability repairs under the language model, i.e.,
+\begin{equation}
+  R(\ell_\cap, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+\end{equation}
+  % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+%    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
+\end{definition}
+
+%A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+
+%As we will demonstrate, ranked repair can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+
+Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
+
+\begin{definition}[Linear convergence]\label{def:linear-convergence}
+Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{\leq|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
+\end{definition}
+
+\noindent This will ensure that if $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include a representative subset, and additionally, will terminate after exhausting all valid repairs.
+
+To satisfy Def.~\ref{def:linear-convergence}, we can construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language.  Finally, sentences can be scored and ranked by likelihood under a language model.
+
+%Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell_\cap$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
+
 
 \end{document}

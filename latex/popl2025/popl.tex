@@ -150,73 +150,8 @@
   From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. Then, we proceed to construct a synthetic grammar, recognizing all strings in the intersection of the programming language and the edit ball. Finally, this grammar is reduced to a normal form and decoded with the help of a statistical model to produce a list of suggested repairs.
 
   \begin{figure}[h!]
-%    \begin{center}
-%      \resizebox{0.7\textwidth}{!}{
-%        \begin{tikzpicture}[node distance=5cm]
-%          \node (start) [io] {Broken code};
-%          \node (node1) [plain, right of=start] {\phantom{...}\textbf{Language intersection}\phantom{...}};
-%          \node (gram1) [io2, above of=node1, yshift=-3.2cm] {Grammar};
-%%        \node (node2) [plain, right of=node1] {\textbf{Repair extraction}};
-%%        \node (ptree) [io, above of=node2, yshift=-3cm] {$\mathbb{T}_2$};
-%          \node (node3) [plain, right of=node1, xshift=0.5cm] {\textbf{Repair decoding}};
-%          \node (ngram) [io2, above of=node3, yshift=-3.2cm] {Markov chain};
-%          \node (node4) [io, right of=node3] {Repairs};
-%          \draw [arrow] (start) -- (node1);
-%          \draw [arrow] (gram1) -- (node1);
-%          \draw [arrow] (node1) -- (node3);
-%          \draw [arrow] (node3) -- (node4);
-%          \draw [arrow] (ngram) -- (node3);
-%%        \draw [arrow] (ptree) -- (node2);
-%        \end{tikzpicture}
-%      }
-%    \end{center}
     \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
-    %digraph Automaton {
-    %  rankdir = LB;
-    %  edge [fontname="Jetbrains Mono"]
-    %  0 [shape=doublecircle,label=""];
-    %  1 [shape=circle,label=""];
-    %  1 -> 6 [label="  )"]
-    %  2 [shape=circle,label=""];
-    %  2 -> 10 [label="  )"]
-    %  3 [shape=doublecircle,label=""];
-    %  4 [shape=circle,label=""];
-    %  4 -> 2 [label="  ("]
-    %  5 [shape=circle,label=""];
-    %  5 -> 3 [label="  )"]
-    %  6 [shape=doublecircle,label=""];
-    %  6 -> 7 [label="  ("]
-    %  7 [shape=circle,label=""];
-    %  7 -> 0 [label="  )"]
-    %  8 [shape=doublecircle,label=""];
-    %  9 [shape=circle,label=""];
-    %  initial [shape=plaintext,label=""];
-    %  initial -> 9
-    %  9 -> 1 [headlabel = " (", labeldistance=2.5, labelangle=30]
-    %  9 -> 4 [label="  ("]
-    %  9 -> 5 [headlabel = " (", labeldistance=2.5, labelangle=-30]
-    %  10 [shape=circle,label=""];
-    %  10 -> 8 [label="  )"]
-    %}
-
-    %digraph Automaton {
-    %  edge [fontsize=14,fontname="Jetbrains Mono"]
-    %  0 [shape=circle,label=""];
-    %  0 -> 5 [label=""]
-    %  0 -> 3 [label=""]
-    %  1 [shape=circle,label=""];
-    %  1 -> 4 [label=""]
-    %  2 [shape=circle,label=""];
-    %  initial [shape=plaintext,label=""];
-    %  initial -> 2
-    %  2 -> 0 [label=""]
-    %  3 [shape=doublecircle,label=""];
-    %  3 -> 1 [label=""]
-    %  4 [shape=doublecircle,label=""];
-    %  5 [shape=circle,label=""];
-    %  5 -> 1 [label=""]
-    %}
-    \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
+    \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
   \end{figure}
 
   \noindent This process is depicted in Fig.~\ref{fig:arch_simp}. We will now discuss the intersection step in slightly more detail.
