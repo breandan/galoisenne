@@ -57,7 +57,12 @@ data class FSATrajectory(val traj: List<Σᐩ?>, val lastState: BState, val scor
 
 fun BAutomaton.min(): BAutomaton = minimize(this)
 
-fun PTree.toDFA(minimize: Boolean = false) =
+fun PTree.toDFA(
+  minimize: Boolean = false,
+  unitRule: (String) -> dk.brics.automaton.Automaton = {
+    BAutomaton.makeChar(Random(it.hashCode()).nextInt().toChar())
+  }
+) =
   measureTimedValue {
     BAutomaton.setMinimization(MINIMIZE_BRZOZOWSKI)
     var i = 0
@@ -68,10 +73,7 @@ fun PTree.toDFA(minimize: Boolean = false) =
         else if (i++ % 13 == 0) a.concatenate(b).min() else a.concatenate(b) },
       either = { a, b -> if (a == null) b else if (b == null) a
         else if (j++ % 13 == 0) a.union(b).min() else a.union(b) },
-      unit = { a ->
-        if ("ε" in a.root) null
-        else BAutomaton.makeChar(Random(a.root.hashCode()).nextInt().toChar())
-      }
+      unit = { a -> if ("ε" in a.root) null else unitRule(a.root) }
     )
   }.also { println("Took ${it.duration} to build FSA") }.value
   ?.also { println("Original automata had ${it

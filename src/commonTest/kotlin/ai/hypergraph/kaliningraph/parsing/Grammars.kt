@@ -25,6 +25,7 @@ object Grammars {
     S -> X | Y | Z
   """.parseCFG().noNonterminalStubs
 
+  val dyck = """S -> ( ) | ( S ) | S S""".parseCFG().noEpsilonOrNonterminalStubs
   val deadSimple = """S -> ( ) | ( S )""".parseCFG().noEpsilonOrNonterminalStubs
   val dsNorm = """
     START -> START START
