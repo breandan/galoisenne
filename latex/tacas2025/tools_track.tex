@@ -199,13 +199,13 @@ University of Toronto, Toronto, ON, M5S 1A1 Canada\\
 
 Syntax errors are a familiar nuisance for software developers. Whenever a syntax error is detected, the IDE typically flags the offending code fragment, but offers little guidance on how it should be fixed. The developer must inspect the code and manually apply the appropriate fix through a process of trial and error. This process can be distracting and time-consuming, especially for novice developers. In this paper, we describe a tool for automatic syntax repair in an IDE.
 
-We propose a new approach to syntax repair and accompanying tool that suggests a small set of repairs to the user, which are guaranteed to be valid, minimal and natural. Our repair tool is a fusion of two widely available components: grammars and language models. At first glance, these two models are not obviously synergistic: the grammar is a deterministic, formal model of the language, while the language model is only an approximate generator of linguistic patterns. However, we show that by carefully integrating them, it is possible to generate repairs that are always correct and highly natural.
+We propose a new approach to syntax repair and accompanying tool, called \textit{Tidyparse} that suggests a small set of repairs to the user, which are guaranteed to be valid, minimal and natural. Our repair tool is a fusion of two widely available components: grammars and language models. At first glance, these two models are not obviously synergistic: the grammar is a deterministic, formal model of the language, while the language model is only an approximate generator of linguistic patterns. However, we show that by carefully integrating them, it is possible to generate repairs that are always correct and highly natural.
 
 Language models are statistical models that generate natural sequences of text, however, these models make no guarantees about the validity of the generated text. Given a sequence of previous tokens, $\sigma_{0}, \ldots, \sigma_{n-1}$, an autoregressive language model outputs a distribution over the next most likely token, $\sigma_n$.
 
 Almost every programming language ever developed is syntactically context-free, which means the syntax of the language can be expressed as a context-free grammar (CFG). This grammar can be used to recognize the validity of a given input sequence, or force an autoregressive language model to generate only syntactically valid sequences by blocking out invalid tokens during inference.
 
-Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using language intersection techniques. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
+Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using the Bar-Hillel construction. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
 
 Let us consider an example. Suppose the user has written the following code fragment: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
 
@@ -216,7 +216,7 @@ Let us consider an example. Suppose the user has written the following code frag
   \end{tabular}\vspace{-5pt}
 \end{figure}
 
-\noindent To find these repairs, we first lexicalize the input as follows:
+\noindent To generate these repairs, we first lexicalize the input as follows:
 
 \begin{verbatim}
   v = df.iloc(5:, 2:)
@@ -224,14 +224,14 @@ Let us consider an example. Suppose the user has written the following code frag
   NAME = NAME . NAME ( NUMBER : , NUMBER : )
 \end{verbatim}
 
-\noindent Next, we will construct an automaton that recognizes every string within a certain edit distance of the input. We will depict the process for a simpler example, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.\vspace{-0.3cm}
+\noindent Next, we will construct an automaton that recognizes every string within a certain edit distance of the input. We will depict the process for a simpler language, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.\vspace{-0.3cm}
 
 \begin{figure}[h!]
   \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
   \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then intersect it with the grammar to produce an intersection grammar, which can be simplified to a DFA and decoded.}\label{fig:arch_simp}
 \end{figure}\vspace{-0.3cm}
 
-To generate the repairs, we first construct an automaton that recognizes every string within a certain edit distance of the input. We then construct an intersection grammar, which recognizes all and only valid sequences within a certain edit distance of the input. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
+We first construct an automaton that recognizes every string within a certain edit distance of the input. We then reduce the grammar to Chomsky normal form (CNF) and construct an intersection grammar, which recognizes all and only valid sequences recognized by the grammar and edit automaton. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
 
 Now that we have a high-level overview of our approach, we will demonstrate a few of the capabilities of our tool by means of some usage examples.
 
@@ -356,12 +356,12 @@ var -> a | b | c | f | x | y | z
 3. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 \end{lstlisting}
 \end{tcolorbox}
-\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement. Customizing the order of repair ranking is possible using a programmatic interface.
+\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement, then sorts the results by Levenshtein distance. Customizing the ranking order is possible using a programmatic interface.
 
 
 \subsection{Grammar assistance}
 
-Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG does not parse, will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
+Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG is missing a term or uses the wrong delimiters, it will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
 
   \begin{tcolorbox}[
   left=0.35cm,
@@ -382,6 +382,22 @@ B ::= true | false | (*@\caret{ }@*)
 3. B (*@\hlorange{->}@*) true | false | (*@\hlgreen{<RHS>}@*)
   \end{lstlisting}
   \end{tcolorbox}
+
+\subsection{Syntax highlighting}
+
+Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
+
+\begin{tcolorbox}[
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+(*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
+\end{lstlisting}
+\end{tcolorbox}
 
 \subsection{Interactive nonterminal expansion}
 
@@ -407,7 +423,7 @@ true and ( false or <(*@\caret{S}@*)> and true )
 
 \subsection{Nonterminal stubs}
 
-Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-sub}$, allows the user to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG representing some finite type and its inhabitants. $\alpha\textsc{-sub}$ replaces all productions containing $\langle\alpha\rangle$ with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$. The second rule, $\alpha\textsc{-int}$, introduces homonymous terminals for each user-defined nonterminal.
+Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-sub}$, allows the user to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG representing some finite type and its inhabitants. $\alpha\textsc{-sub}$ replaces all productions containing $\langle\alpha\rangle$ with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$. The second rule, $\alpha\textsc{-int}$, introduces bracketed terminals for each user-defined nonterminal, representing unexpanded subexpressions.
 
 \begin{figure}[h!]
   \begin{prooftree}
@@ -443,21 +459,6 @@ E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
 \end{lstlisting}
 \end{tcolorbox}
 
-\subsection{Syntax highlighting}
-
-Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
-
-\begin{tcolorbox}[
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-(*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
-\end{lstlisting}
-\end{tcolorbox}
 
 \section{Related work}
 
