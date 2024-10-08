@@ -53,8 +53,12 @@
 \usepackage{amsmath}
 \DeclareMathOperator*{\argmax}{argmax}
 \DeclareMathOperator*{\argmin}{argmin}
-\usepackage{amssymb}
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
 
+\usepackage{hyperref}
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 \usepackage{inconsolata}
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows}
@@ -74,8 +78,12 @@
   listing only,
 %  boxsep=-1pt,
 %  top=-1pt,
-  bottom=0.1cm,
-  right=0.5cm,
+  width=0.9\textwidth,
+  left=0.4cm,
+  bottom=0cm,
+  right=0cm,
+  left skip=1.8cm,
+  boxrule=1pt,
   overlay first={
     \node[black!50] (S) at (frame.south) {\Large\ding{34}};
     \draw[dashed,black!50] (frame.south west) -- (S) -- (frame.south east);
@@ -119,39 +127,15 @@
   \endgroup
 }
 
-\newtcblisting{halftidyinput}[1][]{%
-  left skip=0.7cm,
-  left=0.35cm,
-  width=6cm,
-%  left=-0.01cm,
-  top=-0.1cm,
-  bottom=-0.35cm,
-  listing options={
-    language=tidy,
-    basicstyle=\ttfamily\small,
-%numberstyle=\footnotesize,
-    showstringspaces=false,
-    tabsize=2,
-    breaklines=true,
-    numbers=none,
-    inputencoding=utf8,
-    escapeinside={(*@}{@*)},
-    #1
-  },
-  underlay unbroken and first={%
-    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-7mm]interior.north west);
-  }
-}
-
 \newtcblisting{wholetidyinput}[1][]{%
-  left skip=0.7cm,
-  left=0.35cm,
+  left=0.4cm,
   top=0.1cm,
+%  width=0.9\textwidth,
   middle=0mm,
   boxsep=0mm,
   listing options={
     language=tidy,
-    basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\scriptsize,
 %numberstyle=\footnotesize,
     showstringspaces=false,
     tabsize=2,
@@ -162,7 +146,7 @@
     #1
   },
   underlay unbroken and first={%
-    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-8mm]interior.north west);
   }
 }
 
@@ -240,12 +224,12 @@ Let us consider an example. Suppose the user has written the following code frag
   NAME = NAME . NAME ( NUMBER : , NUMBER : )
 \end{verbatim}
 
-\noindent Next, we will construct an automaton that recognizes every string within a certain edit distance of the input. We will depict the process for a simpler example, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.
+\noindent Next, we will construct an automaton that recognizes every string within a certain edit distance of the input. We will depict the process for a simpler example, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.\vspace{-0.3cm}
 
 \begin{figure}[h!]
   \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
   \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then intersect it with the grammar to produce an intersection grammar, which can be simplified to a DFA and decoded.}\label{fig:arch_simp}
-\end{figure}
+\end{figure}\vspace{-0.3cm}
 
 To generate the repairs, we first construct an automaton that recognizes every string within a certain edit distance of the input. We then construct an intersection grammar, which recognizes all and only valid sequences within a certain edit distance of the input. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
 
@@ -253,67 +237,26 @@ Now that we have a high-level overview of our approach, we will demonstrate a fe
 
 \section{Usage examples}
 
-Tidyparse offers a convenient user interface featuring a text editor, a grammar editor and a parse tree viewer for interactive prototyping. For example, suppose we have the following context-free grammar:
+Tidyparse offers a convenient user interface featuring a text editor, a grammar editor and a parse tree viewer for interactive prototyping. All tokens are delimited by whitespace. For example, suppose we have the following grammar:
 
 \begin{wholetidyinput}
   S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{wholetidyinput}
 
-\noindent This grammar will automatically be rewritten into Chomsky Normal Form:
+\noindent Syntax repair is the primary intended use case of our tool. If given an unparsable string, it will return an ordered set of suggestions how to fix it, highlighted with colors, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
 
-\begin{wholetidyinput}
- F.! (*@$\rightarrow$@*) !        S.) (*@$\rightarrow$@*) S F.)     and.S (*@$\rightarrow$@*) F.and S
-F.( (*@$\rightarrow$@*) (      F.xor (*@$\rightarrow$@*) xor       xor.S (*@$\rightarrow$@*) F.xor S
-F.) (*@$\rightarrow$@*) )      F.and (*@$\rightarrow$@*) and           S (*@$\rightarrow$@*) S xor.S
-  S (*@$\rightarrow$@*) <S>        S (*@$\rightarrow$@*) false         S (*@$\rightarrow$@*) true
-  S (*@$\rightarrow$@*) F.! S      S (*@$\rightarrow$@*) F.( S.)       S (*@$\rightarrow$@*) S and.S
-  S (*@$\rightarrow$@*) S (*@$\varepsilon$@*)+      (*@$\varepsilon$@*)+ (*@$\rightarrow$@*) (*@$\varepsilon$@*)+ (*@$\varepsilon$@*)+         (*@$\varepsilon$@*)+ (*@$\rightarrow$@*) (*@$\varepsilon$@*)
-\end{wholetidyinput}
-
-%\noindent We can visualize the CFG as either a graph or a matrix:
-%
-%\begin{figure}[H]
-%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_graph.png}
-%    \hspace{20pt}
-%    \includegraphics[width=3.5cm]{../figures/bool_arith_cfg_mat.bmp}
-%\end{figure}
-
-\noindent Given a string containing holes, our tool will return several completions in a few milliseconds:
-
-\begin{tcolorbox}[left skip=0.7cm,
+\begin{tcolorbox}[
 top=0.1cm,
 middle=0mm,
 boxsep=0mm,
 underlay unbroken and first={%
   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
-true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
-\end{lstlisting}
-\tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
-1. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-2. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-3. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-4. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
-...
-\end{lstlisting}
-\end{tcolorbox}
-
-\noindent Similarly, if provided with a string containing various errors, it will return several suggestions how to fix it, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
-
-\begin{tcolorbox}[left skip=0.7cm,
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 true and ( false or and true false(*@\caret{ }@*)
 \end{lstlisting}
 \tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 1. true and ( false or (*@\hlorange{!}@*) true (*@\hlorange{)}@*)
 2. true and ( false or (*@\hlgreen{<S>}@*) and true (*@\hlorange{)}@*)
 3. true and ( false or (*@\hlorange{(}@*) true (*@\hlorange{)}@*) (*@\hlgreen{)}@*)
@@ -321,7 +264,27 @@ true and ( false or and true false(*@\caret{ }@*)
 9. true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
 \end{lstlisting}
 \end{tcolorbox}
+Code completion is the secondary intended use case. Given a string containing holes, our tool will return several possible completions:
 
+\begin{tcolorbox}[
+top=0.1cm,
+middle=0mm,
+boxsep=0mm,
+underlay unbroken and first={%
+  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
+\end{lstlisting}
+\tcblower
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+1. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+2. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+3. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+4. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
+...
+\end{lstlisting}
+\end{tcolorbox}
 %Since CFLs are closed under homomorphisms, it is possible to unify lexing and parsing, however most languages explicitly define a separate lexer, which we avail to substitute named identifiers with their type. Given an invalid string, the tool will first abstract the raw characters, generate edits in the abstract token space, then remap successful repairs back to character space as shown below:
 %
 %\hspace{-0.4cm}\begin{minipage}[t]{0.485\textwidth}
@@ -335,11 +298,11 @@ true and ( false or and true false(*@\caret{ }@*)
 %                 underlay unbroken and first={%
 %                   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 %                 }]
-%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 %d = sum([foo(i] for i in vals))(*@\caret{ }@*)
 %                 \end{lstlisting}
 %                 \tcblower
-%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 %1. d = sum([foo(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
 %2. d = sum([(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
 %3. d = sum([foo(*@\hlorange{.}@*)i for i in vals(*@\hlorange{]}@*))
@@ -359,11 +322,11 @@ true and ( false or and true false(*@\caret{ }@*)
 %  underlay unbroken and first={%
 %    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 %  }]
-%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 %w = w ( [ w ( w ] for w in w ) )
 %  \end{lstlisting}
 %  \tcblower
-%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 %1. w = w ( [ w ( i (*@\hlorange{)}@*) for i in w (*@\hlorange{]}@*) )
 %2. w = w ( [ (*@\hlred{w}@*) ( w (*@\hlorange{)}@*) for w in w (*@\hlorange{]}@*) )
 %3. w = w ( [ w (*@\hlorange{.}@*) w (*@\hlred{)}@*)  for w in w (*@\hlorange{]}@*) )
@@ -371,31 +334,29 @@ true and ( false or and true false(*@\caret{ }@*)
 %  \end{lstlisting}
 %  \end{tcolorbox}
 %\end{minipage}
-
 For simplicity, it is also possible to define a grammar and string side-by-side, as shown in the untyped $\lambda$-calculus example below:
 
-\begin{tcolorbox}[left skip=0.7cm,
+\begin{tcolorbox}[
 top=0.1cm,
 middle=0mm,
 boxsep=0mm,
 underlay unbroken and first={%
   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 sxp -> (*@$\lambda$@*) var . sxp | sxp sxp | var | ( sxp )
 var -> a | b | c | f | x | y | z
 ---
 ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x x ) (*@\caret{ }@*)
 \end{lstlisting}
 \tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 1. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) (*@\hlorange{)}@*) (*@$\lambda$@*) x . f ( x x )
 2. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) (*@\hlorange{x}@*) (*@\hlgreen{)}@*) (*@$\lambda$@*) x . f ( x x )
 3. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 \end{lstlisting}
 \end{tcolorbox}
-
-\noindent Name resolution and scope checking is also possible but requires a more sophisticated grammar.
+\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement. Customizing the order of repair ranking is possible using a programmatic interface.
 
 
 \subsection{Grammar assistance}
@@ -403,7 +364,6 @@ var -> a | b | c | f | x | y | z
 Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG does not parse, will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
 
   \begin{tcolorbox}[
-  left skip=0.7cm,
   left=0.35cm,
   right=0cm,
   top=0.1cm,
@@ -412,11 +372,11 @@ Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance whil
   underlay unbroken and first={%
     \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
   }]
-  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 B ::= true | false | (*@\caret{ }@*)
   \end{lstlisting}
   \tcblower
-  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 1. B (*@\hlorange{->}@*) true | false (*@\hlred{ }@*)
 2. B (*@\hlorange{->}@*) true | false (*@\hlorange{<RHS>}@*)
 3. B (*@\hlorange{->}@*) true | false | (*@\hlgreen{<RHS>}@*)
@@ -427,18 +387,18 @@ B ::= true | false | (*@\caret{ }@*)
 
 Users can interactively build up a complex expression by placing the caret over a nonterminal they wish to expand, then pressing \keys{\ctrl + \SPACE} to receive a list of possible substitutions.
 
-\begin{tcolorbox}[left skip=0.7cm,
+\begin{tcolorbox}[
 top=0.1cm,
 middle=0mm,
 boxsep=0mm,
 underlay unbroken and first={%
   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 true and ( false or <(*@\caret{S}@*)> and true )
 \end{lstlisting}
 \tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 1. true and ( false or (*@\hlorange{true}@*) and true )
 2. true and ( false or (*@\hlorange{false}@*) and true )
 3. true and ( false or (*@\hlorange{! <S>}@*) and true )
@@ -465,19 +425,19 @@ Tidyparse augments CFGs with two additional rules, which are desugared into a va
 
 Tidyparse can also perform a limited form of type checking. Typed expressions are automatically expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule, for example when parsing an expression of the form $x + y$, the grammar will recognize \texttt{true + false} and \texttt{1 + 2}, but not \texttt{1 + true}.
 
-\begin{tcolorbox}[left skip=0.7cm,
+\begin{tcolorbox}[
 top=0.1cm,
 middle=0mm,
 boxsep=0mm,
 underlay unbroken and first={%
   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
 X -> Int | Bool
-\end{lstlisting}
-\tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+
+# The above grammar is equivalent to writing:
+
 E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
 E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
 \end{lstlisting}
@@ -487,15 +447,85 @@ E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
 
 Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
 
-\begin{tcolorbox}[left skip=0.7cm,
+\begin{tcolorbox}[
 top=0.1cm,
 middle=0mm,
 boxsep=0mm,
 underlay unbroken and first={%
   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
 }]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\small, escapeinside={(*@}{@*)}]
+\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
 (*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
 \end{lstlisting}
 \end{tcolorbox}
+
+\section{Related work}
+
+Many methods to sample from language models have been proposed. Some of these guarantee that all samples are grammatically valid. Others guarantee that all grammatically valid samples are generable. The trick is not just synthesizing valid functions, but doing so in a parallel communication-free manner, without compromising soundness or completeness. The goal is to massively scale up a discrete sampler without replacement.
+
+This problem is also closely related to model counting in the CSP literature, so a practical speedup could lead to improvements on a lot of interesting downstream benchmarks.
+
+In general, the problem of program induction from input-output examples is not well-posed, so specialized solvers that can make stronger assumptions will usually have an advantage on domain-specific benchmarks. Most existing program synthesizers do not satisfy all of these desiderata, e.g., soundness (\textbf{S}), completeness (\textbf{S}), naturalness (\textbf{N}), and parallelism (||). It depends on how you define ||, but basically, we want to decode in parallel. So an LLM that uses a GPU we do not consider to be ``parallel'' in the sense we mean here.
+
+\newcommand{\tidyparse}{\href{https://arxiv.org/pdf/2408.01849}{Tidyparse}~\cite{considine2023pragmatic}}
+\newcommand{\seqtoparse}{\href{https://pg.ucsd.edu/publications/Seq2Parse-neurosymbolic-parse-error-repair_OOPSLA-2022.pdf}{Seq2Parse}~\cite{sakkas2022seq2parse}}
+\newcommand{\bifi}{\href{https://arxiv.org/pdf/2106.06600}{BIFI}~\cite{yasunaga2021break}}
+\newcommand{\ordinalfix}{\href{https://arxiv.org/pdf/2309.06771}{OrdinalFix}~\cite{zhang2023ordinalfix}}
+% https://boxbase.org/entries/2019/nov/25/error-correcting-earley-algorithm/
+\newcommand{\ahopeterson}{\href{https://epubs.siam.org/doi/10.1137/0201022}{Aho/Peterson}~\cite{aho1972minimum}}
+
+\begin{table}[h]
+  \begin{tabular}{c|cccccc}
+    & \textbf{S}       & \textbf{C} & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
+    \tidyparse   & \cmark           & \cmark & \cmark & CFG$_\cap$      & \cmark & IDE-ready     \\
+    \seqtoparse  & \cmark$^\dagger$ & \xmark & \cmark & CFG             & \xmark & Python        \\
+    \bifi        & \xmark           & \xmark & \cmark & $\Sigma^*$      & \xmark & Python        \\
+    \ordinalfix  & \cmark           & \xmark & \xmark & CFG+            & \xmark & Rust          \\
+    \ahopeterson & \cmark           & \xmark & \xmark & CFG             & \xmark & None          \\
+  \end{tabular}
+\end{table}
+
+Now, we consider just LLM-based SyGuS synthesizers.
+
+\newcommand{\outlines}{\href{https://arxiv.org/pdf/2307.09702}{Outlines}~\cite{willard2023efficient}}
+\newcommand{\syncode}{\href{https://arxiv.org/pdf/2403.01632}{SynCode}~\cite{ugare2024improving}}
+\newcommand{\gad}{\href{https://arxiv.org/pdf/2405.21047}{GAD}~\cite{park2024grammar}}
+\newcommand{\codeguard}{\href{https://arxiv.org/pdf/2405.00218}{CodeGuard+}~\cite{fu2024constrained}}
+\newcommand{\flap}{\href{https://arxiv.org/pdf/2403.05766}{FLAP}~\cite{roy2024flap}}
+\newcommand{\domino}{\href{https://arxiv.org/pdf/2403.06988}{DOMINO}~\cite{beurer2024guiding}}
+
+\begin{table}[h]
+  \begin{tabular}{c|cccccc}
+    & \textbf{S}       & \textbf{C}       & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
+    \outlines  & \cmark$^\dagger$ & \cmark$^\dagger$ & \cmark     & CFG             & \xmark & Python        \\
+    \syncode   & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
+    \gad       & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
+    \codeguard & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
+    \flap      & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
+    \domino    & \cmark           & \xmark           & \cmark     & CFG             & \xmark & Python
+  \end{tabular}
+\end{table}
+
+
+Also, we consider discrete program search and enumerative search techniques that do not use an LLM, but allow some semantic constraints on the generated program.
+
+\newcommand{\boltzmann}{\href{https://arxiv.org/pdf/2206.06668}{Boltzmann Brain}~\cite{bendkowski2022automatic}}
+\newcommand{\dps}{\href{https://arxiv.org/pdf/2403.06988}{IntCalc}~\cite{beurer2024guiding}}
+
+\begin{table}[h]
+  \begin{tabular}{c|cccccc}
+    & \textbf{S} & \textbf{C} & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
+    Boltzmann Brain~\cite{bendkowski2022automatic} & \cmark     & \cmark     & \cmark     & UT$\lambda$C    & \cmark & Python        \\
+    OrdinalFix~\cite{zhang2023ordinalfix}          & \cmark     & ?          & \xmark     & N/A             & \cmark & Rust          \\
+    Bend/DPS                                       & \cmark     & ?          & ?          & IntCalc         & \cmark & CUDA
+  \end{tabular}
+\end{table}
+
+\section{Conclusion}
+
+
+%bibliography
+\bibliographystyle{splncs04}
+\bibliography{../bib/acmart}
+
 \end{document}

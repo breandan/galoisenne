@@ -26,6 +26,12 @@ object Grammars {
   """.parseCFG().noNonterminalStubs
 
   val dyck = """S -> ( ) | ( S ) | S S""".parseCFG().noEpsilonOrNonterminalStubs
+  val dyckEmbedded = """
+    START -> ( ) | ( START ) | START START
+    START -> START + START | START * START
+    START -> 1
+  """.parseCFG().noNonterminalStubs
+
   val deadSimple = """S -> ( ) | ( S )""".parseCFG().noEpsilonOrNonterminalStubs
   val dsNorm = """
     START -> START START

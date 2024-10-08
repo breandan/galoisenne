@@ -81,18 +81,21 @@ class WFSATest {
     val ab = BAutomaton.makeString("(").concatenate(BAutomaton.makeString(")"))
     val aa = BAutomaton.makeString("(").concatenate(BAutomaton.makeString("("))
     val ac = BAutomaton.makeString("(")
-    val az = RegExp("(\\(+(\\(+\\)+){3,15}\\)+)+").toAutomaton()
+    val az = RegExp("((\\(+(\\(+\\)+){3,5}\\)+)|\\+)+").toAutomaton()
 
-    val ds = Grammars.dyck.startPTree(List(20) { "_" })!!
+//  val template = List(10) { "_" } // Takes 3m?
+    val template = List(8) { "_" }
+    val ds = Grammars.dyckEmbedded.startPTree(template)!!
       .toDFA(false) { BAutomaton.makeString(it) }!!
 
-    val a = ab.union(aa).union(ac)
-    val ag = a.repeat(19, 25).union(az)
+//    val a = ab.union(aa).union(ac)
+    val ag = RegExp("\\(|\\)|+|\\*").toAutomaton().repeat(7)
+//    val ag = a.repeat(19, 25).union(az)
     println("SA:" + ag.getShortestExample(true))
     println("SD:" + ds.getShortestExample(true))
     println("SS:" + ds.intersection(ag).getShortestExample(true))
 
-    measureTimeMillis { println(!ds.intersection(ag).isEmpty) }
+    measureTimeMillis { assertTrue(!ds.intersection(ag).isEmpty) }
       .also { println("Time: $it ms") }
   }
 
