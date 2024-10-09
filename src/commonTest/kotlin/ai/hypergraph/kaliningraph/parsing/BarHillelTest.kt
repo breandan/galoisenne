@@ -397,11 +397,12 @@ class BarHillelTest {
   @Test
   fun testHammingBallRepair() {
     val timeout = 30
-    val gram = vanillaS2PCFG
+    val gram = vanillaS2PCFGWE
     val prompt= "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val clock = TimeSource.Monotonic.markNow()
     val lbhSet = gram.repairSeq(prompt).onEach { println(it) }
       .takeWhile { clock.elapsedNow().inWholeSeconds < timeout }.toList()
+      .also { assertTrue(it.isNotEmpty()) }
     println("Found ${lbhSet.size} repairs using Levenshtein/Bar-Hillel in $timeout seconds")
   }
 
@@ -415,6 +416,7 @@ class BarHillelTest {
     gram.startPTree(List(n) { "_" })?.also {
       it.sampleWRGD().map { it.removeEpsilon() }.distinct()
         .take(100).toList().onEach { println(it.removeEpsilon()) }
+        .also { assertTrue(it.isNotEmpty()) }
     }?.also {
       println("Total branches off START: ${it.branches.size}")
       println("Average branching factor: ${it.branchRatio.let { (l, r) -> l / r }}")
@@ -436,6 +438,7 @@ class BarHillelTest {
       println("Total parse trees off START: ${it.totalTrees}")
       println("First children: ${it.branches.joinToString("\n") { it.first.root + "," + it.second.root }}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
+      assertEquals(it.sampleStrWithoutReplacement().take(10).toList().toSet().size, 3)
     }
   }
 
