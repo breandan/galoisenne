@@ -23,6 +23,7 @@
 %
 %\input{preamble.tex}
 
+\usepackage{pgfplots}
 \colorlet{lred}{red!30}
 \colorlet{lorange}{orange!30}
 \colorlet{lgreen}{green!30}
@@ -167,6 +168,14 @@
 %  BoldItalicFont=*-BoldItalic
 %]
 
+\definecolor{green}{RGB}{0,128,0}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkviolet1270255}{RGB}{127,0,255}
+\definecolor{deepskyblue3176236}{RGB}{3,176,236}
+\definecolor{dodgerblue45123246}{RGB}{45,123,246}
+\definecolor{lightgray204}{RGB}{204,204,204}
+\definecolor{royalblue8762253}{RGB}{87,62,253}
+
 \begin{document}
 %
 \title{Realtime syntax repair with resource constraints}
@@ -205,7 +214,7 @@ Language models are statistical models that generate natural sequences of text, 
 
 Almost every programming language ever developed is syntactically context-free, which means the syntax of the language can be expressed as a context-free grammar (CFG). This grammar can be used to recognize the validity of a given input sequence, or force an autoregressive language model to generate only syntactically valid sequences by blocking out invalid tokens during inference.
 
-Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment using the Bar-Hillel construction. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list, or continue to edit the code manually.
+Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list.
 
 Let us consider an example. Suppose the user has written the following code fragment: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
 
@@ -231,7 +240,7 @@ Let us consider an example. Suppose the user has written the following code frag
   \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then intersect it with the grammar to produce an intersection grammar, which can be simplified to a DFA and decoded.}\label{fig:arch_simp}
 \end{figure}\vspace{-0.3cm}
 
-We first construct an automaton that recognizes every string within a certain edit distance of the input. We then reduce the grammar to Chomsky normal form (CNF) and construct an intersection grammar, which recognizes all and only valid sequences recognized by the grammar and edit automaton. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
+We first construct an automaton that recognizes every string within a certain edit distance of the input. We then reduce the grammar to Chomsky normal form (CNF), and using a modified construction from Bar-Hillel~\cite{bar1961formal}, construct an intersection grammar, which recognizes all and only valid sequences recognized by the grammar and edit automaton. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
 
 Now that we have a high-level overview of our approach, we will demonstrate a few of the capabilities of our tool by means of some usage examples.
 
@@ -264,77 +273,30 @@ true and ( false or and true false(*@\caret{ }@*)
 9. true and ( false or (*@\hlgreen{!}@*) (*@\hlgreen{<S>}@*) (*@\hlgreen{)}@*) and true (*@\hlred{false} @*)
 \end{lstlisting}
 \end{tcolorbox}
-Code completion is the secondary intended use case. Given a string containing holes, our tool will return several possible completions:
-
-\begin{tcolorbox}[
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
-\end{lstlisting}
-\tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-1. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-2. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-3. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
-4. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
-...
-\end{lstlisting}
-\end{tcolorbox}
-%Since CFLs are closed under homomorphisms, it is possible to unify lexing and parsing, however most languages explicitly define a separate lexer, which we avail to substitute named identifiers with their type. Given an invalid string, the tool will first abstract the raw characters, generate edits in the abstract token space, then remap successful repairs back to character space as shown below:
+%Code completion is the secondary intended use case. Given a string containing a mixture of code and holes, our tool will return several possible completions:
 %
-%\hspace{-0.4cm}\begin{minipage}[t]{0.485\textwidth}
-%                 \begin{tcolorbox}[
-%                 left skip=0.7cm,
-%                 left=0.35cm,
-%                 right=0cm,
-%                 top=0.1cm,
-%                 middle=0mm,
-%                 boxsep=0mm,
-%                 underlay unbroken and first={%
-%                   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-%                 }]
-%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-%d = sum([foo(i] for i in vals))(*@\caret{ }@*)
-%                 \end{lstlisting}
-%                 \tcblower
-%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-%1. d = sum([foo(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
-%2. d = sum([(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
-%3. d = sum([foo(*@\hlorange{.}@*)i for i in vals(*@\hlorange{]}@*))
-%4. d = sum([foo((*@\hlgreen{+}@*)i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
-%                 \end{lstlisting}
-%                 \end{tcolorbox}
-%\end{minipage}
-%\hspace{0.05cm}
-%\begin{minipage}[t]{0.51\textwidth}
-%  \begin{tcolorbox}[
-%  left skip=0.7cm,
-%  left=0.35cm,
-%  right=0cm,
-%  top=0.1cm,
-%  middle=0mm,
-%  boxsep=0mm,
-%  underlay unbroken and first={%
-%    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-%  }]
-%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-%w = w ( [ w ( w ] for w in w ) )
-%  \end{lstlisting}
-%  \tcblower
-%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-%1. w = w ( [ w ( i (*@\hlorange{)}@*) for i in w (*@\hlorange{]}@*) )
-%2. w = w ( [ (*@\hlred{w}@*) ( w (*@\hlorange{)}@*) for w in w (*@\hlorange{]}@*) )
-%3. w = w ( [ w (*@\hlorange{.}@*) w (*@\hlred{)}@*)  for w in w (*@\hlorange{]}@*) )
-%4. w = w ( [ w ( (*@\hlgreen{+}@*) w (*@\hlorange{)}@*) for w in w (*@\hlorange{)}@*) )
-%  \end{lstlisting}
-%  \end{tcolorbox}
-%\end{minipage}
-For simplicity, it is also possible to define a grammar and string side-by-side, as shown in the untyped $\lambda$-calculus example below:
+%\begin{tcolorbox}[
+%top=0.1cm,
+%middle=0mm,
+%boxsep=0mm,
+%underlay unbroken and first={%
+%  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%}]
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%true _ _ _ ( false _ ( _ _ _ _ ! _ _ ) _ _ _ _(*@\caret{ }@*)
+%\end{lstlisting}
+%\tcblower
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%1. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{xor}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+%2. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{or}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+%3. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{xor}@*) (*@\hlorange{<S>}@*)
+%4. true (*@\hlorange{xor}@*) (*@\hlorange{!}@*) ( false (*@\hlorange{and}@*) ( (*@\hlorange{<S>}@*) (*@\hlorange{)}@*) (*@\hlorange{and}@*) ! (*@\hlorange{<S>}@*) ) (*@\hlorange{and}@*) (*@\hlorange{<S>}@*)
+%...
+%\end{lstlisting}
+%\end{tcolorbox}
+%
+%
+For simplicity, it is also possible to define a grammar and string side-by-side from the same editor, as shown in the untyped $\lambda$-calculus example below:
 
 \begin{tcolorbox}[
 top=0.1cm,
@@ -356,177 +318,504 @@ var -> a | b | c | f | x | y | z
 3. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 \end{lstlisting}
 \end{tcolorbox}
-\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement, then sorts the results by Levenshtein distance. Customizing the ranking order is possible using a programmatic interface.
+\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement, then sorts the results by Levenshtein distance. Customizing the ranking order is possible using a programmatic interface. For the Python language, we use a small dataset of n-grams to rank the repairs by naturalness.
 
+%Since CFLs are closed under homomorphisms, it is possible to unify lexing and parsing, however most languages explicitly define a separate lexer, which we avail to substitute named identifiers with their type. Given an invalid string, the tool will first abstract the raw characters, generate edits in the abstract token space, then remap successful repairs back to character space as shown below:
+%
+%\hspace{-0.4cm}\begin{minipage}[t]{0.5\textwidth}
+%                 \begin{tcolorbox}[
+%                 left skip=0.7cm,
+%                 left=0.35cm,
+%                 width=0.9\textwidth,
+%                 right=0cm,
+%                 top=0.1cm,
+%                 middle=0mm,
+%                 boxsep=0mm,
+%                 underlay unbroken and first={%
+%                   \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%                 }]
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%d = sum([foo(i] for i in vals))(*@\caret{ }@*)
+%                 \end{lstlisting}
+%                 \tcblower
+%                 \begin{lstlisting} [hbox, language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%1. d = sum([foo(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%2. d = sum([(i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%3. d = sum([foo(*@\hlorange{.}@*)i for i in vals(*@\hlorange{]}@*))
+%4. d = sum([foo((*@\hlgreen{+}@*)i(*@\hlorange{)}@*) for i in vals(*@\hlorange{]}@*))
+%                 \end{lstlisting}
+%                 \end{tcolorbox}
+%\end{minipage}
+%\hspace{0.05cm}
+%\begin{minipage}[t]{0.56\textwidth}
+%  \begin{tcolorbox}[
+%    left skip=0cm,
+%    left=0.35cm,
+%    width=0.9\textwidth,
+%    right=0cm,
+%    top=0.1cm,
+%    middle=0mm,
+%    boxsep=0mm]
+%    \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%w = w ( [ w ( w ] for w in w ) )
+%    \end{lstlisting}
+%    \tcblower
+%    \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%1. w = w ( [ w ( i (*@\hlorange{)}@*) for i in w (*@\hlorange{]}@*) )
+%2. w = w ( [ (*@\hlred{w}@*) ( w (*@\hlorange{)}@*) for w in w (*@\hlorange{]}@*) )
+%3. w = w ( [ w (*@\hlorange{.}@*) w (*@\hlred{)}@*)  for w in w (*@\hlorange{]}@*) )
+%4. w = w ( [ w ( (*@\hlgreen{+}@*) w (*@\hlorange{)}@*) for w in w (*@\hlorange{)}@*) )
+%    \end{lstlisting}
+%  \end{tcolorbox}
+%\end{minipage}
 
-\subsection{Grammar assistance}
+%\subsection{Grammar assistance}
+%
+%Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG is missing a term or uses the wrong delimiters, it will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
+%
+%  \begin{tcolorbox}[
+%  left=0.35cm,
+%  right=0cm,
+%  top=0.1cm,
+%  middle=0mm,
+%  boxsep=0mm,
+%  underlay unbroken and first={%
+%    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%  }]
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%B ::= true | false | (*@\caret{ }@*)
+%  \end{lstlisting}
+%  \tcblower
+%  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%1. B (*@\hlorange{->}@*) true | false (*@\hlred{ }@*)
+%2. B (*@\hlorange{->}@*) true | false (*@\hlorange{<RHS>}@*)
+%3. B (*@\hlorange{->}@*) true | false | (*@\hlgreen{<RHS>}@*)
+%  \end{lstlisting}
+%  \end{tcolorbox}\vspace{-0.6cm}
 
-Tidyparse uses a CFG to parse the CFG, so it can provide editing assistance while the user is designing the CFG. For example, if the CFG is missing a term or uses the wrong delimiters, it will suggest a list of possible fixes.% In the future, we intend to use this functionality to perform example-based codesign and grammar induction.
-
-  \begin{tcolorbox}[
-  left=0.35cm,
-  right=0cm,
-  top=0.1cm,
-  middle=0mm,
-  boxsep=0mm,
-  underlay unbroken and first={%
-    \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-  }]
-  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-B ::= true | false | (*@\caret{ }@*)
-  \end{lstlisting}
-  \tcblower
-  \begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-1. B (*@\hlorange{->}@*) true | false (*@\hlred{ }@*)
-2. B (*@\hlorange{->}@*) true | false (*@\hlorange{<RHS>}@*)
-3. B (*@\hlorange{->}@*) true | false | (*@\hlgreen{<RHS>}@*)
-  \end{lstlisting}
-  \end{tcolorbox}
-
-\subsection{Syntax highlighting}
-
-Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
-
-\begin{tcolorbox}[
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-(*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
-\end{lstlisting}
-\end{tcolorbox}
-
-\subsection{Interactive nonterminal expansion}
-
-Users can interactively build up a complex expression by placing the caret over a nonterminal they wish to expand, then pressing \keys{\ctrl + \SPACE} to receive a list of possible substitutions.
-
-\begin{tcolorbox}[
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-true and ( false or <(*@\caret{S}@*)> and true )
-\end{lstlisting}
-\tcblower
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-1. true and ( false or (*@\hlorange{true}@*) and true )
-2. true and ( false or (*@\hlorange{false}@*) and true )
-3. true and ( false or (*@\hlorange{! <S>}@*) and true )
-\end{lstlisting}
-\end{tcolorbox}
-
-\subsection{Nonterminal stubs}
-
-Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-sub}$, allows the user to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG representing some finite type and its inhabitants. $\alpha\textsc{-sub}$ replaces all productions containing $\langle\alpha\rangle$ with the terminals in their transitive closure, $\alpha \rightarrow^* \beta$. The second rule, $\alpha\textsc{-int}$, introduces bracketed terminals for each user-defined nonterminal, representing unexpanded subexpressions.
-
-\begin{figure}[h!]
-  \begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
-    \AxiomC{$\alpha^* : \{\beta \mid (\alpha \rightarrow^* \beta) \in P\}$}
-    \RightLabel{$\alpha\textsc{-sub}$}
-    \BinaryInfC{$\mathcal{G} \vdash \forall \beta \in \alpha^*.(w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$\mathcal{G} \vdash v \in V$}
-    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
-    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
-  \end{prooftree}
-\end{figure}
-
-Tidyparse can also perform a limited form of type checking. Typed expressions are automatically expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule, for example when parsing an expression of the form $x + y$, the grammar will recognize \texttt{true + false} and \texttt{1 + 2}, but not \texttt{1 + true}.
-
-\begin{tcolorbox}[
-top=0.1cm,
-middle=0mm,
-boxsep=0mm,
-underlay unbroken and first={%
-  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
-}]
-\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
-E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
-X -> Int | Bool
-
-# The above grammar is equivalent to writing:
-
-E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
-E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
-\end{lstlisting}
-\end{tcolorbox}
-
+%\subsection{Syntax highlighting}
+%
+%Subsequences which are partly parseable are underlined in blue. Unparsable alphabetic tokens are marked orange. All other tokens are marked red.
+%
+%\begin{tcolorbox}[
+%top=0.1cm,
+%middle=0mm,
+%boxsep=0mm,
+%underlay unbroken and first={%
+%  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%}]
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%(*@\erb{( true xor false ) and true}@*) (*@\ero{xor}@*) (*@\ero{and}@*) (*@\err{not}@*) (*@\ero{false}@*)
+%\end{lstlisting}
+%\end{tcolorbox}\vspace{-0.6cm}
+%
+%\subsection{Nonterminal stubs}
+%
+%Tidyparse augments CFGs with two additional rules, which are desugared into a vanilla CFG before parsing. The first rule, $\alpha\textsc{-int}$, introduces bracketed terminals for each nonterminal, representing unexpanded subexpressions. The second rule, $\alpha\textsc{-sub}$, allows users to define a nonterminal parameterized by $\alpha$, a non-recursive nonterminal in the same the CFG that may be later substituted by a terminal in the unit transitive closure. Here we use the context $\mathcal{G}$ to denote the grammar. \vspace{-1cm}
+%
+%\begin{figure}[h!]
+%  \hspace{-0.2cm}\begin{prooftree}
+%    \AxiomC{$\mathcal{G} \vdash v \in V$}
+%    \RightLabel{$\langle\cdot\rangle\textsc{-int}$}
+%    \UnaryInfC{$\mathcal{G} \vdash (v \rightarrow \langle v\rangle) \in P$}
+%    \DisplayProof\hspace{0.5cm}
+%    \AxiomC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z) \in P$}
+%    \AxiomC{$(\alpha \rightarrow^* \beta) \in P$}
+%    \RightLabel{$\alpha\textsc{-sub}$}
+%    \BinaryInfC{$\mathcal{G} \vdash (w\langle\alpha\rangle \rightarrow x z)[\beta/\alpha] \in P'$}
+%  \end{prooftree}
+%\end{figure}\vspace{-0.7cm}
+%
+%The $\alpha\textsc{-int}$ rule is used to create a synthetic terminal representing an unexpanded nonterminal in the grammar. This can be later expanded by the user to a valid expression. Users can interactively build up a complex expression by placing the caret over a nonterminal they wish to expand, then pressing \keys{\ctrl + \SPACE} to receive a list of possible substitutions.\footnote{This feature is currently only supported in the Tidyparse IDE plugin.}
+%
+%\begin{tcolorbox}[
+%top=0.1cm,
+%middle=0mm,
+%boxsep=0mm,
+%underlay unbroken and first={%
+%  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%}]
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%true and ( false or <(*@\caret{S}@*)> and true )
+%\end{lstlisting}
+%\tcblower
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%1. true and ( false or (*@\hlorange{true}@*) and true )
+%2. true and ( false or (*@\hlorange{false}@*) and true )
+%3. true and ( false or (*@\hlorange{! <S>}@*) and true )
+%\end{lstlisting}
+%\end{tcolorbox}
+%
+%$\alpha\textsc{-sub}$ enables Tidyparse to perform a limited form of type checking. Typed expressions are automatically expanded into ordinary nonterminals using the $\alpha\textsc{-sub}$ rule, for example when parsing an expression of the form $x + y$, the following grammar will recognize expressions of the form \texttt{E<Int> + E<Int>} and \texttt{E<Bool> + E<Bool>}, but not \texttt{E<Int> + E<Bool>}.
+%
+%\begin{tcolorbox}[
+%top=0.1cm,
+%middle=0mm,
+%boxsep=0mm,
+%underlay unbroken and first={%
+%  \path[draw=none] (interior.north west) rectangle node[white]{\includegraphics[width=4mm]{../figures/tidyparse_logo.png}} ([xshift=-10mm,yshift=-9mm]interior.north west);
+%}]
+%\begin{lstlisting} [language=tidy, basicstyle=\ttfamily\scriptsize, escapeinside={(*@}{@*)}]
+%E<X> -> E<X> + E<X> | E<X> * E<X> | ( E<X> )
+%X -> Int | Bool
+%
+%# The above grammar is equivalent to writing:
+%
+%E<Int> -> E<Int> + E<Int> | E<Int> * E<Int>
+%E<Bool> -> E<Bool> + E<Bool> | E<Bool> * E<Bool>
+%\end{lstlisting}
+%\end{tcolorbox}
 
 \section{Related work}
 
-Many methods to sample from language models have been proposed. Some of these guarantee that all samples are grammatically valid. Others guarantee that all grammatically valid samples are generable. The trick is not just synthesizing valid functions, but doing so in a parallel communication-free manner, without compromising soundness or completeness. The goal is to massively scale up a discrete sampler without replacement.
+Many methods to sample from grammars and language models have been proposed. Some of these guarantee that all samples will be grammatically valid. Others guarantee that all grammatically valid samples are generable. The difficulty is not just synthesizing valid functions, but doing so in a parallel communication-free manner, without compromising soundness or completeness. The goal should be to massively scale up a replacement-free discrete sampler.
 
-This problem is also closely related to model counting in the CSP literature, so a practical speedup could lead to improvements on a lot of interesting downstream benchmarks.
+%This problem is also closely related to model counting in the CSP literature, so a practical speedup could lead to improvements on a lot of interesting downstream benchmarks.
 
-In general, the problem of program induction from input-output examples is not well-posed, so specialized solvers that can make stronger assumptions will usually have an advantage on domain-specific benchmarks. Most existing program synthesizers do not satisfy all of these desiderata, e.g., soundness (\textbf{S}), completeness (\textbf{S}), naturalness (\textbf{N}), and parallelism (||). It depends on how you define ||, but basically, we want to decode in parallel. So an LLM that uses a GPU we do not consider to be ``parallel'' in the sense we mean here.
+In general, the problem of program induction from input-output examples is not well-posed, so specialized solvers that can make stronger assumptions will usually have an advantage on domain-specific benchmarks. Most existing program synthesizers do not satisfy all of these desiderata, e.g., soundness , completeness , naturalness, and parallel sampling. We compare our approach against Seq2Parse and BIFI, the leading neural program repair models.
 
 \newcommand{\tidyparse}{\href{https://arxiv.org/pdf/2408.01849}{Tidyparse}~\cite{considine2023pragmatic}}
 \newcommand{\seqtoparse}{\href{https://pg.ucsd.edu/publications/Seq2Parse-neurosymbolic-parse-error-repair_OOPSLA-2022.pdf}{Seq2Parse}~\cite{sakkas2022seq2parse}}
 \newcommand{\bifi}{\href{https://arxiv.org/pdf/2106.06600}{BIFI}~\cite{yasunaga2021break}}
 \newcommand{\ordinalfix}{\href{https://arxiv.org/pdf/2309.06771}{OrdinalFix}~\cite{zhang2023ordinalfix}}
 % https://boxbase.org/entries/2019/nov/25/error-correcting-earley-algorithm/
-\newcommand{\ahopeterson}{\href{https://epubs.siam.org/doi/10.1137/0201022}{Aho/Peterson}~\cite{aho1972minimum}}
+\newcommand{\ahopeterson}{\href{https://epubs.siam.org/doi/10.1137/0201022}{Aho \& Peterson}~\cite{aho1972minimum}}
+\newcommand{\diekmanntratt}{\href{https://arxiv.org/pdf/1804.07133}{Diekmann \& Tratt}~\cite{diekmann2018dont}}
 
 \begin{table}[h]
+  \centering
   \begin{tabular}{c|cccccc}
-    & \textbf{S}       & \textbf{C} & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
-    \tidyparse   & \cmark           & \cmark & \cmark & CFG$_\cap$      & \cmark & IDE-ready     \\
-    \seqtoparse  & \cmark$^\dagger$ & \xmark & \cmark & CFG             & \xmark & Python        \\
-    \bifi        & \xmark           & \xmark & \cmark & $\Sigma^*$      & \xmark & Python        \\
-    \ordinalfix  & \cmark           & \xmark & \xmark & CFG+            & \xmark & Rust          \\
-    \ahopeterson & \cmark           & \xmark & \xmark & CFG             & \xmark & None          \\
+                   & Sound       & Complete & Natural & Theory & Parallel   & Tool \\\hline
+    \tidyparse     & \cmark           & \cmark     & \cmark     & CFG$_\cap$      & \cmark & IDE-ready     \\
+    \seqtoparse    & \cmark$^\dagger$ & \xmark     & \cmark     & CFG             & \xmark & Python        \\
+    \bifi          & \xmark           & \xmark     & \cmark     & $\Sigma^*$      & \xmark & Python        \\
+    \ordinalfix    & \cmark           & \xmark     & \xmark     & CFG+            & \xmark & Rust          \\
+    \ahopeterson   & \cmark           & \xmark     & \xmark     & CFG             & \xmark & None          \\
+    \diekmanntratt & \cmark           & \xmark     & \xmark     & LR              & \xmark & Python
   \end{tabular}
-\end{table}
+\end{table}\vspace{-1cm}
 
-Now, we consider just LLM-based SyGuS synthesizers.
+%Now, we consider just LLM-based SyGuS synthesizers.
+%
+%\newcommand{\outlines}{\href{https://arxiv.org/pdf/2307.09702}{Outlines}~\cite{willard2023efficient}}
+%\newcommand{\syncode}{\href{https://arxiv.org/pdf/2403.01632}{SynCode}~\cite{ugare2024improving}}
+%\newcommand{\gad}{\href{https://arxiv.org/pdf/2405.21047}{GAD}~\cite{park2024grammar}}
+%\newcommand{\codeguard}{\href{https://arxiv.org/pdf/2405.00218}{CodeGuard+}~\cite{fu2024constrained}}
+%\newcommand{\flap}{\href{https://arxiv.org/pdf/2403.05766}{FLAP}~\cite{roy2024flap}}
+%\newcommand{\domino}{\href{https://arxiv.org/pdf/2403.06988}{DOMINO}~\cite{beurer2024guiding}}
+%
+%\begin{table}[h]
+%  \begin{tabular}{c|cccccc}
+%    & \textbf{Sound}   & \textbf{Complete}       & \textbf{Natural}       & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
+%    \outlines      & \cmark$^\dagger$ & \cmark$^\dagger$ & \cmark          & CFG    & \xmark & Python \\
+%    \syncode       & \cmark           & ?                & \cmark          & CFG    & \xmark & Python \\
+%    \gad           & \cmark           & ?                & \cmark          & CFG    & \xmark & Python \\
+%    \codeguard     & \cmark           & ?                & \cmark          & CFG    & \xmark & Python \\
+%    \flap          & \cmark           & ?                & \cmark          & CFG    & \xmark & Python \\
+%    \domino        & \cmark           & \xmark           & \cmark          & CFG    & \xmark & Python
+%  \end{tabular}
+%\end{table}
+%
+%Also, we consider discrete program search and enumerative search techniques that do not use an LLM, but allow some semantic constraints on the generated program.
+%
+%\newcommand{\boltzmann}{\href{https://arxiv.org/pdf/2206.06668}{Boltzmann Brain}~\cite{bendkowski2022automatic}}
+%\newcommand{\dps}{\href{https://arxiv.org/pdf/2403.06988}{IntCalc}~\cite{beurer2024guiding}}
+%
+%\begin{table}[h]
+%  \begin{tabular}{c|cccccc}
+%                                                   & \textbf{S} & \textbf{C} & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
+%    Boltzmann Brain~\cite{bendkowski2022automatic} & \cmark     & \cmark     & \cmark     & UT$\lambda$C    & \cmark & Python        \\
+%    OrdinalFix~\cite{zhang2023ordinalfix}          & \cmark     & ?          & \xmark     & N/A             & \cmark & Rust          \\
+%    Bend/DPS                                       & \cmark     & ?          & ?          & IntCalc         & \cmark & CUDA
+%  \end{tabular}
+%\end{table}
 
-\newcommand{\outlines}{\href{https://arxiv.org/pdf/2307.09702}{Outlines}~\cite{willard2023efficient}}
-\newcommand{\syncode}{\href{https://arxiv.org/pdf/2403.01632}{SynCode}~\cite{ugare2024improving}}
-\newcommand{\gad}{\href{https://arxiv.org/pdf/2405.21047}{GAD}~\cite{park2024grammar}}
-\newcommand{\codeguard}{\href{https://arxiv.org/pdf/2405.00218}{CodeGuard+}~\cite{fu2024constrained}}
-\newcommand{\flap}{\href{https://arxiv.org/pdf/2403.05766}{FLAP}~\cite{roy2024flap}}
-\newcommand{\domino}{\href{https://arxiv.org/pdf/2403.06988}{DOMINO}~\cite{beurer2024guiding}}
+\section{Evaluation}
 
-\begin{table}[h]
-  \begin{tabular}{c|cccccc}
-    & \textbf{S}       & \textbf{C}       & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
-    \outlines  & \cmark$^\dagger$ & \cmark$^\dagger$ & \cmark     & CFG             & \xmark & Python        \\
-    \syncode   & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
-    \gad       & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
-    \codeguard & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
-    \flap      & \cmark           & ?                & \cmark     & CFG             & \xmark & Python        \\
-    \domino    & \cmark           & \xmark           & \cmark     & CFG             & \xmark & Python
-  \end{tabular}
-\end{table}
+We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
+To evaluate accuracy, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$ of pairwise aligned errors ($\sigma^\dagger$) and fixes ($\sigma'$), we define Precision@k as:
 
-Also, we consider discrete program search and enumerative search techniques that do not use an LLM, but allow some semantic constraints on the generated program.
+\begin{equation}
+  \text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{Score}(\sigma)\big]
+\end{equation}
 
-\newcommand{\boltzmann}{\href{https://arxiv.org/pdf/2206.06668}{Boltzmann Brain}~\cite{bendkowski2022automatic}}
-\newcommand{\dps}{\href{https://arxiv.org/pdf/2403.06988}{IntCalc}~\cite{beurer2024guiding}}
+%This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
 
-\begin{table}[h]
-  \begin{tabular}{c|cccccc}
-    & \textbf{S} & \textbf{C} & \textbf{N} & \textbf{Theory} & ||     & \textbf{Tool} \\\hline
-    Boltzmann Brain~\cite{bendkowski2022automatic} & \cmark     & \cmark     & \cmark     & UT$\lambda$C    & \cmark & Python        \\
-    OrdinalFix~\cite{zhang2023ordinalfix}          & \cmark     & ?          & \xmark     & N/A             & \cmark & Rust          \\
-    Bend/DPS                                       & \cmark     & ?          & ?          & IntCalc         & \cmark & CUDA
-  \end{tabular}
-\end{table}
+%We use a second training set of valid Python snippets from Yasunaga et al.~\cite{yasunaga2021break} on which BIFI was trained and we also use to train our scoring function. We lexicalize the dataset in the same way as StackOverflow, annotate each snippet with a \texttt{BOS} and \texttt{EOS} token, and train a 5-gram Markov model on a small subset. This model is used to score synthetic repairs generated by Tidyparse on repair instances in the StackOverflow dataset. No filtering criteria are applied to this dataset.
+
+We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is accepted and rejected, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
+
+%  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
+
+The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+
+The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, executing bytecode compiled for JVM 17.0.2. To train our scoring function, we use an order-5 Markov chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for varying latency cutoffs up to 90s, although it often exhausts the search space and halts before timeout.
+
+%  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
+
+%  We compute the Levenshtein alignment on the StackOverflow dataset, then approximate the conditional probability of each edit given the local context. During evaluation, we sample a corruption from the learned typo distribution, and measure the precision of our model at recovering the originally valid lexical sequence.
+
+%  Suppose we have a dataset of Levenshtein edits and their local context. For simplicity, we shall assume a trigram language model, i.e., $P(\sigma_i' \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})$, however the approach can be generalized to higher-order Markov models. Given a string $\sigma$, we can sample error trajectories $q^1(\sigma), q^2(\sigma), \ldots, q^n(\sigma)$ by defining $q(\sigma)$ to sample a single edit from the set of all relevant edit actions $Q(\sigma)$, then recursively applying $q$ to the resulting string. More formally,
+%
+%  \begin{enumerate}
+%    \item Given a string $\sigma$, compute $Q(\sigma)$, the set of all relevant edit actions for all possible edit locations by unioning the set of all possible edits at each location, i.e., $Q(\sigma) = \bigcup_{i=1}^{|\sigma| - 1} \big\{\sigma_i' \mid  0 < P(\sigma_i \mid \sigma_{i-1}, \sigma_i, \sigma_{i+1})\big\}$.
+%    \item Renormalize the probabilities of each edit $P(q \mid \sigma)$ by $\sum_{q \in Q(\sigma)} P(q)$. This ensures the probability of sampling a particular edit is proportional to its relative probability under the language model and sums to 1.
+%    \item Sample an edit $q(\sigma) \sim Q(\sigma)$, then repeat for $n$ steps where $n$ is sampled from a geometric distribution with mean $\mu$ matching the average edit distance of the dataset (this assumes the edit distance is independent of the edits).
+%  \end{enumerate}
+%
+%  For example, suppose we have the following patch in our initial dataset:\\
+%
+%  \texttt{BOS \hlred{def} NAME ( NAME ) : NEWLINE \hlred{INDENT} return \hlorange{NAME} NEWLINE \hlgreen{INDENT} NEWLINE EOS}\\
+%
+%  From this patch, the following contextual typo probabilities will be incremented:
+%
+%  \begin{align*}
+%    P(\texttt{BOS \hlred{def} NAME}) &\mathrel{+}= 1 &P(\texttt{NEWLINE \hlred{INDENT} return}) &\mathrel{+}= 1\\
+%    P(\texttt{return \hlorange{NAME} NEWLINE}) &\mathrel{+}= 1 & P(\texttt{NEWLINE \hlgreen{INDENT} NEWLINE}) &\mathrel{+}= 1
+%  \end{align*}
+%
+%  Later, these contextual probabilities will allow us to sample a synthetic corruption matching the distribution of typos in our dataset. We then measure the precision at recovering the originally valid string.
+
+%\subsection{Dataset statistics}\label{sec:rq1}
+%
+%In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., where pairwise Levenshtein distance is under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
+%
+%\begin{figure}[h!]
+%  \begin{tikzpicture}[scale=0.57]
+%    \begin{axis}[
+%    ybar,
+%    bar width=5pt,
+%    xlabel={Snippet length, $|\err\sigma|$},
+%    ylabel={Frequency},
+%    title={Cumulative length distribution},
+%    axis x line*=bottom,
+%    axis y line*=left,
+%    ymin=0,
+%    ymax=65,
+%    xtick=data,
+%    xticklabels={,<20,,<40,,<60,,<80,,<100},
+%    ymajorgrids=true,
+%    grid style=dashed,
+%    width=0.45\textwidth,
+%    height=0.3\textwidth
+%    ]
+%
+%    \addplot[fill=black!30] table {
+%      X Y
+%      1 7.60
+%      2 14.52
+%      3 22.01
+%      4 30.54
+%      5 37.82
+%      6 44.30
+%      7 49.68
+%      8 55.21
+%      9 59.75
+%      10 63.59
+%    };
+%    \draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
+%    \end{axis}
+%  \end{tikzpicture}
+%  \begin{tikzpicture}[scale=0.57]
+%    \begin{axis}[
+%    ybar,
+%    bar width=5pt,
+%    title={Human repair distance},
+%    xlabel={Edit distance, $\Delta(\err\sigma, \sigma')$},
+%    ylabel={Frequency},
+%    axis x line*=bottom,
+%    axis y line*=left,
+%    xtick=data,
+%    ymajorgrids=true,
+%    grid style=dashed,
+%    xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
+%    ytick={0, 20, 40, 60, 80, 100},
+%    ymin=0,
+%    width=0.45\textwidth,
+%    height=0.3\textwidth
+%    ]
+%    \addplot[fill=black!30] table {
+%      X Y
+%      1  31.48
+%      2  47.52
+%      3  54.89
+%      4  60.44
+%      5  63.88
+%      6  66.38
+%      7  68.02
+%      8  70.04
+%      9  71.49
+%      10 72.22
+%    };
+%    \draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
+%    \end{axis}
+%  \end{tikzpicture}
+%  \begin{tikzpicture}[scale=0.57]
+%    \begin{axis}[
+%    ybar,
+%    bar width=5pt,
+%    xlabel={Beginning $\longleftrightarrow$ End},
+%    ylabel={Frequency},
+%    title={Normalized edit locations},
+%    axis x line*=bottom,
+%    axis y line*=left,
+%    ymin=0,
+%    ymax=35,
+%    xtick=data,
+%    xticklabels={,20\%,,40\%,,60\%,,80\%,,100\%},
+%    ymajorgrids=true,
+%    grid style=dashed,
+%    width=0.45\textwidth,
+%    height=0.3\textwidth
+%    ]
+%
+%    \addplot[fill=black!30] table {
+%      X Y
+%      10 11.6539
+%      20 5.7252
+%      30 6.2087
+%      40 5.9542
+%      50 5.5980
+%      60 7.9389
+%      70 7.0738
+%      80 6.9466
+%      90 12.4173
+%      100 30.4835
+%    };
+%    \end{axis}
+%  \end{tikzpicture}
+%%    \begin{tikzpicture}
+%%      \begin{axis}[
+%%        ybar,
+%%        bar width=5pt,
+%%        title={Intra-patch edit distance},
+%%        xlabel={Caret distance},
+%%        ylabel={Frequency},
+%%        axis x line*=bottom,
+%%        axis y line*=left,
+%%        xtick=data,
+%%        ymajorgrids=true,
+%%        grid style=dashed,
+%%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+%%        width=0.45\textwidth,
+%%        height=0.3\textwidth
+%%      ]
+%%
+%%        \addplot table {
+%%          X Y
+%%          1 40.66
+%%          2 15.00
+%%          3 5.80
+%%          4 4.86
+%%          5 4.26
+%%          6 2.98
+%%          7 2.05
+%%          8 2.73
+%%          9 1.62
+%%          10 13.64
+%%        };
+%%      \end{axis}
+%%    \end{tikzpicture}
+%  \begin{tikzpicture}[scale=0.57]
+%    \begin{axis}[
+%    legend cell align={left},
+%    legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=south east},
+%    xlabel={Snippet length, $|\err\sigma|$},
+%    ylabel={Stable region},
+%    title={Stability profile},
+%    ybar,
+%    axis lines*=left,
+%    xtick={0, 10, 20, 30, 40, 50, 60, 70},
+%    ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+%    xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
+%    yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+%    x tick label style={font=\scriptsize},
+%    ymax=1.0,
+%    ymin=0.0,
+%    bar width=3pt,
+%    grid style=dashed,
+%    ymajorgrids=true,
+%    width=0.45\textwidth,
+%    height=0.3\textwidth
+%    ]
+%    \addlegendimage{empty legend}
+%    \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+%    \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+%    \addlegendentry{1,}
+%    \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+%    \addlegendentry{2,}
+%    \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+%    \addlegendentry{3}
+%    \addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+%    \addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
+%    \addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
+%    \end{axis}
+%  \end{tikzpicture}
+%  \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
+%\end{figure}
+%
+%We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
+%
+%For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
+
+%  We also use a second training set of valid Python snippets from Yasunaga et al.~\cite{yasunaga2021break} on which BIFI was trained and we also use to train our scoring function. We lexicalize the dataset in the same way as StackOverflow, annotate each snippet with a \texttt{BOS} and \texttt{EOS} token, and train a 5-gram Markov model on a small subset. This model is used to score synthetic repairs generated by Tidyparse on repair instances in the StackOverflow dataset. No filtering criteria are applied to this dataset.
+
+%  then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet. This dataset is effectively unlimited as we can generate as many synthetic errors across any range of edit distances and snippet lengths, however these repairs may be less representative of human syntax errors.
+
+\subsection{StackOverflow evaluation}\label{sec:rq2}
+
+For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
+
+\begin{figure}[h!]
+  \resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
+  \resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
+  \resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
+  \resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
+  \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
+\end{figure}
+
+As we can see, Tidyparse has a highly competitive top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute.
+
+Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
+
+\begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+  \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1}}
+  \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2}}
+  \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3}}
+  \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+  \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\end{figure}
+
+%\begin{wrapfigure}{r}{0.38\textwidth}
+%  \vspace{-0.6cm}
+%  \hspace{-0.8cm}
+%  \resizebox{.47\textwidth}{!}{\input{sankey}}
+%  \vspace{-1.4cm}
+%  \caption{Outcomes in the repair pipeline.}
+%  \label{fig:sankey}
+%\end{wrapfigure}
+%
+%%We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
+%
+%We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
+
+The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability during the repair process.
+
+Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked. For larger radii, we can still achieve competitive precision by using an efficient decoder to sample the admissible set.
 
 \section{Conclusion}
 
+From a usability standpoint, we argue that syntax repair tools should be as user-friendly and widely accessible as autocorrection tools in word processors. We argue it is possible to reduce disruption from manual syntax repair and improve the efficiency of working programmers by driving down the latency needed to synthesize an acceptable repair. In contrast with program synthesizers that require intermediate editor states to be well-formed, our synthesizer does not impose any constraints on the code itself being written and is possible to use in an interactive programming setting.
+
+We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse is capable of generating repairs for invalid source code in a range of practical languages with little to no data required. We plan to continue expanding the prototype's autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in practical programming scenarios.
 
 %bibliography
 \bibliographystyle{splncs04}
-\bibliography{../bib/acmart}
+\clearpage\bibliography{../bib/acmart}
 
 \end{document}
