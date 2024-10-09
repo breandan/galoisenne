@@ -3,6 +3,10 @@ package ai.hypergraph.kaliningraph.automata
 import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.repair.LangCache
+import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
+import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton
 import dk.brics.automaton.RegExp
@@ -16,6 +20,7 @@ import kotlin.time.measureTimedValue
 
 
 class WFSATest {
+  init { LangCache.prepopPythonLangCache() }
   val MARKOV_MEMORY = 4
   // Python3 snippets
 // https://github.com/michiyasunaga/BIFI?tab=readme-ov-file#about-the-github-python-dataset
@@ -111,7 +116,7 @@ class WFSATest {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val groundTr = "+ NAME : True NEWLINE NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE"
     val radius = 2
-    val gram = Grammars.seq2parsePythonCFG.run { jvmIntersectLevFSAP(makeLevFSA(toRepair, radius), parikhMap) }
+    val gram = vanillaS2PCFG.run { jvmIntersectLevFSAP(makeLevFSA(toRepair, radius), parikhMap) }
     val pt = gram.toPTree()
 
     println("Total trees: " + pt.totalTrees.toString())
@@ -135,7 +140,7 @@ class WFSATest {
       it.value.forEach {
 //        println(levenshteinAlign(toRepair, it).paintANSIColors())
         assertTrue(levenshtein(toRepair, it) <= radius)
-        assertTrue(it in Grammars.seq2parsePythonCFG.language)
+        assertTrue(it in vanillaS2PCFG.language)
       }
 
       println("Found ${it.value.size} unique repairs by decoding WFSA in ${it.duration}")
@@ -150,7 +155,7 @@ class WFSATest {
   fun testBijection() {
     val toRepair = "NAME : NEWLINE NAME = STRING NEWLINE NAME = NAME ( STRING ) NEWLINE"
     val radius = 2
-    val pt = Grammars.seq2parsePythonCFG.makeLevPTree(toRepair, radius, shortS2PParikhMap)
+    val pt = vanillaS2PCFG.makeLevPTree(toRepair, radius)
     println(pt.totalTrees.toString())
     val maxResults = 10_000
     val repairs = pt.sampleStrWithoutReplacement().take(maxResults).toList()

@@ -50,13 +50,51 @@ fun CFG.parikhBounds(nt: Σᐩ, size: Int): ParikhBounds {
   return bounds
 }
 
-class ParikhMap(val cfg: CFG, val size: Int) {
+class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
   private val lengthBounds: MutableMap<Int, Set<Σᐩ>> = mutableMapOf()
   private val parikhMap: MutableMap<Int, ParikhBoundsMap> = mutableMapOf()
   val parikhRangeMap: MutableMap<IntRange, ParikhBoundsMap> = mutableMapOf()
   val ntIdx = cfg.nonterminals.toList()
 
   companion object {
+    fun serialize(pm: ParikhMap): String =
+      serializePM(pm.parikhMap) + "\n\n====\n\n" +
+          pm.lengthBounds.entries.joinToString("\n") { (k, v) -> "$k ${v.joinToString(" ")}" }
+
+    fun serializePM(pm: Map<Int, ParikhBoundsMap>) =
+      pm.entries.joinToString("\n") { (k0, v0) ->
+        v0.entries.joinToString("\n") { (k1, v1) ->
+          v1.entries.joinToString("\n") { (k2, v2) ->
+            "$k0 $k1 $k2 ${v2.first} ${v2.last}"
+          }
+        }
+      }
+
+    fun deserializePM(str: String): Map<Int, ParikhBoundsMap> =
+      str.lines().filter { it.isNotBlank() }
+        .map { it.split(" ") }.groupBy { it[0].toInt() }.mapValues { (_, v0) ->
+        v0.groupBy { it[1] }.mapValues { (_, v1) ->
+          v1.map { it[2] to it[3].toInt()..it[4].toInt() }.toMap()
+        }
+      }.mapValues { (_, v0) ->
+        v0.mapValues { (_, v1) ->
+          v1.mapValues { (_, v2) ->
+            v2
+          }
+        }
+      }
+
+    fun deserialize(cfg: CFG, str: String): ParikhMap {
+      val pm = deserializePM(str.substringBefore("\n\n====\n\n"))
+      val lb = str.substringAfter("\n\n====\n\n").lines().map { it.split(" ") }
+        .associate { it.first().toInt() to it.drop(1).toSet() }
+      return ParikhMap(cfg, pm.size, false).apply {
+          parikhMap.putAll(pm)
+          lengthBounds.putAll(lb)
+          populatePRMFromPM()
+      }
+    }
+
     fun genRanges(delta: Int = 2 * MAX_RADIUS + 1, n: Int = MAX_TOKENS) =
       (1..delta).map { margin ->
         val range = (0..n).toList()
@@ -66,14 +104,7 @@ class ParikhMap(val cfg: CFG, val size: Int) {
       }.flatten()
   }
 
-  init {
-    val template = List(size) { "_" }
-    cfg.initPForestMat(template).seekFixpoint().diagonals
-      .forEachIndexed { i, it ->
-        lengthBounds[i + 1] = it.first().keys
-        parikhMap[i + 1] = it.first().mapValues { it.value.parikhBounds }
-      }
-
+  fun populatePRMFromPM() {
     genRanges().forEach { range ->
       range.map { parikhMap[it] ?: emptyMap() }
         .fold(emptyMap<Σᐩ, ParikhBounds>()) { acc, map -> pbmplus(acc, map) }
@@ -81,6 +112,20 @@ class ParikhMap(val cfg: CFG, val size: Int) {
 //          println("Generating Parikh range for $range");
           parikhRangeMap[range] = it
         }
+    }
+  }
+
+  init {
+    if (reconstruct) {
+      val template = List(size) { "_" }
+      cfg.initPForestMat(template).seekFixpoint().diagonals
+        .forEachIndexed { i, it ->
+          println("Computing length $i")
+          lengthBounds[i + 1] = it.first().keys
+          parikhMap[i + 1] = it.first().mapValues { it.value.parikhBounds }
+        }
+
+      populatePRMFromPM()
     }
   }
 

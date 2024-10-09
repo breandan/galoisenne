@@ -189,9 +189,14 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
+var langCache = mutableMapOf<Int, String>()
+
 val CFG.parikhMap: ParikhMap by cache {
   val clock = TimeSource.Monotonic.markNow()
-  val parikhMap = ParikhMap(this, MAX_TOKENS + 5)
+
+  val parikhMap = if (hashCode() in langCache)
+    ParikhMap.deserialize(this, langCache[hashCode()]!!)
+    else ParikhMap(this, MAX_TOKENS + 5)
   println("Computed Parikh map in ${clock.elapsedNow()}")
   parikhMap
 }
