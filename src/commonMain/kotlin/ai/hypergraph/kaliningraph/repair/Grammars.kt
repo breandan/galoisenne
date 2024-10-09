@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.repair
 
 import ai.hypergraph.kaliningraph.parsing.freeze
 import ai.hypergraph.kaliningraph.parsing.noEpsilonOrNonterminalStubs
+import ai.hypergraph.kaliningraph.parsing.noNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.parseCFG
 
 val s2pCFGStr =   """
@@ -198,3 +199,4 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 """
 
 val vanillaS2PCFG by lazy { s2pCFGStr.parseCFG().noEpsilonOrNonterminalStubs.freeze() }
+val vanillaS2PCFGWE by lazy { s2pCFGStr.parseCFG().noNonterminalStubs.freeze() }
