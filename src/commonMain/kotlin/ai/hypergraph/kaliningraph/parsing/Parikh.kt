@@ -88,6 +88,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
       val pm = deserializePM(str.substringBefore("\n\n====\n\n"))
       val lb = str.substringAfter("\n\n====\n\n").lines().map { it.split(" ") }
         .associate { it.first().toInt() to it.drop(1).toSet() }
+      println("Deserialized Parikh Map with ${pm.size} lengths and ${lb.size} bounds")
       return ParikhMap(cfg, pm.size, false).apply {
           parikhMap.putAll(pm)
           lengthBounds.putAll(lb)
@@ -120,7 +121,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
       val template = List(size) { "_" }
       cfg.initPForestMat(template).seekFixpoint().diagonals
         .forEachIndexed { i, it ->
-          println("Computing length $i")
+          println("Computing PM length $i/$size with ${it.size} keys")
           lengthBounds[i + 1] = it.first().keys
           parikhMap[i + 1] = it.first().mapValues { it.value.parikhBounds }
         }

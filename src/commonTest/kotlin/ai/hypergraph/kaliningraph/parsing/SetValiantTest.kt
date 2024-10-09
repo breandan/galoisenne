@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import Grammars
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
@@ -345,7 +346,7 @@ class SetValiantTest {
 */
   @Test
   fun testUnitParse() {
-    assertNotNull(Grammars.seq2parsePythonCFG.parse("NEWLINE"))
+    assertNotNull(vanillaS2PCFG.parse("NEWLINE"))
   }
 
 /*

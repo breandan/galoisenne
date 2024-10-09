@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import kotlin.test.*
 
 /*
@@ -11,7 +12,7 @@ class ParikhTest {
   */
   @Test
   fun testParikhBounds() {
-    val cfg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val cfg = vanillaS2PCFG
     val parikhMap = ParikhMap(cfg, 10)
     (1..10).forEach { i ->
       cfg.enumSeq(List(i) { "_" }).take(10).forEach {

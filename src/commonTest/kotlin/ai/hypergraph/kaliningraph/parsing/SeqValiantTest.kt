@@ -6,6 +6,7 @@ import Grammars.seq2parsePythonVanillaCFG
 import Grammars.tinyC
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import org.kosat.round
 import kotlin.random.Random
 import kotlin.test.*
@@ -21,19 +22,19 @@ class SeqValiantTest {
   @Test
   fun testSeqValiant() {
     var clock = TimeSource.Monotonic.markNow()
-    val detSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val detSols = vanillaS2PCFG
       .enumSeq(List(20) {"_"})
       .take(10_000).sortedBy { it.length }.toList()
 
-    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
+    detSols.forEach { assertTrue("\"$it\" was invalid!") { it in vanillaS2PCFG.language } }
 
     var elapsed = clock.elapsedNow().inWholeMilliseconds
     println("Found ${detSols.size} determinstic solutions in ${elapsed}ms or ~${detSols.size / (elapsed/1000.0)}/s, all were valid!")
 
     clock = TimeSource.Monotonic.markNow()
-    val randSols = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val randSols = vanillaS2PCFG
       .sampleSeq(List(20) { "_" }).take(10_000).toList().distinct()
-      .onEach { assertTrue("\"$it\" was invalid!") { it in Grammars.seq2parsePythonCFG.language } }
+      .onEach { assertTrue("\"$it\" was invalid!") { it in vanillaS2PCFG.language } }
 
     // 10k in ~22094ms
     elapsed = clock.elapsedNow().inWholeMilliseconds
@@ -140,7 +141,7 @@ class SeqValiantTest {
     val template = List(refLst.size + 3) { "_" }
     println("Solving: $template")
     measureTime {
-      Grammars.seq2parsePythonCFG.enumSeq(template)
+      vanillaS2PCFG.enumSeq(template)
         .map { it to levenshtein(it, refStr) }
         .filter { it.second < 4 }.distinct().take(100)
         .sortedWith(compareBy({ it.second }, { it.first.length }))

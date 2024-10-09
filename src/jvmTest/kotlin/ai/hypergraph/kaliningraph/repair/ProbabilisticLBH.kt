@@ -19,14 +19,15 @@ import kotlin.time.Duration.Companion.seconds
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH"
 */
 class ProbabilisticLBH {
+  init { LangCache.prepopPythonLangCache() }
   val pythonTestCases =
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
       // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
-//    .map { it.first.tokenizeByWhitespace().map { if (it in Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
-      .filter { it.first.tokenizeByWhitespace().all { it in Grammars.seq2parsePythonCFG.terminals } }
+//    .map { it.first.tokenizeByWhitespace().map { if (it in vanillaS2PCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
+      .filter { it.first.tokenizeByWhitespace().all { it in vanillaS2PCFG.terminals } }
       .shuffled(Random(seed = 1)).filter { (a, b) ->
-        ("$a NEWLINE" !in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed invalid") }
-            && ("$b NEWLINE" in Grammars.seq2parsePythonCFG.language).also { if (!it) println("Failed valid") }
+        ("$a NEWLINE" !in vanillaS2PCFG.language).also { if (!it) println("Failed invalid") }
+            && ("$b NEWLINE" in vanillaS2PCFG.language).also { if (!it) println("Failed valid") }
             && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
       }.distinct().filter { it.first.tokenizeByWhitespace().size < 23 }
 /*
@@ -35,7 +36,7 @@ class ProbabilisticLBH {
   @Test
   fun testSubgrammarEquivalence() {
     val terminalImage = setOf<String>() + "NEWLINE" + validPythonStatements.tokenizeByWhitespace().toSet()
-    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val s2pg = vanillaS2PCFG
     val subgrammar = s2pg.subgrammar(terminalImage)
 
     (validPythonStatements + invalidPythonStatements).lines()
@@ -48,7 +49,7 @@ class ProbabilisticLBH {
   @Test
   fun testSubgrammar() {
     val terminalImage = setOf<String>() + "NEWLINE" + validPythonStatements.tokenizeByWhitespace().toSet()
-    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val s2pg = vanillaS2PCFG
     val subgrammar = s2pg.subgrammar(terminalImage)
     println("Original size: ${s2pg.size}")
     println("Subgrammar size: ${subgrammar.size}")
@@ -79,11 +80,11 @@ class ProbabilisticLBH {
 ////      subgrammar.parseInvalidWithMaximalFragments(pp).forEach { println(it.prettyPrint() + "\n\n") }
 //      println(s2pg.parse(pp)!!.prettyPrint())
 //      println(lastGood.first { it.isNotEmpty() }.first().prettyPrint())
-      assertTrue(pp in s2pg.language, "$it\nnot in Grammars.seq2parsePythonCFG!")
+      assertTrue(pp in s2pg.language, "$it\nnot in vanillaS2PCFG!")
       assertTrue(pp in subgrammar.language, "$it\nnot in subgrammar!")
     }
     subgrammar.sampleSeq(List(20) {"_"}).take(100).forEach { pp ->
-      assertTrue(pp in Grammars.seq2parsePythonCFG.language, "$pp\nnot in Grammars.seq2parsePythonCFG!")
+      assertTrue(pp in vanillaS2PCFG.language, "$pp\nnot in vanillaS2PCFG!")
       assertTrue(pp in subgrammar.language, "$pp\nnot in subgrammar!")
     }
   }
@@ -91,12 +92,12 @@ class ProbabilisticLBH {
   val topTerms by lazy {
     contextCSV.allProbs.entries
       .filter { it.key.type != EditType.DEL }
-      .groupingBy { Grammars.seq2parsePythonCFG.getS2PNT(it.key.newMid) }
+      .groupingBy { vanillaS2PCFG.getS2PNT(it.key.newMid) }
       .aggregate { _, acc: Int?, it, _ -> (acc ?: 0) + it.value }
       .map { (k, v) -> k to v }
       .sortedBy { -it.second }
-//      .onEach { println("${it.first}≡${Grammars.seq2parsePythonCFG.bimap[it.first]}: ${it.second}") }
-      .mapNotNull { Grammars.seq2parsePythonCFG.bimap[it.first].firstOrNull() }
+//      .onEach { println("${it.first}≡${vanillaS2PCFG.bimap[it.first]}: ${it.second}") }
+      .mapNotNull { vanillaS2PCFG.bimap[it.first].firstOrNull() }
       .take(20)
       .toSet()
   }
@@ -109,7 +110,7 @@ class ProbabilisticLBH {
   fun threeEditRepair() {
     val source = "NAME = { STRING = NUMBER , STRING = NUMBER , STRING = NUMBER } NEWLINE"
     val repair = "NAME = { STRING : NUMBER , STRING : NUMBER , STRING : NUMBER } NEWLINE"
-    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val gram = vanillaS2PCFG
 //    MAX_TOKENS = source.tokenizeByWhitespace().size + 5
 //    MAX_RADIUS = 3
     val levDist = 3
@@ -134,7 +135,7 @@ class ProbabilisticLBH {
     invalidPythonStatements.lines().shuffled().take(10).forEach {
       val toRepair = "$it NEWLINE".tokenizeByWhitespace()
       println("Repairing: ${toRepair.joinToString(" ")}\nRepairs:\n")
-      Grammars.seq2parsePythonCFG.fasterRepairSeq(toRepair)
+      vanillaS2PCFG.fasterRepairSeq(toRepair)
         .filter { it.isNotEmpty() }.distinct().take(10).forEach {
           println(levenshteinAlign(toRepair, it.tokenizeByWhitespace()).paintANSIColors())
         }
@@ -146,7 +147,7 @@ class ProbabilisticLBH {
 */
 //  @Test
   fun testCompleteness() {
-    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val s2pg = vanillaS2PCFG
     val TIMEOUT_MINS = 2
     val totalTrials = 10
     var currentTrials = 0
@@ -237,7 +238,7 @@ class ProbabilisticLBH {
     val sampleTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val allTimeByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
     val samplesBeforeMatchByLevDist = mutableMapOf(1 to 0.0, 2 to 0.0, 3 to 0.0)
-    val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val s2pg = vanillaS2PCFG
 
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
 //      .filter { (invalid, valid) -> 3 == levenshtein(invalid, valid) }.take(50)
@@ -311,7 +312,7 @@ class ProbabilisticLBH {
       val clock = TimeSource.Monotonic.markNow()
 
       val levDist = 2
-      val s2pg = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+      val s2pg = vanillaS2PCFG
       val levBall = makeLevFSA(toRepair, levDist)
       val intGram = s2pg.jvmIntersectLevFSA(levBall)
       val template = List(toRepair.size + levDist) { "_" }
@@ -334,7 +335,7 @@ class ProbabilisticLBH {
     validPythonStatements
       .lines()
       .shuffled()
-      .flatMap { (0..10).map { _ -> Grammars.seq2parsePythonCFG to it.maskRandomIndices(holes) } }
+      .flatMap { (0..10).map { _ -> vanillaS2PCFG to it.maskRandomIndices(holes) } }
       .filter { (a, b) ->
         val clock = TimeSource.Monotonic.markNow()
         a.sampleSWOR(b).takeWhile { clock.elapsedNow() < 2.seconds }.distinct().toList().size > 1

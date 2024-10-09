@@ -4,6 +4,7 @@ import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import kotlin.test.*
 import kotlin.time.*
 
@@ -247,7 +248,7 @@ class BarHillelTest {
 */
   @Test
   fun testPythonBarHillel() {
-    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val maxLevDist = 2
@@ -282,7 +283,7 @@ class BarHillelTest {
   //  Found 6987 minimal solutions using Levenshtein/Bar-Hillel
   //  Enumerative solver took 360184ms
 
-    val s2pg = Grammars.seq2parsePythonCFG
+    val s2pg = vanillaS2PCFG
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 3)
       .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
       .mapIndexedNotNull { i, it ->
@@ -313,7 +314,7 @@ class BarHillelTest {
 */
   @Test
   fun semiRealisticTest() {
-    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
     val origStr = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
@@ -336,7 +337,7 @@ class BarHillelTest {
       .also { println("Found ${it.size} minimal solutions using " +
           "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
-    val s2pg = Grammars.seq2parsePythonCFG
+    val s2pg = vanillaS2PCFG
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2)
       .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
       .mapIndexedNotNull { i, it ->
@@ -365,14 +366,14 @@ class BarHillelTest {
 */
   @Test
   fun levenshteinBlanketTest() {
-    val gram = Grammars.seq2parsePythonCFG.noEpsilonOrNonterminalStubs
+    val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
     val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
     val levBall = makeLevFSA(toRepair, levDist)
     val clock = TimeSource.Monotonic.markNow()
 
-    val s2pg = Grammars.seq2parsePythonCFG
+    val s2pg = vanillaS2PCFG
     s2pg.fasterRepairSeq(toRepair, 1, 2).distinct()
       .mapIndexedNotNull { i, it ->
         val levDistance = levenshtein(origStr, it)
@@ -395,7 +396,7 @@ class BarHillelTest {
   @Test
   fun testHammingBallRepair() {
     val timeout = 30
-    val gram = Grammars.seq2parsePythonCFG
+    val gram = vanillaS2PCFG
     val prompt= "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val clock = TimeSource.Monotonic.markNow()
     val lbhSet = gram.repairSeq(prompt).onEach { println(it) }
@@ -408,7 +409,7 @@ class BarHillelTest {
 */
   @Test
   fun testAllBlankSampler() {
-    val gram = Grammars.seq2parsePythonCFG
+    val gram = vanillaS2PCFG
     val n = 10
     gram.startPTree(List(n) { "_" })?.also {
       it.sampleWRGD().map { it.removeEpsilon() }.distinct()
