@@ -26,6 +26,7 @@
 \usepackage{pgfplots}
 \usepackage{array,multirow,graphicx}
 \usepackage{arydshln}
+\usepackage{tablefootnote} % for table footnotes
 
 \colorlet{lred}{red!30}
 \colorlet{lorange}{orange!30}
@@ -220,7 +221,7 @@ Almost every programming language ever developed is syntactically context-free, 
 
 Likewise, this grammar can be also used to construct a synthetic grammar, recognizing all and only valid sequences within a certain edit distance of a broken source code fragment. Our approach uses a pretrained language model to sample repair candidates from this synthetic grammar. We rank the results by negative log likelihood under the language model, and present the top $k$ candidates to the user. The user can then select the most appropriate repair from the list.
 
-Let us consider an example. Suppose the user has written the following code fragment: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:
+Let us consider a simplified example. Suppose the user has just written the following code fragment: \texttt{v = df.iloc(5:, 2:)}. Given an alphabet of just a few dozen lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:\vspace{-0.3cm}
 
 \begin{figure}[h!]
   \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
@@ -229,11 +230,11 @@ Let us consider an example. Suppose the user has written the following code frag
   \end{tabular}\vspace{-5pt}
 \end{figure}
 
-\noindent To generate these repairs, we first lexicalize the input as follows:
+\vspace{-0.3cm}\noindent The color \hlgreen{green} denotes an insertion, \hlorange{orange} is substitution and \hlred{red} is deletion. To generate these repairs, we start by lexicalizing the input sequence as follows:
 
 \begin{verbatim}
-  v    = df   . iloc ( 5      : , 2      : )
-  NAME = NAME . NAME ( NUMBER : , NUMBER : )
+              v    = df   . iloc ( 5      : , 2      : )
+              NAME = NAME . NAME ( NUMBER : , NUMBER : )
 \end{verbatim}
 
 \noindent Next, we construct an automaton that recognizes every string within a certain edit distance of the input. We will depict this process for a simpler language, where the grammar is $S \rightarrow \texttt{( )} \mid \texttt{( } S \texttt{ )} \mid S S$ and the broken code is \texttt{( ) )}.\vspace{-0.3cm}
@@ -243,7 +244,7 @@ Let us consider an example. Suppose the user has written the following code frag
   \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then intersect it with the grammar to produce an intersection grammar, which can be simplified to a DFA and decoded.}\label{fig:arch_simp}
 \end{figure}\vspace{-0.3cm}
 
-We first construct an automaton that recognizes every string within a certain edit distance of the input. We then reduce the grammar to Chomsky normal form (CNF), and using a modified construction from Bar-Hillel~\cite{bar1961formal}, construct an intersection grammar, which recognizes all and only valid sequences recognized by the grammar and edit automaton. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which we rank by negative log likelihood under the language model.
+The programming language syntax is represented by a context-free grammar, which we first reduce the grammar to Chomsky normal form (CNF). Then, using a modified construction from Bar-Hillel~\cite{bar1961formal}, we construct an intersection grammar, which recognizes all and only valid sequences recognized by both the grammar and edit automaton. This grammar is known to be non-recursive, and can be simplified to a deterministic finite automaton (DFA) using standard techniques. Finally, we decode the DFA to produce a list of repair candidates, which are reranked by a scoring function, e.g., the log likelihood of a language model.
 
 Now that we have a high-level overview of our approach, we will demonstrate a few of the capabilities of our tool by means of some usage examples.
 
@@ -255,7 +256,7 @@ Tidyparse offers a convenient user interface featuring a text editor, a grammar 
   S -> S and S | S xor S | ( S ) | true | false | ! S(*@\caret{ }@*)
 \end{wholetidyinput}
 
-\noindent Syntax repair is the primary intended use case of our tool. If given an unparsable string, it will return an ordered set of suggestions how to fix it, highlighted with colors, where \hlgreen{green} is insertion, \hlorange{orange} is substitution and \hlred{red} is deletion.
+\noindent Syntax repair is the primary intended use case of our tool. If given an unparsable string, it will return an ordered set of suggestions how to fix it:
 
 \begin{tcolorbox}[
 top=0.1cm,
@@ -299,7 +300,8 @@ true and ( false or and true false(*@\caret{ }@*)
 %\end{tcolorbox}
 %
 %
-For simplicity, it is also possible to define a grammar and string side-by-side from the same editor, as shown in the untyped $\lambda$-calculus example below:
+
+\vspace{-0.2cm}For simplicity, it is also possible to define a grammar and string side-by-side from the same editor, as shown in the untyped $\lambda$-calculus example below:
 
 \begin{tcolorbox}[
 top=0.1cm,
@@ -321,7 +323,8 @@ var -> a | b | c | f | x | y | z
 3. ( (*@$\lambda$@*) f . ( (*@$\lambda$@*) x . f ( x x ) ) ( (*@$\lambda$@*) x . f ( x(*@\hlred{ }@*)) (*@\hlgreen{)}@*) (*@\hlgreen{)}@*)
 \end{lstlisting}
 \end{tcolorbox}
-\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement, then sorts the results by Levenshtein distance. Customizing the ranking order is possible using a programmatic interface. For the Python language, we use a small dataset of n-grams to rank the repairs by naturalness.
+
+\vspace{-0.2cm}\noindent By default, Tidyparse samples the finite intersection language uniformly without replacement, then sorts the results by Levenshtein distance. Customizing the ranking order is possible using a programmatic interface. For the Python language, we use a small dataset of n-grams to rank the repairs by naturalness.
 
 %Since CFLs are closed under homomorphisms, it is possible to unify lexing and parsing, however most languages explicitly define a separate lexer, which we avail to substitute named identifiers with their type. Given an invalid string, the tool will first abstract the raw characters, generate edits in the abstract token space, then remap successful repairs back to character space as shown below:
 %
@@ -471,9 +474,9 @@ var -> a | b | c | f | x | y | z
 
 \section{Related work}
 
-Many methods to sample from grammars and language models have been proposed. Some of these guarantee that all samples will be grammatically valid. Others guarantee that all grammatically valid samples are generable. The difficulty is not just synthesizing valid functions, but doing so in a parallel communication-free manner, without compromising soundness or completeness. The goal should be to massively scale up a replacement-free discrete sampler.
+Many methods to sample sequences from grammars and language models have been proposed. Some of these guarantee that all samples will be grammatically valid. Others guarantee that all grammatically valid sentences are generable. The difficulty is not just generating valid sentences, but doing so in a parallel communication-free manner, without compromising soundness or completeness. The goal should be to massively parallelize a replacement-free discrete sampler.
 
-In general, the problem of program induction from input-output examples is not well-posed, so specialized solvers that can make stronger assumptions will usually have an advantage on domain-specific benchmarks. Most existing program synthesizers do not satisfy all of these desiderata, e.g., soundness, completeness , naturalness, and parallel sampling. We compare our approach against Seq2Parse and BIFI, the leading neural syntax repair models in the literature.\vspace{-0.5cm}
+In general, the problem of program induction from input-output examples is not well-posed, so specialized solvers that can make stronger assumptions will usually have an advantage on domain-specific benchmarks. Most existing program synthesizers do not satisfy all of our desiderata, e.g., soundness, completeness, naturalness, and parallel sampling. We compare our approach against Seq2Parse and BIFI, the leading neural syntax repair models in the literature.\vspace{-0.5cm}
 
 \newcommand{\tidyparse}{\href{https://github.com/tidyparse/tidyparse}{Tidyparse}~\cite{considine2023pragmatic}}
 \newcommand{\seqtoparse}{\href{https://github.com/gsakkas/seq2parse}{Seq2Parse}~\cite{sakkas2022seq2parse}}
@@ -481,9 +484,9 @@ In general, the problem of program induction from input-output examples is not w
 \newcommand{\ordinalfix}{\href{https://github.com/myxxxsquared/OrdinalFix}{OrdinalFix}~\cite{zhang2023ordinalfix}}
 % https://boxbase.org/entries/2019/nov/25/error-correcting-earley-algorithm/
 \newcommand{\ahopeterson}{\href{https://epubs.siam.org/doi/10.1137/0201022}{Aho \& Peterson}~\cite{aho1972minimum}}
-\newcommand{\diekmanntratt}{\href{https://github.com/softdevteam/error_recovery_experiment}{Diekmann \& Tratt}~\cite{diekmann2018dont}}
+\newcommand{\diekmanntratt}{\href{https://github.com/softdevteam/error_recovery_experiment}{Don't panic!}~\cite{diekmann2018dont}}
 \newcommand{\outlines}{\href{https://github.com/dottxt-ai/outlines}{Outlines}~\cite{willard2023efficient}}
-\newcommand{\syncode}{\href{https://arxiv.org/pdf/2403.01632}{SynCode}~\cite{ugare2024improving}}
+\newcommand{\syncode}{\href{https://github.com/uiuc-focal-lab/syncode}{SynCode}~\cite{ugare2024improving}}
 \newcommand{\gad}{\href{https://arxiv.org/pdf/2405.21047}{GAD}~\cite{park2024grammar}}
 \newcommand{\codeguard}{\href{https://arxiv.org/pdf/2405.00218}{CodeGuard+}~\cite{fu2024constrained}}
 \newcommand{\flap}{\href{https://arxiv.org/pdf/2403.05766}{FLAP}~\cite{roy2024flap}}
@@ -497,14 +500,14 @@ In general, the problem of program induction from input-output examples is not w
                    & & & \phantom{.}Sound\phantom{.}            & \phantom{.}Complete\phantom{.} & \phantom{.}Natural\phantom{.} & Theory     & Parallel & Tool \\\hline
    \parbox[t]{2mm}{\multirow{5}{*}{\rotatebox[origin=c]{90}{Repair}}}
      & & \tidyparse     & \cmark           & \cmark           & \cmark  & CFG$_\cap$ & \cmark & IDE-ready \\
-     & & \seqtoparse    & \cmark$^\dagger$ & \xmark           & \cmark  & CFG        & \xmark & Python    \\
+     & & \seqtoparse    & \cmark\tablefootnote[1]{Claimed by authors, but published tool is known to exhibit counterexamples.} & \xmark           & \cmark  & CFG        & \xmark & Python    \\
      & & \bifi          & \xmark           & \xmark           & \cmark  & $\Sigma^*$ & \xmark & Python    \\
      & & \ordinalfix    & \cmark           & \xmark           & \xmark  & CFG/MJ     & \xmark & Rust      \\
 %     & & \ahopeterson   & \cmark           & \xmark           & \xmark  & CFG        & \xmark & None      \\
      & & \diekmanntratt & \cmark           & \xmark           & \xmark  & CFG/LR         & \xmark & Python    \\\hdashline
                    \parbox[t]{2mm}{\multirow{4}{*}{\rotatebox[origin=c]{90}{SyGuS}}}
-     & & \outlines      & \cmark$^\dagger$ & \cmark$^\dagger$ & \cmark  & CFG        & \xmark & Python    \\
-     & & \syncode       & \cmark           & ?                & \cmark  & CFG        & \xmark & Python    \\
+     & & \outlines      & \cmark^1 & \cmark^1 & \cmark  & CFG        & \xmark & Python    \\
+     & & \syncode       & \cmark           & \cmark                & \cmark  & CFG        & \xmark & Python    \\
      & & \guidance      & \cmark           & ?                & \cmark  & CFG        & \xmark & Python    \\
      & & \llamacpp      & \cmark           & ?                & \cmark  & CFG        & \xmark & Python    \\
 %     & & \gad           & \cmark           & ?                & \cmark  & CFG        & \xmark & Python    \\
@@ -514,7 +517,7 @@ In general, the problem of program induction from input-output examples is not w
   \end{tabular}
 \end{table}\vspace{-0.5cm}
 
-More generally, there exists a broad spectrum of LLM-powered syntax-guided synthesis (SuGuS) tools that do not specifically target syntax repair, but nonetheless constrain the output of the model to only produce syntactically valid text.
+More generally, there exists a broad spectrum of LLM-powered syntax-guided synthesis (SuGuS) tools that do not specifically target syntax repair, but nonetheless constrain the output of the model to only produce syntactically valid text. We mention the latter tools for their relevance to grammar-constrained decoding, and otherwise omit constrained decoding methods without a dedicated tool.
 
 %Now, we consider just LLM-based SyGuS synthesizers.
 %
@@ -556,9 +559,9 @@ We compare our method against two external baselines, Seq2Parse and Break-It-Fix
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{\scriptsize{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{\scriptsize{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}\footnote{\scriptsize{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}}. Since it was unclear how to extract multiple repairs, we only measure Precision@1. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{\scriptsize{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
-The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, executing bytecode compiled for JVM 17.0.2. For the decoder, we use an order-5 Markov chain trained on 55 million BIFI tokens, which takes roughly 10 minutes. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for varying latency cutoffs up to 90s, although it often exhausts the search space and halts before timeout.
+The Tidyparse experiments were conducted on a server containing 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, executing bytecode compiled for JVM 17.0.2. For the decoder, we use an order-5 Markov chain trained on 55 million BIFI tokens, which takes roughly 10 minutes. Sequences are scored using negative log likelihood with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for varying latency cutoffs up to 90s, although the decoder often exhausts the search space and halts before timeout.
 
 %  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
@@ -773,19 +776,19 @@ The language intersection experiments were conducted on 40 Intel Skylake cores r
 
 \subsection{StackOverflow evaluation}\label{sec:rq2}
 
-For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
+For our first experiment, we measure the precision of Tidyparse on repairs of varying snippet lengths and edit distances. We compare the Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples. The results are depicted in Fig.~\ref{fig:len_dist_prec}.
 
 \begin{figure}[h!]
   \resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
   \resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
   \resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
   \resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
-  \caption{Repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
+  \caption{Repair precision across varying snippet lengths and edit distances.}\label{fig:len_dist_prec}
 \end{figure}
 
 Tidyparse exhibits a highly competitive top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k while requiring only a fraction of the data and compute.
 
-Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
+For the second experiment, we measure the precision at various Precision@k thresholds and wall-clock timeouts. These results are shown in Fig.~\ref{fig:human}. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot response times but are neural models trained on a much larger dataset.
 
 \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
@@ -796,7 +799,7 @@ Next, we measure the precision at various ranking cutoffs and wall-clock timeout
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-  \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
+  \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs, which both have subsecond repair latency.}\label{fig:human}
 \end{figure}
 
 %\begin{wrapfigure}{r}{0.38\textwidth}
@@ -812,15 +815,15 @@ Next, we measure the precision at various ranking cutoffs and wall-clock timeout
 %
 %We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
-The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and steerability during the repair process.
+The main lesson we draw from our experiments is that by constraining and parallelizing the decoder, it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our method uses a small grammar and a cheap ranking metric (n-gram perplexity) to achieve significantly higher precision on natural repair. This approach allows Tidyparse to trade additional time for increased precision and handle languages with very little training data, offering far more flexibility and steer-ability during the repair process.
 
-Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked.
+Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small edit ball, and by enumerating or sampling the language of nearby valid snippets, then reranking generated repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii edit balls, where the admissible set is small enough to be completely enumerated and ranked.
 
 \section{Conclusion}
 
-From a usability standpoint, we argue that syntax repair tools should be as user-friendly and widely accessible as autocorrection tools in word processors. We argue it is possible to reduce disruption from manual syntax repair and improve the efficiency of working programmers by driving down the latency needed to synthesize an acceptable repair. In contrast with program synthesizers that require intermediate editor states to be well-formed, our synthesizer does not impose any constraints on the code itself being written and is possible to use in an interactive programming setting.
+From a usability standpoint, we argue that syntax repair tools should be as user-friendly and widely accessible as autocorrection tools in word processors. We argue that it is possible to reduce disruption from manual syntax repair and improve the efficiency of working programmers by driving down the latency needed to synthesize an acceptable repair. In contrast with program synthesizers that require intermediate editor states to be syntactically well-formed, our tool does not impose any constraints on the code itself being written and is possible to use in an interactive programming setting such as an IDE or text editor.
 
-We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse is capable of generating repairs for invalid source code in a range of practical languages with little to no data required. We plan to continue expanding the prototype's autocorrection functionality to cover a broader range of languages and hope to conduct a more thorough user study to validate its effectiveness in practical programming scenarios.
+We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse~\footnote{Artifact is available as a \href{http://tidyparse.github.io}{web application} or \href{https://plugins.jetbrains.com/plugin/19570-tidyparse}{IDE plugin}.} is capable of generating repairs for invalid source code in a range of practical languages with a context-free grammar and little to no training data required. We plan to continue expanding the autocorrection functionality and hope to conduct a user study to validate its effectiveness in practical programming scenarios.
 
 %bibliography
 \bibliographystyle{splncs04}
