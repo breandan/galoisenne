@@ -129,7 +129,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:6.0.0")
+        implementation("org.apache.datasketches:datasketches-java:6.1.1")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -166,7 +166,7 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.11.2")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:25.0.0")
+        implementation("org.jetbrains:annotations:26.0.0")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
