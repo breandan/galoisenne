@@ -121,16 +121,6 @@ fun bijectiveRepair(
   return if (parallelize) ::genSeq.parallelize().distinct().asSequence() else genSeq()
 }
 
-// This experiment essentially tries every possible combination of fillers in parallel
-fun List<Σᐩ>.parallelSolve(fillers: Set<Σᐩ>) =
-  MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER })
-    .asStream().parallel().map {
-      fold("" to it) { (a, b), c ->
-        if (c == HOLE_MARKER) (a + " " + b.first()) to b.drop(1) else ("$a $c") to b
-      }.first.replace("ε ", "").trim()
-    }
-//      .filter { measureTimedValue { it.fastMatch(CFG) }.also { println("Decided ${it.value} in ${it.duration}") }.value }
-
 // This is fairly slow compared to bijective repair, but it's a good baseline for comparison
 fun repairInParallel(
   prompt: Σᐩ,
