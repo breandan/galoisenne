@@ -1,0 +1,122 @@
+% This structure conforms to the mcgill university wide thesis guidelines:
+% 
+% https://www.mcgill.ca/gps/thesis/thesis-guidelines/preparation
+% Some parts of it were taken from here, but mostly it is a "from scratch" template with minimal bload and fuzz: https://github.com/juliengs/mcgill-thesis-template
+% Author: Maximilian Schiedermeier
+
+\documentclass[12pt,oneside]{book}
+\usepackage{graphicx}
+
+% enable onehalfspaceing etc
+\usepackage{setspace}
+
+% Make chapter enumeration big and fat
+\usepackage{fix-cm}
+\usepackage{xcolor}
+\usepackage[bf,rm,medium,compact]{titlesec}
+\definecolor{gray75}{gray}{0.75}
+\newcommand{\hsp}{\hspace{20pt}}
+\titleformat{\chapter}[display]{\filleft\Huge\bfseries}{\fontsize{100}{100}\selectfont\textcolor{gray75}\thechapter}{1ex}{}[]%
+
+
+% Enable non-ugly hyperlinks
+\usepackage{blindtext}
+\usepackage[hidelinks]{hyperref}
+
+
+
+
+% Some metadata for your generated PDF
+\title{Phd Thesis}
+\author{Your-First-Name Your-Family-Name}
+\date{\today}
+
+% DOCUMENT BEGINS
+\begin{document}
+
+
+% Special command to link to official guidelines:
+\newcommand{\mcgillguidelines}{\href{https://www.mcgill.ca/gps/thesis/thesis-guidelines/preparation}{Official McGill Guidelines: }}
+
+
+% TITLE PAGE
+\begin{onehalfspacing}
+\pagestyle{empty}
+\input{content/TitlePage.tex}
+\cleardoublepage
+\end{onehalfspacing}
+
+
+% Pages in all "Chapters" before the actual thesis content are enumerated in roman (i, ii, iii, ...)
+\pagenumbering{roman}
+\pagestyle{plain}
+
+
+% Abstracts in English and French
+\input{content/AbstractEnglish}
+\clearpage
+\input{content/AbstractFrench}
+\cleardoublepage
+
+
+% List of Contributions
+% Abstracts in English and French
+\input{content/Contributions}
+\clearpage
+
+
+% Acknowledgements
+\input{content/Acknowledgements}
+\clearpage
+
+% Next comes the GENERATED list of contents, figures and tables.
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+
+
+
+% Here comes the actual thesis content, we switch back to arabic page numbers.
+\pagenumbering{arabic}
+% \pagestyle{fancyplain}
+
+
+% Intro and literature are mandatory mcgill parts:
+\input{content/Introduction}
+\input{content/RelevantLiterature}
+
+% Two sample parts with sample chapters, change this parts as much as your little heart desires:
+%\part{Why Does the Sun Shine?}
+%\label{part:part1}
+\input{content/Chapter01}
+\input{content/Chapter02}
+
+%\part{Why Does the Sun Really Shine?}
+%\label{part:part2}
+\input{content/Chapter03}
+% more chapters here, you get the idea...
+
+
+% Finally, as you reach the end of your thesis: (Discussion is a mandatory part, see mcgill guidelines:
+% https://www.mcgill.ca/gps/thesis/thesis-guidelines/preparation
+%\part{Discussion and Conclusions}
+%\label{part:disclusions}
+\input{content/Discussion}
+\input{content/Conclusions}
+% If you want to mention future work, pack it here.
+
+
+% List of YOUR publications
+\input{content/Publications}
+
+% Optional: List of Acronyms / Glossary
+\input{content/Acronyms}
+
+% Finally your references
+% PLEASE use a management system, e.g. Zotero (this works really nice with overleaf, there's seamless referencing of all your organized papers from zotero).
+% To add zotero, use "New file -> From Zotero"
+\bibliographystyle{alpha}
+\bibliography{../bib/acmart}
+
+\end{document}
