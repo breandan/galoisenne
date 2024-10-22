@@ -1,5 +1,8 @@
-\chapter{\rm\bfseries Program Repair}
+\chapter{\rm\bfseries Deterministic Program Repair}
 \label{ch:chapter02}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Parsimony is a guiding principle in program repair that comes from the 14th century Fransiscan friar named William of Ockham. In keeping with the Fransiscan minimialist lifestyle, Ockham's principle basically says that when you have multiple hypotheses, the simpler one is the better. It is not precisely clear what ``simpler'' should mean in the context of program repair, but a first-order approximation is to strive for the smallest number of changes required to transform an invalid program into a valid one.
 
+Levenshtein distance is one such metric for measuring the number of edits between two strings. First proposed by the Soviet scientist Vladimir Iosifovich Levenshtein, it quantifies how many insertions, deletions, and substitutions are required to transform one string into another. As it turns out, there is an automaton, called the Levenshtein automaton~\cite{schulz2002fast}, that recognizes all strings within a certain Levenshtein distance of a given string. We can use this automaton to find the most likely repair consistent with the observed program and the grammar.
+
+Given the source code for a computer program $\hat\sigma$ and a grammar $G$, our goal is to find the most likely valid string $\sigma$ consistent with the grammar $G$ and the observed program $\hat\sigma$. We can formalize all possible repairs as a language intersection problem.

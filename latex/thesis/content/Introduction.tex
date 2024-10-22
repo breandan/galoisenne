@@ -1,5 +1,10 @@
 \chapter*{\rm\bfseries Introduction}
 \label{ch:introduction}
 
-\mcgillguidelines Clearly state the rationale and objectives of the research.
+%\mcgillguidelines Clearly state the rationale and objectives of the research.
 
+Our goal in this thesis is to introduce a theory of program repair. Broadly, its goal is to repair faulty programs by combining probabilistic language models with exact combinatorial methods. We do so by reformulating the problem of program repair in the parlance of formal language theory. In addition to being a natural fit for syntax repair, this also allows us to encode and compose static analyses as grammatical specifications.
+
+Program repair is a highly underdetermined problem, meaning that the validity constraints do not uniquely determine a solution. A proper theory of program repair must be able to resolve this ambiguity to infer the user's intent from an incomplete specification, and incrementally refine its guess as more information becomes available from the user.
+
+This theory we propose has a number of desirable properties. It is highly compositional, meaning that users can manipulate constraints on programs while retaining the algebraic closure properties, such as union, intersection, and differentiation. It is well-suited for probabilistic reasoning, meaning we can use any probabilistic model of language to guide the repair process. It is also amenable to incremental repair, meaning that we can repair programs in a streaming fashion, while the user is typing.
