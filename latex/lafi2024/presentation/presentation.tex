@@ -54,26 +54,26 @@
   \HL}
 \makeatother
 
-\newcommand\ddd{\Ddots}
-\newcommand\vdd{\Vdots}
-\newcommand\cdd{\Cdots}
-\newcommand\lds{\ldots}
-\newcommand\vno{\varnothing}
+\newcommand{\ddd}{\Ddots}
+\newcommand{\vdd}{\Vdots}
+\newcommand{\cdd}{\Cdots}
+\newcommand{\lds}{\ldots}
+\newcommand{\vno}{\varnothing}
 \newcommand{\ts}[1]{\textsuperscript{#1}}
-\newcommand\non{1\ts{st}}
-\newcommand\ntw{2\ts{nd}}
-\newcommand\nth{3\ts{rd}}
-\newcommand\nfo{4\ts{th}}
-\newcommand\nfi{5\ts{th}}
-\newcommand\nsi{6\ts{th}}
-\newcommand\nse{7\ts{th}}
+\newcommand{\non}{1\ts{st}}
+\newcommand{\ntw}{2\ts{nd}}
+\newcommand{\nth}{3\ts{rd}}
+\newcommand{\nfo}{4\ts{th}}
+\newcommand{\nfi}{5\ts{th}}
+\newcommand{\nsi}{6\ts{th}}
+\newcommand{\nse}{7\ts{th}}
 \newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
-\newcommand\rcr{\rowcolor{black!15}}
-\newcommand\rcw{\rowcolor{white}}
-\newcommand\pcd{\cdot}
-\newcommand\pcp{\phantom\cdot}
-\newcommand\ppp{\phantom{\nse}}
-\newcommand\hole{\underline{\hspace{0.25cm}}}
+\newcommand{\rcr}{\rowcolor{black!15}}
+\newcommand{\rcw}{\rowcolor{white}}
+\newcommand{\pcd}{\cdot}
+\newcommand{\pcp}{\phantom\cdot}
+\newcommand{\ppp}{\phantom{\nse}}
+\newcommand{\hole}{\underline{\hspace{0.25cm}}}
 
 \title[A Tree Sampler for Bounded CFLs]{A Tree Sampler for Bounded Context-Free Languages}
 \titlegraphic{\includegraphics[width=0.2\textwidth]{../../figures/tidyparse_logo.png}}
@@ -146,7 +146,7 @@
 \end{frame}
 
 \begin{frame}[fragile]{Satisfiability + holes (our contribution)}
-  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow × \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
+  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
 
   \resizebox{\textwidth}{!}{
       {\renewcommand{\arraystretch}{1.2}
