@@ -96,7 +96,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
       }
     }
 
-    fun genRanges(delta: Int = 2 * MAX_RADIUS + 1, n: Int = MAX_TOKENS) =
+    fun genRanges(delta: Int = 2 * MAX_RADIUS + 1, n: Int = MAX_TOKENS + MAX_RADIUS) =
       (1..delta).map { margin ->
         val range = (0..n).toList()
         range.windowed(margin, 1).map {

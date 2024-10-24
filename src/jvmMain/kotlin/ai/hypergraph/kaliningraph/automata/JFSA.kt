@@ -151,3 +151,8 @@ fun BAutomaton.decodeDFA(
 
   return deduped
 }
+
+fun BAutomaton.decodeDFA(
+  dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings because BAutomata uses Unicode
+  take: Int = 1000,
+) = getFiniteStrings(take).map { it.map { dec[it]!! }.joinToString(" ") }

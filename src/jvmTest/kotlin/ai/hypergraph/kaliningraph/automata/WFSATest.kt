@@ -149,6 +149,28 @@ class WFSATest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testRepairMembership"
+ */
+  @Test
+  fun testRepairMembership() {
+    val toRepair = "if STRING in NAME : return [ NEWLINE"
+    val groundTr = "if STRING in NAME : return NUMBER NEWLINE"
+    println(groundTr in vanillaS2PCFG.language)
+    val radius = 1
+    val fsa = makeLevFSA(toRepair, radius)
+    val gram = vanillaS2PCFG.run { jvmIntersectLevFSAP(fsa, parikhMap) }
+    val pt = gram.toPTree()
+
+    pt.toDFA(true)!!.decodeDFA(pt.termDict).toSet()
+      .also { assertTrue(it.isNotEmpty()) }.onEach {
+        assertTrue(fsa.recognizes(it) && it in vanillaS2PCFG.language)
+        println(levenshteinAlign(toRepair, it).paintANSIColors())
+      }.also { assertEquals(pt.sampleStrWithoutReplacement().toSet(), it) }
+
+    assertTrue(groundTr in gram.language)
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testBijection"
 */
   @Test

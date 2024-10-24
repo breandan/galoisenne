@@ -37,6 +37,8 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   }
 
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
+  var height = 0
+  var width = 0
 
   val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
   val validPairs by lazy { stateCoords.let { it * it }.filter { it.isValidStatePair() }.toSet() }

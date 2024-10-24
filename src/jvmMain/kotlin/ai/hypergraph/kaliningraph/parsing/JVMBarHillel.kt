@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.minimizeFix
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
-import java.util.concurrent.*
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
@@ -165,6 +164,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
                             lbc: List<IntRange> = this.lengthBoundsCache
                             ): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
+  if (parikhMap.size < fsa.width + fsa.height) throw Exception("WARNING: Parikh map size exceeded")
   var clock = TimeSource.Monotonic.markNow()
 
   val nts = ConcurrentHashMap.newKeySet<Σᐩ>().apply { add("START") }
@@ -200,8 +200,9 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA,
         // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
         fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
     }.toList().also {
-      val fraction = it.size.toDouble() / (fsa.states.size * nonterminals.size * fsa.states.size)
-      println("Fraction of valid triples: $fraction")
+      val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
+      val fraction = it.size.toDouble() / candidates
+      println("Fraction of valid triples: ${it.size}/$candidates ≈ $fraction")
     }.forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
   println("Precomputed LP constraints in ${ctClock.elapsedNow()}")
 

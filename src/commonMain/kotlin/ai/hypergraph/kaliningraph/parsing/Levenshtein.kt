@@ -76,6 +76,7 @@ fun makeLevFSA(
     }
 
     FSA(Q, initialStates, finalStates)
+      .also { it.height = dist; it.width = str.size }
 //      .nominalize()
       .also { println("Levenshtein-${str.size}x$dist automaton has ${Q.size} arcs!") }
   }
