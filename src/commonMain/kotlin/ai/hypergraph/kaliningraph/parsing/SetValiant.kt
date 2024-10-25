@@ -266,7 +266,8 @@ fun CFG.initialUTBMatrix(
 ): UTMatrix<Blns> =
   UTMatrix(
     ts = tokens.map { it ->
-      bmp[listOf(it)].let { nts -> allNTs.map { it in nts } }.toBooleanArray()
+      if (it == HOLE_MARKER) BooleanArray(nonterminals.size) { true }
+      else bmp[listOf(it)].let { nts -> allNTs.map { it in nts } }.toBooleanArray()
     }.toTypedArray(),
     algebra = bitwiseAlgebra
   )

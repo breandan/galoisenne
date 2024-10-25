@@ -53,33 +53,41 @@ fun CFG.levenshteinRepair(maxDist: Int, unparseable: List<Σᐩ>, solver: CJL.(L
 
 fun makeLevFSA(str: Σᐩ, dist: Int): FSA = makeLevFSA(str.tokenizeByWhitespace(), dist)
 
+fun Σᐩ.unpackCoordinates() =
+  substringAfter('_').split('/')
+    .let { (i, j) -> i.toInt() to j.toInt() }
+
 /** Uses nominal arc predicates. See [NOM] for denominalization. */
 fun makeLevFSA(
   str: List<Σᐩ>,
   dist: Int,
   digits: Int = (str.size * dist).toString().length,
+  lastGoodIndex: Int = str.size
 ): FSA =
   (upArcs(str, dist, digits) +
     diagArcs(str, dist, digits) +
     str.mapIndexed { i, it -> rightArcs(i, dist, it, digits) }.flatten() +
     str.mapIndexed { i, it -> knightArcs(i, dist, it, digits, str) }.flatten())
-  .let { Q ->
-    val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
-    fun Σᐩ.unpackCoordinates() =
-      substringAfter('_').split('/')
-        .let { (i, j) -> i.toInt() to j.toInt() }
-
-    val finalStates = mutableSetOf<String>()
-    Q.states.forEach {
-      val (i, j) = it.unpackCoordinates()
-      if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
+    .also {
+      println("Levenshtein-${str.size}x$dist automaton had ${it.size} arcs initially!")
+    }.filter { arc ->
+      arc.first.unpackCoordinates().let { (i, j) -> 0 < j || i <= lastGoodIndex + 1 }
     }
+    .let { Q ->
+      val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
 
-    FSA(Q, initialStates, finalStates)
-      .also { it.height = dist; it.width = str.size }
-//      .nominalize()
-      .also { println("Levenshtein-${str.size}x$dist automaton has ${Q.size} arcs!") }
-  }
+
+      val finalStates = mutableSetOf<String>()
+      Q.states.forEach {
+        val (i, j) = it.unpackCoordinates()
+        if ((str.size - i + j).absoluteValue <= dist) finalStates.add(it)
+      }
+
+      FSA(Q, initialStates, finalStates)
+        .also { it.height = dist; it.width = str.size; it.levString = str }
+//        .nominalize()
+        .also { println("Levenshtein-${str.size}x$dist automaton had ${Q.size} arcs finally!") }
+    }
 
 private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 

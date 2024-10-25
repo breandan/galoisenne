@@ -81,22 +81,23 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   fun parikhVector(from: Int, to: Int): ParikhVector =
     parikhVector.getOrPut(from..to) { levString.subList(from, to).parikhVector() }
 
-  val levString: List<Σᐩ> by lazy {
-    val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
-    val maxY = stateCoords.maxOf { it.π3 }
-    val pad = (t * maxY).toString().length
-//    println("Max state: $t")
-    val padY = "0".padStart(pad, '0')
-    (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
-      .map { (a, b) ->
-        val lbl = edgeLabels[a to b]
-//        if (lbl == null) {
-//          println("Failed to lookup: $a to $b")
-//          println(edgeLabels)
-//        }
-        lbl!!
-      }
-  }
+  var levString: List<Σᐩ> = emptyList()
+//  by lazy {
+//    val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
+//    val maxY = stateCoords.maxOf { it.π3 }
+//    val pad = (t * maxY).toString().length
+////    println("Max state: $t")
+//    val padY = "0".padStart(pad, '0')
+//    (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
+//      .map { (a, b) ->
+//        val lbl = edgeLabels[a to b]
+////        if (lbl == null) {
+////          println("Failed to lookup: $a to $b")
+////          println(edgeLabels)
+////        }
+//        lbl!!
+//      }
+//  }
 
   fun walk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {
     val startVtx = from

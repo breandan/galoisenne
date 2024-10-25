@@ -45,6 +45,13 @@ fun pruneInactiveRules(cfg: CFG): CFG =
   TODO("Identify and prune all nonterminals t generating" +
     "a finite language rooted at t and disjoint from the upward closure.")
 
+fun CFG.maxParsableFragment(tokens: List<String>, padRight: Int = 3): Int =
+  (1..tokens.size).first { i ->
+    val blocked = tokens.mapIndexed { j, t -> if (j < i) t else "_" } + List(padRight) { "_" }
+//    println(blocked)
+    blocked !in language
+  }
+
 // REL ⊂ CFL ⊂ CJL
 operator fun REL.contains(s: Σᐩ): Bln = s in reg.asCFG.language
 operator fun CFL.contains(s: Σᐩ): Bln = cfg.isValid(s)
