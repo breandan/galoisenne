@@ -22,6 +22,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val states by lazy { Q.states }
   val stateLst by lazy { states.toList() }
   val stateMap by lazy { states.withIndex().associate { it.value to it.index } }
+  // Index of every state pair of states the FSA to the shortest path distance between them
   val APSP: Map<Pair<Int, Int>, Int> by lazy {
     graph.APSP.map { (k, v) ->
 //      println("Hashing: ${k.first.label} -> ${k.second.label} == $v")

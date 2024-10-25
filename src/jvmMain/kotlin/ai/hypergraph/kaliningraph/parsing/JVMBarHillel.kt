@@ -159,10 +159,11 @@ val MAX_PRODS = 150_000_000
 
 // We pass pm and lbc because cache often flushed forcing them to be reloaded
 // and we know they will usually be the same for all calls to this function.
-fun CFG.jvmIntersectLevFSAP(fsa: FSA,
-                            parikhMap: ParikhMap = this.parikhMap,
-                            lbc: List<IntRange> = this.lengthBoundsCache
-                            ): CFG {
+fun CFG.jvmIntersectLevFSAP(
+  fsa: FSA,
+  parikhMap: ParikhMap = this.parikhMap,
+  lbc: List<IntRange> = this.lengthBoundsCache
+): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   if (parikhMap.size < fsa.width + fsa.height) throw Exception("WARNING: Parikh map size exceeded")
   var clock = TimeSource.Monotonic.markNow()

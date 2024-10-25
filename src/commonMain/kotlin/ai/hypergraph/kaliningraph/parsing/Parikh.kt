@@ -50,10 +50,11 @@ fun CFG.parikhBounds(nt: Σᐩ, size: Int): ParikhBounds {
   return bounds
 }
 
+// For a description of this datastructure: https://github.com/breandan/galoisenne/blob/master/latex/popl2025/rebuttal.md
 class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
   private val lengthBounds: MutableMap<Int, Set<Σᐩ>> = mutableMapOf()
   private val parikhMap: MutableMap<Int, ParikhBoundsMap> = mutableMapOf()
-  val parikhRangeMap: MutableMap<IntRange, ParikhBoundsMap> = mutableMapOf()
+  val parikhRangeMap: MutableMap<IntRange, ParikhBoundsMap> = mutableMapOf() // Parameterized Parikh map
   val ntIdx = cfg.nonterminals.toList()
 
   companion object {
@@ -106,7 +107,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
   }
 
   fun populatePRMFromPM() {
-    genRanges().forEach { range ->
+    genRanges(n = size).forEach { range ->
       range.map { parikhMap[it] ?: emptyMap() }
         .fold(emptyMap<Σᐩ, ParikhBounds>()) { acc, map -> pbmplus(acc, map) }
         .also {
