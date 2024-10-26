@@ -62,7 +62,7 @@ fun makeLevFSA(
   str: List<Σᐩ>,
   dist: Int,
   digits: Int = (str.size * dist).toString().length,
-  lastGoodIndex: Int = str.size
+  bounds: Pair<Int, Int> = str.size to 0
 ): FSA =
   (upArcs(str, dist, digits) +
     diagArcs(str, dist, digits) +
@@ -71,11 +71,11 @@ fun makeLevFSA(
     .also {
       println("Levenshtein-${str.size}x$dist automaton had ${it.size} arcs initially!")
     }.filter { arc ->
-      arc.first.unpackCoordinates().let { (i, j) -> 0 < j || i <= lastGoodIndex + 1 }
+      listOf(arc.first.unpackCoordinates(), arc.third.unpackCoordinates())
+        .all { (i, j) -> (0 < j || i <= bounds.first) && (j < dist || i >= bounds.second - 2) }
     }
     .let { Q ->
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
-
 
       val finalStates = mutableSetOf<String>()
       Q.states.forEach {
