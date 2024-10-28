@@ -203,7 +203,7 @@ fun CFG.jvmIntersectLevFSAP(
     }.toList().also {
       val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
       val fraction = it.size.toDouble() / candidates
-      println("Fraction of valid triples: ${it.size}/$candidates ≈ $fraction")
+      println("Fraction of valid LBH triples: ${it.size}/$candidates ≈ $fraction")
     }.forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
   println("Precomputed LP constraints in ${ctClock.elapsedNow()}")
 

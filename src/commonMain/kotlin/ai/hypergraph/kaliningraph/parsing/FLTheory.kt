@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
+import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.types.*
 
 // https://en.wikipedia.org/wiki/Regular_grammar
@@ -45,18 +46,6 @@ fun pruneInactiveRules(cfg: CFG): CFG =
   TODO("Identify and prune all nonterminals t generating" +
     "a finite language rooted at t and disjoint from the upward closure.")
 
-fun CFG.maxParsableFragment(tokens: List<String>, pad: Int = 3): Pair<Int, Int> =
-  ((1..tokens.size).firstOrNull { i ->
-    val blocked =
-      tokens.mapIndexed { j, t -> if (j < i) t else "_" } + List(pad) { "_" }
-//    println(blocked)
-    blocked !in language
-  } ?: tokens.size) to ((2..tokens.size).firstOrNull { i ->
-    val blocked = List(pad) { "_" } +
-        tokens.mapIndexed { j, t -> if (tokens.size - i < j) t else "_" }
-//    println(blocked)
-    blocked !in language
-  }?.let { tokens.size - it } ?: 0)
 
 // REL ⊂ CFL ⊂ CJL
 operator fun REL.contains(s: Σᐩ): Bln = s in reg.asCFG.language
