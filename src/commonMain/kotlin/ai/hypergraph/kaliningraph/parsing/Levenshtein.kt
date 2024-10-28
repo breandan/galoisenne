@@ -256,7 +256,7 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
 
   fun IntRange.tryToShrinkRight(): IntRange {
     var right = last
-    while (first < right - 1 && !hasSingleEditRepair(tokens, first until right)) right--
+    while (first < right - 2 && !hasSingleEditRepair(tokens, first until right)) right--
     return first until right
   }
 
@@ -269,8 +269,7 @@ fun CFG.shrinkLRBounds(tokens: List<String>, pair: Pair<Int, Int>): IntRange {
 
   return if (right - left <= 1 || hasSingleEditRepair(tokens, left until right)) 0..tokens.size
   else tryToShrinkMultiEditRange(tokens, left until right)
-    .let { it -> it.first..(it.last + 2) }
-    .also { println("Shrunken multiedit fragment:" + maskEverythingButRange(tokens, it).joinToString(" ")) }
+    .let { it -> it.first..(it.last + 1) }
 }
 
 fun CFG.smallestRangeWithNoSingleEditRepair(tokens: List<String>, stride: Int = MAX_RADIUS + 2): IntRange {
