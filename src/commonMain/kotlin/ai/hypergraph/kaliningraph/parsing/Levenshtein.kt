@@ -78,7 +78,7 @@ fun makeLevFSA(
    * by this point in order to reach a parsable state. This proof is expensive to
    * find but worthwhile for long strings. See [smallestRangeWithNoSingleEditRepair].
    */
-//  multiEditBounds: IntRange = 0 until str.size
+  multiEditBounds: IntRange = 0 until str.size,
   digits: Int = (str.size * maxRad).toString().length,
 ): FSA =
   (upArcs(str, maxRad, digits) +
@@ -92,8 +92,8 @@ fun makeLevFSA(
         .all { (i, j) ->
            (0 < j || i <= singleEditBounds.first) // Prunes bottom right
             && (j < maxRad || i >= singleEditBounds.second - 2) // Prunes top left
-//          && (1 < j || i <= multiEditBounds.last + 2 || maxRad == 1) // Prunes bottom right
-//          && (j < maxRad - 1 || i > multiEditBounds.first - 3 || maxRad == 1) // Prunes top left
+            && (1 < j || i <= multiEditBounds.last + 1 || maxRad == 1) // Prunes bottom right
+            && (j < maxRad - 1 || i > multiEditBounds.first - 1 || maxRad == 1) // Prunes top left
         }
     }
     .let { Q ->
@@ -242,7 +242,7 @@ fun CFG.hasSingleEditRepair(tokens: List<String>, range: IntRange): Boolean =
     else premask
 
     (maxOf(0, range.first) until minOf(tokens.size, range.last + 1)).any { i ->
-      toCheck.mapIndexed { j, t -> if (j == i) "_" else t }.also { println(it.joinToString(" ")) } in language
+      toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language
     }
   }
 
@@ -261,6 +261,16 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
   }
 
   return range.tryToShrinkLeft().tryToShrinkRight()
+}
+
+fun CFG.shrinkLRBounds(tokens: List<String>, pair: Pair<Int, Int>): IntRange {
+  val (left, right) = (min(pair.first, pair.second) - 3).coerceAtLeast(0) to
+      (max(pair.first, pair.second) + 3).coerceAtMost(tokens.size)
+
+  return if (right - left <= 1 || hasSingleEditRepair(tokens, left until right)) 0..tokens.size
+  else tryToShrinkMultiEditRange(tokens, left until right)
+    .let { it -> it.first..(it.last + 2) }
+    .also { println("Shrunken multiedit fragment:" + maskEverythingButRange(tokens, it).joinToString(" ")) }
 }
 
 fun CFG.smallestRangeWithNoSingleEditRepair(tokens: List<String>, stride: Int = MAX_RADIUS + 2): IntRange {
@@ -285,6 +295,10 @@ fun CFG.smallestRangeWithNoSingleEditRepair(tokens: List<String>, stride: Int = 
     return rmin
   }
 }
+
+/**
+ * Utils for calculating Levenshtein distance and alignments between strings.
+ */
 
 fun allPairsLevenshtein(s1: Set<Σᐩ>, s2: Set<Σᐩ>) =
   (s1 * s2).sumOf { (a, b) -> levenshtein(a, b) }
