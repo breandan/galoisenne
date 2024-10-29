@@ -241,9 +241,10 @@ fun CFG.hasSingleEditRepair(tokens: List<String>, range: IntRange): Boolean =
     else if (tokens.size <= range.last) premask + List(range.last - tokens.size) { "_" }
     else premask
 
-    (maxOf(0, range.first) until minOf(tokens.size, range.last + 1)).any { i ->
-      toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language
-    }
+    val rangeSub = (maxOf(0, range.first) until minOf(tokens.size, range.last + 1))
+    val rangeIns = (maxOf(0, range.first) until minOf(tokens.size + 1, range.last + 2))
+    rangeSub.any { i -> toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language } // Check substitutions
+      && rangeIns.any { (toCheck.take(it) + "_" + toCheck.drop(it)) in language } // Check insertions
   }
 
 // Tries to shrink a multi-edit range until it has a single edit repair
