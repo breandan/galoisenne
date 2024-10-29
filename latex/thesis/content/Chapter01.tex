@@ -1,7 +1,7 @@
 \chapter{\rm\bfseries Formal Language Theory}
 \label{ch:chapter01}
 
-In computer science, it is common to conflate two distinct notions for a set. The first is a collection of distinct objects sitting on some storage device. The second is a lazy construction: not an explicit collection of objects, but a representation that allows us to efficiently determine membership on demand. This lets us represent infinite sets without requiring an infinite amount of memory. Inclusion then, instead of being simply a lookup query, becomes a decision procedure. This is the basis of formal language theory.
+In computer science, it is common to conflate two distinct notions for a set. The first is a collection sitting on some storage device, e.g., a dataset. The second is a lazy construction: not an explicit collection of objects, but a representation that allows us to efficiently determine membership on demand. This lets us represent infinite sets without requiring an infinite amount of memory. Inclusion then, instead of being simply a lookup query, becomes a decision procedure. This is the basis of formal language theory.
 
 The representation we are chiefly interested in are grammars, which are a common metanotation for specifying the syntactic constraints on programs shared by nearly every programming language. Programming language grammars are overapproximations to the true language of interest, providing a fast procedure for rejecting invalid programs and parsing valid ones.
 
