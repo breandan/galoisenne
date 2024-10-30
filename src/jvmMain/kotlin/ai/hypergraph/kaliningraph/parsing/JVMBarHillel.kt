@@ -159,11 +159,7 @@ val MAX_PRODS = 150_000_000
 
 // We pass pm and lbc because cache often flushed forcing them to be reloaded
 // and we know they will usually be the same for all calls to this function.
-fun CFG.jvmIntersectLevFSAP(
-  fsa: FSA,
-  parikhMap: ParikhMap = this.parikhMap,
-  lbc: List<IntRange> = this.lengthBoundsCache
-): CFG {
+fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
 //  if (fsa.Q.size < 650) throw Exception("FSA size was out of bounds")
   if (parikhMap.size < fsa.width + fsa.height) throw Exception("WARNING: Parikh map size exceeded")
   var clock = TimeSource.Monotonic.markNow()
@@ -194,7 +190,7 @@ fun CFG.jvmIntersectLevFSAP(
       // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
       // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
       // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
-      lbc[it.π3].overlaps(
+      parikhMap.ntLengthBounds[it.π3].overlaps(
         fsa.SPLP(it.π1, it.π2)
       ) &&
         // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.

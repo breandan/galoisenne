@@ -197,34 +197,9 @@ val CFG.parikhMap: ParikhMap by cache {
   val parikhMap = if (hashCode() in langCache)
     ParikhMap.deserialize(this, langCache[hashCode()]!!)
     else ParikhMap(this, MAX_TOKENS + 5)
-  println("Computed Parikh map in ${clock.elapsedNow()}")
+  println("Obtained Parikh map in ${clock.elapsedNow()}")
   parikhMap
 }
-
-// Tracks the number of tokens a given nonterminal can represent
-// e.g., a NT with a bound of 1..3 can parse { s: Σ^[1, 3] }
-val CFG.lengthBounds: Map<Σᐩ, IntRange> by cache {
-  val clock = TimeSource.Monotonic.markNow()
-  val epsFree = noEpsilonOrNonterminalStubs.freeze()
-  val tpl = List(MAX_TOKENS + 5) { "_" }
-  val map =
-    epsFree.nonterminals.associateWith { -1..-1 }.toMutableMap()
-    epsFree.initPForestMat(tpl).seekFixpoint().diagonals.mapIndexed { idx, sets ->
-    sets
-      .first().keys
-//      .flatMap { it.map { it.key } }.toSet()
-      .forEach { nt ->
-        map[nt]?.let {
-          (if (it.first < 0) (idx + 1) else it.first)..(idx + 1)
-        }?.let { map[nt] = it }
-      }
-  }
-
-  println("Computed NT length bounds in ${clock.elapsedNow()}")
-  map
-}
-
-val CFG.lengthBoundsCache by cache { lengthBounds.let { lb -> nonterminals.map { lb[it] ?: 0..0 } } }
 
 fun Π3A<STC>.isValidStateTriple(): Boolean {
   fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =

@@ -2,9 +2,6 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.kaliningraph.types.cache
-import kotlin.jvm.JvmName
-import kotlin.math.*
 
 // Number of each terminal (necessary, possible)
 typealias ParikhBounds = Map<Σᐩ, IntRange>
@@ -56,6 +53,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
   private val parikhMap: MutableMap<Int, ParikhBoundsMap> = mutableMapOf()
   val parikhRangeMap: MutableMap<IntRange, ParikhBoundsMap> = mutableMapOf() // Parameterized Parikh map
   val ntIdx = cfg.nonterminals.toList()
+  val ntLengthBounds: MutableList<IntRange> = mutableListOf()
 
   companion object {
     fun serialize(pm: ParikhMap): String =
@@ -63,27 +61,17 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
           pm.lengthBounds.entries.joinToString("\n") { (k, v) -> "$k ${v.joinToString(" ")}" }
 
     fun serializePM(pm: Map<Int, ParikhBoundsMap>) =
-      pm.entries.joinToString("\n") { (k0, v0) ->
-        v0.entries.joinToString("\n") { (k1, v1) ->
-          v1.entries.joinToString("\n") { (k2, v2) ->
-            "$k0 $k1 $k2 ${v2.first} ${v2.last}"
-          }
+      pm.entries.joinToString("\n") { (k0: Int, v0: ParikhBoundsMap) ->
+        v0.entries.joinToString("\n") { (k1: String, v1: Map<Σᐩ, IntRange>) ->
+          "$k0 $k1 : " + v1.entries.joinToString(" ") { (k2, v2) -> "$k2 ${v2.first} ${v2.last}" }
         }
       }
 
     fun deserializePM(str: String): Map<Int, ParikhBoundsMap> =
-      str.lines().filter { it.isNotBlank() }
-        .map { it.split(" ") }.groupBy { it[0].toInt() }.mapValues { (_, v0) ->
-        v0.groupBy { it[1] }.mapValues { (_, v1) ->
-          v1.map { it[2] to it[3].toInt()..it[4].toInt() }.toMap()
+      str.lines().map { it.split(" ") }.groupBy { it.first().toInt() }
+        .mapValues { (_, v) ->
+          v.map { it[1] to it.drop(3).chunked(3).map { it[0] to (it[1].toInt()..it[2].toInt()) }.toMap() }.toMap()
         }
-      }.mapValues { (_, v0) ->
-        v0.mapValues { (_, v1) ->
-          v1.mapValues { (_, v2) ->
-            v2
-          }
-        }
-      }
 
     fun deserialize(cfg: CFG, str: String): ParikhMap {
       val pm = deserializePM(str.substringBefore("\n\n====\n\n"))
@@ -94,6 +82,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
           parikhMap.putAll(pm)
           lengthBounds.putAll(lb)
           populatePRMFromPM()
+          populateLengthBounds()
       }
     }
 
@@ -117,6 +106,18 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
     }
   }
 
+  fun populateLengthBounds() {
+    // Compute the bounds for each nonterminal of the least to greatest index it appears in lengthBounds
+    // If it does not appear in lengthBounds, it is assumed to have bounds 0..0
+    val nts = cfg.nonterminals
+
+    ntLengthBounds.addAll(nts.associateWith { nt ->
+      lengthBounds.entries.filter { nt in it.value }.map { it.key }.ifEmpty { listOf(0) }.let { bounds ->
+        bounds.minOrNull()!!..bounds.maxOrNull()!!
+      }
+    }.let { lb -> nts.map { lb[it]!! } })
+  }
+
   init {
     if (reconstruct) {
       val template = List(size) { "_" }
@@ -128,6 +129,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
         }
 
       populatePRMFromPM()
+      populateLengthBounds()
     }
   }
 
