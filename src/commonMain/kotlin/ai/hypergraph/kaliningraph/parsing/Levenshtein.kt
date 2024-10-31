@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
+import org.kosat.swap
 import kotlin.math.*
 
 // Only accept states that are within radius dist of (strLen, 0)
@@ -235,16 +236,20 @@ fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int>
 fun maskEverythingButRange(tokens: List<String>, range: IntRange): List<String> =
   tokens.mapIndexed { i, t -> if (i in range) t else "_" }
 
+var hypothesis = 0
 fun CFG.hasSingleEditRepair(tokens: List<String>, range: IntRange): Boolean =
   maskEverythingButRange(tokens, range).let { premask ->
     val toCheck = if (range.first < 0) List(-range.first) { "_" } + premask
     else if (tokens.size <= range.last) premask + List(range.last - tokens.size) { "_" }
     else premask
 
-    val rangeSub = (maxOf(0, range.first) until minOf(tokens.size, range.last + 1))
-    val rangeIns = (maxOf(0, range.first) until minOf(tokens.size + 1, range.last + 2))
-    rangeSub.any { i -> toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language } // Check substitutions
-        || rangeIns.any { (toCheck.take(it) + "_" + toCheck.drop(it)) in language } // Check insertions
+    val range = (maxOf(0, range.first) until minOf(tokens.size + 1, range.last + 2))
+    val indices = range.toMutableList().apply { if (hypothesis in range) swap(0, hypothesis - range.first) }
+    indices.any { i -> (
+        toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language // Check substitutions
+            || (toCheck.take(i) + "_" + toCheck.drop(i)) in language // Check insertions
+      ).also { if (it) hypothesis = i }
+    }
   }
 
 // Tries to shrink a multi-edit range until it has a single edit repair
@@ -258,19 +263,33 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
   fun IntRange.tryToShrinkRight(): IntRange {
     var right = last
     while (first < right - 2 && !hasSingleEditRepair(tokens, first until right)) right--
-    return first until right
+    return first..right
   }
 
   return range.tryToShrinkLeft().tryToShrinkRight()
+}
+
+// Tries to grow single-edit bounds from both sides until it must have a multi-edit repair, then shrinks it until minimal
+fun CFG.tryToExpandSingleEditBounds(tokens: List<String>, range: IntRange, i: Int = 0): IntRange {
+  fun IntRange.expandBothSides(): IntRange =
+    (first - 3).coerceAtLeast(0) ..(last + 3).coerceAtMost(tokens.size - 1)
+
+  val expandedRange = range.expandBothSides()
+
+  return if (expandedRange == range) range
+  else if (i > 3) 0..tokens.size
+  else if (hasSingleEditRepair(tokens, expandedRange)) tryToExpandSingleEditBounds(tokens, expandedRange, i+1)
+  else tryToShrinkMultiEditRange(tokens, expandedRange)
 }
 
 fun CFG.shrinkLRBounds(tokens: List<String>, pair: Pair<Int, Int>): IntRange {
   val (left, right) = (min(pair.first, pair.second) - 3).coerceAtLeast(0) to
       (max(pair.first, pair.second) + 3).coerceAtMost(tokens.size)
 
-  return if (right - left <= 1 || hasSingleEditRepair(tokens, left until right)) 0..tokens.size
-  else tryToShrinkMultiEditRange(tokens, left until right)
-    .let { it -> it.first..(it.last + 1) }
+  val range = left until right
+  return if (right - left <= 1) 0..tokens.size
+  else if (hasSingleEditRepair(tokens, range)) tryToExpandSingleEditBounds(tokens, range)
+  else tryToShrinkMultiEditRange(tokens, range)
 }
 
 fun CFG.smallestRangeWithNoSingleEditRepair(tokens: List<String>, stride: Int = MAX_RADIUS + 2): IntRange {
