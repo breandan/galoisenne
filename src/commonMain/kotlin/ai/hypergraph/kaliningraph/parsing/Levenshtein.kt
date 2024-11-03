@@ -239,10 +239,10 @@ fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int>
   println("Mono-edit bounds (R=${monoEditBounds.first}, " +
       "L=${monoEditBounds.second})/${tokens.size} [delta=$delta] in ${boundsTimer.elapsedNow()}")
 
-  if (monoEditBounds != 0..tokens.size) {
-    println("Mono-edit fragment (R): " + maskEverythingButRange(tokens, 0..monoEditBounds.first).joinToString(" "))
-    println("Mono-edit fragment (L): " + maskEverythingButRange(tokens, monoEditBounds.second..tokens.size).joinToString(" "))
-  }
+//  if (monoEditBounds != 0..tokens.size) {
+//    println("Mono-edit fragment (R): " + maskEverythingButRange(tokens, 0..monoEditBounds.first).joinToString(" "))
+//    println("Mono-edit fragment (L): " + maskEverythingButRange(tokens, monoEditBounds.second..tokens.size).joinToString(" "))
+//  }
   return monoEditBounds
 }
 
