@@ -71,7 +71,7 @@ fun makeLevFSA(
    * edits so far (with provably at least one edit necessary) to reach a parsable state.
    * See [maxParsableFragment] for how these bounds are proven.
    */
-  singleEditBounds: Pair<Int, Int> = str.size to 0,
+  monoEditBounds: Pair<Int, Int> = str.size to 0,
   /**
    * Range provably containing two or more edits -- should be minimal for efficiency.
    * We can use this to prune states representing trajectories which have 1 or fewer
@@ -92,8 +92,8 @@ fun makeLevFSA(
     }.filter { arc ->
       listOf(arc.first.unpackCoordinates(), arc.third.unpackCoordinates())
         .all { (i, j) ->
-           (0 < j || i <= singleEditBounds.first) // Prunes bottom right
-            && (j < maxRad || i >= singleEditBounds.second - 2) // Prunes top left
+           (0 < j || i <= monoEditBounds.first) // Prunes bottom right
+            && (j < maxRad || i >= monoEditBounds.second - 2) // Prunes top left
             && (1 < j || i <= multiEditBounds.last + 1 || maxRad == 1) // Prunes bottom right
             && (j < maxRad - 1 || i > multiEditBounds.first - 1 || maxRad == 1) // Prunes top left
         }
@@ -206,15 +206,16 @@ fun CFG.maxParsableFragmentL(tokens: List<String>, pad: Int = 3): Pair<Int, Int>
     blockBackward(tokens, i, pad) !in language
   }?.let { tokens.size - it } ?: 0)
 
-fun blockForward(tokens: List<String>, i: Int, pad: Int = 3) =
-  tokens.mapIndexed { j, t -> if (j < i) t else "_" } + List(pad) { "_" }
+fun blockForward(tokens: List<String>, i: Int, pad: Int = 3): List<String> =
+  List(pad) { "_" } + tokens.mapIndexed { j, t -> if (j < i) t else "_" } + List(pad) { "_" }
 
-fun blockBackward(tokens: List<String>, i: Int, pad: Int = 3) =
-  List(pad) { "_" } + tokens.mapIndexed { j, t -> if (tokens.size - i < j) t else "_" }
+fun blockBackward(tokens: List<String>, i: Int, pad: Int = 3): List<String> =
+  List(pad) { "_" } + tokens.mapIndexed { j, t -> if (tokens.size - i < j) t else "_" } + List(pad) { "_" }
 
 // Binary search for the max parsable fragment. Equivalent to the linear search, but faster
-fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int> =
-  ((1..tokens.size).toList().binarySearch { i ->
+fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int> {
+  val boundsTimer = TimeSource.Monotonic.markNow()
+  val monoEditBounds = ((1..tokens.size).toList().binarySearch { i ->
     val blocked = blockForward(tokens, i, pad)
     val blockedInLang = blocked in language
 //    println(blocked.joinToString(" "))
@@ -234,6 +235,17 @@ fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int>
     }
   }.let { if (it < 0) 0 else (tokens.size - it - 2).coerceAtLeast(0) })
 
+  val delta = monoEditBounds.run { second - first }.let { if(it < 0) "$it" else "+$it" }
+  println("Mono-edit bounds (R=${monoEditBounds.first}, " +
+      "L=${monoEditBounds.second})/${tokens.size} [delta=$delta] in ${boundsTimer.elapsedNow()}")
+
+  if (monoEditBounds != 0..tokens.size) {
+    println("Mono-edit fragment (R): " + maskEverythingButRange(tokens, 0..monoEditBounds.first).joinToString(" "))
+    println("Mono-edit fragment (L): " + maskEverythingButRange(tokens, monoEditBounds.second..tokens.size).joinToString(" "))
+  }
+  return monoEditBounds
+}
+
 fun maskEverythingButRange(tokens: List<String>, range: IntRange): List<String> =
   tokens.mapIndexed { i, t -> if (i in range) t else "_" }
 
@@ -246,8 +258,11 @@ fun CFG.hasMonoEditRepair(tokens: List<String>, unmaskedRange: IntRange, already
 
     val range = (maxOf(0, unmaskedRange.first) until minOf(tokens.size + 1, unmaskedRange.last + 2))
     val indices = range.toMutableList().apply { if (hypothesis in range) swap(0, hypothesis - range.first) }
+
     indices.filter { it !in alreadyChecked }.any { i -> (
-        (toCheck.mapIndexed { j, t -> if (j == i) "_ _" else t }.joinToString(" ") in language) // Check both
+        (toCheck.mapIndexed { j, t -> if (j == i) "_ _" else t }.joinToString(" ")
+//          .also { println(it) }
+            in language) // Check both
             && (toCheck.mapIndexed { j, t -> if (j == i) "_" else t } in language // Check substitutions
                 || (toCheck.take(i) + "_" + toCheck.drop(i)) in language) // Check insertions
       ).also { if (it) hypothesis = i }
@@ -304,6 +319,7 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
       val me = hasMonoEditRepair(tokens, first until right)
       if (left && !me) break
       else if (!left && !me) { end = right; right -= (right - start) / 2 }
+      if (0.6 * tokens.size < right - first) return 0..tokens.size
       else { start = right; val inc = (end - right) / 2; right += inc.coerceAtLeast(1) }
     }
     return first..right.coerceAtMost(tokens.size)
@@ -337,14 +353,22 @@ fun CFG.tryGrowingMonoEditBounds(tokens: List<String>, range: IntRange, i: Int =
  * If more than one such range exists, returns the first minimal range found.
  */
 
-fun CFG.findMinimalMultiEditBounds(tokens: List<String>, pair: Pair<Int, Int>): IntRange {
-  val (left, right) = (min(pair.first, pair.second) - 3).coerceAtLeast(0) to
-      (max(pair.first, pair.second) + 3).coerceAtMost(tokens.size)
+fun CFG.findMinimalMultiEditBounds(tokens: List<String>, pair: Pair<Int, Int>, levDist: Int): IntRange {
+  val meBoundsTimer = TimeSource.Monotonic.markNow()
+  val (left, right) = (min(pair.first, pair.second) - levDist) to (max(pair.first, pair.second) + levDist)
 
   val range = left until right
-  return if (right - left <= 1) 0..tokens.size
+  val multiEditBounds = if (right - left <= 1) 0..tokens.size
   else if (hasMonoEditRepair(tokens, range)) tryGrowingMonoEditBounds(tokens, range)
   else tryToShrinkMultiEditRange(tokens, range)
+
+  println("Multi-edit bounds (lower=${multiEditBounds.first}, " +
+      "upper=${multiEditBounds.last})/${tokens.size} in ${meBoundsTimer.elapsedNow()}")
+
+  if (multiEditBounds != 0..tokens.size)
+    println("Shrunken multiedit fragment: " + maskEverythingButRange(tokens, multiEditBounds).joinToString(" "))
+
+  return multiEditBounds
 }
 
 /**
