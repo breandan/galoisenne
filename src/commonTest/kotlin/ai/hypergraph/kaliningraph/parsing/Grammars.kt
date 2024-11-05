@@ -25,7 +25,9 @@ object Grammars {
     S -> X | Y | Z
   """.parseCFG().noNonterminalStubs
 
-  val dyck = """S -> ( ) | ( S ) | S S""".parseCFG().noEpsilonOrNonterminalStubs
+  val dyckUnambig = """S -> ( S ) S | ( S ) | ( ) S | ( )""".parseCFG().noEpsilonOrNonterminalStubs
+  val dyck = """S -> ( S ) | ( ) | S S""".parseCFG().noEpsilonOrNonterminalStubs
+
   val dyckEmbedded = """
     START -> ( ) | ( START ) | START START
     START -> START + START | START * START
