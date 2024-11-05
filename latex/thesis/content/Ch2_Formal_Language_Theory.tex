@@ -29,7 +29,7 @@ The advantage of dealing with formal language representations is that we can rea
   f(x) &= \frac{-x^2 + 1 \pm \sqrt{x^4 - 6x^2 + 1}}{2}
 \end{align*}
 
-\noindent We also have that $f(x)=\sum _{n=0}^{\infty }f_nx^{n}$, so to obtain the number of ambiguous Dyck trees of size $n$, we can extract the $n$th coefficient of $f_n$ using the binomial series. Expanding $1 + \sqrt{x^4 - 6x^2 + 1}$, we obtain:
+\noindent We also have that $f(x)=\sum _{n=0}^{\infty }f_nx^{n}$, so to obtain the number of ambiguous Dyck trees of size $n$, we can extract the $n$th coefficient of $f_n$ using the binomial series. Expanding $\sqrt{x^4 - 6x^2 + 1}$, we obtain:
 
 \begin{align*}
 f(x) = (1+x)^{\alpha }&=\sum _{k=0}^{\infty }\;{\binom {\alpha }{k}}\;x^{k}\\
@@ -38,7 +38,7 @@ f(x) = (1+x)^{\alpha }&=\sum _{k=0}^{\infty }\;{\binom {\alpha }{k}}\;x^{k}\\
 
 \begin{align*}
   [x^n]f(x) &= [x^n]\frac{-x^2 + 1}{2} + \frac{1}{2}[x^n]\sum _{k=0}^{\infty }\;{\binom {\frac{1}{2} }{k}}\;(x^4 - 6x^2)^{k}\\
-  [x^n]f(x) &= [x^n]\frac{-x^2 + 1}{2} + \frac{1}{2}{\binom {\frac{1}{2} }{n}}\;(x^4 - 6x^2)^n
+  [x^n]f(x) &= \frac{1}{2}{\binom {\frac{1}{2} }{n}}\;[x^n](x^4 - 6x^2)^n = \frac{1}{2}{\binom {\frac{1}{2} }{n}}\;[x^n](x^2 - 6x)^n
 \end{align*}
 
 This lets us understand grammars as a kind of algebra, which is useful for enumerative combinatorics on words and syntax-guided synthesis.
