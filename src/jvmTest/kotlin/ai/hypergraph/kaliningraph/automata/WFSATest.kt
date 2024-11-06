@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.repair.LangCache
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton
 import dk.brics.automaton.RegExp
@@ -185,6 +186,23 @@ class WFSATest {
     println("Found ${repairs.size} total repairs by enumerating PTree")
     val distinct = repairs.toSet().size
     println("Found $distinct unique repairs by enumerating PTree")
+  }
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testSelfInt"
+*/
+  @Test
+  fun testSelfInt() {
+    val startTime = System.currentTimeMillis()
+    val toRepair = "_ _ _ _".split(" ")
+    val toRepair1 = "True _ _ True _ _".split(" ")
+    val pt = vanillaS2PCFG.startPTree(toRepair)!!
+    val pt1 = vanillaS2PCFGWE.startPTree(toRepair1)!!
+    val int = pt.toDFA(true)!!.intersection(pt1.toDFA(true))
+    assertFalse(int.isEmpty)
+    int.decodeDFA(pt1.termDict).toSet()
+      .also { it.forEach { println(it) }; println("Size: ${it.size}") }
+    println("Total time: ${System.currentTimeMillis() - startTime} ms")
   }
 
   /*
