@@ -160,9 +160,11 @@ val MAX_PRODS = 150_000_000
 
 /**
  * Checks whether the NT can parse the string between indices a.π2 and b.π2,
- * representing a horizontal subtrajectory. If the two states a and b occupy
- * the same row in the LevFSA, this subtrajectory represents an unmodified
- * substring. Ignores state pairs that reside on different levels.
+ * representing a horizontal subtrajectory. Horizontal subtrajectories in a
+ * LevFSA are necessarily distinct, i.e., there is only one path between two
+ * states that both have the same height. If the two states a and b are both
+ * the same height in an LevFSA, this subtrajectory represents an unmodified
+ * substring. This will ignore state pairs that reside on different levels.
  *
  * @see computeNTCompat
  */
@@ -215,16 +217,17 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
   ct.parallelStream()
     .filter { it: Π3<STC, STC, Int> ->
-      // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
-      // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
-      // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
-      parikhMap.ntLengthBounds[it.π3].overlaps(
-        fsa.SPLP(it.π1, it.π2)
-      ) &&
+      // Checks whether the distinct subtrajectory between two horizontal states is parseable by a given NT
+      fsa.compat(it.π1, it.π2, it.π3, compat)
+        // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
+        // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
+        // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
+        && parikhMap.ntLengthBounds[it.π3].overlaps(
+          fsa.SPLP(it.π1, it.π2)
+        )
         // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.
         // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
-        fsa.obeys(it.π1, it.π2, it.π3, parikhMap) &&
-          fsa.compat(it.π1, it.π2, it.π3, compat)
+        && fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
     }.toList().also {
       val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
       val fraction = it.size.toDouble() / candidates
