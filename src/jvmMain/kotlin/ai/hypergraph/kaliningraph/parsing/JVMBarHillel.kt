@@ -157,6 +157,30 @@ val MINFREEMEM = 1000000000L
 val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB
 val MAX_PRODS = 150_000_000
 
+
+/**
+ * Checks whether the NT can parse the string between indices a.π2 and b.π2,
+ * representing a horizontal subtrajectory. If the two states a and b occupy
+ * the same row in the LevFSA, this subtrajectory represents an unmodified
+ * substring. Ignores state pairs that reside on different levels.
+ *
+ * @see computeNTCompat
+ */
+
+fun FSA.compat(a: STC, b: STC, nt: Int, compat: Array<Array<Array<Boolean>>>) =
+  if (a.π3 != b.π3) true else compat[a.π2][b.π2][nt]
+
+fun computeNTCompat(cfg: CFG, levStr: List<Σᐩ>): Array<Array<Array<Boolean>>> {
+  val tbl = cfg.parseTableBln(levStr)
+  val arr = Array(tbl.numRows) { Array(tbl.numCols) { Array(cfg.nonterminals.size) { false } } }
+  for (r in 0 until tbl.numRows)
+    for (c in r until tbl.numCols)
+      for (k in cfg.nonterminals.indices)
+        arr[r][c][k] = tbl[r, c][k]
+
+  return arr
+}
+
 // We pass pm and lbc because cache often flushed forcing them to be reloaded
 // and we know they will usually be the same for all calls to this function.
 fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
@@ -177,6 +201,10 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   val unitProds = unitProdRules(fsa)
     .toSet().onEach { (a, _) -> nts.add(a) }
 
+  val ccClock = TimeSource.Monotonic.markNow()
+  val compat: Array<Array<Array<Boolean>>> = computeNTCompat(this, fsa.levString)
+  println("Computed NT compatibility in ${ccClock.elapsedNow()}")
+
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods = nonterminalProductions.map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
@@ -195,7 +223,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
       ) &&
         // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.
         // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
-        fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
+        fsa.obeys(it.π1, it.π2, it.π3, parikhMap) &&
+          fsa.compat(it.π1, it.π2, it.π3, compat)
     }.toList().also {
       val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
       val fraction = it.size.toDouble() / candidates

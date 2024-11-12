@@ -57,6 +57,7 @@ fun CFG.corner(str: Σᐩ) =
 
 fun CFG.parseForest(str: Σᐩ): Forest = solveFixedpoint(str.tokenizeByWhitespace())[0].last()
 fun CFG.parseTable(str: Σᐩ): TreeMatrix = solveFixedpoint(str.tokenizeByWhitespace())
+fun CFG.parseTableBln(str: List<Σᐩ>): FreeMatrix<Blns> = initialUTBMatrix(str).seekFixpoint().toFullMatrix()
 
 fun CFG.parse(
   tokens: List<Σᐩ>,
