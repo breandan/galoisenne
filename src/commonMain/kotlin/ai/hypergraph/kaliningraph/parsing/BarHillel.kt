@@ -29,19 +29,16 @@ fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5
 fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   var clock = TimeSource.Monotonic.markNow()
-  val nts = mutableSetOf("START")
-  fun Σᐩ.isSyntheticNT() =
-    first() == '[' && last() == ']' && count { it == '~' } == 2
-  fun Iterable<Production>.filterRHSInNTS() =
-    asSequence().filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+  val nts = mutableSetOf(listOf("START"))
+  fun List<Σᐩ>.isSyntheticNT() = size > 1
 
-  val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
-      .filterRHSInNTS()
+  val initFinal = (fsa.init * fsa.final).map { (q, r) -> listOf("START") to listOf(listOf(q,"START",r)) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
-  val unitProds = unitProdRules(fsa).onEach { (a, _) -> nts.add(a) }
+  val unitProds = unitProdRules2(fsa).map { (a, b) -> a.also { nts.add(it) } to b }
+
+  fun List<Σᐩ>.toNT() = if (size == 1) first() else "[" + joinToString("~") + "]"
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
@@ -73,13 +70,18 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .map { (a, b, c) ->
           val (p, q, r)  = states[a] to states[b] to states[c]
-          "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
+//          "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
+          listOf(p, allsym[A], r).also { nts.add(it) } to listOf(listOf(p, allsym[B], q), listOf(q, allsym[C], r))
         }.toList()
-    }.flatten().filterRHSInNTS()
+    }.flatten()
 
   println("Constructing ∩-grammar took: ${clock.elapsedNow()}")
   clock = TimeSource.Monotonic.markNow()
-  return (initFinal + binaryProds + unitProds).toSet().postProcess()
+  return (initFinal + binaryProds + unitProds)
+    .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+    .map { (l, r) -> l.toNT() to r.map { it.toNT() } }
+    .toSet()
+    .postProcess()
 //    .expandNonterminalStubs(origCFG = this@intersectLevFSAP)
     .also { println("Bar-Hillel construction took ${clock.elapsedNow()}") }
 }
@@ -100,6 +102,12 @@ fun CFG.unitProdRules(fsa: FSA): List<Pair<String, List<Σᐩ>>> =
 //    else if (arc.π2 == σ) "[${arc.π1}~$A~${arc.π3}]" to listOf(σ)
 //    else null
 //  }
+
+fun CFG.unitProdRules2(fsa: FSA): List<Pair<List<String>, List<List<Σᐩ>>>> =
+  (unitProductions * fsa.nominalize().flattenedTriples)
+    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+//    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+    .map { (A, σ, arc) -> listOf(arc.π1, A, arc.π3) to listOf(listOf(σ)) }
 
 fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
 //  println("FM: $it / ${it.RHS.first()} / ${it.RHS.first().isNonterminalStub()}")

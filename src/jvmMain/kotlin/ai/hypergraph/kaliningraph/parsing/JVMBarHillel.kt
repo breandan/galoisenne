@@ -190,18 +190,19 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   if (parikhMap.size < fsa.width + fsa.height) throw Exception("WARNING: Parikh map size exceeded")
   var clock = TimeSource.Monotonic.markNow()
 
-  val nts = ConcurrentHashMap.newKeySet<Σᐩ>().apply { add("START") }
+  val nts = ConcurrentHashMap.newKeySet<List<Σᐩ>>().apply { add(listOf("START")) }
 
   val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
+    (fsa.init * fsa.final).map { (q, r) -> listOf("START") to listOf(listOf(q, "START", r)) }
 
   val transits =
-    fsa.Q.map { (q, a, r) -> "[$q~$a~$r]".also { nts.add(it) } to listOf(a) }
+    fsa.Q.map { (q, a, r) -> listOf(q, a, r).also { nts.add(it) } to listOf(listOf(a)) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
-  val unitProds = unitProdRules(fsa)
-    .toSet().onEach { (a, _) -> nts.add(a) }
+  val unitProds = unitProdRules2(fsa)
+    .map { (a, b) -> a.also { nts.add(it) } to b }
+    .toSet()
 
   val ccClock = TimeSource.Monotonic.markNow()
   val compat: Array<Array<Array<Boolean>>> = computeNTCompat(this, fsa.levString)
@@ -254,7 +255,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
         .map { (a, b, c) ->
           if (MAX_PRODS < counter.incrementAndGet()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
           val (p, q, r) = states[a] to states[b] to states[c]
-          "[$p~${allsym[A]}~$r]".also { nts.add(it) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
+//          "[$p~${allsym[A]}~$r]".also { nts.add(listOf(p, allsym[A], r)) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
+          listOf(p, allsym[A], r).also { nts.add(it) } to listOf(listOf(p, allsym[B], q), listOf(q, allsym[C], r))
         }
     }.toList()
 
@@ -262,8 +264,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   println("Levenshtein-Parikh constraints eliminated $elimCounter productions in ${lpClock.elapsedNow()}")
 
   // !isSyntheticNT() === is START or a terminal
-  fun Σᐩ.isSyntheticNT() =
-    first() == '[' && length > 1 // && last() == ']' && count { it == '~' } == 2
+  fun List<Σᐩ>.isSyntheticNT() = size > 1
+  fun List<Σᐩ>.toNT() = if (size == 1) first() else "[" + joinToString("~") + "]"
 
   val totalProds = binaryProds.size + transits.size + unitProds.size + initFinal.size
   println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")
@@ -273,6 +275,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     // A production, e.g., * -> * [G], can be removed if the synthetic nonterminal [G] does not exist, i.e.,
     // every instance of [G] -> * * was incompatible with the FSA, so the nonterminal [G] is "unproductive".
     .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+    .map { (l, r) -> l.toNT() to r.map { it.toNT() } }
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
     .jvmPostProcess(clock)
