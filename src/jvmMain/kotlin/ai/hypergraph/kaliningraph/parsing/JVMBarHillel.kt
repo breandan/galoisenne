@@ -286,28 +286,32 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 // Parallel streaming doesn't seem to be that much faster (yet)?
 
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
-  jvmDropVestigialProductions(clock)
-    .jvmElimVarUnitProds()
-      .also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
+    jvmElimVarUnitProds(
+      cfg = jvmDropVestigialProductions(clock)
+    ).also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
       .freeze()
 
-tailrec fun CFG.jvmElimVarUnitProds(
-  toVisit: Set<Σᐩ> = nonterminals,
-  vars: Set<Σᐩ> = nonterminals,
+tailrec fun jvmElimVarUnitProds(
+  cfg: CFG,
+  toVisit: Set<Σᐩ> = cfg.nonterminals,
+  vars: Set<Σᐩ> = cfg.nonterminals,
   toElim: Σᐩ? = toVisit.firstOrNull()
 ): CFG {
   fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
-  if (toElim == null) return filter { !it.isVariableUnitProd() }
+  if (toElim == null) return cfg.filter { !it.isVariableUnitProd() }
   val varsThatMapToMe =
-    asSequence().asStream().parallel()
+    cfg.asSequence().asStream().parallel()
       .filter { it.RHS.size == 1 && it.RHS[0] == toElim }
       .map { it.LHS }.collect(Collectors.toSet())
   val thingsIMapTo =
-    asSequence().asStream().parallel()
+    cfg.asSequence().asStream().parallel()
       .filter { it.LHS == toElim }.map { it.RHS }
       .collect(Collectors.toSet())
-  return (varsThatMapToMe * thingsIMapTo).fold(this) { g, p -> g + p }
-    .jvmElimVarUnitProds(toVisit.drop(1).toSet(), vars)
+  return jvmElimVarUnitProds(
+    (varsThatMapToMe * thingsIMapTo).fold(cfg) { g, p -> g + p },
+    toVisit.drop(1).toSet(),
+    vars
+  )
 }
 
 // TODO: Incomplete / untested
