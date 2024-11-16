@@ -1,0 +1,1729 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+\beamertemplatenavigationsymbolsempty
+
+\input{preamble.tex}
+
+\usepackage{pgf-soroban}
+\usetikzlibrary{shapes.geometric,calc,decorations.text,bayesnet,arrows,backgrounds}
+\usepackage{circledsteps}
+\usepackage{epigraph}
+\usepackage{array}
+\setmonofont{JetBrains Mono}[
+  Contextuals = Alternate,
+  Ligatures = TeX,
+]
+\lstset{
+  basicstyle = \ttfamily,
+  columns = flexible,
+}
+\makeatletter
+\renewcommand*\verbatim@nolig@list{}
+\makeatother
+\usepackage{pmboxdraw}
+\usetikzlibrary{cd}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\setbeamertemplate{footline}
+{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.25\paperwidth,ht=2.25ex,dp=1ex,center]{author in head/foot}%
+      \usebeamerfont{author in head/foot}\insertshortauthor{}{~~(\insertshortinstitute)}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.3\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+      \usebeamerfont{date in head/foot}\insertshortdate{}\hspace*{2em}
+      \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+\makeatother
+
+\makeatletter
+\let\HL\hl
+\renewcommand\hl{%
+  \let\set@color\beamerorig@set@color
+  \let\reset@color\beamerorig@reset@color
+  \HL}
+\makeatother
+
+\newcommand{\ddd}{\Ddots}
+\newcommand{\vdd}{\Vdots}
+\newcommand{\cdd}{\Cdots}
+\newcommand{\lds}{\ldots}
+\newcommand{\vno}{\varnothing}
+\newcommand{\ts}[1]{\textsuperscript{#1}}
+\newcommand{\non}{1\ts{st}}
+\newcommand{\ntw}{2\ts{nd}}
+\newcommand{\nth}{3\ts{rd}}
+\newcommand{\nfo}{4\ts{th}}
+\newcommand{\nfi}{5\ts{th}}
+\newcommand{\nsi}{6\ts{th}}
+\newcommand{\nse}{7\ts{th}}
+\newcommand{\vs}[1]{\sigma_{#1}^{\shur}}
+\newcommand{\rcr}{\rowcolor{black!15}}
+\newcommand{\rcw}{\rowcolor{white}}
+\newcommand{\pcd}{\cdot}
+\newcommand{\pcp}{\phantom\cdot}
+\newcommand{\ppp}{\phantom{\nse}}
+\newcommand{\hole}{\underline{\hspace{0.25cm}}}
+
+\title[Syntax Repair as Language Intersection]{Repairing Multiline Syntax Errors\\Using the Levenshtein-Bar-Hillel Construction}
+\titlegraphic{\includegraphics[width=0.2\textwidth]{../figures/tidyparse_logo}}
+\author[Considine, Guo, Si]{\textbf{Breandan Considine}, Jin Guo, Xujie Si}
+\institute[McGill]{
+  McGill University, Mila IQIA\\
+  \medskip
+  \textit{bre@ndan.co}
+}
+\date{\today}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Overview}
+  \tableofcontents
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1)]
+  z = set([5, 0, 4)]
+
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1)]
+  z = set([5, 0, 4)]
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  newlist = []
+  i = set([5, 3, 1!\hlorange{])}!
+  z = set([5, 0, 4!\hlorange{])}!
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    else if values == (-3,2):
+      return (-3+2+8-1)/4
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    !\hlorange{else}! !\hlred{if}! values == (-3,2):
+      return (-3+2+8-1)/4
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  def average(values):
+    if values == (1,2,3):
+      return (1+2+3)/3
+    !\hlorange{elif}! values == (-3,2):
+      return (-3+2+8-1)/4
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  import Global from Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{import}! Global !\hlorange{from}! Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\hlorange{from}! Global !\hlorange{import}! Global
+  globalObj = Global()
+  print(str(globalObj.Test()))
+
+      \end{lstlisting} \\\hline
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   catch AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+%
+%\begin{frame}[fragile]{Can you spot the error?}
+%  \begin{center}
+%    \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+%      \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Human repair}\rule[-1ex]{0pt}{2ex} \\\hline
+%      \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{catch}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+%
+%   try:
+%     something()
+%   !\hlorange{except}! AttributeError:
+%     pass
+%
+%      \end{lstlisting} \\\hline
+%    \end{tabular}
+%  \end{center}
+%\end{frame}
+
+\begin{frame}[t,fragile]{How many repairs could there possibly be?}
+  Consider the following Python snippet, which contains a small syntax error:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{How many repairs could there possibly be?}
+  Consider the following Python snippet, which contains a small syntax error:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+
+  It can be fixed by appending a colon after the function signature, yielding:\\
+
+    \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])!\hlgreen{:}!
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[t,fragile]{How many repairs could there possibly be?}
+  Consider the following Python snippet, which contains a small syntax error:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+
+  It can be fixed by appending a colon after the function signature, yielding:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])!\hlgreen{:}!
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+
+  \vspace{0.5cm}
+
+  \normalsize Let us consider a slightly more ambiguous error: \footnotesize{\texttt{v = df.iloc(5:, 2:)}}. \normalsize Assuming an alphabet of just a hundred lexical tokens, this statement has millions of two-token edits, yet only six are accepted by the Python parser:
+\end{frame}
+
+\begin{frame}[t,fragile]{How many repairs could there possibly be?}
+  Consider the following Python snippet, which contains a small syntax error:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+
+  It can be fixed by appending a colon after the function signature, yielding:\\
+
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+    def prepend(i, k, L=[])!\hlgreen{:}!
+      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
+  \end{lstlisting}
+
+  \vspace{0.5cm}
+
+  \normalsize Let us consider a slightly more ambiguous error: \footnotesize{\texttt{v = df.iloc(5:, 2:)}}. \normalsize Assuming an alphabet of just a hundred lexical tokens, this statement has millions of two-token edits, yet only six are accepted by the Python parser:
+
+    \scriptsize
+    \begin{figure}[h!]
+      \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
+      (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\\\
+      (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})} \\
+      \end{tabular}
+    \end{figure}
+\end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  !\phantom{( ) )}
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+  ( ) ( )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+  \begin{frame}[fragile]{Can you spot the error?}
+  \begin{center}
+  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
+  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
+  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( ) )
+
+  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
+
+  ( )
+  ( ) ( )
+  ( ( ) )
+
+  \end{lstlisting} \\\hline
+  \end{tabular}
+  \end{center}
+  \end{frame}
+
+\begin{frame}[fragile]{High-level architecture overview}
+This process can be depicted as series of staged transformations lowering the CFL intersection problem onto a finite automaton. Below, we consider a simplified version based on the language of balanced parentheses.
+
+\vspace{0.3cm}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{flow_short}
+\vspace{0.1cm}
+\caption{Simplified dataflow of the language intersection pipeline. Given a grammar and broken code fragment, we (1) create a automaton generating the language of small edits, then (2) construct a grammar representing the intersection of the two languages. This grammar can be (3) converted into a finite automaton, (4) determinized, then (5) decoded to produce a list of repairs.}
+\label{fig:exampleDFA}
+\end{figure}
+\end{frame}
+
+\section{Formal Language Theory}\label{sec:fltheory}
+
+
+\section{Algebraic Parsing}\label{sec:algebraic-parsing}
+
+\begin{frame}[fragile]{Parsing for linear algebraists}
+  Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
+
+  \vspace{-7pt}
+  \[
+    s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
+    \text{e.g.},
+    \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
+  \]
+  \vspace{-1.5cm}
+
+  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+
+  \begin{align*}
+    M^0:=
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
+      \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                  &                &             &        & \varnothing\\
+                  &                &             &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &             &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
+      \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                  &                &         &        & \Lambda\\
+                  &                &         &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &         &        & \varnothing
+    \end{pNiceMatrix}
+  \end{align*}
+
+  \noindent $S \Rightarrow^* \sigma \iff \sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \Lambda^*_\sigma$, i.e., $\mathds{1}_{\Lambda^*_\sigma}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+\end{frame}
+
+\begin{frame}[fragile]{Satisfiability + holes}
+  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
+
+  \resizebox{\textwidth}{!}{
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix} \\\hline
+  $M_\infty$ & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix}\\\hline
+\end{tabular}
+}
+  }
+\end{frame}
+
+%------------------------------------------------------------------------------------------------
+
+\begin{frame}[fragile]{Background: Regular grammars}
+  A regular grammar (RG) is a quadruple $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ where $V$ are nonterminals, $\Sigma$ are terminals, $P: V\times (V \cup \Sigma)^{\leq 2}$ are the productions, and $S\in V$ is the start symbol, i.e., all productions are of the form $A \rightarrow a$, $A \rightarrow a B$ (right-regular), or $A \rightarrow B a$ (left-regular). e.g., the following RG and NFA correspond to the language defined by the \textit{regex} \tinline{(a(ab)*)*(ba)*}:
+
+  % https://www3.nd.edu/~kogge/courses/cse30151-fa17/Public/other/tikz_tutorial.pdf
+  % Glushkov's algorithm: https://www.irif.fr/~jep/PDF/MPRI/MPRI.pdf#subsection.3.5.2
+  \begin{figure}
+    \hspace{-1cm}
+    \begin{minipage}[t]{0.25\linewidth}
+      \vspace{-2.4cm}\scalebox{0.6}{
+        \begin{aligned}[t]
+          S &\rightarrow Q_0 \mid Q_2 \mid Q_3 \mid Q_5\\
+          Q_0 &\rightarrow \varepsilon \\
+          Q_1 &\rightarrow Q_0 b \mid Q_2 b\\
+          Q_2 &\rightarrow Q_1 a \\
+          Q_3 &\rightarrow Q_0 a \mid Q_3 a \mid Q_5 a \\
+          Q_4 &\rightarrow Q_3 a \mid Q_5 a \\
+          Q_5 &\rightarrow Q_4 b \\
+        \end{aligned}}
+    \end{minipage}
+    \hspace{0.5cm}
+    \begin{minipage}[t]{0.48\linewidth}
+      \scalebox{0.5}{
+        \begin{tikzpicture}
+          [->, >=stealth,]
+          \node[state, initial above, accepting] (Q0) {$Q_0$};
+          \node[state, left of=Q0] (Q1) {$Q_1$};
+          \node[state, accepting, left of=Q1] (Q2) {$Q_2$};
+          \node[state, accepting, right of=Q0] (Q3) {$Q_3$};
+          \node[state, above right of=Q3] (Q4) {$Q_4$};
+          \node[state, accepting, below right of=Q3] (Q5) {$Q_5$};
+          \draw
+          %        (Q0) edge[loop above] (Q0)
+          (Q0) edge node{\ttinline b} (Q1)
+          (Q0) edge node{\ttinline a} (Q3)
+          (Q1) edge[bend right] node{\ttinline a} (Q2)
+          (Q2) edge[bend right] node{\ttinline b} (Q1)
+          (Q3) edge[loop above] node{\ttinline a} (Q3)
+          (Q3) edge node{\ttinline a} (Q4)
+          (Q5) edge node{\ttinline a} (Q3)
+          (Q4) edge[bend left] node{\ttinline b} (Q5)
+          (Q5) edge[bend left] node{\ttinline a} (Q4)
+        \end{tikzpicture}
+      }
+    \end{minipage}
+  \end{figure}
+
+  \begin{center}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+        \fi
+        }
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt] (F-\Y){};
+        \fi}
+      \end{tikzpicture}
+    }
+  \end{center}
+\end{frame}
+
+    \begin{frame}[fragile]{Levenshtein automaton customization}
+
+Consider the string $\err\sigma=$ \texttt{\scriptsize ( ) )} and the alphabet $\Sigma = \{\texttt{\scriptsize)}, \texttt{\scriptsize(}\}$. Every string within one edit of $\err\sigma$ is recognized by an NFA with the following structure:
+
+\begin{figure}[h!]
+\resizebox{0.45\textwidth}{!}{
+\begin{tikzpicture}[
+%->, % makes the edges directed
+>=stealth',
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+initial text=$ $, % sets the text that appears on the start arrow
+]
+\node[state, initial]                (00) {$q_{0,0}$};
+\node[state, right of=00]            (10) {$q_{1,0}$};
+\node[accepting, state, right of=10] (20) {$q_{2,0}$};
+\node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+\node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+\node[state, right of=01]                     (11) {$q_{1,1}$};
+\node[state, right of=11]                     (21) {$q_{2,1}$};
+\node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+\draw [->] (00) edge[below] node{$\texttt{(}$} (10);
+\draw [->] (10) edge[below] node{$\texttt{)}$} (20);
+\draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+
+\draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
+\draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
+\draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+
+\draw [->] (00) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+\draw [->] (10) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+\draw [->] (20) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+
+\draw [->] (00) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (01);
+\draw [->] (10) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+\draw [->] (20) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+
+\draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+\draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+\draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+\draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (01);
+\draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+\draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+
+\draw [->] (30) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+\draw [->] (30) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+\draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
+\draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+\node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein automaton};
+\end{tikzpicture}
+}
+\resizebox{0.515\textwidth}{!}{
+\begin{tikzpicture}[
+%->, % makes the edges directed
+>=stealth',
+node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+initial text=$ $, % sets the text that appears on the start arrow
+]
+\draw[orange,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
+
+\node[state, initial]                (00) {$q_{0,0}$};
+\node[state, right of=00]            (10) {$q_{1,0}$};
+\node[accepting, state, right of=10] (20) {$q_{2,0}$};
+\node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+\node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+\node[state, right of=01]                     (11) {$q_{1,1}$};
+\node[state, right of=11]                     (21) {$q_{2,1}$};
+\node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+\draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+\draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+\draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
+
+\draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+\draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+\draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
+
+\draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+\draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+\draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+\draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+\draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+\draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+\draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+\draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+\draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+\node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
+\end{tikzpicture}
+}
+\caption{Automaton recognizing every single patch of the broken string \texttt{( ) )} within Levenshtein distance 1. We nominalize the original Levenshtein automaton, ensuring upward arcs denote a mutation, and replace terminals with a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
+\end{figure}
+\\
+\tiny{\url{https://fulmicoton.com/posts/levenshtein/#observations-lets-count-states}}
+\end{frame}
+
+\begin{frame}[fragile]{Levenshtein reachability}
+  \begin{figure}[H]
+    \resizebox{\textwidth}{!}{
+      \begin{tikzpicture}[
+%->, % makes the edges directed
+        >=stealth',
+        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+        initial text=$ $, % sets the text that appears on the start arrow
+      ]
+        \node[state, initial]                (00) {$q_{0,0}$};
+        \node[state, right of=00]            (10) {$q_{1,0}$};
+        \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+        \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+        \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+        \node[accepting, state, right of=40] (50) {$q_{5,0}$};
+
+        \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+        \node[state, right of=01]                          (11) {$q_{1,1}$};
+        \node[state, right of=11]                          (21) {$q_{2,1}$};
+        \node[accepting, state, right of=21]               (31) {$q_{3,1}$};
+        \node[accepting, state, right of=31]               (41) {$q_{4,1}$};
+        \node[accepting, state, right of=41]               (51) {$q_{5,1}$};
+
+        \node[state, above of=01, shift={(-2cm,0cm)}] (0j) {$q_{0,2}$};
+        \node[state, right of=0j]                          (1j) {$q_{1,2}$};
+        \node[state, right of=1j]                          (2j) {$q_{2,2}$};
+        \node[state, right of=2j]                          (3j) {$q_{3,2}$};
+        \node[accepting, state, right of=3j]               (4j) {$q_{4,2}$};
+        \node[accepting, state, right of=4j]               (5j) {$q_{5,2}$};
+
+        \node[state, above of=0j, shift={(-2cm,0cm)}] (0k) {$q_{0,3}$};
+        \node[state, right of=0k]                         (1k) {$q_{1,3}$};
+        \node[state, right of=1k]                         (2k) {$q_{2,3}$};
+        \node[state, right of=2k]                         (3k) {$q_{3,3}$};
+        \node[state, right of=3k]                         (4k) {$q_{4,3}$};
+        \node[accepting, state, right of=4k]              (5k) {$q_{5,3}$};
+
+        \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+        \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+        \draw [->] (20) edge[below] node{$\sigma_3$} (30);
+        \draw [->] (30) edge[below] node{$\sigma_4$} (40);
+        \draw [->] (40) edge[below] node{$\sigma_5$} (50);
+
+        \draw [->] (01) edge[below] node{$\sigma_1$} (11);
+        \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_2$} (21);
+        \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_3$} (31);
+        \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_4$} (41);
+        \draw [->] (41) edge[below] node{$\sigma_5$} (51);
+
+        \draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
+        \draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
+        \draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
+        \draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
+        \draw [->] (4j) edge[below] node{$\sigma_5$} (5j);
+
+        \draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
+        \draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
+        \draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
+        \draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
+        \draw [->] (4k) edge[below] node{$\sigma_5$} (5k);
+
+        \draw [->] (00) edge[left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (10) edge[left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (20) edge[left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (30) edge[left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (40) edge[left] node{$\phantom{\cdot}$} (51);
+
+% Super-knight arcs
+        \draw [->, red] (00) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3j);
+        \draw [->, red] (10) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4j);
+        \draw [->, red] (20) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5j);
+
+        \draw [->, red] (01) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3k);
+        \draw [->, red] (11) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4k);
+        \draw [->, red] (21) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5k);
+
+        \draw [->, violet] (00) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_4$}  (4k);
+        \draw [->, violet] (10) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_5$}  (5k);
+
+        \draw [->] (01) edge[left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (11) edge[left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (21) edge[left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (31) edge[left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (41) edge[left] node{$\phantom{\cdot}$} (5j);
+
+        \draw [->] (0j) edge[left] node{$\phantom{\cdot}$} (1k);
+        \draw [->] (1j) edge[left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (2j) edge[left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (3j) edge[left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (4j) edge[left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->] (00) edge[bend left=10, left] node{$\phantom{\cdot}$} (01);
+        \draw [->] (10) edge[bend left=10, left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (20) edge[bend left=10, left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (30) edge[bend left=10, left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (40) edge[bend left=10, left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (50) edge[bend left=10, left] node{$\phantom{\cdot}$} (51);
+
+        \draw [->] (01) edge[bend left=10, left] node{$\phantom{\cdot}$} (0j);
+        \draw [->] (11) edge[bend left=10, left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (21) edge[bend left=10, left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (31) edge[bend left=10, left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (41) edge[bend left=10, left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (51) edge[bend left=10, left] node{$\phantom{\cdot}$} (5j);
+
+        \draw [->] (0j) edge[bend left=10, left] node{$\phantom{\cdot}$} (0k);
+        \draw [->] (1j) edge[bend left=10, left] node{$\phantom{\cdot}$} (1k);
+        \draw [->] (2j) edge[bend left=10, left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (3j) edge[bend left=10, left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (4j) edge[bend left=10, left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (5j) edge[bend left=10, left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_2$}    (21);
+        \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_3$}    (31);
+        \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_4$}    (41);
+        \draw [->, blue] (30) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_5$}    (51);
+
+        \draw [->, blue] (01) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_2$}    (2j);
+        \draw [->, blue] (11) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_3$}    (3j);
+        \draw [->, blue] (21) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (4j);
+        \draw [->, blue] (31) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (5j);
+
+        \draw [->, blue] (0j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_2$}    (2k);
+        \draw [->, blue] (1j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_3$}    (3k);
+        \draw [->, blue] (2j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_4$}    (4k);
+        \draw [->, blue] (3j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_5$}    (5k);
+
+%https://tex.stackexchange.com/a/20986/139648
+        \draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (50.south east) node[midway,yshift=-3em]{\textbf{String length}};
+        \draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1cm,yshift=-1cm,rotate=-54]{\textbf{Edit distance}};
+      \end{tikzpicture}
+    }
+    \caption{Bounded Levenshtein reachability from $\sigma: \Sigma^n$ is expressible as an NFA populated by accept states within radius $k$ of $S=q_{n,0}$, which accepts all strings $\sigma'$ within Levenshtein radius $k$ of $\sigma$.}
+  \end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Geometrically interpreting the edit calculus}
+
+Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of $\geq 1$ tokens. Consider some illustrative cases:
+
+\vspace{0.5cm}
+
+\newcommand{\substitutionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (24pt,8pt);
+\draw [-to] (24pt,8pt) -- (32pt,8pt);
+\draw [-to] (32pt,8pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\insertionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\fill[white] (16pt,0pt) circle [radius = 1.2pt];
+\fill[white] (24pt,8pt) circle [radius = 1.2pt];
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (24pt,0pt);
+\draw [-to] (24pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (32pt,8pt);
+\draw [-to] (32pt,8pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\deletionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+}
+\phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (24pt,0pt);
+\draw [-to] (24pt,0pt) -- (40pt,8pt);
+}
+}
+
+\newcommand{\doubleDeletionExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (24pt,16pt);
+\draw [-to] (24pt,16pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\subDelExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\subSubExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\draw [-to] (0pt,0pt) -- (8pt,0pt);
+\draw [-to] (8pt,0pt) -- (16pt,8pt);
+\draw [-to] (16pt,8pt) -- (24pt,16pt);
+\draw [-to] (24pt,16pt) -- (32pt,16pt);
+\draw [-to] (32pt,16pt) -- (40pt,16pt);
+}
+}
+
+\newcommand{\insertDeleteExample}{
+\tikz{
+\foreach \x in {0,8,16,24,32,40,48}{
+\fill (\x pt,0pt) circle [radius = 1pt];
+\fill (\x pt,8pt) circle [radius = 1pt];
+\fill (\x pt,16pt) circle [radius = 1pt];
+}
+\fill[white] (16pt,16pt) circle [radius = 1.2pt];
+\fill[white] (8pt,0pt) circle [radius = 1.2pt];
+\fill[white] (16pt,8pt) circle [radius = 1.2pt];
+\draw [-to] (0pt,0pt) -- (16pt,0pt);
+\draw [-to] (16pt,0pt) -- (8pt,8pt);
+\draw [-to] (8pt,8pt) -- (24pt,8pt);
+\draw [-to] (24pt,8pt) -- (40pt,16pt);
+\draw [-to] (40pt,16pt) -- (48pt,16pt);
+}
+}
+
+\footnotesize{
+\begin{table}[h!]
+\begin{tabular}{ccccc}
+
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+\texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} \\
+
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+\texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+\texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} \\
+
+\substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample
+\end{tabular}
+\end{table}
+}
+
+\normalsize{Note that the same $\langle\err\sigma, \sigma'\rangle$ pair can have multiple Levenshtein alignments:}
+\vspace{0.5cm}
+
+\footnotesize{
+\begin{table}[h!]
+\begin{tabular}{cc}
+
+\texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+\texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+\texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+\texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+\subSubExample & \insertDeleteExample
+\end{tabular}
+\end{table}
+}
+
+\normalsize{Non-uniqueness of geodesics has implications for CFG $\cap$ L-NFA ambiguity.}
+\end{frame}
+
+
+\begin{frame}[fragile]{The nominal Levenshtein automaton}
+  The original Levenshtein automaton (Schulz \& Stoyan, 2002):
+
+  \begin{prooftree}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$\vphantom{|}$}
+    \RightLabel{$\textsc{Init}$}
+    \UnaryInfC{$q_{0,0} \in I$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$q_{i, j}$}
+    \AxiomC{$|n-i+j| \leq k$}
+    \RightLabel{$\textsc{Done}$}
+    \BinaryInfC{$q_{i, j}\in F$}
+  \end{prooftree}
+
+  We modify the original automaton with a nominal predicate:
+
+  \begin{prooftree}
+    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+\end{frame}
+
+\begin{frame}{Background: Context-free grammars}
+  In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $\mathcal{O}(n^\omega)$, n.b. CFLs are \textbf{not} closed under $\cap$!\newline\\
+  %
+  For example, consider the grammar $\underline{S \rightarrow S S \mid ( S ) \mid ()}$. This represents the language of balanced parentheses, e.g. $(), ()(), (()), ()(()), (()()), (())()\ldots$\newline\\
+  %
+  Every CFG has a normal form $P^*: V \times (V^2 \mid \Sigma)$, i.e., every production can be refactored into either $v_0 \rightarrow v_1 v_2$ or $v_0 \rightarrow \sigma$, where $v_{0\ldots2}: V$ and $\sigma: \Sigma$, e.g., $\{S \rightarrow S S \mid ( S ) \mid ()\}\Leftrightarrow^*\{S\rightarrow XR \mid SS \mid LR, L \rightarrow (, R \rightarrow ), X\rightarrow LS\}$
+
+  \begin{center}
+    \scalebox{0.8}{
+      \begin{tikzpicture}[font=\sffamily,breathe dist/.initial=4ex]
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt, fill=black!30!white] (F-\Y){};
+        \fi
+        }
+        \foreach \X [count=\Y,remember=\Y as \LastY] in
+          {finite,regular,context-free,conjunctive}
+          {\ifnum\Y=1
+        \node[ellipse,draw,outer sep=0pt] (F-\Y) {\X};
+        \else
+        \path[decoration={text along path,
+        text={|\sffamily|\X},text align=center,raise=0.9ex},decorate]
+        let \p1=($(F-\LastY.north)-(F-\LastY.west)$)
+        in (F-\LastY.west) arc(180:0:\x1 and \y1);
+        \path let \p1=($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)
+        -(F-\LastY.south)$),
+        \p2=($(F-1.east)-(F-1.west)$),\p3=($(F-1.north)-(F-1.south)$)
+        in ($([yshift=\pgfkeysvalueof{/tikz/breathe dist}]F-\LastY.north)!0.5!(F-\LastY.south)$)
+        node[minimum height=\y1,minimum width={\y1*\x2/\y3},
+        draw,ellipse,inner sep=0pt] (F-\Y){};
+        \fi}
+      \end{tikzpicture}
+    }
+  \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Background: Closure properties of formal languages}
+  Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $*$ be Kleene star, and $\complement$ be complementation:\\
+  \begin{table}
+    \begin{tabular}{c|ccccc}
+      & $\cup$ & $\cap$ & $\cdot$ & $*$ & $\complement$ \\\hline
+      Finite$^1$                                  & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
+      Regular$^1$                                 & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
+      \rowcolor{slightgray} Context-free$^{1, 2}$ & \cmark & \xmark$^\dagger$ & \cmark  & \cmark  & \xmark \\
+      Conjunctive$^{1,2}$                         & \cmark & \cmark     & \cmark  & \cmark  & ?      \\
+      Context-sensitive$^2$                       & \cmark & \cmark     & \cmark  & +       & \cmark \\
+      Recursively Enumerable$^2$                  & \cmark & \cmark     & \cmark  & \cmark  & \xmark \\
+    \end{tabular}
+  \end{table}
+  We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.\vspace{0.2cm}
+
+  $^\dagger$ However, CFLs are closed under intersection with regular languages.
+\end{frame}
+
+
+\begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
+  The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free language.
+  \noindent\begin{prooftree}
+    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+    \RightLabel{$\sqrt{\phantom{S}}$}
+    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+    \DisplayProof
+    \hskip 2em
+    \AxiomC{$(A \rightarrow a) \in P$}
+    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+    \RightLabel{$\uparrow$}
+    \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+    \DisplayProof
+    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+    \AxiomC{$p,q,r \in Q$}
+    \RightLabel{$\Join$}
+    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+\end{frame}
+
+\begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
+  The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free language.
+  \noindent\begin{prooftree}
+             \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+             \RightLabel{$\sqrt{\phantom{S}}$}
+             \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+             \DisplayProof
+             \hskip 2em
+             \AxiomC{$(A \rightarrow a) \in P$}
+             \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+             \RightLabel{$\uparrow$}
+             \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+             \DisplayProof
+             \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+             \AxiomC{$p,q,r \in Q$}
+             \RightLabel{$\Join$}
+             \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+
+  Observation: too many $(q, v, q')$ triples! Three low-hanging optimizations:
+
+  \begin{itemize}
+    \item Only consider $(q, q')$ where $q \Longrightarrow^* q'$.
+    \item Filter impossible $(q, v, q')$ triples based on path length.
+    \item Remove unreachable states from the Levenshtein automaton.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Edit location refinement: intuition}
+  But do we really need $|\sigma| \times d_\max$ states? Can we somehow narrow down the edit range? Where should we make the edits?
+
+  \begin{figure}[H]
+  \includegraphics[width=0.37\textwidth]{../figures/survivorship}
+  \end{figure}
+
+  Often, it is easier to determine where \textit{not} to make the edits. Certain regions, no matter their contents, will never yield a viable repair.
+\end{frame}
+
+\begin{frame}[fragile]{Edit location refinement: example}
+  Let's prune states absorbing obviously impossible repair trajectories.\vspace{-0.5cm}
+  \begin{figure}[H]
+    \resizebox{\textwidth}{!}{
+      \begin{tikzpicture}[
+%->, % makes the edges directed
+        >=stealth',
+        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+        initial text=$ $, % sets the text that appears on the start arrow
+      ]
+        \node[state, initial]                (00) {$q_{0,0}$};
+        \node[state, right of=00]            (10) {$q_{1,0}$};
+        \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+%        \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+%        \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+%        \node[accepting, state, right of=40] (50) {$q_{5,0}$};
+
+        \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+        \node[state, right of=01]                          (11) {$q_{1,1}$};
+        \node[state, right of=11]                          (21) {$q_{2,1}$};
+        \node[accepting, state, right of=21]               (31) {$q_{3,1}$};
+        \node[accepting, state, right of=31]               (41) {$q_{4,1}$};
+        \node[accepting, state, right of=41]               (51) {$q_{5,1}$};
+
+        \node[state, above of=01, shift={(-2cm,0cm)}] (0j) {$q_{0,2}$};
+        \node[state, right of=0j]                          (1j) {$q_{1,2}$};
+        \node[state, right of=1j]                          (2j) {$q_{2,2}$};
+        \node[state, right of=2j]                          (3j) {$q_{3,2}$};
+        \node[accepting, state, right of=3j]               (4j) {$q_{4,2}$};
+        \node[accepting, state, right of=4j]               (5j) {$q_{5,2}$};
+
+        \phantom{\node[state, above of=0j, shift={(-2cm,0cm)}] (0k) {$q_{0,3}$};}
+        \phantom{\node[state, right of=0k]                         (1k) {$q_{1,3}$};}
+        \phantom{\node[state, right of=1k]                         (2k) {$q_{2,3}$};}
+        \node[state, right of=2k]                         (3k) {$q_{3,3}$};
+        \node[state, right of=3k]                         (4k) {$q_{4,3}$};
+        \node[accepting, state, right of=4k]              (5k) {$q_{5,3}$};
+
+        \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+        \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+%        \draw [->] (20) edge[below] node{$\sigma_3$} (30);
+%        \draw [->] (30) edge[below] node{$\sigma_4$} (40);
+%        \draw [->] (40) edge[below] node{$\sigma_5$} (50);
+
+        \draw [->] (01) edge[below] node{$\sigma_1$} (11);
+        \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_2$} (21);
+        \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_3$} (31);
+        \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_4$} (41);
+        \draw [->] (41) edge[below] node{$\sigma_5$} (51);
+
+        \draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
+        \draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
+        \draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
+        \draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
+        \draw [->] (4j) edge[below] node{$\sigma_5$} (5j);
+
+%        \draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
+%        \draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
+%        \draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
+        \draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
+        \draw [->] (4k) edge[below] node{$\sigma_5$} (5k);
+
+        \draw [->] (00) edge[left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (10) edge[left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (20) edge[left] node{$\phantom{\cdot}$} (31);
+%        \draw [->] (30) edge[left] node{$\phantom{\cdot}$} (41);
+%        \draw [->] (40) edge[left] node{$\phantom{\cdot}$} (51);
+
+% Super-knight arcs
+        \draw [->, red] (00) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3j);
+        \draw [->, red] (10) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4j);
+        \draw [->, red] (20) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5j);
+
+        \draw [->, red] (01) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3k);
+        \draw [->, red] (11) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4k);
+        \draw [->, red] (21) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5k);
+
+        \draw [->, violet] (00) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_4$}  (4k);
+        \draw [->, violet] (10) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_5$}  (5k);
+
+        \draw [->] (01) edge[left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (11) edge[left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (21) edge[left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (31) edge[left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (41) edge[left] node{$\phantom{\cdot}$} (5j);
+
+%        \draw [->] (0j) edge[left] node{$\phantom{\cdot}$} (1k);
+%        \draw [->] (1j) edge[left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (2j) edge[left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (3j) edge[left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (4j) edge[left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->] (00) edge[bend left=10, left] node{$\phantom{\cdot}$} (01);
+        \draw [->] (10) edge[bend left=10, left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (20) edge[bend left=10, left] node{$\phantom{\cdot}$} (21);
+%        \draw [->] (30) edge[bend left=10, left] node{$\phantom{\cdot}$} (31);
+%        \draw [->] (40) edge[bend left=10, left] node{$\phantom{\cdot}$} (41);
+%        \draw [->] (50) edge[bend left=10, left] node{$\phantom{\cdot}$} (51);
+
+        \draw [->] (01) edge[bend left=10, left] node{$\phantom{\cdot}$} (0j);
+        \draw [->] (11) edge[bend left=10, left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (21) edge[bend left=10, left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (31) edge[bend left=10, left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (41) edge[bend left=10, left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (51) edge[bend left=10, left] node{$\phantom{\cdot}$} (5j);
+
+%        \draw [->] (0j) edge[bend left=10, left] node{$\phantom{\cdot}$} (0k);
+%        \draw [->] (1j) edge[bend left=10, left] node{$\phantom{\cdot}$} (1k);
+%        \draw [->] (2j) edge[bend left=10, left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (3j) edge[bend left=10, left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (4j) edge[bend left=10, left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (5j) edge[bend left=10, left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_2$}    (21);
+        \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_3$}    (31);
+        \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_4$}    (41);
+%        \draw [->, blue] (30) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_5$}    (51);
+
+        \draw [->, blue] (01) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_2$}    (2j);
+        \draw [->, blue] (11) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_3$}    (3j);
+        \draw [->, blue] (21) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (4j);
+        \draw [->, blue] (31) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (5j);
+
+%        \draw [->, blue] (0j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_2$}    (2k);
+        \draw [->, blue] (1j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_3$}    (3k);
+        \draw [->, blue] (2j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_4$}    (4k);
+        \draw [->, blue] (3j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_5$}    (5k);
+
+%https://tex.stackexchange.com/a/20986/139648
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (50.south east) node[midway,yshift=-3em]{\textbf{String length}};
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1cm,yshift=-1cm,rotate=-54]{\textbf{Edit distance}};
+      \end{tikzpicture}
+    }
+  \end{figure}
+
+  $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+\end{frame}
+
+\begin{frame}[fragile]{Grammar refinement: Parikh interval maps}
+  If we’re reusing the CFG, it would make sense to precompute some statistics. For example, the total tokens each nonterminal can parse.\\\vspace{0.5cm}
+
+  e.g., if $R$ is a unit nonterminal that maps to one value, then $[R] = [1, 1]$.\\\vspace{0.5cm}
+
+  Can be parameterized by $\Sigma$., e.g.,: $[R] = \{a:[1,1], b:[0,0]\ldots\}$\\\vspace{0.5cm}
+
+  We call this the Parikh interval. We can compute it for each string length, e.g., $[R, a, 1] = \{a:[1,1], b:[0,0]\ldots\}, [R, a, 2] = \ldots$\\\vspace{0.5cm}
+
+  Now when we have a new automaton, we can check whether $(q, v, q')$ is compatible by checking whether the Parikh range for q, q’ and v overlaps.\\\vspace{0.5cm}
+
+  This optimization is not specific to LBH intersections, and can be applied to any CFG/FSA intersection.
+\end{frame}
+
+\begin{frame}[fragile]{Potential ambiguity of Levenshtein-Bar-Hillel grammars}
+The previous technique enumerates parse trees in a given $\mathbb{T}_2$, but does not guarantee string uniqueness since the CFG may be ambiguous.
+
+\begin{lemma}\label{lemma:ambiguity}
+If the FSA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambiguous.
+\end{lemma}
+
+\begin{proof}
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+\end{proof}
+
+We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by first translating $\mathbb{T}_2$ into an FSA.
+\end{frame}
+
+\begin{frame}[fragile]{Existence of an FSA that generates $\mathcal{L}(G_\cap)$}
+There is an FSA generating $\mathcal{L}(G_\cap)$. We first show this non-constructively:
+
+\begin{lemma}\label{lemma:upper-bound}
+The intersection grammar, $G_\cap$, is acyclic.
+\end{lemma}
+
+\begin{proof}
+Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But since $G_\cap$ generates $\ell \cap \mathcal{L}(\alpha)$ by construction and $\alpha$ is acyclic, $\mathcal{L}(G_\cap)$ is necessarily finite. Therefore, $G_\cap$ must not be cyclic.
+\end{proof}
+
+Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and decoded in order of n-gram likelihood using a Markov chain or standard pretrained autoregressive language model.
+\end{frame}
+
+\begin{frame}[fragile]{Translating from $T_2$ to a DFA}
+Let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $\mathbb{T}_2$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, *$:
+
+\begin{equation*}
+\mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
+\alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
+\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
+\end{cases}
+\end{equation*}
+%
+In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathcal{A} \mid \mathcal{L}(\alpha) = \ell\cap L(\err\sigma, d)$, which can be minimized via Brzozowski's algorithm then decoded:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{../popl2025/exampleDFA}
+\caption{$L(\scriptsize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$}
+\end{figure}
+\end{frame}
+
+\section{Decoding}\label{sec:error-correction}
+
+\begin{frame}[fragile]{Decoding the DFA in order of normalized log likelihood}
+\vspace{-0.3cm}
+\begin{algorithm}[H]
+\caption{Steerable DFA walk}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$ DFA, $P_\theta: \Sigma^d \rightarrow \mathbb{R}$ Markov chain
+
+\State $\mathcal{T} \gets \varnothing \text{ total trajectories}, \mathcal{P} \gets \big[\langle \varepsilon, i, 0\rangle \mid i \in I\big] \text{ partial trajectories}$
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+\Repeat
+\State \textbf{let }$\langle \sigma, q, \gamma \rangle = \texttt{head}(\mathcal{P})$ \textbf{in}
+%\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P})$
+% For loop:
+\State \phantom{\textbf{let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$
+\For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
+\If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
+\State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to PQ.}
+\EndIf
+\If {$q \in F$}
+\State $\mathcal{T} \gets \mathcal{T} \oplus T$ \Comment{Accepting state reached, add to queue.}
+\EndIf
+\EndFor
+\Until{interrupted or $\mathcal{P}=\varnothing$.}
+\State \Return $\big[\sigma_{|\sigma|..1} \mid \langle \sigma, q, \gamma \rangle = T \in \mathcal{T}\big]$ \Comment{Return in sorted order}
+\end{algorithmic}
+\end{algorithm}
+\end{frame}
+
+\begin{frame}[fragile]{Characteristics of the repair dataset}
+\begin{figure}[h!]
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+xlabel={Length $(|\err\sigma|)$},
+ylabel={Frequency},
+title={Cumulative length distribution},
+axis x line*=bottom,
+axis y line*=left,
+ymin=0,
+ymax=65,
+xtick=data,
+xticklabels={,,<30,,,<60,,,<90,},
+ymajorgrids=true,
+grid style=dashed,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+
+\addplot[fill=black!30] table {
+X Y
+1 7.60
+2 14.52
+3 22.01
+4 30.54
+5 37.82
+6 44.30
+7 49.68
+8 55.21
+9 59.75
+10 63.59
+};
+\draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+title={Human repair distance},
+xlabel={Edits, $\Delta(\err\sigma, \sigma')$},
+ylabel={Frequency},
+axis x line*=bottom,
+axis y line*=left,
+xtick=data,
+ymajorgrids=true,
+grid style=dashed,
+xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
+ytick={0, 20, 40, 60, 80, 100},
+ymin=0,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+\addplot[fill=black!30] table {
+X Y
+1  31.48
+2  47.52
+3  54.89
+4  60.44
+5  63.88
+6  66.38
+7  68.02
+8  70.04
+9  71.49
+10 72.22
+};
+\draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
+\end{axis}
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+ybar,
+bar width=5pt,
+xlabel={Beginning $\longleftrightarrow$ End},
+ylabel={Frequency},
+title={Normalized edit locations},
+axis x line*=bottom,
+axis y line*=left,
+ymin=0,
+ymax=35,
+xtick=data,
+xticklabels={0\%,,,,,,,,,100\%},
+ymajorgrids=true,
+grid style=dashed,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+
+\addplot[fill=black!30] table {
+X Y
+10 11.6539
+20 5.7252
+30 6.2087
+40 5.9542
+50 5.5980
+60 7.9389
+70 7.0738
+80 6.9466
+90 12.4173
+100 30.4835
+};
+\end{axis}
+\end{tikzpicture}
+%    \begin{tikzpicture}
+%      \begin{axis}[
+%        ybar,
+%        bar width=5pt,
+%        title={Intra-patch edit distance},
+%        xlabel={Caret distance},
+%        ylabel={Frequency},
+%        axis x line*=bottom,
+%        axis y line*=left,
+%        xtick=data,
+%        ymajorgrids=true,
+%        grid style=dashed,
+%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
+%        width=0.45\textwidth,
+%        height=0.3\textwidth
+%      ]
+%
+%        \addplot table {
+%          X Y
+%          1 40.66
+%          2 15.00
+%          3 5.80
+%          4 4.86
+%          5 4.26
+%          6 2.98
+%          7 2.05
+%          8 2.73
+%          9 1.62
+%          10 13.64
+%        };
+%      \end{axis}
+%    \end{tikzpicture}
+\begin{tikzpicture}[scale=0.52]
+\begin{axis}[
+legend cell align={left},
+legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east, legend style={at={(0.5,1.8)},anchor=north}},
+xlabel={$|\err\sigma|$},
+ylabel={Stable region},
+title={Stability profile},
+ybar,
+axis lines*=left,
+xtick={0, 10, 20, 30, 40, 50, 60, 70},
+ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
+yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
+x tick label style={font=\scriptsize},
+ymax=1.0,
+ymin=0.0,
+bar width=3pt,
+grid style=dashed,
+ymajorgrids=true,
+width=0.45\textwidth,
+height=0.3\textwidth
+]
+\addlegendimage{empty legend}
+\addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+\addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+\addlegendentry{1,}
+\addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+\addlegendentry{2,}
+\addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+\addlegendentry{3}
+\addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
+\addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
+\addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
+\end{axis}
+\end{tikzpicture}
+\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory. The stability profile measures the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball across repairs of varying length and distance.}\label{fig:patch_stats}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Ranked repair}
+We train on lexical n-grams using the standard MLE for Markov chains. To score the repairs, we use the conventional length-normalized NLL:
+
+\begin{equation}
+\text{NLL}(\sigma) = -\frac{1}{|\sigma|}\sum_{i=1}^{|\sigma|}\log P_\theta(\sigma_i \mid \sigma_{i-1}\ldots\sigma_{i-n})
+\end{equation}
+
+For each retrieved set $\hat{A} \subseteq A$ drawn before a predetermined timeout and each $\sigma \in \hat{A}$, we score the repair and return $\hat{A}$ in ascending order.
+
+To evaluate the quality of our ranking, we use the Precision@k statistic. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a parallel corpus, $\mathcal{D}_{\text{test}}$, of errors ($\sigma^\dagger$) and repairs ($\sigma'$), we define Precision@k as:
+
+\begin{equation}
+\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subset R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{NLL}(\sigma)\big]
+\end{equation}
+\end{frame}
+
+\begin{frame}[fragile]{Precision and latency comparison}
+\begin{figure}[h!]
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_s2p}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi}}
+\caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+\end{figure}
+\begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_4}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+\caption{Latency benchmarks. Note the varying y-axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Results from sample efficiency experiments}
+\begin{figure}[h!]
+\input{../popl2025/sample_efficiency}\\
+%    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+\resizebox{.35\textwidth}{!}{\input{../popl2025/throughput}}\hspace{1cm}
+\resizebox{.35\textwidth}{!}{\input{../popl2025/experiments/timings}}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Outcomes in the syntax repair pipeline}
+\vspace{-1cm}
+\begin{figure}
+\resizebox{.83\textwidth}{!}{\input{../popl2025/sankey}}
+\vspace{-1cm}
+\caption{Sankey diagram of 967 total repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost snippet lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a sampling timeout of 30s per repair.}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Feature comparison matrix}
+\begin{table}
+\begin{tabular}{c|cccccc}
+             & \textbf{Sound}   & \textbf{Complete} & \textbf{Natural} & \textbf{Theory} & ||      & \textbf{Tool} \\\hline
+Tidyparse    & \cmark           & \cmark            & \cmark           & CFG$_\cap$      & \cmark  & IDE-ready     \\
+Seq2Parse    & \cmark$^\dagger$ & \xmark            & \cmark           & CFG             & \xmark  & Python        \\
+BIFI         & \xmark           & \xmark            & \cmark           & $\Sigma^*$      & \xmark  & Python        \\
+OrdinalFix   & \cmark           & \xmark            & \xmark           & CFG+            & \xmark  & Rust          \\
+Outlines$^1$ & \cmark$^\dagger$ & \cmark$^\dagger$  & \cmark           & EBNF            & \xmark  & Python        \\
+SynCode$^1$  & \cmark           & \cmark            & \cmark           & EBNF            & \xmark  & Python        \\
+Aho/Irons    & \cmark           & \xmark            & \xmark           & CFG             & \xmark  & None          \\
+\end{tabular}
+\end{table}
+
+\textbf{Sound} $=$ generated repairs always syntactically valid.
+
+\textbf{Complete} $=$ all valid repairs are eventually generated.
+
+\textbf{Natural} $\approx$ statistically likely / designed to model human preferability.
+
+|| = Trivially parallelizable, i.e., designed to be executed on multiple cores.\\\vspace{0.3cm}
+
+$^1$ Not specifically intended for syntax repair, but can be adapted.
+
+$^\dagger$ Claimed by the authors, but counterexamples known to exist.
+\end{frame}
+
+\begin{frame}{Abbreviated history of algebraic parsing}
+  \begin{itemize}
+    \item \href{http://www-igm.univ-mlv.fr/~berstel/Mps/Travaux/A/1963-7ChomskyAlgebraic.pdf}{Chomsky \& Sch\"utzenberger (1959) - The algebraic theory of CFLs}
+    \item Cocke–Younger–Kasami (1961) - Bottom-up matrix-based parsing
+    \item \href{https://dl.acm.org/doi/10.1145/321239.321249}{Brzozowski (1964) - Derivatives of regular expressions}
+%    \item \href{https://dl.acm.org/doi/10.1145/362007.362035}{Earley (1968) - top-down dynamic programming (no CNF needed)}
+    \item \href{http://theory.stanford.edu/~virgi/cs367/papers/valiantcfg.pdf}{Valiant (1975) - first realizes the Boolean matrix correspondence}
+    \begin{itemize}
+      \item Na\"ively, has complexity $\mathcal{O}(n^4)$, can be reduced to $\mathcal{O}(n^\omega)$, $\omega < 2.763$
+    \end{itemize}
+    \item \href{https://www.cs.cornell.edu/home/llee/papers/bmmcfl-jacm.pdf}{Lee (1997) - Fast CFG Parsing $\Longleftrightarrow$ Fast BMM, formalizes reduction}
+    \item \href{https://matt.might.net/papers/might2011derivatives.pdf}{Might et al. (2011) - Parsing with derivatives (Brzozowski $\Rightarrow$ CFL)}
+    \item \href{https://users.math-cs.spbu.ru/~okhotin/papers/formal_languages_gf2.pdf}{Bakinova, Okhotin et al. (2010) - Formal languages over GF(2)}
+    \item \href{https://arxiv.org/pdf/1601.07724.pdf}{Bernady \& Jansson (2015) - Certifies Valiant (1975) in Agda}
+    \item \href{https://arxiv.org/pdf/1504.08342.pdf}{Cohen \& Gildea (2016) - Generalizes Valiant (1975) to parse and recognize mildly context sensitive languages, e.g. LCFRS, TAG, CCG}
+    \item \textbf{Considine, Guo \& Si (2022) - SAT + Valiant (1975) + holes}
+    \item \textbf{Considine, Guo \& Si (2024) - Levenshtein Bar-Hillel repairs}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Special thanks}
+  \begin{center}
+    \LARGE{
+      Jin Guo, Xujie Si, David Bieber,\\
+      David Chiang, Brigitte Pientka, David Hui,\\
+      Ori Roth, Younesse Kaddar, Michael Schröder\\
+      Will Chrichton, Kristopher Micinski, Alex Lew\\
+      Matthijs Vákár, Michael Coblenz, Maddy Bowers\\
+      \phantom{}\\
+    }
+    \href{https://cs.mcgill.ca}{\includegraphics[scale=0.06]{../figures/mcgill_logo}}
+    \href{https://mila.quebec}{\includegraphics[scale=0.1]{../figures/mila_logo}}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \huge{Learn more at: \\~\\
+    \href{https://tidyparse.github.io}{\color{blue}{https://tidyparse.github.io}}}
+  \end{center}
+\end{frame}
+
+\end{document}
