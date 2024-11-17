@@ -44,20 +44,16 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   val validTriples by lazy { stateCoords.let { it * it * it }.filter { it.isValidStateTriple() }.toList() }
   val validPairs by lazy { stateCoords.let { it * it }.filter { it.isValidStatePair() }.toSet() }
 
-  fun Π2A<STC>.isValidStatePair(): Boolean {
-    fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
-      first <= other.first && second <= other.second
+  private fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
+    first <= other.first && second <= other.second &&
+        (first < other.first || second < other.second)
 
-    return first.coords().dominates(second.coords())
-  }
+  fun Π2A<STC>.isValidStatePair(): Boolean =
+    first.coords().dominates(second.coords())
 
-  fun Π3A<STC>.isValidStateTriple(): Boolean {
-    fun Pair<Int, Int>.dominates(other: Pair<Int, Int>) =
-      first <= other.first && second <= other.second
-
-    return first.coords().dominates(second.coords())
-      && second.coords().dominates(third.coords())
-  }
+  fun Π3A<STC>.isValidStateTriple(): Boolean =
+    first.coords().dominates(second.coords()) &&
+        second.coords().dominates(third.coords())
 
   val edgeLabels by lazy {
     Q.groupBy { (a, b, c) -> a to c }

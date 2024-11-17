@@ -854,6 +854,65 @@ initial text=$ $, % sets the text that appears on the start arrow
   \end{figure}
 \end{frame}
 
+\begin{frame}[fragile]{The nominal Levenshtein automaton}
+  The original Levenshtein automaton (Schulz \& Stoyan, 2002):
+
+  \begin{prooftree}
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$\vphantom{|}$}
+    \RightLabel{$\textsc{Init}$}
+    \UnaryInfC{$q_{0,0} \in I$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$q_{i, j}$}
+    \AxiomC{$|n-i+j| \leq k$}
+    \RightLabel{$\textsc{Done}$}
+    \BinaryInfC{$q_{i, j}\in F$}
+  \end{prooftree}
+
+  We modify the original automaton with a nominal predicate:
+
+  \begin{prooftree}
+    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\duparrow$}
+    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
+    \RightLabel{$\ddiagarrow$}
+    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+  \begin{prooftree}
+    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
+    \RightLabel{$\drightarrow$}
+    \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
+    \RightLabel{$\knightarrow$}
+    \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \end{prooftree}
+\end{frame}
+
 \begin{frame}[fragile]{Geometrically interpreting the edit calculus}
 
 Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of $\geq 1$ tokens. Consider some illustrative cases:
@@ -1008,66 +1067,6 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \normalsize{Non-uniqueness of geodesics has implications for CFG $\cap$ L-NFA ambiguity.}
 \end{frame}
 
-
-\begin{frame}[fragile]{The nominal Levenshtein automaton}
-  The original Levenshtein automaton (Schulz \& Stoyan, 2002):
-
-  \begin{prooftree}
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$s=\sigma_i \phantom{\land} i \in [1, n] \phantom{\land} j \in [0, k]$}
-    \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$s=\sigma_i \phantom{\land} i \in [2, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-2, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$\vphantom{|}$}
-    \RightLabel{$\textsc{Init}$}
-    \UnaryInfC{$q_{0,0} \in I$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$q_{i, j}$}
-    \AxiomC{$|n-i+j| \leq k$}
-    \RightLabel{$\textsc{Done}$}
-    \BinaryInfC{$q_{i, j}\in F$}
-  \end{prooftree}
-
-  We modify the original automaton with a nominal predicate:
-
-  \begin{prooftree}
-    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, k]$}
-    \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, k]$}
-    \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, k]$}
-    \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-\end{frame}
-
 \begin{frame}{Background: Context-free grammars}
   In a context-free grammar $\mathcal{G} = \langle V, \Sigma, P, S\rangle$ all productions are of the form $P: V\times (V \cup \Sigma)^+$, i.e., RHS may contain any number of nonterminals, $V$. Recognition decidable in $\mathcal{O}(n^\omega)$, n.b. CFLs are \textbf{not} closed under $\cap$!\newline\\
   %
@@ -1135,8 +1134,13 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \end{frame}
 
 
-\begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
-  The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free language.
+\begin{frame}[t,fragile]{The Bar-Hillel construction and its specialization}
+  \begin{theorem}[Bar-Hillel, 1961]
+  Given a CFG, $G$, and an NFA, $A$, there exists a $G_\cap = \langle V_\cap, \Sigma_\cap, P_\cap, S\rangle$, such that $L(G_\cap) = L(G) \cap L(A)$.
+  \end{theorem}
+
+  Salomaa (1973) constructs the intersection grammar as follows:\\
+
   \noindent\begin{prooftree}
     \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
     \RightLabel{$\sqrt{\phantom{S}}$}
@@ -1155,8 +1159,13 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \end{prooftree}
 \end{frame}
 
-\begin{frame}[fragile]{The Bar-Hillel construction and its specialization}
-  The original Bar-Hillel construction provides a way to construct a grammar for the intersection of a regular and context-free language.
+\begin{frame}[t,fragile]{The Bar-Hillel construction and its specialization}
+  \begin{theorem}[Bar-Hillel, 1961]
+    Given a CFG, $G$, and an NFA, $A$, there exists a $G_\cap = \langle V_\cap, \Sigma_\cap, P_\cap, S\rangle$, such that $L(G_\cap) = L(G) \cap L(A)$.
+  \end{theorem}
+
+  Salomaa (1973) constructs the intersection grammar as follows:\\
+
   \noindent\begin{prooftree}
              \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
              \RightLabel{$\sqrt{\phantom{S}}$}
@@ -1168,33 +1177,33 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
              \RightLabel{$\uparrow$}
              \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
              \DisplayProof
-             \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-             \AxiomC{$p,q,r \in Q$}
+             \AxiomC{$\highlight{(w \rightarrow xz) \in P}$}
+             \AxiomC{$\highlight{\vphantom{(}p,q,r \in Q}$}
              \RightLabel{$\Join$}
              \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
 
   Observation: too many $(q, v, q')$ triples! Three low-hanging optimizations:
 
-  \begin{itemize}
-    \item Only consider $(q, q')$ where $q \Longrightarrow^* q'$.
+  \begin{enumerate}
+    \item Only consider $(q, q')$ where $\exists \sigma: \Sigma^*$ s.t. $q \overset{\sigma}{\Longrightarrow} q'$.
     \item Filter impossible $(q, v, q')$ triples based on path length.
-    \item Remove unreachable states from the Levenshtein automaton.
-  \end{itemize}
+    \item Remove unreachable states $q'$, i.e., $\nexists \sigma \in L(G)$ s.t., $q_0 \overset{\sigma}{\Longrightarrow} q'$.
+  \end{enumerate}
 \end{frame}
 
 \begin{frame}[fragile]{Edit location refinement: intuition}
-  But do we really need $|\sigma| \times d_\max$ states? Can we somehow narrow down the edit range? Where should we make the edits?
+  Let's think: do we really need $|\sigma| \times d_\max$ states? Can we somehow narrow down the edit range? Where can we cut down on armor?
 
   \begin{figure}[H]
   \includegraphics[width=0.37\textwidth]{../figures/survivorship}
   \end{figure}
 
-  Often, it is easier to determine where \textit{not} to make the edits. Certain regions, no matter their contents, will never yield a viable repair.
+  It is typically easier to determine where \textit{not} to make the edits. Certain regions, no matter their contents, will never yield a viable repair.
 \end{frame}
 
 \begin{frame}[fragile]{Edit location refinement: example}
-  Let's prune states absorbing obviously impossible repair trajectories.\vspace{-0.5cm}
+  Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
   \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1335,7 +1344,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \end{frame}
 
 \begin{frame}[fragile]{Grammar refinement: Parikh interval maps}
-  If we’re reusing the CFG, it would make sense to precompute some statistics. For example, the total tokens each nonterminal can parse.\\\vspace{0.5cm}
+  If we’re reusing the CFG, it makes sense to precompute some statistics. For example, the total tokens each nonterminal can parse.\\\vspace{0.5cm}
 
   e.g., if $R$ is a unit nonterminal that maps to one value, then $[R] = [1, 1]$.\\\vspace{0.5cm}
 
