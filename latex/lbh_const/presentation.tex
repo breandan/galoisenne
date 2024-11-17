@@ -255,38 +255,16 @@
 %\end{frame}
 
 \begin{frame}[t,fragile]{How many repairs could there possibly be?}
+  \begin{onlyenv}<1->
   Consider the following Python snippet, which contains a small syntax error:\\
 
   \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
     def prepend(i, k, L=[])
       n and [prepend(i - 1, k, [b] + L) for b in range(k)]
   \end{lstlisting}
-\end{frame}
+  \end{onlyenv}
 
-\begin{frame}[t,fragile]{How many repairs could there possibly be?}
-  Consider the following Python snippet, which contains a small syntax error:\\
-
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-    def prepend(i, k, L=[])
-      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
-  \end{lstlisting}
-
-  It can be fixed by appending a colon after the function signature, yielding:\\
-
-    \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-    def prepend(i, k, L=[])!\hlgreen{:}!
-      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
-    \end{lstlisting}
-\end{frame}
-
-\begin{frame}[t,fragile]{How many repairs could there possibly be?}
-  Consider the following Python snippet, which contains a small syntax error:\\
-
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-    def prepend(i, k, L=[])
-      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
-  \end{lstlisting}
-
+  \begin{onlyenv}<2->
   It can be fixed by appending a colon after the function signature, yielding:\\
 
   \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
@@ -295,27 +273,9 @@
   \end{lstlisting}
 
   \vspace{0.5cm}
+  \end{onlyenv}
 
-  \normalsize Let us consider a slightly more ambiguous error: \footnotesize{\texttt{v = df.iloc(5:, 2:)}}. \normalsize Assuming an alphabet of just a hundred lexical tokens, this statement has millions of two-token edits, yet only six are accepted by the Python parser:
-\end{frame}
-
-\begin{frame}[t,fragile]{How many repairs could there possibly be?}
-  Consider the following Python snippet, which contains a small syntax error:\\
-
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-    def prepend(i, k, L=[])
-      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
-  \end{lstlisting}
-
-  It can be fixed by appending a colon after the function signature, yielding:\\
-
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-    def prepend(i, k, L=[])!\hlgreen{:}!
-      n and [prepend(i - 1, k, [b] + L) for b in range(k)]
-  \end{lstlisting}
-
-  \vspace{0.5cm}
-
+  \begin{onlyenv}<3->
   \normalsize Let us consider a slightly more ambiguous error: \footnotesize{\texttt{v = df.iloc(5:, 2:)}}. \normalsize Assuming an alphabet of just a hundred lexical tokens, this statement has millions of two-token edits, yet only six are accepted by the Python parser:
 
     \scriptsize
@@ -325,91 +285,8 @@
       (2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})} \\
       \end{tabular}
     \end{figure}
+  \end{onlyenv}
 \end{frame}
-
-  \begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  !\phantom{( ) )}
-
-  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  \end{lstlisting} \\\hline
-  \end{tabular}
-  \end{center}
-  \end{frame}
-
-  \begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( ) )
-
-  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  \end{lstlisting} \\\hline
-  \end{tabular}
-  \end{center}
-  \end{frame}
-
-  \begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( ) )
-
-  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( )
-
-  \end{lstlisting} \\\hline
-  \end{tabular}
-  \end{center}
-  \end{frame}
-
-  \begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( ) )
-
-  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( )
-  ( ) ( )
-
-  \end{lstlisting} \\\hline
-  \end{tabular}
-  \end{center}
-  \end{frame}
-
-  \begin{frame}[fragile]{Can you spot the error?}
-  \begin{center}
-  \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
-  \hline \rule{0pt}{2.5ex}\textbf{Original code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{Valid repairs}\rule[-1ex]{0pt}{2ex} \\\hline
-  \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( ) )
-
-  \end{lstlisting} & \begin{lstlisting}[escapechar=!, basicstyle=\linespread{1.3}\ttfamily\footnotesize]
-
-  ( )
-  ( ) ( )
-  ( ( ) )
-
-  \end{lstlisting} \\\hline
-  \end{tabular}
-  \end{center}
-  \end{frame}
 
 \begin{frame}[fragile]{High-level architecture overview}
 This process can be depicted as series of staged transformations lowering the CFL intersection problem onto a finite automaton. Below, we consider a simplified version based on the language of balanced parentheses.
@@ -463,7 +340,7 @@ This process can be depicted as series of staged transformations lowering the CF
   \noindent $S \Rightarrow^* \sigma \iff \sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \Lambda^*_\sigma$, i.e., $\mathds{1}_{\Lambda^*_\sigma}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
 \end{frame}
 
-\begin{frame}[fragile]{Satisfiability + holes}
+\begin{frame}[t,fragile]{Satisfiability + holes}
   Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
 
   \resizebox{\textwidth}{!}{
@@ -471,7 +348,7 @@ This process can be depicted as series of staged transformations lowering the CF
 \noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
   \hline
   & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
-  $M_0$ & \begin{pmatrix}
+  $M_0$: & \begin{pmatrix}
   \phantom{V} & \tiny{\{N\}} &         &             \\
               &              & \{N,O\} &             \\
               &              &         & \{N,O\} \\
@@ -486,8 +363,8 @@ This process can be depicted as series of staged transformations lowering the CF
                  &          & V_{1, 2} &          \\
                  &          &          & V_{2, 3} \\
                  &          &          &
-  \end{pmatrix} \\\hline
-  $M_1$ & \begin{pmatrix}
+  \end{pmatrix} \onslide<2->\\\hline
+  $M_1$: & \begin{pmatrix}
   \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
               &              & \{N,O\}     & \{L\}   \\
               &              &             & \{N,O\} \\
@@ -502,8 +379,8 @@ This process can be depicted as series of staged transformations lowering the CF
                    &          & V_{1, 2} & V_{1, 3} \\
                    &          &          & V_{2, 3} \\
                    &          &          &
-  \end{pmatrix} \\\hline
-  $M_\infty$ & \begin{pmatrix}
+  \end{pmatrix} \onslide<3->\\\hline
+  $M_\infty$: & \begin{pmatrix}
   \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
               &              & \{N,O\}     & \{L\}   \\
               &              &             & \{N,O\} \\
@@ -518,7 +395,7 @@ This process can be depicted as series of staged transformations lowering the CF
                    &          & V_{1, 2} & V_{1, 3} \\
                    &          &          & V_{2, 3} \\
                    &          &          &
-  \end{pmatrix}\\\hline
+  \end{pmatrix}\onslide<4->\\\hline
 \end{tabular}
 }
   }
@@ -1133,37 +1010,35 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   $^\dagger$ However, CFLs are closed under intersection with regular languages.
 \end{frame}
 
-
 \begin{frame}[t,fragile]{The Bar-Hillel construction and its specialization}
-  \begin{theorem}[Bar-Hillel, 1961]
-  Given a CFG, $G$, and an NFA, $A$, there exists a $G_\cap = \langle V_\cap, \Sigma_\cap, P_\cap, S\rangle$, such that $\mathcal{L}(G_\cap) = \mathcal{L}(G) \cap \mathcal{L}(A)$.
-  \end{theorem}
-
-  Salomaa (1973) constructs the intersection grammar as follows:\\
-
-  \noindent\begin{prooftree}
-    \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-    \RightLabel{$\sqrt{\phantom{S}}$}
-    \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
-    \DisplayProof
-    \hskip 2em
-    \AxiomC{$(A \rightarrow a) \in P$}
-    \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
-    \RightLabel{$\uparrow$}
-    \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
-    \DisplayProof
-    \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-    \AxiomC{$p,q,r \in Q$}
-    \RightLabel{$\Join$}
-    \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}
-\end{frame}
-
-\begin{frame}[t,fragile]{The Bar-Hillel construction and its specialization}
+  \begin{onlyenv}<1->
   \begin{theorem}[Bar-Hillel, 1961]
     Given a CFG, $G$, and an NFA, $A$, there exists a $G_\cap = \langle V_\cap, \Sigma_\cap, P_\cap, S\rangle$, such that $\mathcal{L}(G_\cap) = \mathcal{L}(G) \cap \mathcal{L}(A)$.
   \end{theorem}
+  \end{onlyenv}
 
+  \begin{onlyenv}<2>
+  Salomaa (1973) constructs the intersection grammar as follows:\\
+
+  \noindent\begin{prooftree}
+             \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+             \RightLabel{$\sqrt{\phantom{S}}$}
+             \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+             \DisplayProof
+             \hskip 2em
+             \AxiomC{$(A \rightarrow a) \in P$}
+             \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+             \RightLabel{$\uparrow$}
+             \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+             \DisplayProof
+             \AxiomC{$(w \rightarrow xz) \in P$}
+             \AxiomC{$\vphantom{(}p,q,r \in Q$}
+             \RightLabel{$\Join$}
+             \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+  \end{onlyenv}
+
+  \begin{onlyenv}<3->
   Salomaa (1973) constructs the intersection grammar as follows:\\
 
   \noindent\begin{prooftree}
@@ -1182,7 +1057,6 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
              \RightLabel{$\Join$}
              \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
-
   Observation: too many $(q, v, q')$ triples! Three low-hanging optimizations:
 
   \begin{enumerate}
@@ -1190,6 +1064,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
     \item Filter impossible $(q, v, q')$ triples based on path length.
     \item Remove unreachable states $q'$, i.e., $\nexists \sigma \in \mathcal{L}(G)$ s.t., $q_0 \overset{\sigma}{\Longrightarrow} q'$.
   \end{enumerate}
+  \end{onlyenv}
 \end{frame}
 
 \begin{frame}[fragile]{Edit location refinement: intuition}
@@ -1204,6 +1079,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
 \begin{frame}[fragile]{Edit location refinement: example}
   Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
+    \begin{onlyenv}<1>
   \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1216,9 +1092,147 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
         \node[state, initial]                (00) {$q_{0,0}$};
         \node[state, right of=00]            (10) {$q_{1,0}$};
         \node[accepting, state, right of=10] (20) {$q_{2,0}$};
-%        \node[accepting, state, right of=20] (30) {$q_{3,0}$};
-%        \node[accepting, state, right of=30] (40) {$q_{4,0}$};
-%        \node[accepting, state, right of=40] (50) {$q_{5,0}$};
+        \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+        \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+        \node[accepting, state, right of=40] (50) {$q_{5,0}$};
+
+        \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+        \node[state, right of=01]                          (11) {$q_{1,1}$};
+        \node[state, right of=11]                          (21) {$q_{2,1}$};
+        \node[accepting, state, right of=21]               (31) {$q_{3,1}$};
+        \node[accepting, state, right of=31]               (41) {$q_{4,1}$};
+        \node[accepting, state, right of=41]               (51) {$q_{5,1}$};
+
+        \node[state, above of=01, shift={(-2cm,0cm)}] (0j) {$q_{0,2}$};
+        \node[state, right of=0j]                          (1j) {$q_{1,2}$};
+        \node[state, right of=1j]                          (2j) {$q_{2,2}$};
+        \node[state, right of=2j]                          (3j) {$q_{3,2}$};
+        \node[accepting, state, right of=3j]               (4j) {$q_{4,2}$};
+        \node[accepting, state, right of=4j]               (5j) {$q_{5,2}$};
+
+        \node[state, above of=0j, shift={(-2cm,0cm)}] (0k) {$q_{0,3}$};
+        \node[state, right of=0k]                         (1k) {$q_{1,3}$};
+        \node[state, right of=1k]                         (2k) {$q_{2,3}$};
+        \node[state, right of=2k]                         (3k) {$q_{3,3}$};
+        \node[state, right of=3k]                         (4k) {$q_{4,3}$};
+        \node[accepting, state, right of=4k]              (5k) {$q_{5,3}$};
+
+        \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+        \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+        \draw [->] (20) edge[below] node{$\sigma_3$} (30);
+        \draw [->] (30) edge[below] node{$\sigma_4$} (40);
+        \draw [->] (40) edge[below] node{$\sigma_5$} (50);
+
+        \draw [->] (01) edge[below] node{$\sigma_1$} (11);
+        \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_2$} (21);
+        \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_3$} (31);
+        \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_4$} (41);
+        \draw [->] (41) edge[below] node{$\sigma_5$} (51);
+
+        \draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
+        \draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
+        \draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
+        \draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
+        \draw [->] (4j) edge[below] node{$\sigma_5$} (5j);
+
+        \draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
+        \draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
+        \draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
+        \draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
+        \draw [->] (4k) edge[below] node{$\sigma_5$} (5k);
+
+        \draw [->] (00) edge[left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (10) edge[left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (20) edge[left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (30) edge[left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (40) edge[left] node{$\phantom{\cdot}$} (51);
+
+% Super-knight arcs
+        \draw [->, red] (00) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3j);
+        \draw [->, red] (10) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4j);
+        \draw [->, red] (20) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5j);
+
+        \draw [->, red] (01) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3k);
+        \draw [->, red] (11) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4k);
+        \draw [->, red] (21) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5k);
+
+        \draw [->, violet] (00) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_4$}  (4k);
+        \draw [->, violet] (10) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_5$}  (5k);
+
+        \draw [->] (01) edge[left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (11) edge[left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (21) edge[left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (31) edge[left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (41) edge[left] node{$\phantom{\cdot}$} (5j);
+
+        \draw [->] (0j) edge[left] node{$\phantom{\cdot}$} (1k);
+        \draw [->] (1j) edge[left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (2j) edge[left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (3j) edge[left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (4j) edge[left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->] (00) edge[bend left=10, left] node{$\phantom{\cdot}$} (01);
+        \draw [->] (10) edge[bend left=10, left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (20) edge[bend left=10, left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (30) edge[bend left=10, left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (40) edge[bend left=10, left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (50) edge[bend left=10, left] node{$\phantom{\cdot}$} (51);
+
+        \draw [->] (01) edge[bend left=10, left] node{$\phantom{\cdot}$} (0j);
+        \draw [->] (11) edge[bend left=10, left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (21) edge[bend left=10, left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (31) edge[bend left=10, left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (41) edge[bend left=10, left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (51) edge[bend left=10, left] node{$\phantom{\cdot}$} (5j);
+
+        \draw [->] (0j) edge[bend left=10, left] node{$\phantom{\cdot}$} (0k);
+        \draw [->] (1j) edge[bend left=10, left] node{$\phantom{\cdot}$} (1k);
+        \draw [->] (2j) edge[bend left=10, left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (3j) edge[bend left=10, left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (4j) edge[bend left=10, left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (5j) edge[bend left=10, left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_2$}    (21);
+        \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_3$}    (31);
+        \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_4$}    (41);
+        \draw [->, blue] (30) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_5$}    (51);
+
+        \draw [->, blue] (01) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_2$}    (2j);
+        \draw [->, blue] (11) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_3$}    (3j);
+        \draw [->, blue] (21) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (4j);
+        \draw [->, blue] (31) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (5j);
+
+        \draw [->, blue] (0j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_2$}    (2k);
+        \draw [->, blue] (1j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_3$}    (3k);
+        \draw [->, blue] (2j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_4$}    (4k);
+        \draw [->, blue] (3j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_5$}    (5k);
+
+%https://tex.stackexchange.com/a/20986/139648
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (50.south east) node[midway,yshift=-3em]{\textbf{String length}};
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1cm,yshift=-1cm,rotate=-54]{\textbf{Edit distance}};
+      \end{tikzpicture}
+    }
+  \end{figure}
+  $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}
+  \end{onlyenv}
+  \begin{onlyenv}<2->
+  \begin{figure}[H]
+    \resizebox{\textwidth}{!}{
+      \begin{tikzpicture}[
+%->, % makes the edges directed
+        >=stealth',
+        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+        initial text=$ $, % sets the text that appears on the start arrow
+      ]
+        \node[state, initial]                (00) {$q_{0,0}$};
+        \node[state, right of=00]            (10) {$q_{1,0}$};
+        \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+        \phantom{\node[accepting, state, right of=20] (30) {$q_{3,0}$};}
+        \phantom{\node[accepting, state, right of=30] (40) {$q_{4,0}$};}
+        \phantom{\node[accepting, state, right of=40] (50) {$q_{5,0}$};}
 
         \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
         \node[state, right of=01]                          (11) {$q_{1,1}$};
@@ -1337,13 +1351,16 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
       \end{tikzpicture}
     }
   \end{figure}
-
+  \end{onlyenv}
+  \begin{onlyenv}<2->
   $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+  \end{onlyenv}
 \end{frame}
 
-\begin{frame}[fragile]{Grammar refinement: Parikh interval maps}
+\begin{frame}[t,fragile]{Grammar refinement: Parikh interval maps}
+  \begin{onlyenv}<1->
   If we’re reusing the CFG, it makes sense to precompute some statistics. For example, the total tokens each nonterminal can parse.
 
 %  e.g., if $R$ is a unit nonterminal that maps to one value, then $[R] = [1, 1]$. Can be parameterized by $\Sigma$., e.g.,: $[R] = \{a:[1,1], b:[0,0]\ldots\}$\\\vspace{0.5cm}
@@ -1351,7 +1368,9 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \begin{definition}[Parikh map for nonterminals]
     The \textbf{Parikh image}, $p: \Sigma^* \rightarrow \mathbb{N}^{|\Sigma|}$, counts the number of times each terminal appears in a string. The \textbf{Parikh map}, $\pi: V \times \mathbb{N} \rightarrow \Pi$, is the smallest interval containing the Parikh image across all strings generated by a nonterminal $R$ of length $n$, i.e, $\forall \sigma \in \mathcal{L}(R) \cap \Sigma^n \vdash p(\sigma) \in \pi(R, n)$.
   \end{definition}
+  \end{onlyenv}
 
+  \begin{onlyenv}<3->
   Likewise, we can define a Parikh interval for subautomata.
 
   \begin{definition}[Parikh map for subautomata]
@@ -1362,6 +1381,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
   Now when we have a new automaton, we can check whether $(q, v, q')$ is compatible by checking whether the Parikh range for q, q’ and v overlaps.\\\vspace{0.5cm}
 
+  \end{onlyenv}
 %  This optimization is not specific to LBH intersections, and can be applied to any CFG/FSA intersection.
 \end{frame}
 
@@ -1381,38 +1401,36 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
   Now, we are ready to re[de]fine the original $\Join$ rule:
 
-  \noindent\begin{prooftree}
+  \only<1>{\noindent\begin{prooftree}
              \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
              \AxiomC{$p,q,r \in Q$}
              \RightLabel{$\Join$}
              \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}
+  \end{prooftree}}
+  \only<2>{\noindent\begin{prooftree}
+             \def\defaultHypSeparation{\hskip 0.14cm}
+             \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
+             \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+             \AxiomC{$p,q,r \in Q$}
+             \RightLabel{$\hat\Join$}
+             \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}}
 \end{frame}
 
-\begin{frame}[fragile]{Grammar refinement: Parikh interval maps}
-  Criteria to overapproximate compatible nonterminals and states:
+\begin{frame}[t,fragile]{So, we have a grammar. Now what?}
+  There still many unnecessary productions, since we over-approximated the grammar. To reduce the number of productions, we normalize $G_\cap \Longrightarrow G_\cap^*$ to CNF, removing unreachable and unproductive productions.\\\vspace{0.3cm}
 
-  \begin{definition}[Parikh compatibility]
-    We call a nonterminal $R$ and state pair $q, q'$ \textit{compatible} when:\\
-    \begin{prooftree}
-      \AxiomC{$\displaystyle\mathcal{L}(R) \cap \bigcup_{\mathclap{n \in \llbracket q, q' \rrbracket}}\Sigma^n \neq \varnothing $}
-      \AxiomC{$\displaystyle\pi(q, q') \cap \bigcup_{\mathclap{n\in \llbracket q, q' \rrbracket}} \pi(R, n) \neq \varnothing$}
-      \RightLabel{$\lhd$}
-      \BinaryInfC{$R \lhd q, q'$}
-    \end{prooftree}
-    where $\llbracket q, q' \rrbracket = [\min |\sigma|, \max |\sigma|]$ s.t. $q \overset{\sigma}{\Longrightarrow} q'$.
-  \end{definition}
+  We could sample repairs from $G_\cap^*$ directly, but there are a few issues here:
 
-  Now, we are ready to re[de]fine the original $\Join$ rule:
+  \begin{enumerate}
+    \item It is not obvious how to steer a CFG sampler with a LLM.
+    \item It is nontrivial to implement a parallel, replacement-free CFG sampler while also prioritizing high-likelihood repairs.
+    \item Even if we could, this would not guarantee repair uniqueness, because the CFG can be ambiguous, so we could end up sampling distinct trees representing the same string.
+  \end{enumerate}
 
-  \noindent\begin{prooftree}
-   \def\defaultHypSeparation{\hskip 0.14cm}
-   \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
-   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
-   \AxiomC{$p,q,r \in Q$}
-   \RightLabel{$\hat\Join$}
-   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}
+  \only<1>{Now, let's step back and think\ldots\\}
+  \only<2->{Now, let's step back and think\ldots the intersection language is finite\ldots\\}
+  \only<3->{So we should be able to represent it as a DFA.}
 \end{frame}
 
 \begin{frame}[fragile]{Potential ambiguity of Levenshtein-Bar-Hillel grammars}
