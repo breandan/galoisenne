@@ -271,10 +271,8 @@
     def prepend(i, k, L=[])!\hlgreen{:}!
       n and [prepend(i - 1, k, [b] + L) for b in range(k)]
   \end{lstlisting}
-
-  \vspace{0.5cm}
+  \vspace{0.3cm}
   \end{onlyenv}
-
   \begin{onlyenv}<3->
   \normalsize Let us consider a slightly more ambiguous error: \footnotesize{\texttt{v = df.iloc(5:, 2:)}}. \normalsize Assuming an alphabet of just a hundred lexical tokens, this statement has millions of two-token edits, yet only six are accepted by the Python parser:
 
@@ -302,104 +300,6 @@ This process can be depicted as series of staged transformations lowering the CF
 \end{frame}
 
 \section{Formal Language Theory}\label{sec:fltheory}
-
-
-\section{Algebraic Parsing}\label{sec:algebraic-parsing}
-
-\begin{frame}[fragile]{Parsing for linear algebraists}
-  Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
-
-  \vspace{-7pt}
-  \[
-    s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
-    \text{e.g.},
-    \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
-  \]
-  \vspace{-1.5cm}
-
-  \noindent If we define $\sigma_r^{\shur} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shur}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
-
-  \begin{align*}
-    M^0:=
-    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
-      \varnothing & \sigma_1^\shri & \varnothing & \Cdots & \varnothing \\
-      \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
-                  &                &             &        & \varnothing\\
-                  &                &             &        & \sigma_n^\shup \\
-      \varnothing & \Cdots         &             &        & \varnothing
-    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
-    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
-      \varnothing & \sigma_1^\shri & \Lambda & \Cdots & \Lambda^*_\sigma\\
-      \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
-                  &                &         &        & \Lambda\\
-                  &                &         &        & \sigma_n^\shup \\
-      \varnothing & \Cdots         &         &        & \varnothing
-    \end{pNiceMatrix}
-  \end{align*}
-
-  \noindent $S \Rightarrow^* \sigma \iff \sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \Lambda^*_\sigma$, i.e., $\mathds{1}_{\Lambda^*_\sigma}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
-\end{frame}
-
-\begin{frame}[t,fragile]{Satisfiability + holes}
-  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{10pt}
-
-  \resizebox{\textwidth}{!}{
-{\renewcommand{\arraystretch}{1.2}
-\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
-  \hline
-  & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
-  $M_0$: & \begin{pmatrix}
-  \phantom{V} & \tiny{\{N\}} &         &             \\
-              &              & \{N,O\} &             \\
-              &              &         & \{N,O\} \\
-              &              &         &
-  \end{pmatrix} & \begin{pmatrix}
-  \phantom{V} & \ws\bs\ws\ws &              &              \\
-              &              & \ws\bs\bs\ws &              \\
-              &              &              & \ws\bs\bs\ws \\
-              &              &              &
-  \end{pmatrix} & \begin{pmatrix}
-     \phantom{V} & V_{0, 1} &          &          \\
-                 &          & V_{1, 2} &          \\
-                 &          &          & V_{2, 3} \\
-                 &          &          &
-  \end{pmatrix} \onslide<2->\\\hline
-  $M_1$: & \begin{pmatrix}
-  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
-              &              & \{N,O\}     & \{L\}   \\
-              &              &             & \{N,O\} \\
-              &              &             &
-  \end{pmatrix} & \begin{pmatrix}
-  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
-              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-              &              &              & \ws\bs\bs\ws \\
-              &              &              &
-  \end{pmatrix} & \begin{pmatrix}
-                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
-                   &          & V_{1, 2} & V_{1, 3} \\
-                   &          &          & V_{2, 3} \\
-                   &          &          &
-  \end{pmatrix} \onslide<3->\\\hline
-  $M_\infty$: & \begin{pmatrix}
-  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
-              &              & \{N,O\}     & \{L\}   \\
-              &              &             & \{N,O\} \\
-              &              &             &
-  \end{pmatrix} & \begin{pmatrix}
-  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
-              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-              &              &              & \ws\bs\bs\ws \\
-              &              &              &
-  \end{pmatrix} & \begin{pmatrix}
-                   \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
-                   &          & V_{1, 2} & V_{1, 3} \\
-                   &          &          & V_{2, 3} \\
-                   &          &          &
-  \end{pmatrix}\onslide<4->\\\hline
-\end{tabular}
-}
-  }
-\end{frame}
 
 %------------------------------------------------------------------------------------------------
 
@@ -732,7 +632,7 @@ initial text=$ $, % sets the text that appears on the start arrow
 \end{frame}
 
 \begin{frame}[fragile]{The nominal Levenshtein automaton}
-  The original Levenshtein automaton (Schulz \& Stoyan, 2002):
+  The original Levenshtein automaton (Schulz \& Mihov, 2002):
 
   \begin{prooftree}
     \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, k]$}
@@ -992,6 +892,176 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \end{center}
 \end{frame}
 
+\section{Algebraic Parsing}\label{sec:algebraic-parsing}
+
+\begin{frame}[t,fragile]{Parsing for linear algebraists}
+  \begin{onlyenv}<1->
+  Given a CFG $\mathcal{G} \coloneqq \langle V, \Sigma, P, S\rangle$ in Chomsky Normal Form, we can construct a recognizer $R_\mathcal{G}: \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as follows:
+
+  \vspace{-7pt}
+  \[
+    s_1 \otimes s_2 \coloneqq \{C \mid \langle A, B\rangle \in s_1 \times s_2, (C\rightarrow AB) \in P\}\\
+    \text{e.g.},
+    \{A \rightarrow BC, C \rightarrow AD, D \rightarrow BA\} \subseteq P \vdash \{A, B, C\} \otimes \{B, C, D\} = \{A, C\}
+  \]
+  \vspace{-1.5cm}
+  \end{onlyenv}
+
+  \begin{onlyenv}<2->
+  \noindent If we define $\sigma_r^{\shup} \coloneqq \{w \mid (w \rightarrow \sigma_r) \in P\}$, then initialize $M^0_{r+1=c}(\mathcal{G}', e) := \;\sigma_r^{\shup}$ and solve for the fixpoint $M^* = M + M^2$,\vspace{-10pt}
+
+  \begin{align*}
+    M^0:=
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shup & \varnothing & \Cdots & \varnothing \\
+      \Vdots      & \Ddots         & \Ddots      & \Ddots & \Vdots\\
+                  &                &             &        & \varnothing\\
+                  &                &             &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &             &        & \varnothing
+    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M^* =
+    \begin{pNiceMatrix}[xdots/line-style=loosely dotted]
+      \varnothing & \sigma_1^\shup & \Lambda & \Cdots & \Lambda^*_\sigma\\
+      \Vdots      & \Ddots         & \Ddots  & \Ddots & \Vdots\\
+                  &                &         &        & \Lambda\\
+                  &                &         &        & \sigma_n^\shup \\
+      \varnothing & \Cdots         &         &        & \varnothing
+    \end{pNiceMatrix}
+  \end{align*}
+
+  \noindent $S \Rightarrow^* \sigma \iff \sigma \in \mathcal{L}(\mathcal{G})$ iff $S \in \Lambda^*_\sigma$, i.e., $\mathds{1}_{\Lambda^*_\sigma}(S) \iff \mathds{1}_{\mathcal{L}(\mathcal{G})}(\sigma)$.
+  \end{onlyenv}
+\end{frame}
+
+\begin{frame}[t,fragile]{Satisfiability + holes}
+  Let us consider an example with two holes, $\sigma = 1$ \hole\phantom{.}\hole, and the grammar being $G\coloneqq\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This can be rewritten into CNF as $G'\coloneqq \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the algebra where $\oplus=\cup$, $X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}$, the fixpoint $M' = M + M^2$ can be computed as follows:\\\vspace{0.05cm}
+  \begin{onlyenv}<2>
+  \resizebox{\textwidth}{!}{
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  \phantom{$M_\infty$:} & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+\end{tabular}
+}
+  }
+\end{onlyenv}
+  \begin{onlyenv}<3>
+  \resizebox{\textwidth}{!}{
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  \phantom{$M_\infty$:} & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix} \\\hline
+\end{tabular}
+}
+  }
+\end{onlyenv}
+\begin{onlyenv}<4>
+  \resizebox{\textwidth}{!}{
+{\renewcommand{\arraystretch}{1.2}
+\noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
+  \hline
+  \phantom{$M_\infty$:} & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
+  $M_0$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} &         &             \\
+              &              & \{N,O\} &             \\
+              &              &         & \{N,O\} \\
+              &              &         &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws &              &              \\
+              &              & \ws\bs\bs\ws &              \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+     \phantom{V} & V_{0, 1} &          &          \\
+                 &          & V_{1, 2} &          \\
+                 &          &          & V_{2, 3} \\
+                 &          &          &
+  \end{pmatrix} \\\hline
+  $M_1$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix} \\\hline
+  $M_\infty$: & \begin{pmatrix}
+  \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
+              &              & \{N,O\}     & \{L\}   \\
+              &              &             & \{N,O\} \\
+              &              &             &
+  \end{pmatrix} & \begin{pmatrix}
+  \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+              &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+              &              &              & \ws\bs\bs\ws \\
+              &              &              &
+  \end{pmatrix} & \begin{pmatrix}
+                   \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
+                   &          & V_{1, 2} & V_{1, 3} \\
+                   &          &          & V_{2, 3} \\
+                   &          &          &
+  \end{pmatrix}\\\hline
+\end{tabular}
+}
+  }
+  \end{onlyenv}
+\end{frame}
+
 \begin{frame}[fragile]{Background: Closure properties of formal languages}
   Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $*$ be Kleene star, and $\complement$ be complementation:\\
   \begin{table}
@@ -1076,10 +1146,10 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   It is typically easier to determine where \textit{not} to make the edits. Certain regions, no matter their contents, will never yield a viable repair.
 \end{frame}
 
-\begin{frame}[fragile]{Edit location refinement: example}
-  Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
-    \begin{onlyenv}<1>
-  \begin{figure}[H]
+\begin{frame}[t,fragile]{Edit location refinement: example}
+  \begin{onlyenv}<1>
+      Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
+    \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
 %->, % makes the edges directed
@@ -1213,10 +1283,150 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
     }
   \end{figure}
   $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
-  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\\
-  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: \texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: \texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}}
   \end{onlyenv}
-  \begin{onlyenv}<2->
+  \begin{onlyenv}<2>
+      Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
+  \begin{figure}[H]
+    \resizebox{\textwidth}{!}{
+      \begin{tikzpicture}[
+%->, % makes the edges directed
+        >=stealth',
+        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+        initial text=$ $, % sets the text that appears on the start arrow
+      ]
+        \node[state, initial]                (00) {$q_{0,0}$};
+        \node[state, right of=00]            (10) {$q_{1,0}$};
+        \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+        \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+        \node[accepting, state, right of=30] (40) {$q_{4,0}$};
+        \node[accepting, state, right of=40] (50) {$q_{5,0}$};
+
+        \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+        \node[state, right of=01]                          (11) {$q_{1,1}$};
+        \node[state, right of=11]                          (21) {$q_{2,1}$};
+        \node[accepting, state, right of=21]               (31) {$q_{3,1}$};
+        \node[accepting, state, right of=31]               (41) {$q_{4,1}$};
+        \node[accepting, state, right of=41]               (51) {$q_{5,1}$};
+
+        \node[state, above of=01, shift={(-2cm,0cm)}] (0j) {$q_{0,2}$};
+        \node[state, right of=0j]                          (1j) {$q_{1,2}$};
+        \node[state, right of=1j]                          (2j) {$q_{2,2}$};
+        \node[state, right of=2j]                          (3j) {$q_{3,2}$};
+        \node[accepting, state, right of=3j]               (4j) {$q_{4,2}$};
+        \node[accepting, state, right of=4j]               (5j) {$q_{5,2}$};
+
+        \phantom{\node[state, above of=0j, shift={(-2cm,0cm)}] (0k) {$q_{0,3}$};}
+        \phantom{\node[state, right of=0k]                         (1k) {$q_{1,3}$};}
+        \phantom{\node[state, right of=1k]                         (2k) {$q_{2,3}$};}
+        \node[state, right of=2k]                         (3k) {$q_{3,3}$};
+        \node[state, right of=3k]                         (4k) {$q_{4,3}$};
+        \node[accepting, state, right of=4k]              (5k) {$q_{5,3}$};
+
+        \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+        \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+        \draw [->] (20) edge[below] node{$\sigma_3$} (30);
+        \draw [->] (30) edge[below] node{$\sigma_4$} (40);
+        \draw [->] (40) edge[below] node{$\sigma_5$} (50);
+
+        \draw [->] (01) edge[below] node{$\sigma_1$} (11);
+        \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_2$} (21);
+        \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_3$} (31);
+        \draw [->] (31) edge[below] node[shift={(-0.2cm,0cm)}]{$\sigma_4$} (41);
+        \draw [->] (41) edge[below] node{$\sigma_5$} (51);
+
+        \draw [->] (0j) edge[below] node{$\sigma_1$} (1j);
+        \draw [->] (1j) edge[below] node{$\sigma_2$} (2j);
+        \draw [->] (2j) edge[below] node{$\sigma_3$} (3j);
+        \draw [->] (3j) edge[below] node{$\sigma_4$} (4j);
+        \draw [->] (4j) edge[below] node{$\sigma_5$} (5j);
+
+%        \draw [->] (0k) edge[below] node{$\sigma_1$} (1k);
+%        \draw [->] (1k) edge[below] node{$\sigma_2$} (2k);
+%        \draw [->] (2k) edge[below] node{$\sigma_3$} (3k);
+        \draw [->] (3k) edge[below] node{$\sigma_4$} (4k);
+        \draw [->] (4k) edge[below] node{$\sigma_5$} (5k);
+
+        \draw [->] (00) edge[left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (10) edge[left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (20) edge[left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (30) edge[left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (40) edge[left] node{$\phantom{\cdot}$} (51);
+
+% Super-knight arcs
+        \draw [->, red] (00) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3j);
+        \draw [->, red] (10) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4j);
+        \draw [->, red] (20) edge[bend right=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5j);
+
+        \draw [->, red] (01) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_3$}         (3k);
+        \draw [->, red] (11) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_4$}         (4k);
+        \draw [->, red] (21) edge[bend left=8] node[east, shift={(-0.2cm,-0.7cm)}]{$\color{red}\sigma_5$}         (5k);
+
+        \draw [->, violet] (00) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_4$}  (4k);
+        \draw [->, violet] (10) edge node[east, shift={(-0.1cm,-0.8cm)}]{$\color{violet}\sigma_5$}  (5k);
+
+        \draw [->] (01) edge[left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (11) edge[left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (21) edge[left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (31) edge[left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (41) edge[left] node{$\phantom{\cdot}$} (5j);
+
+%        \draw [->] (0j) edge[left] node{$\phantom{\cdot}$} (1k);
+%        \draw [->] (1j) edge[left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (2j) edge[left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (3j) edge[left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (4j) edge[left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->] (00) edge[bend left=10, left] node{$\phantom{\cdot}$} (01);
+        \draw [->] (10) edge[bend left=10, left] node{$\phantom{\cdot}$} (11);
+        \draw [->] (20) edge[bend left=10, left] node{$\phantom{\cdot}$} (21);
+        \draw [->] (30) edge[bend left=10, left] node{$\phantom{\cdot}$} (31);
+        \draw [->] (40) edge[bend left=10, left] node{$\phantom{\cdot}$} (41);
+        \draw [->] (50) edge[bend left=10, left] node{$\phantom{\cdot}$} (51);
+
+        \draw [->] (01) edge[bend left=10, left] node{$\phantom{\cdot}$} (0j);
+        \draw [->] (11) edge[bend left=10, left] node{$\phantom{\cdot}$} (1j);
+        \draw [->] (21) edge[bend left=10, left] node{$\phantom{\cdot}$} (2j);
+        \draw [->] (31) edge[bend left=10, left] node{$\phantom{\cdot}$} (3j);
+        \draw [->] (41) edge[bend left=10, left] node{$\phantom{\cdot}$} (4j);
+        \draw [->] (51) edge[bend left=10, left] node{$\phantom{\cdot}$} (5j);
+
+%        \draw [->] (0j) edge[bend left=10, left] node{$\phantom{\cdot}$} (0k);
+%        \draw [->] (1j) edge[bend left=10, left] node{$\phantom{\cdot}$} (1k);
+%        \draw [->] (2j) edge[bend left=10, left] node{$\phantom{\cdot}$} (2k);
+        \draw [->] (3j) edge[bend left=10, left] node{$\phantom{\cdot}$} (3k);
+        \draw [->] (4j) edge[bend left=10, left] node{$\phantom{\cdot}$} (4k);
+        \draw [->] (5j) edge[bend left=10, left] node{$\phantom{\cdot}$} (5k);
+
+        \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_2$}    (21);
+        \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_3$}    (31);
+        \draw [->, blue] (20) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_4$}    (41);
+        \draw [->, blue] (30) edge[bend right=11,below] node[shift={(0.5cm,0.3cm)}]{$\color{blue}\sigma_5$}    (51);
+
+        \draw [->, blue] (01) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_2$}    (2j);
+        \draw [->, blue] (11) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_3$}    (3j);
+        \draw [->, blue] (21) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (4j);
+        \draw [->, blue] (31) edge[bend right=3,below] node[shift={(0.3cm,0.2cm)}]{$\color{blue}\sigma_4$}    (5j);
+
+%        \draw [->, blue] (0j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_2$}    (2k);
+        \draw [->, blue] (1j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_3$}    (3k);
+        \draw [->, blue] (2j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_4$}    (4k);
+        \draw [->, blue] (3j) edge[bend left=8,below] node[shift={(-0.45cm,-0.55cm)}]{$\color{blue}\sigma_5$}    (5k);
+
+%https://tex.stackexchange.com/a/20986/139648
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=10pt,mirror}] (00.south west) -- (50.south east) node[midway,yshift=-3em]{\textbf{String length}};
+%        \draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1cm,yshift=-1cm,rotate=-54]{\textbf{Edit distance}};
+      \end{tikzpicture}
+    }
+  \end{figure}
+  $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
+  \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: \texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}}
+  \end{onlyenv}
+  \begin{onlyenv}<3>
+  Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.675cm}
   \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1349,9 +1559,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 %        \draw [decorate,decoration={brace,amplitude=10pt,raise=20pt}] (00.south west) -- (0k.north west) node[midway,xshift=-1cm,yshift=-1cm,rotate=-54]{\textbf{Edit distance}};
       \end{tikzpicture}
     }
-  \end{figure}
-  \end{onlyenv}
-  \begin{onlyenv}<2->
+  \end{figure}\vspace{-0.175cm}
   $G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
@@ -1360,7 +1568,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
 \begin{frame}[t,fragile]{Grammar refinement: Parikh interval maps}
   \begin{onlyenv}<1->
-  If we’re reusing the CFG, it makes sense to precompute some statistics. For example, the total tokens each nonterminal can parse.
+  \vspace{-0.1cm}If we’re reusing the CFG, it makes sense to precompute some statistics.
 
 %  e.g., if $R$ is a unit nonterminal that maps to one value, then $[R] = [1, 1]$. Can be parameterized by $\Sigma$., e.g.,: $[R] = \{a:[1,1], b:[0,0]\ldots\}$\\\vspace{0.5cm}
 
@@ -1368,8 +1576,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
     The \textbf{Parikh image}, $p: \Sigma^* \rightarrow \mathbb{N}^{|\Sigma|}$, counts the number of times each terminal appears in a string. The \textbf{Parikh map}, $\pi: V \times \mathbb{N} \rightarrow \Pi$, is the smallest interval containing the Parikh image across all strings generated by a nonterminal $R$ of length $n$, i.e, $\forall \sigma \in \mathcal{L}(R) \cap \Sigma^n \vdash p(\sigma) \in \pi(R, n)$.
   \end{definition}
   \end{onlyenv}
-
-  \begin{onlyenv}<3->
+  \begin{onlyenv}<2->
   Likewise, we can define a Parikh interval for subautomata.
 
   \begin{definition}[Parikh map for subautomata]
@@ -1384,7 +1591,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 %  This optimization is not specific to LBH intersections, and can be applied to any CFG/FSA intersection.
 \end{frame}
 
-\begin{frame}[fragile]{Grammar refinement: Parikh compatibility}
+\begin{frame}[t,fragile]{Grammar refinement: Parikh compatibility}
   Criteria to overapproximate compatible nonterminals and states:
 
   \begin{definition}[Parikh compatibility]
@@ -1400,20 +1607,24 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
   Now, we are ready to re[de]fine the original $\Join$ rule:
 
-  \only<1>{\noindent\begin{prooftree}
+  \begin{onlyenv}<1>
+  \noindent\begin{prooftree}
              \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
              \AxiomC{$p,q,r \in Q$}
              \RightLabel{$\Join$}
              \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}}
-  \only<2>{\noindent\begin{prooftree}
-             \def\defaultHypSeparation{\hskip 0.14cm}
+  \end{prooftree}
+  \end{onlyenv}
+  \begin{onlyenv}<2>
+  \vspace{-0.1cm}\noindent\begin{prooftree}
+%             \def\defaultHypSeparation{\hskip 0.14cm}
              \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
              \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
              \AxiomC{$p,q,r \in Q$}
              \RightLabel{$\hat\Join$}
              \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-  \end{prooftree}}
+  \end{prooftree}
+  \end{onlyenv}
 \end{frame}
 
 \begin{frame}[t,fragile]{So, we have a grammar. Now what?}
@@ -1436,7 +1647,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 The previous technique enumerates parse trees in a given $\mathbb{T}_2$, but does not guarantee string uniqueness since the CFG may be ambiguous.
 
 \begin{lemma}[Possible ambiguity of LBH grammar]\label{lemma:ambiguity}
-If the FSA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambiguous.
+If the NFA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambiguous.
 \end{lemma}
 
 \begin{proof}
@@ -1460,17 +1671,17 @@ Assume $G_\cap$ is cyclic. Then $\mathcal{L}(G_\cap)$ must be infinite. But sinc
 Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. Using an FSA for decoding has many advantages, notably, it can be efficiently minimized and decoded in order of n-gram likelihood using a Markov chain or standard pretrained autoregressive language model.
 \end{frame}
 
-\begin{frame}[fragile]{Translating from $T_2$ to a DFA}
-Let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $\mathbb{T}_2$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, *$:
+\begin{frame}[fragile]{Translating from $G_\cap$ to a DFA}
+Let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $G_\cap$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, *$:
 
 \begin{equation*}
-\mathcal{Y}(T:\mathbb{T}_2) \mapsto \begin{cases}
-\alpha \mid \mathcal{L}(\alpha) = \{T\} & T: \Sigma, \\
-\sum_{\langle T_1, T_2\rangle \in \texttt{children}(T)} \mathcal{Y}(T_1)*\mathcal{Y}(T_2) & T: VL\big(V^2P(a)^2\big)
+\mathcal{Y}(v: V) \mapsto \begin{cases}
+\alpha \mid \mathcal{L}(\alpha) = \{s \in \Sigma_\cap \mid v \rightarrow s\} & \textit{ if v is a unit NT}, \\
+\sum_{\langle v_1, v_2\rangle \mid v \rightarrow v_1 v_2} \mathcal{Y}(v_1)*\mathcal{Y}(v_2) & \text{ otherwise.}
 \end{cases}
 \end{equation*}
 %
-In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathcal{A} \mid \mathcal{L}(\alpha) = \ell\cap L(\err\sigma, d)$, which can be minimized via Brzozowski's algorithm then decoded:
+In the case of LBH intersections, $\mathcal{Y}(S)$ yields $\alpha: \mathcal{A} \mid \mathcal{L}(\alpha) = \ell\cap L(\err\sigma, d)$, which can be minimized via Brzozowski's algorithm then decoded:
 
 \begin{figure}[H]
 \centering
@@ -1481,7 +1692,7 @@ In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathca
 
 \section{Decoding}\label{sec:error-correction}
 
-\begin{frame}[fragile]{Decoding the DFA in order of normalized log likelihood}
+\begin{frame}[fragile]{Decoding the DFA}
 \vspace{-0.3cm}
 \begin{algorithm}[H]
 \caption{Steerable DFA walk}
@@ -1497,9 +1708,9 @@ In the case of LBH intersections, $\mathcal{Y}(G_\cap')$ yields $\alpha: \mathca
 % For loop:
 \State \phantom{\textbf{let }}$\mathbf{T} = \big\{\langle s\sigma, q', \gamma - \log P_\theta(s \mid \sigma_{1..d-1}) \rangle\mid (q\overset{s}{\rightarrow}q') \in \delta\big\}$
 \For{$\langle \sigma, q, \gamma \rangle = T \in \mathbf{T}$}
-\If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
+%\If {$\exists s: \Sigma, q': Q \mid (q\overset{s}{\rightarrow} q')\in\delta$}
 \State $\mathcal{P} \gets \texttt{tail}(\mathcal{P}) \oplus T$ \Comment{Add partial trajectory to PQ.}
-\EndIf
+%\EndIf
 \If {$q \in F$}
 \State $\mathcal{T} \gets \mathcal{T} \oplus T$ \Comment{Accepting state reached, add to queue.}
 \EndIf
