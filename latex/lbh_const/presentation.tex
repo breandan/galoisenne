@@ -1926,11 +1926,30 @@ To evaluate the quality of our ranking, we use the Precision@k statistic. Specif
 \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
 \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
 \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
-\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_4}}
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-\caption{Latency benchmarks. Note the varying y-axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]{Precision and latency comparison}
+\begin{figure}[h!]
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy200}}
+    \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy20k}}
+\caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+\end{figure}
+\begin{figure}[h!]
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
+\resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_3}}
+%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+\caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
 \end{figure}
 \end{frame}
 

@@ -3,6 +3,8 @@
   xlabel={Snippet length, $|\sigma|$},
   ylabel={Precision@20k},
   title={\textbf{BIFI Repair Precision@20k}},
+  legend cell align={left},
+  legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east},
   ybar,
   axis lines*=left,
   xtick={0, 10, 20, 30, 40, 50, 60, 70},
@@ -14,8 +16,17 @@
   bar width=4pt,
   ]
 
-  \addplot[green, fill=green!50] coordinates {(0, 0.65) (10, 0.67) (20, 0.71) (30, 0.63) (40, 0.6) (50, 0.62) (60, 0.59) (70, 0.64)};
-  \addplot[blue, fill=blue!50] coordinates {(0, 0.52) (10, 0.41) (20, 0.35) (30, 0.31) (40, 0.27) (50, 0.27) (60, 0.21) (70, 0.22)};
+  \addlegendimage{empty legend}
+  \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+  \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+  \addlegendentry{1,}
+  \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+  \addlegendentry{2,}
+  \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+  \addlegendentry{3}
+
+  \addplot[green, fill=green!50] coordinates   {(0, 0.65) (10, 0.67) (20, 0.71) (30, 0.63) (40, 0.60) (50, 0.62) (60, 0.59) (70, 0.64)};
+  \addplot[blue, fill=blue!50] coordinates     {(0, 0.52) (10, 0.41) (20, 0.35) (30, 0.31) (40, 0.27) (50, 0.27) (60, 0.21) (70, 0.22)};
   \addplot[orange, fill=orange!50] coordinates {(0, 0.25) (10, 0.08) (20, 0.08) (30, 0.17) (40, 0.11) (50, 0.17) (60, 0.08) (70, 0.08)};
 
   \end{axis}
