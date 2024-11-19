@@ -1953,7 +1953,7 @@ To evaluate the quality of our ranking, we use the Precision@k statistic. Specif
 \end{figure}
 \end{frame}
 
-\begin{frame}[fragile]{Results from sample efficiency experiments}
+\begin{frame}[fragile]{Results from uniform sample efficiency experiments}
 \begin{figure}[h!]
 \input{../popl2025/sample_efficiency}\\
 %    \caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
@@ -1965,9 +1965,9 @@ To evaluate the quality of our ranking, we use the Precision@k statistic. Specif
 \begin{frame}[fragile]{Outcomes in the syntax repair pipeline}
 \vspace{-1cm}
 \begin{figure}
-\resizebox{.83\textwidth}{!}{\input{../popl2025/sankey}}
-\vspace{-1cm}
-\caption{Sankey diagram of 967 total repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost snippet lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a sampling timeout of 30s per repair.}
+\resizebox{.73\textwidth}{!}{\input{../popl2025/sankey}}
+\vspace{-0.5cm}
+\caption{Sankey diagram of 5136 repair instances sampled uniformly from the StackOverflow Python dataset balanced acrost ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$). (ER=Error, NR=Not recognized, NG=Not generated). Time: $\sim$10hr on M1 Max.}
 \end{figure}
 \end{frame}
 
