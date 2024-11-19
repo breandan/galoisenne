@@ -92,6 +92,8 @@
   \tableofcontents
 \end{frame}
 
+\section{Examples and Motivation}\label{sec:ex_motiv}
+
 \begin{frame}[fragile]{Can you spot the error?}
   \begin{center}
     \begin{tabular}{|m{5.5cm}|m{5.5cm}|}
@@ -892,7 +894,6 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \end{center}
 \end{frame}
 
-\section{Algebraic Parsing}\label{sec:algebraic-parsing}
 
 \begin{frame}[t,fragile]{Parsing for linear algebraists}
   \begin{onlyenv}<1->
@@ -1136,8 +1137,10 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \end{onlyenv}
 \end{frame}
 
+\section{Bar-Hillel Refinements}\label{sec:bh-refinements}
+
 \begin{frame}[fragile]{Edit location refinement: intuition}
-  Let's think: do we really need $|\sigma| \times d_\max$ states? Can we somehow narrow down the edit range? Where can we cut down on armor?
+  Let's think: do we really need $|\sigma| \times d_\max$ states? Can we somehow narrow down the edit range? Where can we remove dead weight?
 
   \begin{figure}[H]
   \includegraphics[width=0.37\textwidth]{../figures/survivorship}
@@ -1148,7 +1151,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 
 \begin{frame}[t,fragile]{Edit location refinement: example}
   \begin{onlyenv}<1>
-      Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
+      Let's prune states absorbing impossible repair trajectories!\vspace{-0.5cm}
     \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1287,7 +1290,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: \texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}}
   \end{onlyenv}
   \begin{onlyenv}<2>
-      Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.5cm}
+      Let's prune states absorbing impossible repair trajectories!\vspace{-0.5cm}
   \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1426,7 +1429,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: \texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}}
   \end{onlyenv}
   \begin{onlyenv}<3>
-  Let's prune states absorbing obviously impossible repair trajectories!\vspace{-0.675cm}
+  Let's prune states absorbing impossible repair trajectories!\vspace{-0.675cm}
   \begin{figure}[H]
     \resizebox{\textwidth}{!}{
       \begin{tikzpicture}[
@@ -1627,6 +1630,8 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
   \end{onlyenv}
 \end{frame}
 
+\section{Left-to-right Decoding}\label{sec:decoding}
+
 \begin{frame}[t,fragile]{So, we have a grammar. Now what?}
   There still many unnecessary productions, since we over-approximated the grammar. To reduce the number of productions, we normalize $G_\cap \Longrightarrow G_\cap^*$ to CNF, removing unreachable and unproductive productions.\\\vspace{0.3cm}
 
@@ -1690,8 +1695,6 @@ In the case of LBH intersections, $\mathcal{Y}(S)$ yields $\alpha: \mathcal{A} \
 \end{figure}
 \end{frame}
 
-\section{Decoding}\label{sec:error-correction}
-
 \begin{frame}[fragile]{Decoding the DFA}
 \vspace{-0.3cm}
 \begin{algorithm}[H]
@@ -1720,6 +1723,8 @@ In the case of LBH intersections, $\mathcal{Y}(S)$ yields $\alpha: \mathcal{A} \
 \end{algorithmic}
 \end{algorithm}
 \end{frame}
+
+\section{Empirical Evaluation}\label{sec:empirical}
 
 \begin{frame}[fragile]{Characteristics of the repair dataset}
 \begin{figure}[h!]
@@ -2015,6 +2020,27 @@ $^\dagger$ Claimed by the authors, but counterexamples known to exist.
     \item \href{https://arxiv.org/pdf/1504.08342.pdf}{Cohen \& Gildea (2016) - Generalizes Valiant (1975) to parse and recognize mildly context sensitive languages, e.g. LCFRS, TAG, CCG}
     \item \textbf{Considine, Guo \& Si (2022) - SAT + Valiant (1975) + holes}
     \item \textbf{Considine, Guo \& Si (2024) - Levenshtein Bar-Hillel repairs}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Future work}
+  Parsing
+  \begin{itemize}
+    \item Error propagation in discrete dynamical systems and TRS
+    \item Dynamic matrix inverse and incremental transitive closure
+    \item Language Edit Distance with metrizable Boolean semirings
+    \item Unify parser-lexer for scannerless ECP on a real language
+    \item Investigate the feasibility of grammar induction and repair
+    \item Strengthen the connection to Leibnizian differentiability
+%    \item What is the meaning of abstract algebraic eigenvalues?
+  \end{itemize}
+  \phantom{space}\\
+  Probability
+  \begin{itemize}
+    \item Look into Markov chains (detailed balance, stationarity, reversibility)
+    \item Fuse Valiant parser and probabilistic context-free grammar
+    \item Contextualize belief propagation and graph diffusion processes
+    \item Look into constrained optimization (e.g., L/QP) to rank feasible set
   \end{itemize}
 \end{frame}
 
