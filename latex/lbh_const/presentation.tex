@@ -1677,12 +1677,12 @@ Since $G_\cap$ is acyclic and thus finite, it must be representable as an FSA. U
 \end{frame}
 
 \begin{frame}[fragile]{Translating from $G_\cap$ to a DFA}
-Let $+, *: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 * A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $G_\cap$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, *$:
+Let $+, \cdot: \mathcal{A}\times \mathcal{A} \rightarrow \mathcal{A}$ be automata operators satisfying the property $\mathcal{L}(A_1 + A_2) = \mathcal{L}(A_1)\cup\mathcal{L}(A_2)$, and $\mathcal{L}(A_1 \cdot A_2) = \mathcal{L}(A_1)\times\mathcal{L}(A_2)$. We can translate $G_\cap$ to $\mathcal{A}$, as follows, recalling FSAs are closed over $+, \cdot$:
 
 \begin{equation*}
 \mathcal{Y}(v: V) \mapsto \begin{cases}
 \alpha \mid \mathcal{L}(\alpha) = \{s \in \Sigma_\cap \mid v \rightarrow s\} & \textit{ if v is a unit NT}, \\
-\sum_{\langle v_1, v_2\rangle \mid v \rightarrow v_1 v_2} \mathcal{Y}(v_1)*\mathcal{Y}(v_2) & \text{ otherwise.}
+\sum_{\langle v_1, v_2\rangle \mid v \rightarrow v_1 v_2} \mathcal{Y}(v_1)\cdot\mathcal{Y}(v_2) & \text{ otherwise.}
 \end{cases}
 \end{equation*}
 %
