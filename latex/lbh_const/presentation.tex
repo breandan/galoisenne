@@ -1649,7 +1649,7 @@ Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ ha
 \end{frame}
 
 \begin{frame}[fragile]{Potential ambiguity of Levenshtein-Bar-Hillel grammars}
-The previous technique enumerates parse trees in a given $\mathbb{T}_2$, but does not guarantee string uniqueness since the CFG may be ambiguous.
+The previous technique produces a grammar that exactly generates $G_\cap$, but does not guarantee string uniqueness since the CFG may be ambiguous.
 
 \begin{lemma}[Possible ambiguity of LBH grammar]\label{lemma:ambiguity}
 If the NFA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambiguous.
@@ -1659,7 +1659,7 @@ If the NFA, $\alpha$, is ambiguous, the intersection CFG, $G_\cap$, can be ambig
 Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
-We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by first translating $\mathbb{T}_2$ into an FSA.
+We can eliminate ambiguity and thereby improve the rate of convergence for natural syntax repair by first translating $G_\cap$ into an FSA.
 \end{frame}
 
 \begin{frame}[fragile]{Existence of an FSA that generates $\mathcal{L}(G_\cap)$}
