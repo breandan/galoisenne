@@ -29,14 +29,14 @@ Levenshtein automata are finite automata that recognize all and only strings wit
 The original automaton is nondeterministic, containing an upward arc for each token. This can be avoided with a simple modification that matches an inequality predicate. The machine enters at $q_{0, 0}$ and at each step, accepts the labeled token. Final states are encircled twice, denoting that any trajectory ending at such a state is considered valid.
 When the edit distance grows larger, we introduce some additional arcs to handle multi-token deletions, but the overall picture remains unchanged. We depict a 3x5 automaton recognizing 3-edit patches of a length-5 string in Figure~\ref{fig:lev_nfa}.
 
-\begin{figure}
+\begin{figure}%{r}{0.4\textwidth}
   \begin{center}
     \input{content/figures/nfa_cfg}
   \end{center}
   \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
 \end{figure}
 
-Here, a pattern begins to emerge: the automaton is a grid of states, with each horizontal arc consuming a token in the original string, and vertical and diagonal arcs recognizing mutations. Traversing a vertical arc corresponds to an insertion or substitution, and a diagonal arc corresponds to a deletion. LA can also be defined as a set of inference rules, which generalize this picture to arbitrary length strings and edit distances. The indices are a bit finicky, but the rules are otherwise straightforward.
+Here, a pattern begins to emerge: the automaton is a grid of states, with each horizontal arc consuming a token in the original string, and upwards arcs recognizing mutations. Traversing a vertical arc corresponds to an insertion or substitution, and a diagonal arc corresponds to a deletion. Levenshtein automata can also be defined as a set of inference rules, which generalize this picture to arbitrary length strings and edit distances. The indices are a bit finicky, but the rules are otherwise straightforward.
 
 \begin{prooftree}
   \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
@@ -70,9 +70,141 @@ Here, a pattern begins to emerge: the automaton is a grid of states, with each h
   \BinaryInfC{$q_{i, j}\in F$}
 \end{prooftree}
 
+
+\newcommand{\substitutionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (24pt,8pt);
+    \draw [-to] (24pt,8pt) -- (32pt,8pt);
+    \draw [-to] (32pt,8pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\insertionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \fill[white] (16pt,0pt) circle [radius = 1.2pt];
+    \fill[white] (24pt,8pt) circle [radius = 1.2pt];
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (24pt,0pt);
+    \draw [-to] (24pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (32pt,8pt);
+    \draw [-to] (32pt,8pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\deletionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (24pt,0pt);
+    \draw [-to] (24pt,0pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\doubleDeletionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (24pt,16pt);
+    \draw [-to] (24pt,16pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\subDelExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\subSubExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (24pt,16pt);
+    \draw [-to] (24pt,16pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\insertDeleteExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40,48}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \fill[white] (16pt,16pt) circle [radius = 1.2pt];
+    \fill[white] (8pt,0pt) circle [radius = 1.2pt];
+    \fill[white] (16pt,8pt) circle [radius = 1.2pt];
+    \draw [-to] (0pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (8pt,8pt);
+    \draw [-to] (8pt,8pt) -- (24pt,8pt);
+    \draw [-to] (24pt,8pt) -- (40pt,16pt);
+    \draw [-to] (40pt,16pt) -- (48pt,16pt);
+  }
+}
+
+Each rule recognizes a specific type of edit. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of one or more terminals. Let us consider some illustrative cases depicting the edit trajectory with specific Levenshtein alignments. Note that the trajectory may not be unique.
+
+\begin{table}[H]
+  \begin{tabular}{ccccccc}
+
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+    \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
+    \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+    \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+    \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} &
+    \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+    \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+    \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
+  \end{tabular}
+\end{table}
+
 \section{The Bar-Hillel Construction}
 
-The Bar-Hillel construction is a method for conjoining a context-free grammar with a finite automaton. First proposed by Bar-Hillel in 1961, and later refined by Salomaa in 1973. The construction is based on the idea of a product automaton, generalized to a grammar. It consists of three rules:
+The Bar-Hillel construction is a method for conjoining a context-free grammar with a finite automaton. First proposed by Bar-Hillel in 1961, and later realized by Salomaa in 1973, this construction is based on the idea of a product automaton, generalized to a grammar. It consists of three rules:
 
 \begin{prooftree}
   \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
@@ -93,9 +225,7 @@ The Bar-Hillel construction is a method for conjoining a context-free grammar wi
   \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-The $\Join$ rule has a strong dependency on the number of states. Every reduction in the number of states will have a cubic impact on the size of the product automaton. So, the primary target is to first reduce the number of states in the product automaton.
-
-But do we really need all these states? We can reduce the number of states without compromising the integrity of the Bar-Hillel construction by pruning states which are obviously inaccessible. For example, let us consider the following scenario:
+The $\Join$ rule has a strong dependency on the number of states. Every reduction in the number of states will have a cubic impact on the size of the product automaton. So, the primary target is to first reduce the number of states in the Levenshtein automaton. We can reduce the number of states without compromising the integrity of the Bar-Hillel construction by pruning states which are obviously inaccessible. For example, let us consider the following scenario:
 
 \begin{figure}[H]
   \begin{center}
@@ -106,6 +236,52 @@ But do we really need all these states? We can reduce the number of states witho
 \noindent\phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
 \end{figure}
 
-We can determine the monoedit bounds by conducting a binary search for the rightmost and leftmost states with an empty porous completion problem, and remove all states from the automaton which absorb trajectories that are incompatible. Similar bounds can be established for multi-edit bounds.
+We can determine the monoedit bounds by conducting a binary search for the rightmost and leftmost states with an empty porous completion problem, and remove all states from the automaton which absorb trajectories that are incompatible. Similar bounds can be established for multi-edit locations.
 
 Now, let us consider the Parikh constraints.
+
+\section{Parikh Refinements}
+
+To identify these superfluous triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal can generate. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
+
+\begin{definition}[Parikh mapping of a nonterminal]\label{def:parikh}
+Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. We define the Parikh map, $\pi: V \rightarrow \Pi$, as a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
+\end{definition}
+
+In other words, the Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
+
+\begin{definition}[Parikh mapping of NFA states]
+  We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
+\end{definition}
+
+Next, we will define a measure on Parikh intervals representing the minimum total edits required to transform a string in one Parikh interval to a string in another, across all such pairings.
+
+\begin{definition}[Parikh divergence]
+  Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
+\end{definition}
+
+Now, we know that if the Parikh divergence between two intervals is nonzero, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
+
+\begin{definition}[Parikh compatibility]
+  Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff \big(\pi(v) \parallel \pi(q, q')\big) = 0$.
+\end{definition}
+
+Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
+
+\begin{prooftree}
+  \hskip -0.9em
+  \def\defaultHypSeparation{\hskip 0.14cm}
+  \AxiomC{$(A \rightarrow a) \in P$}
+  \AxiomC{$(q\overset{{\color{orange}[\cdot]}}{\rightarrow}r) \in \delta$}
+  \AxiomC{$\color{orange}a[\cdot]$}
+  \RightLabel{$\hat\uparrow$}
+  \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+  \DisplayProof
+  \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
+  \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+  \AxiomC{$p,q,r \in Q$}
+  \RightLabel{$\hat\Join$}
+  \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+\end{prooftree}\vspace{2pt}
+
+%\noindent Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = \ell_\cap$, satisfying Def.~\ref{def:bcflr}. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization.
