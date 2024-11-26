@@ -1,0 +1,32 @@
+\resizebox{0.42\textwidth}{!}{
+  \def\secondcirclepath{(1.15,0) coordinate (e) circle (2cm)}
+  \begin{tikzpicture}[
+    dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
+    node contents={}}
+  ]
+    \def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
+    \def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
+    \def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
+    \def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
+    \def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
+
+    \begin{scope}
+      \clip[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
+      \fill[black!35] \firstcircle;
+    \end{scope}
+
+    \draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
+    \draw [dashed] \firstcirclea;
+    \draw [dashed] \firstcircleb;
+    \draw [dashed] \firstcirclec;
+    \draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
+    \draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
+    \draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$d^*$};
+    \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
+    \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d^+$};
+
+    \draw[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
+    \node [above] at (current bounding box.north -| a) {$\mathcal{L}\bigl(L(\err\sigma, d^*)\bigr)$};
+    \node [above,yshift=2.1cm] at (e) {$\mathcal{L}(G)$};
+  \end{tikzpicture}
+}

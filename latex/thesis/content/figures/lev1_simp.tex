@@ -1,0 +1,93 @@
+\resizebox{0.45\textwidth}{!}{
+  \begin{tikzpicture}[
+%->, % makes the edges directed
+    >=stealth',
+    node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+    initial text=$ $, % sets the text that appears on the start arrow
+  ]
+    \node[state, initial]                (00) {$q_{0,0}$};
+    \node[state, right of=00]            (10) {$q_{1,0}$};
+    \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+    \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+    \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+    \node[state, right of=01]                     (11) {$q_{1,1}$};
+    \node[state, right of=11]                     (21) {$q_{2,1}$};
+    \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+    \draw [->] (00) edge[below] node{$\texttt{(}$} (10);
+    \draw [->] (10) edge[below] node{$\texttt{)}$} (20);
+    \draw [->] (20) edge[below] node{$\texttt{)}$} (30);
+
+    \draw [->] (01) edge[below] node{$\texttt{(}$}                       (11);
+    \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (21);
+    \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{$\texttt{)}$} (31);
+
+    \draw [->] (00) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+    \draw [->] (10) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+    \draw [->] (20) edge[bend left=10] node[shift={(-0.15cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+
+    \draw [->] (00) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (01);
+    \draw [->] (10) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (11);
+    \draw [->] (20) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (21);
+
+    \draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+    \draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+    \draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+    \draw [->] (00) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (01);
+    \draw [->] (10) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (11);
+    \draw [->] (20) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (21);
+
+    \draw [->] (30) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
+    \draw [->] (30) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
+
+    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
+    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+    \node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein automaton};
+  \end{tikzpicture}
+}
+\resizebox{0.515\textwidth}{!}{
+  \begin{tikzpicture}[
+%->, % makes the edges directed
+    >=stealth',
+    node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+    initial text=$ $, % sets the text that appears on the start arrow
+  ]
+    \draw[orange,->] (-4cm,1.2cm) -- (-3cm,1.2cm);
+
+    \node[state, initial]                (00) {$q_{0,0}$};
+    \node[state, right of=00]            (10) {$q_{1,0}$};
+    \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+    \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+    \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+    \node[state, right of=01]                     (11) {$q_{1,1}$};
+    \node[state, right of=11]                     (21) {$q_{2,1}$};
+    \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+    \draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+    \draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+    \draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
+
+    \draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+    \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+    \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
+
+    \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+    \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+    \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+    \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+    \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+    \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+    \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+    \node[align=center, yshift=2em, xshift=-0.4cm] (title) at (current bounding box.north) {Nominal Levenshtein automaton (ours)};
+  \end{tikzpicture}
+}

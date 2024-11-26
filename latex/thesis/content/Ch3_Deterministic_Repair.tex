@@ -3,6 +3,109 @@
 
 Parsimony is a guiding principle in program repair that comes from the 14th century Fransiscan friar named William of Ockham. In keeping with the Fransiscan minimalist lifestyle, Ockham's principle basically says that when you have multiple hypotheses, the simplest one is the best. It is not precisely clear what ``simple'' ought to mean in the context of program repair, but a first-order approximation is to strive for the smallest number of changes required to transform an invalid program into a valid one.
 
-Levenshtein distance is one such metric for measuring the number of edits between two strings. First proposed by the Soviet scientist Vladimir Levenshtein, it quantifies how many insertions, deletions, and substitutions are required to transform one string into another. As it turns out, there is an automaton, called the Levenshtein automaton~\cite{schulz2002fast}, that recognizes all strings within a certain Levenshtein distance of a given string. We can use this automaton to find the nearest most likely repair consistent with the observed program and the grammar.
+Levenshtein distance is one such metric for measuring the minimum number of changes between two strings. First proposed by the Soviet scientist Vladimir Levenshtein, it quantifies how many insertions, deletions, and substitutions are required to transform one string into another. Conveniently, there is an automaton, called the Levenshtein automaton~\cite{schulz2002fast}, that recognizes all strings within a given edit distance of a given string. We can use this automaton to locate the positions and contents of the most likely repair consistent with the observed program and the grammar.
 
-Given the source code for a computer program $\hat\sigma$ and a grammar $G$, our goal is to find the most likely valid string $\sigma$ consistent with the grammar $G$ and the observed program $\hat\sigma$. We can formalize all possible repairs as a language intersection problem.
+The closure of CFLs under intersection with regular languages was first established in 1961 by Bar-Hillel, implying the existence of a context-free grammar representing the conjunction of any finite automaton and context-free grammar. Such a construction was given by Salomaa in 1973, who provides a direct, but inefficient, construction. In our work, we refine this construction to intersections with Levenshtein automata, which recognize all and only strings within a given edit distance of a reference string. Using this refinement, we demonstrate it is feasible to repair multiline syntax errors in practical programming languages.
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-0.2cm}
+  \input{content/figures/cfl_intersect}
+  \vspace{-0.3cm}
+  \caption{CFL intersection.}
+  \vspace{-0.2cm}
+\end{wrapfigure}
+
+Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance. Consider the language of valid strings within a certain Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language will contain all possible repairs within a small edit distance.
+
+\section{Levenshtein Automata}
+
+Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of a reference string by permitting insertions, deletions, and substitutions. For example, suppose we have a string \texttt{( ) )}, and wish to find nearby repairs. To represent the language of small edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
+
+\begin{figure}[h!]
+  \input{content/figures/lev1_simp}
+  \caption{Automaton recognizing every 1-edit patch. We nominalize the original automaton, ensuring upward arcs denote a mutation, and use a symbolic predicate, which deduplicates parallel arcs in large alphabets.}\label{fig:lev_automaton}\vspace{-5pt}
+\end{figure}
+
+The original automaton is nondeterministic, containing an upward arc for each token. This can be avoided with a simple modification that matches an inequality predicate. The machine enters at $q_{0, 0}$ and at each step, accepts the labeled token. Final states are encircled twice, denoting that any trajectory ending at such a state is considered valid.
+When the edit distance grows larger, we introduce some additional arcs to handle multi-token deletions, but the overall picture remains unchanged. We depict a 3x5 automaton recognizing 3-edit patches of a length-5 string in Figure~\ref{fig:lev_nfa}.
+
+\begin{figure}
+  \begin{center}
+    \input{content/figures/nfa_cfg}
+  \end{center}
+  \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
+\end{figure}
+
+Here, a pattern begins to emerge: the automaton is a grid of states, with each horizontal arc consuming a token in the original string, and vertical and diagonal arcs recognizing mutations. Traversing a vertical arc corresponds to an insertion or substitution, and a diagonal arc corresponds to a deletion. LA can also be defined as a set of inference rules, which generalize this picture to arbitrary length strings and edit distances. The indices are a bit finicky, but the rules are otherwise straightforward.
+
+\begin{prooftree}
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\duparrow$}
+  \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\ddiagarrow$}
+  \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
+  \RightLabel{$\drightarrow$}
+  \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
+  \RightLabel{$\knightarrow$}
+  \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$\vphantom{|}$}
+  \RightLabel{$\textsc{Init}$}
+  \UnaryInfC{$q_{0,0} \in I$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$q_{i, j} \in Q$}
+  \AxiomC{$|n-i+j| \leq d_{\max}$}
+  \RightLabel{$\textsc{Done}$}
+  \BinaryInfC{$q_{i, j}\in F$}
+\end{prooftree}
+
+\section{The Bar-Hillel Construction}
+
+The Bar-Hillel construction is a method for conjoining a context-free grammar with a finite automaton. First proposed by Bar-Hillel in 1961, and later refined by Salomaa in 1973. The construction is based on the idea of a product automaton, generalized to a grammar. It consists of three rules:
+
+\begin{prooftree}
+  \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+  \RightLabel{$\sqrt{\phantom{S}}$}
+  \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+  \DisplayProof
+  \hskip 1em
+  \AxiomC{$(A \rightarrow a) \in P$}
+  \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+  \RightLabel{$\uparrow$}
+  \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+\end{prooftree}
+
+\begin{prooftree}
+  \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
+  \AxiomC{$p,q,r \in Q$}
+  \RightLabel{$\Join$}
+  \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+\end{prooftree}
+
+The $\Join$ rule has a strong dependency on the number of states. Every reduction in the number of states will have a cubic impact on the size of the product automaton. So, the primary target is to first reduce the number of states in the product automaton.
+
+But do we really need all these states? We can reduce the number of states without compromising the integrity of the Bar-Hillel construction by pruning states which are obviously inaccessible. For example, let us consider the following scenario:
+
+\begin{figure}[H]
+  \begin{center}
+ \input{content/figures/pruned_lev3x5}
+ \end{center}
+\noindent$G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
+\noindent\phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
+\noindent\phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+\end{figure}
+
+We can determine the monoedit bounds by conducting a binary search for the rightmost and leftmost states with an empty porous completion problem, and remove all states from the automaton which absorb trajectories that are incompatible. Similar bounds can be established for multi-edit bounds.
+
+Now, let us consider the Parikh constraints.
