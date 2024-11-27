@@ -10,7 +10,7 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.0.0"
+  kotlin("multiplatform") version "2.1.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -101,8 +101,8 @@ kotlin {
 //    }
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common"))
-        implementation(kotlin("reflect"))
+        implementation(kotlin("stdlib-common:2.1.0"))
+        implementation(kotlin("reflect:2.1.0"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
       }
@@ -116,13 +116,13 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:24.1.0")
+        implementation("org.graalvm.js:js:24.1.1")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.8.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -163,7 +163,7 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("org.junit.jupiter:junit-jupiter:5.11.2")
+        implementation("org.junit.jupiter:junit-jupiter:5.11.3")
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:26.0.0")
@@ -186,7 +186,7 @@ kotlin {
         implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
         implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
 
-        val tinkerpopVersion by extra { "3.7.2" }
+        val tinkerpopVersion by extra { "3.7.3" }
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
