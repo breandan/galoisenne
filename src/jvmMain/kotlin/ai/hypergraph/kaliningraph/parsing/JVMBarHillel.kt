@@ -183,6 +183,9 @@ fun computeNTCompat(cfg: CFG, levStr: List<Σᐩ>): Array<Array<Array<Boolean>>>
   return arr
 }
 
+var filterMs = 0L
+var normMs = 0L
+
 // We pass pm and lbc because cache often flushed forcing them to be reloaded
 // and we know they will usually be the same for all calls to this function.
 fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
@@ -220,7 +223,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     .filter { it: Π3<STC, STC, Int> ->
       // Checks whether the distinct subtrajectory between two horizontal states is parseable by a given NT
       fsa.compat(it.π1, it.π2, it.π3, compat)
-        // Checks whether the length bounds for the noterminal (i.e., the range of the number of terminals it can
+        // Checks whether the length bounds for the nonterminal (i.e., the range of the number of terminals it can
         // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
         // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
         && parikhMap.ntLengthBounds[it.π3].overlaps(
@@ -270,6 +273,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   val totalProds = binaryProds.size + transits.size + unitProds.size + initFinal.size
   println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")
 
+  filterMs += clock.elapsedNow().inWholeMilliseconds
+
   clock = TimeSource.Monotonic.markNow()
   return Stream.concat(binaryProds.stream(), (initFinal + transits + unitProds).stream()).parallel()
     // A production, e.g., * -> * [G], can be removed if the synthetic nonterminal [G] does not exist, i.e.,
@@ -279,6 +284,10 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
     .jvmPostProcess(clock)
+    .also {
+      normMs += clock.elapsedNow().inWholeMilliseconds
+      println("Fraction of time spent normalizing: " + (normMs)/(normMs.toDouble() + filterMs))
+    }
 //    .expandNonterminalStubs(origCFG = this@jvmIntersectLevFSAP)
 //    .jdvpNew()
 }

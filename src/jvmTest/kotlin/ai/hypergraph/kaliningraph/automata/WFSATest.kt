@@ -126,7 +126,7 @@ class WFSATest {
     val ptreeRepairs = measureTimedValue {
       pt.sampleStrWithoutReplacement().distinct().take(maxResults).toSet()
     }
-    measureTimedValue { pt.toDFA()!!.decodeDFA(P_BIFI_PY150, dec = pt.termDict, parallelize = true) }.also {
+    measureTimedValue { pt.toDFA()!!.decodeDFA(P_BIFI_PY150, dec = pt.termDict) }.also {
       assertTrue(groundTr in it.value, "Ground truth not found in ${it.value.size} repairs")
       println("Index: ${it.value.indexOf(groundTr)}")
 //      // Print side by side comparison of repairs

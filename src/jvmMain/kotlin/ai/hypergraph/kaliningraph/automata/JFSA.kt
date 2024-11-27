@@ -5,7 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton.*
 import dk.brics.automaton.Transition
-import java.util.concurrent.*
+import java.util.PriorityQueue
 import kotlin.random.Random
 import kotlin.time.*
 
@@ -49,10 +49,13 @@ fun JAutomaton<String, Double>.toDot(processed: MutableSet<Any> = mutableSetOf()
  * previous n-1 transitions, i.e., q' ~ argmax_{q'} P(q' | q_{t-1}, ..., q_{t-n+1})
  */
 
-data class FSATrajectory(val traj: List<Σᐩ?>, val lastState: BState, val score: Double) {
+data class FSATrajectory(val traj: List<Σᐩ?>, val lastState: BState, val score: Double, val id: Int = traj.hashCode()) {
   val isComplete: Boolean = lastState.isAccept
   val tokens by lazy { traj.reversed().filterNotNull() }
+  fun append(tok: Σᐩ?, state: BState, score: Double) =
+    FSATrajectory(listOf(tok) + traj, state, score, id * 31 + tok.hashCode())
   override fun toString() = tokens.joinToString(" ")
+  override fun equals(other: Any?): Boolean = other is FSATrajectory && id == other.id
 }
 
 fun BAutomaton.min(): BAutomaton = minimize(this)
@@ -65,14 +68,15 @@ fun PTree.toDFA(
 ) =
   measureTimedValue {
     BAutomaton.setMinimization(MINIMIZE_BRZOZOWSKI)
+    val period = 5
     var i = 0
     var j = 0
     propagator(
       both = { a, b -> if (a == null) b else if (b == null) a
         // Only periodically minimize the automata during construction
-        else if (i++ % 13 == 0) a.concatenate(b).min() else a.concatenate(b) },
+        else if (i++ % period == 0) a.concatenate(b).min() else a.concatenate(b) },
       either = { a, b -> if (a == null) b else if (b == null) a
-        else if (j++ % 13 == 0) a.union(b).min() else a.union(b) },
+        else if (j++ % period == 0) a.union(b).min() else a.union(b) },
       unit = { a -> if ("ε" in a.root) null else unitRule(a.root) }
     )
   }.also { println("Took ${it.duration} to build FSA") }.value
@@ -98,48 +102,39 @@ fun BAutomaton.decodeDFA(
   callback: (Σᐩ) -> Unit = {},
   topK: Int = 10_000_000, // Total number of top-K results to return
   timeout: Duration = Duration.INFINITE,
-  parallelize: Boolean = false
 ): List<Σᐩ> {
   val startTime = TimeSource.Monotonic.markNow()
   val load = 100_000
-  val fullTrajectories = PriorityBlockingQueue<FSATrajectory>(load, compareBy { it.score / it.traj.size })
-  val partTrajectories = Array(if(parallelize) NUM_CORES else 1) {
-    PriorityBlockingQueue<FSATrajectory>(load, compareBy { it.score / it.traj.size })
+  val fullTrajectories = PriorityQueue<FSATrajectory>(load, compareBy { it.score / it.traj.size })
+  val partTrajectories =
+    PriorityQueue<FSATrajectory>(load, compareBy { it.score / it.traj.size })
       .apply { add(FSATrajectory(List(mc.memory) { null }, initialState, 0.0)) }
-  }
 
-  fun task(id: Int = 0) {
-    var i = 0
     while (
       fullTrajectories.size < topK &&
-      partTrajectories.any { it.size > 0 } &&
+      partTrajectories.size > 0 &&
       startTime.elapsedNow() < timeout
     ) {
-      if (partTrajectories[id].isEmpty()) continue
-// Checks for balanced distribution of work across cores
-//    if (i++ % 9999 == 0) println("Trajectories[$id]: ${partTrajectories.map {it.size}}")
-      val partTraj = partTrajectories[id].remove()
+      val partTraj = partTrajectories.poll()
       val lastToks = partTraj.traj.take(mc.memory - 1).reversed()
-      partTraj.lastState.transitions.forEach { next: Transition ->
-        (next.min..next.max).forEach { tok ->
+      partTraj.lastState.transitions.flatMap { next ->
+        (next.min..next.max).map { tok ->
           val decTok = dec[tok]
-          val nextToks = lastToks + decTok
-          val nextScore = partTraj.score + mc.scoreChunk(nextToks)
-          val traj = FSATrajectory(listOf(decTok) + partTraj.traj, next.dest, nextScore)
-          val bin = if (parallelize) Random(traj.score.hashCode()).nextInt(NUM_CORES) else 0
-          if (!traj.isComplete) partTrajectories[bin].add(traj)
+          val nextScore = partTraj.score + mc.scoreChunk(lastToks + decTok)
+
+          Triple(next, decTok, nextScore)
+        }
+      }
+//        .sortedBy { (_, _, nextScore) -> -nextScore }.take(100)
+        .forEach { (next: Transition, decTok: String?, nextScore: Double) ->
+          val traj = partTraj.append(decTok, next.dest, nextScore)
+          if (!traj.isComplete) { partTrajectories.add(traj) }
           else {
-            fullTrajectories.add(traj)
-            callback(traj.toString())
-            if (traj.lastState.transitions.isNotEmpty())
-              partTrajectories[bin].add(traj)
+            fullTrajectories.add(traj.also { callback(it.toString()) })
+            if (traj.lastState.transitions.isNotEmpty()) partTrajectories.add(traj)
           }
         }
       }
-    }
-  }
-
-  if (parallelize) (0..<NUM_CORES).toList().parallelStream().forEach { task(it) } else task(0)
 
   val deduped = fullTrajectories.map { it.toString() }.distinct().toList()
 //    .map { it.toString() to mc.score(it.tokens) }
@@ -147,8 +142,60 @@ fun BAutomaton.decodeDFA(
 
 //  println("Top 10 trajectories:")
 //  fullTrajectories.take(10).forEach { println(it.score.toString().take(5) + ": $it") }
-  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories")
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${partTrajectories.size} in queue")
 
+  return deduped
+}
+
+fun BAutomaton.decodeDFAWithBeamSearch(
+  mc: MarkovChain<Σᐩ>,
+  dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings
+  callback: (Σᐩ) -> Unit = {},
+  topK: Int = 10_000_000, // Total number of top-K results to return
+  timeout: Duration = Duration.INFINITE,
+  beamWidth: Int = 100_000, // Maximum number of trajectories to keep at each step
+): List<Σᐩ> {
+  val startTime = TimeSource.Monotonic.markNow()
+  val fullTrajectories = PriorityQueue<FSATrajectory>(compareBy { it.score / it.traj.size }) // Max-heap for full trajectories
+  val beam = PriorityQueue<FSATrajectory>(compareBy { it.score / it.traj.size }) // Beam for partial trajectories
+
+  beam.add(FSATrajectory(List(mc.memory) { null }, initialState, 0.0))
+
+  while (
+    fullTrajectories.size < topK &&
+    beam.isNotEmpty() &&
+    startTime.elapsedNow() < timeout
+  ) {
+    val nextBeam = PriorityQueue<FSATrajectory>(compareBy { it.score / it.traj.size })
+
+    while (beam.isNotEmpty() && startTime.elapsedNow() < timeout) {
+      val partTraj = beam.poll()
+      val lastToks = partTraj.traj.take(mc.memory - 1).reversed()
+
+      partTraj.lastState.transitions.flatMap { next ->
+        (next.min..next.max).map { tok ->
+          val decTok = dec[tok]
+          val nextScore = partTraj.score + mc.scoreChunk(lastToks + decTok)
+          partTraj.append(decTok, next.dest, nextScore)
+        }
+      }.forEach { traj ->
+        if (traj.isComplete) {
+          if (traj.lastState.transitions.isNotEmpty()) nextBeam.add(traj)
+          fullTrajectories.add(traj)
+          callback(traj.toString())
+        } else {
+          nextBeam.add(traj)
+        }
+      }
+    }
+
+    beam.clear()
+    beam.addAll(nextBeam.take(beamWidth))
+  }
+
+  val deduped = fullTrajectories.map { it.toString() }.distinct().toList()
+
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${beam.size} in queue")
   return deduped
 }
 

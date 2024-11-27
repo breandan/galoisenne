@@ -150,7 +150,7 @@
   From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. Then, we proceed to construct a synthetic grammar, recognizing all strings in the intersection of the programming language and the edit ball. Finally, this grammar is reduced to a normal form and decoded with the help of a statistical model to produce a list of suggested repairs.
 
   \begin{figure}[h!]
-    \includegraphics[width=\textwidth]{flow.pdf}\vspace{-1pt}
+    \includegraphics[width=\textwidth]{flow}\vspace{-1pt}
     \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
   \end{figure}
 
@@ -1199,7 +1199,7 @@ For example, let us return to the example given in \S~\ref{sec:example}, where w
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.9\textwidth]{exampleDFA.pdf}
+  \includegraphics[width=0.9\textwidth]{exampleDFA}
   \caption{Minimal DFA recognizing the language $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
   \label{fig:exampleDFA}
 \end{figure}
@@ -1659,14 +1659,14 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
   Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 
   \begin{figure}[h!]
-%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
+%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair}}
     \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1}}
     \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2}}
     \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3}}
     \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4}}
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
+%\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
+%\resizebox{.307\textwidth}{!}{\input{repair2_plot}}
     \caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
   \end{figure}
 
