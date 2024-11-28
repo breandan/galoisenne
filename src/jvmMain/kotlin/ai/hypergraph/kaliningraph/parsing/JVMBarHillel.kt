@@ -2,7 +2,7 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.repair.minimizeFix
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import java.util.stream.*
@@ -154,8 +154,6 @@ fun CFG.makeLevPTree(toRepair: Σᐩ, levDist: Int = 3, parikhMap: ParikhMap = t
 val BH_TIMEOUT = 9.minutes
 val MINFREEMEM = 1000000000L
 val MAX_NTS = 4_000_000 // Gives each nonterminal about ~35kb of memory on Xmx=150GB
-val MAX_PRODS = 150_000_000
-
 
 /**
  * Checks whether the NT can parse the string between indices a.π2 and b.π2,
@@ -192,18 +190,16 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   if (parikhMap.size < fsa.width + fsa.height) throw Exception("WARNING: Parikh map size exceeded")
   var clock = TimeSource.Monotonic.markNow()
 
-  val nts = ConcurrentHashMap.newKeySet<List<Σᐩ>>().apply { add(listOf("START")) }
+  // Tracks all nonterminals constructed on the left hand side of a synthetic production
+  val ntsb = Array(fsa.states.size) { Array(symbols.size) { Array(fsa.states.size) { false } } }
 
   val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> listOf("START") to listOf(listOf(q, "START", r)) }
-
-  val transits =
-    fsa.Q.map { (q, a, r) -> listOf(q, a, r).also { nts.add(it) } to listOf(listOf(a)) }
+    (fsa.init * fsa.final).map { (q, r) -> listOf(ntMap["START"]!!) to listOf(listOf(fsa.stateMap[q]!!, ntMap["START"]!!, fsa.stateMap[r]!!)) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
-  val unitProds = unitProdRules2(fsa)
-    .map { (a, b) -> a.also { nts.add(it) } to b }
+  val unitProds = unitProdRules3(fsa)
+    .map { (a, b) -> a.also { ntsb[a[0]][a[1]][a[2]] = true } to b }
     .toSet()
 
   val ccClock = TimeSource.Monotonic.markNow()
@@ -236,13 +232,11 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     }.forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
   println("Precomputed LP constraints in ${ctClock.elapsedNow()}")
 
-  val states = fsa.stateLst
-  val allsym = ntLst
   var counter = 0
   val lpClock = TimeSource.Monotonic.markNow()
   val binaryProds =
     prods.parallelStream().flatMap {
-      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${nts.size} nts")
+      if (BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout: ${ntsb.flatten().sumOf { it.count { it } }} nts")
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
       val trip = arrayOf(A, B, C)
       validTriples.stream()
@@ -253,10 +247,10 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .filter { it.checkCompatibility(trip, ct2) }
         .map { (a, b, c) ->
-          if (MAX_PRODS < counter++) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
-          val (p, q, r) = states[a] to states[b] to states[c]
+          if (MAX_IPRODS < counter++) throw Exception("∩-grammar has too many productions! (>$MAX_IPRODS)")
+//          val (p, q, r) = states[a] to states[b] to states[c]
 //          "[$p~${allsym[A]}~$r]".also { nts.add(listOf(p, allsym[A], r)) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
-          listOf(p, allsym[A], r).also { nts.add(it) } to listOf(listOf(p, allsym[B], q), listOf(q, allsym[C], r))
+          listOf(a, A, c).also { ntsb[a][A][c] = true } to listOf(listOf(a, B, b), listOf(b, C, c))
         }
     }.toList()
 
@@ -264,19 +258,20 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   println("Levenshtein-Parikh constraints eliminated $elimCounter productions in ${lpClock.elapsedNow()}")
 
   // !isSyntheticNT() === is START or a terminal
-  fun List<Σᐩ>.isSyntheticNT() = size > 1
-  fun List<Σᐩ>.toNT() = if (size == 1) first() else "[" + joinToString("~") + "]"
+  fun <T> List<T>.isSyntheticNT() = size > 1
+  fun List<Int>.toNT() = if (size == 1) ntLst[first()]
+    else "[" + fsa.stateLst[this[0]] + "~" + ntLst[this[1]] + "~" + fsa.stateLst[this[2]] + "]"
 
-  val totalProds = binaryProds.size + transits.size + unitProds.size + initFinal.size
+  val totalProds = binaryProds.size + unitProds.size + initFinal.size
   println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")
 
   filterMs += clock.elapsedNow().inWholeMilliseconds
 
   clock = TimeSource.Monotonic.markNow()
-  return Stream.concat(binaryProds.stream(), (initFinal + transits + unitProds).stream()).parallel()
+  return Stream.concat(binaryProds.stream(), (initFinal + unitProds).stream()).parallel()
     // A production, e.g., * -> * [G], can be removed if the synthetic nonterminal [G] does not exist, i.e.,
     // every instance of [G] -> * * was incompatible with the FSA, so the nonterminal [G] is "unproductive".
-    .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || it in nts } }
+    .filter { (_, rhs) -> rhs.all { !it.isSyntheticNT() || ntsb[it[0]][it[1]][it[2]] } }
     .map { (l, r) -> l.toNT() to r.map { it.toNT() } }
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }

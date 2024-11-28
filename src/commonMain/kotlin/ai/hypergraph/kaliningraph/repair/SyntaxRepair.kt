@@ -10,7 +10,9 @@ import ai.hypergraph.kaliningraph.types.Π2A
 import kotlin.math.pow
 import kotlin.time.*
 
-var CFG_THRESH = 20_000
+var CFG_THRESH = 20_000 // Threshold to sample without or with replacement
+val MAX_DFA_IN = 50_000 // Maximum number of prods in minimized intersection grammar
+val MAX_IPRODS = 150_000_000 // Maximum number of prods in intersection grammar
 var MAX_UNIQUE = 20_000 // Maximum number of unique samples to generate
 var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 40 // Maximum number of tokens per repair

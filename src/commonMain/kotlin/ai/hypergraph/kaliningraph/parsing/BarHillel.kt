@@ -109,6 +109,12 @@ fun CFG.unitProdRules2(fsa: FSA): List<Pair<List<String>, List<List<Σᐩ>>>> =
 //    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
     .map { (A, σ, arc) -> listOf(arc.π1, A, arc.π3) to listOf(listOf(σ)) }
 
+fun CFG.unitProdRules3(fsa: FSA): List<Pair<List<Int>, List<List<Int>>>> =
+  (unitProductions * fsa.nominalize().flattenedTriples)
+    .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+//    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
+    .map { (A, σ, arc) -> listOf(fsa.stateMap[arc.π1]!!, ntMap[A]!!, fsa.stateMap[arc.π3]!!) to listOf(listOf(ntMap[σ]!!)) }
+
 fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
 //  println("FM: $it / ${it.RHS.first()} / ${it.RHS.first().isNonterminalStub()}")
   if (it.RHS.size != 1 || !it.RHS.first().isNonterminalStub()) listOf(it)
@@ -175,9 +181,6 @@ infix fun CFG.intersect(fsa: FSA): CFG {
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> "START" to listOf("[$q~START~$r]") }
 
-  val transits =
-    fsa.Q.map { (q, a, r) -> "[$q~$a~$r]" to listOf(a) }
-
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
   val unitProds = unitProdRules(fsa)
@@ -193,7 +196,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
       }
     }.flatten()
 
-  return (initFinal + transits + binaryProds + unitProds).toSet().postProcess()
+  return (initFinal + binaryProds + unitProds).toSet().postProcess()
     .also { println("Postprocessing took ${clock.elapsedNow()}") }
 }
 
