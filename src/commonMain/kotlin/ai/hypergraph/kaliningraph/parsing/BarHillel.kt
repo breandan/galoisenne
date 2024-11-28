@@ -294,6 +294,15 @@ fun FSA.SPLP(a: STC, b: STC): IntRange {
   else rng..manhattanDistance(a.coords(), b.coords())
 }
 
+fun SPLPArith(a: STC, b: STC): IntRange {
+  val (xdiff, ydiff) = (b.coords().first - a.coords().first) to (b.coords().second - a.coords().second)
+  val lp = manhattanDistance(a.coords(), b.coords())
+  return (if (xdiff < 0 || ydiff < 0) Int.MAX_VALUE..Int.MAX_VALUE
+  else if (xdiff == ydiff + 1) 1..lp
+  else if (xdiff > ydiff + 1) (xdiff - ydiff)..lp
+  else ((ydiff - xdiff) + 2).coerceAtMost(ydiff)..lp)//.also { if (it != SPLP(a, b)) println("INEQ!: $a,$b") }
+}
+
 fun IntRange.overlaps(other: IntRange) =
   (other.first in first..last) || (other.last in first..last)
 

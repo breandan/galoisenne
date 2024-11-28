@@ -10,7 +10,6 @@ import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.*
 
 fun CFG.parallelEnumSeqMinimalWOR(
   prompt: List<String>,
@@ -226,9 +225,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
         // Checks whether the length bounds for the nonterminal (i.e., the range of the number of terminals it can
         // parse) is compatible with the range of path lengths across all paths connecting two states in an FSA.
         // This is a coarse approximation, but is cheaper to compute, so it filters out most invalid triples.
-        && parikhMap.ntLengthBounds[it.π3].overlaps(
-          fsa.SPLP(it.π1, it.π2)
-        )
+        && parikhMap.ntLengthBounds[it.π3].overlaps(SPLPArith(it.π1, it.π2))
         // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.
         // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
         && fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
@@ -241,7 +238,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 
   val states = fsa.stateLst
   val allsym = ntLst
-  val counter = AtomicInteger(0)
+  var counter = 0
   val lpClock = TimeSource.Monotonic.markNow()
   val binaryProds =
     prods.parallelStream().flatMap {
@@ -256,7 +253,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 //        .filter { it.obeysLevenshteinParikhBounds(A to B to C, fsa, parikhMap) }
         .filter { it.checkCompatibility(trip, ct2) }
         .map { (a, b, c) ->
-          if (MAX_PRODS < counter.incrementAndGet()) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
+          if (MAX_PRODS < counter++) throw Exception("∩-grammar has too many productions! (>$MAX_PRODS)")
           val (p, q, r) = states[a] to states[b] to states[c]
 //          "[$p~${allsym[A]}~$r]".also { nts.add(listOf(p, allsym[A], r)) } to listOf("[$p~${allsym[B]}~$q]", "[$q~${allsym[C]}~$r]")
           listOf(p, allsym[A], r).also { nts.add(it) } to listOf(listOf(p, allsym[B], q), listOf(q, allsym[C], r))
