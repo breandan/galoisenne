@@ -80,7 +80,7 @@ The choice of representation is heavily usage-dependent. For example, if we are 
 
 Union, concatenation and repetition are all mundane in the theory of formal languages. Intersection and negation are more challenging concepts to borrow from set theory, and do not translate naturally into the Chomsky hierarchy. For example, the intersection of two CFLs is Turing Complete, but the intersection of a CFL and a regular language is a CFL.
 
-Deciding intersection non-emptiness of a finite collection of finite automata is known to be PSPACE-complete~\cite{kozen1977lower}. It is still unknown whether a faster algorithm than the product construction exists for deciding intersection non-emptiness of just two finite automata.
+Deciding intersection non-emptiness (INE) of a finite collection of finite automata is known to be PSPACE-complete~\cite{kozen1977lower}. It is still unknown whether a faster algorithm than the product construction exists for deciding INE of just two finite automata.
 
 The textbook algorithm proceeds as follows: create an automaton containing the cross-product of states, and simulate both automata in lockstep, creating arcs between states that are co-reachable. If a final state is reachable in the product automaton, then the intersection is non-empty. This requires space proportional to the Cartesian product of the two states.
 
