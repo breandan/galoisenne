@@ -26,6 +26,8 @@
 \date{\today}
 
 \titlespacing*{\chapter}{0pt}{-40pt}{40pt}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+
 % DOCUMENT BEGINS
 \begin{document}
 
@@ -79,6 +81,9 @@
 \pagenumbering{arabic}
 % \pagestyle{fancyplain}
 
+
+\setcounter{chapter}{-1}
+\input{content/Ch0_Literature_Review}
 
 % Intro and literature are mandatory mcgill parts:
 \input{content/Ch1_Introduction}
