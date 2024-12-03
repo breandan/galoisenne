@@ -1,0 +1,56 @@
+----------------------- REVIEW 1 ---------------------
+SUBMISSION: 2093
+TITLE: Tidyparse: A Tool for Realtime Syntax Repair
+AUTHORS: Breandan Considine, Jin L.C. Guo and Xujie Si
+
+----------- Overall evaluation -----------
+SCORE: -1 (weak reject (I lean towards rejection, but will not champion))
+----- TEXT:
+This paper describes the implementation of a tool for real-time syntax correction. The tool takes a syntactically invalid source code fragment around the caret position, and produces a small set of "suggested repairs". The problem of syntax repair is modeled as a structured prediction task, whose goal is to generate the most likely valid repair in a small edit distance of the invalid code fragment.
+
+In a nutshell, the programming language syntax is represented by a context-free grammar, reduced to CNF. Then, using [1], the authors construct an intersection grammar, which recognizes all and only valid sequences recognized by both the grammar and edit automaton. This grammar can be simplified to a DFA. The DFA produces a list of repair candidates, which are reranked by a scoring function, e.g., the log likelihood of a language model.
+
+I have several criticisms for this paper:
+
+(1) It remains a mystery how correctness of suggested repairs are proven? Are all suggested repairs correct according to the grammar (obtained by the DFA)?
+
+(2) I cannot make sense of the experiments. Fig. 2 doesn't have a legend and I can only case what each bar color is representing.
+
+(3) I am not sure how to decode the quality of suggested repairs using the evaluation technique. I would have thought there needs to be serious human/programmer study.
+
+
+----------------------- REVIEW 2 ---------------------
+SUBMISSION: 2093
+TITLE: Tidyparse: A Tool for Realtime Syntax Repair
+AUTHORS: Breandan Considine, Jin L.C. Guo and Xujie Si
+
+----------- Overall evaluation -----------
+SCORE: -1 (weak reject (I lean towards rejection, but will not champion))
+----- TEXT:
+This tool demo paper describes Tidyparse, a tool that can repair minor syntax errors relatively quickly. The approach works be leveraging grammars to limit the search for possible fixes, thus outperforming approaches that (for example) rely only on machine learning.
+
+While the claim for "real time" repair is perhaps a bit optimistic, the tool is fast enough in most cases of single-character mistakes where a human pauses for a couple of seconds to think about the next step. For larger edit differences, the approach would only be fast enough in situations where a human developer would have to think a lot (e.g., consulting a manual).
+
+The paper and its presentation are mostly clear, but the figures are so small as to be unreadable, thus leaving large gaps in the content. Details of the approach, as well as the experimental results, therefore have to be considered missing (as making them readable would require larger figures, which would exceed the page limit with the given amount of text).
+
+
+----------------------- REVIEW 3 ---------------------
+SUBMISSION: 2093
+TITLE: Tidyparse: A Tool for Realtime Syntax Repair
+AUTHORS: Breandan Considine, Jin L.C. Guo and Xujie Si
+
+----------- Overall evaluation -----------
+SCORE: 1 (weak accept (I lean towards accept, but will not champion))
+----- TEXT:
+This tool demonstration paper describes Tidyparse, a tool for syntax repair that exploits both grammars and language models, using the latter to suggest and rank repair candidates to a syntactically invalid code. After showing some usage examples and discussing most related work, the authors present a comparison of Tidyparse with BIFI and Seq2Parse on a benchmark suite of 20k Python errors and measuring the precision by means of Precision@k, which counts how often a fix is contained in the top k-results (Eq. 1). They propose two experiments: one measuring Precision@1 of Tidyparse, and the second one on Precision@k for varying values of
+k, including detailed latency measurements for different repair distances. These experiments show that Tidyparse achieves competitive results with smaller edit-repair distances, while it has higher latency for 2- 3-edit repairs. The paper is a bit 'shallow' on the technical details about how Tidyparse works (limited to page 2) but I think it is acceptable for a tool demonstration paper, as it includes all all the essential elements of this type of paper (tool description, some usage examples, comparison with other tools).
+
+Remarks:
+- abstract: I would rephrase or extend the abstract emphasizing the comparative evaluation performed in the paper
+- does the high latency documented in the paper undermine the usability of Tidyparse its usability in real-world scenarios, e.g., when integrated into the IDE?
+- I didn't understand the 'CFL reachability' and 'language games' keywords. I think you could use more suitable keywords for the paper
+- p. 4: SuGuS
+- p. 5: ... a fraction of the data and compute -> computational resources?
+
+
+------------------------------------------------------
