@@ -69,6 +69,13 @@ val CFG.vindex: Array<IntArray> by cache {
   }
 }
 
+val CFG.vindex2: Array<List<List<Int>>> by cache {
+  Array(bindex.indexedNTs.size) { i ->
+    bimap[bindex[i]].filter { it.size > 1 }
+      .map { listOf(bindex[it[0]], bindex[it[1]]) }
+  }
+}
+
 val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.depGraph: LabeledGraph by cache { dependencyGraph() }

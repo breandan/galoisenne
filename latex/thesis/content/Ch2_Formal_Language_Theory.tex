@@ -88,7 +88,7 @@ The textbook algorithm proceeds as follows: create an automaton containing the c
   \caption{TODO: depict product construction for finite automata here.}
   \end{figure}
 
-The goal of this thesis is to speed up the product construction by leveraging (1) parameterized complexity (2) pruning and (3) parallelization to speed up the wallclock runtime of the product construction and generalize it to CFG-REG intersections. We show it is possible to decide intersection non-emptiness in realtime for Levenshtein automata and build a tool to demonstrate it on real-world programming languages and grammars.
+The goal of this thesis is to speed up the product construction by leveraging (1) parameterized complexity (2) pruning and (3) parallelization to speed up the wallclock runtime of the product construction and generalize it to CFG-REG intersections. We show it is possible to decide INE in realtime for Levenshtein automata and build a tool to demonstrate it on real-world programming languages and grammars.
 
 Finally, we show a probabilistic extension of the REG-CFL product construction, which can be used to decode the top-K most probable words in the intersection of two languages. This is useful for applications in natural language processing, where we might want to find the most natural word that satisfies multiple constraints, such as being a valid repair with fewer than $k$ edits whose probability is maximized.
 

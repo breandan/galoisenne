@@ -175,7 +175,7 @@
 
 \mysection{Motivation}
 \null\hspace*{3cm}\begin{minipage}[c]{0.85\columnwidth}
-Suppose we want to force an autoregressive LLM to generate syntactically valid next tokens $P(x_n \mid x_1, \ldots, x_{n-1})$, under certain resource constraints. Here is a concrete example: ``Generate an arithmetic expression with two or more variables in ten or fewer tokens.''. If we sample the partial trajectory,
+Suppose we want to force an autoregressive LLM to generate syntactically valid next tokens $P(x_n \mid x_1, \ldots, x_{n-1})$, under certain resource constraints. Here is a concrete example: ``Generate an arithmetic expression with two or more variables in ten or fewer tokens.'' If we sample the partial trajectory,
 \begin{center}\texttt{( x + ( y * }\underline{\texttt{(}}\end{center}\\
 then we will spend quite a long time rejecting invalid completions, because this trajectory has passed the point of no return. Even though \texttt{(} is a locally valid continuation, we need to avoid this scenario, because we would like a linear sampling delay and to guarantee this, we must avoid backtracking.
 \end{minipage}
@@ -398,7 +398,7 @@ Janusz Brzozowski (1964) introduced a derivative operator $\partial_a: \textsc{R
       Consider a time series, $A$, whose points which are not too close nor far apart, and $n \leq \sum_{i=1}^{|A|} \mathbf{1}[A_i = \bs]$. We want to sample the typical set using an LLM.\vspace{0.5cm}
 \begin{itemize}[leftmargin=2cm]
 \item The words are bitvectors of some length, $T$, i.e., $A = \{\ws, \bs\}^T$
-\item Consecutive $\bs$ separated by $\ws^{[a,b]}$, i.e., $B = \ws^*(\bs\ws^{[a, b]})^{[n,\infty)}\{\bs,\epsilon\}\ws^*$
+\item Consecutive $\bs$ separated by $\ws^{[a,b]}$, i.e., $B = \ws^*(\bs\ws^{[a, b]})^{[n,\infty)}\{\bs,\varepsilon\}\ws^*$
 \end{itemize}\vspace{0.5cm}
 
 The DPP language is regular. Let $C$ be an FSA such that $\mathcal{L}(C) = \mathcal{L}(A) \cap \mathcal{L}(B)$. For example, here is the minimal automaton for $T=13, a=3, b=5, n=2$.
