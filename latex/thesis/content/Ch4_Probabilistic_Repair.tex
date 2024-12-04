@@ -9,12 +9,14 @@ This probabilistic model will generally admit programs that are locally probable
 
 We will consider two kinds of probabilistic models: a constrained Markov model and an unconstrained transformer-based neural network trained on program repair, then evaluate the performance of these models on a syntax repair benchmark consisting of pairwise program transformations. As we will show, the constrained Markov model is able to achieve state-of-the-art precision on blind prediction of the lexical sequence.
 
+Here we give each model 5k+ syntax repairs of varying lengths and Levenshtein distances and measure the precision at varying cutoffs. For example, if the ground truth syntax repair was contained in the top 10 results for half of the repair instances, the model's P@10 would be 50\%.
+
 \begin{figure}[H]
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_s2p}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi}}
-  \caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+  \caption{Total repair precision across the entire test set.}
 \end{figure}
 
 If we give it an equivalent number of samples, the constrained Markov model attains an even wider margin.
@@ -24,12 +26,13 @@ If we give it an equivalent number of samples, the constrained Markov model atta
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_bifi_all}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy200}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/len_dist_tidy20k}}
-  \caption{Tidyparse, Seq2Parse and BIFI repair precision across length and edits.}
+  \caption{Sample efficiency increases sharply at larger precision intervals.}
 \end{figure}
 
-Now, we measure latency.
+Next, we measure latency, which attains state-of-the-art precision at about 10 seconds, and additional time results in higher precision.
 
 \begin{figure}[H]
+  \begin{center}
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair.tex}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_1}}
   \resizebox{.24\textwidth}{!}{\input{../popl2025/bar_hillel_repair_2}}
@@ -37,5 +40,6 @@ Now, we measure latency.
 %    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
 %\resizebox{.3\textwidth}{!}{\input{repair1_plot.tex}}
 %\resizebox{.307\textwidth}{!}{\input{repair2_plot.tex}}
-  \caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1 on the same repairs.}\label{fig:human}
+  \end{center}
+  \caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1.}\label{fig:human}
 \end{figure}

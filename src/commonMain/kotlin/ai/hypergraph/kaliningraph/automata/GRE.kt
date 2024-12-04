@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
 
 // Generalized regular expression: https://planetmath.org/generalizedregularexpression
+// Parsing with derivatives: https://matt.might.net/papers/might2011derivatives.pdf
 sealed class GRE(vararg val args: GRE) {
   companion object { operator fun invoke(s: Σᐩ) = ONE(s) }
 
