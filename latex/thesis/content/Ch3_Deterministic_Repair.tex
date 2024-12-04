@@ -15,11 +15,11 @@ The closure of CFLs under intersection with regular languages was first establis
   \vspace{-0.2cm}
 \end{wrapfigure}
 
-Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance. Consider the language of valid strings within a certain Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language will contain all possible repairs within a small edit distance.
+Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language, $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 
 \section{Levenshtein Automata}
 
-Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of a reference string by permitting insertions, deletions, and substitutions. For example, suppose we have a string \texttt{( ) )}, and wish to find nearby repairs. To represent the language of nearby edits, there is an automaton, called the Levenshtein automaton, recognizing every single string that can be formed by inserting, substituting or deleting a parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
+Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of another string by permitting insertions, deletions, and substitutions. For instance, suppose we have the input, \texttt{( ) )}, and wish to find nearby repairs. To represent the language of nearby edits, we can construct the Levenshtein-1 automaton recognizing every string that can be formed by inserting, substituting or deleting a single parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
 
 \begin{figure}[h!]
   \input{content/figures/lev1_simp}

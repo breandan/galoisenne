@@ -53,7 +53,7 @@ Next, we measure latency, which attains state-of-the-art precision at about 10 s
   \item $|G_\cap| < \textsc{MaxHeap}:$ the intersection grammar fits in memory
 \end{enumerate}
 
-\noindent Repair cases that pass all four are the ideal, meaning the true repair was sampled and ranked highly, but often (1) fails. This indicates the decoder drew the true repair but was not able to discern its importance. Cases that fail (2) mean the decoder did not draw the true repair. In rare cases, the decoder would not have the chance to draw the true repair, as the intersection grammar is too large to represent. This typically happens when the language edit distance is very large, and the decoder is unable to fully explore all the sample space. Below, we give a summary of the repair outcomes.
+\noindent Repair cases that pass all four are the ideal, meaning the true repair was sampled and ranked highly, but (1) often fails. This indicates the decoder drew the true repair but was not discerning enough to realize its importance. Cases that fail (2) mean the decoder had the opportunity to, but did not actually draw the true repair, which occurs when the intersection language is too large to fully explore. In rare cases, the decoder was incapable of sampling the true repair, as the JVM ran out of memory. Below, we give a summary of distribution over outcomes across the test set.
 
 \begin{figure}[H]
 \begin{center}
