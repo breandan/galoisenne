@@ -225,22 +225,21 @@ The Bar-Hillel construction is a method for conjoining a context-free grammar wi
   \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
 
-The $\Join$ rule has a strong dependency on the number of states. Every reduction in the number of states will have a cubic impact on the size of the product automaton. So, the primary target is to first reduce the number of states in the Levenshtein automaton. We can reduce the number of states without compromising the integrity of the Bar-Hillel construction by pruning states which are obviously inaccessible. For example, let us consider the following scenario:
+\subsection{State elimination}
+
+The $\Join$ rule has a strong dependency on the number of states. So, the primary target is to first reduce the number of states in the Levenshtein automaton. We can reduce the number of states without compromising the integrity of the Bar-Hillel construction by pruning states which are obviously inaccessible. For example, let us consider the following scenario, where $G = S \rightarrow \texttt{( } S \texttt{ )} \mid \texttt{[ } S \texttt{ ]} \mid S \texttt{ + } S \mid \texttt{1}$ and $\err{\sigma} = \texttt{[ ( + ) ]}$. If we can establish $\mathcal{L}(\texttt{\_ \_ + ) ]}) = \varnothing \land \mathcal{L}(\texttt{\_ \_ \_ ) ]})\neq \varnothing$ and $\mathcal{L}(\texttt{[ ( + \_ \_}) = \varnothing \land \mathcal{L}(\texttt{[ ( \_ \_ \_})\neq\varnothing$, then:
 
 \begin{figure}[H]
   \begin{center}
  \input{content/figures/pruned_lev3x5}
  \end{center}
-\noindent$G$: \texttt{S $\rightarrow$ ( S ) |}\hspace{1.4cm}$\sigma$: \texttt{[ ( + ) ]}\phantom{...}\emoji{cross-mark}\\
-\noindent\phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{[ S ] |}\phantom{\texttt{S ) }... $\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
-\noindent\phantom{$G$: \texttt{S $\rightarrow$ }}\texttt{S + S | 1}\phantom{\texttt{ |}... $\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
 \end{figure}
 
 We can determine the monoedit bounds by conducting a binary search for the rightmost and leftmost states with an empty porous completion problem, and remove all states from the automaton which absorb trajectories that are incompatible. Similar bounds can be established for multi-edit locations.
 
 Now, let us consider the Parikh constraints.
 
-\section{Parikh Refinements}
+\subsection{Parikh Refinements}
 
 To identify superfluous $q, v, q'$ triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal must and can generate, respectively. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
