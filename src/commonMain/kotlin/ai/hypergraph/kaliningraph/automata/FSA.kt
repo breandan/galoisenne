@@ -170,7 +170,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     else (str.fold(init) { acc, sym ->
       val nextStates = acc.flatMap { map[it to sym] ?: emptySet() }.toSet()
   //      println("$acc --$sym--> $nextStates")
-      nextStates.also { println("Next states: $it") }
+      nextStates//.also { println("Next states: $it") }
     } intersect final).isNotEmpty()
 
   open fun recognizes(str: Σᐩ) = recognizes(str.tokenizeByWhitespace())
