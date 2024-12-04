@@ -43,3 +43,21 @@ Next, we measure latency, which attains state-of-the-art precision at about 10 s
   \end{center}
   \caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1.}\label{fig:human}
 \end{figure}
+
+\noindent For Precision@k, we measure the precision of our model at top-k prediction out of all instances presented, regardless of outcome. Four outcomes are possible in each repair instance, each a strict subset of the successor.
+
+\begin{enumerate}
+  \item $\textsc{Rank}(\sigma') < K$: the top-K sorted results contain the true repair
+  \item $\textsc{Dec}(G_\cap) \rightsquigarrow \sigma'$: the true repair is sampled by the decoder
+  \item $\sigma' \in \mathcal{L}(G_\cap)$: the true repair is recognized by the intersection grammar
+  \item $|G_\cap| < \textsc{MaxHeap}:$ the intersection grammar fits in memory
+\end{enumerate}
+
+\noindent Repair cases that pass all four are the ideal, meaning the true repair was sampled and ranked highly, but often (1) fails. This indicates the decoder drew the true repair but was not able to discern its importance. Cases that fail (2) mean the decoder did not draw the true repair. In rare cases, the decoder would not have the chance to draw the true repair, as the intersection grammar is too large to represent. This typically happens when the language edit distance is very large, and the decoder is unable to fully explore all the sample space. Below, we give a summary of the repair outcomes.
+
+\begin{figure}[H]
+\begin{center}
+\resizebox{.73\textwidth}{!}{\input{../popl2025/sankey}}
+\caption{Summarized repair outcomes from the SO Python dataset. (ER=Error, NR=Not recognized, NG=Not generated). Time: $\sim$10h on M1.}
+\end{center}
+\end{figure}
