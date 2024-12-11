@@ -24,4 +24,91 @@ Program repair is a highly underdetermined problem, meaning that the validity co
 
 This calculus we propose has a number of desirable properties. It is highly compositional, meaning that users can manipulate constraints on programs while retaining the algebraic closure properties, such as union, intersection, and differentiation. It is well-suited for probabilistic reasoning, meaning we can use any probabilistic model of language to guide the repair process. It is also amenable to incremental repair, meaning that we can repair programs in a streaming fashion, while the user is typing.
 
+To explain the virtues of our approach, we need some background. Formal languages are not always closed under set-theoretic operations, e.g., CFL $\cap$ CFL is not CFL in general. Let $\cdot$ denote concatenation, $*$ be Kleene star, and $\complement$ be complementation:\\
+
+\begin{table}[H]
+  \begin{center}
+  \begin{tabular}{c|ccccc}
+    & $\cup$ & $\cap$ & $\cdot$ & $*$ & $\complement$ \\\hline
+    Finite$^1$                                  & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
+    Regular$^1$                                 & \cmark & \cmark     & \cmark  & \cmark  & \cmark \\
+    \rowcolor{slightgray} Context-free$^{1, 2}$ & \cmark & \xmark$^\dagger$ & \cmark  & \cmark  & \xmark \\
+    Conjunctive$^{1,2}$                         & \cmark & \cmark     & \cmark  & \cmark  & ?      \\
+    Context-sensitive$^2$                       & \cmark & \cmark     & \cmark  & +       & \cmark \\
+    Recursively Enumerable$^2$                  & \cmark & \cmark     & \cmark  & \cmark  & \xmark \\
+  \end{tabular}
+\end{center}
+\end{table}
+
+We would like a language family that is (1) tractable, i.e., has polynomial recognition and search complexity and (2) reasonably expressive, i.e., can represent syntactic properties of real-world programming languages.\vspace{0.2cm}
+
+$^\dagger$ However, CFLs are closed under intersection with regular languages.
+
+\section{Examples}
+
+
+Syntax errors are a familiar nuisance for programmers, arising due to a variety of factors, from inexperience, typographic error, to cognitive load. Often the mistake itself is simple to fix, but manual correction can disrupt concentration, a developer's most precious and fickle resource. Syntax repair attempts to automate the correction process by trying to anticipate which program, out of the many possible alternatives, the developer actually intended to write.
+
+Taking inspiration from formal and statistical language modeling alike, we adapt a construction from Bar-Hillel~\cite{bar1961formal} for formal language intersection, to the problem of syntactic program repair. Our work shows this approach, while seemingly intractable, can be scaled up to handle real-world program repair tasks. We will then demonstrate how, by decoding the Bar-Hillel construction with a simple Markov model, it is possible to predict human syntax repairs with the accuracy of large language models, while retaining the correctness and interpretability of classical repair algorithms.
+
+In particular, we consider the problem of ranked syntax repair under a finite edit distance. We experimentally show it is possible to attain a significant advantage over state-of-the-art neural repair techniques by exhaustively retrieving every valid Levenshtein edit in a certain distance and scoring it. Not only does this approach guarantee both soundness and completeness, we find it also improves precision when ranking by naturalness.
+
+Our primary technical contributions are (1) the adaptation of the Levenshtein automaton and Bar-Hillel construction to syntax repair and (2) a method for enumerating or sampling valid sentences in finite context-free languages in order of naturalness. The efficacy of our technique owes to the fact it does not synthesize likely edits, but unique, fully-formed repairs within a given edit distance. This enables us to suggest correct and natural repairs with far less compute and data than would otherwise be required by a large language model to attain the same precision.
+
+\section{Example}\label{sec:example}
+
+Syntax errors can usually be fixed with a small number of edits. If we assume the intended repair is small, this imposes strong locality constraints on the space of possible edits. For example, let us consider the following Python snippet: \texttt{v = df.iloc(5:, 2:)}. Assuming an alphabet of just a hundred lexical tokens, this tiny statement has millions of possible two-token edits, yet only six of those possibilities are accepted by the Python parser:\vspace{-3pt}
+%  , which contains a small syntax error:\vspace{0.2cm}
+%
+%  \texttt{def prepend(i, k, L=[]) n and [prepend(i - 1, k, [b] + L) for b in range(k)]}\vspace{0.2cm}
+%
+%  We can fix it by inserting a colon after the function definition, yielding:\vspace{0.3cm}
+%
+%  \texttt{def prepend(i, k, L=[])\hlgreen{:} n and [prepend(i - 1, k, [b] + L) for b in range(k)]} \vspace{0.2cm}
+%
+%  The observant reader will note that there is only one way to repair this Python snippet by making a single edit. In fact, many programming languages share this curious property: syntax errors with a small repair have few uniquely small repairs. Valid sentences corrupted by a few small errors rarely have many small corrections. We call such sentences \textit{metastable}, since they are relatively stable to small perturbations, as likely to be incurred by a careless typist or novice programmer.
+%  Consider the following Kotlin snippet:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} except(e: Exception) \{ handle(e) \}}\\
+%
+%  \noindent Again, there are thousands of possible single-token edits, only one of which is a valid repair:\\
+%
+%  \texttt{fun main() = try \{ fetch() \} \hlorange{catch}(e: Exception) \{ handle(e) \}}\\
+
+%  Let us consider a slightly more ambiguous error:
+
+%\setlength{\columnsep}{-10pt}
+%\setlength{\columnseprule}{-10pt}
+%\noindent\begin{multicols}{3}
+%  \begin{enumerate}
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})}\\
+%    \item\texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}}\\
+%    \item\texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})}\\
+%    \item\texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})}\\
+%    \item\texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}
+%  \end{enumerate}
+%\end{multicols}
+\begin{figure}[H]
+  \noindent\begin{tabular}{@{}l@{\hspace{10pt}}l@{\hspace{10pt}}l@{}}
+  (1) \texttt{v = df.iloc(5\hlred{:}, 2\hlorange{,})} & (3) \texttt{v = df.iloc(5\hlgreen{[}:, 2:\hlgreen{]})} & (5) \texttt{v = df.iloc\hlorange{[}5:, 2:\hlorange{]}} \\
+  \rule{0pt}{4ex}(2) \texttt{v = df.iloc(5\hlorange{)}, 2\hlorange{(})} & (4) \texttt{v = df.iloc(5\hlred{:}, 2\hlred{:})} & (6) \texttt{v = df.iloc(5\hlgreen{[}:, 2\hlorange{]})}\\
+  \end{tabular}\vspace{-5pt}
+\end{figure}
+
+With some semantic constraints, we could easily narrow the results, but even in their absence, one can probably rule out (2, 3, 6) given that \texttt{5[} and \texttt{2(} are rare bigrams in Python, and knowing \texttt{df.iloc} is often followed by \texttt{[}, determine (5) is the most likely repair. This is the key insight behind our approach: we can usually locate the intended fix by exhaustively searching small repairs. As the set of small repairs is itself often small, if only we had some procedure to distinguish valid from invalid patches, the resulting solutions could be simply ranked by likelihood.
+
+The trouble is that any such procedure must be highly efficient. We cannot afford to sample the universe of possible $d$-token edits, then reject invalid samples -- assuming it takes just 10ms to generate and check each sample, (1-6) could take 24+ hours to find. The hardness of brute-force search grows exponentially with edit distance, sentence length and alphabet size. We will need a more efficient procedure for sampling all and only small valid repairs.
+
+We will now proceed to give an informal intuition behind our method, then formalize it in the following sections. At a high level, our approach is to construct a language that represents all syntactically valid patches within a certain edit distance of the invalid code fragment. To do so, we first lexicalize the invalid source code, which simply abstracts over numbers and named identifiers.
+
+From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. Then, we proceed to construct a synthetic grammar, recognizing all strings in the intersection of the programming language and the edit ball. Finally, this grammar is reduced to a normal form and decoded with the help of a statistical model to produce a list of suggested repairs.
+
+\begin{figure}[h!]
+  \includegraphics[width=\textwidth]{content/figures/flow.pdf}\vspace{-1pt}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
+\end{figure}
+
+We will now proceed to give a more detailed background on the formal language theory, then proceed to give the full Bar-Hillel construction and our specialization to Levenshtein automata intersections.
+
 \clearpage
