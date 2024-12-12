@@ -44,16 +44,16 @@ Next, we measure latency, which attains state-of-the-art precision at about 10 s
   \caption{Latency benchmarks. Note the varying axis ranges. The red line marks Seq2Parse and the orange line marks BIFI's Precision@1.}\label{fig:human}
 \end{figure}
 
-\noindent For Precision@k, we measure the precision of our model at top-k prediction out of all instances presented, regardless of outcome. Four outcomes are possible in each repair instance, each a strict subset of the successor.
+\noindent For Precision@k, we measure the precision of our model at top-k prediction out of all instances presented, regardless of outcome. Four outcomes are possible in each repair instance, each a strict superset of the successor.
 
 \begin{enumerate}
-  \item $\textsc{Rank}(\sigma') < K$: the top-K sorted results contain the true repair
-  \item $\textsc{Dec}(G_\cap) \rightsquigarrow \sigma'$: the true repair is sampled by the decoder
-  \item $\sigma' \in \mathcal{L}(G_\cap)$: the true repair is recognized by the intersection grammar
   \item $|G_\cap| < \textsc{MaxHeap}:$ the intersection grammar fits in memory
+  \item $\sigma' \in \mathcal{L}(G_\cap)$: the true repair is recognized by the intersection grammar
+  \item $\textsc{Dec}(G_\cap) \rightsquigarrow \sigma'$: the true repair is sampled by the decoder
+  \item $\textsc{Rank}(\sigma') < K$: the top-K sorted results contain the true repair
 \end{enumerate}
 
-\noindent Repair cases that pass all four are the ideal, meaning the true repair was sampled and ranked highly, but (1) often fails. This indicates the decoder drew the true repair but was not discerning enough to realize its importance. Cases that fail (2) mean the decoder had the opportunity to, but did not actually draw the true repair, which occurs when the intersection language is too large to fully explore. In rare cases, the decoder was incapable of sampling the true repair, as the JVM ran out of memory. Below, we give a summary of distribution over outcomes across the test set.
+\noindent Repair cases that pass all four are the ideal, meaning the true repair was sampled and ranked highly, but (4) often fails. This indicates the decoder drew the true repair but was not discerning enough to realize its importance. Cases that fail (2) mean the decoder had the opportunity to, but did not actually draw the true repair, which occurs when the intersection language is too large to fully explore. In rare cases, the decoder was incapable of sampling the true repair, as the JVM ran out of memory. Below, we give a summary of distribution over outcomes across the test set.
 
 \begin{figure}[H]
 \begin{center}
