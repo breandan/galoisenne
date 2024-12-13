@@ -85,6 +85,7 @@ interface Group<T>: Nat<T> {
 interface Ring<T>: Group<T> {
   override fun T.plus(t: T): T
   override fun T.times(t: T): T
+  fun dot(l1: List<T>, l2: List<T>): T = l1.zip(l2).map { (l, r) -> l * r }.reduce { acc, t -> acc + t }
 
   open class of<T>(
     override val nil: T, override val one: T = nil,

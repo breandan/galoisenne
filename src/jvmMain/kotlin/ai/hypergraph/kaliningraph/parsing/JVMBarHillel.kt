@@ -10,6 +10,7 @@ import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.asSequence
 
 fun CFG.parallelEnumSeqMinimalWOR(
   prompt: List<String>,
@@ -284,35 +285,24 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 //    .jdvpNew()
 }
 
-// Parallel streaming doesn't seem to be that much faster (yet)?
-
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
-    jvmElimVarUnitProds(
-      cfg = jvmDropVestigialProductions(clock)
-    ).also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
-      .freeze()
+    jvmDropVestigialProductions(clock)
+      .also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
 
-tailrec fun jvmElimVarUnitProds(
-  cfg: CFG,
-  toVisit: Set<Σᐩ> = cfg.nonterminals,
-  vars: Set<Σᐩ> = cfg.nonterminals,
-  toElim: Σᐩ? = toVisit.firstOrNull()
-): CFG {
-  fun Production.isVariableUnitProd() = RHS.size == 1 && RHS[0] in vars
-  if (toElim == null) return cfg.filter { !it.isVariableUnitProd() }
-  val varsThatMapToMe =
-    cfg.asSequence().asStream().parallel()
-      .filter { it.RHS.size == 1 && it.RHS[0] == toElim }
-      .map { it.LHS }.collect(Collectors.toSet())
-  val thingsIMapTo =
-    cfg.asSequence().asStream().parallel()
-      .filter { it.LHS == toElim }.map { it.RHS }
-      .collect(Collectors.toSet())
-  return jvmElimVarUnitProds(
-    (varsThatMapToMe * thingsIMapTo).fold(cfg) { g, p -> g + p },
-    toVisit.drop(1).toSet(),
-    vars
-  )
+// Eliminates unit productions whose RHS is not a terminal. For Bar-Hillel intersections, we know the only
+// examples of this are the (S -> *) rules, so elimination is much simpler than the full CNF normalization.
+fun jvmElimVarUnitProds(cfg: CFG): CFG {
+  val scfg = cfg.asSequence()
+  val vars = scfg.asStream().parallel().map { it.first }.collect(Collectors.toSet())
+  val toElim = scfg.asStream().parallel()
+    .filter { it.RHS.size == 1 && it.LHS == "START" && it.RHS[0] in vars }
+    .map { it.RHS[0] }
+    .collect(Collectors.toSet())
+  val newCFG = scfg.asStream().parallel()
+    .filter { it.RHS.size > 1 || it.RHS[0] !in toElim }
+    .map { if (it.LHS in toElim) "START" to it.RHS else it }
+    .collect(Collectors.toSet())
+  return newCFG
 }
 
 // TODO: Incomplete / untested
@@ -394,9 +384,9 @@ tailrec fun jvmElimVarUnitProds(
 fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
   var counter = 0
-  val nts: Set<Σᐩ> = asSequence().asStream().parallel().map { it.first }.collect(Collectors.toSet())
-  val rw = asSequence().asStream().parallel()
-    .filter { prod ->
+  val scfg = asSequence()
+  val nts: Set<Σᐩ> = scfg.asStream().parallel().map { it.first }.collect(Collectors.toSet())
+  val rw = scfg.asStream().parallel().filter { prod ->
      if (counter++ % 1000 == 0 && BH_TIMEOUT < clock.elapsedNow()) throw Exception("Timeout! ${clock.elapsedNow()}")
       // Only keep productions whose RHS symbols are not synthetic or are in the set of NTs
       prod.RHS.all { !(it.first() == '[' && 1 < it.length) || it in nts }
@@ -405,11 +395,11 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
     .also { println("Removed ${size - it.size} invalid productions in ${clock.elapsedNow() - start}") }
     .freeze()
     .jvmRemoveUselessSymbols(nts)
-//  .jdvpNew()
 
   println("Removed ${size - rw.size} vestigial productions, resulting in ${rw.size} productions.")
 
-  return if (rw.size == size) rw else rw.jvmDropVestigialProductions(clock)
+  return if (rw.size == size) jvmElimVarUnitProds(rw).freeze()
+  else rw.jvmDropVestigialProductions(clock)
 }
 
 /**
@@ -472,7 +462,7 @@ private fun CFG.jvmGenSym(
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
   val TDEPS =
     ConcurrentHashMap<Σᐩ, MutableSet<Σᐩ>>(size).apply {
-      this@jvmGenSym.asSequence().asStream().parallel()
+      this@jvmGenSym.toHashSet().asSequence().asStream().parallel()
         .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentHashMap.newKeySet() }.add(l) } }
     }
 //    this@jvmGenSym.asSequence().asStream().parallel()

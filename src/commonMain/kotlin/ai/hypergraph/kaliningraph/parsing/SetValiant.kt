@@ -201,11 +201,11 @@ fun ptreeUnion(left: List<PTree?>, right: List<PTree?>): List<PTree?> =
   }
 
 val CFG.bitwiseAlgebra: Ring<Blns> by cache {
-  vindex.let {
+  vindex.let { vi ->
     Ring.of(
       nil = BooleanArray(nonterminals.size) { false },
       plus = { x, y -> union(x, y) },
-      times = { x, y -> fastJoin(it, x, y) }
+      times = { x, y -> fastJoin(vi, x, y) },
     )
   }
 }

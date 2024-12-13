@@ -403,13 +403,11 @@ open class UTMatrix<T> constructor(
         algebra = algebra
       )
     else carry.windowed(2, 1).map { window ->
-      window[0].second.zip(window[1].third)
-        .map { (l, r) -> with(algebra) { l * r } }
-        .fold(algebra.nil) { t, acc -> with(algebra) { acc + t } }
-        .let { it to (window[0].second + it) to (listOf(it) + window[1].third) }
+      with(algebra) { dot(window[0].π2, window[1].π3) }
+        .let { it to (window[0].π2 + it) to (listOf(it) + window[1].π3) }
     }.let { next ->
       UTMatrix(
-        diagonals = diagonals + listOf(next.map { it.first }),
+        diagonals = diagonals + listOf(next.map { it.π1 }),
         algebra = algebra
       ).seekFixpoint(next, iteration + 1, maxIterations)
     }
