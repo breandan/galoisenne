@@ -64,8 +64,12 @@ val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
 // which is then flattened to a list of adjacent pairs of nonterminal indices
 val CFG.vindex: Array<IntArray> by cache {
   Array(bindex.indexedNTs.size) { i ->
-    bimap[bindex[i]].filter { it.size > 1 }
-      .flatMap { listOf(bindex[it[0]], bindex[it[1]]) }.toIntArray()
+//    val lhs = bindex[i]
+    bimap[bindex[i]].filter { it.size == 2 }
+//      .map { it to -(PCFG3_BIFI[lhs to it[0] to it[1]] ?: 0).also { s -> println("$lhs -> ${it[0]} ${it[1]} ($s)" )} }
+//      .sortedBy { it.second }.map { it.first }
+      .map { it.map { bindex[it] } }.flatten()
+      .toIntArray()
   }
 }
 

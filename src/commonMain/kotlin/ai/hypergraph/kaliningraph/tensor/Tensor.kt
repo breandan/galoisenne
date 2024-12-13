@@ -339,8 +339,9 @@ operator fun DoubleMatrix.times(value: Double): DoubleMatrix =
   DoubleMatrix(numRows, numCols, data.map { it * value })
 
 // TODO: Rewrite this from scratch using T: List<UTMatrix<T>> recursive type with overlapping trees
-// Diagonals of a strictly-UT matrix for DAG-based dynamic programming
-class UTMatrix<T> constructor(
+// Diagonals of a strictly upper triangular matrix for DAG-based dynamic programming
+// All lower diagonal and diagonal entries are zero
+open class UTMatrix<T> constructor(
   val diagonals: List<List<T>>, // List of strictly-UT diagonals from longest to shortest
   override val algebra: Ring<T>
 ): AbstractMatrix<T, Ring<T>, UTMatrix<T>>(algebra, diagonals.first().size + 1) {
@@ -382,7 +383,9 @@ class UTMatrix<T> constructor(
 
   fun squared() = toFullMatrix().squareUpperTriangular().toUTMatrix()
 
-  fun seekFixpoint(
+  // Performs matrix-matrix multiplication until the fixpoint is reached
+  // This basically fills up each diagonal until the last upper diagonal
+  open fun seekFixpoint(
     // Carries a triple of:
     //    (1) the element itself,
     //    (2) row to an element's left (inclusive)
@@ -410,39 +413,6 @@ class UTMatrix<T> constructor(
         algebra = algebra
       ).seekFixpoint(next, iteration + 1, maxIterations)
     }
-
-  fun seekFixpointFast(maxIterations: Int = diagonals.first().size): UTMatrix<T> {
-    var iteration = 0
-
-    val diagonalsMutable = diagonals.toMutableList()
-    val carry = diagonals.last().map { it to mutableListOf(it) to mutableListOf(it) }.toMutableList()
-
-    while (iteration < maxIterations && diagonalsMutable.last().size != 1) {
-      val next = mutableListOf<Triple<T, MutableList<T>, MutableList<T>>>()
-
-      for (i in 1 until carry.size) {
-        var acc = algebra.nil
-        for (j in carry[i - 1].second.indices) {
-          acc = with(algebra) { acc + (carry[i - 1].second[j] * carry[i].third[j]) }
-        }
-
-        val left = carry[i - 1].second.apply { add(acc) }
-        val right = carry[i].third.apply { add(0, acc) }
-
-        next.add(Triple(acc, left, right))
-      }
-
-      diagonalsMutable += next.map { it.first }
-      carry.clear()
-      carry.addAll(next)
-      iteration++
-    }
-
-    return UTMatrix(
-      diagonals = diagonalsMutable,
-      algebra = algebra
-    )
-  }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =

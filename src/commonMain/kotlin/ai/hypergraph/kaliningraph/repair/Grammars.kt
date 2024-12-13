@@ -5,7 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.noEpsilonOrNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.noNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.parseCFG
 
-val s2pCFGStr =   """
+val s2pCFGStr = """
 START -> Stmts_Or_Newlines
 Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
 Stmt_Or_Newline -> Stmt | Newline

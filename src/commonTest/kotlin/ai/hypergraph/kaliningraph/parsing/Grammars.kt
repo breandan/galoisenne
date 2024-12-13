@@ -1,10 +1,13 @@
 import ai.hypergraph.kaliningraph.parsing.*
 
 object Grammars {
-  val sss = """START -> b | START | START START | START START START"""
-    .parseCFG().noNonterminalStubs
+  val sss by lazy {
+    """START -> b | START | START START | START START START"""
+      .parseCFG().noNonterminalStubs
+  }
 
-  val ifThen = """
+  val ifThen by lazy {
+    """
      START -> X
      X -> I | F | P | Q
      P -> I O I | P O I
@@ -18,33 +21,34 @@ object Grammars {
     BO -> and | or | xor | nand
      N -> !
   """.parseCFG().noNonterminalStubs
+  }
 
-  val toyArith = """
+  val toyArith by lazy { """
     S -> S + S | S * S | S - S | S / S | ( S ) | - S
     S -> 0 | 1 | 2 | 3 | 4
     S -> X | Y | Z
-  """.parseCFG().noNonterminalStubs
+  """.parseCFG().noNonterminalStubs }
 
-  val dyckUnambig = """S -> ( S ) S | ( S ) | ( ) S | ( )""".parseCFG().noEpsilonOrNonterminalStubs
-  val dyck = """S -> ( S ) | ( ) | S S""".parseCFG().noEpsilonOrNonterminalStubs
+  val dyckUnambig by lazy { """S -> ( S ) S | ( S ) | ( ) S | ( )""".parseCFG().noEpsilonOrNonterminalStubs }
+  val dyck by lazy { """S -> ( S ) | ( ) | S S""".parseCFG().noEpsilonOrNonterminalStubs }
 
-  val dyckEmbedded = """
+  val dyckEmbedded by lazy { """
     START -> ( ) | ( START ) | START START
     START -> START + START | START * START
     START -> 1
-  """.parseCFG().noNonterminalStubs
+  """.parseCFG().noNonterminalStubs}
 
-  val deadSimple = """S -> ( ) | ( S )""".parseCFG().noEpsilonOrNonterminalStubs
-  val dsNorm = """
+  val deadSimple by lazy { """S -> ( ) | ( S )""".parseCFG().noEpsilonOrNonterminalStubs }
+  val dsNorm by lazy { """
     START -> START START
     START -> A B
     START -> A C
     A -> (
     B -> )
     C -> START B
-  """.parseCFG().noEpsilonOrNonterminalStubs
+  """.parseCFG().noEpsilonOrNonterminalStubs }
 
-  val ocamlCFG = """
+  val ocamlCFG by lazy { """
     S -> X
     X -> A | V | ( X , X ) | X X | ( X )
     A -> FUN | F | LI | M | L
@@ -69,9 +73,9 @@ object Grammars {
     VO -> = | < | `||` | `&&`
     I -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
     B ->  true | false
-  """.parseCFG().noNonterminalStubs
+  """.parseCFG().noNonterminalStubs }
 
-  val coarsenedPythonCFG = """
+  val coarsenedPythonCFG by lazy { """
     S -> w | S ( S ) | ( ) | S = S | S . S | S S | ( S ) | [ S ] | { S } | : | * S | [ ]
     S -> S , S | S ; S | S : S
     S -> S IOP S | S BOP S
@@ -86,9 +90,9 @@ object Grammars {
     S -> if S | if S else S | return S
     S -> not S | S or S
     S -> lambda w : S | lambda w , w : S | lambda w , w , w : S | lambda w , w , w , w : S
-  """.parseCFG().noNonterminalStubs
+  """.parseCFG().noNonterminalStubs }
 
-  val tinyC: CFG = """
+  val tinyC: CFG by lazy { """
     START -> program
     program -> statement
     statement -> if paren_expr statement
@@ -103,10 +107,10 @@ object Grammars {
     test -> sum | sum < sum
     sum -> term | sum + term | sum - term
     term -> id | int | paren_expr
-  """.parseCFG().freeze()
+  """.parseCFG().freeze() }
 
 //  https://aclanthology.org/2020.conll-1.41.pdf#page=12
-  val hardestCFL: CFG = """
+  val hardestCFL: CFG by lazy { """
     S' -> R ${'$'} Q S L ;
     L -> L' , U
     L' -> , V L'
@@ -131,10 +135,10 @@ object Grammars {
     T -> [ Q S Q ]
     T -> ( Q )
     T -> [ Q ]
-  """.trimIndent().parseCFG().noNonterminalStubs
+  """.trimIndent().parseCFG().noNonterminalStubs }
 
   val shortS2PParikhMap by lazy { ParikhMap(seq2parsePythonCFG, 20) }
-  val seq2parsePythonCFGStr = """
+  val seq2parsePythonCFGStr by lazy { """
     START -> Stmts_Or_Newlines
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
     Stmt_Or_Newline -> Stmt | Newline
@@ -325,12 +329,12 @@ object Grammars {
 
     Yield_Expr -> Yield_Keyword | Yield_Keyword Yield_Arg
     Yield_Arg -> From_Keyword Test | Testlist_Endcomma 
-  """
+  """ }
 
-  val seq2parsePythonCFG: CFG = seq2parsePythonCFGStr.parseCFG().noNonterminalStubs
-  val seq2parsePythonVanillaCFG: CFG = seq2parsePythonCFGStr.parseCFG().noEpsilonOrNonterminalStubs
+  val seq2parsePythonCFG: CFG by lazy { seq2parsePythonCFGStr.parseCFG().noNonterminalStubs }
+  val seq2parsePythonVanillaCFG: CFG by lazy { seq2parsePythonCFGStr.parseCFG().noEpsilonOrNonterminalStubs }
 
-  val checkedArithCFG = """
+  val checkedArithCFG by lazy { """
     START -> S
 S -> S1 = S1
 S -> S2 = S2
@@ -381,13 +385,13 @@ P6 -> P6 / P1
 P7 -> P7 / P1
 P8 -> P8 / P1
 P9 -> P9 / P1
-  """.parseCFG().noNonterminalStubs.freeze()
+  """.parseCFG().noNonterminalStubs.freeze() }
 
-  val arith = """
+  val arith by lazy { """
     O -> + | * | - | /
     S -> S O S | ( S )
     S -> 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-  """.parseCFG()
+  """.parseCFG() }
 
   private fun Tree.middle(): Σᐩ? = children.drop(1).firstOrNull()?.terminal
   fun Tree.evalArith(): Int = when {

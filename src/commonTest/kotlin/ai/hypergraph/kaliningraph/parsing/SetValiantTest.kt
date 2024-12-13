@@ -16,6 +16,18 @@ import kotlin.time.*
 */
 class SetValiantTest {
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testStressRecognizer"
+*/
+  @Test
+  fun testStressRecognizer() {
+    val g = Grammars.seq2parsePythonVanillaCFG
+    g.sliceSample(20).take(10000).forEach {
+      assertTrue(it.matches(g))
+      assertFalse(it.tokenizeByWhitespace().dropLastWhile { it == "DEDENT" || it == "NEWLINE" }.matches(g))
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testSimpleGrammar"
 */
   @Test
