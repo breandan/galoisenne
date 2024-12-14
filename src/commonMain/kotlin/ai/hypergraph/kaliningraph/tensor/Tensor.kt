@@ -50,10 +50,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
   fun getElements(filterBy: (Int, Int) -> Boolean) =
     allPairs(numRows, numCols).mapNotNull { (r, c) -> if (filterBy(r, c)) this[r, c] else null }
 
-  infix fun List<T>.dot(es: List<T>): T =
-    require(size == es.size) { "Length mismatch: $size . ${es.size}" }
-//      .run { with(algebra) { mapIndexed { i, a -> a * es[i] }.reduce { a, b -> a + b } } }
-    .run { with(algebra) { zip(es).map { (a, b) -> a * b }.reduce { a, b -> a + b } } }
+  infix fun List<T>.dot(es: List<T>): T = algebra.dot(this, es)
 
   // Constructs a new instance with the same concrete matrix type
   fun new(rows: Int = numRows, cols: Int = numCols, data: List<T>, alg: A = algebra): M
@@ -403,7 +400,7 @@ open class UTMatrix<T> constructor(
         algebra = algebra
       )
     else carry.windowed(2, 1).map { window ->
-      with(algebra) { dot(window[0].π2, window[1].π3) }
+      algebra.dot(window[0].π2, window[1].π3)
         .let { it to (window[0].π2 + it) to (listOf(it) + window[1].π3) }
     }.let { next ->
       UTMatrix(

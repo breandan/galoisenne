@@ -462,7 +462,7 @@ private fun CFG.jvmGenSym(
   val nextGenerating: MutableSet<Σᐩ> = from.toMutableSet()
   val TDEPS =
     ConcurrentHashMap<Σᐩ, MutableSet<Σᐩ>>(size).apply {
-      this@jvmGenSym.toHashSet().asSequence().asStream().parallel()
+      this@jvmGenSym.asSequence().asStream().parallel()
         .forEach { (l, r) -> r.forEach { getOrPut(it) { ConcurrentHashMap.newKeySet() }.add(l) } }
     }
 //    this@jvmGenSym.asSequence().asStream().parallel()
