@@ -226,11 +226,13 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
         // Checks the Parikh map for compatibility between the CFG nonterminals and state pairs in the FSA.
         // This is a finer grained filter, but more expensive to compute, so we use the coarse filter first
         && fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
-    }.toList().also {
-      val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
-      val fraction = it.size.toDouble() / candidates
-      println("Fraction of valid LBH triples: ${it.size}/$candidates ≈ $fraction")
-    }.forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
+    }
+//    .toList().also {
+//      val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
+//      val fraction = it.size.toDouble() / candidates
+//      println("Fraction of valid LBH triples: ${it.size}/$candidates ≈ $fraction")
+//    }
+    .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
   println("Precomputed LP constraints in ${ctClock.elapsedNow()}")
 
   var counter = 0

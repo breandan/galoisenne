@@ -58,7 +58,8 @@ data class FSATrajectory(val traj: List<Σᐩ?>, val lastState: BState,
   fun append(tok: Σᐩ?, state: BState, score: Double) =
     FSATrajectory(listOf(tok) + traj, state, score, id * 31 + tok.hashCode())
   override fun toString() = tokens.joinToString(" ")
-  override fun equals(other: Any?): Boolean = other is FSATrajectory && lenNormedScore == other.lenNormedScore
+//  override fun equals(other: Any?): Boolean = other is FSATrajectory && lenNormedScore == other.lenNormedScore
+  override fun equals(other: Any?): Boolean = other is FSATrajectory && id == other.id
   override fun compareTo(other: FSATrajectory): Int = lenNormedScore.compareTo(other.lenNormedScore)
 }
 

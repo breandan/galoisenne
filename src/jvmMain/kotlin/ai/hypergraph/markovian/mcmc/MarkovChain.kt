@@ -19,7 +19,6 @@ import kotlin.random.Random
 import kotlin.streams.asStream
 import kotlin.time.measureTimedValue
 
-
 /**
  * Marginalizes/sums out all dimensions not contained in [dims],
  * producing a rank-(dims.size) tensor consisting of [dims].
