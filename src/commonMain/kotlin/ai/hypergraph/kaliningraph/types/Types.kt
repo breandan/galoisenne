@@ -87,7 +87,9 @@ interface Ring<T>: Group<T> {
   override fun T.times(t: T): T
   fun dot(l1: List<T>, l2: List<T>): T =
     // n.b.: addition may not necessarily commute?
-    l1.zip(l2).map { (l, r) -> l * r }.reduce { acc, t -> t + acc }
+    l1.zip(l2).map { (l, r) -> l * r }
+      .fold(nil) { acc, t -> acc + t }
+//      .fold(nil) { t, acc -> acc + t }
 
   open class of<T>(
     override val nil: T, override val one: T = nil,

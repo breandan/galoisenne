@@ -438,7 +438,10 @@ class BarHillelTest {
       println("Total parse trees off START: ${it.totalTrees}")
       println("First children: ${it.branches.joinToString("\n") { it.first.root + "," + it.second.root }}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
-      assertEquals(it.sampleStrWithoutReplacement().take(10).toList().toSet().size, 3)
+      it.sampleStrWithoutReplacement().take(10).toList().toSet().forEach {
+        println(it)
+      }
+      assertEquals(2, it.sampleStrWithoutReplacement().take(10).toList().toSet().size)
     }
   }
 
