@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import Grammars
 import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
@@ -15,6 +16,20 @@ import kotlin.time.*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest"
 */
 class SetValiantTest {
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testCompleteness"
+*/
+  @Test
+  fun testCompleteness() {
+    val g = Grammars.toyArith
+    val sols = g.enumSeq("_ + _".tokenizeByWhitespace()).toSet()
+
+    val all = g.terminals.filter { it.all { it.isLetterOrDigit() && it.code < 128 } }
+      .toSet().let { it * it }.map { (a, b) -> "$a + $b" }.toSet()
+
+    assertEquals(all, sols)
+  }
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testStressRecognizer"
 */

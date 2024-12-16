@@ -292,6 +292,7 @@ class BigLFSR(primitivePoly: BigInteger, val start: BigInteger = BigInteger.ONE)
 
   fun sequence() = sequence {
     var last = start
+    yield(last)
     var next: BigInteger
     while (true) {
       val shiftedOutA1: Boolean = last.bitAt(0)
