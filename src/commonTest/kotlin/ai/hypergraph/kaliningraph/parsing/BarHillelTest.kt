@@ -439,9 +439,9 @@ class BarHillelTest {
       println("First children: ${it.branches.joinToString("\n") { it.first.root + "," + it.second.root }}")
       println("Inverse CFL density (Σ^$n/|T($n)|): ~1/${it.inverseDensity}")
       it.sampleStrWithoutReplacement().take(10).toList().toSet().forEach {
-        println(it)
+        println(it + " " + it.tokenizeByWhitespace().size)
       }
-      assertEquals(2, it.sampleStrWithoutReplacement().take(10).toList().toSet().size)
+      assertEquals(3, it.sampleStrWithoutReplacement().take(10).toList().toSet().size)
     }
   }
 
