@@ -277,20 +277,23 @@ fun <T> List<T>.sampleWithGeomDecay(): T {
   return this[index]
 }
 
-fun bigLFSRSequence(int: Int) = bigLFSRSequence(BigInteger(int))
-fun bigLFSRSequence(maxVal: BigInteger) =
-  BigLFSR(makeBigIntFromTaps(Polynomials.xlinz[maxVal.bitLength()]!!)).sequence().filter { it < maxVal }
-fun bigLFSRSequence(taps: List<Int>) = BigLFSR(makeBigIntFromTaps(taps)).sequence()
+fun bigLFSRSequence(int: Int): Sequence<BigInteger> = bigLFSRSequence(BigInteger(int))
+fun bigLFSRSequence(maxVal: BigInteger): Sequence<BigInteger> =
+  BigLFSR(makeBigIntFromTaps(Polynomials.xlinz[maxVal.bitLength()]!!), makeRandBigInt(maxVal.bitLength()))
+    .sequence().filter { it < maxVal }
 
-fun makeBigIntFromTaps(taps: List<Int>) =
+fun makeBigIntFromTaps(taps: List<Int>): BigInteger =
   taps.map {
     BigInteger.parseString(Array(it + 1) { if (it == 0) '1' else '0' }.joinToString(""), 2)
   }.reduce { a, c -> a.or(c) }.or(BigInteger.ONE)
 
+fun makeRandBigInt(len: Int): BigInteger =
+    BigInteger.parseString(Array(len) { if(Random.nextBoolean()) '1' else '0' }.joinToString(""), 2) + 1
+
 class BigLFSR(primitivePoly: BigInteger, val start: BigInteger = BigInteger.ONE) {
   private val taps: BigInteger = primitivePoly.shr(1)
 
-  fun sequence() = sequence {
+  fun sequence(): Sequence<BigInteger> = sequence {
     var last = start
     yield(last)
     var next: BigInteger
