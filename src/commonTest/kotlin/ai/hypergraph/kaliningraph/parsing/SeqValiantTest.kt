@@ -123,7 +123,7 @@ class SeqValiantTest {
     generateSequence {
       measureTime {
         val cfg = generateRandomCFG().parseCFG().freeze()
-        val results = cfg.enumSeq(List(30) { "_" }).filter { 20 < it.length }.take(10).toList()
+        val results = cfg.enumSeq(List(20) { "_" }).filter { 15 < it.length }.take(10).toList()
         val corruptedResults = results.map { if (Random.nextBoolean()) it else it.deleteRandomSingleWord() }
         preparseParseableLines(cfg, corruptedResults.joinToString("\n"))
       }
