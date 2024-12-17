@@ -288,7 +288,7 @@ fun makeBigIntFromTaps(taps: List<Int>): BigInteger =
   }.reduce { a, c -> a.or(c) }.or(BigInteger.ONE)
 
 fun makeRandBigInt(len: Int): BigInteger =
-    BigInteger.parseString(Array(len) { if(Random.nextBoolean()) '1' else '0' }.joinToString(""), 2) + 1
+    BigInteger.parseString(Array(len) { if (it == 0) '1' else if (Random.nextBoolean()) '1' else '0' }.joinToString(""), 2) + 1
 
 class BigLFSR(primitivePoly: BigInteger, val start: BigInteger = BigInteger.ONE) {
   private val taps: BigInteger = primitivePoly.shr(1)

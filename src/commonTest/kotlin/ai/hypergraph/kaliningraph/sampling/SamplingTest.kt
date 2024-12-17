@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.sampling
 import ai.hypergraph.kaliningraph.choose
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.pow
+import kotlin.random.Random
 import kotlin.test.*
 
 /*
@@ -34,6 +35,14 @@ class SamplingTest {
       assertEquals(2.0.pow(i).toInt(), list.size + 1)
       assertEquals(2.0.pow(i).toInt(), distinct.size + 1)
     }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testBigLFSR"
+*/
+  @Test
+  fun testBigLFSR() =
+    listOf(11, 101, 1_001, 10_001, 100_001).map { it + 2 * it * Random.nextDouble().toInt() }
+      .forEach { i -> assertEquals(i, bigLFSRSequence(i).toList().distinct().size) }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.sampling.SamplingTest.testMDSampler"
