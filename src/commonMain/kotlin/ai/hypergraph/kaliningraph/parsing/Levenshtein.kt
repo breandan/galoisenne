@@ -2,7 +2,6 @@ package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import org.kosat.swap
@@ -59,6 +58,24 @@ fun Σᐩ.unpackCoordinates() =
   substringAfter('_').split('/')
     .let { (i, j) -> i.toInt() to j.toInt() }
 
+fun makeExactLevCFL(
+  str: List<Σᐩ>,
+  radius: Int, // Levenshtein distance
+  digits: Int = (str.size * radius).toString().length
+): FSA =
+  (upArcs(str, radius, digits) +
+    diagArcs(str, radius, digits) +
+    str.mapIndexed { i, it -> rightArcs(i, radius, it, digits) }.flatten() +
+    str.mapIndexed { i, it -> knightArcs(i, radius, it, digits, str) }.flatten())
+  .let { Q ->
+    val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
+    val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue == radius) } }
+
+    FSA(Q, initialStates, finalStates)
+      .also { it.height = radius; it.width = str.size; it.levString = str }
+      .also { println("Levenshtein-${str.size}x$radius automaton had ${Q.size} arcs!") }
+  }
+
 /** Uses nominal arc predicates. See [NOM] for denominalization. */
 fun makeLevFSA(
   str: List<Σᐩ>,
@@ -100,12 +117,7 @@ fun makeLevFSA(
     }
     .let { Q ->
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
-
-      val finalStates = mutableSetOf<String>()
-      Q.states.forEach {
-        val (i, j) = it.unpackCoordinates()
-        if ((str.size - i + j).absoluteValue <= maxRad) finalStates.add(it)
-      }
+      val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
 
       FSA(Q, initialStates, finalStates)
         .also { it.height = maxRad; it.width = str.size; it.levString = str }

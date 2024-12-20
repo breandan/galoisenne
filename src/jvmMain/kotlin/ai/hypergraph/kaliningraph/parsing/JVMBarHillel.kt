@@ -281,7 +281,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     .jvmPostProcess(clock)
     .also {
       normMs += clock.elapsedNow().inWholeMilliseconds
-      println("Fraction of time spent normalizing: " + (normMs)/(normMs.toDouble() + filterMs))
+      println("Fraction of time spent normalizing: " + normMs / (normMs.toDouble() + filterMs))
     }
 //    .expandNonterminalStubs(origCFG = this@jvmIntersectLevFSAP)
 //    .jdvpNew()

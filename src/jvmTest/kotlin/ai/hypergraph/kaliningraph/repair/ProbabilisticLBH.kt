@@ -44,6 +44,30 @@ class ProbabilisticLBH {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testExactDist"
+*/
+  @Test
+  fun testExactDist() {
+    val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
+
+    val anything = """START -> START START | ${gram.terminals.joinToString(" | ") { it }}"""
+      .trimIndent().parseCFG().noEpsilonOrNonterminalStubs
+
+    (1..2).forEach { r ->
+      gram.sliceSample(6).take(10).forEach { orig ->
+        val exactLevFSA = makeExactLevCFL(str = orig.tokenizeByWhitespace(), radius=r)
+        anything.jvmIntersectLevFSA(exactLevFSA)
+          .toPTree().sampleStrWithoutReplacement().take(10)
+          .also { println("\nOrig:  $orig") }.toList()
+          .also { assertTrue(it.isNotEmpty()) }.forEach {
+            val dist = levenshtein(orig, it)
+            println("Lev-$dist: ${levenshteinAlign(orig, it).paintANSIColors()}")
+          }.also { println() }
+      }
+    }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammar"
 */
   @Test
