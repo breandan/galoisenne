@@ -243,44 +243,49 @@ Now, let us consider the Parikh constraints.
 
 To identify superfluous $q, v, q'$ triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal must and can generate, respectively. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
-\begin{definition}[Parikh mapping of a nonterminal]\label{def:parikh}
-Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. We define the Parikh map, $\pi: V \rightarrow \Pi$, as a function returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
+\begin{definition}{Parikh mapping of a nonterminal}{def:parikh}
+Let $p: \Sigma^*\rightarrow\mathbb{N}^{|\Sigma|}$ be the Parikh operator~\cite{parikh1966context}, which counts the frequency of terminals in a string. We define the Parikh map as a function, $\pi: V \rightarrow \Pi$, returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall v: V$, $v \Rightarrow^* \sigma \vdash p(\sigma) \in \pi(v)$.
 \end{definition}
 
 The Parikh mapping computes the greatest lower and least upper bound of the Parikh image over all strings in the language of a nonterminal. The infimum of a nonterminal's Parikh interval tells us how many of each terminal a nonterminal \textit{must} generate, and the supremum tells us how many it \textit{can} generate. Likewise, we define a similar relation over NFA state pairs:
 
-\begin{definition}[Parikh mapping of NFA states]
+\begin{definition}{Parikh mapping of NFA states}{}
   We define $\pi: Q\times Q \rightarrow \Pi$ as returning the smallest interval such that $\forall \sigma: \Sigma^*, \forall q, q': Q$, $q \overset{\sigma}{\Longrightarrow} q' \vdash p(\sigma) \in \pi(q, q')$.
 \end{definition}
 
 Next, we will define a measure on Parikh intervals representing the minimum total edits required to transform a string in one Parikh interval to a string in another, across all such pairings.
 
-\begin{definition}[Parikh divergence]
+\begin{definition}{Parikh divergence}{}
   Given two Parikh intervals $\pi, \pi': \Pi$, we define the divergence between them as $\pi \parallel \pi' = \sum_{n=1}^{|\Sigma|} \min_{(i, i') \in \pi[n]\times \pi'[n]} |i - i'|$.
 \end{definition}
 
 We know that if the Parikh divergence between two intervals is nonzero, those intervals must be incompatible as no two strings, one from each Parikh interval, can be transformed into the other with fewer than $\pi \parallel \pi'$ edits.
 
-\begin{definition}[Parikh compatibility]
+\begin{definition}{Parikh compatibility}{}
   Let $q, q'$ be NFA states and $v$ be a CFG nonterminal. We call $\langle q, v, q'\rangle: Q\times V\times Q$ \textit{compatible} iff their divergence is zero, i.e., $v \lhd qq' \iff \big(\pi(v) \parallel \pi(q, q')\big) = 0$.
 \end{definition}
 
-Finally, we define the modified Bar-Hillel construction for nominal Levenshtein automata as:\vspace{-2pt}
 
+For efficiency, Parikh compatibility can be precomputed for each $Q \times V \times Q$ triple and reused for each synthetic production. Finally, we are ready to define the modified Bar-Hillel construction:
+
+\begin{definition}{Modified Bar-Hillel construction}{}
+  Let $w, x, z$ be nonterminals in a CNF CFG and $p, q, r$ be states in an FSA. We modify the $\Join$ rule from the BH construction as follows:
 \begin{prooftree}
-  \hskip -0.9em
-  \def\defaultHypSeparation{\hskip 0.14cm}
-  \AxiomC{$(A \rightarrow a) \in P$}
-  \AxiomC{$(q\overset{{\color{orange}[\cdot]}}{\rightarrow}r) \in \delta$}
-  \AxiomC{$\color{orange}a[\cdot]$}
-  \RightLabel{$\hat\uparrow$}
-  \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
-  \DisplayProof
+%  \hskip -0.9em
+%  \def\defaultHypSeparation{\hskip 0.14cm}
+%  \AxiomC{$(A \rightarrow a) \in P$}
+%  \AxiomC{$(q\overset{{\color{orange}[\cdot]}}{\rightarrow}r) \in \delta$}
+%  \AxiomC{$\color{orange}a[\cdot]$}
+%  \RightLabel{$\hat\uparrow$}
+%  \TrinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+%  \DisplayProof
   \AxiomC{$\vphantom{\overset{[\cdot]}{\rightarrow}}\color{orange} w \lhd pr \phantom{\land} x \lhd pq \phantom{\land} z \lhd qr$}
   \AxiomC{$(w \rightarrow xz) \in P\vphantom{\overset{a}{\rightarrow}}$}
   \AxiomC{$p,q,r \in Q$}
   \RightLabel{$\hat\Join$}
   \TrinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-\end{prooftree}\vspace{2pt}
+\end{prooftree}
+\end{definition}
 
-%\noindent Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = \ell_\cap$, satisfying Def.~\ref{def:bcflr}. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization.
+
+Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = \ell_\cap$. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization. This modified rule is not specific to Levenshtein automata and can be used to accelerate any FSA-CFG intersection.
