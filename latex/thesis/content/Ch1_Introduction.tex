@@ -5,7 +5,7 @@
 
 %\mcgillguidelines Clearly state the rationale and objectives of the research.
 
-Computer programs are instructions for performing a chore that humans would rather avoid doing ourselves. In order to persuade the computer to do them for us, we must communicate our intention in a way that is plain and unambiguous. Programming languages are protocols for this dialogue, designed to enable programmers to conveniently express their intent and facilitate the exchange of information between humans and computers.
+Computer programs are instructions for performing a chore that humans would rather avoid doing ourselves. In order to persuade the computer to do them for us, we must communicate our intention in a way that is plain and unambiguous. Programming languages are protocols for this dialogue, designed to enable programmers to conveniently express their intent and facilitate information exchange between humans and computers.
 
 %By observing programmers, one can learn a great deal about how this dialogue unfolds.
 Programs are seldom written from left-to-right in one fell swoop. During the course of writing a program, the programmer often revisits and revises code as they write, sharing additional information and receiving feedback. Often, during this process, the programmer makes a mistake, causing the program to behave in an unexpected manner. These mistakes can manifest as a simple typographic or syntactic error, or a more subtle logical error.
@@ -106,11 +106,11 @@ From the lexical string, we build an automaton that represents all possible stri
 
 \begin{figure}[h!]
   \includegraphics[width=\textwidth]{content/figures/flow.pdf}\vspace{-1pt}
-  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create a automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce an explicit list of repairs.}\label{fig:arch_simp}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce an explicit list of repairs.}\label{fig:arch_simp}
 \end{figure}
 
-The advantage of using this approach for syntax repair is that it performs the intersection not in the set domain, but in the domain of grammars and automata, thereby avoiding a great deal of useless work that would occur were we to compute the intersection via sampling and rejection.
+The advantage of using this approach for syntax repair is that it performs the intersection not in the set domain, but in the domain of grammars and automata, thereby avoiding a great deal of useless work that would occur were we to compute the intersection by sampling and rejecting edits. Furthermore, it is a complete decision procedure, meaning that every possible repair within a given edit distance will eventually be found by the decoder.
 
-To explain each component, we will first require a more detailed background on the formal language theory, then we can describe the full Bar-Hillel construction and our specialization to Levenshtein automata intersections.
+To explain each component, we will require a more detailed background on the formal language theory, then we can describe the full Bar-Hillel construction and our specialization to Levenshtein automata intersections. But first, we will cover some related literature on program repair.
 
 \clearpage

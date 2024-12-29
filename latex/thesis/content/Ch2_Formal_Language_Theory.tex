@@ -1,7 +1,7 @@
 \chapter{\rm\bfseries Formal Language Theory}
 \label{ch:chapter01}
 
-In computer science, it is common to conflate two distinct notions for a set. The first is a collection sitting on some storage device, e.g., a dataset. The second is a lazy construction: not an explicit collection of objects, but a representation that allows us to efficiently determine membership on demand. This lets us represent infinite sets without requiring an infinite amount of storage. Inclusion then, instead of being simply a lookup query, becomes a decision procedure. This is the basis of formal language theory.
+In computer science, it is common to conflate two distinct notions for a set. The first is a collection sitting on some storage device, e.g., a dataset. The second is a lazy construction: not an explicit collection of objects, but a representation that allows us to efficiently determine membership on demand. This representation lets us describe infinite sets without requiring an infinite amount of storage. Inclusion then, instead of being simply a lookup query, becomes a decision procedure. This is the basis of formal language theory.
 
 The representation we are chiefly interested in is called a \textit{grammar}, a common metanotation for specifying the syntactic constraints on programs, shared by nearly every programming language. Programming language grammars are overapproximations to the true language, but provide a reasonably detailed specification for rejecting invalid programs and parsing valid ones.
 
@@ -45,7 +45,7 @@ We can use this technique, first described by Flajolet \& Sedgewick~\cite{flajol
 
 Naturally, like algebra, there is also a kind of calculus to formal languages. Janusz Brzozowski~\cite{brzozowski1964derivatives} introduced the derivative operator for regular languages, which can be used to determine membership, and extract subwords from the language. This operator has been extended to CFLs by Might et al.~\cite{might2011parsing}, and is the basis for a family of elegant parsing algorithms.
 
-The Brzozowski derivative has an extensional and intensional form. Extensionally, we have $\partial_a L = \{b \in \Sigma^* \mid ab \in L\}$. Intensionally, we have an induction over generalized regular expressions (GREs), which are a superset of regular expressions that also support intersection and negation.\vspace{-1cm}
+The Brzozowski derivative has an extensional and intensional form. Extensionally, we have $\partial_a L = \{b \in \Sigma^* \mid ab \in L\}$. Intensionally, we have an induction over generalized regular expressions (GREs), which are a superset of regular expressions that supports intersection and negation.\vspace{-1cm}
 
 \begin{multicols}{2}
   \begin{eqnarray*}
@@ -88,8 +88,8 @@ The textbook algorithm proceeds as follows: create an automaton containing the c
   \caption{TODO: depict product construction for finite automata here.}
   \end{figure}
 
-The goal of this thesis is to speed up the product construction by leveraging (1) parameterized complexity (2) pruning and (3) parallelization to speed up the wallclock runtime of the product construction and generalize it to CFG-REG intersections. We show it is possible to decide INE in realtime for Levenshtein automata and build a tool to demonstrate it on real-world programming languages and grammars.
+The goal of this thesis is to speed up the product construction by leveraging (1) parameterized complexity (2) pruning and (3) parallelization to speed up the wallclock runtime of the product construction and generalize it to CFG-REG intersections. We show it is possible to decide INE in realtime for intersections with Levenshtein automata and build a tool to demonstrate it on real-world programming languages and grammars.
 
-Finally, we show a probabilistic extension of the REG-CFL product construction, which can be used to decode the top-K most probable words in the intersection of two languages. This is useful for applications in natural language processing, where we might want to find the most natural word that satisfies multiple constraints, such as being a valid repair with fewer than $k$ edits whose probability is maximized.
+Finally, we show a probabilistic extension of the REG-CFL product construction, which can be used to decode the top-K most probable words in the intersection of two formal languages. This is useful for languages with both formal and natural characteristics, where we might want to find the most natural word that satisfies multiple constraints, such as being a valid repair with fewer than $k$ edits whose probability is maximized.
 
 \clearpage
