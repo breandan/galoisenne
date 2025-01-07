@@ -3,7 +3,7 @@
 
 As we have seen, the problem of program repair is highly underdetermined. To resolve this ambiguity, we will use a probabilistic model to induce a distribution over the language of valid programs. This distribution will guide the repair process by assigning a likelihood to each possible repair. Then, taking the maximum over all possible repairs, we can find the most likely repair consistent with the constraints and the observed program.
 
-Specifically, we will define an ordering over strings by their likelihood under the probabilistic model. We then define a repair as the most likely string consistent with the observed program and the grammar. We factorize the probability of a string as the product of the probability of each token in the string, conditioned on its predecessors. This allows us to compute the joint probability in a left-to-right fashion.
+Specifically, we will define an ordering over strings by their likelihood under the probabilistic model. We then define a suggested repair as the most likely string consistent with the observed program and the grammar. We factorize the probability of a string as the product of the probability of each token in the string, conditioned on its prefix. This allows us to compute the joint probability in a left-to-right fashion.
 
 This probabilistic model will generally admit programs that are locally probable, but globally inconsistent with the grammar. To enforce syntactic validity, we will use the probabilistic language model to ``steer'' a generative sampler through the automaton representing the repair language. This has two advantages: first, it allows us to sample from the repair language incrementally, and second, it ensures that subsequences with high probability are retrieved first, and all trajectories are syntactically valid.
 
@@ -61,3 +61,15 @@ Next, we measure latency, which attains state-of-the-art precision at about 10 s
 \caption{Summarized repair outcomes from the SO Python dataset. (ER=Error, NR=Not recognized, NG=Not generated). Time: $\sim$10h on M1.}
 \end{center}
 \end{figure}
+
+Here, we plot the ground truth next token's log mean rank in the constrained and unconstrained decoding settings, across normalized snippet positions. That is, we take a trained LLM from the GPT-2 model family, and measure the rank of true token at each position when sorted by the model's predicted logit score, then average the ranks over normalized position across the StackOverflow dataset.
+
+\begin{figure}[h]
+  \begin{center}
+    \footnotesize{True next-token rank over normalized snippet positions (Constrained vs. Unconstrained)}
+    \resizebox{.83\textwidth}{!}{\input{../figures/rank_cst_unc.pgf}}\vspace{-0.2cm}
+  \end{center}
+  \caption{Mean rank of constrained versus unconstrained next-token prediction across normalized snippet positions (lower is better).}
+\end{figure}
+
+What this tells us is that the model is most likely to make an error at the beginning and end of the snippet, and the rate of decoding errors is significantly higher in the unconstrained case. Constrained decoding removes a large fraction of ``junk'' tokens that the model is likely to generate, but are syntactically invalid or inconsistent with the predicted edit distance, thereby improving the true token's rank and rate of matching the true repair.

@@ -11,7 +11,7 @@ The closure of CFLs under intersection with regular languages was first establis
   \vspace{-0.2cm}
   \input{content/figures/cfl_intersect}
   \vspace{-0.3cm}
-  \caption{CFL intersection.}
+  \caption{CFL intersection with the local edit region of a given broken code snippet.}
   \vspace{-0.2cm}
 \end{wrapfigure}
 
@@ -19,7 +19,7 @@ Given the source code for a computer program $\err\sigma$ and a grammar $G$, our
 
 \section{Levenshtein Automata}
 
-Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of another string by permitting insertions, deletions, and substitutions. For instance, suppose we have the input, \texttt{( ) )}, and wish to find nearby repairs. To represent the language of nearby edits, we can construct the Levenshtein-1 automaton recognizing every string that can be formed by inserting, substituting or deleting a single parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
+Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of another string by permitting insertions, deletions, and substitutions. For instance, suppose we have the input, \texttt{( ) )}, and wish to find nearby or parsimonious edits. To represent the language of parsimonious edits, we can construct the Levenshtein-1 automaton accepting every string that can be formed by inserting, substituting or deleting a single parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
 
 \begin{figure}[h!]
   \input{content/figures/lev1_simp}
