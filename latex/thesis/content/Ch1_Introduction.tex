@@ -109,7 +109,7 @@ From the lexical string, we build an automaton that represents all possible stri
   \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce an explicit list of repairs.}\label{fig:arch_simp}
 \end{figure}
 
-The advantage of using this approach for syntax repair is that it performs the intersection not in the set domain, but in the domain of grammars and automata, thereby avoiding a great deal of useless work that would occur were we to compute the intersection by sampling and rejecting edits. Furthermore, it is a complete decision procedure, meaning that every possible repair within a given edit distance will eventually be found by the decoder.
+The advantage of using this approach for syntax repair is that it performs the intersection not in the set domain, but in the domain of grammars and automata, thereby avoiding a great deal of useless work that would be necessary were we to compute the intersection by sampling and rejecting edits. Furthermore, it is a complete decision procedure, meaning that every possible repair within a given edit distance will eventually be found by the decoder.
 
 To explain each component, we will require a more detailed background on the formal language theory, then we can describe the full Bar-Hillel construction and our specialization to Levenshtein automata intersections. But first, we will cover some related literature on program repair.
 

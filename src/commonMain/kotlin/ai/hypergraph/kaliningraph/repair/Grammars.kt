@@ -198,5 +198,5 @@ Yield_Expr -> Yield_Keyword | Yield_Keyword Yield_Arg
 Yield_Arg -> From_Keyword Test | Testlist_Endcomma 
 """
 
-val vanillaS2PCFG by lazy { s2pCFGStr.parseCFG().noEpsilonOrNonterminalStubs.freeze() }
-val vanillaS2PCFGWE by lazy { s2pCFGStr.parseCFG().noNonterminalStubs.freeze() }
+val vanillaS2PCFG by lazy { s2pCFGStr.parseCFG().noEpsilonOrNonterminalStubs.freeze() } // Without Epsilon
+val vanillaS2PCFGWE by lazy { s2pCFGStr.parseCFG().noNonterminalStubs.freeze() } // With Epsilon

@@ -14,6 +14,9 @@ typealias BState = dk.brics.automaton.State
 typealias BAutomaton = dk.brics.automaton.Automaton
 typealias JAutomaton<S, K> = net.jhoogland.jautomata.Automaton<S, K>
 
+fun BState.options(dec: Map<Char, Σᐩ>) =
+  transitions.flatMap { next -> (next.min..next.max).map { tok -> dec[tok] to next.dest } }.toMap()
+
 fun JAutomaton<String, Double>.toDot(processed: MutableSet<Any> = mutableSetOf()) =
   LabeledGraph {
     val stateQueue = mutableListOf<Any>()
