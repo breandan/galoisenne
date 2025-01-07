@@ -119,10 +119,10 @@ kotlin {
         implementation("org.graalvm.js:js:24.1.1")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.2")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.3")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -142,7 +142,7 @@ kotlin {
         implementation(files("$projectDir/jautomata-0.0.1-SNAPSHOT.jar"))
         implementation("dk.brics:automaton:1.12-4")
 
-        implementation("org.sosy-lab:common:0.3000-529-g6152d88")
+        implementation("org.sosy-lab:common:0.3000-609-g90a352c")
         implementation("org.sosy-lab:java-smt:5.0.1")
 
         // val z3Version = "4.12.2-glibc_2.27"
@@ -166,7 +166,7 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.11.4")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:26.0.0")
+        implementation("org.jetbrains:annotations:26.0.1")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
