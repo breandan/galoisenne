@@ -441,7 +441,7 @@ class BarHillelTest {
       it.sampleStrWithoutReplacement().take(10).toList().toSet().forEach {
         println(it + " " + it.tokenizeByWhitespace().size)
       }
-      assertEquals(3, it.sampleStrWithoutReplacement().take(10).toList().toSet().size)
+      assertEquals(3, it.sampleStrWithoutReplacement().take(100).toList().toSet().size)
     }
   }
 
