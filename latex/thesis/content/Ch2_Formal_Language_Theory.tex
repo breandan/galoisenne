@@ -78,15 +78,33 @@ Like all representations, grammars are themselves a trade-off between expressive
 
 The choice of representation is heavily usage-dependent. For example, if we are interested in recognition, we might favor a disjoint representation, allowing properties to be checked independently without merging, whereas if we are interested in generation or deciding non-emptiness, we might prefer a unified representation which can be efficiently sampled without rejection.
 
-Union, concatenation and repetition are all mundane in the theory of formal languages. Intersection and negation are more challenging concepts to borrow from set theory, and do not translate naturally into the Chomsky hierarchy. For example, the intersection of two CFLs is Turing Complete, but the intersection of a CFL and a regular language is a CFL.
+Union, concatenation and repetition are all mundane in the theory of formal languages. Intersection and negation are more challenging concepts to borrow from finite set theory, and do not translate naturally into the Chomsky hierarchy. For example, the intersection of two CFLs is Turing Complete, but the intersection of a CFL and a regular language is a CFL.
 
 Deciding intersection non-emptiness (INE) of a finite collection of finite automata is known to be PSPACE-complete~\cite{kozen1977lower}. It is still unknown whether a faster algorithm than the product construction exists for deciding INE of just two finite automata.
 
-The textbook algorithm proceeds as follows: create an automaton containing the cross-product of states, and simulate both automata in lockstep, creating arcs between states that are co-reachable. If a final state is reachable in the product automaton, then the intersection is non-empty. This requires space proportional to the Cartesian product of the two states.
+The textbook algorithm proceeds as follows: construct an automaton $\mathcal{A}_\cap$ containing the Cartesian product of states from automata $\mathcal{A}_1, \mathcal{A}_2$, then simulate both in lockstep for every terminal in the shared alphabet, creating arcs between co-reachable states. More succinctly, \footnote{Recall finite automata $\mathcal{A}$ are quintuples $\mathcal{A}= \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q\times\Sigma\times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively.}
 
 \begin{figure}[h]
-  \caption{TODO: depict product construction for finite automata here.}
-  \end{figure}
+  \begin{prooftree}
+%    \hskip -1em
+    \AxiomC{$q_i \in Q_1$}
+    \AxiomC{$q_j \in Q_2$}
+    \BinaryInfC{$q_{ij} \in Q_\cap$}
+    \DisplayProof
+    \hskip 1.5em
+    \AxiomC{$q_h \overset{a}{\rightarrow} q_i \in \delta_1$}
+    \AxiomC{$q_j \overset{a}{\rightarrow} q_k \in \delta_2$}
+    \AxiomC{$a\in \Sigma_1 \cap \Sigma_2$}
+    \TrinaryInfC{$q_{hj} \overset{a}{\rightarrow} q_{ik} \in \delta_\cap$}
+    \DisplayProof
+%    \hskip 0.5em
+%    \AxiomC{$q_i \in F_1$}
+%    \AxiomC{$q_j \in F_2$}
+%    \BinaryInfC{$q_{ij} \in F_\cap$}
+  \end{prooftree}
+\end{figure}
+
+The initial states, $I_\cap$, will consist of all states $q_{hi}$ such that $q_h$ and $q_i$ are both initial; likewise, the final states $F_\cap$ will be all states $q_{jk}\in Q_\cap$ such that $q_j\in Q_1$ and $q_k\in Q_2$ are both final. If there is any path from $I_\cap$ to $F_\cap$, then the intersection is non-empty. This requires space proportional to $|Q_1|\cdot|Q_2|$.
 
 The goal of this thesis is to speed up the product construction by leveraging (1) parameterized complexity (2) pruning and (3) parallelization to speed up the wallclock runtime of the product construction and generalize it to CFG-REG intersections. We show it is possible to decide INE in realtime for intersections with Levenshtein automata and build a tool to demonstrate it on real-world programming languages and grammars.
 
