@@ -17,7 +17,7 @@ The closure of CFLs under intersection with regular languages was first establis
 
 Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language, $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 
-\section{Levenshtein Automata}
+\section{Levenshtein automata}
 
 Levenshtein automata are finite automata that recognize all and only strings within a given edit distance of another string by permitting insertions, deletions, and substitutions. For instance, suppose we have the input, \texttt{( ) )}, and wish to find nearby or parsimonious edits. To represent the language of parsimonious edits, we can construct the Levenshtein-1 automaton accepting every string that can be formed by inserting, substituting or deleting a single parenthesis. We depict this automaton in Figure~\ref{fig:lev_automaton}.
 
@@ -202,7 +202,7 @@ Each rule recognizes a specific type of edit. $\duparrow$ handles insertions, $\
   \end{tabular}
 \end{table}
 
-\section{The Bar-Hillel Construction}
+\section{The Bar-Hillel construction}
 
 The Bar-Hillel construction is a method for conjoining a context-free grammar with a finite automaton. First proposed by Bar-Hillel in 1961, and later realized by Salomaa in 1973, this construction is based on the idea of a product automaton, generalized to a grammar. It consists of three rules:
 
@@ -239,7 +239,7 @@ We can determine the monoedit bounds by conducting a binary search for the right
 
 Now, let us consider the Parikh constraints.
 
-\subsection{Parikh Refinements}
+\subsection{Parikh refinements}
 
 To identify superfluous $q, v, q'$ triples, we define an interval domain that soundly overapproximates the Parikh image, encoding the minimum and maximum number of terminals each nonterminal must and can generate, respectively. Since some intervals may be right-unbounded, we write $\mathbb{N}^*=\mathbb{N} \cup \{\infty\}$ to denote the upper bound, and $\Pi = \{[a, b] \in \mathbb{N} \times \mathbb{N}^* \mid a \leq b\}^{|\Sigma|}$ to denote the Parikh image of all terminals.
 
