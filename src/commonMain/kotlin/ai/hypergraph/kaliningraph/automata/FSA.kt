@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.lazy
 import kotlin.random.Random
 
 typealias Arc = Π3A<Σᐩ>
@@ -18,10 +19,42 @@ fun STC.coords() = π2 to π3
 open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
   open val alphabet by lazy { Q.map { it.π2 }.toSet() }
   val isNominalizable by lazy { alphabet.any { it.startsWith("[!=]") } }
-  val nominalForm: NOM by lazy { nominalize() }
-  val states by lazy { Q.states }
-  val stateLst by lazy { states.toList() }
-  val stateMap by lazy { states.withIndex().associate { it.value to it.index } }
+  val nominalForm: NOM by lazy { nominalize() } // Converts FSA to nominal form
+
+  val transit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
+    Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
+  }
+  val revtransit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
+    Q.groupBy { it.π3 }.mapValues { (_, v) -> v.map { it.π2 to it.π1 } }
+  }
+
+  val states: Set<Σᐩ> by lazy { Q.states }
+  // States, in a topological order
+  val stateLst: List<Σᐩ> by lazy {
+    val visited = mutableSetOf<Σᐩ>()
+    val topSort = mutableListOf<Σᐩ>()
+    val stack = init.toMutableList()
+
+    fun dfs(state: Σᐩ) {
+      if (state !in visited) {
+        visited.add(state)
+        topSort.add(state)
+        transit[state]?.forEach { (_, nextState) -> dfs(nextState) }
+        stack.add(state)
+      }
+    }
+
+    while (stack.isNotEmpty()) dfs(stack.removeLast())
+    topSort
+  }
+
+  fun allIndexedTxs(cfg: CFG): List<Π3A<Int>> =
+    (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+      .map { (A, _, arc) -> Triple(stateMap[arc.π1]!!, cfg.ntMap[A]!!, stateMap[arc.π3]!!) }
+
+  val numStates: Int by lazy { states.size }
+
+  val stateMap: Map<Σᐩ, Int> by lazy { stateLst.withIndex().associate { it.value to it.index } }
   // Index of every state pair of states the FSA to the shortest path distance between them
   val APSP: Map<Pair<Int, Int>, Int> by lazy {
     graph.APSP.map { (k, v) ->
@@ -30,12 +63,13 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
     }.toMap()
   }
 
-  val transit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
-    Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
+  val allPairs: Map<Pair<Int, Int>, Set<Int>> by lazy {
+    graph.allPairs.entries.associate { (a, b) ->
+      Pair(Pair(stateMap[a.first.label]!!, stateMap[a.second.label]!!), b.map { stateMap[it.label]!! }.toSet())
+    }
   }
-  val revtransit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
-    Q.groupBy { it.π3 }.mapValues { (_, v) -> v.map { it.π2 to it.π1 } }
-  }
+
+  val finalIdxs by lazy { final.map { stateMap[it]!! } }
 
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
   var height = 0
@@ -53,9 +87,9 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
   fun Π3A<STC>.isValidStateTriple(): Boolean =
     first.coords().dominates(second.coords()) &&
-        second.coords().dominates(third.coords())
+    second.coords().dominates(third.coords())
 
-  val edgeLabels by lazy {
+  val edgeLabels: Map<Pair<Σᐩ, Σᐩ>, Σᐩ> by lazy {
     Q.groupBy { (a, b, c) -> a to c }
       .mapValues { (_, v) -> v.map { it.π2 }.toSet().joinToString(",") }
   }
@@ -94,6 +128,28 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 //        lbl!!
 //      }
 //  }
+
+  companion object {
+    fun levIntersect(str: Σᐩ, cfg: CFG, radius: Int): Boolean {
+      val levFSA = makeLevFSA(str, radius)
+
+      val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(cfg.nonterminals.size) { false } } }
+
+      levFSA.allIndexedTxs(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+
+      for (p in 0 until levFSA.numStates)
+        for (q in p+1 until levFSA.numStates)
+          for ((w, x, z) in cfg.tripIntProd) // w -> xz
+            if (!dp[p][q][w])
+              for (r in levFSA.allPairs[p to q] ?: emptySet())
+                if (dp[p][r][x] && dp[r][q][z]) {
+                  dp[p][q][w] = true
+                  break
+                }
+
+      return levFSA.finalIdxs.any { f -> dp[0][f][cfg.bindex[START_SYMBOL]] }
+    }
+  }
 
   fun walk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {
     val startVtx = from

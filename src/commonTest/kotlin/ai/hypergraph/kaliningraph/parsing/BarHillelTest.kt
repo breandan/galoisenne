@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
-import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
@@ -320,7 +319,7 @@ class BarHillelTest {
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
     val levBall = makeLevFSA(toRepair, levDist)
-    println(levBall.states.size)
+    println(levBall.numStates)
 //  println(levBall.toDot())
 //  throw Exception("")
     val intGram = gram.intersectLevFSA(levBall)
@@ -461,5 +460,17 @@ class BarHillelTest {
       .also { println("Found ${it.size} total triples.") }
 
     assertEquals(overwrittenRepairs, allTriples)
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.matrixLBHTest"
+  */
+  @Test
+  fun matrixLBHTest() {
+    val str = "NAME ( STRING . NAME ( ( NAME & NAME ) ) or STRING NEWLINE"
+    println(str.tokenizeByWhitespace().size)
+
+    measureTimedValue { FSA.levIntersect(str, vanillaS2PCFG, 3) }
+      .also { println("${it.value} / ${it.duration}") }
   }
 }

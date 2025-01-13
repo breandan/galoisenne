@@ -207,6 +207,18 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
   dist
 }
 
+// AllPairs[p, q] is the set of all vertices, r, such that p ->* r ->* q
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.allPairs: Map<Pair<V, V>, Set<V>> by cache {
+  // All vertices reachable from v
+  val forward: Map<V, Set<V>> = vertices.associateWith { v -> transitiveClosure(setOf(v)) }
+
+  // AAll vertices that can reach v (reachable from v in reversed graph)
+  val backward: Map<V, Set<V>> = reversed().let { it.vertices.associateWith { v -> it.transitiveClosure(setOf(v)) } }
+
+  // For every pair (p, q), collect all vertices r that lie on some path p ->* r ->* q
+  vertices.flatMap { p -> vertices.map { q -> Pair(Pair(p, q), (forward[p]!! intersect backward[q]!!)) } }.filter { it.second.isNotEmpty() }.toMap()
+}
+
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by cache { vertices.associateWith { it.neighbors.size } }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edges: Set<E>           by cache { edgMap.values.flatten().toSet() }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgList: List<Π2<V, E>> by cache { vertices.flatMap { s -> s.outgoing.map { s to it } } }
@@ -311,6 +323,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outgoing: Set<E>  by cache { edgeMap(this as V).toSet() }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.neighbors: Set<V> by cache { outgoing.map { it.target }.toSet() }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V>.outdegree: Int get() = neighbors.size
+
 
 abstract class AGF<G, E, V> : IGF<G, E, V>
   where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {

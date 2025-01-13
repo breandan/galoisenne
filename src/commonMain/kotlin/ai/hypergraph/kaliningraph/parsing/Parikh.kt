@@ -70,7 +70,7 @@ class ParikhMap(val cfg: CFG, val size: Int, reconstruct: Boolean = true) {
     fun deserializePM(str: String): Map<Int, ParikhBoundsMap> =
       str.lines().map { it.split(" ") }.groupBy { it.first().toInt() }
         .mapValues { (_, v) ->
-          v.map { it[1] to it.drop(3).chunked(3).map { it[0] to (it[1].toInt()..it[2].toInt()) }.toMap() }.toMap()
+          v.associate { it[1] to it.drop(3).chunked(3).associate { it[0] to (it[1].toInt()..it[2].toInt()) } }
         }
 
     fun deserialize(cfg: CFG, str: String): ParikhMap {

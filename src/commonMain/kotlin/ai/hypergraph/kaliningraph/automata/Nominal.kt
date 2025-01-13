@@ -24,7 +24,7 @@ class NOM(override val Q: TSA, override val init: Set<Σᐩ>, override val final
       .mapValues { (_, v) -> v.map { it.second to it.third } }
   }
 
-  val flattenedTriples by lazy {
+  val flattenedTriples: Set<Triple<Σᐩ, StrPred, Σᐩ>> by lazy {
     Q.map { (a, b, c) -> a to b.predicate() to c }.toSet()
   }
 

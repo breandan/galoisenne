@@ -10,6 +10,8 @@ import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.LongAdder
 import kotlin.collections.asSequence
 
 fun CFG.parallelEnumSeqMinimalWOR(
@@ -192,7 +194,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   var clock = TimeSource.Monotonic.markNow()
 
   // Tracks all nonterminals constructed on the left hand side of a synthetic production
-  val ntsb = Array(fsa.states.size) { Array(symbols.size) { Array(fsa.states.size) { false } } }
+  val ntsb = Array(fsa.numStates) { Array(symbols.size) { Array(fsa.numStates) { false } } }
 
   val initFinal =
     (fsa.init * fsa.final).map { (q, r) -> listOf(ntMap["START"]!!) to listOf(listOf(fsa.stateMap[q]!!, ntMap["START"]!!, fsa.stateMap[r]!!)) }
@@ -214,7 +216,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 
   val ctClock = TimeSource.Monotonic.markNow()
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
-  val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+  val ct2 = Array(fsa.numStates) { Array(nonterminals.size) { Array(fsa.numStates) { false } } }
   ct.parallelStream()
     .filter { it: Π3<STC, STC, Int> ->
       // Checks whether the distinct subtrajectory between two horizontal states is parseable by a given NT
@@ -228,7 +230,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
         && fsa.obeys(it.π1, it.π2, it.π3, parikhMap)
     }
 //    .toList().also {
-//      val candidates = (fsa.states.size * nonterminals.size * fsa.states.size)
+//      val candidates = (fsa.numStates * nonterminals.size * fsa.numStates)
 //      val fraction = it.size.toDouble() / candidates
 //      println("Fraction of valid LBH triples: ${it.size}/$candidates ≈ $fraction")
 //    }
@@ -278,6 +280,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
     .map { (l, r) -> l.toNT() to r.map { it.toNT() } }
     .collect(Collectors.toSet())
     .also { println("Eliminated ${totalProds - it.size} extra productions before normalization") }
+//    .also { it.jdvpNew() }
     .jvmPostProcess(clock)
     .also {
       normMs += clock.elapsedNow().inWholeMilliseconds
@@ -290,98 +293,6 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 fun CFG.jvmPostProcess(clock: TimeSource.Monotonic.ValueTimeMark) =
     jvmDropVestigialProductions(clock)
       .also { println("Normalization eliminated ${size - it.size} productions in ${clock.elapsedNow()}") }
-
-// Eliminates unit productions whose RHS is not a terminal. For Bar-Hillel intersections, we know the only
-// examples of this are the (S -> *) rules, so elimination is much simpler than the full CNF normalization.
-fun jvmElimVarUnitProds(cfg: CFG): CFG {
-  val scfg = cfg.asSequence()
-  val vars = scfg.asStream().parallel().map { it.first }.collect(Collectors.toSet())
-  val toElim = scfg.asStream().parallel()
-    .filter { it.RHS.size == 1 && it.LHS == "START" && it.RHS[0] in vars }
-    .map { it.RHS[0] }
-    .collect(Collectors.toSet())
-  val newCFG = scfg.asStream().parallel()
-    .filter { it.RHS.size > 1 || it.RHS[0] !in toElim }
-    .map { if (it.LHS in toElim) "START" to it.RHS else it }
-    .collect(Collectors.toSet())
-  return newCFG
-}
-
-// TODO: Incomplete / untested
-// Based on: https://zerobone.net/blog/cs/non-productive-cfg-rules/
-// Precondition: The CFG must be binarized, i.e., almost CNF but may have useless productions
-// Postcondition: The CFG is in Chomsky Normal Form (CNF)
-//fun CFG.jdvpNew(): CFG {
-//  println("Total productions: $size")
-//  val timer = TimeSource.Monotonic.markNow()
-//  val counter = ConcurrentHashMap<Set<Σᐩ>, LongAdder>()
-//
-//  // Maps each nonterminal to the set of RHS sets that contain it
-//  val UDEPS = ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Set<Σᐩ>>>(size)
-//  // Maps the set of symbols on the RHS of a production to the production
-//  val NDEPS = ConcurrentHashMap<Set<Σᐩ>, ConcurrentLinkedQueue<Production>>(size).apply {
-//    put(emptySet(), ConcurrentLinkedQueue())
-//    this@jdvpNew.asSequence().asStream().parallel().forEach {
-//      val v = it.second.toSet() // RHS set, i.e., the set of NTs on the RHS of a production
-//      // If |v| is 1, then the production must be a unit production, i.e, A -> a, b/c A -> B is not binarized
-//      getOrPut(if(it.second.size == 1) emptySet() else v) { ConcurrentLinkedQueue() }.add(it)
-//      v.forEach { s -> UDEPS.getOrPut(s) { ConcurrentLinkedQueue() }.add(v) }
-//      if (v.size == 2) counter.putIfAbsent(v, LongAdder().apply { add(2L) })
-//    }
-//  }
-//
-//  println("Built graph in ${timer.elapsedNow()}: ${counter.size} conjuncts, ${UDEPS.size + NDEPS.size} edges")
-//
-//  val nextReachable: LinkedHashSet<Set<Σᐩ>> = LinkedHashSet<Set<Σᐩ>>().apply { add(emptySet()) }
-//
-//  val productive = mutableSetOf<Production>()
-//  do {
-////    println("Next reachable: ${nextReachable.size}, Productive: ${productive.size}")
-//    val q = nextReachable.removeFirst()
-//    if (counter[q]?.sum() == 0L || NDEPS[q]?.all { it in productive } == true) continue
-//    else if (q.size == 2) { // Conjunct
-//      val dec = counter[q]!!.apply { decrement() }
-//      if (dec.sum() == 0L) { // Seen both
-//        NDEPS[q]?.forEach {
-//          productive.add(it)
-//          UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
-//        }
-//      } else nextReachable.addLast(q) // Always add back if sum not zero
-//    } else {
-//      NDEPS[q]?.forEach {
-//        productive.add(it)
-//        UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
-//      }
-//    }
-//  } while (nextReachable.isNotEmpty())
-//
-//  println("Eliminated ${size - productive.size} unproductive productions in ${timer.elapsedNow()}")
-//  println("Resulting in ${productive.size} productions.")
-//
-//  val QDEPS =
-//    ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Production>>(size).apply {
-//      productive.asSequence().asStream().parallel().forEach {
-//        getOrPut(it.LHS) { ConcurrentLinkedQueue() }.add(it)
-//      }
-//    }
-//
-//  val done = mutableSetOf(START_SYMBOL)
-//  val nextProd: MutableList<Σᐩ> = mutableListOf(START_SYMBOL)
-//  val productiveAndReachable = mutableSetOf<Production>()
-//
-//  do {
-//    val q = nextProd.removeFirst().also { done += it }
-//    QDEPS[q]?.forEach { it ->
-//      productiveAndReachable.add(it)
-//      it.RHS.forEach { if (it !in done) nextProd += it }
-//    }
-//  } while (nextProd.isNotEmpty())
-//
-//  println("Eliminated ${productive.size - productiveAndReachable.size} unreachable productions in ${timer.elapsedNow()}")
-//  println("Resulting in ${productiveAndReachable.size} productions.")
-//
-//  return productiveAndReachable.freeze()
-//}
 
 fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): CFG {
   val start = clock.elapsedNow()
@@ -402,6 +313,22 @@ fun CFG.jvmDropVestigialProductions(clock: TimeSource.Monotonic.ValueTimeMark): 
 
   return if (rw.size == size) jvmElimVarUnitProds(rw).freeze()
   else rw.jvmDropVestigialProductions(clock)
+}
+
+// Eliminates unit productions whose RHS is not a terminal. For Bar-Hillel intersections, we know the only
+// examples of this are the (S -> *) rules, so elimination is much simpler than the full CNF normalization.
+fun jvmElimVarUnitProds(cfg: CFG): CFG {
+  val scfg = cfg.asSequence()
+  val vars = scfg.asStream().parallel().map { it.first }.collect(Collectors.toSet())
+  val toElim = scfg.asStream().parallel()
+    .filter { it.RHS.size == 1 && it.LHS == "START" && it.RHS[0] in vars }
+    .map { it.RHS[0] }
+    .collect(Collectors.toSet())
+  val newCFG = scfg.asStream().parallel()
+    .filter { it.RHS.size > 1 || it.RHS[0] !in toElim }
+    .map { if (it.LHS in toElim) "START" to it.RHS else it }
+    .collect(Collectors.toSet())
+  return newCFG
 }
 
 /**
@@ -484,3 +411,79 @@ private fun CFG.jvmGenSym(
 
   return allGenerating
 }
+
+// TODO: Incomplete / untested
+// Based on: https://zerobone.net/blog/cs/non-productive-cfg-rules/
+// Precondition: The CFG must be binarized, i.e., almost CNF but may have useless productions
+// Postcondition: The CFG is in Chomsky Normal Form (CNF)
+//fun CFG.jdvpNew(): CFG {
+//  println("Total productions: $size")
+//  val timer = TimeSource.Monotonic.markNow()
+//  val counter = ConcurrentHashMap<Set<Σᐩ>, LongAdder>()
+//
+//  // Maps each nonterminal to the set of RHS sets that contain it
+//  val UDEPS = ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Set<Σᐩ>>>(size)
+//  // Maps the set of symbols on the RHS of a production to the production
+//  val NDEPS = ConcurrentHashMap<Set<Σᐩ>, ConcurrentLinkedQueue<Production>>(size).apply {
+//    put(emptySet(), ConcurrentLinkedQueue())
+//    this@jdvpNew.asSequence().asStream().parallel().forEach {
+//      val v = it.second.toSet() // RHS set, i.e., the set of NTs on the RHS of a production
+//      // If |v| is 1, then the production must be a unit production, i.e, A -> a, b/c A -> B is not binarized
+//      getOrPut(if(it.second.size == 1) emptySet() else v) { ConcurrentLinkedQueue() }.add(it)
+//      v.forEach { s -> UDEPS.getOrPut(s) { ConcurrentLinkedQueue() }.add(v) }
+//      if (v.size == 2) counter.putIfAbsent(v, LongAdder().apply { add(2L) })
+//    }
+//  }
+//
+//  println("Built graph in ${timer.elapsedNow()}: ${counter.size} conjuncts, ${UDEPS.size + NDEPS.size} edges")
+//
+//  val nextReachable: LinkedHashSet<Set<Σᐩ>> = LinkedHashSet<Set<Σᐩ>>().apply { add(emptySet()) }
+//
+//  val productive = mutableSetOf<Production>()
+//  do {
+////    println("Next reachable: ${nextReachable.size}, Productive: ${productive.size}")
+//    val q = nextReachable.removeFirst()
+//    if (counter[q]?.sum() == 0L || NDEPS[q]?.all { it in productive } == true) continue
+//    else if (q.size == 2) { // Conjunct
+//      val dec = counter[q]!!.apply { decrement() }
+//      if (dec.sum() == 0L) { // Seen both
+//        NDEPS[q]?.forEach {
+//          productive.add(it)
+//          UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
+//        }
+//      } else nextReachable.addLast(q) // Always add back if sum not zero
+//    } else {
+//      NDEPS[q]?.forEach {
+//        productive.add(it)
+//        UDEPS[it.LHS]?.forEach { st -> if (st !in productive) nextReachable.addLast(st) }
+//      }
+//    }
+//  } while (nextReachable.isNotEmpty())
+//
+//  println("Eliminated ${size - productive.size} unproductive productions in ${timer.elapsedNow()}")
+//  println("Resulting in ${productive.size} productions.")
+//
+//  val QDEPS =
+//    ConcurrentHashMap<Σᐩ, ConcurrentLinkedQueue<Production>>(size).apply {
+//      productive.asSequence().asStream().parallel().forEach {
+//        getOrPut(it.LHS) { ConcurrentLinkedQueue() }.add(it)
+//      }
+//    }
+//
+//  val done = mutableSetOf(START_SYMBOL)
+//  val nextProd: MutableList<Σᐩ> = mutableListOf(START_SYMBOL)
+//  val productiveAndReachable = mutableSetOf<Production>()
+//
+//  do {
+//    val q = nextProd.removeFirst().also { done += it }
+//    QDEPS[q]?.forEach { it ->
+//      productiveAndReachable.add(it)
+//      it.RHS.forEach { if (it !in done) nextProd += it }
+//    }
+//  } while (nextProd.isNotEmpty())
+//
+//  println("Eliminated ${productive.size - productiveAndReachable.size} unreachable productions in ${timer.elapsedNow()}")
+//  println("Resulting in ${productiveAndReachable.size} productions.")
+//
+//  return productiveAndReachable.freeze()
+//}

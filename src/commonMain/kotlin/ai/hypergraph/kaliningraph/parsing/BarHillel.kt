@@ -48,10 +48,10 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }.toTypedArray()
 
   val ct = (fsa.validPairs * nonterminals.indices.toSet()).toList()
-//  val ct1 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+//  val ct1 = Array(fsa.numStates) { Array(nonterminals.size) { Array(fsa.numStates) { false } } }
 //  ct.filter { lengthBoundsCache[it.π3].overlaps(fsa.SPLP(it.π1, it.π2)) }
 //    .forEach { ct1[it.π1.π1][it.π3][it.π2.π1] = true }
-  val ct2 = Array(fsa.states.size) { Array(nonterminals.size) { Array(fsa.states.size) { false } } }
+  val ct2 = Array(fsa.numStates) { Array(nonterminals.size) { Array(fsa.numStates) { false } } }
   ct.filter { fsa.obeys(it.π1, it.π2, it.π3, parikhMap) }
     .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
@@ -173,6 +173,7 @@ fun CFG.dropVestigialProductions(
   return if (rw.size == size) rw else rw.dropVestigialProductions(criteria)
 }
 
+
 // Generic Bar-Hillel construction for arbitrary CFL ∩ REG language
 infix fun FSA.intersect(cfg: CFG) = cfg.freeze().intersect(this)
 
@@ -191,9 +192,7 @@ infix fun CFG.intersect(fsa: FSA): CFG {
     nonterminalProductions.mapIndexed { i, it ->
       val triples = fsa.states * fsa.states * fsa.states
       val (A, B, C) = it.π1 to it.π2[0] to it.π2[1]
-      triples.map { (p, q, r) ->
-        "[$p~$A~$r]" to listOf("[$p~$B~$q]", "[$q~$C~$r]")
-      }
+      triples.map { (p, q, r) -> "[$p~$A~$r]" to listOf("[$p~$B~$q]", "[$q~$C~$r]") }
     }.flatten()
 
   return (initFinal + binaryProds + unitProds).toSet().postProcess()
