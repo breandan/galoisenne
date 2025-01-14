@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
 import kotlin.math.*
@@ -173,6 +175,13 @@ fun CFG.dropVestigialProductions(
   return if (rw.size == size) rw else rw.dropVestigialProductions(criteria)
 }
 
+
+fun CFG.LED(brokeToks: Σᐩ): Int =
+  (1..MAX_RADIUS).firstOrNull {
+    try {
+      intersectLevFSA(fsa = makeLevFSA(brokeToks.tokenizeByWhitespace(), it)).isNotEmpty()
+    } catch (_: Exception) { println("Failed $it, increasing..."); false }
+  } ?: MAX_RADIUS
 
 // Generic Bar-Hillel construction for arbitrary CFL ∩ REG language
 infix fun FSA.intersect(cfg: CFG) = cfg.freeze().intersect(this)

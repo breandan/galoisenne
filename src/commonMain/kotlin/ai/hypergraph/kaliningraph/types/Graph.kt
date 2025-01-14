@@ -6,6 +6,10 @@ import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.theory.wl
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.iterator
+import kotlin.collections.orEmpty
 import kotlin.js.JsName
 import kotlin.math.sqrt
 import kotlin.properties.ReadOnlyProperty
@@ -205,6 +209,41 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
     if (done) break
   }
   dist
+}
+
+// States, in a topological order (using BFS / Kahn's algorithm)
+// TODO: implement this using min-plus semiring: https://en.wikipedia.org/wiki/Topological_sorting#Parallel_algorithms
+// Behavior is undefined when the graph contains cycles, so be sure to only call this on acyclic graphs
+val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.topSort: List<V> by cache {
+  // 1. Build in-degree map
+  val inDegree = vertices.associateWith { 0 }.toMutableMap()
+
+  val transit = vertices.associateWith { it.outgoing.toSet() }
+  // For every outgoing edge (s -> t), increment in-degree of t
+  for ((s, edges) in transit) {
+    for ((_, t) in edges) {
+      inDegree[t] = inDegree[t]?.plus(1) ?: 1
+    }
+  }
+
+  // 2. Initialize queue with states whose in-degree is zero
+  val queue = ArrayDeque(inDegree.filterValues { it == 0 }.keys)
+  val order = mutableListOf<V>()
+
+  // 3. Repeatedly pop from queue and update in-degree of successors
+  while (queue.isNotEmpty()) {
+    val s = queue.removeFirst()
+    order.add(s)
+
+    // Decrement in-degree for all s -> t
+    for ((_, t) in transit[s].orEmpty()) {
+      val deg = inDegree[t]!!.minus(1)
+      inDegree[t] = deg
+      if (deg == 0) queue.addLast(t)
+    }
+  }
+
+  order
 }
 
 // AllPairs[p, q] is the set of all vertices, r, such that p ->* r ->* q

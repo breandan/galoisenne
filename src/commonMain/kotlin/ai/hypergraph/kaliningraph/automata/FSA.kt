@@ -16,7 +16,12 @@ fun Σᐩ.coords(): Pair<Int, Int> =
 typealias STC = Triple<Int, Int, Int>
 fun STC.coords() = π2 to π3
 
-open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
+class ACYC_FSA constructor(override val Q: TSA, override val init: Set<Σᐩ>, override val final: Set<Σᐩ>): FSA(Q, init, final) {
+  // Since the FSA is acyclic, we can use a more efficient topological ordering
+  override val stateLst by lazy { graph.topSort.map { it.label } }
+}
+
+open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
   open val alphabet by lazy { Q.map { it.π2 }.toSet() }
   val isNominalizable by lazy { alphabet.any { it.startsWith("[!=]") } }
   val nominalForm: NOM by lazy { nominalize() } // Converts FSA to nominal form
@@ -29,28 +34,11 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
   }
 
   val states: Set<Σᐩ> by lazy { Q.states }
-  // States, in a topological order
-  val stateLst: List<Σᐩ> by lazy {
-    val visited = mutableSetOf<Σᐩ>()
-    val topSort = mutableListOf<Σᐩ>()
-    val stack = init.toMutableList()
-
-    fun dfs(state: Σᐩ) {
-      if (state !in visited) {
-        visited.add(state)
-        topSort.add(state)
-        transit[state]?.forEach { (_, nextState) -> dfs(nextState) }
-        stack.add(state)
-      }
-    }
-
-    while (stack.isNotEmpty()) dfs(stack.removeLast())
-    topSort
-  }
+  open val stateLst: List<Σᐩ> by lazy { states.toList() }
 
   fun allIndexedTxs(cfg: CFG): List<Π3A<Int>> =
     (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-      .map { (A, _, arc) -> Triple(stateMap[arc.π1]!!, cfg.ntMap[A]!!, stateMap[arc.π3]!!) }
+      .map { (A: Σᐩ, _, arc) -> Triple(stateMap[arc.π1]!!, cfg.bindex[A], stateMap[arc.π3]!!) }
 
   val numStates: Int by lazy { states.size }
 
@@ -102,9 +90,7 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
   fun allOutgoingArcs(from: Σᐩ) = Q.filter { it.π1 == from }
 
-  val graph: LabeledGraph by lazy {
-    LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } }
-  }
+  val graph: LabeledGraph by lazy { LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } } }
 
   val parikhVector: MutableMap<IntRange, ParikhVector> = mutableMapOf()
 
@@ -137,12 +123,15 @@ open class FSA(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<�
 
       levFSA.allIndexedTxs(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
+      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
+
       for (p in 0 until levFSA.numStates)
-        for (q in p+1 until levFSA.numStates)
-          for ((w, x, z) in cfg.tripIntProd) // w -> xz
+        for (q in (p + 1) until levFSA.numStates)
+          for ((w, /*->*/ x, z) in cfg.tripleIntProds)
             if (!dp[p][q][w])
               for (r in levFSA.allPairs[p to q] ?: emptySet())
                 if (dp[p][r][x] && dp[r][q][z]) {
+//                  println("Found: ${levFSA.stateLst[p]} ${levFSA.stateLst[q]} / ${cfg.bindex[w]} -> ${cfg.bindex[x]} ${cfg.bindex[z]}")
                   dp[p][q][w] = true
                   break
                 }

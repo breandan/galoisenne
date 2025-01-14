@@ -71,7 +71,7 @@ fun makeExactLevCFL(
     val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
     val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue == radius) } }
 
-    FSA(Q, initialStates, finalStates)
+    ACYC_FSA(Q, initialStates, finalStates)
       .also { it.height = radius; it.width = str.size; it.levString = str }
       .also { println("Levenshtein-${str.size}x$radius automaton had ${Q.size} arcs!") }
   }
@@ -119,7 +119,7 @@ fun makeLevFSA(
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
       val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
 
-      FSA(Q, initialStates, finalStates)
+      ACYC_FSA(Q, initialStates, finalStates)
         .also { it.height = maxRad; it.width = str.size; it.levString = str }
 //        .nominalize()
         .also { println("Levenshtein-${str.size}x$maxRad automaton had ${Q.size} arcs after pruning!") }

@@ -60,7 +60,7 @@ val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).next
 val CFG.ntLst by cache { (symbols + "ε").toList() }
 val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
 
-val CFG.tripIntProd: Set<Π3A<Int>> by cache { filter { it.RHS.size == 2 }.map { bindex[it.LHS] to bindex[it.RHS[0]] to bindex[it.RHS[1]] }.toSet() }
+val CFG.tripleIntProds: Set<Π3A<Int>> by cache { filter { it.RHS.size == 2 }.map { bindex[it.LHS] to bindex[it.RHS[0]] to bindex[it.RHS[1]] }.toSet() }
 val CFG.revUnitProds: Map<Σᐩ, List<Int>> by cache { terminals.associate { it to bimap[listOf(it)].map { bindex[it] } } }
 
 // Maps each nonterminal to the set of nonterminal pairs that can generate it,
