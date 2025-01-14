@@ -160,6 +160,59 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
       return false
     }
+
+    fun intersectPTree(str: Σᐩ, cfg: CFG, radius: Int): PTree? {
+      // 1) Build the Levenshtein automaton (acyclic)
+      val levFSA = makeLevFSA(str, radius)
+
+      val nStates = levFSA.numStates
+      val startIdx = cfg.bindex[START_SYMBOL]
+
+      // 2) Create dp array of parse trees
+      val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(cfg.nonterminals.size) { null } } }
+
+      // 3) Initialize terminal productions A -> a
+      for ((p, Aidx, q) in levFSA.allIndexedTxs(cfg)) {
+        for (t in cfg.bimap.UNITS[cfg.bindex[Aidx]]!!) {
+          val Aname = cfg.bindex[Aidx]
+
+          val newLeaf = PTree(root = Aname, branches = PSingleton(t))
+          dp[p][q][Aidx] = if (dp[p][q][Aidx] == null) newLeaf else dp[p][q][Aidx]!! + newLeaf
+        }
+      }
+
+      for (dist in 1 until nStates) {
+        for (p in 0 until (nStates - dist)) {
+          val q = p + dist
+
+          // For each rule A -> B C
+          for ((Aidx, Bidx, Cidx) in cfg.tripleIntProds) {
+            val Aname = cfg.bindex[Aidx]
+
+            // Check all possible midpoint states r in the DAG from p to q
+            for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
+              val left = dp[p][r][Bidx]
+              val right = dp[r][q][Cidx]
+              if (left != null && right != null) {
+                // Found a parse for A
+                val newBranch = (left to right)
+                val newTree = PTree(Aname, listOf(newBranch))
+
+                if (dp[p][q][Aidx] == null) dp[p][q][Aidx] = newTree
+                else dp[p][q][Aidx] = dp[p][q][Aidx]!! + newTree
+              }
+            }
+          }
+        }
+      }
+
+      // 5) Gather final parse trees from dp[0][f][startIdx], for all final states f
+      val allParses = levFSA.finalIdxs.mapNotNull { f -> dp[0][f][startIdx] }
+
+      // 6) Combine them under a single "super‐root"
+      return if (allParses.isEmpty()) null
+        else PTree(START_SYMBOL, allParses.flatMap { forest -> forest.branches })
+    }
   }
 
   fun walk(from: Σᐩ, next: (Σᐩ, List<Σᐩ>) -> Int): List<Σᐩ> {

@@ -14,10 +14,12 @@ import kotlin.time.measureTimedValue
 // Indexes a set of PTrees by their roots
 typealias PForest = Map<String, PTree> // ℙ₃
 // Algebraic data type / polynomial functor for parse forests (ℙ₂)
-class PTree(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()) {
+class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>> = listOf()) {
 //  val hash by lazy { root.hashCode() + if (branches.isEmpty()) 0 else branches.hashCode() }
 //  override fun hashCode(): Int = hash
   var ntIdx = -1
+
+  operator fun plus(other: PTree) = PTree(root, branches + other.branches)
 
   val branchRatio: Pair<Double, Double> by lazy { if (branches.isEmpty()) 0.0 to 0.0 else
     (branches.size.toDouble() + branches.sumOf { (l, r) -> l.branchRatio.first + r.branchRatio.first }) to

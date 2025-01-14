@@ -60,7 +60,7 @@ val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).next
 val CFG.ntLst by cache { (symbols + "ε").toList() }
 val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
 
-val CFG.tripleIntProds: Set<Π3A<Int>> by cache { filter { it.RHS.size == 2 }.map { bindex[it.LHS] to bindex[it.RHS[0]] to bindex[it.RHS[1]] }.toSet() }
+val CFG.tripleIntProds: Set<Π3A<Int>> by cache { bimap.TRIPL.map { (a, b, c) -> bindex[a] to bindex[b] to bindex[c] }.toSet() }
 val CFG.revUnitProds: Map<Σᐩ, List<Int>> by cache { terminals.associate { it to bimap[listOf(it)].map { bindex[it] } } }
 
 // Maps each nonterminal to the set of nonterminal pairs that can generate it,
@@ -249,7 +249,7 @@ class Bindex<T>(
   override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
 }
 // Maps variables to expansions and expansions to variables in a grammar
-class BiMap(cfg: CFG) {
+class BiMap(val cfg: CFG) {
   val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
   val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
 
@@ -265,11 +265,11 @@ class BiMap(cfg: CFG) {
           getOrPut(l) { mutableSetOf() }.add(symbol)
     }
   }
-  val TRIPL by lazy {
+  val TRIPL: List<Π3A<Σᐩ>> by lazy {
     R2LHS.filter { it.key.size == 2 }
       .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
   }
-  val X2WZ: Map<Σᐩ, List<Triple<Σᐩ, Σᐩ, Σᐩ>>> by lazy {
+  val X2WZ: Map<Σᐩ, List<Π3A<Σᐩ>>> by lazy {
     TRIPL.groupBy { it.second }.mapValues { it.value }
   }
   val UNITS by lazy {

@@ -473,6 +473,12 @@ class BarHillelTest {
     val led = Grammars.dyck.LED(str)
     println("Language edit distance: $led")
 
+    measureTime {
+      FSA.intersectPTree(str, Grammars.dyck, led)!!.sampleStrWithoutReplacement()
+        .take(100).toList().also { assertTrue { it.isNotEmpty() } }
+        .forEach { assertTrue(it in Grammars.dyck.language) }
+    }.also { println("Enumeration took: $it") }
+
     measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
