@@ -473,15 +473,15 @@ class BarHillelTest {
     val led = Grammars.dyck.LED(str)
     println("Language edit distance: $led")
 
-    measureTimedValue { FSA.levIntersect(str, vanillaS2PCFG, led) }
+    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
 
-    measureTimedValue { FSA.levIntersect(str, vanillaS2PCFG, led + 1) }
+    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led + 1) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
 
-    measureTimedValue { FSA.levIntersect(str, vanillaS2PCFG, led - 1) }
+    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led - 1) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertFalse(it.value) }
   }

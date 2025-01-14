@@ -255,7 +255,8 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
   val backward: Map<V, Set<V>> = reversed().let { it.vertices.associateWith { v -> it.transitiveClosure(setOf(v)) } }
 
   // For every pair (p, q), collect all vertices r that lie on some path p ->* r ->* q
-  vertices.flatMap { p -> vertices.map { q -> Pair(Pair(p, q), (forward[p]!! intersect backward[q]!!)) } }.filter { it.second.isNotEmpty() }.toMap()
+  vertices.flatMap { p -> vertices.map { q -> Pair(Pair(p, q), (forward[p]!! intersect backward[q]!!)) } }
+    .filter { it.second.isNotEmpty() }.toMap()
 }
 
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.degMap: Map<V, Int>     by cache { vertices.associateWith { it.neighbors.size } }

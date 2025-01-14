@@ -136,7 +136,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
                   break
                 }
 
-      return levFSA.finalIdxs.any { f -> dp[0][f][cfg.bindex[START_SYMBOL]] }
+      return levFSA.finalIdxs.any { f -> dp[0][f][cfg.bindex[START_SYMBOL]].also { if (it) println("Found: ${levFSA.stateLst[0]} ${levFSA.stateLst[f]}") } }
     }
   }
 
