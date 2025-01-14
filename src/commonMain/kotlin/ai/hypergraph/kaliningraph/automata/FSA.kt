@@ -116,27 +116,41 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 //  }
 
   companion object {
-    fun levIntersect(str: Σᐩ, cfg: CFG, radius: Int): Boolean {
+    // Decides intersection non-emptiness for Levenshtein ball ∩ CFG
+    fun nonemptyLevInt(str: Σᐩ, cfg: CFG, radius: Int): Boolean {
       val levFSA = makeLevFSA(str, radius)
 
       val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(cfg.nonterminals.size) { false } } }
 
       levFSA.allIndexedTxs(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
-      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
+//      println("BEFORE (sum=${dp.sumOf { it.sumOf { it.sumOf { if(it) 1.0 else 0.0 } } }})")
+//      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
+//      println(dp.joinToString("\n") { it.joinToString(" ") { it.joinToString("", "[", "]") { if (it) "1" else "0"} } })
 
-      for (p in 0 until levFSA.numStates)
-        for (q in (p + 1) until levFSA.numStates)
-          for ((w, /*->*/ x, z) in cfg.tripleIntProds)
-            if (!dp[p][q][w])
-              for (r in levFSA.allPairs[p to q] ?: emptySet())
-                if (dp[p][r][x] && dp[r][q][z]) {
+      val startIdx = cfg.bindex[START_SYMBOL]
+      var fresh = true
+      while (fresh) {
+        fresh = false
+        for (p in 0 until levFSA.numStates)
+          for (q in (p + 1) until levFSA.numStates)
+            for ((w, /*->*/ x, z) in cfg.tripleIntProds)
+              if (!dp[p][q][w])
+                for (r in levFSA.allPairs[p to q] ?: emptySet<Int>())
+                  if (dp[p][r][x] && dp[r][q][z]) {
 //                  println("Found: ${levFSA.stateLst[p]} ${levFSA.stateLst[q]} / ${cfg.bindex[w]} -> ${cfg.bindex[x]} ${cfg.bindex[z]}")
-                  dp[p][q][w] = true
-                  break
-                }
+                    if (p == 0 && w == startIdx && q in levFSA.finalIdxs) return true
+                    dp[p][q][w] = true
+                    fresh = true
+                    break
+                  }
+      }
 
-      return levFSA.finalIdxs.any { f -> dp[0][f][cfg.bindex[START_SYMBOL]].also { if (it) println("Found: ${levFSA.stateLst[0]} ${levFSA.stateLst[f]}") } }
+//      println("AFTER (sum=${dp.sumOf { it.sumOf { it.sumOf { if(it) 1.0 else 0.0 } } }})")
+//      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
+//      println(dp.joinToString("\n") { it.joinToString(" ") { it.joinToString("", "[", "]") { if (it) "1" else "0"} } })
+
+      return false
     }
   }
 

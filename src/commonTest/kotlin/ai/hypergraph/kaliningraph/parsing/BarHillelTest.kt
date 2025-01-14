@@ -467,21 +467,21 @@ class BarHillelTest {
   */
   @Test
   fun matrixLBHTest() {
-    val str = "( ( ("
+    val str = "( ( ( ( ("
     println(str.tokenizeByWhitespace().size)
 
     val led = Grammars.dyck.LED(str)
     println("Language edit distance: $led")
 
-    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led) }
+    measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
 
-    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led + 1) }
+    measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led + 1) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
 
-    measureTimedValue { FSA.levIntersect(str, Grammars.dyck, led - 1) }
+    measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led - 1) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertFalse(it.value) }
   }
