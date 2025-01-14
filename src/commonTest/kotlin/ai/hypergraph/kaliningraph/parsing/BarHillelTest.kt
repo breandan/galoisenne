@@ -484,5 +484,14 @@ class BarHillelTest {
     measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led - 1) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertFalse(it.value) }
+
+    val pythonCode = "NAME = [ ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , NAME ) , , ( NAME , NAME ) , , ( NAME , STRING ) , , ( NAME , NAME ) ]"
+    measureTimedValue {  FSA.nonemptyLevInt(pythonCode, vanillaS2PCFG, 4) }
+      .also { println("${it.value} / ${it.duration}") }
+      .also { assertTrue(it.value) }
+
+    measureTimedValue { FSA.nonemptyLevInt(pythonCode, vanillaS2PCFG, 3) }
+      .also { println("${it.value} / ${it.duration}") }
+      .also { assertFalse(it.value) }
   }
 }
