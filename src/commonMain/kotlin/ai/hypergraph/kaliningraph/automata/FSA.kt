@@ -163,7 +163,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     }
 
     fun LED(cfg: CFG, brokeToks: Σᐩ): Int =
-      (1 until MAX_RADIUS).firstOrNull { FSA.nonemptyLevInt(brokeToks, cfg, it) } ?: MAX_RADIUS
+      (1 until (2 * MAX_RADIUS)).firstOrNull { FSA.nonemptyLevInt(brokeToks, cfg, it) } ?: (2 * MAX_RADIUS)
 
     fun intersectPTree(str: Σᐩ, cfg: CFG, radius: Int): PTree? {
       // 1) Build the Levenshtein automaton (acyclic)
