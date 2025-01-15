@@ -268,6 +268,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 
 val cache = LRUCache<String, Any>()
 
+// If you see a JS error get_first_irdx8n_k, it DEPTH is set incorrectly or something is funny with the stacktrace
 object PlatformVars { var PLATFORM_CALLER_STACKTRACE_DEPTH: Int = 3 }
 // This is somewhat of a hack and may break depending on the platform.
 // We do this because Kotlin Common has poor reflection capabilities.

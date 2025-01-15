@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.lazy
 import kotlin.random.Random
@@ -160,6 +161,9 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
       return false
     }
+
+    fun LED(cfg: CFG, brokeToks: Σᐩ): Int =
+      (1 until MAX_RADIUS).firstOrNull { FSA.nonemptyLevInt(brokeToks, cfg, it) } ?: MAX_RADIUS
 
     fun intersectPTree(str: Σᐩ, cfg: CFG, radius: Int): PTree? {
       // 1) Build the Levenshtein automaton (acyclic)
