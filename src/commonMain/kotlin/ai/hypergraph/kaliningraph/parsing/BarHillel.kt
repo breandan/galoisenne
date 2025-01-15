@@ -14,18 +14,17 @@ import kotlin.time.TimeSource
  * [FSA.intersect] for the generic Bar-Hillel version with arbitrary FSA.
  */
 
-infix fun FSA.intersectLevFSA(cfg: CFG) = cfg.intersectLevFSA(this)
+infix fun FSA.intersectLevFSA(cfg: CFG): CFG = cfg.intersectLevFSA(this)
 
-fun CFG.intersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG =
-  intersectLevFSAP(fsa, parikhMap)
+fun CFG.intersectLevFSA(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG = intersectLevFSAP(fsa, parikhMap)
 //  subgrammar(fsa.alphabet)
 //    .also { it.forEach { println("${it.LHS} -> ${it.RHS.joinToString(" ")}") } }
 
-fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int) =
-  intersectLevFSA(makeLevFSA(source, distance))
+fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int): CFG = intersectLevFSA(makeLevFSA(source, distance))
 
-fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int) =
-  makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
+fun CFG.barHillelRepair(prompt: Σᐩ, distance: Int): Sequence<String> = barHillelRepair(prompt.tokenizeByWhitespace(), distance)
+
+fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int): Sequence<String> = makeLevGrammar(prompt, distance).enumSeq()
 
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5

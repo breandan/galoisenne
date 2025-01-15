@@ -281,7 +281,7 @@ class BiMap(val cfg: CFG) {
   operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
 }
 
-// n.b., this only works if the CFG is acyclic, i.e., finite otherwise it will loop forever
+// n.b., this only works if the CFG is acyclic, i.e., L(G) is finite otherwise it will loop forever
 fun CFG.toPTree(from: Σᐩ = START_SYMBOL, origCFG: CFG = this): PTree =
   PTree(from, bimap[from].map { toPTree(it[0], origCFG) to if (it.size == 1) PTree() else toPTree(it[1], origCFG) })
     .also { it.ntIdx = (origCFG.ntMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }

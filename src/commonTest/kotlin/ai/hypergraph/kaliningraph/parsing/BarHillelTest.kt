@@ -474,9 +474,15 @@ class BarHillelTest {
     println("Language edit distance: $led")
 
     measureTime {
-      FSA.intersectPTree(str, Grammars.dyck, led)!!.sampleStrWithoutReplacement()
-        .take(100).toList().also { assertTrue { it.isNotEmpty() } }
-        .forEach { assertTrue(it in Grammars.dyck.language) }
+      val naiveLBHResults = Grammars.dyck.barHillelRepair(str, led).toSet()
+      val matrixLBHResults = FSA.intersectPTree(str, Grammars.dyck, led)!!
+        .sampleStrWithoutReplacement().toSet()
+        .also { it.forEach { assertTrue(it in Grammars.dyck.language) } }
+
+      println("Naive LBH found ${naiveLBHResults.size} solutions")
+      println("MatrixLBH found ${naiveLBHResults.size} solutions")
+
+      assertEquals(naiveLBHResults, matrixLBHResults)
     }.also { println("Enumeration took: $it") }
 
     measureTimedValue { FSA.nonemptyLevInt(str, Grammars.dyck, led) }

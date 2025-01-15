@@ -366,6 +366,10 @@ fun CFG.solveSeq(tokens: List<String>): Sequence<String> =
 fun CFG.enumSeq(tokens: List<String>): Sequence<String> =
   startPTree(tokens)?.sampleStrWithoutReplacement() ?: sequenceOf()
 
+// This will only work on acyclic grammars, otherwise, if grammar is cyclic
+// then it must be sliced with L(G) ∩ (Σ^n) beforehand.
+fun CFG.enumSeq(): Sequence<String> = toPTree().sampleStrWithoutReplacement()
+
 fun CFG.enumSeqMinimal(
   prompt: List<String>,
   tokens: List<String>,
