@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.parsing
 import Grammars
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.automata.*
+import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
 import kotlin.test.*
@@ -318,35 +319,31 @@ class BarHillelTest {
     val origStr = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
-    val levBall = makeLevFSA(toRepair, levDist)
-    println(levBall.numStates)
 //  println(levBall.toDot())
 //  throw Exception("")
-    val intGram = gram.intersectLevFSA(levBall)
+    val intGram = FSA.intersectPTree(origStr, gram, levDist)!!
 
     val clock = TimeSource.Monotonic.markNow()
 
-    val lbhSet = intGram.toPTree().sampleStrWithoutReplacement()
+    val lbhSet = intGram.sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
-        if (i < 100) println(levenshteinAlign(origStr, it).paintANSIColors())
+        if (i < 100) println("$i.)" + levenshteinAlign(origStr, it).paintANSIColors())
 
         assertTrue(levenshtein(origStr, it) <= levDist)
         assertTrue(it in gram.language)
-        assertTrue(levBall.recognizes(it))
-      }.toSet()
+      }.takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.toSet()
       .also { println("Found ${it.size} minimal solutions using " +
           "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
     val s2pg = vanillaS2PCFG
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2)
-      .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
+      .takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.distinct()
       .mapIndexedNotNull { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (levDistance < levDist) {
           println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
           assertTrue(it in s2pg.language)
-          assertTrue(levBall.recognizes(it))
-          assertTrue(it in intGram.language)
+          assertTrue(levenshtein(origStr, it) <= levDist)
           assertTrue(it in lbhSet)
           it
         } else null
@@ -451,13 +448,24 @@ class BarHillelTest {
   fun testEnumLBEquality() {
     val prompt = ") ( (".tokenizeByWhitespace()
     val overwrittenRepairs =
-      Grammars.dyck.barHillelRepair(prompt, 3).toSet()
-        .also { println("Found ${it.size} BH repairs.") }
+      Grammars.dyckEpsilon.barHillelRepair(prompt, 3).toSet()
+        .also { assertTrue(it.isNotEmpty()) }
+        .onEach {
+          println(levenshteinAlign(prompt.joinToString(" "), it).paintANSIColors())
+          assertTrue(it in Grammars.dyckEpsilon.language)
+        }.toSet()
 
-    val allTriples = Grammars.dyck.solveSeq(List(6) { "_" })
+    println("Found ${overwrittenRepairs.size} BH repairs.")
+
+    val allTriples = Grammars.dyckEpsilon.solveSeq(List(6) { "_" })
       .distinct().toSet()
+      .also { assertTrue(it.isNotEmpty()) }
       .filter { levenshtein(prompt, it.tokenizeByWhitespace()) <= 3 }.toSet()
       .also { println("Found ${it.size} total triples.") }
+      .onEach {
+        println(levenshteinAlign(prompt.joinToString(" "), it).paintANSIColors())
+        assertTrue(it in Grammars.dyckEpsilon.language)
+      }.toSet()
 
     assertEquals(overwrittenRepairs, allTriples)
   }
@@ -475,12 +483,16 @@ class BarHillelTest {
 
     measureTime {
       val naiveLBHResults = Grammars.dyck.barHillelRepair(str, led).toSet()
+      println("Naive LBH found ${naiveLBHResults.size} solutions")
       val matrixLBHResults = FSA.intersectPTree(str, Grammars.dyck, led)!!
         .sampleStrWithoutReplacement().toSet()
-        .also { it.forEach { assertTrue(it in Grammars.dyck.language) } }
+        .also { it.forEach {
+          assertEquals(led, levenshtein(it, str))
+          assertTrue(it in Grammars.dyck.language)
+        } }
 
       println("Naive LBH found ${naiveLBHResults.size} solutions")
-      println("MatrixLBH found ${naiveLBHResults.size} solutions")
+      println("MatrixLBH found ${matrixLBHResults.size} solutions")
 
       assertEquals(naiveLBHResults, matrixLBHResults)
     }.also { println("Enumeration took: $it") }
@@ -505,5 +517,25 @@ class BarHillelTest {
     measureTimedValue { FSA.nonemptyLevInt(pythonCode, vanillaS2PCFG, 3) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertFalse(it.value) }
+  }
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BarHillelTest.matrixLBHDistTest"
+*/
+  @Test
+  fun matrixLBHDistTest() {
+    val str = "if ( ID < NUM ) { ID = ID ; } else { ID = ID + NUM ;"
+    val led = Grammars.whileLang.LED(str).also { println("LED: $it") }
+
+    measureTime {
+      val matrixLBHResults = FSA.intersectPTree(str, Grammars.whileLang, led)!!
+        .sampleStrWithoutReplacement().toSet()
+        .also { it.forEach {
+          assertTrue(it in Grammars.whileLang.language)
+          println(levenshteinAlign(str, it).paintANSIColors())
+          assertEquals(led, levenshtein(it, str))
+        } }
+      assertTrue(matrixLBHResults.isNotEmpty())
+    }.also { println("Enumeration took: $it") }
   }
 }

@@ -25,7 +25,7 @@ fun CFG.makeLevGrammar(source: List<Σᐩ>, distance: Int): CFG = intersectLevFS
 fun CFG.barHillelRepair(prompt: Σᐩ, distance: Int): Sequence<String> = barHillelRepair(prompt.tokenizeByWhitespace(), distance)
 
 fun CFG.barHillelRepair(prompt: List<Σᐩ>, distance: Int): Sequence<String> =
-  makeLevGrammar(prompt, distance).enumSeq(List(prompt.size + distance) { "_" })
+  makeLevGrammar(prompt, distance).toPTree().sampleStrWithoutReplacement()
 
 // http://www.cs.umd.edu/~gasarch/BLOGPAPERS/cfg.pdf#page=2
 // https://browse.arxiv.org/pdf/2209.06809.pdf#page=5

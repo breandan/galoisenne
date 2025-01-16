@@ -31,6 +31,7 @@ object Grammars {
 
   val dyckUnambig by lazy { """S -> ( S ) S | ( S ) | ( ) S | ( )""".parseCFG().noEpsilonOrNonterminalStubs }
   val dyck by lazy { """S -> ( S ) | ( ) | S S""".parseCFG().noEpsilonOrNonterminalStubs }
+  val dyckEpsilon by lazy { """S -> ( S ) | ( ) | S S""".parseCFG().noNonterminalStubs }
 
   val dyckEmbedded by lazy { """
     START -> ( ) | ( START ) | START START
@@ -386,6 +387,20 @@ P7 -> P7 / P1
 P8 -> P8 / P1
 P9 -> P9 / P1
   """.parseCFG().noNonterminalStubs.freeze() }
+
+  val whileLang by lazy {
+    """
+      START -> STM+
+      STM+ -> STM+ STM | STM
+       STM -> ID = EXP ; | IFS | while ( BEXP ) { STM+ }
+       IFS -> ID = if ( BEXP ) { EXP } else { EXP }
+       IFS -> if ( BEXP ) { STM+ } else { STM+ } | if ( BEXP ) { STM+ }
+       EXP -> ID | NUM | EXP + EXP | ( EXP ) | ID ( ARGS ) | BEXP
+      ARGS -> EXP | EXP , EXP
+      BEXP -> EXP == EXP | EXP < EXP | ( BEXP ) | LIT | ! BEXP
+       LIT -> true | false
+    """.trimIndent().parseCFG().noEpsilonOrNonterminalStubs.freeze()
+  }
 
   val arith by lazy { """
     O -> + | * | - | /

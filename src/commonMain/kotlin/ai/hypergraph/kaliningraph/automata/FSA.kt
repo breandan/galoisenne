@@ -37,7 +37,11 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   val states: Set<Σᐩ> by lazy { Q.states }
   open val stateLst: List<Σᐩ> by lazy { states.toList() }
 
-  fun allIndexedTxs(cfg: CFG): List<Π3A<Int>> =
+  fun allIndexedTxs1(cfg: CFG): List<Π3<Int, Σᐩ, Int>> =
+    (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
+      .map { (A: Σᐩ, σ: Σᐩ, arc) -> Triple(stateMap[arc.π1]!!, σ, stateMap[arc.π3]!!) }
+
+  fun allIndexedTxs0(cfg: CFG): List<Π3A<Int>> =
     (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
       .map { (A: Σᐩ, _, arc) -> Triple(stateMap[arc.π1]!!, cfg.bindex[A], stateMap[arc.π3]!!) }
 
@@ -123,7 +127,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
       val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(cfg.nonterminals.size) { false } } }
 
-      levFSA.allIndexedTxs(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+      levFSA.allIndexedTxs0(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
 //      println("BEFORE (sum=${dp.sumOf { it.sumOf { it.sumOf { if(it) 1.0 else 0.0 } } }})")
 //      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
@@ -165,9 +169,9 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     fun LED(cfg: CFG, brokeToks: Σᐩ): Int =
       (1 until (2 * MAX_RADIUS)).firstOrNull { FSA.nonemptyLevInt(brokeToks, cfg, it) } ?: (2 * MAX_RADIUS)
 
-    fun intersectPTree(str: Σᐩ, cfg: CFG, radius: Int): PTree? {
+    fun intersectPTree(brokenStr: Σᐩ, cfg: CFG, radius: Int): PTree? {
       // 1) Build the Levenshtein automaton (acyclic)
-      val levFSA = makeLevFSA(str, radius)
+      val levFSA = makeLevFSA(brokenStr, radius)
 
       val nStates = levFSA.numStates
       val startIdx = cfg.bindex[START_SYMBOL]
@@ -176,11 +180,10 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(cfg.nonterminals.size) { null } } }
 
       // 3) Initialize terminal productions A -> a
-      for ((p, Aidx, q) in levFSA.allIndexedTxs(cfg)) {
-        for (t in cfg.bimap.UNITS[cfg.bindex[Aidx]]!!) {
-          val Aname = cfg.bindex[Aidx]
-
-          val newLeaf = PTree(root = Aname, branches = PSingleton(t))
+      for ((p, σ, q) in levFSA.allIndexedTxs1(cfg)) {
+        val Aidxs = cfg.bimap.TDEPS[σ]!!.map { cfg.bindex[it] }
+        for (Aidx in Aidxs) {
+          val newLeaf = PTree(root = cfg.bindex[Aidx], branches = PSingleton(σ))
           dp[p][q][Aidx] = if (dp[p][q][Aidx] == null) newLeaf else dp[p][q][Aidx]!! + newLeaf
         }
       }
@@ -191,16 +194,13 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
           // For each rule A -> B C
           for ((Aidx, Bidx, Cidx) in cfg.tripleIntProds) {
-            val Aname = cfg.bindex[Aidx]
-
             // Check all possible midpoint states r in the DAG from p to q
             for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
               val left = dp[p][r][Bidx]
               val right = dp[r][q][Cidx]
               if (left != null && right != null) {
                 // Found a parse for A
-                val newBranch = (left to right)
-                val newTree = PTree(Aname, listOf(newBranch))
+                val newTree = PTree(cfg.bindex[Aidx], listOf(left to right))
 
                 if (dp[p][q][Aidx] == null) dp[p][q][Aidx] = newTree
                 else dp[p][q][Aidx] = dp[p][q][Aidx]!! + newTree
