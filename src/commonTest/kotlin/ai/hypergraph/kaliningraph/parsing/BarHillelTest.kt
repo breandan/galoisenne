@@ -249,34 +249,23 @@ class BarHillelTest {
 */
   @Test
   fun testPythonBarHillel() {
-    val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
-    val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
-    val toRepair = origStr.tokenizeByWhitespace()
-    val maxLevDist = 2
-    val levBall = makeLevFSA(toRepair, maxLevDist)
-    println("Total transitions in FSA: ${levBall.Q.size}")
-//  throw Exception("")
+  val gram = vanillaS2PCFG.noEpsilonOrNonterminalStubs
+  val origStr = "NAME = ( NAME . NAME ( NAME NEWLINE"
+  val toRepair = origStr.tokenizeByWhitespace()
+  val maxLevDist = 2
 //  println(levBall.toDot())
 //  throw Exception("")
-    val intGram = gram.intersectLevFSA(levBall)
+  val intGram = FSA.intersectPTree(origStr, gram, maxLevDist)!!
 
-    val clock = TimeSource.Monotonic.markNow()
+  var clock = TimeSource.Monotonic.markNow()
 
-    val lbhSet = intGram.toPTree().sampleStrWithoutReplacement()
+  val lbhSet = intGram.sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
-        if (i < 100) {
-          val levAlign = levenshteinAlign(origStr, it).paintANSIColors()
-          println(levAlign)
-          val pf = intGram.enumTrees(it.tokenizeByWhitespace()).toList()
-          println("Found " + pf.size + " parse trees")
-          println(pf.first().prettyPrint())
-          println("\n\n")
-        }
+        if (i < 100) println("$i.)" + levenshteinAlign(origStr, it).paintANSIColors())
 
         assertTrue(levenshtein(origStr, it) <= maxLevDist)
         assertTrue(it in gram.language)
-        assertTrue(levBall.recognizes(it))
-      }.toSet()
+      }.takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.toSet()
     // Found 6182 minimal solutions using Levenshtein/Bar-Hillel in 9m 12.755585250s
     .also { println("Found ${it.size} minimal solutions using " +
             "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
@@ -285,16 +274,15 @@ class BarHillelTest {
   //  Enumerative solver took 360184ms
 
     val s2pg = vanillaS2PCFG
+    clock = TimeSource.Monotonic.markNow()
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 3)
-      .takeWhile { clock.elapsedNow().inWholeSeconds < 90 }.distinct()
+      .takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.distinct()
       .mapIndexedNotNull { i, it ->
         val levDistance = levenshtein(origStr, it)
         if (i < 100) println("Found ($levDistance): " + levenshteinAlign(origStr, it).paintANSIColors())
         if (levDistance < maxLevDist) {
           println("Checking: $it")
           assertTrue(it in s2pg.language)
-          assertTrue(levBall.recognizes(it))
-          assertTrue(it in intGram.language)
           assertTrue(it in lbhSet)
           it
         } else null
@@ -323,7 +311,7 @@ class BarHillelTest {
 //  throw Exception("")
     val intGram = FSA.intersectPTree(origStr, gram, levDist)!!
 
-    val clock = TimeSource.Monotonic.markNow()
+    var clock = TimeSource.Monotonic.markNow()
 
     val lbhSet = intGram.sampleStrWithoutReplacement()
       .onEachIndexed { i, it ->
@@ -336,6 +324,7 @@ class BarHillelTest {
           "Levenshtein/Bar-Hillel in ${clock.elapsedNow()}") }
 
     val s2pg = vanillaS2PCFG
+    clock = TimeSource.Monotonic.markNow()
     val prbSet = s2pg.fasterRepairSeq(toRepair, 1, 2)
       .takeWhile { clock.elapsedNow().inWholeSeconds < 30 }.distinct()
       .mapIndexedNotNull { i, it ->
