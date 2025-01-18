@@ -1,11 +1,10 @@
 package ai.hypergraph.kaliningraph.automata
 
-import ai.hypergraph.kaliningraph.*
-import ai.hypergraph.kaliningraph.graphs.*
+import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.lazy
 import kotlin.random.Random
 
 typealias Arc = Π3A<Σᐩ>
@@ -56,7 +55,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     }.toMap()
   }
 
-  val allPairs: Map<Pair<Int, Int>, Set<Int>> by lazy {
+  // TODO: should be a way to compute this on the fly for L-automata (basically a Cartesian grid)
+  open val allPairs: Map<Pair<Int, Int>, Set<Int>> by lazy {
     graph.allPairs.entries.associate { (a, b) ->
       Pair(Pair(stateMap[a.first.label]!!, stateMap[a.second.label]!!), b.map { stateMap[it.label]!! }.toSet())
     }
@@ -64,6 +64,9 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
   val finalIdxs by lazy { final.map { stateMap[it]!! } }
 
+  // TODO: Implement Lev state pairing function to avoid this pain
+  val idsToCoords by lazy { stateLst.mapIndexed { i, it -> i to it.coords() }.toMap() }
+  val coordsToIds by lazy { stateLst.mapIndexed { i, it -> Pair(it.coords(), i) }.toMap() }
   val stateCoords: Sequence<STC> by lazy { states.map { it.coords().let { (i, j) -> Triple(stateMap[it]!!, i, j) } }.asSequence() }
   var height = 0
   var width = 0
