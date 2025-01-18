@@ -88,6 +88,18 @@ fun PTree.sampleWithPCFG(
       .asStream()
   }
 
+fun PTree.sampleDirectlyWR(
+  cores: Int = NUM_CORES,
+  stoppingCriterion: () -> Boolean = { true }
+): Stream<String> =
+  (0..<cores).toList().parallelStream().flatMap { i ->
+    sampleWRGD()
+      .map { it.removeEpsilon() }
+      .takeWhile { stoppingCriterion() }
+      .distinct()
+      .asStream()
+  }
+
 fun PTree.sampleDirectlyWOR(
   cores: Int = NUM_CORES,
   stoppingCriterion: () -> Boolean = { true }
