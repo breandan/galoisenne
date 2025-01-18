@@ -138,8 +138,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
       val startIdx = cfg.bindex[START_SYMBOL]
 
-      // For pairs (p,q) in topological order by (rank(q) - rank(p)):
-      for (dist in 1..levFSA.numStates-1) {
+      // For pairs (p,q) in topological order
+      for (dist in 0 until levFSA.numStates) {
         for (iP in 0 until levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
@@ -191,18 +191,16 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         }
       }
 
-      for (dist in 1 until nStates) {
+      for (dist in 0 until nStates) {
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
 
-          // For each rule A -> B C
-          for ((Aidx, Bidx, Cidx) in cfg.tripleIntProds) {
+          for ((Aidx, /*->*/ Bidx, Cidx) in cfg.tripleIntProds) {
             // Check all possible midpoint states r in the DAG from p to q
             for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
               val left = dp[p][r][Bidx]
               val right = dp[r][q][Cidx]
               if (left != null && right != null) {
-                // Found a parse for A
                 val newTree = PTree(cfg.bindex[Aidx], listOf(left to right))
 
                 if (dp[p][q][Aidx] == null) dp[p][q][Aidx] = newTree
