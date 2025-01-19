@@ -42,10 +42,10 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
   // TODO: Use weighted choice mechanism
   val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
   val toCFG: CFG by lazy {
-    if (branches.any { (x, z) -> "ε" in (x.root + z.root) }) // Means we have reached one level before the leaves
-      branches.map { (x, z) -> root to listOf(x.root) }.toSet()
-    else branches.map { (x, z) -> root to listOf(x.root, z.root) }.toSet() +
-        branches.flatMap { (x, z) -> x.toCFG + z.toCFG }.toSet()
+    branches.map { (x, z) ->
+      if (".ε" == z.root) setOf(root to listOf(x.root))
+      else setOf(root to listOf(x.root, z.root)) + x.toCFG + z.toCFG
+    }.flatten().toSet()
   }
 
   val totalTreesStr by lazy { totalTrees.toString() }
