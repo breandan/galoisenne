@@ -183,7 +183,21 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       for ((p, σ, q) in levFSA.allIndexedTxs1(cfg)) {
         val Aidxs = cfg.bimap.TDEPS[σ]!!.map { cfg.bindex[it] }
         for (Aidx in Aidxs) {
-          val newLeaf = PTree(root = cfg.bindex[Aidx], branches = PSingleton(σ))
+          val newLeaf = PTree(root = "[$p~${cfg.bindex[Aidx]}~$q]", branches = PSingleton(σ))
+          /*
+           * Source: NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as in : NEWLINE INDENT NAME , = NAME . NAME ( STRING , in . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
+           * Repair: NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as NAME : NEWLINE INDENT NAME , = NAME . NAME ( STRING , NAME . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
+           * Mono-edit bounds (R=22, L=33)/63 [delta=+11] in 1.345236166s
+           * Levenshtein-63x3 automaton had 1001 arcs initially!
+           * Levenshtein-63x3 automaton had 593 arcs after pruning!
+           * Encountered error Index 185 out of bounds for length 184 6.414935917s):
+           * NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as NAME : NEWLINE INDENT NAME , = NAME . NAME ( STRING , NAME . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
+           * java.lang.ArrayIndexOutOfBoundsException: Index 185 out of bounds for length 184
+           * at ai.hypergraph.kaliningraph.automata.FSA$Companion.intersectPTree(FSA.kt:187)
+           * at edu.mcgill.cstk.experiments.repair.PythonMatrixBarHillelKt.evaluateMatrixBarHillelRepairOnStackOverflow(PythonMatrixBarHillel.kt:80)
+           * at edu.mcgill.cstk.experiments.repair.PythonBarHillelRepairKt.main(PythonBarHillelRepair.kt:32)
+           * at edu.mcgill.cstk.experiments.repair.PythonBarHillelRepairKt.main(PythonBarHillelRepair.kt)
+           */
           dp[p][q][Aidx] = if (dp[p][q][Aidx] == null) newLeaf else dp[p][q][Aidx]!! + newLeaf
         }
       }
@@ -198,7 +212,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
               val left = dp[p][r][Bidx]
               val right = dp[r][q][Cidx]
               if (left != null && right != null) {
-                val newTree = PTree(cfg.bindex[Aidx], listOf(left to right))
+                val newTree = PTree("[$p~${cfg.bindex[Aidx]}~$q]", listOf(left to right))
 
                 if (dp[p][q][Aidx] == null) dp[p][q][Aidx] = newTree
                 else dp[p][q][Aidx] = dp[p][q][Aidx]!! + newTree
@@ -229,7 +243,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
     var nextVtx = startVtx.step()
 
-    while (nextVtx != null) { nextVtx = nextVtx.step() }
+    while (nextVtx != null) nextVtx = nextVtx.step()
 
     return path
   }
