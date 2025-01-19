@@ -219,7 +219,7 @@ class BarHillelTest {
           println(levAlign)
         }
 
-        val actDist= levenshtein(origStr, it)
+        val actDist = levenshtein(origStr, it)
         assertTrue(it in gram.language)
         assertTrue(levBall.recognizes(it))
         assertTrue(actDist <= maxLevDist)
@@ -255,7 +255,7 @@ class BarHillelTest {
   val maxLevDist = 2
 //  println(levBall.toDot())
 //  throw Exception("")
-  val intGram = FSA.intersectPTree(origStr, gram, maxLevDist)!!
+  val intGram = FSA.intersectPTree(origStr.tokenizeByWhitespace(), gram, maxLevDist)!!
 
   var clock = TimeSource.Monotonic.markNow()
 
@@ -309,7 +309,7 @@ class BarHillelTest {
     val levDist = 2
 //  println(levBall.toDot())
 //  throw Exception("")
-    val intGram = FSA.intersectPTree(origStr, gram, levDist)!!
+    val intGram = FSA.intersectPTree(toRepair, gram, levDist)!!
 
     var clock = TimeSource.Monotonic.markNow()
 
@@ -352,7 +352,7 @@ class BarHillelTest {
 */
   @Test
   fun levenshteinBlanketTest() {
-    val origStr= "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
+    val origStr = "NAME = NAME . NAME ( [ NUMBER , NUMBER , NUMBER ] NEWLINE"
     val toRepair = origStr.tokenizeByWhitespace()
     val levDist = 2
     val levBall = makeLevFSA(toRepair, levDist)
@@ -383,7 +383,7 @@ class BarHillelTest {
   fun testHammingBallRepair() {
     val timeout = 30
     val gram = vanillaS2PCFGWE
-    val prompt= "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
+    val prompt = "NAME = ( NAME . NAME ( NAME NEWLINE".tokenizeByWhitespace()
     val clock = TimeSource.Monotonic.markNow()
     val lbhSet = gram.repairSeq(prompt).onEach { println(it) }
       .takeWhile { clock.elapsedNow().inWholeSeconds < timeout }.toList()
@@ -464,8 +464,8 @@ class BarHillelTest {
   */
   @Test
   fun matrixLBHTest() {
-    val str = "( ( ( ( ("
-    println(str.tokenizeByWhitespace().size)
+    val str = "( ( ( ( (".tokenizeByWhitespace()
+    println(str.size)
 
     val led = Grammars.dyck.LED(str)
     println("Language edit distance: $led")
@@ -476,7 +476,7 @@ class BarHillelTest {
       val matrixLBHResults = FSA.intersectPTree(str, Grammars.dyck, led)!!
         .sampleStrWithoutReplacement().toSet()
         .also { it.forEach {
-          assertEquals(led, levenshtein(it, str))
+          assertEquals(led, levenshtein(it.tokenizeByWhitespace(), str))
           assertTrue(it in Grammars.dyck.language)
         } }
 
@@ -498,7 +498,7 @@ class BarHillelTest {
       .also { println("${it.value} / ${it.duration}") }
       .also { assertFalse(it.value) }
 
-    val pythonCode = "NAME = [ ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , NAME ) , , ( NAME , NAME ) , , ( NAME , STRING ) , , ( NAME , NAME ) ]"
+    val pythonCode = "NAME = [ ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , STRING ) , ( STRING , NAME ) , , ( NAME , NAME ) , , ( NAME , STRING ) , , ( NAME , NAME ) ]".tokenizeByWhitespace()
     measureTimedValue {  FSA.nonemptyLevInt(pythonCode, vanillaS2PCFG, 4) }
       .also { println("${it.value} / ${it.duration}") }
       .also { assertTrue(it.value) }
@@ -513,7 +513,7 @@ class BarHillelTest {
 */
   @Test
   fun matrixLBHDistTest() {
-    val str = "if ( ID < NUM ) { ID = ID ; } else { ID = ID + NUM ;"
+    val str = "if ( ID < NUM ) { ID = ID ; } else { ID = ID + NUM ;".tokenizeByWhitespace()
     val led = Grammars.whileLang.LED(str).also { println("LED: $it") }
 
     measureTime {
@@ -521,8 +521,9 @@ class BarHillelTest {
         .sampleStrWithoutReplacement().toSet()
         .also { it.forEach {
           assertTrue(it in Grammars.whileLang.language)
-          println(levenshteinAlign(str, it).paintANSIColors())
-          assertEquals(led, levenshtein(it, str))
+          val fixedToks = it.tokenizeByWhitespace()
+          println(levenshteinAlign(str, fixedToks).paintANSIColors())
+          assertEquals(led, levenshtein(fixedToks, str))
         } }
       assertTrue(matrixLBHResults.isNotEmpty())
     }.also { println("Enumeration took: $it") }

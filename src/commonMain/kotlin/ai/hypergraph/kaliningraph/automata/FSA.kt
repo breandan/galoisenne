@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.random.Random
@@ -18,7 +19,10 @@ fun STC.coords() = π2 to π3
 
 class ACYC_FSA constructor(override val Q: TSA, override val init: Set<Σᐩ>, override val final: Set<Σᐩ>): FSA(Q, init, final) {
   // Since the FSA is acyclic, we can use a more efficient topological ordering
-  override val stateLst by lazy { graph.topSort.map { it.label } }
+  override val stateLst by lazy {
+    graph.topSort.map { it.label }
+      .also { if (it.size != states.size) throw Exception("Contained ${states.size} but ${it.size} topsorted indices") }
+  }
 }
 
 open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
@@ -125,9 +129,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
   companion object {
     // Decides intersection non-emptiness for Levenshtein ball ∩ CFG
-    fun nonemptyLevInt(str: Σᐩ, cfg: CFG, radius: Int): Boolean {
-      val levFSA = makeLevFSA(str, radius)
-
+    fun nonemptyLevInt(str: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(str, radius)): Boolean {
       val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(cfg.nonterminals.size) { false } } }
 
       levFSA.allIndexedTxs0(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
@@ -169,10 +171,16 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       return false
     }
 
-    fun LED(cfg: CFG, brokeToks: Σᐩ): Int =
-      (1 until (2 * MAX_RADIUS)).firstOrNull { FSA.nonemptyLevInt(brokeToks, cfg, it) } ?: (2 * MAX_RADIUS)
+    fun LED(
+      cfg: CFG, brokeToks: List<Σᐩ>,
+      upperBound: Int = 2 * MAX_RADIUS,
+      monoEditBounds: Pair<Int, Int> = vanillaS2PCFGWE.maxParsableFragmentB(brokeToks, pad = upperBound)
+    ): Int =
+      (1 until upperBound).firstOrNull {
+        FSA.nonemptyLevInt(brokeToks, cfg, it, makeLevFSA(brokeToks, it, monoEditBounds))
+      } ?: upperBound
 
-    fun intersectPTree(brokenStr: Σᐩ, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(brokenStr, radius)): PTree? {
+    fun intersectPTree(brokenStr: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(brokenStr, radius)): PTree? {
       val nStates = levFSA.numStates
       val startIdx = cfg.bindex[START_SYMBOL]
 

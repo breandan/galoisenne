@@ -251,7 +251,7 @@ fun CFG.maxParsableFragmentB(tokens: List<String>, pad: Int = 3): Pair<Int, Int>
     }
   }.let { if (it < 0) 0 else (tokens.size - it - 2).coerceAtLeast(0) })
 
-  val delta = monoEditBounds.run { second - first }.let { if(it < 0) "$it" else "+$it" }
+  val delta = monoEditBounds.run { second - first }.let { if (it < 0) "$it" else "+$it" }
   println("Mono-edit bounds (R=${monoEditBounds.first}, " +
       "L=${monoEditBounds.second})/${tokens.size} [delta=$delta] in ${boundsTimer.elapsedNow()}")
 
