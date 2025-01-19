@@ -99,31 +99,35 @@ fun makeLevFSA(
    */
   multiEditBounds: IntRange = 0 until str.size,
   digits: Int = (str.size * maxRad).toString().length,
-): FSA =
-  (upArcs(str, maxRad, digits) +
-    diagArcs(str, maxRad, digits) +
-    str.mapIndexed { i, it -> rightArcs(i, maxRad, it, digits) }.flatten() +
-    str.mapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) }.flatten())
-    .also {
-      println("Levenshtein-${str.size}x$maxRad automaton had ${it.size} arcs initially!")
-    }.filter { arc ->
+): FSA {
+  val clock = TimeSource.Monotonic.markNow()
+  var initSize = 0
+  val fsa = (upArcs(str, maxRad, digits) +
+      diagArcs(str, maxRad, digits) +
+      str.mapIndexed { i, it -> rightArcs(i, maxRad, it, digits) }.flatten() +
+      str.mapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) }.flatten())
+    .also { initSize = it.size }
+    .filter { arc ->
       listOf(arc.first.unpackCoordinates(), arc.third.unpackCoordinates())
         .all { (i, j) ->
-           (0 < j || i <= monoEditBounds.first) // Prunes bottom right
-            && (j < maxRad || i >= monoEditBounds.second - 2) // Prunes top left
-            && (1 < j || i <= multiEditBounds.last + 1 || maxRad == 1) // Prunes bottom right
-            && (j < maxRad - 1 || i > multiEditBounds.first - 1 || maxRad == 1) // Prunes top left
+          (0 < j || i <= monoEditBounds.first) // Prunes bottom right
+              && (j < maxRad || i >= monoEditBounds.second - 2) // Prunes top left
+              && (1 < j || i <= multiEditBounds.last + 1 || maxRad == 1) // Prunes bottom right
+              && (j < maxRad - 1 || i > multiEditBounds.first - 1 || maxRad == 1) // Prunes top left
         }
     }
     .let { Q ->
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
-      val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
+      val finalStates =
+        Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
 
       ACYC_FSA(Q, initialStates, finalStates)
         .also { it.height = maxRad; it.width = str.size; it.levString = str }
 //        .nominalize()
-        .also { println("Levenshtein-${str.size}x$maxRad automaton had ${Q.size} arcs after pruning!") }
+        .also { println("Reduced L-NFA(${str.size}, $maxRad) from $initSize to ${Q.size} arcs in ${clock.elapsedNow()}") }
     }
+  return fsa
+}
 
 private fun pd(i: Int, digits: Int) = i.toString().padStart(digits, '0')
 
