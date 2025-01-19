@@ -172,9 +172,10 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     }
 
     fun LED(
-      cfg: CFG, brokeToks: List<Σᐩ>,
+      cfg: CFG,
+      brokeToks: List<Σᐩ>,
       upperBound: Int = 2 * MAX_RADIUS,
-      monoEditBounds: Pair<Int, Int> = vanillaS2PCFGWE.maxParsableFragmentB(brokeToks, pad = upperBound)
+      monoEditBounds: Pair<Int, Int> = cfg.maxParsableFragmentB(brokeToks, pad = upperBound)
     ): Int =
       (1 until upperBound).firstOrNull {
         FSA.nonemptyLevInt(brokeToks, cfg, it, makeLevFSA(brokeToks, it, monoEditBounds))
