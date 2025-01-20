@@ -24,7 +24,7 @@ interface IGF<G, E, V> where G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G
   @JsName("V0") val V: (old: V, edgeMap: (V) -> Set<E>) -> V // Vertex constructor
   fun V(out: Set<V>): V = TODO("Must override me if you want a fresh vertex")
 
-  val deepHashCode: Int
+  val deepHashCode: Long
   @JsName("G1") fun G() = G(setOf())
   @JsName("G2") fun G(vararg graphs: G): G = G(graphs.toList())
   @JsName("G3") fun G(vararg vertices: V): G = G(vertices.map { it.graph })
@@ -368,8 +368,8 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IVertex<G, E, V
 
 abstract class AGF<G, E, V> : IGF<G, E, V>
   where G : IGraph<G, E, V>, E : IEdge<G, E, V>, V : IVertex<G, E, V> {
-  override val deepHashCode: Int = Random.nextInt()
-  override fun hashCode() = deepHashCode
+  override val deepHashCode: Long = Random.nextLong()
+  override fun hashCode() = deepHashCode.toInt()
 }
 
 abstract class Graph<G, E, V>(override val vertices: Set<V> = setOf()) :
