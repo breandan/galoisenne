@@ -69,7 +69,7 @@ fun makeExactLevCFL(
     str.mapIndexed { i, it -> knightArcs(i, radius, it, digits, str) }.flatten())
   .let { Q ->
     val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
-    val finalStates = Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue == radius) } }
+    val finalStates = Q.states().filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue == radius) } }
 
     ACYC_FSA(Q, initialStates, finalStates)
       .also { it.height = radius; it.width = str.size; it.levString = str }
@@ -119,7 +119,7 @@ fun makeLevFSA(
     .let { Q ->
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
       val finalStates =
-        Q.states.filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
+        Q.states().filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
 
       ACYC_FSA(Q, initialStates, finalStates)
         .also { it.height = maxRad; it.width = str.size; it.levString = str }

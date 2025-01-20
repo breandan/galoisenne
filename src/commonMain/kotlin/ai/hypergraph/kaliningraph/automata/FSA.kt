@@ -20,8 +20,15 @@ fun STC.coords() = π2 to π3
 class ACYC_FSA constructor(override val Q: TSA, override val init: Set<Σᐩ>, override val final: Set<Σᐩ>): FSA(Q, init, final) {
   // Since the FSA is acyclic, we can use a more efficient topological ordering
   override val stateLst by lazy {
-    graph.topSort.map { it.label }
-      .also { if (it.size != states.size) throw Exception("Contained ${states.size} but ${it.size} topsorted indices") }
+    graph.topSort().map { it.label }.also {
+      if (it.size != states.size)
+        throw Exception("Contained ${states.size} but ${it.size} topsorted indices:\n" +
+            "T:${Q.joinToString("") { (a, b, c) -> ("($a -[$b]-> $c)") }}\n" +
+            "V:${graph.vertices.map { it.label }.sorted().joinToString(",")}\n" +
+            "Q:${Q.states().sorted().joinToString(",")}\n" +
+            "S:${states.sorted().joinToString(",")}"
+        )
+    }
   }
 }
 
@@ -37,7 +44,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     Q.groupBy { it.π3 }.mapValues { (_, v) -> v.map { it.π2 to it.π1 } }
   }
 
-  val states: Set<Σᐩ> by lazy { Q.states }
+  val states: Set<Σᐩ> by lazy { Q.states() }
   open val stateLst: List<Σᐩ> by lazy { states.toList() }
 
   fun allIndexedTxs1(cfg: CFG): List<Π3<Int, Σᐩ, Int>> =
@@ -102,7 +109,18 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
   fun allOutgoingArcs(from: Σᐩ) = Q.filter { it.π1 == from }
 
-  val graph: LabeledGraph by lazy { LabeledGraph { Q.forEach { (a, b, c) -> a[b] = c } } }
+  val graph: LabeledGraph by lazy {
+    LabeledGraph {
+      Q.forEach { (a, b, c) -> a[b] = c } }.also {
+        if (it.size != states.size)
+          throw Exception("Contained ${states.size} states but ${it.size} vertices:\n" +
+              "T:${Q.joinToString("") { (a, b, c) -> ("($a -[$b]-> $c)") }}\n" +
+              "V:${it.vertices.map { it.label }.sorted().joinToString(",")}\n" +
+              "Q:${Q.states().sorted().joinToString(",")}\n" +
+              "S:${states.sorted().joinToString(",")}"
+          )
+      }
+  }
 
   val parikhVector: MutableMap<IntRange, ParikhVector> = mutableMapOf()
 
@@ -339,7 +357,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   }
 }
 
-val TSA.states by cache { flatMap { listOf(it.π1, it.π3) }.toSet() }
+fun TSA.states() = flatMap { listOf(it.π1, it.π3) }.toSet()
 
 // FSAs looks like this:
 /*

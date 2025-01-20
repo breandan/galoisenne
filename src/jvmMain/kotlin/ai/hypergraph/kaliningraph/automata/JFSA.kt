@@ -4,7 +4,6 @@ import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton.*
-import dk.brics.automaton.Transition
 import java.util.PriorityQueue
 import java.util.concurrent.PriorityBlockingQueue
 import kotlin.random.Random
@@ -73,7 +72,7 @@ fun PTree.toDFA(
   unitRule: (String) -> dk.brics.automaton.Automaton = {
     BAutomaton.makeChar(Random(it.hashCode()).nextInt().toChar())
   }
-) =
+): BAutomaton? =
   measureTimedValue {
     BAutomaton.setMinimization(MINIMIZE_BRZOZOWSKI)
     val period = 5
@@ -83,8 +82,7 @@ fun PTree.toDFA(
       both = { a, b -> if (a == null) b else if (b == null) a
         // Only periodically minimize the automata during construction
         else if (i++ % period == 0) a.concatenate(b).min() else a.concatenate(b) },
-      either = { a, b -> if (a == null) b else if (b == null) a
-        else if (j++ % period == 0) a.union(b).min() else a.union(b) },
+      either = { l -> if (l.isEmpty()) null else BAutomaton.union(l) },
       unit = { a -> if ("ε" in a.root) null else unitRule(a.root) }
     )
   }.also { println("Took ${it.duration} to build FSA") }.value

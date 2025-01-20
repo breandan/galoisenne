@@ -214,7 +214,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 // States, in a topological order (using BFS / Kahn's algorithm)
 // TODO: implement this using min-plus semiring: https://en.wikipedia.org/wiki/Topological_sorting#Parallel_algorithms
 // Behavior is undefined when the graph contains cycles, so be sure to only call this on acyclic graphs
-val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.topSort: List<V> by cache {
+fun <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.topSort(): List<V> {
   // 1. Build in-degree map
   val inDegree = vertices.associateWith { 0 }.toMutableMap()
 
@@ -243,7 +243,7 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
     }
   }
 
-  order
+  return order
 }
 
 // AllPairs[p, q] is the set of all vertices, r, such that p ->* r ->* q
