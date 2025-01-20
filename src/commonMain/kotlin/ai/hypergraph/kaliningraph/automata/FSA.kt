@@ -32,6 +32,7 @@ class ACYC_FSA constructor(override val Q: TSA, override val init: Set<Σᐩ>, o
   }
 }
 
+// TODO: Add support for incrementally growing the FSA by adding new transitions
 open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
   open val alphabet by lazy { Q.map { it.π2 }.toSet() }
   val isNominalizable by lazy { alphabet.any { it.startsWith("[!=]") } }
