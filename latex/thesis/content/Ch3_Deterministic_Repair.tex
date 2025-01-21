@@ -289,3 +289,32 @@ For efficiency, Parikh compatibility can be precomputed for each $Q \times V \ti
 
 
 Once constructed, we normalize $G_\cap$ by removing unreachable and non-generating productions~\cite{firsov2015certified} to obtain $G_\cap'$, which is a recognizer for the admissible set, i.e., $\mathcal{L}(G_\cap') = \ell_\cap$. Note, the original BH construction and our adapted version both reduce to the same CNF, $G_\cap'$, but normalization becomes significantly more tractable for large intersections, as far fewer useless productions are instantiated to only later be removed during normalization. This modified rule is not specific to Levenshtein automata and can be used to accelerate any FSA-CFG intersection.
+
+\section{Matrix Bar-Hillel Construction}
+
+A \textbf{Directed Graph (DG)} is a pair $\mathbf{G} = \langle V, E \subseteq V \times V\rangle$ whose structure can be described via its adjacency matrix $A[u, v] = \mathds{1}_{u\rightarrow v \in E}$. Powers of the adjacency matrix ($A^k$) represent the number of directed paths of a given length between any two nodes, i.e., $(A^k)[u,v] = |\{ p: V^k \mid p=u \rightarrow^* v\}|$. For a \textbf{Directed Acyclic Graph (DAG)}, $A$ satisfies the following properties:
+
+\begin{enumerate}
+\item $A^k = 0$ for all \( k \geq |V| \), since no path can visit the same node twice.
+\item The reachability of $j$ from $i$ can be determined by examining the entries of $A^* = I + A + A^2 + \cdots + A^{n-1}$, where $I$ is the identity matrix.
+\end{enumerate}
+
+\noindent This can be restated as $\Tr(e^A) - |V| = 0$ as observed by Zheng et al.~\cite{zheng2018dags}.
+
+Effectively, this matrix exponential is what we are computing when we are parsing. We will now generalize it to parsing on an acyclic graph.
+
+A \textbf{topological sort} of a graph $G$ is a total order on the vertices $(V, \prec)$ such that $u \rightarrow v \Longrightarrow u \prec v$. It can be easily shown that (1) DAGs are the only graphs which can be topologically sorted and (2) under such an ordering, the adjacency matrix of a DAG will be strictly upper triangular. One way to define a topsort is to repeatedly square the adjacency matrix using a $\langle \min, +\rangle$-semiring, then sort the vertices by incoming path length.
+
+Let $A$ be an acyclic nondeterministic finite automaton with an unlabeled transition graph $T = \langle Q, \{ u \rightarrow v \mid  s \in \Sigma \land (u \overset{s}{\rightarrow} v) \in \delta\}\rangle$, and let $\prec_T$ be a topological sort on $T$. In other words, $u \prec v \Longleftrightarrow \exists \sigma \in \mathcal{L}(u \Longrightarrow v)$.
+
+We will define a matrix algebra over $2^V$ that decides intersection nonemptiness (INE) of a CFG and FSA. Let $G'=\langle \Sigma, V, P, S\rangle$ be a CFG in CNF and $N: \langle \Sigma, Q, \delta, I, F\rangle$ be an acyclic FSA. We will define , and $\oplus = \cup$ and $\otimes = \ldots$.
+
+\begin{equation}
+M_0[u, v] = \{w : V \mid (u \overset{s}{\rightarrow} v) \in \delta \land (w \rightarrow s) \in P \}
+\end{equation}
+
+$\odot: Q \times Q \rightarrow 2^Q$ is a function returning the set of midpoints on any path between two states in the FSA.
+
+\[
+  p\odot r = \{q \in Q \mid p \rightarrow^* q \rightarrow^* r \}
+\]
