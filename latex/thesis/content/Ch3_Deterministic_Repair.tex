@@ -292,7 +292,7 @@ Once constructed, we normalize $G_\cap$ by removing unreachable and non-generati
 
 \section{Matrix Bar-Hillel Construction}
 
-A \textbf{Directed Graph (DG)} is a pair $\mathbf{G} = \langle V, E \subseteq V \times V\rangle$ whose structure can be described via its adjacency matrix $A[u, v] = \mathds{1}_{u\rightarrow v \in E}$. Powers of the adjacency matrix ($A^k$) represent the number of directed paths of a given length between any two nodes, i.e., $(A^k)[u,v] = |\{ p: V^k \mid p=u \rightarrow^* v\}|$. For a \textbf{Directed Acyclic Graph (DAG)}, $A$ satisfies the following properties:
+A \textbf{Directed Graph (DG)} is a pair $\mathbf{G} = \langle V, E \subseteq V \times V\rangle$ whose structure can be described via its adjacency matrix $A[u, v] = \mathds{1}_E(u\rightarrow v)$. Powers of the adjacency matrix ($A^k$) represent the number of directed paths of a given length between any two nodes, i.e., $(A^k)[u,v] = |\{ p: V^k \mid p=u \rightarrow^* v\}|$. For a \textbf{Directed Acyclic Graph (DAG)}, $A$ satisfies the following properties:
 
 \begin{enumerate}
 \item $A^k = 0$ for all \( k \geq |V| \), since no path can visit the same node twice.
@@ -301,20 +301,26 @@ A \textbf{Directed Graph (DG)} is a pair $\mathbf{G} = \langle V, E \subseteq V 
 
 \noindent This can be restated as $\Tr(e^A) - |V| = 0$ as observed by Zheng et al.~\cite{zheng2018dags}.
 
-Effectively, this matrix exponential is what we are computing when we are parsing. We will now generalize it to parsing on an acyclic graph.
+Effectively, this matrix exponential is what we are computing when we are parsing. The parse matrix that is formed by:
+
+\begin{equation}
+  \exp(M) = M + M^2 + \cdots + M^{n-1}
+\end{equation}
+
+\noindent directly corresponds standard CYK parsing algorithm presented in \S~\ref{sec:matrix_parsing}. We will now generalize it to parsing an acyclic finite state automaton.
 
 A \textbf{topological sort} of a graph $G$ is a total order on the vertices $(V, \prec)$ such that $u \rightarrow v \Longrightarrow u \prec v$. It can be easily shown that (1) DAGs are the only graphs which can be topologically sorted and (2) under such an ordering, the adjacency matrix of a DAG will be strictly upper triangular. One way to define a topsort is to repeatedly square the adjacency matrix using a $\langle \min, +\rangle$-semiring, then sort the vertices by incoming path length.
 
-Let $A$ be an acyclic nondeterministic finite automaton with an unlabeled transition graph $T = \langle Q, \{ u \rightarrow v \mid  s \in \Sigma \land (u \overset{s}{\rightarrow} v) \in \delta\}\rangle$, and let $\prec_T$ be a topological sort on $T$. In other words, $u \prec v \Longleftrightarrow \exists \sigma \in \mathcal{L}(u \Longrightarrow v)$.
-
-We will define a matrix algebra over $2^V$ that decides intersection nonemptiness (INE) of a CFG and FSA. Let $G'=\langle \Sigma, V, P, S\rangle$ be a CFG in CNF and $N: \langle \Sigma, Q, \delta, I, F\rangle$ be an acyclic FSA. We will define , and $\oplus = \cup$ and $\otimes = \ldots$.
+Let $A$ be an acyclic finite state automaton, and let $\prec_A: \langle \Sigma, Q, \delta, I, F\rangle$ be a topological sort on $\delta_A$. In other words, $(u \overset{s}{\rightarrow} v) \implies u \prec v$. We will now define a matrix algebra $(2^V, \oplus, \otimes)$ which we will use to decide intersection nonemptiness (INE) of a CFG and FSA. Let $G':\langle \Sigma, V, P, S\rangle$ be a CFG in CNF. We will reuse the definition for $\oplus = \cup$ and $\otimes$ from \S~\ref{sec:matrix_parsing}, and using the indices from the topological sort, initialize $M_0$ as follows:
 
 \begin{equation}
 M_0[u, v] = \{w : V \mid (u \overset{s}{\rightarrow} v) \in \delta \land (w \rightarrow s) \in P \}
 \end{equation}
 
-$\odot: Q \times Q \rightarrow 2^Q$ is a function returning the set of midpoints on any path between two states in the FSA.
+To avoid some unnecessary computation, we can define a helper function $\odot: Q \times Q \rightarrow 2^Q$ that returns the set of pivots on any path between two states in the FSA, i.e., $p\odot q = \{r \in Q \mid p \rightarrow^* r \rightarrow^* q \}$. Now, we are ready to define the elementwise fixpoint iteration:
 
-\[
-  p\odot r = \{q \in Q \mid p \rightarrow^* q \rightarrow^* r \}
-\]
+\begin{equation}
+  M^2[p, q] = \bigoplus_{r \in p \odot q} \big(M[p, r] \otimes M[r, q]\big)
+\end{equation}
+
+Finally, INE is decided by checking whether the parse matrix contains $S$ in any terminating state, i.e., $\big[S \in \bigcup_{q \in F}\exp(M_0)[0, q]\big] \Longleftrightarrow \mathcal{L}(G) \cap \mathcal{L}(A) \neq \varnothing$. This procedure takes roughly $\mathcal{O}(|Q|^2|P|)$ time and space, which confers a quadratic speedup over na\"ively generating the intersection grammar, then normalizing it to eliminate useless productions.

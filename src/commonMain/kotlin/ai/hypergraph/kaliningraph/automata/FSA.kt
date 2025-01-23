@@ -167,14 +167,10 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
           // For each A -> B C
           for ((A, B, C) in cfg.tripleIntProds) {
             if (!dp[p][q][A]) {
-              // Check possible midpoints r in [p+1, q-1]
-              // or in general, r in levFSA.allPairs[p->q]
               for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
                 if (dp[p][r][B] && dp[r][q][C]) {
                   if (p == 0 && A == startIdx && q in levFSA.finalIdxs) return true
                   dp[p][q][A] = true
-                  // We don't need fresh = true, because once we pass this step,
-                  // we won't come back to (p,q) in a later sweep
                   break
                 }
               }
@@ -212,20 +208,6 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         val Aidxs = cfg.bimap.TDEPS[σ]!!.map { cfg.bindex[it] }
         for (Aidx in Aidxs) {
           val newLeaf = PTree(root = "[$p~${cfg.bindex[Aidx]}~$q]", branches = PSingleton(σ))
-          /*
-           * Source: NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as in : NEWLINE INDENT NAME , = NAME . NAME ( STRING , in . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
-           * Repair: NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as NAME : NEWLINE INDENT NAME , = NAME . NAME ( STRING , NAME . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
-           * Mono-edit bounds (R=22, L=33)/63 [delta=+11] in 1.345236166s
-           * Levenshtein-63x3 automaton had 1001 arcs initially!
-           * Levenshtein-63x3 automaton had 593 arcs after pruning!
-           * Encountered error Index 185 out of bounds for length 184 6.414935917s):
-           * NAME = STRING NEWLINE NAME = NAME . NAME ( STRING ) NEWLINE with NAME ( NAME , STRING ) as NAME : NEWLINE INDENT NAME , = NAME . NAME ( STRING , NAME . NAME ( NAME ) ) NEWLINE NAME = NAME . NAME ( NAME ) NEWLINE if NAME == NAME : NEWLINE INDENT return NEWLINE DEDENT DEDENT NEWLINE
-           * java.lang.ArrayIndexOutOfBoundsException: Index 185 out of bounds for length 184
-           * at ai.hypergraph.kaliningraph.automata.FSA$Companion.intersectPTree(FSA.kt:187)
-           * at edu.mcgill.cstk.experiments.repair.PythonMatrixBarHillelKt.evaluateMatrixBarHillelRepairOnStackOverflow(PythonMatrixBarHillel.kt:80)
-           * at edu.mcgill.cstk.experiments.repair.PythonBarHillelRepairKt.main(PythonBarHillelRepair.kt:32)
-           * at edu.mcgill.cstk.experiments.repair.PythonBarHillelRepairKt.main(PythonBarHillelRepair.kt)
-           */
           dp[p][q][Aidx] = if (dp[p][q][Aidx] == null) newLeaf else dp[p][q][Aidx]!! + newLeaf
         }
       }
