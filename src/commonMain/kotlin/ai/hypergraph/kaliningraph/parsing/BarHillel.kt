@@ -305,6 +305,12 @@ fun FSA.SPLP(a: STC, b: STC): IntRange {
   else rng..manhattanDistance(a.coords(), b.coords())
 }
 
+fun FSA.SPLP(a: Int, b: Int): IntRange {
+  val rng = APSP[a to b]
+  return if (rng == null) Int.MAX_VALUE..Int.MAX_VALUE
+  else rng..manhattanDistance(stateLst[a].coords(), stateLst[b].coords())
+}
+
 fun SPLPArith(a: STC, b: STC): IntRange {
   val (xdiff, ydiff) = (b.coords().first - a.coords().first) to (b.coords().second - a.coords().second)
   val lp = manhattanDistance(a.coords(), b.coords())

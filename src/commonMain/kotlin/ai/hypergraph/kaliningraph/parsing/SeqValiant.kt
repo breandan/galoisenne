@@ -19,7 +19,7 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
 //  override fun hashCode(): Int = hash
   var ntIdx = -1
 
-  operator fun plus(other: PTree) = PTree(root, branches + other.branches)
+  operator fun plus(other: PTree?) = if (other == null) this else PTree(root, branches + other.branches)
 
   val branchRatio: Pair<Double, Double> by lazy { if (branches.isEmpty()) 0.0 to 0.0 else
     (branches.size.toDouble() + branches.sumOf { (l, r) -> l.branchRatio.first + r.branchRatio.first }) to

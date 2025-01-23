@@ -200,42 +200,48 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val nStates = levFSA.numStates
       val startIdx = cfg.bindex[START_SYMBOL]
 
-      // 2) Create dp array of parse trees
+      // 1) Create dp array of parse trees
       val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(cfg.nonterminals.size) { null } } }
 
-      // 3) Initialize terminal productions A -> a
+      // 2) Initialize terminal productions A -> a
       for ((p, σ, q) in levFSA.allIndexedTxs1(cfg)) {
         val Aidxs = cfg.bimap.TDEPS[σ]!!.map { cfg.bindex[it] }
         for (Aidx in Aidxs) {
           val newLeaf = PTree(root = "[$p~${cfg.bindex[Aidx]}~$q]", branches = PSingleton(σ))
-          dp[p][q][Aidx] = if (dp[p][q][Aidx] == null) newLeaf else dp[p][q][Aidx]!! + newLeaf
+          dp[p][q][Aidx] = newLeaf + dp[p][q][Aidx]
         }
       }
 
+      // 3) CYK + Floyd Warshall parsing
       for (dist in 0 until nStates) {
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
+//          val splp = levFSA.SPLP(p, q).let { (it.first - 1)..(it.last + 2) }
 
-          for ((Aidx, /*->*/ Bidx, Cidx) in cfg.tripleIntProds) {
+          val possibleProds = cfg.tripleIntProds
+//              .filter { // Potential optimization:
+//                val ntlb = cfg.parikhMap.ntLengthBounds[it.first]
+//                println("SPLP (${levFSA.stateLst[p]}, ${levFSA.stateLst[q]}): $splp / $ntlb")
+//                splp.overlaps(ntlb)
+//              }
+          for ((Aidx, /*->*/ Bidx, Cidx) in possibleProds) {
             // Check all possible midpoint states r in the DAG from p to q
-            for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
+            for (r in (levFSA.allPairs[p to q] ?: emptySet())) { // Sparse dot prod
               val left = dp[p][r][Bidx]
               val right = dp[r][q][Cidx]
               if (left != null && right != null) {
                 val newTree = PTree("[$p~${cfg.bindex[Aidx]}~$q]", listOf(left to right))
-
-                if (dp[p][q][Aidx] == null) dp[p][q][Aidx] = newTree
-                else dp[p][q][Aidx] = dp[p][q][Aidx]!! + newTree
+                dp[p][q][Aidx] = newTree + dp[p][q][Aidx]
               }
             }
           }
         }
       }
 
-      // 5) Gather final parse trees from dp[0][f][startIdx], for all final states f
-      val allParses = levFSA.finalIdxs.mapNotNull { f -> dp[0][f][startIdx] }
+      // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
+      val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
-      // 6) Combine them under a single "super‐root"
+      // 5) Combine them under a single "super‐root"
       return if (allParses.isEmpty()) null
         else PTree(START_SYMBOL, allParses.flatMap { forest -> forest.branches })
     }
