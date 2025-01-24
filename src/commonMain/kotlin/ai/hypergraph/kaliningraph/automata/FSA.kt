@@ -129,43 +129,27 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     parikhVector.getOrPut(from..to) { levString.subList(from, to).parikhVector() }
 
   var levString: List<Σᐩ> = emptyList()
-//  by lazy {
-//    val t = stateCoords.filter { it.π3 == 0 }.maxOf { it.π2 }
-//    val maxY = stateCoords.maxOf { it.π3 }
-//    val pad = (t * maxY).toString().length
-////    println("Max state: $t")
-//    val padY = "0".padStart(pad, '0')
-//    (0..<t).map { "q_${it.toString().padStart(pad, '0')}/$padY" to "q_${(it+1).toString().padStart(pad, '0')}/$padY" }
-//      .map { (a, b) ->
-//        val lbl = edgeLabels[a to b]
-////        if (lbl == null) {
-////          println("Failed to lookup: $a to $b")
-////          println(edgeLabels)
-////        }
-//        lbl!!
-//      }
-//  }
 
   companion object {
     // Decides intersection non-emptiness for Levenshtein ball ∩ CFG
     fun nonemptyLevInt(str: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(str, radius)): Boolean {
-      val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(cfg.nonterminals.size) { false } } }
+      val nStates = levFSA.numStates
+      val bindex = cfg.bindex
+      val prods = cfg.tripleIntProds
+      val width = cfg.nonterminals.size
+      val startIdx = bindex[START_SYMBOL]
+      val dp = Array(nStates) { Array(nStates) { BooleanArray(width) { false } } }
 
       levFSA.allIndexedTxs0(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
-//      println("BEFORE (sum=${dp.sumOf { it.sumOf { it.sumOf { if(it) 1.0 else 0.0 } } }})")
-//      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
-//      println(dp.joinToString("\n") { it.joinToString(" ") { it.joinToString("", "[", "]") { if (it) "1" else "0"} } })
-
-      val startIdx = cfg.bindex[START_SYMBOL]
-
       // For pairs (p,q) in topological order
-      for (dist in 0 until levFSA.numStates) {
-        for (iP in 0 until levFSA.numStates - dist) {
+      for (dist in 0 until nStates) {
+        for (iP in 0 until nStates - dist) {
           val p = iP
           val q = iP + dist
+          if ((p to q) !in levFSA.allPairs) continue
           // For each A -> B C
-          for ((A, B, C) in cfg.tripleIntProds) {
+          for ((A, B, C) in prods) {
             if (!dp[p][q][A]) {
               for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
                 if (dp[p][r][B] && dp[r][q][C]) {
@@ -178,10 +162,6 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
           }
         }
       }
-
-//      println("AFTER (sum=${dp.sumOf { it.sumOf { it.sumOf { if(it) 1.0 else 0.0 } } }})")
-//      println(dp.joinToString("\n") { it.joinToString(" ") { if (it.any { it }) "1" else "0" } })
-//      println(dp.joinToString("\n") { it.joinToString(" ") { it.joinToString("", "[", "]") { if (it) "1" else "0"} } })
 
       return false
     }
@@ -198,16 +178,20 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
     fun intersectPTree(brokenStr: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(brokenStr, radius)): PTree? {
       val nStates = levFSA.numStates
-      val startIdx = cfg.bindex[START_SYMBOL]
+      val bindex = cfg.bindex
+      val bimap = cfg.bimap
+      val prods = cfg.tripleIntProds
+      val width = cfg.nonterminals.size
+      val startIdx = bindex[START_SYMBOL]
 
       // 1) Create dp array of parse trees
-      val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(cfg.nonterminals.size) { null } } }
+      val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(width) { null } } }
 
       // 2) Initialize terminal productions A -> a
       for ((p, σ, q) in levFSA.allIndexedTxs1(cfg)) {
-        val Aidxs = cfg.bimap.TDEPS[σ]!!.map { cfg.bindex[it] }
+        val Aidxs = bimap.TDEPS[σ]!!.map { bindex[it] }
         for (Aidx in Aidxs) {
-          val newLeaf = PTree(root = "[$p~${cfg.bindex[Aidx]}~$q]", branches = PSingleton(σ))
+          val newLeaf = PTree(root = "[$p~${bindex[Aidx]}~$q]", branches = PSingleton(σ))
           dp[p][q][Aidx] = newLeaf + dp[p][q][Aidx]
         }
       }
@@ -216,21 +200,13 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       for (dist in 0 until nStates) {
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
-//          val splp = levFSA.SPLP(p, q).let { (it.first - 1)..(it.last + 2) }
-
-          val possibleProds = cfg.tripleIntProds
-//              .filter { // Potential optimization:
-//                val ntlb = cfg.parikhMap.ntLengthBounds[it.first]
-//                println("SPLP (${levFSA.stateLst[p]}, ${levFSA.stateLst[q]}): $splp / $ntlb")
-//                splp.overlaps(ntlb)
-//              }
-          for ((Aidx, /*->*/ Bidx, Cidx) in possibleProds) {
-            // Check all possible midpoint states r in the DAG from p to q
-            for (r in (levFSA.allPairs[p to q] ?: emptySet())) { // Sparse dot prod
+          if (p to q !in levFSA.allPairs) continue
+          for (r in levFSA.allPairs[p to q]!!) { // Sparse dot prod
+            for ((Aidx, /*->*/ Bidx, Cidx) in prods) {
               val left = dp[p][r][Bidx]
               val right = dp[r][q][Cidx]
               if (left != null && right != null) {
-                val newTree = PTree("[$p~${cfg.bindex[Aidx]}~$q]", listOf(left to right))
+                val newTree = PTree("[$p~${bindex[Aidx]}~$q]", listOf(left to right))
                 dp[p][q][Aidx] = newTree + dp[p][q][Aidx]
               }
             }
