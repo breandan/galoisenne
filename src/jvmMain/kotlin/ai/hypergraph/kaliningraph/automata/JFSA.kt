@@ -82,7 +82,7 @@ fun PTree.toDFA(
       both = { a, b -> if (a == null) b else if (b == null) a
         // Only periodically minimize the automata during construction
         else if (i++ % period == 0) a.concatenate(b).min() else a.concatenate(b) },
-      either = { l -> if (l.isEmpty()) null else BAutomaton.union(l) },
+      either = { l -> if (l.isEmpty()) null else BAutomaton.union(l).min() },
       unit = { a -> if ("ε" in a.root) null else unitRule(a.root) }
     )
   }.also { println("Took ${it.duration} to build FSA") }.value
