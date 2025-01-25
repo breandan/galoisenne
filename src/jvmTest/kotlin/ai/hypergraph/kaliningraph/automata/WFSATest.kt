@@ -1,13 +1,11 @@
 package ai.hypergraph.kaliningraph.automata
 
 import Grammars
-import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.LangCache
-import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
-import ai.hypergraph.kaliningraph.repair.MAX_TOKENS
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
+import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton
 import dk.brics.automaton.RegExp
