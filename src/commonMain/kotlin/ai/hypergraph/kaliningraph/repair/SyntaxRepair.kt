@@ -18,6 +18,7 @@ var MAX_SAMPLE = 20 // Maximum number of repairs to sample
 var MAX_TOKENS = 100 // Maximum number of tokens per repair
 var MIN_TOKENS = 3
 var MAX_RADIUS = 3
+var LED_BUFFER = 1 // Distance to search past the language edit distance
 var TIMEOUT_MS = 10_000 // Timeout for each repair attempt (default, modify elsewhere)
 var MAX_REPAIR = 2 // Maximum number of edits per repair
 
