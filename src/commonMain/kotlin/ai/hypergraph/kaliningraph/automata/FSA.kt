@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.automata
 
+import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
@@ -17,21 +18,6 @@ fun Σᐩ.coords(): Pair<Int, Int> =
 typealias STC = Triple<Int, Int, Int>
 fun STC.coords() = π2 to π3
 
-class ACYC_FSA constructor(override val Q: TSA, override val init: Set<Σᐩ>, override val final: Set<Σᐩ>): FSA(Q, init, final) {
-  // Since the FSA is acyclic, we can use a more efficient topological ordering
-  override val stateLst by lazy {
-    graph.topSort().map { it.label }.also {
-      if (it.size != states.size)
-        throw Exception("Contained ${states.size} but ${it.size} topsorted indices:\n" +
-            "T:${Q.joinToString("") { (a, b, c) -> ("($a -[$b]-> $c)") }}\n" +
-            "V:${graph.vertices.map { it.label }.sorted().joinToString(",")}\n" +
-            "Q:${Q.states().sorted().joinToString(",")}\n" +
-            "S:${states.sorted().joinToString(",")}"
-        )
-    }
-  }
-}
-
 // TODO: Add support for incrementally growing the FSA by adding new transitions
 open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val final: Set<Σᐩ>) {
   open val alphabet by lazy { Q.map { it.π2 }.toSet() }
@@ -41,6 +27,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   val transit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
     Q.groupBy { it.π1 }.mapValues { (_, v) -> v.map { it.π2 to it.π3 } }
   }
+
   val revtransit: Map<Σᐩ, List<Pair<Σᐩ, Σᐩ>>> by lazy {
     Q.groupBy { it.π3 }.mapValues { (_, v) -> v.map { it.π2 to it.π1 } }
   }
@@ -188,7 +175,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(width) { null } } }
 
       // 2) Initialize terminal productions A -> a
-      for ((p, σ, q) in levFSA.allIndexedTxs1(cfg)) {
+      val aitx = levFSA.allIndexedTxs1(cfg)
+      for ((p, σ, q) in aitx) {
         val Aidxs = bimap.TDEPS[σ]!!.map { bindex[it] }
         for (Aidx in Aidxs) {
           val newLeaf = PTree(root = "[$p~${bindex[Aidx]}~$q]", branches = PSingleton(σ))
