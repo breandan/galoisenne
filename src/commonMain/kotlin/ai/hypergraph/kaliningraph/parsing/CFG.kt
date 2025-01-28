@@ -244,7 +244,12 @@ class Bindex<T>(
   val ntIndices: Map<T, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
 ): List<T> by indexedNTs {
   constructor(map: Map<Int, T>) : this(map.values.toSet(), map.values.toList(), map.entries.associate { it.value to it.key })
-  operator fun get(s: T): Int = ntIndices[s] ?: 1.also { println("Unknown nonterminal: $s"); null!! }
+  operator fun get(s: T): Int = ntIndices[s] ?: 1.also {
+    println("Unknown nonterminal: $s");
+    try {
+      throw IllegalArgumentException("Unknown nonterminal: $s")
+    } catch (e: IllegalArgumentException) {e.printStackTrace()}
+    null!! }
   fun getUnsafe(s: T): Int? = ntIndices[s]
   override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
 }

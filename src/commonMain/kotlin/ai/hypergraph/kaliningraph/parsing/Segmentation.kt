@@ -82,7 +82,7 @@ data class Segmentation(
       acc
     }
 
-  // Takes an IntRange of word indices and a String of words delimited by one or more whitespaces,
+// Takes an IntRange of word indices and a String of words delimited by one or more whitespaces,
 // and returns the corresponding IntRange of character indices in the original string.
 // For example, if the input is (1..2, "a__bb___ca d e f"), the output is 3..10
   fun IntRange.charIndicesOfWordsInString(str: String): IntRange {
@@ -121,6 +121,16 @@ fun preparseParseableLines(cfg: CFG, editorText: Σᐩ) {
       segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
         Segmentation.build(cfg, line.trim()).toColorfulHTMLString()
           .let { leadingWhiteSpace + it + trailingWhiteSpace }
+      }
+    }
+}
+
+fun preparseParseableLines(cfg: CFG, editorText: Σᐩ, recognizer: (String) -> Boolean) {
+  editorText.lineSequence()
+    .filter { it.isNotBlank() && !it.containsHole() }
+    .forEach { line ->
+      segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
+        (if (recognizer(line)) line.also { println("Recognized $it") } else "<u>$line</u>".also { println("Unrecognized $it") })
       }
     }
 }
