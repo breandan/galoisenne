@@ -103,8 +103,6 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
         when {
           i == j -> {
             // The trivial path i->i has just i on it (assuming zero-length path is allowed).
-            // Or, if you prefer an empty path to have no “states in between,”
-            // you could make this emptySet().
             result[i to i] = emptySet()
           }
           !post[i].get(j) -> {
