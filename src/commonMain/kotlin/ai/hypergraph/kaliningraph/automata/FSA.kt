@@ -1,13 +1,12 @@
 package ai.hypergraph.kaliningraph.automata
 
-import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
-import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.random.Random
+import kotlin.time.TimeSource
 
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
@@ -120,32 +119,36 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   companion object {
     // Decides intersection non-emptiness for Levenshtein ball ∩ CFG
     fun nonemptyLevInt(str: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(str, radius)): Boolean {
-      val nStates = levFSA.numStates
       val bindex = cfg.bindex
-      val prods = cfg.tripleIntProds
       val width = cfg.nonterminals.size
-      val startIdx = bindex[START_SYMBOL]
-      val dp = Array(nStates) { Array(nStates) { BooleanArray(width) { false } } }
+      val vindex = cfg.vindex
+      val ap: Map<Pair<Int, Int>, Set<Int>> = levFSA.allPairs
+      val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
 
       levFSA.allIndexedTxs0(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
+      val startIdx = bindex[START_SYMBOL]
+
       // For pairs (p,q) in topological order
-      for (dist in 0 until nStates) {
-        for (iP in 0 until nStates - dist) {
+      for (dist in 0 until levFSA.numStates) {
+        for (iP in 0 until levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
-          if ((p to q) !in levFSA.allPairs) continue
-          // For each A -> B C
-          for ((A, B, C) in prods) {
-            if (!dp[p][q][A]) {
-              for (r in (levFSA.allPairs[p to q] ?: emptySet())) {
+          if (p to q !in ap) continue
+          val appq = ap[p to q]!!
+          for ((A, indexArray) in vindex.withIndex()) {
+            outerloop@for(j in 0..<indexArray.size step 2) {
+              val B = indexArray[j]
+              val C = indexArray[j + 1]
+              for (r in appq) {
                 if (dp[p][r][B] && dp[r][q][C]) {
-                  if (p == 0 && A == startIdx && q in levFSA.finalIdxs) return true
                   dp[p][q][A] = true
-                  break
+                  break@outerloop
                 }
               }
             }
+
+            if (p == 0 && A == startIdx && q in levFSA.finalIdxs && dp[p][q][A]) return true
           }
         }
       }
@@ -163,12 +166,16 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         FSA.nonemptyLevInt(brokeToks, cfg, it, makeLevFSA(brokeToks, it, monoEditBounds))
       } ?: upperBound
 
-    fun intersectPTree(brokenStr: List<Σᐩ>, cfg: CFG, radius: Int, levFSA: FSA = makeLevFSA(brokenStr, radius)): PTree? {
-      val nStates = levFSA.numStates
+
+    fun intersectPTree(brokenStr: List<Σᐩ>, cfg: CFG, radius: Int,
+                       levFSA: FSA = makeLevFSA(brokenStr, radius)): PTree? {
+      val timer = TimeSource.Monotonic.markNow()
       val bindex = cfg.bindex
       val bimap = cfg.bimap
-      val prods = cfg.tripleIntProds
       val width = cfg.nonterminals.size
+      val vindex = cfg.vindex
+
+      val nStates = levFSA.numStates
       val startIdx = bindex[START_SYMBOL]
 
       // 1) Create dp array of parse trees
@@ -189,25 +196,32 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
           if (p to q !in levFSA.allPairs) continue
-          for (r in levFSA.allPairs[p to q]!!) { // Sparse dot prod
-            for ((Aidx, /*->*/ Bidx, Cidx) in prods) {
-              val left = dp[p][r][Bidx]
-              val right = dp[r][q][Cidx]
-              if (left != null && right != null) {
-                val newTree = PTree("[$p~${bindex[Aidx]}~$q]", listOf(left to right))
-                dp[p][q][Aidx] = newTree + dp[p][q][Aidx]
+          val appq = levFSA.allPairs[p to q]!!
+          for ((Aidx, indexArray) in vindex.withIndex()) {
+            val rhsPairs = dp[p][q][Aidx]?.branches?.toMutableList() ?: mutableListOf()
+            outerLoop@for (j in 0..<indexArray.size step 2) {
+              val Bidx = indexArray[j]
+              val Cidx = indexArray[j + 1]
+              for (r in appq) {
+                val left = dp[p][r][Bidx]
+                val right = dp[r][q][Cidx]
+                if (left != null && right != null) {
+                  rhsPairs += left to right
+                }
               }
             }
+
+            if (rhsPairs.isNotEmpty()) dp[p][q][Aidx] = PTree("[$p~${bindex[Aidx]}~$q]", rhsPairs)
           }
         }
       }
 
+      println("Completed parse matrix in: ${timer.elapsedNow()}")
+
       // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
       val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
-      // 5) Combine them under a single "super‐root"
-      return if (allParses.isEmpty()) null
-        else PTree(START_SYMBOL, allParses.flatMap { forest -> forest.branches })
+      return PTree(START_SYMBOL, allParses.flatMap { forest -> forest.branches })
     }
   }
 
