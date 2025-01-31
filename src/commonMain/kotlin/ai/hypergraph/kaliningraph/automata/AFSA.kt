@@ -49,9 +49,13 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     return result
   }
 
-  // Since the FSA is acyclic, we can use a more efficient topological ordering
+  /** See [FSA.intersectPTree] for why this is needed*/
   override val stateLst by lazy {
-    topSort()
+    // Since the FSA is acyclic, we can use a more efficient topsort -
+    // This trick will only work for Levenshtein FSAs (otherwise use topSort())
+    states.groupBy { it.coords().let { (a, b) -> a + b } }.values.flatten()
+
+//    topSort()
 //      .also {
 //      if (it.size != states.size)
 //        throw Exception("Contained ${states.size} but ${it.size} topsorted indices:\n" +
