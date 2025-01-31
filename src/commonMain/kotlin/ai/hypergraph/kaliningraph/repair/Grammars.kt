@@ -2846,6 +2846,16 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Compound_Stmt -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     Stmt -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-  """.trimIndent()
-    .lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+}
+
+val dyck by lazy {
+  """
+    START -> L R
+    START -> L F
+    START -> START START
+    F -> START R
+    L -> (
+    R -> )
+  """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
 }

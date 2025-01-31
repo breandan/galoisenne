@@ -292,7 +292,7 @@ Once constructed, we normalize $G_\cap$ by removing unreachable and non-generati
 
 \section{Matrix Bar-Hillel Construction}
 
-A \textbf{Directed Graph (DG)} is a pair $\mathbf{G} = \langle V, E \subseteq V \times V\rangle$ whose structure can be described via its adjacency matrix $A[u, v] = \mathds{1}_E(u\rightarrow v)$. Powers of the adjacency matrix ($A^k$) represent the number of directed paths of a given length between any two nodes, i.e., $(A^k)[u,v] = |\{ p: V^k \mid p=u \rightarrow^* v\}|$. For a \textbf{Directed Acyclic Graph (DAG)}, $A$ satisfies the following properties:
+A \textbf{Directed Graph (DG)} is a graph $\mathbf{G} = \langle V, E \subseteq V \times V\rangle$ whose topology can be described via its adjacency matrix $A[u, v] = \mathds{1}_E(u\rightarrow v)$. Powers of the adjacency matrix ($A^k$) represent the number of directed paths of a given length between any two nodes, i.e., $(A^k)[u,v] = |\{ p: V^k \mid p=u \rightarrow^* v\}|$. For a \textbf{Directed Acyclic Graph (DAG)}, $A$ satisfies the following properties:
 
 \begin{enumerate}
 \item $A^k = 0$ for all \( k \geq |V| \), since no path can visit the same node twice.
@@ -317,10 +317,98 @@ Let $A$ be an acyclic finite state automaton, and let $\prec_A: \langle \Sigma, 
 M_0[u, v] = \{w : V \mid (u \overset{s}{\rightarrow} v) \in \delta \land (w \rightarrow s) \in P \}
 \end{equation}
 
-To avoid some unnecessary computation, we can define a helper function $\odot: Q \times Q \rightarrow 2^Q$ that returns the set of pivots on any path between two states in the FSA, i.e., $p\odot q = \{r \in Q \mid p \rightarrow^* r \rightarrow^* q \}$. Now, we are ready to define the elementwise fixpoint iteration:
+To avoid some unnecessary computation, we can define a helper function $\blacktriangle: Q \times Q \rightarrow 2^Q$ that returns only the set of pivots on any path between two states in the FSA, i.e., $p\blacktriangle q = \{r \in Q \mid p \rightarrow^* r \rightarrow^* q \}$. Now, we are ready to define the elementwise fixpoint iteration:
 
 \begin{equation}
-  M^2[p, q] = \bigoplus_{r \in p \odot q} \big(M[p, r] \otimes M[r, q]\big)
+  M^2[p, q] = \bigoplus_{r \in p \blacktriangle q} \big(M[p, r] \otimes M[r, q]\big)
 \end{equation}
 
 Finally, INE is decided by checking whether the parse matrix contains $S$ in any terminating state, i.e., $\big[S \in \bigcup_{q \in F}\exp(M_0)[0, q]\big] \Longleftrightarrow \mathcal{L}(G) \cap \mathcal{L}(A) \neq \varnothing$. This procedure takes roughly $\mathcal{O}(|Q|^2|P|)$ time and space, which confers a quadratic speedup over na\"ively generating the intersection grammar, then normalizing it to eliminate useless productions.
+
+\clearpage
+
+
+For example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to balance the parentheses. We will initially have the following Levenshtein automaton, A. To check for non-emptiness, we will perform the following procedure:
+\begin{center}
+  \resizebox{0.6\textwidth}{!}{
+
+    \begin{tikzpicture}[
+%->, % makes the edges directed
+      >=stealth',
+      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+      initial text=$ $, % sets the text that appears on the start arrow
+    ]
+      \node[state, initial]                (00) {$q_{0,0}$};
+      \node[state, right of=00]            (10) {$q_{1,0}$};
+      \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+      \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+      \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+      \node[state, right of=01]                     (11) {$q_{1,1}$};
+      \node[state, right of=11]                     (21) {$q_{2,1}$};
+      \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+      \draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+      \draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+      \draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
+
+      \draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
+
+      \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+      \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+      \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+      \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+      \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+    \end{tikzpicture}
+  }
+\end{center}
+
+\noindent Suppose CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow ), R \rightarrow )\}$.
+Let us assume an ordering $S, F, L, R$ on $V$ (i.e., $\bs\ws\bs\ws$ would represent $\{S, L\}$), and a topological ordering on $A$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $L(G')\cap L(A)$. We will proceed as follows:
+
+\resizebox{0.8\textwidth}{!}{
+\[
+  \begin{array}{c|cccccccc}
+    M_0  & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
+    q_{00} &              & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{01} &              &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{10} &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{11} &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{20} &              &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws \\ [6pt]
+    q_{21} &              &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{30} &              &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+    q_{31} &              &              &              &              &              &              &              &              \\ [6pt]
+  \end{array}
+\]
+}
+
+\ldots
+
+\resizebox{0.8\textwidth}{!}{
+\[
+  \begin{array}{c|cccccccc}
+    M_\infty & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
+    q_{00} &              & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
+    q_{01} &              &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
+    q_{10} &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
+    q_{11} &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{20} &              &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws \\ [6pt]
+    q_{21} &              &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{30} &              &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+    q_{31} &              &              &              &              &              &              &              &              \\ [6pt]
+  \end{array}
+\]
+}
+
+\noindent Since $M[q_{00}, q_{31}, 0] = \bs$, this implies $L(A)\cap L(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$.
+
