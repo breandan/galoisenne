@@ -6,7 +6,7 @@ class LRUCache<K, V>(
   private val sizeOf: (key: K, value: V) -> Int = { _, _ -> 1 }
 ) {
   val map: LinkedHashMap<K, V> = LinkedHashMap(0, .75f)
-  private var size: Int = 0
+  var size: Int = 0
 
   fun getOrPut(key: K, value: () -> V): V =
     map[key] ?: value().also { put(key, it) }

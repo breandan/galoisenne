@@ -1,11 +1,12 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import Grammars
+import ai.hypergraph.kaliningraph.automata.GRE.ONE
+import ai.hypergraph.kaliningraph.automata.GRE.UNI
+import ai.hypergraph.kaliningraph.automata.startGRE
 import ai.hypergraph.kaliningraph.types.*
-import ai.hypergraph.kaliningraph.types.powerset
 import kotlin.test.*
+import kotlin.time.measureTime
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.BrzozowskiTest"
@@ -16,14 +17,9 @@ class BrzozowskiTest {
 */
   @Test
   fun testGRE() {
-    val ab = GRE("A") + GRE("B")
-    val nabab = !(ab * ab)
-
-    println(nabab.toString())
-
     val t = Grammars.ifThen.startGRE(List(5) { "_" })
-
-    println(t?.toString()?.length)
+    println(t!!.toString().length)
+    measureTime { t.words().toList().size.also { println("Words: $it") } }.also { println("Time: $it") }
   }
 
   /*
