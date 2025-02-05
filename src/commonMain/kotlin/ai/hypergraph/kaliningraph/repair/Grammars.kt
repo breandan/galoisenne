@@ -987,28 +987,17 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Star_Op -> *
     Double_Star_Op -> **
     Arrow -> arrow
-    Simple_Stmt -> Small_Stmts Newline
-    Expr_Stmt -> Testlist_Star_Expr Annotated_Assign
     Annotated_Assign -> Colon Test
     Testlist_Star_Expr -> Test_Or_Star_Exprs Comma
     Yield_Testlist_Star_Assign_Exprs -> Assign_Op Yield_Expr
     Yield_Testlist_Star_Assign_Exprs -> Assign_Op Testlist_Star_Expr
-    Testlist_Star_Exprs_Assign -> Testlist_Star_Expr Yield_Testlist_Star_Assign_Exprs
-    Del_Stmt -> Del_Keyword Exprlist
-    Return_Stmt -> Return_Keyword Testlist_Endcomma
-    Raise_Stmt -> Raise_Keyword Test
-    Import_name -> Import_Keyword Dotted_As_Names
     Dots_Plus -> Dot_Or_Dots Dots_Plus
     Start_Dotted_Name -> Dots_Plus Dotted_Name
     Import_From_Froms -> From_Keyword Start_Dotted_Name
     Import_From_Froms -> From_Keyword Dots_Plus
     Import_From_Imports -> Import_Keyword Star_Op
     Import_From_Imports -> Import_Keyword Import_As_Names_Endcomma
-    Import_From -> Import_From_Froms Import_From_Imports
     Import_As_Names_Endcomma -> Import_As_Name Comma
-    Global_Stmt -> Global_Keyword Many_Names
-    Nonlocal_Stmt -> Nonlocal_Keyword Many_Names
-    Assert_Stmt -> Assert_Keyword Test
     Aug_Assign -> +=
     Aug_Assign -> -=
     Aug_Assign -> *=
@@ -1023,9 +1012,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Aug_Assign -> **=
     Aug_Assign -> //=
     Del_Keyword -> del
-    Pass_Stmt -> pass
-    Break_Stmt -> break
-    Continue_Stmt -> continue
     Return_Keyword -> return
     Yield_Keyword -> yield
     Raise_Keyword -> raise
@@ -1039,9 +1025,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Assert_Keyword -> assert
     Def_Keyword -> def
     Class_Keyword -> class
-    Async_Stmt -> Async_Keyword Funcdef
-    Async_Stmt -> Async_Keyword With_Stmt
-    Async_Stmt -> Async_Keyword For_Stmt
     Except_Clause -> Except_Keyword Test
     Async_Keyword -> async
     Await_Keyword -> await
@@ -1067,7 +1050,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Open_Curl_Bracket -> {
     Close_Curl_Bracket -> }
     Not_Test -> Not_Bool_Op Not_Test
-    Star_Expr -> Star_Op Expr
     Factor -> Unary_Op Factor
     Many_Trailers -> Trailer Many_Trailers
     Atom_Expr -> Atom Many_Trailers
@@ -1086,9 +1068,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Exprlist -> Generic_Exprs Comma
     Testlist_Endcomma -> Test Comma
     KeyVal_Or_Unpack -> Double_Star_Op Expr
-    KeyVal_Or_Unpack_Setter -> KeyVal_Or_Unpack Comp_For
-    KeyVal_Or_Unpack_Setter -> Many_KeyVals_Or_Unpacks Comma
-    Test_Or_Star_Expr_Setter -> Test_Or_Star_Expr Comp_For
     Or_Bool_Op -> or
     And_Bool_Op -> and
     Not_Bool_Op -> not
@@ -1118,19 +1097,11 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Unary_Op -> +
     Unary_Op -> -
     Unary_Op -> ~
-    Literals -> NAME
-    Literals -> NUMBER
-    Literals -> STRING
-    Literals -> ...
-    Literals -> None
-    Literals -> True
-    Literals -> False
     Simple_Name -> NAME
     Arglist -> Arguments Comma
     Argument -> Test Comp_For
     Argument -> Double_Star_Op Test
     Argument -> Star_Op Test
-    Comp_If -> If_Keyword Test_Nocond
     Yield_Expr -> Yield_Keyword Yield_Arg
     Yield_Arg -> From_Keyword Test
     Typedargslist -> Star_Tfpdef Comma
@@ -1158,32 +1129,23 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Typedargslist -> *
     Star_Double_Star -> *
     Varargslist -> *
-    Stmt -> Small_Stmts Newline
     Suite -> Small_Stmts Newline
     START -> Small_Stmts Newline
     Small_Stmt -> Testlist_Star_Expr Annotated_Assign
     Small_Stmts -> Testlist_Star_Expr Annotated_Assign
-    Testlist_Star_Exprs_Assign -> Test_Or_Star_Exprs Comma
     Testlist_Comp -> Test_Or_Star_Exprs Comma
-    Test_Or_Star_Expr_Setter -> Test_Or_Star_Exprs Comma
-    Expr_Stmt -> Testlist_Star_Expr Yield_Testlist_Star_Assign_Exprs
-    Expr_Stmt -> Test_Or_Star_Exprs Comma
     Small_Stmt -> Testlist_Star_Expr Yield_Testlist_Star_Assign_Exprs
     Small_Stmt -> Test_Or_Star_Exprs Comma
     Small_Stmts -> Testlist_Star_Expr Yield_Testlist_Star_Assign_Exprs
     Small_Stmts -> Test_Or_Star_Exprs Comma
     Small_Stmt -> Del_Keyword Exprlist
     Small_Stmts -> Del_Keyword Exprlist
-    Flow_Stmt -> Return_Keyword Testlist_Endcomma
     Small_Stmt -> Return_Keyword Testlist_Endcomma
     Small_Stmts -> Return_Keyword Testlist_Endcomma
-    Flow_Stmt -> Raise_Keyword Test
     Small_Stmt -> Raise_Keyword Test
     Small_Stmts -> Raise_Keyword Test
-    Import_Stmt -> Import_Keyword Dotted_As_Names
     Small_Stmt -> Import_Keyword Dotted_As_Names
     Small_Stmts -> Import_Keyword Dotted_As_Names
-    Import_Stmt -> Import_From_Froms Import_From_Imports
     Small_Stmt -> Import_From_Froms Import_From_Imports
     Small_Stmts -> Import_From_Froms Import_From_Imports
     Small_Stmt -> Global_Keyword Many_Names
@@ -1194,29 +1156,17 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Small_Stmts -> Assert_Keyword Test
     Small_Stmt -> pass
     Small_Stmts -> pass
-    Flow_Stmt -> break
     Small_Stmt -> break
     Small_Stmts -> break
-    Flow_Stmt -> continue
     Small_Stmt -> continue
     Small_Stmts -> continue
-    Return_Stmt -> return
-    Flow_Stmt -> return
     Small_Stmt -> return
     Small_Stmts -> return
     Yield_Expr -> yield
-    Raise_Stmt -> raise
-    Flow_Stmt -> raise
     Small_Stmt -> raise
     Small_Stmts -> raise
     Dots_Plus -> .
     Dots_Plus -> ...
-    Compound_Stmt -> Async_Keyword Funcdef
-    Compound_Stmt -> Async_Keyword With_Stmt
-    Compound_Stmt -> Async_Keyword For_Stmt
-    Stmt -> Async_Keyword Funcdef
-    Stmt -> Async_Keyword With_Stmt
-    Stmt -> Async_Keyword For_Stmt
     START -> Async_Keyword Funcdef
     START -> Async_Keyword With_Stmt
     START -> Async_Keyword For_Stmt
@@ -1230,14 +1180,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Not_Bool_Op Not_Test
     With_Item -> Not_Bool_Op Not_Test
     Subscript -> Not_Bool_Op Not_Test
-    Testlist -> Not_Bool_Op Not_Test
     Argument -> Not_Bool_Op Not_Test
     Test_Or_Star_Exprs -> Not_Bool_Op Not_Test
     Testlist_Star_Expr -> Not_Bool_Op Not_Test
-    Testlist_Star_Exprs_Assign -> Not_Bool_Op Not_Test
     Testlist_Comp -> Not_Bool_Op Not_Test
-    Test_Or_Star_Expr_Setter -> Not_Bool_Op Not_Test
-    Expr_Stmt -> Not_Bool_Op Not_Test
     Small_Stmt -> Not_Bool_Op Not_Test
     Small_Stmts -> Not_Bool_Op Not_Test
     With_Items -> Not_Bool_Op Not_Test
@@ -1245,10 +1191,7 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Generic_Expr -> Star_Op Expr
     Test_Or_Star_Exprs -> Star_Op Expr
     Testlist_Star_Expr -> Star_Op Expr
-    Testlist_Star_Exprs_Assign -> Star_Op Expr
     Testlist_Comp -> Star_Op Expr
-    Test_Or_Star_Expr_Setter -> Star_Op Expr
-    Expr_Stmt -> Star_Op Expr
     Small_Stmt -> Star_Op Expr
     Small_Stmts -> Star_Op Expr
     Term -> Unary_Op Factor
@@ -1267,19 +1210,13 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Unary_Op Factor
     With_Item -> Unary_Op Factor
     Subscript -> Unary_Op Factor
-    Testlist -> Unary_Op Factor
     Argument -> Unary_Op Factor
     Test_Or_Star_Exprs -> Unary_Op Factor
     Testlist_Star_Expr -> Unary_Op Factor
-    Testlist_Star_Exprs_Assign -> Unary_Op Factor
     Testlist_Comp -> Unary_Op Factor
-    Test_Or_Star_Expr_Setter -> Unary_Op Factor
-    Expr_Stmt -> Unary_Op Factor
     Small_Stmt -> Unary_Op Factor
     Small_Stmts -> Unary_Op Factor
     With_Items -> Unary_Op Factor
-    Power -> Atom Many_Trailers
-    Power -> Await_Keyword Atom
     Factor -> Atom Many_Trailers
     Factor -> Await_Keyword Atom
     Term -> Atom Many_Trailers
@@ -1314,22 +1251,14 @@ val pythonStatementCNFAllProds: CFG by lazy {
     With_Item -> Await_Keyword Atom
     Subscript -> Atom Many_Trailers
     Subscript -> Await_Keyword Atom
-    Testlist -> Atom Many_Trailers
-    Testlist -> Await_Keyword Atom
     Argument -> Atom Many_Trailers
     Argument -> Await_Keyword Atom
     Test_Or_Star_Exprs -> Atom Many_Trailers
     Test_Or_Star_Exprs -> Await_Keyword Atom
     Testlist_Star_Expr -> Atom Many_Trailers
     Testlist_Star_Expr -> Await_Keyword Atom
-    Testlist_Star_Exprs_Assign -> Atom Many_Trailers
-    Testlist_Star_Exprs_Assign -> Await_Keyword Atom
     Testlist_Comp -> Atom Many_Trailers
     Testlist_Comp -> Await_Keyword Atom
-    Test_Or_Star_Expr_Setter -> Atom Many_Trailers
-    Test_Or_Star_Expr_Setter -> Await_Keyword Atom
-    Expr_Stmt -> Atom Many_Trailers
-    Expr_Stmt -> Await_Keyword Atom
     Small_Stmt -> Atom Many_Trailers
     Small_Stmt -> Await_Keyword Atom
     Small_Stmts -> Atom Many_Trailers
@@ -1339,9 +1268,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Atom_Expr -> Open_Paren Close_Paren
     Atom_Expr -> Open_Sq_Bracket Close_Sq_Bracket
     Atom_Expr -> Open_Curl_Bracket Close_Curl_Bracket
-    Power -> Open_Paren Close_Paren
-    Power -> Open_Sq_Bracket Close_Sq_Bracket
-    Power -> Open_Curl_Bracket Close_Curl_Bracket
     Factor -> Open_Paren Close_Paren
     Factor -> Open_Sq_Bracket Close_Sq_Bracket
     Factor -> Open_Curl_Bracket Close_Curl_Bracket
@@ -1393,9 +1319,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Subscript -> Open_Paren Close_Paren
     Subscript -> Open_Sq_Bracket Close_Sq_Bracket
     Subscript -> Open_Curl_Bracket Close_Curl_Bracket
-    Testlist -> Open_Paren Close_Paren
-    Testlist -> Open_Sq_Bracket Close_Sq_Bracket
-    Testlist -> Open_Curl_Bracket Close_Curl_Bracket
     Argument -> Open_Paren Close_Paren
     Argument -> Open_Sq_Bracket Close_Sq_Bracket
     Argument -> Open_Curl_Bracket Close_Curl_Bracket
@@ -1405,18 +1328,9 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Testlist_Star_Expr -> Open_Paren Close_Paren
     Testlist_Star_Expr -> Open_Sq_Bracket Close_Sq_Bracket
     Testlist_Star_Expr -> Open_Curl_Bracket Close_Curl_Bracket
-    Testlist_Star_Exprs_Assign -> Open_Paren Close_Paren
-    Testlist_Star_Exprs_Assign -> Open_Sq_Bracket Close_Sq_Bracket
-    Testlist_Star_Exprs_Assign -> Open_Curl_Bracket Close_Curl_Bracket
     Testlist_Comp -> Open_Paren Close_Paren
     Testlist_Comp -> Open_Sq_Bracket Close_Sq_Bracket
     Testlist_Comp -> Open_Curl_Bracket Close_Curl_Bracket
-    Test_Or_Star_Expr_Setter -> Open_Paren Close_Paren
-    Test_Or_Star_Expr_Setter -> Open_Sq_Bracket Close_Sq_Bracket
-    Test_Or_Star_Expr_Setter -> Open_Curl_Bracket Close_Curl_Bracket
-    Expr_Stmt -> Open_Paren Close_Paren
-    Expr_Stmt -> Open_Sq_Bracket Close_Sq_Bracket
-    Expr_Stmt -> Open_Curl_Bracket Close_Curl_Bracket
     Small_Stmt -> Open_Paren Close_Paren
     Small_Stmt -> Open_Sq_Bracket Close_Sq_Bracket
     Small_Stmt -> Open_Curl_Bracket Close_Curl_Bracket
@@ -1480,7 +1394,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Yield_Arg -> Open_Sq_Bracket Close_Sq_Bracket
     Yield_Arg -> Open_Curl_Bracket Close_Curl_Bracket
     Many_KeyVals_Or_Unpacks -> Double_Star_Op Expr
-    KeyVal_Or_Unpack_Setter -> Double_Star_Op Expr
     Dict_Or_Set_Maker -> KeyVal_Or_Unpack Comp_For
     Dict_Or_Set_Maker -> Many_KeyVals_Or_Unpacks Comma
     Dict_Or_Set_Maker -> Double_Star_Op Expr
@@ -1508,13 +1421,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Atom_Expr -> None
     Atom_Expr -> True
     Atom_Expr -> False
-    Power -> NAME
-    Power -> NUMBER
-    Power -> STRING
-    Power -> ...
-    Power -> None
-    Power -> True
-    Power -> False
     Factor -> NAME
     Factor -> NUMBER
     Factor -> STRING
@@ -1634,13 +1540,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Subscript -> None
     Subscript -> True
     Subscript -> False
-    Testlist -> NAME
-    Testlist -> NUMBER
-    Testlist -> STRING
-    Testlist -> ...
-    Testlist -> None
-    Testlist -> True
-    Testlist -> False
     Argument -> NAME
     Argument -> NUMBER
     Argument -> STRING
@@ -1662,13 +1561,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Testlist_Star_Expr -> None
     Testlist_Star_Expr -> True
     Testlist_Star_Expr -> False
-    Testlist_Star_Exprs_Assign -> NAME
-    Testlist_Star_Exprs_Assign -> NUMBER
-    Testlist_Star_Exprs_Assign -> STRING
-    Testlist_Star_Exprs_Assign -> ...
-    Testlist_Star_Exprs_Assign -> None
-    Testlist_Star_Exprs_Assign -> True
-    Testlist_Star_Exprs_Assign -> False
     Testlist_Comp -> NAME
     Testlist_Comp -> NUMBER
     Testlist_Comp -> STRING
@@ -1676,20 +1568,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Testlist_Comp -> None
     Testlist_Comp -> True
     Testlist_Comp -> False
-    Test_Or_Star_Expr_Setter -> NAME
-    Test_Or_Star_Expr_Setter -> NUMBER
-    Test_Or_Star_Expr_Setter -> STRING
-    Test_Or_Star_Expr_Setter -> ...
-    Test_Or_Star_Expr_Setter -> None
-    Test_Or_Star_Expr_Setter -> True
-    Test_Or_Star_Expr_Setter -> False
-    Expr_Stmt -> NAME
-    Expr_Stmt -> NUMBER
-    Expr_Stmt -> STRING
-    Expr_Stmt -> ...
-    Expr_Stmt -> None
-    Expr_Stmt -> True
-    Expr_Stmt -> False
     Small_Stmt -> NAME
     Small_Stmt -> NUMBER
     Small_Stmt -> STRING
@@ -1763,7 +1641,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Import_As_Name -> NAME
     Dotted_Name -> NAME
     Many_Names -> NAME
-    Import_As_Names -> NAME
     Import_As_Names_Endcomma -> NAME
     Start_Dotted_Name -> NAME
     Dotted_As_Name -> NAME
@@ -1803,10 +1680,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Arglist -> True
     Arglist -> False
     Comp_Iter -> If_Keyword Test_Nocond
-    Yield_Stmt -> Yield_Keyword Yield_Arg
-    Yield_Stmt -> yield
-    Flow_Stmt -> Yield_Keyword Yield_Arg
-    Flow_Stmt -> yield
     Small_Stmt -> Yield_Keyword Yield_Arg
     Small_Stmt -> yield
     Small_Stmts -> Yield_Keyword Yield_Arg
@@ -1845,13 +1718,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Vfpdef_Default -> Vfpdef Assign_Op.Test
     Tfpdef -> Vfpdef Colon.Test
     Colon.Test -> Colon Test
-    Simple_Stmt -> Small_Stmts Semicolon.Newline
     Semicolon.Newline -> Semicolon Newline
     Small_Stmts -> Small_Stmt Semicolon.Small_Stmts
     Semicolon.Small_Stmts -> Semicolon Small_Stmts
-    Expr_Stmt -> Testlist_Star_Expr Aug_Assign.Yield_Expr
     Aug_Assign.Yield_Expr -> Aug_Assign Yield_Expr
-    Expr_Stmt -> Testlist_Star_Expr Aug_Assign.Testlist_Endcomma
     Aug_Assign.Testlist_Endcomma -> Aug_Assign Testlist_Endcomma
     Test_Or_Star_Exprs -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
     Comma.Test_Or_Star_Exprs -> Comma Test_Or_Star_Exprs
@@ -1864,7 +1734,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Import_As_Name -> Simple_Name As_Keyword.Simple_Name
     As_Keyword.Simple_Name -> As_Keyword Simple_Name
     Dotted_As_Name -> Dotted_Name As_Keyword.Simple_Name
-    Import_As_Names -> Import_As_Name Comma.Import_As_Names_Endcomma
     Comma.Import_As_Names_Endcomma -> Comma Import_As_Names_Endcomma
     Dotted_As_Names -> Dotted_As_Name Comma.Dotted_As_Names
     Comma.Dotted_As_Names -> Comma Dotted_As_Names
@@ -1889,8 +1758,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     With_Item -> Test As_Keyword.Expr
     As_Keyword.Expr -> As_Keyword Expr
     Else_Keyword.Test -> Else_Keyword Test
-    Lambdef -> Lambda_Keyword Colon.Test
-    Lambdef_Nocond -> Lambda_Keyword Colon.Test_Nocond
     Colon.Test_Nocond -> Colon Test_Nocond
     Or_Test -> Or_Test Or_Bool_Op.And_Test
     Or_Bool_Op.And_Test -> Or_Bool_Op And_Test
@@ -1910,7 +1777,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Arith_Op.Term -> Arith_Op Term
     Term -> Term MulDiv_Op.Factor
     MulDiv_Op.Factor -> MulDiv_Op Factor
-    Power -> Atom_Expr Double_Star_Op.Factor
     Double_Star_Op.Factor -> Double_Star_Op Factor
     Atom_Expr -> Await_Keyword Atom.Many_Trailers
     Atom.Many_Trailers -> Atom Many_Trailers
@@ -1935,7 +1801,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Colon.Sliceop -> Colon Sliceop
     Generic_Exprs -> Generic_Expr Comma.Generic_Exprs
     Comma.Generic_Exprs -> Comma Generic_Exprs
-    Testlist -> Test Comma.Testlist_Endcomma
     Comma.Testlist_Endcomma -> Comma Testlist_Endcomma
     KeyVal_Or_Unpack -> Test Colon.Test
     Many_KeyVals_Or_Unpacks -> KeyVal_Or_Unpack Comma.Many_KeyVals_Or_Unpacks
@@ -1945,7 +1810,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Argument -> Test Assign_Op.Test
     In_Keyword.Or_Test -> In_Keyword Or_Test
     Or_Test.Comp_Iter -> Or_Test Comp_Iter
-    Comp_If -> If_Keyword Test_Nocond.Comp_Iter
     Test_Nocond.Comp_Iter -> Test_Nocond Comp_Iter
     Typedargslist -> Star_Tfpdef Comma.Double_Star_Tfpdef
     Star_Double_Star_Typed -> Star_Op Tfpdef.Star_Tfpdef_Comma
@@ -1964,7 +1828,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Tfpdef_Default -> Vfpdef Colon.Test
     Many_Tfpdef -> Vfpdef Colon.Test
     Typedargslist -> Vfpdef Colon.Test
-    Stmt -> Small_Stmts Semicolon.Newline
     Suite -> Small_Stmts Semicolon.Newline
     START -> Small_Stmts Semicolon.Newline
     Small_Stmt -> Testlist_Star_Expr Aug_Assign.Yield_Expr
@@ -1972,13 +1835,9 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Small_Stmts -> Testlist_Star_Expr Aug_Assign.Yield_Expr
     Small_Stmts -> Testlist_Star_Expr Aug_Assign.Testlist_Endcomma
     Testlist_Star_Expr -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
-    Testlist_Star_Exprs_Assign -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
     Testlist_Comp -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
-    Test_Or_Star_Expr_Setter -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
-    Expr_Stmt -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
     Small_Stmt -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
     Small_Stmts -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
-    Import_As_Names -> Simple_Name As_Keyword.Simple_Name
     Dotted_As_Names -> Dotted_Name As_Keyword.Simple_Name
     Import_As_Names_Endcomma -> Import_As_Name Comma.Import_As_Names_Endcomma
     Import_As_Names_Endcomma -> Simple_Name As_Keyword.Simple_Name
@@ -1990,14 +1849,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Lambda_Keyword Colon.Test
     With_Item -> Lambda_Keyword Colon.Test
     Subscript -> Lambda_Keyword Colon.Test
-    Testlist -> Lambda_Keyword Colon.Test
     Argument -> Lambda_Keyword Colon.Test
     Test_Or_Star_Exprs -> Lambda_Keyword Colon.Test
     Testlist_Star_Expr -> Lambda_Keyword Colon.Test
-    Testlist_Star_Exprs_Assign -> Lambda_Keyword Colon.Test
     Testlist_Comp -> Lambda_Keyword Colon.Test
-    Test_Or_Star_Expr_Setter -> Lambda_Keyword Colon.Test
-    Expr_Stmt -> Lambda_Keyword Colon.Test
     Small_Stmt -> Lambda_Keyword Colon.Test
     Small_Stmts -> Lambda_Keyword Colon.Test
     With_Items -> Lambda_Keyword Colon.Test
@@ -2007,14 +1862,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Or_Test Or_Bool_Op.And_Test
     With_Item -> Or_Test Or_Bool_Op.And_Test
     Subscript -> Or_Test Or_Bool_Op.And_Test
-    Testlist -> Or_Test Or_Bool_Op.And_Test
     Argument -> Or_Test Or_Bool_Op.And_Test
     Test_Or_Star_Exprs -> Or_Test Or_Bool_Op.And_Test
     Testlist_Star_Expr -> Or_Test Or_Bool_Op.And_Test
-    Testlist_Star_Exprs_Assign -> Or_Test Or_Bool_Op.And_Test
     Testlist_Comp -> Or_Test Or_Bool_Op.And_Test
-    Test_Or_Star_Expr_Setter -> Or_Test Or_Bool_Op.And_Test
-    Expr_Stmt -> Or_Test Or_Bool_Op.And_Test
     Small_Stmt -> Or_Test Or_Bool_Op.And_Test
     Small_Stmts -> Or_Test Or_Bool_Op.And_Test
     With_Items -> Or_Test Or_Bool_Op.And_Test
@@ -2024,14 +1875,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> And_Test And_Bool_Op.Not_Test
     With_Item -> And_Test And_Bool_Op.Not_Test
     Subscript -> And_Test And_Bool_Op.Not_Test
-    Testlist -> And_Test And_Bool_Op.Not_Test
     Argument -> And_Test And_Bool_Op.Not_Test
     Test_Or_Star_Exprs -> And_Test And_Bool_Op.Not_Test
     Testlist_Star_Expr -> And_Test And_Bool_Op.Not_Test
-    Testlist_Star_Exprs_Assign -> And_Test And_Bool_Op.Not_Test
     Testlist_Comp -> And_Test And_Bool_Op.Not_Test
-    Test_Or_Star_Expr_Setter -> And_Test And_Bool_Op.Not_Test
-    Expr_Stmt -> And_Test And_Bool_Op.Not_Test
     Small_Stmt -> And_Test And_Bool_Op.Not_Test
     Small_Stmts -> And_Test And_Bool_Op.Not_Test
     With_Items -> And_Test And_Bool_Op.Not_Test
@@ -2043,14 +1890,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Comparison Comp_Op.Expr
     With_Item -> Comparison Comp_Op.Expr
     Subscript -> Comparison Comp_Op.Expr
-    Testlist -> Comparison Comp_Op.Expr
     Argument -> Comparison Comp_Op.Expr
     Test_Or_Star_Exprs -> Comparison Comp_Op.Expr
     Testlist_Star_Expr -> Comparison Comp_Op.Expr
-    Testlist_Star_Exprs_Assign -> Comparison Comp_Op.Expr
     Testlist_Comp -> Comparison Comp_Op.Expr
-    Test_Or_Star_Expr_Setter -> Comparison Comp_Op.Expr
-    Expr_Stmt -> Comparison Comp_Op.Expr
     Small_Stmt -> Comparison Comp_Op.Expr
     Small_Stmts -> Comparison Comp_Op.Expr
     With_Items -> Comparison Comp_Op.Expr
@@ -2064,14 +1907,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Expr Or_Op.Xor_Expr
     With_Item -> Expr Or_Op.Xor_Expr
     Subscript -> Expr Or_Op.Xor_Expr
-    Testlist -> Expr Or_Op.Xor_Expr
     Argument -> Expr Or_Op.Xor_Expr
     Test_Or_Star_Exprs -> Expr Or_Op.Xor_Expr
     Testlist_Star_Expr -> Expr Or_Op.Xor_Expr
-    Testlist_Star_Exprs_Assign -> Expr Or_Op.Xor_Expr
     Testlist_Comp -> Expr Or_Op.Xor_Expr
-    Test_Or_Star_Expr_Setter -> Expr Or_Op.Xor_Expr
-    Expr_Stmt -> Expr Or_Op.Xor_Expr
     Small_Stmt -> Expr Or_Op.Xor_Expr
     Small_Stmts -> Expr Or_Op.Xor_Expr
     With_Items -> Expr Or_Op.Xor_Expr
@@ -2086,14 +1925,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Xor_Expr Xor_Op.And_Expr
     With_Item -> Xor_Expr Xor_Op.And_Expr
     Subscript -> Xor_Expr Xor_Op.And_Expr
-    Testlist -> Xor_Expr Xor_Op.And_Expr
     Argument -> Xor_Expr Xor_Op.And_Expr
     Test_Or_Star_Exprs -> Xor_Expr Xor_Op.And_Expr
     Testlist_Star_Expr -> Xor_Expr Xor_Op.And_Expr
-    Testlist_Star_Exprs_Assign -> Xor_Expr Xor_Op.And_Expr
     Testlist_Comp -> Xor_Expr Xor_Op.And_Expr
-    Test_Or_Star_Expr_Setter -> Xor_Expr Xor_Op.And_Expr
-    Expr_Stmt -> Xor_Expr Xor_Op.And_Expr
     Small_Stmt -> Xor_Expr Xor_Op.And_Expr
     Small_Stmts -> Xor_Expr Xor_Op.And_Expr
     With_Items -> Xor_Expr Xor_Op.And_Expr
@@ -2109,14 +1944,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> And_Expr And_Op.Shift_Expr
     With_Item -> And_Expr And_Op.Shift_Expr
     Subscript -> And_Expr And_Op.Shift_Expr
-    Testlist -> And_Expr And_Op.Shift_Expr
     Argument -> And_Expr And_Op.Shift_Expr
     Test_Or_Star_Exprs -> And_Expr And_Op.Shift_Expr
     Testlist_Star_Expr -> And_Expr And_Op.Shift_Expr
-    Testlist_Star_Exprs_Assign -> And_Expr And_Op.Shift_Expr
     Testlist_Comp -> And_Expr And_Op.Shift_Expr
-    Test_Or_Star_Expr_Setter -> And_Expr And_Op.Shift_Expr
-    Expr_Stmt -> And_Expr And_Op.Shift_Expr
     Small_Stmt -> And_Expr And_Op.Shift_Expr
     Small_Stmts -> And_Expr And_Op.Shift_Expr
     With_Items -> And_Expr And_Op.Shift_Expr
@@ -2133,14 +1964,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Shift_Expr Shift_Op.Arith_Expr
     With_Item -> Shift_Expr Shift_Op.Arith_Expr
     Subscript -> Shift_Expr Shift_Op.Arith_Expr
-    Testlist -> Shift_Expr Shift_Op.Arith_Expr
     Argument -> Shift_Expr Shift_Op.Arith_Expr
     Test_Or_Star_Exprs -> Shift_Expr Shift_Op.Arith_Expr
     Testlist_Star_Expr -> Shift_Expr Shift_Op.Arith_Expr
-    Testlist_Star_Exprs_Assign -> Shift_Expr Shift_Op.Arith_Expr
     Testlist_Comp -> Shift_Expr Shift_Op.Arith_Expr
-    Test_Or_Star_Expr_Setter -> Shift_Expr Shift_Op.Arith_Expr
-    Expr_Stmt -> Shift_Expr Shift_Op.Arith_Expr
     Small_Stmt -> Shift_Expr Shift_Op.Arith_Expr
     Small_Stmts -> Shift_Expr Shift_Op.Arith_Expr
     With_Items -> Shift_Expr Shift_Op.Arith_Expr
@@ -2158,14 +1985,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Arith_Expr Arith_Op.Term
     With_Item -> Arith_Expr Arith_Op.Term
     Subscript -> Arith_Expr Arith_Op.Term
-    Testlist -> Arith_Expr Arith_Op.Term
     Argument -> Arith_Expr Arith_Op.Term
     Test_Or_Star_Exprs -> Arith_Expr Arith_Op.Term
     Testlist_Star_Expr -> Arith_Expr Arith_Op.Term
-    Testlist_Star_Exprs_Assign -> Arith_Expr Arith_Op.Term
     Testlist_Comp -> Arith_Expr Arith_Op.Term
-    Test_Or_Star_Expr_Setter -> Arith_Expr Arith_Op.Term
-    Expr_Stmt -> Arith_Expr Arith_Op.Term
     Small_Stmt -> Arith_Expr Arith_Op.Term
     Small_Stmts -> Arith_Expr Arith_Op.Term
     With_Items -> Arith_Expr Arith_Op.Term
@@ -2184,14 +2007,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Term MulDiv_Op.Factor
     With_Item -> Term MulDiv_Op.Factor
     Subscript -> Term MulDiv_Op.Factor
-    Testlist -> Term MulDiv_Op.Factor
     Argument -> Term MulDiv_Op.Factor
     Test_Or_Star_Exprs -> Term MulDiv_Op.Factor
     Testlist_Star_Expr -> Term MulDiv_Op.Factor
-    Testlist_Star_Exprs_Assign -> Term MulDiv_Op.Factor
     Testlist_Comp -> Term MulDiv_Op.Factor
-    Test_Or_Star_Expr_Setter -> Term MulDiv_Op.Factor
-    Expr_Stmt -> Term MulDiv_Op.Factor
     Small_Stmt -> Term MulDiv_Op.Factor
     Small_Stmts -> Term MulDiv_Op.Factor
     With_Items -> Term MulDiv_Op.Factor
@@ -2212,18 +2031,13 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Atom_Expr Double_Star_Op.Factor
     With_Item -> Atom_Expr Double_Star_Op.Factor
     Subscript -> Atom_Expr Double_Star_Op.Factor
-    Testlist -> Atom_Expr Double_Star_Op.Factor
     Argument -> Atom_Expr Double_Star_Op.Factor
     Test_Or_Star_Exprs -> Atom_Expr Double_Star_Op.Factor
     Testlist_Star_Expr -> Atom_Expr Double_Star_Op.Factor
-    Testlist_Star_Exprs_Assign -> Atom_Expr Double_Star_Op.Factor
     Testlist_Comp -> Atom_Expr Double_Star_Op.Factor
-    Test_Or_Star_Expr_Setter -> Atom_Expr Double_Star_Op.Factor
-    Expr_Stmt -> Atom_Expr Double_Star_Op.Factor
     Small_Stmt -> Atom_Expr Double_Star_Op.Factor
     Small_Stmts -> Atom_Expr Double_Star_Op.Factor
     With_Items -> Atom_Expr Double_Star_Op.Factor
-    Power -> Await_Keyword Atom.Many_Trailers
     Factor -> Await_Keyword Atom.Many_Trailers
     Term -> Await_Keyword Atom.Many_Trailers
     Arith_Expr -> Await_Keyword Atom.Many_Trailers
@@ -2241,14 +2055,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test_Or_Star_Expr -> Await_Keyword Atom.Many_Trailers
     With_Item -> Await_Keyword Atom.Many_Trailers
     Subscript -> Await_Keyword Atom.Many_Trailers
-    Testlist -> Await_Keyword Atom.Many_Trailers
     Argument -> Await_Keyword Atom.Many_Trailers
     Test_Or_Star_Exprs -> Await_Keyword Atom.Many_Trailers
     Testlist_Star_Expr -> Await_Keyword Atom.Many_Trailers
-    Testlist_Star_Exprs_Assign -> Await_Keyword Atom.Many_Trailers
     Testlist_Comp -> Await_Keyword Atom.Many_Trailers
-    Test_Or_Star_Expr_Setter -> Await_Keyword Atom.Many_Trailers
-    Expr_Stmt -> Await_Keyword Atom.Many_Trailers
     Small_Stmt -> Await_Keyword Atom.Many_Trailers
     Small_Stmts -> Await_Keyword Atom.Many_Trailers
     With_Items -> Await_Keyword Atom.Many_Trailers
@@ -2256,10 +2066,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Atom_Expr -> Open_Paren Testlist_Comp.Close_Paren
     Atom_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Atom_Expr -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
-    Power -> Open_Paren Yield_Expr.Close_Paren
-    Power -> Open_Paren Testlist_Comp.Close_Paren
-    Power -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    Power -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Factor -> Open_Paren Yield_Expr.Close_Paren
     Factor -> Open_Paren Testlist_Comp.Close_Paren
     Factor -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
@@ -2328,10 +2134,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Subscript -> Open_Paren Testlist_Comp.Close_Paren
     Subscript -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Subscript -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
-    Testlist -> Open_Paren Yield_Expr.Close_Paren
-    Testlist -> Open_Paren Testlist_Comp.Close_Paren
-    Testlist -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    Testlist -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Argument -> Open_Paren Yield_Expr.Close_Paren
     Argument -> Open_Paren Testlist_Comp.Close_Paren
     Argument -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
@@ -2344,22 +2146,10 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Testlist_Star_Expr -> Open_Paren Testlist_Comp.Close_Paren
     Testlist_Star_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Testlist_Star_Expr -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
-    Testlist_Star_Exprs_Assign -> Open_Paren Yield_Expr.Close_Paren
-    Testlist_Star_Exprs_Assign -> Open_Paren Testlist_Comp.Close_Paren
-    Testlist_Star_Exprs_Assign -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    Testlist_Star_Exprs_Assign -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Testlist_Comp -> Open_Paren Yield_Expr.Close_Paren
     Testlist_Comp -> Open_Paren Testlist_Comp.Close_Paren
     Testlist_Comp -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Testlist_Comp -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
-    Test_Or_Star_Expr_Setter -> Open_Paren Yield_Expr.Close_Paren
-    Test_Or_Star_Expr_Setter -> Open_Paren Testlist_Comp.Close_Paren
-    Test_Or_Star_Expr_Setter -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    Test_Or_Star_Expr_Setter -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
-    Expr_Stmt -> Open_Paren Yield_Expr.Close_Paren
-    Expr_Stmt -> Open_Paren Testlist_Comp.Close_Paren
-    Expr_Stmt -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    Expr_Stmt -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Small_Stmt -> Open_Paren Yield_Expr.Close_Paren
     Small_Stmt -> Open_Paren Testlist_Comp.Close_Paren
     Small_Stmt -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
@@ -2473,8 +2263,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Yield_Arg -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Yield_Arg -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Many_KeyVals_Or_Unpacks -> Test Colon.Test
-    KeyVal_Or_Unpack_Setter -> KeyVal_Or_Unpack Comma.Many_KeyVals_Or_Unpacks
-    KeyVal_Or_Unpack_Setter -> Test Colon.Test
     Dict_Or_Set_Maker -> KeyVal_Or_Unpack Comma.Many_KeyVals_Or_Unpacks
     Dict_Or_Set_Maker -> Test Colon.Test
     Dict_Or_Set_Maker -> Test_Or_Star_Expr Comma.Test_Or_Star_Exprs
@@ -2534,24 +2322,18 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Test.Colon.Suite -> Test Colon.Suite
     Annotated_Assign -> Colon Test.Assign_Op.Test
     Test.Assign_Op.Test -> Test Assign_Op.Test
-    Raise_Stmt -> Raise_Keyword Test.From_Keyword.Test
     Test.From_Keyword.Test -> Test From_Keyword.Test
     Import_From_Imports -> Import_Keyword Open_Paren.Import_As_Names_Endcomma.Close_Paren
     Open_Paren.Import_As_Names_Endcomma.Close_Paren -> Open_Paren Import_As_Names_Endcomma.Close_Paren
-    Assert_Stmt -> Assert_Keyword Test.Comma.Test
     Test.Comma.Test -> Test Comma.Test
     Elif_Stmt -> Elif_Keyword Test.Colon.Suite
     Colon.Suite.Elif_Stmt -> Colon Suite.Elif_Stmt
-    If_Stmt -> If_Keyword Test.Colon.Suite
     Colon.Suite.Else_Stmt -> Colon Suite.Else_Stmt
     Suite.Elif_Stmt.Else_Stmt -> Suite Elif_Stmt.Else_Stmt
-    While_Stmt -> While_Keyword Test.Colon.Suite
     Testlist_Endcomma.Colon.Suite -> Testlist_Endcomma Colon.Suite
     Except_Stmt -> Except_Clause Colon.Suite.Except_Stmt
     Colon.Suite.Except_Stmt -> Colon Suite.Except_Stmt
-    Try_Stmt -> Try_Keyword Colon.Suite.Finally_Stmt
     Colon.Suite.Finally_Stmt -> Colon Suite.Finally_Stmt
-    Try_Stmt -> Try_Keyword Colon.Suite.Except_Stmt
     Suite.Except_Stmt.Else_Stmt -> Suite Except_Stmt.Else_Stmt
     Suite.Except_Stmt.Finally_Stmt -> Suite Except_Stmt.Finally_Stmt
     Except_Stmt.Else_Stmt.Finally_Stmt -> Except_Stmt Else_Stmt.Finally_Stmt
@@ -2560,50 +2342,32 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Except_Clause -> Except_Keyword Test.As_Keyword.Simple_Name
     Test.As_Keyword.Simple_Name -> Test As_Keyword.Simple_Name
     Or_Test.Else_Keyword.Test -> Or_Test Else_Keyword.Test
-    Lambdef -> Lambda_Keyword Varargslist.Colon.Test
     Varargslist.Colon.Test -> Varargslist Colon.Test
-    Lambdef_Nocond -> Lambda_Keyword Varargslist.Colon.Test_Nocond
     Varargslist.Colon.Test_Nocond -> Varargslist Colon.Test_Nocond
     Subscript -> Test Colon.Test.Sliceop
     Colon.Test.Sliceop -> Colon Test.Sliceop
-    Classdef -> Class_Keyword Simple_Name.Colon.Suite
     Simple_Name.Colon.Suite -> Simple_Name Colon.Suite
     Close_Paren.Colon.Suite -> Close_Paren Colon.Suite
     Comp_For -> For_Keyword Exprlist.In_Keyword.Or_Test
     Exprlist.In_Keyword.Or_Test -> Exprlist In_Keyword.Or_Test
     In_Keyword.Or_Test.Comp_Iter -> In_Keyword Or_Test.Comp_Iter
-    Flow_Stmt -> Raise_Keyword Test.From_Keyword.Test
     Small_Stmt -> Raise_Keyword Test.From_Keyword.Test
     Small_Stmts -> Raise_Keyword Test.From_Keyword.Test
     Small_Stmt -> Assert_Keyword Test.Comma.Test
     Small_Stmts -> Assert_Keyword Test.Comma.Test
-    Compound_Stmt -> If_Keyword Test.Colon.Suite
-    Stmt -> If_Keyword Test.Colon.Suite
     START -> If_Keyword Test.Colon.Suite
-    Compound_Stmt -> While_Keyword Test.Colon.Suite
-    Stmt -> While_Keyword Test.Colon.Suite
     START -> While_Keyword Test.Colon.Suite
-    Compound_Stmt -> Try_Keyword Colon.Suite.Finally_Stmt
-    Compound_Stmt -> Try_Keyword Colon.Suite.Except_Stmt
-    Stmt -> Try_Keyword Colon.Suite.Finally_Stmt
-    Stmt -> Try_Keyword Colon.Suite.Except_Stmt
     START -> Try_Keyword Colon.Suite.Finally_Stmt
     START -> Try_Keyword Colon.Suite.Except_Stmt
-    Compound_Stmt -> With_Keyword With_Items.Colon.Suite
-    Stmt -> With_Keyword With_Items.Colon.Suite
     START -> With_Keyword With_Items.Colon.Suite
     Test -> Lambda_Keyword Varargslist.Colon.Test
     Test_Or_Star_Expr -> Lambda_Keyword Varargslist.Colon.Test
     With_Item -> Lambda_Keyword Varargslist.Colon.Test
     Subscript -> Lambda_Keyword Varargslist.Colon.Test
-    Testlist -> Lambda_Keyword Varargslist.Colon.Test
     Argument -> Lambda_Keyword Varargslist.Colon.Test
     Test_Or_Star_Exprs -> Lambda_Keyword Varargslist.Colon.Test
     Testlist_Star_Expr -> Lambda_Keyword Varargslist.Colon.Test
-    Testlist_Star_Exprs_Assign -> Lambda_Keyword Varargslist.Colon.Test
     Testlist_Comp -> Lambda_Keyword Varargslist.Colon.Test
-    Test_Or_Star_Expr_Setter -> Lambda_Keyword Varargslist.Colon.Test
-    Expr_Stmt -> Lambda_Keyword Varargslist.Colon.Test
     Small_Stmt -> Lambda_Keyword Varargslist.Colon.Test
     Small_Stmts -> Lambda_Keyword Varargslist.Colon.Test
     With_Items -> Lambda_Keyword Varargslist.Colon.Test
@@ -2615,8 +2379,6 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Testlist_Endcomma -> Lambda_Keyword Varargslist.Colon.Test
     Yield_Arg -> Lambda_Keyword Varargslist.Colon.Test
     Dict_Or_Set_Maker -> Lambda_Keyword Varargslist.Colon.Test
-    Compound_Stmt -> Class_Keyword Simple_Name.Colon.Suite
-    Stmt -> Class_Keyword Simple_Name.Colon.Suite
     START -> Class_Keyword Simple_Name.Colon.Suite
     Arguments -> Lambda_Keyword Varargslist.Colon.Test
     Arglist -> Lambda_Keyword Varargslist.Colon.Test
@@ -2626,16 +2388,11 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Arrow.Test.Colon.Suite -> Arrow Test.Colon.Suite
     Elif_Stmt -> Elif_Keyword Test.Colon.Suite.Elif_Stmt
     Test.Colon.Suite.Elif_Stmt -> Test Colon.Suite.Elif_Stmt
-    If_Stmt -> If_Keyword Test.Colon.Suite.Else_Stmt
     Test.Colon.Suite.Else_Stmt -> Test Colon.Suite.Else_Stmt
-    If_Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt
     Colon.Suite.Elif_Stmt.Else_Stmt -> Colon Suite.Elif_Stmt.Else_Stmt
-    While_Stmt -> While_Keyword Test.Colon.Suite.Else_Stmt
     In_Keyword.Testlist_Endcomma.Colon.Suite -> In_Keyword Testlist_Endcomma.Colon.Suite
     Testlist_Endcomma.Colon.Suite.Else_Stmt -> Testlist_Endcomma Colon.Suite.Else_Stmt
-    Try_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt
     Colon.Suite.Except_Stmt.Else_Stmt -> Colon Suite.Except_Stmt.Else_Stmt
-    Try_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Finally_Stmt
     Colon.Suite.Except_Stmt.Finally_Stmt -> Colon Suite.Except_Stmt.Finally_Stmt
     Suite.Except_Stmt.Else_Stmt.Finally_Stmt -> Suite Except_Stmt.Else_Stmt.Finally_Stmt
     Test -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
@@ -2646,35 +2403,19 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Exprlist.In_Keyword.Or_Test.Comp_Iter -> Exprlist In_Keyword.Or_Test.Comp_Iter
     Comp_For -> Async_Keyword For_Keyword.Exprlist.In_Keyword.Or_Test
     For_Keyword.Exprlist.In_Keyword.Or_Test -> For_Keyword Exprlist.In_Keyword.Or_Test
-    Compound_Stmt -> Def_Keyword Simple_Name.Parameters.Colon.Suite
-    Stmt -> Def_Keyword Simple_Name.Parameters.Colon.Suite
     START -> Def_Keyword Simple_Name.Parameters.Colon.Suite
-    Compound_Stmt -> If_Keyword Test.Colon.Suite.Else_Stmt
-    Compound_Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt
-    Stmt -> If_Keyword Test.Colon.Suite.Else_Stmt
-    Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt
     START -> If_Keyword Test.Colon.Suite.Else_Stmt
     START -> If_Keyword Test.Colon.Suite.Elif_Stmt
-    Compound_Stmt -> While_Keyword Test.Colon.Suite.Else_Stmt
-    Stmt -> While_Keyword Test.Colon.Suite.Else_Stmt
     START -> While_Keyword Test.Colon.Suite.Else_Stmt
-    Compound_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt
-    Compound_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Finally_Stmt
-    Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt
-    Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Finally_Stmt
     START -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt
     START -> Try_Keyword Colon.Suite.Except_Stmt.Finally_Stmt
     Test_Or_Star_Expr -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     With_Item -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Subscript -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
-    Testlist -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Argument -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Test_Or_Star_Exprs -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Testlist_Star_Expr -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
-    Testlist_Star_Exprs_Assign -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Testlist_Comp -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
-    Test_Or_Star_Expr_Setter -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
-    Expr_Stmt -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Small_Stmt -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     Small_Stmts -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
     With_Items -> Or_Test If_Keyword.Or_Test.Else_Keyword.Test
@@ -2688,45 +2429,27 @@ val pythonStatementCNFAllProds: CFG by lazy {
     Comp_Iter -> For_Keyword Exprlist.In_Keyword.Or_Test.Comp_Iter
     Comp_Iter -> Async_Keyword For_Keyword.Exprlist.In_Keyword.Or_Test
     Parameters.Arrow.Test.Colon.Suite -> Parameters Arrow.Test.Colon.Suite
-    If_Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt.Else_Stmt
     Test.Colon.Suite.Elif_Stmt.Else_Stmt -> Test Colon.Suite.Elif_Stmt.Else_Stmt
     For_Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite
     Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite -> Exprlist In_Keyword.Testlist_Endcomma.Colon.Suite
     In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt -> In_Keyword Testlist_Endcomma.Colon.Suite.Else_Stmt
-    Try_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
     Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt -> Colon Suite.Except_Stmt.Else_Stmt.Finally_Stmt
-    Classdef -> Class_Keyword Simple_Name.Open_Paren.Close_Paren.Colon.Suite
     Simple_Name.Open_Paren.Close_Paren.Colon.Suite -> Simple_Name Open_Paren.Close_Paren.Colon.Suite
     Open_Paren.Arglist.Close_Paren.Colon.Suite -> Open_Paren Arglist.Close_Paren.Colon.Suite
     Comp_For -> Async_Keyword For_Keyword.Exprlist.In_Keyword.Or_Test.Comp_Iter
     For_Keyword.Exprlist.In_Keyword.Or_Test.Comp_Iter -> For_Keyword Exprlist.In_Keyword.Or_Test.Comp_Iter
-    Compound_Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt.Else_Stmt
-    Stmt -> If_Keyword Test.Colon.Suite.Elif_Stmt.Else_Stmt
     START -> If_Keyword Test.Colon.Suite.Elif_Stmt.Else_Stmt
-    Compound_Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite
-    Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite
     START -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite
-    Compound_Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
-    Stmt -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
     START -> Try_Keyword Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
-    Compound_Stmt -> Class_Keyword Simple_Name.Open_Paren.Close_Paren.Colon.Suite
-    Stmt -> Class_Keyword Simple_Name.Open_Paren.Close_Paren.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Close_Paren.Colon.Suite
     Comp_Iter -> Async_Keyword For_Keyword.Exprlist.In_Keyword.Or_Test.Comp_Iter
     Funcdef -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
     Simple_Name.Parameters.Arrow.Test.Colon.Suite -> Simple_Name Parameters.Arrow.Test.Colon.Suite
     For_Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
     Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt -> Exprlist In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
-    Classdef -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite -> Simple_Name Open_Paren.Arglist.Close_Paren.Colon.Suite
-    Compound_Stmt -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
-    Stmt -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
     START -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
-    Compound_Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
-    Stmt -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
     START -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
-    Compound_Stmt -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-    Stmt -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
   """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
 }
