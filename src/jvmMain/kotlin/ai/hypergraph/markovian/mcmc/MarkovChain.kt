@@ -3,7 +3,6 @@ package ai.hypergraph.markovian.mcmc
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.sampling.pow
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
@@ -11,13 +10,10 @@ import org.apache.datasketches.frequencies.ItemsSketch
 import org.jetbrains.kotlinx.multik.api.*
 import org.jetbrains.kotlinx.multik.ndarray.data.*
 import org.jetbrains.kotlinx.multik.ndarray.operations.*
-import java.io.File
 import java.util.concurrent.atomic.*
 import java.util.stream.Stream
 import kotlin.math.*
 import kotlin.random.Random
-import kotlin.streams.asStream
-import kotlin.time.measureTimedValue
 
 /**
  * Marginalizes/sums out all dimensions not contained in [dims],
