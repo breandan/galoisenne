@@ -34,13 +34,19 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   val states: Set<Σᐩ> by lazy { Q.states() }
   open val stateLst: List<Σᐩ> by lazy { states.toList() }
 
-  fun allIndexedTxs1(cfg: CFG): List<Π3<Int, Σᐩ, Int>> =
-    (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-      .map { (A: Σᐩ, σ: Σᐩ, arc) -> Triple(stateMap[arc.π1]!!, σ, stateMap[arc.π3]!!) }
+  fun allIndexedTxs1(unitProds: Set<Π2A<Σᐩ>>): List<Π3<Int, Σᐩ, Int>> {
+    val triples = mutableListOf<Π3<Int, Σᐩ, Int>>()
+    for ((A, σ) in unitProds) for (arc in nominalForm.flattenedTriples)
+      if (arc.π2(σ)) triples.add(Triple(stateMap[arc.π1]!!, σ, stateMap[arc.π3]!!))
+    return triples
+  }
 
-  fun allIndexedTxs0(cfg: CFG): List<Π3A<Int>> =
-    (cfg.unitProductions * nominalForm.flattenedTriples).filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
-      .map { (A: Σᐩ, _, arc) -> Triple(stateMap[arc.π1]!!, cfg.bindex[A], stateMap[arc.π3]!!) }
+  fun allIndexedTxs0(unitProds: Set<Π2A<Σᐩ>>, bindex: Bindex<Σᐩ>): List<Π3A<Int>> {
+    val triples = mutableListOf<Π3A<Int>>()
+    for ((A, σ) in unitProds) for (arc in nominalForm.flattenedTriples)
+        if (arc.π2(σ)) triples.add(Triple(stateMap[arc.π1]!!, bindex[A], stateMap[arc.π3]!!))
+    return triples
+  }
 
   val numStates: Int by lazy { states.size }
 
@@ -54,10 +60,14 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   }
 
   // TODO: should be a way to compute this on the fly for L-automata (basically a Cartesian grid)
-  open val allPairs: Map<Pair<Int, Int>, Set<Int>> by lazy {
-    graph.allPairs.entries.associate { (a, b) ->
-      Pair(Pair(stateMap[a.first.label]!!, stateMap[a.second.label]!!), b.map { stateMap[it.label]!! }.toSet())
+  open val allPairs: List<List<List<Int>?>> by lazy {
+    val aps: List<MutableList<MutableList<Int>?>> =
+      List(states.size) { MutableList(states.size) { null } }
+    graph.allPairs.entries.forEach { (a, b) ->
+      val temp = b.map { stateMap[it.label]!! }.toMutableList()
+      aps[stateMap[a.first.label]!!][stateMap[a.second.label]!!] = temp
     }
+    aps
   }
 
   val finalIdxs by lazy { final.map { stateMap[it]!! } }
@@ -122,10 +132,11 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val bindex = cfg.bindex
       val width = cfg.nonterminals.size
       val vindex = cfg.vindex
-      val ap: Map<Pair<Int, Int>, Set<Int>> = levFSA.allPairs
+      val ups = cfg.unitProductions
+      val aps: List<List<List<Int>?>> = levFSA.allPairs
       val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
 
-      levFSA.allIndexedTxs0(cfg).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+      levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
       val startIdx = bindex[START_SYMBOL]
 
@@ -134,8 +145,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         for (iP in 0 until levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
-          if (p to q !in ap) continue
-          val appq = ap[p to q]!!
+          if (aps[p][q] == null) continue
+          val appq = aps[p][q]!!
           for ((A, indexArray) in vindex.withIndex()) {
             outerloop@for(j in 0..<indexArray.size step 2) {
               val B = indexArray[j]
@@ -174,6 +185,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val bimap = cfg.bimap
       val width = cfg.nonterminals.size
       val vindex = cfg.vindex
+      val ups = cfg.unitProductions
 
       val nStates = levFSA.numStates
       val startIdx = bindex[START_SYMBOL]
@@ -182,7 +194,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val dp: Array<Array<Array<PTree?>>> = Array(nStates) { Array(nStates) { Array(width) { null } } }
 
       // 2) Initialize terminal productions A -> a
-      val aitx = levFSA.allIndexedTxs1(cfg)
+      val aitx = levFSA.allIndexedTxs1(ups)
       for ((p, σ, q) in aitx) {
         val Aidxs = bimap.TDEPS[σ]!!.map { bindex[it] }
         for (Aidx in Aidxs) {
@@ -195,8 +207,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       for (dist in 0 until nStates) {
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
-          if (p to q !in levFSA.allPairs) continue
-          val appq = levFSA.allPairs[p to q]!!
+          if (levFSA.allPairs[p][q] == null) continue
+          val appq = levFSA.allPairs[p][q]!!
           for ((Aidx, indexArray) in vindex.withIndex()) {
             val rhsPairs = dp[p][q][Aidx]?.branches?.toMutableList() ?: mutableListOf()
             outerLoop@for (j in 0..<indexArray.size step 2) {

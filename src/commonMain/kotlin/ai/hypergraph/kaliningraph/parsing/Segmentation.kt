@@ -39,14 +39,11 @@ data class Segmentation(
   val illegalRegions = illegal.map { it..it }.map { it.charIndicesOfWordsInString(line) }
 
   fun toColorfulHTMLString(): String {
-    val unsoundRegions =
-      unparseableRegions.map { it to "orange" } +
-        illegalRegions.map { it to "red" }
+    val unsoundRegions = unparseableRegions.map { it to "orange" } + illegalRegions.map { it to "red" }
 
     if (unsoundRegions.isEmpty()) return line.escapeHTML()
 
-    val regions =
-      (parseableRegions.map { it to "other" } + unsoundRegions).sortedBy { it.first.first }
+    val regions = (parseableRegions.map { it to "other" } + unsoundRegions).sortedBy { it.first.first }
 
     val coloredLine = StringBuilder().append("<u>")
     regions.forEach { (range, color) ->
@@ -112,30 +109,24 @@ data class Segmentation(
 val segmentationCache = mutableMapOf<Int, Segmentation>()
 val segmentationCacheHTML = mutableMapOf<Int, String>()
 
-fun preparseParseableLines(cfg: CFG, editorText: Σᐩ) {
-  editorText.lineSequence() // Only preparse the section after the grammar
-    .filter { it.isNotBlank() && !it.containsHole() }
-    .forEach { line ->
-      val leadingWhiteSpace = line.takeWhile { it.isWhitespace() }
-      val trailingWhiteSpace = line.takeLastWhile { it.isWhitespace() }
-      segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
-        Segmentation.build(cfg, line.trim()).toColorfulHTMLString()
-          .let { leadingWhiteSpace + it + trailingWhiteSpace }
-      }
-    }
-}
+private fun String.validLines() = lines().filter { it.isNotBlank() && !it.containsHole() }
 
-fun preparseParseableLines(cfg: CFG, editorText: Σᐩ, recognizer: (String) -> Boolean) {
-  editorText.lineSequence()
-    .filter { it.isNotBlank() && !it.containsHole() }
-    .forEach { line ->
-      segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
-        (if (recognizer(line)) line.also { println("Recognized $it") } else "<u>$line</u>".also { println("Unrecognized $it") })
-      }
+fun preparseParseableLines(cfg: CFG, editorText: Σᐩ) =
+  editorText.validLines().forEach { line ->
+    val leadingWhiteSpace = line.takeWhile { it.isWhitespace() }
+    val trailingWhiteSpace = line.takeLastWhile { it.isWhitespace() }
+    segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
+      Segmentation.build(cfg, line.trim()).toColorfulHTMLString()
+        .let { leadingWhiteSpace + it + trailingWhiteSpace }
     }
-}
+  }
+
+fun preparseParseableLines(cfg: CFG, editorText: Σᐩ, recognizer: (String) -> Boolean) =
+  editorText.validLines().forEach { line ->
+    segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
+      if (recognizer(line)) line else "<u>$line</u>"
+    }
+  }
 
 fun getOrComputeSegmentations(cfg: CFG, editorText: Σᐩ): List<Segmentation> =
-  editorText.split("---").last().lines() // Only preparse the section after the grammar
-    .filter { it.isNotBlank() && !it.containsHole() }
-    .map { Segmentation.build(cfg, it) }
+  editorText.validLines().map { Segmentation.build(cfg, it) }

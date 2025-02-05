@@ -339,7 +339,6 @@ val pythonStatementCNF: CFG by lazy {
     Dots_Plus -> .
     Dots_Plus -> ...
     START -> Async_Keyword Funcdef
-    START -> Async_Keyword For_Stmt
     Except_Clause -> except
     Subscript -> :
     Test -> Not_Bool_Op Not_Test
@@ -356,8 +355,6 @@ val pythonStatementCNF: CFG by lazy {
     Term -> Await_Keyword Atom
     Arith_Expr -> Atom Many_Trailers
     Arith_Expr -> Await_Keyword Atom
-    Shift_Expr -> Await_Keyword Atom
-    And_Expr -> Await_Keyword Atom
     Xor_Expr -> Await_Keyword Atom
     Expr -> Atom Many_Trailers
     Expr -> Await_Keyword Atom
@@ -392,12 +389,6 @@ val pythonStatementCNF: CFG by lazy {
     Term -> Open_Curl_Bracket Close_Curl_Bracket
     Arith_Expr -> Open_Paren Close_Paren
     Arith_Expr -> Open_Curl_Bracket Close_Curl_Bracket
-    Shift_Expr -> Open_Paren Close_Paren
-    Shift_Expr -> Open_Sq_Bracket Close_Sq_Bracket
-    Shift_Expr -> Open_Curl_Bracket Close_Curl_Bracket
-    And_Expr -> Open_Paren Close_Paren
-    And_Expr -> Open_Sq_Bracket Close_Sq_Bracket
-    And_Expr -> Open_Curl_Bracket Close_Curl_Bracket
     Xor_Expr -> Open_Paren Close_Paren
     Xor_Expr -> Open_Sq_Bracket Close_Sq_Bracket
     Xor_Expr -> Open_Curl_Bracket Close_Curl_Bracket
@@ -490,20 +481,6 @@ val pythonStatementCNF: CFG by lazy {
     Arith_Expr -> None
     Arith_Expr -> True
     Arith_Expr -> False
-    Shift_Expr -> NAME
-    Shift_Expr -> NUMBER
-    Shift_Expr -> STRING
-    Shift_Expr -> ...
-    Shift_Expr -> None
-    Shift_Expr -> True
-    Shift_Expr -> False
-    And_Expr -> NAME
-    And_Expr -> NUMBER
-    And_Expr -> STRING
-    And_Expr -> ...
-    And_Expr -> None
-    And_Expr -> True
-    And_Expr -> False
     Xor_Expr -> NAME
     Xor_Expr -> NUMBER
     Xor_Expr -> STRING
@@ -718,7 +695,6 @@ val pythonStatementCNF: CFG by lazy {
     Comma.Many_Tfpdef -> Comma Many_Tfpdef
     Tfpdef_Default -> Tfpdef Assign_Op.Test
     Assign_Op.Test -> Assign_Op Test
-    Star_Vfpdef -> Star_Op Vfpdef.Star_Vfpdef_Comma
     Vfpdef.Comma -> Vfpdef Comma
     Colon.Test -> Colon Test
     Semicolon.Newline -> Semicolon Newline
@@ -774,7 +750,6 @@ val pythonStatementCNF: CFG by lazy {
     Typedargslist -> Double_Star_Op Tfpdef.Comma
     Typedargslist -> Tfpdef_Default Comma.Many_Tfpdef
     Many_Tfpdef -> Tfpdef Assign_Op.Test
-    Varargslist -> Star_Op Vfpdef.Star_Vfpdef_Comma
     Varargslist -> Double_Star_Op Vfpdef.Comma
     START -> Small_Stmts Semicolon.Newline
     Small_Stmts -> Testlist_Star_Expr Aug_Assign.Testlist_Endcomma
@@ -839,8 +814,6 @@ val pythonStatementCNF: CFG by lazy {
     Atom_Expr -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Factor -> Open_Paren Testlist_Comp.Close_Paren
     Term -> Open_Paren Testlist_Comp.Close_Paren
-    Shift_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
-    And_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Xor_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
     Xor_Expr -> Open_Curl_Bracket Dict_Or_Set_Maker.Close_Curl_Bracket
     Generic_Expr -> Open_Sq_Bracket Testlist_Comp.Close_Sq_Bracket
@@ -988,97 +961,6 @@ val pythonStatementCNF: CFG by lazy {
     Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite -> Simple_Name Open_Paren.Arglist.Close_Paren.Colon.Suite
     START -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-    Star_Vfpdef -> Star_Op F.Star_Vfpdef_Comma
-    F.Star_Vfpdef_Comma -> Star_Vfpdef_Comma
-    F.With_Stmt -> With_Stmt
-    Varargslist -> Star_Op F.Star_Vfpdef_Comma
-    START -> Async_Keyword F.With_Stmt
-    Vfpdef.Star_Vfpdef_Comma -> Vfpdef F.Star_Vfpdef_Comma
-    Atom_Expr -> Await_Keyword F.Atom.Many_Trailers
-    F.Atom.Many_Trailers -> Atom.Many_Trailers
-    Subscript -> Colon F.Test.Sliceop
-    F.Test.Sliceop -> Test.Sliceop
-    Generic_Expr -> Xor_Expr F.Xor_Op.And_Expr
-    F.Xor_Op.And_Expr -> Xor_Op.And_Expr
-    And_Test -> Xor_Expr F.Xor_Op.And_Expr
-    Test_Nocond -> Xor_Expr F.Xor_Op.And_Expr
-    With_Items -> Xor_Expr F.Xor_Op.And_Expr
-    Generic_Expr -> And_Expr F.And_Op.Shift_Expr
-    F.And_Op.Shift_Expr -> And_Op.Shift_Expr
-    With_Items -> And_Expr F.And_Op.Shift_Expr
-    Generic_Expr -> Shift_Expr F.Shift_Op.Arith_Expr
-    F.Shift_Op.Arith_Expr -> Shift_Op.Arith_Expr
-    And_Test -> Shift_Expr F.Shift_Op.Arith_Expr
-    Test_Nocond -> Shift_Expr F.Shift_Op.Arith_Expr
-    Subscript -> Shift_Expr F.Shift_Op.Arith_Expr
-    With_Items -> Shift_Expr F.Shift_Op.Arith_Expr
-    Factor -> Await_Keyword F.Atom.Many_Trailers
-    Term -> Await_Keyword F.Atom.Many_Trailers
-    Arith_Expr -> Await_Keyword F.Atom.Many_Trailers
-    Shift_Expr -> Await_Keyword F.Atom.Many_Trailers
-    And_Expr -> Await_Keyword F.Atom.Many_Trailers
-    Xor_Expr -> Await_Keyword F.Atom.Many_Trailers
-    Generic_Expr -> Await_Keyword F.Atom.Many_Trailers
-    Not_Test -> Await_Keyword F.Atom.Many_Trailers
-    And_Test -> Await_Keyword F.Atom.Many_Trailers
-    Or_Test -> Await_Keyword F.Atom.Many_Trailers
-    Test_Nocond -> Await_Keyword F.Atom.Many_Trailers
-    Test_Or_Star_Expr -> Await_Keyword F.Atom.Many_Trailers
-    Subscript -> Await_Keyword F.Atom.Many_Trailers
-    Argument -> Await_Keyword F.Atom.Many_Trailers
-    Test_Or_Star_Exprs -> Await_Keyword F.Atom.Many_Trailers
-    With_Items -> Await_Keyword F.Atom.Many_Trailers
-    Atom_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    F.Yield_Expr.Close_Paren -> Yield_Expr.Close_Paren
-    Factor -> Open_Paren F.Yield_Expr.Close_Paren
-    Arith_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    Shift_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    And_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    Xor_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    Generic_Expr -> Open_Paren F.Yield_Expr.Close_Paren
-    Test_Nocond -> Open_Paren F.Yield_Expr.Close_Paren
-    Subscript -> Open_Paren F.Yield_Expr.Close_Paren
-    Test_Or_Star_Exprs -> Open_Paren F.Yield_Expr.Close_Paren
-    Testlist_Comp -> Open_Paren F.Yield_Expr.Close_Paren
-    Small_Stmts -> Open_Paren F.Yield_Expr.Close_Paren
-    Subscripts -> Xor_Expr F.Xor_Op.And_Expr
-    Subscripts -> Shift_Expr F.Shift_Op.Arith_Expr
-    Subscripts -> Await_Keyword F.Atom.Many_Trailers
-    Subscripts -> Open_Paren F.Yield_Expr.Close_Paren
-    Subscriptlist -> Await_Keyword F.Atom.Many_Trailers
-    Subscriptlist -> Open_Paren F.Yield_Expr.Close_Paren
-    Generic_Exprs -> Xor_Expr F.Xor_Op.And_Expr
-    Generic_Exprs -> And_Expr F.And_Op.Shift_Expr
-    Generic_Exprs -> Shift_Expr F.Shift_Op.Arith_Expr
-    Generic_Exprs -> Await_Keyword F.Atom.Many_Trailers
-    Generic_Exprs -> Open_Paren F.Yield_Expr.Close_Paren
-    Exprlist -> Xor_Expr F.Xor_Op.And_Expr
-    Exprlist -> And_Expr F.And_Op.Shift_Expr
-    Exprlist -> Shift_Expr F.Shift_Op.Arith_Expr
-    Exprlist -> Await_Keyword F.Atom.Many_Trailers
-    Exprlist -> Open_Paren F.Yield_Expr.Close_Paren
-    Yield_Arg -> Xor_Expr F.Xor_Op.And_Expr
-    Yield_Arg -> Await_Keyword F.Atom.Many_Trailers
-    Dict_Or_Set_Maker -> Xor_Expr F.Xor_Op.And_Expr
-    Dict_Or_Set_Maker -> And_Expr F.And_Op.Shift_Expr
-    Dict_Or_Set_Maker -> Shift_Expr F.Shift_Op.Arith_Expr
-    Dict_Or_Set_Maker -> Await_Keyword F.Atom.Many_Trailers
-    Dict_Or_Set_Maker -> Open_Paren F.Yield_Expr.Close_Paren
-    Arguments -> Await_Keyword F.Atom.Many_Trailers
-    F.Colon.Suite.Finally_Stmt -> Colon.Suite.Finally_Stmt
-    START -> Try_Keyword F.Colon.Suite.Finally_Stmt
-    F.Colon.Suite.Except_Stmt.Else_Stmt -> Colon.Suite.Except_Stmt.Else_Stmt
-    F.Colon.Suite.Except_Stmt.Finally_Stmt -> Colon.Suite.Except_Stmt.Finally_Stmt
-    START -> Try_Keyword F.Colon.Suite.Except_Stmt.Else_Stmt
-    START -> Try_Keyword F.Colon.Suite.Except_Stmt.Finally_Stmt
-    F.Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt -> Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
-    F.Simple_Name.Open_Paren.Close_Paren.Colon.Suite -> Simple_Name.Open_Paren.Close_Paren.Colon.Suite
-    START -> Try_Keyword F.Colon.Suite.Except_Stmt.Else_Stmt.Finally_Stmt
-    START -> Class_Keyword F.Simple_Name.Open_Paren.Close_Paren.Colon.Suite
-    For_Stmt -> For_Keyword F.Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
-    F.Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt -> Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
-    START -> For_Keyword F.Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
   """.trimIndent()
     .lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
 }

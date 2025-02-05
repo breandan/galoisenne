@@ -129,6 +129,8 @@ infix fun Collection<Any>.anyAre(that: Any) = any { it isA that }
  * Minimal pure-Kotlin bit set for indices [0..n-1].
  */
 class KBitSet(private val n: Int) {
+  constructor(n: Int, v: Int) : this(n) { set(v) }
+  constructor(n: Int, v: Collection<Int>) : this(n) { v.forEach { set(it) } }
   // Each element of 'data' holds 64 bits, covering up to n bits total.
   private val data = LongArray((n + 63) ushr 6)
 
@@ -154,8 +156,8 @@ class KBitSet(private val n: Int) {
     for (i in data.indices) data[i] = data[i] and other.data[i]
   }
 
-  fun toSet(): Set<Int> {
-    val result = mutableSetOf<Int>()
+  fun toList(): List<Int> {
+    val result = mutableListOf<Int>()
     for (i in 0 until n) if (get(i)) result.add(i)
     return result
   }
