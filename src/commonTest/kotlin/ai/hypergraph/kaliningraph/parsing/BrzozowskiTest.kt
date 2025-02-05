@@ -1,8 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import Grammars
-import ai.hypergraph.kaliningraph.automata.GRE.ONE
-import ai.hypergraph.kaliningraph.automata.GRE.UNI
 import ai.hypergraph.kaliningraph.automata.startGRE
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.test.*
@@ -19,7 +17,7 @@ class BrzozowskiTest {
   fun testGRE() {
     val t = Grammars.ifThen.startGRE(List(5) { "_" })
     println(t!!.toString().length)
-    measureTime { t.words().toList().size.also { println("Words: $it") } }.also { println("Time: $it") }
+    measureTime { t.words(Grammars.ifThen.tmLst).toList().size.also { println("Words: $it") } }.also { println("Time: $it") }
   }
 
   /*

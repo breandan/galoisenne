@@ -9,6 +9,7 @@ import kotlin.jvm.JvmName
 import kotlin.random.Random
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
+import kotlin.to
 
 typealias Σᐩ = String
 typealias Production = Π2<Σᐩ, List<Σᐩ>>
@@ -60,7 +61,10 @@ val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).next
 val CFG.ntLst by cache { (symbols + "ε").toList() }
 val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
 
-val CFG.tripleIntProds: Set<Π3A<Int>> by cache { bimap.TRIPL.map { (a, b, c) -> bindex[a] to bindex[b] to bindex[c] }.toSet() }
+val CFG.tmLst by cache { terminals.toList() }
+val CFG.tmMap by cache { tmLst.mapIndexed { i, s -> s to i }.toMap() }
+
+val CFG.tripleIntProds: Set<Π3A<Int>> by cache { bimap.TRIPL.map { (a, b, c) -> Triple(bindex[a], bindex[b], bindex[c]) }.toSet() }
 val CFG.revUnitProds: Map<Σᐩ, List<Int>> by cache { terminals.associate { it to bimap[listOf(it)].map { bindex[it] } } }
 
 // Maps each nonterminal to the set of nonterminal pairs that can generate it,
@@ -272,7 +276,7 @@ class BiMap(val cfg: CFG) {
   }
   val TRIPL: List<Π3A<Σᐩ>> by lazy {
     R2LHS.filter { it.key.size == 2 }
-      .map { it.value.map { v -> v to it.key[0] to it.key[1] } }.flatten()
+      .map { it.value.map { v -> Triple(v, it.key[0], it.key[1]) } }.flatten()
   }
   val X2WZ: Map<Σᐩ, List<Π3A<Σᐩ>>> by lazy {
     TRIPL.groupBy { it.second }.mapValues { it.value }

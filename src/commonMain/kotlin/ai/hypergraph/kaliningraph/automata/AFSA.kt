@@ -68,7 +68,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
   }
 
   // Assumes stateLst is already in topological order:
-  override val allPairs: Map<Pair<Int, Int>, Set<Int>> by lazy {
+  override val allPairs: List<List<List<Int>?>> by lazy {
     val fwdAdj = Array(numStates) { mutableListOf<Int>() }
     val revAdj = Array(numStates) { mutableListOf<Int>() }
 
@@ -100,34 +100,14 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     //    i.e. if post[i].get(j) == false => empty set.
     //
     //    We'll reuse a single KBitSet 'tmp' to avoid allocations:
-    val result = mutableMapOf<Pair<Int, Int>, Set<Int>>()
+    val result: List<MutableList<List<Int>?>> = List(states.size) { MutableList(states.size) { null } }
 
-    for (i in 0 until numStates) {
-      for (j in i until numStates) {
-        when {
-          i == j -> {
-            // The trivial path i->i has just i on it (assuming zero-length path is allowed).
-            result[i to i] = emptySet()
-          }
-          !post[i].get(j) -> {
-            // i < j, but j is not actually reachable from i
-            result[i to j] = emptySet()
-            // In a DAG, j->i is definitely unreachable if j > i, so:
-            result[j to i] = emptySet()
-          }
-          else -> {
-            // i < j and j is reachable from i => do the intersection of post[i] & pre[j].
-            val tmp = KBitSet(numStates)
-            tmp.or(post[i])
-            tmp.and(pre[j])
-            result[i to j] = tmp.toSet()
-
-            // j>i => definitely unreachable for j->i in a DAG
-            result[j to i] = emptySet()
-          }
-        }
+    for (i in 0 until numStates) for (j in i + 1 until numStates)
+      when {
+        !post[i].get(j) -> { }
+        // i < j and j is reachable from i => do the intersection of post[i] & pre[j].
+        else -> result[i][j] = KBitSet(numStates).apply { or(post[i]); and(pre[j]) }.toList()
       }
-    }
 
     result
   }
