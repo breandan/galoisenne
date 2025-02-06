@@ -283,10 +283,10 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
 //  }
 }
 
-fun CFG.startPTree(tokens: List<String>) = //measureTimedValue {
+fun CFG.startPTree(tokens: List<String>, nt: Σᐩ = START_SYMBOL) = //measureTimedValue {
 //  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
 //}.also { println("Took ${it.duration} to compute parse forest") }.value
-  initPTreeListMat(tokens).seekFixpoint().diagonals.last()[0][bindex[START_SYMBOL]]
+  initPTreeListMat(tokens).seekFixpoint().diagonals.last()[0][bindex[nt]]
 
 // Instead of defining a special case, we instead represent the unit production
 // as a left child whose sibling is empty like so: Left child to Right child
@@ -388,6 +388,15 @@ fun CFG.enumSeqMinimal(
     ?.flatMap { minimizeFix(tokens, it.tokenizeByWhitespace()) { this in language } }
     ?.distinct()
     ?: sequenceOf()
+
+fun CFG.enumNTSmall(nt: String): Sequence<Σᐩ> =
+  if (nt !in nonterminals) emptySequence<Σᐩ>()
+  else ((3..21 step 3).asSequence().flatMap {
+    startPTree(List(it) { "_" }, nt)?.sampleStrWithoutReplacement()
+//      ?.map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
+      ?.filter { it != "<$nt>" }
+      ?: emptySequence()
+  })
 
 var maxTrees = 50_000
 // This should never return duplicates and is the second fastest.

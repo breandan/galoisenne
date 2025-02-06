@@ -97,6 +97,7 @@ fun <T> multisetManhattanDistance(q1: List<T>, q2: List<T>): Int {
 }
 
 fun String.removeEpsilon() = tokenizeByWhitespace().filter { it != "ε" }.joinToString(" ")
+fun String.stripStub() = substring(1, length - 1) // A stub is a token like <...> enclosing an NT
 
 // Intersperses "" in between every token in a list of tokens
 fun List<Σᐩ>.intersperse(i: Int = 1, tok: Σᐩ = "", spacer: List<Σᐩ> = List(i) { tok }): List<Σᐩ> =
