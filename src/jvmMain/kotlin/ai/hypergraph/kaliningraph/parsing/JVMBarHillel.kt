@@ -10,8 +10,6 @@ import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.LongAdder
 import kotlin.collections.asSequence
 
 fun CFG.parallelEnumSeqMinimalWOR(
@@ -209,7 +207,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
   val ntsb = Array(fsa.numStates) { Array(symbols.size) { Array(fsa.numStates) { false } } }
 
   val initFinal =
-    (fsa.init * fsa.final).map { (q, r) -> listOf(ntMap["START"]!!) to listOf(listOf(fsa.stateMap[q]!!, ntMap["START"]!!, fsa.stateMap[r]!!)) }
+    (fsa.init * fsa.final).map { (q, r) -> listOf(symMap["START"]!!) to listOf(listOf(fsa.stateMap[q]!!, symMap["START"]!!, fsa.stateMap[r]!!)) }
 
   // For every production A → σ in P, for every (p, σ, q) ∈ Q × Σ × Q
   // such that δ(p, σ) = q we have the production [p, A, q] → σ in P′.
@@ -223,7 +221,7 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
-  val prods = nonterminalProductions.map { (a, b) -> ntMap[a]!! to b.map { ntMap[it]!! } }.toSet()
+  val prods = nonterminalProductions.map { (a, b) -> symMap[a]!! to b.map { symMap[it]!! } }.toSet()
   val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }
 
   val ctClock = TimeSource.Monotonic.markNow()
@@ -276,8 +274,8 @@ fun CFG.jvmIntersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CF
 
   // !isSyntheticNT() === is START or a terminal
   fun <T> List<T>.isSyntheticNT() = size > 1
-  fun List<Int>.toNT() = if (size == 1) ntLst[first()]
-    else "[" + fsa.stateLst[this[0]] + "~" + ntLst[this[1]] + "~" + fsa.stateLst[this[2]] + "]"
+  fun List<Int>.toNT() = if (size == 1) symLst[first()]
+    else "[" + fsa.stateLst[this[0]] + "~" + symLst[this[1]] + "~" + fsa.stateLst[this[2]] + "]"
 
   val totalProds = binaryProds.size + unitProds.size + initFinal.size
   println("Constructed ∩-grammar with $totalProds productions in ${clock.elapsedNow()}")

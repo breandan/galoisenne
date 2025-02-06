@@ -45,7 +45,7 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
   // For each production A → BC in P, for every p, q, r ∈ Q,
   // we have the production [p,A,r] → [p,B,q] [q,C,r] in P′.
   val prods: Set<Pair<Int, List<Int>>> = nonterminalProductions
-    .map { (a, bc) -> ntMap[a]!! to bc.map { ntMap[it]!! } }.toSet()
+    .map { (a, bc) -> symMap[a]!! to bc.map { symMap[it]!! } }.toSet()
 //  val lengthBoundsCache = lengthBounds.let { lb -> ntLst.map { lb[it] ?: 0..0 } }
   val validTriples = fsa.validTriples.map { arrayOf(it.π1.π1, it.π2.π1, it.π3.π1) }.toTypedArray()
 
@@ -58,7 +58,7 @@ fun CFG.intersectLevFSAP(fsa: FSA, parikhMap: ParikhMap = this.parikhMap): CFG {
     .forEach { ct2[it.π1.π1][it.π3][it.π2.π1] = true }
 
   val states = fsa.stateLst
-  val allsym = ntLst
+  val allsym = symLst
   val binaryProds =
     prods.map {
 //      if (i % 100 == 0) println("Finished ${i}/${nonterminalProductions.size} productions")
@@ -115,7 +115,7 @@ fun CFG.unitProdRules3(fsa: FSA): List<Pair<List<Int>, List<List<Int>>>> =
   (unitProductions * fsa.nominalize().flattenedTriples)
     .filter { (_, σ: Σᐩ, arc) -> (arc.π2)(σ) }
 //    .map { (A, σ, arc) -> "[${arc.π1}~$A~${arc.π3}]" to listOf(σ) }
-    .map { (A, σ, arc) -> listOf(fsa.stateMap[arc.π1]!!, ntMap[A]!!, fsa.stateMap[arc.π3]!!) to listOf(listOf(ntMap[σ]!!)) }
+    .map { (A, σ, arc) -> listOf(fsa.stateMap[arc.π1]!!, symMap[A]!!, fsa.stateMap[arc.π3]!!) to listOf(listOf(symMap[σ]!!)) }
 
 fun CFG.expandNonterminalStubs(origCFG: CFG) = flatMap {
 //  println("FM: $it / ${it.RHS.first()} / ${it.RHS.first().isNonterminalStub()}")

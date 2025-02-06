@@ -7,8 +7,6 @@ import ai.hypergraph.kaliningraph.sampling.choose
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.jvm.JvmName
 import kotlin.random.Random
-import kotlin.time.*
-import kotlin.time.Duration.Companion.seconds
 import kotlin.to
 
 typealias Σᐩ = String
@@ -58,11 +56,12 @@ val CFG.tmap: Map<Set<Σᐩ>, Set<Σᐩ>> by cache {
 
 val CFG.unicodeMap by cache { terminals.associateBy { Random(it.hashCode()).nextInt().toChar().toUnicodeEscaped() } }
 
-val CFG.ntLst by cache { (symbols + "ε").toList() }
-val CFG.ntMap by cache { ntLst.mapIndexed { i, s -> s to i }.toMap() }
+val CFG.symLst by cache { (symbols + "ε").toList() }
+val CFG.symMap by cache { symLst.mapIndexed { i, s -> s to i }.toMap() }
 
-val CFG.tmLst by cache { terminals.toList() }
-val CFG.tmMap by cache { tmLst.mapIndexed { i, s -> s to i }.toMap() }
+val CFG.tmLst: List<Σᐩ> by cache { terminals.toList() }
+val CFG.tmMap: Map<Σᐩ, Int> by cache { tmLst.mapIndexed { i, s -> s to i }.toMap() }
+val CFG.tmToVidx: List<List<Int>> by cache { List(tmLst.size) { bimap.TDEPS[tmLst[it]]!!.map { bindex[it] } } }
 
 val CFG.tripleIntProds: Set<Π3A<Int>> by cache { bimap.TRIPL.map { (a, b, c) -> Triple(bindex[a], bindex[b], bindex[c]) }.toSet() }
 val CFG.revUnitProds: Map<Σᐩ, List<Int>> by cache { terminals.associate { it to bimap[listOf(it)].map { bindex[it] } } }
@@ -293,7 +292,7 @@ class BiMap(val cfg: CFG) {
 // n.b., this only works if the CFG is acyclic, i.e., L(G) is finite otherwise it will loop forever
 fun CFG.toPTree(from: Σᐩ = START_SYMBOL, origCFG: CFG = this): PTree =
   PTree(from, bimap[from].map { toPTree(it[0], origCFG) to if (it.size == 1) PTree() else toPTree(it[1], origCFG) })
-    .also { it.ntIdx = (origCFG.ntMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }
+    .also { it.ntIdx = (origCFG.symMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }
 
 /*
 Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
