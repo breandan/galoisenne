@@ -38,11 +38,10 @@ private class FrozenCFG(val cfg: CFG): CFG by cfg {
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf(HOLE_MARKER, " ")).toTypedArray() }
-val CFG.nonterminals: Set<Σᐩ> by cache { map { it.LHS }.toSet() }
+val CFG.nonterminals: Set<Σᐩ> by cache { setOf(START_SYMBOL) + map { it.LHS }.toSet() }
 val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
-val CFG.terminalUnitProductions: Set<Production>
-    by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
+val CFG.terminalUnitProductions: Set<Production> by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
 val CFG.unitProductions: Set<Pair<Σᐩ, Σᐩ>> by cache { filter { it.RHS.size == 1 }.map { it.LHS to it.RHS[0] }.toSet() }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.unitNonterminals: Set<Σᐩ> by cache { terminalUnitProductions.map { it.LHS }.toSet() }
@@ -240,7 +239,6 @@ class JoinMap(val CFG: CFG) {
 }
 
 // Maps indices to nonterminals and nonterminals to indices
-// TODO: Would be nice if START had a zero index (requires rebuilding caches)
 class Bindex<T>(
   val set: Set<T>,
   val indexedNTs: List<T> = set.toList(),
