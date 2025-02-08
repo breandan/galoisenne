@@ -139,7 +139,7 @@ fun List<Pair<Int, Int>>.apply(indices: List<Int>): List<Int> =
 fun Patch.apply(indices: List<Int>, separator: Σᐩ = ""): Σᐩ =
   mapIndexed { i, it -> if (i in indices) it.new else it.old }.joinToString(separator)
 
-fun Patch.apply(separator: Σᐩ = ""): Σᐩ = map { it.new }.joinToString(separator)
+fun Patch.apply(separator: Σᐩ = ""): Σᐩ = joinToString(separator) { it.new }
 
 fun extractPatch(original: List<Σᐩ>, new: List<Σᐩ>): Patch =
   levenshteinAlign(original, new).map { (old, new) ->
