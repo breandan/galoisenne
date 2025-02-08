@@ -3,6 +3,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.*
+import ai.hypergraph.kaliningraph.automata.FSA
 import ai.hypergraph.kaliningraph.automata.GRE
 import ai.hypergraph.kaliningraph.sampling.*
 import ai.hypergraph.kaliningraph.tensor.*
@@ -47,10 +48,36 @@ private fun List<Σᐩ>.pad3(): List<Σᐩ> =
 fun CFG.isValid(str: Σᐩ): Bln = isValid(str.tokenizeByWhitespace())
 fun CFG.isValid(str: List<Σᐩ>): Bln =
   if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
-  else initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0]
+//  else initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0][0]
+  else {
+     val dp = Array(str.size + 1) { Array(str.size + 1) { BooleanArray(nonterminals.size) { false } } }
+    str.map {
+//      if (it != "_" && tmMap[it] == null) println("What was this? \"$it\" / ${str.joinToString(" ")}")
+      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1][vidx] = true } }
+
+     for (dist: Int in 0 until dp.size) {
+       for (iP: Int in 0 until dp.size - dist) {
+         val p = iP
+         val q = iP + dist
+         val appq = p..q
+         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
+           outerloop@for(j: Int in 0..<indexArray.size step 2) {
+             val B = indexArray[j]
+             val C = indexArray[j + 1]
+             for (r in appq)
+               if (dp[p][r][B] && dp[r][q][C]) {
+                 dp[p][q][A] = true
+                 break@outerloop
+               }
+           }
+         }
+       }
+     }
+    dp[0][str.size][bindex[START_SYMBOL]]
+  }
     //.also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
     //.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
-    .let { corner -> corner[bindex[START_SYMBOL]] }
 
 fun CFG.corner(str: Σᐩ) =
  solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()

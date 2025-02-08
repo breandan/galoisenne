@@ -38,7 +38,7 @@ private class FrozenCFG(val cfg: CFG): CFG by cfg {
 
 val CFG.language: CFL by cache { CFL(this) }
 val CFG.delimiters: Array<Σᐩ> by cache { (terminals.sortedBy { -it.length } + arrayOf(HOLE_MARKER, " ")).toTypedArray() }
-val CFG.nonterminals: Set<Σᐩ> by cache { setOf(START_SYMBOL) + map { it.LHS }.toSet() }
+val CFG.nonterminals: Set<Σᐩ> by cache { /*setOf(START_SYMBOL) + */map { it.LHS }.toSet() }
 val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production> by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
