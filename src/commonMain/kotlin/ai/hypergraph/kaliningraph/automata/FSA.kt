@@ -70,6 +70,16 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     aps
   }
 
+  open val allPairs2: List<List<List<Int>>> by lazy {
+    val aps: List<MutableList<MutableList<Int>>> =
+      List(states.size) { MutableList(states.size) { mutableListOf() } }
+    graph.allPairs.entries.forEach { (a, b) ->
+      val temp = b.map { stateMap[it.label]!! }.toMutableList()
+      aps[stateMap[a.first.label]!!][stateMap[a.second.label]!!] = temp
+    }
+    aps
+  }
+
   val finalIdxs by lazy { final.map { stateMap[it]!! } }
 
   // TODO: Implement Lev state pairing function to avoid this pain
