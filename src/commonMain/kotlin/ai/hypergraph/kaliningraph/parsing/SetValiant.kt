@@ -50,7 +50,7 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
   if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
 //  else initialUTBMatrix(str.pad3()).seekFixpoint().diagonals.last()[0][0]
   else {
-     val dp = Array(str.size + 1) { Array(str.size + 1) { BooleanArray(nonterminals.size) { false } } }
+    val dp = Array(str.size + 1) { Array(str.size + 1) { BooleanArray(nonterminals.size) { false } } }
     str.map {
 //      if (it != "_" && tmMap[it] == null) println("What was this? \"$it\" / ${str.joinToString(" ")}")
       if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
@@ -76,8 +76,26 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
      }
     dp[0][str.size][bindex[START_SYMBOL]]
   }
-    //.also { it.forEachIndexed { r, d -> d.forEachIndexed { i, it -> println("$r, $i: ${toNTSet(it)}") } } }
-    //.also { println("Last: ${it.joinToString(",") {if (it) "1" else "0"}}") }
+
+fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
+  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
+  else {
+    val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
+    str.map {
+      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
+
+    for (dist: Int in 0 until dp.size) {
+      for (iP: Int in 0 until dp.size - dist) {
+        val p = iP
+        val q = iP + dist
+        val appq = p..q
+        for (r in appq) for (lt in dp[p][r].set) for (rt in dp[r][q].set)
+          bimap.R2LHSI[lt][rt].forEach { dp[p][q].set(it) }
+      }
+    }
+    dp[0][str.size][bindex[START_SYMBOL]]
+  }
 
 fun CFG.corner(str: Σᐩ) =
  solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
@@ -286,6 +304,47 @@ fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
     else bimap[listOf(str[j - 1])].map {
       Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
     }.toSet()
+  }
+
+typealias GRES = List<GRE?>
+
+fun CFG.makeGRESAlgebra(): Ring<GRES> =
+  Ring.of(// Not a proper ring, but close enough.
+    // 0 = ∅
+    nil = listOf(),
+    // x + y = x ∪ y
+    plus = { x, y ->
+      if (x.isEmpty()) y else if (y.isEmpty()) x
+      else x.zip(y) { a, b ->
+        if (a == null) b
+        else if (b == null) a
+        else a + b
+      }
+    },
+    // x · y = { A0 | A1 ∈ x, A2 ∈ y, (A0 -> A1 A2) ∈ P }
+    times = { x, y -> if (x.isEmpty() || y.isEmpty()) emptyList() else greJoin(x, y) }
+  )
+
+fun CFG.greJoin(left: GRES, right: GRES): GRES =
+  vindex.map { lrs ->
+    val pairs = mutableListOf<GRE>()
+    for (i in 0..<lrs.size step 2) {
+      val left = (left[lrs[i]])
+      val right = (right[lrs[i + 1]])
+      if (left != null && right != null)
+        pairs += left * right
+    }
+    if (pairs.isEmpty()) null else GRE.CUP(*pairs.toTypedArray())
+  }
+
+fun CFG.initialGREMatrix(str: List<Σᐩ>): FreeMatrix<GRES> =
+  FreeMatrix(makeGRESAlgebra(), str.size + 1) { i, j ->
+    if (i + 1 != j) listOf<GRE>()
+    else if (str[j - 1] == HOLE_MARKER || str[j - 1] !in tmMap)
+      List(nonterminals.size) { GRE.SET(KBitSet(terminals.size).apply { setAll() }) }
+    else bimap[listOf(str[j - 1])].map { nt ->
+      GRE.SET(KBitSet(terminals.size).apply { set(tmMap[str[j - 1]]!!) })
+    }
   }
 
 fun CFG.initialUTBMatrix(

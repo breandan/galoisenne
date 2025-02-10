@@ -133,12 +133,18 @@ class KBitSet(val n: Int) {
   constructor(n: Int, v: Collection<Int>) : this(n) { v.forEach { set(it) } }
   // Each element of 'data' holds 64 bits, covering up to n bits total.
   private val data = LongArray((n + 63) ushr 6)
+  var set = mutableSetOf<Int>()
+  var modified = false
 
   fun set(index: Int) {
+    modified = true
     val word = index ushr 6
     val bit  = index and 63
+    set += index
     data[word] = data[word] or (1L shl bit)
   }
+
+  fun setAll() { (0..<n).forEach { set(it) } }
 
   operator fun get(index: Int): Boolean {
     val word = index ushr 6

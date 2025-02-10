@@ -440,7 +440,7 @@ class SetValiantTest {
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
       measureTimedValue {
-        println(str in language)
+        println(isValidAlt(str))
       }.also { println("DP transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
       println("Length: ${str.size}")
