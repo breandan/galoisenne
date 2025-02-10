@@ -8,6 +8,9 @@ import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
+import kotlin.math.ceil
+import kotlin.math.log
+import kotlin.math.log2
 import kotlin.random.Random
 import kotlin.test.*
 import kotlin.time.*
@@ -413,10 +416,14 @@ class SetValiantTest {
   @Test
   fun testUTMRepresentationEquivalence() {
     with("""P -> ( P ) | P P | ε""".parseCFG()) {
-      val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( )".tokenizeByWhitespace()
+      val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( )".tokenizeByWhitespace()
+      val iter = ceil(log2(str.size.toDouble())).toInt() + 2
       val slowTransitionFP =  measureTimedValue {
-        initialMatrix(str).seekFixpoint(succ={it + it * it})
-      }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}") }.value
+        initialMatrix(str).seekFixpoint(
+          succ = { it + it * it },
+          stop = { i, _, _ -> i == iter }
+        )
+      }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}ms") }.value
       val fastTransitionFP = measureTimedValue {
         initialUTMatrix(str).seekFixpoint().toFullMatrix()
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value

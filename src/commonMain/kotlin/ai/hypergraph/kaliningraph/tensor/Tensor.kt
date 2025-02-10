@@ -437,7 +437,7 @@ tailrec fun <T> T.seekFixpoint(
   succ: (T) -> T
 ): T {
   val next = succ(this)
-  return if (stop(i, this, next)) next//.also { println("Converged in $i iterations") }
+  return if (stop(i, this, next)) next.also { println("Converged in $i iterations") }
   else if (checkHistory) {
     val hash = next.hashCode()
     if (hash in hashCodes)

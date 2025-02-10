@@ -314,11 +314,11 @@ Effectively, this matrix exponential is what we are computing when we are parsin
   \[
     S(2n) \;=\;
     \begin{cases}
-      M, & \text{if } n = 1,\\[6pt]
+      M_0, & \text{if } n = 1,\\[6pt]
       S(n) + S(n)^2 & \text{otherwise}.
     \end{cases}
   \]
-  Each level of recursion requires at most two parallel matrix multiplication steps, which requires $\mathcal{O}(\lceil \log_2 n \rceil)$ individual matrix multiplications.
+  Each level of recursion requires a single parallel matrix multiplication, and $S$ requires at most $\mathcal{O}(\lceil \log_2 n \rceil)$ total steps to attain the matrix fixpoint.
 \end{proof}
 
 Thus, for a fixed grammar $G$ with a cubic number of parallel processors, we can decide $[\sigma \in \mathcal{L}(G)]$ in $\mathcal{O}(\log n)$ for arbitrary $\sigma: \Sigma^n$. We will now generalize this procedure to parsing an acyclic finite state automaton.
