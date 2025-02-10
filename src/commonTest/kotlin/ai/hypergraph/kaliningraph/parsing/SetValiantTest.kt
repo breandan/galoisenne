@@ -5,6 +5,7 @@ import Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
+import ai.hypergraph.kaliningraph.tensor.rows
 import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
@@ -415,23 +416,44 @@ class SetValiantTest {
   @ExperimentalTime
   @Test
   fun testUTMRepresentationEquivalence() {
-    with("""P -> ( P ) | P P | ε""".parseCFG()) {
-      val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( )".tokenizeByWhitespace()
-      val iter = ceil(log2(str.size.toDouble())).toInt() + 2
-      val slowTransitionFP =  measureTimedValue {
+    with(vanillaS2PCFG) {
+      val str = "NAME = NAME ( NAME , NUMBER ) . NAME ( ) NEWLINE NAME = NAME . NAME NEWLINE NAME = STRING . NAME ( NAME for NAME in NAME if NAME . NAME ( ) ) NEWLINE NAME ( NAME ) NEWLINE".tokenizeByWhitespace()
+//  with("""P -> ( P ) | P P | ε""".parseCFG()) {
+//    val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( )".tokenizeByWhitespace()
+      val iter = ceil(log2(str.size.toDouble())).toInt() + 9
+      var i = 0
+      val slowTransitionFP = measureTimedValue {
         initialMatrix(str).seekFixpoint(
-          succ = { it + it * it },
-          stop = { i, _, _ -> i == iter }
-        )
+          succ = {
+            (it + it.squareUpperTriangular())
+//            .also { println("ITER=${i++}"); it.prettyPrint(); println() }
+           },
+//          stop = { i, _, _ -> i == iter }
+        )[0, str.size]
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}ms") }.value
+
+      i = 0
       val fastTransitionFP = measureTimedValue {
-        initialUTMatrix(str).seekFixpoint().toFullMatrix()
+        initialUTMatrix(str).seekFixpoint(
+//          debug = { println("ITER=${i++}"); it.toFullMatrix().prettyPrint(); println() }
+        ).toFullMatrix()[0, str.size]
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
+
+      measureTimedValue {
+        println(str in language)
+      }.also { println("DP transition: ${it.duration.inWholeMilliseconds}ms") }.value
+
+      println("Length: ${str.size}")
 
       assertEquals(slowTransitionFP, fastTransitionFP)
     }
   }
 
+  fun TreeMatrix.prettyPrint() {
+    rows.forEach { row ->
+      println(row.joinToString(" ") { e -> if (e.isEmpty()) "  " else e.size.toString().padEnd(2) })
+    }
+  }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testHardestCFL"
 */

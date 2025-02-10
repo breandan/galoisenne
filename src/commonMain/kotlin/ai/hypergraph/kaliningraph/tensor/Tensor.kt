@@ -1,8 +1,11 @@
 package ai.hypergraph.kaliningraph.tensor
 
+import ai.hypergraph.kaliningraph.tensor.minus
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.collections.component1
 import kotlin.math.*
 import kotlin.random.Random
+import kotlin.text.compareTo
 
 /**
  * Generic matrix which supports overloadable addition and multiplication
@@ -38,6 +41,11 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
       if (j <= i) algebra.nil
       else this@Matrix[i].drop(i + 1).take(j) dot this@Matrix.cols[j].drop(i + 1).take(j)
     })
+
+  fun squareAndAddUT() = new(numRows, numCols, allPairs(numRows, numCols).map { (i, j) ->
+    if (j <= i) algebra.nil
+    else with(algebra) { (this@Matrix[i, j] + (this@Matrix[i].drop(i + 1).take(j) dot this@Matrix.cols[j].drop(i + 1).take(j))) }
+  })
 //  transpose.let { tt ->
 //    safeJoin(tt, criteria = numCols == numRows) { i, j ->
 //      if (j <= i) algebra.nil
@@ -392,6 +400,7 @@ open class UTMatrix<T> constructor(
     //    (3) column beneath an element (inclusive)
     carry: List<Triple<T, List<T>, List<T>>> =
       diagonals.last().map { it to listOf(it) to listOf(it) },
+//    debug: (UTMatrix<T>) -> Unit =  { },
     iteration: Int = 0,
     maxIterations: Int = diagonals.first().size
   ): UTMatrix<T> =
@@ -409,15 +418,19 @@ open class UTMatrix<T> constructor(
       UTMatrix(
         diagonals = diagonals + listOf(next.map { it.π1 }),
         algebra = algebra
-      ).seekFixpoint(next, iteration + 1, maxIterations)
+      )
+//        .also { debug(it) }
+        .seekFixpoint(next, iteration + 1, maxIterations)
     }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =
-    if (diagonals.last().size != 1)
-      throw IndexOutOfBoundsException("OOB: [${diagonals.first().size}, ${diagonals.last().size}]")
-    else FreeMatrix(algebra, diagonals.size + 1, diagonals.size + 1) { r, c ->
-      if (c <= r) algebra.nil else diagonals[c - r - 1][r]
+    (diagonals + if (diagonals.last().size != 1) {
+      ((diagonals.last().size - 1)..1).map { List(it) { algebra.nil } }
+    } else emptyList()).let { diagonals ->
+      FreeMatrix(algebra, diagonals.size + 1, diagonals.size + 1) { r, c ->
+        if (c <= r) algebra.nil else diagonals[c - r - 1][r]
+      }
     }
 
   override fun new(rows: Int, cols: Int, data: List<T>, alg: Ring<T>): UTMatrix<T> =
