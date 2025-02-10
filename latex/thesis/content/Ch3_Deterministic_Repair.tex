@@ -304,10 +304,31 @@ A \textbf{Directed Graph (DG)} is a graph $\mathbf{G} = \langle V, E \subseteq V
 Effectively, this matrix exponential is what we are computing when we are parsing. The parse matrix that is formed by:
 
 \begin{equation}
-  \exp(M) = M + M^2 + \cdots + M^{n-1}
+  \exp(M) = \sum_{i=1}^\infty M^i = S(n-1) = M + M^2 + \cdots + M^{n-1}
 \end{equation}
 
-\noindent directly corresponds standard CYK parsing algorithm presented in \S~\ref{sec:matrix_parsing}. We will now generalize it to parsing an acyclic finite state automaton.
+\noindent directly corresponds standard CYK parsing algorithm presented in \S~\ref{sec:matrix_parsing}. Effectively for matrix semirings, this can be computed using the equivalent construction:
+
+\begin{proof}
+  To compute \(M^n\), we use:
+  \[
+    M^n \;=\;
+    \begin{cases}
+      M, & \text{if } n=1,\\[3pt]
+      \bigl(M^{n/2}\bigr)^2, & \text{if \(n\) is even},\\[3pt]
+      \bigl(M^{(n-1)/2}\bigr)^2 \; M, & \text{if \(n\) is odd}.
+    \end{cases}
+  \]
+  Each level of recursion requires at most two matrix multiplications in parallel, yielding \(\mathcal{O}(\log n)\) depth.
+
+  For the sum \(S(n) = M + M^2 + \cdots + M^n\), observe that
+  \[
+    S(2k) \;=\; S(k) \;+\; M^k \, S(k).
+  \]
+  which requires $\mathcal{O}(\log_2 n)$ parallel matrix multiplication steps, $M_{i+1} = M_i + M_i^2$.
+\end{proof}
+
+We will now generalize this procedure to parsing an acyclic finite state automaton.
 
 A \textbf{topological sort} of a graph $G$ is a total order on the vertices $(V, \prec)$ such that $u \rightarrow v \Longrightarrow u \prec v$. It can be easily shown that (1) DAGs are the only graphs which can be topologically sorted and (2) under such an ordering, the adjacency matrix of a DAG will be strictly upper triangular. One way to define a topsort is to repeatedly square the adjacency matrix using a $\langle \min, +\rangle$-semiring, then sort the vertices by incoming path length.
 
@@ -373,21 +394,21 @@ For example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to bal
   }
 \end{center}
 
-\noindent Suppose CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow ), R \rightarrow )\}$.
+\noindent Suppose CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$.
 Let us assume an ordering $S, F, L, R$ on $V$ (i.e., $\bs\ws\bs\ws$ would represent $\{S, L\}$), and a topological ordering on $A$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $L(G')\cap L(A)$. We will proceed as follows:
 
 \resizebox{0.8\textwidth}{!}{
 \[
   \begin{array}{c|cccccccc}
     M_0 & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
-    q_{00} &              & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-    q_{01} &              &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-    q_{10} &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-    q_{11} &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-    q_{20} &              &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws \\ [6pt]
-    q_{21} &              &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-    q_{30} &              &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
-    q_{31} &              &              &              &              &              &              &              &              \\ [6pt]
+    q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws \\ [6pt]
+    q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+    q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
   \end{array}
 \]
 }
@@ -398,14 +419,14 @@ Let us assume an ordering $S, F, L, R$ on $V$ (i.e., $\bs\ws\bs\ws$ would repres
 \[
   \begin{array}{c|cccccccc}
     M_\infty & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
-    q_{00} &              & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
-    q_{01} &              &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
-    q_{10} &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
-    q_{11} &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-    q_{20} &              &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws \\ [6pt]
-    q_{21} &              &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-    q_{30} &              &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
-    q_{31} &              &              &              &              &              &              &              &              \\ [6pt]
+    q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
+    q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
+    q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
+    q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws \\ [6pt]
+    q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+    q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
   \end{array}
 \]
 }
