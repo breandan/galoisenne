@@ -77,25 +77,25 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
     dp[0][str.size][bindex[START_SYMBOL]]
   }
 
-fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
-  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
-  else {
-    val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
-    str.map {
-      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
-      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
-
-    for (dist: Int in 0 until dp.size) {
-      for (iP: Int in 0 until dp.size - dist) {
-        val p = iP
-        val q = iP + dist
-        val appq = p..q
-        for (r in appq) for (lt in dp[p][r].set) for (rt in dp[r][q].set)
-          bimap.R2LHSI[lt][rt].forEach { dp[p][q].set(it) }
-      }
-    }
-    dp[0][str.size][bindex[START_SYMBOL]]
-  }
+//fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
+//  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
+//  else {
+//    val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
+//    str.map {
+//      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+//      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
+//
+//    for (dist: Int in 0 until dp.size) {
+//      for (iP: Int in 0 until dp.size - dist) {
+//        val p = iP
+//        val q = iP + dist
+//        val appq = p..q
+//        for (r in appq) for (lt in dp[p][r].set) for (rt in dp[r][q].set)
+//          bimap.R2LHSI[lt][rt].forEach { dp[p][q].set(it) }
+//      }
+//    }
+//    dp[0][str.size][bindex[START_SYMBOL]]
+//  }
 
 fun CFG.corner(str: Σᐩ) =
  solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()

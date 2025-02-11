@@ -417,6 +417,7 @@ class SetValiantTest {
   @Test
   fun testUTMRepresentationEquivalence() {
     with(vanillaS2PCFG) {
+      println("SIZE: ${nonterminals.size}")
       val str = "NAME = NAME ( NAME , NUMBER ) . NAME ( ) NEWLINE NAME = NAME . NAME NEWLINE NAME = STRING . NAME ( NAME for NAME in NAME if NAME . NAME ( ) ) NEWLINE NAME ( NAME ) NEWLINE".tokenizeByWhitespace()
 //  with("""P -> ( P ) | P P | ε""".parseCFG()) {
 //    val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( )".tokenizeByWhitespace()
