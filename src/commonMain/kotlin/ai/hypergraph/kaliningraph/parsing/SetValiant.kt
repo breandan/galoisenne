@@ -77,25 +77,28 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
     dp[0][str.size][bindex[START_SYMBOL]]
   }
 
-//fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
-//  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
-//  else {
-//    val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
-//    str.map {
-//      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
-//      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
-//
-//    for (dist: Int in 0 until dp.size) {
-//      for (iP: Int in 0 until dp.size - dist) {
-//        val p = iP
-//        val q = iP + dist
-//        val appq = p..q
-//        for (r in appq) for (lt in dp[p][r].set) for (rt in dp[r][q].set)
-//          bimap.R2LHSI[lt][rt].forEach { dp[p][q].set(it) }
-//      }
-//    }
-//    dp[0][str.size][bindex[START_SYMBOL]]
-//  }
+// Differs only by the JOIN\otimes operation.
+// This strategy only wins over child-enumeration under low ambiguity.
+// If the number of child pairs is high, better to just loop over grammar
+fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
+  if (str.size == 1) checkUnitWord(str.first()).isNotEmpty()
+  else {
+    val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
+    str.map {
+      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+      else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
+
+    for (dist: Int in 0 until dp.size) {
+      for (iP: Int in 0 until dp.size - dist) {
+        val p = iP
+        val q = iP + dist
+        val appq = p..q
+        for (r in appq) for (lt in dp[p][r].toList()) for (rt in dp[r][q].toList())
+          bimap.R2LHSI[lt][rt].forEach { dp[p][q].set(it) }
+      }
+    }
+    dp[0][str.size][bindex[START_SYMBOL]]
+  }
 
 fun CFG.corner(str: Σᐩ) =
  solveFixedpoint(str.tokenizeByWhitespace())[0].last().map { it.root }.toSet()
@@ -298,9 +301,18 @@ fun Σᐩ.isNonterminalStubIn(CJL: CJL): Bln = CJL.cfgs.map { isNonterminalStubI
 fun Σᐩ.containsNonterminal(): Bln = Regex("<[^\\s>]*>") in this
 
 // Converts tokens to UT matrix via constructor: σ_i = { A | (A -> w[i]) ∈ P }
-fun CFG.initialMatrix(str: List<Σᐩ>): TreeMatrix =
+fun CFG.initialMatrix(
+  str: List<Σᐩ>,
+  bmp: BiMap = bimap,
+  unitReach: Map<Σᐩ, Set<Σᐩ>> = originalForm.unitReachability
+): TreeMatrix =
   FreeMatrix(makeForestAlgebra(), str.size + 1) { i, j ->
     if (i + 1 != j) emptySet()
+    else if (str[j - 1] == HOLE_MARKER)
+      unitReach.values.flatten().toSet().map { root ->
+        bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
+          .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
+      }.flatten().toSet()
     else bimap[listOf(str[j - 1])].map {
       Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
     }.toSet()
