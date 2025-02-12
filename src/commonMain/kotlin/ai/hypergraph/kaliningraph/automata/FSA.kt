@@ -151,7 +151,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val startIdx = bindex[START_SYMBOL]
 
       // For pairs (p,q) in topological order
-      for (dist in 0 until levFSA.numStates) {
+      for (dist in 1 until levFSA.numStates) {
         for (iP in 0 until levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
@@ -214,7 +214,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       }
 
       // 3) CYK + Floyd Warshall parsing
-      for (dist in 0 until nStates) {
+      for (dist in 1 until nStates) {
         for (p in 0 until (nStates - dist)) {
           val q = p + dist
           if (levFSA.allPairs[p][q] == null) continue
@@ -226,10 +226,10 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
               val Cidx = indexArray[j + 1]
               for (r in appq) {
                 val left = dp[p][r][Bidx]
+                if (left == null) continue
                 val right = dp[r][q][Cidx]
-                if (left != null && right != null) {
-                  rhsPairs += left to right
-                }
+                if (right == null) continue
+                rhsPairs += left to right
               }
             }
 
