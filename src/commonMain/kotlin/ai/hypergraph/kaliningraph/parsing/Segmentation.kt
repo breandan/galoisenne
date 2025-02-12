@@ -123,8 +123,12 @@ fun preparseParseableLines(cfg: CFG, editorText: Σᐩ) =
 
 fun preparseParseableLines(cfg: CFG, editorText: Σᐩ, recognizer: (String) -> Boolean) =
   editorText.validLines().forEach { line ->
+    val leadingWhiteSpace = line.takeWhile { it.isWhitespace() }
+    val trailingWhiteSpace = line.takeLastWhile { it.isWhitespace() }
     segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
-      if (recognizer(line)) line else "<u>$line</u>"
+      val trimmedLine = line.trim()
+      if (recognizer(trimmedLine)) line
+      else "$leadingWhiteSpace<u>$trimmedLine</u>$trailingWhiteSpace"
     }
   }
 
