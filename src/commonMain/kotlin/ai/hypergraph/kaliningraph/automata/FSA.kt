@@ -80,7 +80,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     aps
   }
 
-  val finalIdxs by lazy { final.map { stateMap[it]!! } }
+  val finalIdxs by lazy { final.map { stateMap[it]!! }.filter { 0 < idsToCoords[it]!!.second } }
 
   // TODO: Implement Lev state pairing function to avoid this pain
   val idsToCoords by lazy { stateLst.mapIndexed { i, it -> i to it.coords() }.toMap() }
