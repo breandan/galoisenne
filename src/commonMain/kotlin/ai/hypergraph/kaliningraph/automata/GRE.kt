@@ -4,7 +4,11 @@ import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
+import org.kosat.heuristics.PriorityQueue
+import kotlin.collections.plus
 import kotlin.math.max
+import kotlin.time.Duration
+import kotlin.time.TimeSource
 
 // Generalized regular expression: https://planetmath.org/generalizedregularexpression
 // Parsing with derivatives: https://matt.might.net/papers/might2011derivatives.pdf
@@ -58,6 +62,7 @@ sealed class GRE(open vararg val args: GRE) {
     }
   }
 
+  // Greedy LTR decoding
   fun enumerateWithPriority(
     ngrams: MutableMap<List<String>, Double>,
     tmLst: List<Σᐩ>,
@@ -67,12 +72,10 @@ sealed class GRE(open vararg val args: GRE) {
 //    println("pfx: ${pfx.joinToString(" ")}")
     when (this@GRE) {
       is EPS -> emptyList<Int>()
-      is SET -> {
-        yieldAll(s.toList().map {
-          -(ngrams[pfx + tmLst[it]] ?: 0.0) to it
-        }.sortedBy { it.first }.map { listOf(it.second) })
+      is SET ->
+        yieldAll(s.toList().map { -(ngrams[pfx + tmLst[it]] ?: 0.0) to it }
+          .sortedBy { it.first }.map { listOf(it.second) })
 //        yieldAll(s.toList().map { listOf(it) })
-      }
       is CUP -> {
         val orderedChoices = admits.toList()
           .map { -(ngrams[pfx + tmLst[it]] ?: 0.0) to it }
