@@ -258,6 +258,16 @@ class Bindex<T>(
 class BiMap(val cfg: CFG) {
   val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
   val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
+  val R2LHSV by lazy { cfg.filter { it.RHS.all { it in cfg.nonterminals } }.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
+  val R2LHSI by lazy {
+    val mmap = List(cfg.nonterminals.size) { List(cfg.nonterminals.size) { mutableListOf<Int>() } }
+    R2LHSV.forEach {
+      val rhs = it.key.map { cfg.bindex[it] }
+      mmap[rhs[0]][rhs[1]] += it.value.map { cfg.bindex[it] }
+    }
+//    R2LHSV.map { it.key.map { cfg.bindex[it] } to it.value.map { cfg.bindex[it] } }.toMap()
+    mmap
+  }
 
   val TDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
     mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {

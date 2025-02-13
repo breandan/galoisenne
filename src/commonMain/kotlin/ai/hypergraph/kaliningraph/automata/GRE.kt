@@ -4,6 +4,7 @@ import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
+import org.kosat.heuristics.PriorityQueue
 import kotlin.collections.plus
 import kotlin.math.max
 import kotlin.time.Duration
@@ -61,53 +62,7 @@ sealed class GRE(open vararg val args: GRE) {
     }
   }
 
-//  fun BAutomaton.decodeDFA(
-//    mc: MarkovChain<Σᐩ>,
-//    // BAutomata uses a Unicode alphabet, and the Markov Chain recognizes a
-//    // string-based alphabet, so we need a way to translate between the two
-//    dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings
-//    callback: (Σᐩ) -> Unit = {},
-//    timeout: Duration = Duration.INFINITE,
-//    beamWidth: Long = 1_000_000L, // Maximum number of trajectories to keep at each step
-//  ): List<Σᐩ> {
-//    val startTime = TimeSource.Monotonic.markNow()
-//    val fullTrajectories = PriorityBlockingQueue<FSATrajectory>(10000) // Max-heap for full trajectories
-//    val beam = PriorityQueue<FSATrajectory>() // Beam for partial trajectories
-//
-//    beam.add(FSATrajectory(List(mc.memory) { null }, initialState, 0.0))
-//
-//    while (
-//      fullTrajectories.size < beamWidth &&
-//      beam.isNotEmpty() &&
-//      startTime.elapsedNow() < timeout
-//    ) {
-//      val nextBeam = beam.parallelStream().flatMap { partTraj ->
-//        val lastToks = partTraj.traj.take(mc.memory - 1).reversed()
-//        partTraj.lastState.transitions.flatMap { next ->
-//          (next.min..next.max).map { tok ->
-//            val decTok = dec[tok]
-//            val nextScore = partTraj.score + mc.scoreChunk(lastToks + decTok)
-//            partTraj.append(decTok, next.dest, nextScore)
-//          }
-//        }.flatMap { traj ->
-//          if (traj.isComplete) {
-//            fullTrajectories.add(traj)
-//            callback(traj.toString())
-//            if (traj.lastState.transitions.isNotEmpty()) listOf(traj) else emptyList()
-//          } else { listOf(traj) }
-//        }.stream()
-//      }.sorted().limit(beamWidth).toList()
-//
-//      beam.clear()
-//      beam.addAll(nextBeam)
-//    }
-//
-//    val deduped = fullTrajectories.distinct().map { it.toString() }.toList()
-//
-//    println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${beam.size} in queue")
-//    return deduped
-//  }
-
+  // Greedy LTR decoding
   fun enumerateWithPriority(
     ngrams: MutableMap<List<String>, Double>,
     tmLst: List<Σᐩ>,
@@ -117,18 +72,17 @@ sealed class GRE(open vararg val args: GRE) {
 //    println("pfx: ${pfx.joinToString(" ")}")
     when (this@GRE) {
       is EPS -> emptyList<Int>()
-      is SET -> {
-        yieldAll(s.toList().map {
-          -(ngrams[pfx + tmLst[it]] ?: 0.0) to it
-        }.sortedBy { it.first }.map { listOf(it.second) })
+      is SET ->
+        yieldAll(s.toList().map { -(ngrams[pfx + tmLst[it]] ?: 0.0) to it }
+          .sortedBy { it.first }.map { listOf(it.second) })
 //        yieldAll(s.toList().map { listOf(it) })
-      }
       is CUP -> {
         val orderedChoices = admits.toList()
           .map { -(ngrams[pfx + tmLst[it]] ?: 0.0) to it }
           .sortedBy { it.first }.map { it.second }
-        for (tk in orderedChoices) for (g in args.filter { it.admits[tk] })
-          yieldAll(g.enumerateWithPriority(ngrams, tmLst, pfx + tmLst[tk]))
+        for (tk in orderedChoices)
+          for (g in args.filter { it.admits[tk] })
+            yieldAll(g.enumerateWithPriority(ngrams, tmLst, pfx + tmLst[tk]))
       }
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
       is CAT -> for (lhs in l.enumerateWithPriority(ngrams, tmLst, pfx))

@@ -140,6 +140,8 @@ class KBitSet(val n: Int) {
     data[word] = data[word] or (1L shl bit)
   }
 
+  fun setAll() { (0..<n).forEach { set(it) } }
+
   operator fun get(index: Int): Boolean {
     val word = index ushr 6
     val bit  = index and 63

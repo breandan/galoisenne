@@ -417,7 +417,8 @@ class SetValiantTest {
   @Test
   fun testUTMRepresentationEquivalence() {
     with(vanillaS2PCFG) {
-      val str = "NAME = NAME ( NAME , NUMBER ) . NAME ( ) NEWLINE NAME = NAME . NAME NEWLINE NAME = STRING . NAME ( NAME for NAME in NAME if NAME . NAME ( ) ) NEWLINE NAME ( NAME ) NEWLINE".tokenizeByWhitespace()
+      println("SIZE: ${nonterminals.size}")
+      val str = "NAME = NAME ( NAME , NUMBER ) . NAME ( ) NEWLINE _ _ NAME . NAME NEWLINE NAME = STRING . NAME ( NAME for NAME in NAME if NAME . NAME ( ) ) NEWLINE NAME ( NAME ) NEWLINE".tokenizeByWhitespace()
 //  with("""P -> ( P ) | P P | ε""".parseCFG()) {
 //    val str = "( ( ) ( ) ) ( ) ( ( ( ) ) ( ) ) ( ( ( ) ) ) ( ) ( ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( ) ( ( ) ( ) ) ( )".tokenizeByWhitespace()
       val iter = ceil(log2(str.size.toDouble())).toInt() + 9
@@ -432,6 +433,8 @@ class SetValiantTest {
         )[0, str.size]
       }.also { println("Slow transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
+//      println(slowTransitionFP)
+
       i = 0
       val fastTransitionFP = measureTimedValue {
         initialUTMatrix(str).seekFixpoint(
@@ -439,8 +442,10 @@ class SetValiantTest {
         ).toFullMatrix()[0, str.size]
       }.also { println("Fast transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
+//      println(fastTransitionFP)
+
       measureTimedValue {
-        println(str in language)
+        println(isValidAlt(str))
       }.also { println("DP transition: ${it.duration.inWholeMilliseconds}ms") }.value
 
       println("Length: ${str.size}")
