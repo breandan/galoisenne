@@ -18,13 +18,16 @@ sealed class GRE(open vararg val args: GRE) {
   class CUP(override vararg val args: GRE): GRE(*args)
   class CAT(val l: GRE, val r: GRE): GRE(l, r)
 
-  fun words(terminals: List<Σᐩ>): Sequence<Σᐩ> =
-    enumerate().distinct()
+  fun words(terminals: List<Σᐩ>, shouldContinue: () -> Boolean = { true }): Sequence<Σᐩ> =
+    enumerate().takeWhile { shouldContinue() }.distinct()
       .map { it.mapNotNull { terminals[it].let { if (it == "ε") null else it } }.joinToString(" ") }
 
-  fun wordsOrdered(terminals: List<Σᐩ>,
-                   ngrams: MutableMap<List<String>, Double>) =
-    enumerateWithPriority(ngrams, terminals).distinct()
+  fun wordsOrdered(
+    terminals: List<Σᐩ>,
+    ngrams: MutableMap<List<String>, Double>,
+    shouldContinue: () -> Boolean = { true }
+  ) =
+    enumerateWithPriority(ngrams, terminals).takeWhile { shouldContinue() }.distinct()
       .map { it.mapNotNull { terminals[it].let { if (it == "ε") null else it } }.joinToString(" ") }
 
   val admits: KBitSet by lazy { followSet() }
