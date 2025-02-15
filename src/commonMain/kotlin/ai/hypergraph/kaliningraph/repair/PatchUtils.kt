@@ -12,7 +12,7 @@ val COMMON_BRACKETS = "()[]{}".map { "$it" }.toSet()
 fun Σᐩ.defaultTokenizer(): List<Σᐩ> =
   split(Regex("[\\(\\)\\[\\]{}]|___".let { "((?<=($it))|(?=($it)))" }))
 
-fun minimizeFix(
+fun minimizeFixStr(
   broke: Σᐩ,
   tokenize: Σᐩ.() -> List<Σᐩ>,
   fixed: Σᐩ,
@@ -136,7 +136,7 @@ fun List<Int>.minimalSubpatches(filter: List<Int>.() -> Boolean): Sequence<List<
 fun List<Pair<Int, Int>>.apply(indices: List<Int>): List<Int> =
   mapIndexed { i, it -> if (i in indices) it.second else it.first }
 
-fun Patch.apply(indices: List<Int>, separator: Σᐩ = ""): Σᐩ =
+fun Patch.apply(indices: List<Int>, separator: Σᐩ = " "): Σᐩ =
   mapIndexed { i, it -> if (i in indices) it.new else it.old }.joinToString(separator)
 
 fun Patch.apply(separator: Σᐩ = ""): Σᐩ = joinToString(separator) { it.new }
