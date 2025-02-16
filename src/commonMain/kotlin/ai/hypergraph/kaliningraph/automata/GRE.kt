@@ -4,11 +4,8 @@ import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
-import org.kosat.heuristics.PriorityQueue
 import kotlin.collections.plus
 import kotlin.math.max
-import kotlin.time.Duration
-import kotlin.time.TimeSource
 
 // Generalized regular expression: https://planetmath.org/generalizedregularexpression
 // Parsing with derivatives: https://matt.might.net/papers/might2011derivatives.pdf
@@ -19,7 +16,7 @@ sealed class GRE(open vararg val args: GRE) {
   class CAT(val l: GRE, val r: GRE): GRE(l, r)
 
   fun words(terminals: List<Σᐩ>, shouldContinue: () -> Boolean = { true }): Sequence<Σᐩ> =
-    enumerate().takeWhile { shouldContinue() }.distinct()
+    enumerate(shouldContinue).takeWhile { shouldContinue() }.distinct()
       .map { it.mapNotNull { terminals[it].let { if (it == "ε") null else it } }.joinToString(" ") }
 
   fun wordsOrdered(
@@ -49,13 +46,14 @@ sealed class GRE(open vararg val args: GRE) {
     }
   }
 
-  fun enumerate(): Sequence<List<Int>> = sequence {
-    when (this@GRE) {
+  fun enumerate(shouldContinue: () -> Boolean = { true }): Sequence<List<Int>> = sequence {
+    if (!shouldContinue()) emptySequence<List<Int>>()
+    else when (this@GRE) {
       is EPS -> emptyList<Int>()
       is SET -> yieldAll(s.toList().map { listOf(it) })
-      is CUP -> for (a in args) yieldAll(a.enumerate())
+      is CUP -> for (a in args) yieldAll(a.enumerate(shouldContinue))
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
-      is CAT -> for (lhs in l.enumerate()) for (rhs in r.enumerate())
+      is CAT -> for (lhs in l.enumerate(shouldContinue)) for (rhs in r.enumerate(shouldContinue))
         if (lhs.isEmpty()) {
           if (rhs.isEmpty()) yield(emptyList()) else rhs
         } else {
