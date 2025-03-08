@@ -1,0 +1,179 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bussproofs}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\usepackage{geometry}
+\usepackage{amssymb}
+\geometry{a4paper, margin=1in}
+
+\usepackage{multicol}
+
+\title{Deriving (finite) intersection non-emptiness,\\ courtesy of Brzozowski}
+\author{Breandan Considine}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Syntax and Semantics}
+
+\begin{definition}[Generalized Regex]
+  Let \( E \) be an expression defined by the grammar:
+  \[
+    E ::= \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
+  \]
+
+\noindent Semantically, we have:\vspace{-1cm}
+  \setlength{\columnseprule}{0pt}
+  \setlength{\columnsep}{-3cm}
+  \begin{multicols}{2}
+    \begin{eqnarray*}
+      \mathcal{L}(& \varnothing & ) = \varnothing \\
+      \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
+      \mathcal{L}(& a           & ) = \{a\}\\
+    \end{eqnarray*} \break\vspace{-0.45cm}
+    \begin{eqnarray*}
+      \mathcal{L}(& R\cdot S    & ) = \mathcal{L}(R) \times \mathcal{L}(S)\\
+      \mathcal{L}(& R\vee S     & ) = \mathcal{L}(R) \cup \mathcal{L}(S)\\
+      \mathcal{L}(& R\land S    & ) = \mathcal{L}(R) \cap \mathcal{L}(S)\\
+    \end{eqnarray*}
+  \end{multicols}
+\end{definition}
+
+\begin{definition}[Brzozowski, 1964]
+To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
+
+\vspace{-0.8cm}
+\begin{multicols}{2}
+\begin{eqnarray*}
+\phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
+\phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
+\phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
+\phantom{--}\partial_a(& R\cdot S    &) = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
+\phantom{--}\partial_a(& R\vee S     &) = \partial_a R \vee \partial_a S                        \\
+\phantom{--}\partial_a(& R\land S    &) = \partial_a R \land \partial_a S
+\end{eqnarray*} \break\vspace{-0.45cm}
+\begin{eqnarray*}
+\delta(& \varnothing &)= \varnothing                                      \\
+\delta(& \varepsilon &)= \varepsilon                                      \\
+\delta(& a           &)= \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+\delta(& R\cdot S    &)= \delta(R) \land \delta(S)                        \\
+\delta(& R\vee S     &)= \delta(R) \vee  \delta(S)                        \\
+\delta(& R\land S    &)= \delta(R) \land \delta(S)
+\end{eqnarray*}
+\end{multicols}
+\end{definition}
+
+\begin{theorem}[Recognition]
+  For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
+
+  \[
+    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } w = ab, a: \Sigma\end{cases}
+  \]
+\end{theorem}
+
+\begin{theorem}[Generation]
+  For any $(\varepsilon, \land)$-free regex, \(R\), to generate a witness $\sigma \sim \mathcal{L}(R)$:\\
+
+  $\texttt{follow}\:(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
+     \{R\} &\text{ if } R \in \Sigma \\
+     \texttt{follow}\:(S) &\text{ if } R = S \cdot T\\
+     \texttt{follow}\:(S)\cup\texttt{follow}\:(T) &\text{ if } R = S \lor T
+  \end{cases}\\\\
+
+  $\texttt{choose}\:(R):RE \rightarrow \Sigma^*$ = \begin{cases}
+     R &\text{ if } R \in \Sigma \\
+     \big(s\sim \texttt{follow}\:(R)\big)\cdot \texttt{choose}\:(\partial_sR) &\text{ if } R = S \cdot T\\
+     \texttt{choose}\:(R' \sim \{S, T\}) &\text{ if } R = S \lor T
+  \end{cases}
+\end{theorem}
+
+\clearpage
+\begin{theorem}[Bar-Hillel, 1961]
+For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+\end{theorem}
+
+\begin{definition}[Salomaa, 1973]
+We can construct $G_\cap$ like so:
+
+\noindent\begin{prooftree}
+           \hskip -1em
+           \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+           \RightLabel{$\sqrt{\phantom{S}}$}
+           \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+           \DisplayProof
+           \hskip 1em
+           \AxiomC{$(A \rightarrow a) \in P$}
+           \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+           \RightLabel{$\uparrow$}
+           \BinaryInfC{$\big(qAr\rightarrow a\big)\in P_\cap$}
+           \DisplayProof
+           \hskip 1em
+           \AxiomC{$\highlight{(w \rightarrow xz) \in P}$}
+           \AxiomC{$\highlight{\vphantom{(}p,q,r \in Q}$}
+           \RightLabel{$\Join$}
+           \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+\end{prooftree}
+\end{definition}
+
+\begin{theorem}[Considine, 2025]
+  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}(n^k)$ parallel processors for some $c, k < \infty$.
+\end{theorem}
+
+
+\begin{proof}[Proof Sketch]
+  To determine whether $w: V$ can parse some path $p \rightsquigarrow r$ in A, we have two cases:
+
+  \begin{enumerate}
+    \item Either $p \overset{s}{\rightarrow} r$, in which case it suffices to check whether $(w \rightarrow s) \in P$, or,
+    \item There is some midpoint $q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $(w \rightarrow xz) \in P$, and $\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w$.
+  \end{enumerate}
+
+\noindent This suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). We will initialize it as follows:
+
+\begin{align}
+    M_0[r, c, v] = \bigcup_{a\in \Sigma} \{a \mid (v \rightarrow a) \in P \land q_r \overset{a}{\rightarrow} q_c\}
+\end{align}
+
+\noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined:
+
+\begin{align}
+    [\ell \oplus r]_v &= [\ell_v \lor r_v]\\
+  [\ell \otimes r]_w &= \bigvee_{x, z}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+\end{align}
+
+\noindent By abuse of notation, we will redefine the matrix exponential over this domain as follows:
+
+\begin{align}
+  \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
+\end{align}
+
+\noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
+
+\begin{align}
+  S(2n) \;=\; \begin{cases}
+    M_0, & \text{if } n = 1,\\[6pt]
+    S(n) + S(n)^2 & \text{otherwise}.
+  \end{cases}
+\end{align}
+
+\noindent Therefor, we only need $\log |Q|$ squaring steps to determine the fixpoint. Finally,
+
+\begin{align}
+  S_\cap = \mathclap{\bigvee_{q \in I,\:q' \in F}}M[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
+\end{align}
+
+\noindent To decode a witness in case of emptiness, we simply $\texttt{choose}\:(\varphi)$.
+\end{proof}
+\end{document}
