@@ -14,6 +14,7 @@
 
 \usepackage{geometry}
 \usepackage{amssymb}
+\usepackage{mathtools}
 \geometry{a4paper, margin=1in}
 
 \usepackage{multicol}
@@ -34,7 +35,7 @@
     E ::= \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
   \]
 
-\noindent Semantically, we have:\vspace{-1cm}
+\noindent Semantically, we interpret these expressions as denoting regular languages:\vspace{-1cm}
   \setlength{\columnseprule}{0pt}
   \setlength{\columnsep}{-3cm}
   \begin{multicols}{2}
@@ -79,7 +80,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
   For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
 
   \[
-    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } w = ab, a: \Sigma\end{cases}
+    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } w = ab, a \in \Sigma\end{cases}
   \]
 \end{theorem}
 
@@ -105,7 +106,7 @@ For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and no
 \end{theorem}
 
 \begin{definition}[Salomaa, 1973]
-We can construct $G_\cap$ like so:
+One could construct $G_\cap$ like so,
 
 \noindent\begin{prooftree}
            \hskip -1em
@@ -125,6 +126,7 @@ We can construct $G_\cap$ like so:
            \RightLabel{$\Join$}
            \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
+  however most of the synthetic productions will be non-generating or unreachable.
 \end{definition}
 
 \begin{theorem}[Considine, 2025]
@@ -132,28 +134,28 @@ We can construct $G_\cap$ like so:
 \end{theorem}
 
 
-\begin{proof}[Proof Sketch]
-  To determine whether $w: V$ can parse some path $p \rightsquigarrow r$ in A, we have two cases:
+\begin{proof}[Proof sketch]
+  At least one of the following must hold for $w \in V$ to parse some path $p \rightsquigarrow r$ in A:
 
   \begin{enumerate}
-    \item Either $p \overset{s}{\rightarrow} r$, in which case it suffices to check whether $(w \rightarrow s) \in P$, or,
-    \item There is some midpoint $q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $(w \rightarrow xz) \in P$, and $\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w$.
+    \item $p$ steps directly to $r$ in which case it suffices to check $\exists s.\big((p \overset{s}{\rightarrow} r)\in \delta \land (w \rightarrow s) \in P\big)$, or,
+    \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-\noindent This suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). We will initialize it as follows:
+\noindent This suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). We will initialize it as follows:
 
 \begin{align}
-    M_0[r, c, v] = \bigcup_{a\in \Sigma} \{a \mid (v \rightarrow a) \in P \land q_r \overset{a}{\rightarrow} q_c\}
+    M_0[r, c, v] = \bigcup_{a\:\in\:\Sigma} \{a \mid (v \rightarrow a) \in P \land q_r \overset{a}{\rightarrow} q_c\}
 \end{align}
 
 \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined:
 
 \begin{align}
     [\ell \oplus r]_v &= [\ell_v \lor r_v]\\
-  [\ell \otimes r]_w &= \bigvee_{x, z}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+  [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
 \end{align}
 
-\noindent By abuse of notation, we will redefine the matrix exponential over this domain as follows:
+\noindent By slight abuse of notation, we will redefine the matrix exponential over this domain as:
 
 \begin{align}
   \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
@@ -168,10 +170,10 @@ We can construct $G_\cap$ like so:
   \end{cases}
 \end{align}
 
-\noindent Therefor, we only need $\log |Q|$ squaring steps to determine the fixpoint. Finally,
+\noindent Therefor, we only need $\lceil\log_2 |Q|\rceil$ squaring steps to determine the fixpoint. Finally,
 
 \begin{align}
-  S_\cap = \mathclap{\bigvee_{q \in I,\:q' \in F}}M[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
+  S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
 \end{align}
 
 \noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}\:(\varphi)$.
