@@ -101,6 +101,9 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \end{theorem}
 
 \clearpage
+
+\section{Language intersection}
+
 \begin{theorem}[Bar-Hillel, 1961]
 For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
 \end{theorem}
@@ -126,13 +129,12 @@ One could construct $G_\cap$ like so,
            \RightLabel{$\Join$}
            \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
 \end{prooftree}
-  however most of the synthetic productions will be non-generating or unreachable.
+  however most synthetic productions in $P_\cap$ will be non-generating or unreachable.
 \end{definition}
 
 \begin{theorem}[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}(n^k)$ parallel processors for some $c, k < \infty$.
+  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
 \end{theorem}
-
 
 \begin{proof}[Proof sketch]
   At least one of the following must hold for $w \in V$ to parse some path $p \rightsquigarrow r$ in A:
@@ -145,10 +147,10 @@ One could construct $G_\cap$ like so,
 \noindent This suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). We will initialize it as follows:
 
 \begin{align}
-    M_0[r, c, v] = \bigcup_{a\:\in\:\Sigma} \{a \mid (v \rightarrow a) \in P \land q_r \overset{a}{\rightarrow} q_c\}
+    M_0[r, c, v] = \bigvee_{a\:\in\:\Sigma} \{a \mid (v \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
 \end{align}
 
-\noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined:
+\noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
 
 \begin{align}
     [\ell \oplus r]_v &= [\ell_v \lor r_v]\\
@@ -170,7 +172,7 @@ One could construct $G_\cap$ like so,
   \end{cases}
 \end{align}
 
-\noindent Therefor, we only need $\lceil\log_2 |Q|\rceil$ squaring steps to determine the fixpoint. Finally,
+\noindent Therefor, we only need a maximum of $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally,
 
 \begin{align}
   S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
@@ -178,4 +180,35 @@ One could construct $G_\cap$ like so,
 
 \noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}\:(\varphi)$.
 \end{proof}
+\clearpage
+
+\section{Future work}
+
+Broadly interested in questions related to formal languages and finite model theory, following the Carnap program of logical syntax. Encoding semantics into syntax would allow us to do type checking and static analysis in the parser. A few lines of attack here:
+
+\begin{theorem}[B\"uchi–Elgot–Trakhtenbrot]
+A language is regular iff it can be defined in MSO. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
+\end{theorem}
+
+\begin{theorem}[Pentus, 1997]
+  Lambek categorial grammars, a weak kind of substructural logic, recognize exactly the context-free languages.
+\end{theorem}
+
+\begin{theorem}[Lautemann, Schwentick \& Th\'erien, 1995]
+  CFLs coincide with the class of strings definable by $\exists b \phi$ where $\phi$ is first order, b is a binary predicate symbol \ldots
+\end{theorem}
+
+\begin{theorem}[DeYoung \& Pfenning, 2016]
+  Describes a certain equivalence between subsingleton logic, a weak kind of linear logic and automata.
+\end{theorem}
+
+\begin{theorem}[Glenn \& Garsarch, 1996]
+  Explores the relation between WS1S and finite automata.
+\end{theorem}
+
+\begin{theorem}[Knuth \& Wegner, 1968]
+  Attribute grammars allow some notation of semanticity.
+\end{theorem}
+
+
 \end{document}
