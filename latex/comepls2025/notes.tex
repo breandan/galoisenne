@@ -27,7 +27,7 @@
 
 \maketitle
 
-\section{Syntax and Semantics}
+\section{Syntax and semantics}
 
 \begin{definition}[Generalized Regex]
   Let \( E \) be an expression defined by the grammar:
@@ -105,7 +105,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \section{Language intersection}
 
 \begin{theorem}[Bar-Hillel, 1961]
-For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
 \end{theorem}
 
 \begin{definition}[Salomaa, 1973]
@@ -137,14 +137,14 @@ One could construct $G_\cap$ like so,
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  At least one of the following must hold for $w \in V$ to parse some path $p \rightsquigarrow r$ in A:
+  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $S \vdash p \rightsquigarrow r$. There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists s.\big((p \overset{s}{\rightarrow} r)\in \delta \land (w \rightarrow s) \in P\big)$, or,
     \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-\noindent This suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). We will initialize it as follows:
+\noindent This decomposition suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
 \begin{align}
     M_0[r, c, v] = \bigvee_{a\:\in\:\Sigma} \{a \mid (v \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
@@ -182,9 +182,21 @@ One could construct $G_\cap$ like so,
 \end{proof}
 \clearpage
 
+\section{Combinatorics}
+
+Now, suppose we want to enumerate distinct members...
+
+\begin{theorem}[Enumeration]
+  TODO...
+\end{theorem}
+
+\section{Napkin math}
+
+Suppose we have $10^6$ parallel processors, with an average throughput of ...
+
 \section{Future work}
 
-Broadly interested in questions related to formal languages and finite model theory, following the Carnap program of logical syntax. Encoding semantics into syntax would allow us to do type checking and static analysis in the parser. A few lines of attack here:
+Broadly interested in questions related to formal languages and finite model theory, following the Carnapian program of logical syntax. Encoding semantics into syntax would allow us to do type checking and static analysis in the parser. A few lines of attack here:
 
 \begin{theorem}[B\"uchi–Elgot–Trakhtenbrot]
 A language is regular iff it can be defined in MSO. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
