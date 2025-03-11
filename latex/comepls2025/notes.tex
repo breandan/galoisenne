@@ -17,7 +17,10 @@
 \usepackage{mathtools}
 \geometry{a4paper, margin=1in}
 
+\newtheorem{result}{Result}
+
 \usepackage{multicol}
+\usepackage{hyperref}
 
 \title{Deriving (finite) intersection non-emptiness,\\ courtesy of Brzozowski}
 \author{Breandan Considine}
@@ -77,10 +80,10 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \end{definition}
 
 \begin{theorem}[Recognition]
-  For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
+  For any regex \(E\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(E) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma E)\), where:
 
   \[
-    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } w = ab, a \in \Sigma\end{cases}
+    \partial_\sigma (E): RE \rightarrow RE = \begin{cases}E &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a E) &\text{ if } E = a \cdot b, a \in \Sigma\end{cases}
   \]
 \end{theorem}
 
@@ -93,7 +96,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
      \texttt{follow}\:(S)\cup\texttt{follow}\:(T) &\text{ if } R = S \lor T
   \end{cases}\\\\
 
-  $\texttt{choose}\:(R):RE \rightarrow \Sigma^*$ = \begin{cases}
+  $\texttt{choose}\:(R):RE \rightarrow \Sigma^+$ = \begin{cases}
      R &\text{ if } R \in \Sigma \\
      \big(s\sim \texttt{follow}\:(R)\big)\cdot \texttt{choose}\:(\partial_sR) &\text{ if } R = S \cdot T\\
      \texttt{choose}\:(R' \sim \{S, T\}) &\text{ if } R = S \lor T
@@ -137,7 +140,9 @@ One could construct $G_\cap$ like so,
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $S \vdash p \rightsquigarrow r$. There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $S \vdash p \rightsquigarrow r$.\vspace{0.3cm}
+
+  \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists s.\big((p \overset{s}{\rightarrow} r)\in \delta \land (w \rightarrow s) \in P\big)$, or,
@@ -153,7 +158,7 @@ One could construct $G_\cap$ like so,
 \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
 
 \begin{align}
-    [\ell \oplus r]_v &= [\ell_v \lor r_v]\\
+  [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
   [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
 \end{align}
 
@@ -184,43 +189,60 @@ One could construct $G_\cap$ like so,
 
 \section{Combinatorics}
 
-Now, suppose we want to enumerate distinct members...
+To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevity.
+
+\begin{definition}[Cardinality]
+  $|R|: RE \rightarrow \mathbb{N} =$ \begin{cases}
+    1  & \text{if } R \in \Sigma \\
+    S \times T  & \text{if } R = S \cdot T \\
+    S + T  & \text{if } R = S \vee T
+  \end{cases}\\
+\end{definition}
 
 \begin{theorem}[Enumeration]
-  TODO...
+  To enumerate, invoke $\bigcup_{i = 0}^{|R|}\texttt{enum}(R, i)$:\\
+
+  $\texttt{enum}\:(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
+     R &\text{if } R \in \Sigma \\
+     \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
+     \big(n < |T|\big) \:\:\:?\: \texttt{ enum}(S) \:\::\texttt{ enum} (T) &\text{if } R = S \vee T
+  \end{cases}\\\\
 \end{theorem}
 
-\section{Napkin math}
+\section{Fermi estimation}
 
-Suppose we have $10^6$ parallel processors, with an average throughput of ...
+Suppose a PRAM-based model with 1 TFLOP throughput \(\approx 2^{40}\) FLOPS and assume a \(2^{8}\) FLOP overhead per entry, \(n^3\) entries per matrix multiplication, and approximately \(\log_2(n)\) matrix multiplications. Thus, we would expect somewhere on the order of $~2^{10} n^3 \log_2(n)$ total FLOPS per instance with a ballpark latency:
+
+\[T \approx \frac{2^{8} \, n^3 \, \log_2(n)}{2^{40}} = \frac{n^3 \, \log_2(n)}{2^{32}} \text{ s}\]
+
+\noindent For example assuming, $n^3 = \bigl(2^9\bigr)^3 = 2^{27}, \log_2(n)=9$, hence we can estimate:
+
+\[T \approx \frac{2^{27} \cdot 9}{2^{32}} = \frac{9}{2^5} = \frac{9}{64} \approx 280 \text{ ms}\]
+
+\noindent Further optimizations are likely realizable via bitpacking and vectorization.
 
 \section{Future work}
 
 Broadly interested in questions related to formal languages and finite model theory, following the Carnapian program of logical syntax. Encoding semantics into syntax would allow us to do type checking and static analysis in the parser. A few lines of attack here:
 
-\begin{theorem}[B\"uchi–Elgot–Trakhtenbrot]
-A language is regular iff it can be defined in MSO. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
-\end{theorem}
+\begin{result}[\href{https://link.springer.com/chapter/10.1007/978-1-4613-8928-6_22}{B\"uchi--Elgot--Trakhtenbrot}]
+  A language is regular iff it is MSO-definable. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
+\end{result}
 
-\begin{theorem}[Pentus, 1997]
+\begin{result}[\href{https://ieeexplore.ieee.org/document/287565}{Pentus, 1997}]
   Lambek categorial grammars, a weak kind of substructural logic, recognize exactly the context-free languages.
-\end{theorem}
+\end{result}
 
-\begin{theorem}[Lautemann, Schwentick \& Th\'erien, 1995]
-  CFLs coincide with the class of strings definable by $\exists b \phi$ where $\phi$ is first order, b is a binary predicate symbol \ldots
-\end{theorem}
+\begin{result}[\href{https://www.cs.cmu.edu/~fp/papers/aplas16.pdf}{DeYoung \& Pfenning, 2016}]
+  Describes a certain equivalence between subsingleton logic, a weak kind of linear logic, and automata.
+\end{result}
 
-\begin{theorem}[DeYoung \& Pfenning, 2016]
-  Describes a certain equivalence between subsingleton logic, a weak kind of linear logic and automata.
-\end{theorem}
+\begin{result}[\href{https://www.dcs.warwick.ac.uk/~sk/cs325/gag.pdf}{Knuth \& Wegner, 1968}]
+  Attribute grammars permit some notation of semanticity.
+\end{result}
 
-\begin{theorem}[Glenn \& Garsarch, 1996]
-  Explores the relation between WS1S and finite automata.
-\end{theorem}
+\section{Acknowledgements}
 
-\begin{theorem}[Knuth \& Wegner, 1968]
-  Attribute grammars allow some notation of semanticity.
-\end{theorem}
-
+The author wishes to thank Fr. Paul Pomkowski for his phonetic advice.
 
 \end{document}
