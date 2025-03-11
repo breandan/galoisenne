@@ -48,9 +48,9 @@
       \mathcal{L}(& a           & ) = \{a\}\\
     \end{eqnarray*} \break\vspace{-0.45cm}
     \begin{eqnarray*}
-      \mathcal{L}(& R\cdot S    & ) = \mathcal{L}(R) \times \mathcal{L}(S)\\
-      \mathcal{L}(& R\vee S     & ) = \mathcal{L}(R) \cup \mathcal{L}(S)\\
-      \mathcal{L}(& R\land S    & ) = \mathcal{L}(R) \cap \mathcal{L}(S)\\
+      \mathcal{L}(& S\cdot T    & ) = \mathcal{L}(S) \times \mathcal{L}(T)\\
+      \mathcal{L}(& S\vee  T    & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
+      \mathcal{L}(& S\land T    & ) = \mathcal{L}(S) \cap \mathcal{L}(T)\\
     \end{eqnarray*}
   \end{multicols}
 \end{definition}
@@ -64,26 +64,26 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
 \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
 \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-\phantom{--}\partial_a(& R\cdot S    &) = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
-\phantom{--}\partial_a(& R\vee S     &) = \partial_a R \vee \partial_a S                        \\
-\phantom{--}\partial_a(& R\land S    &) = \partial_a R \land \partial_a S
+\phantom{--}\partial_a(& S\cdot T    &) = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a T \\
+\phantom{--}\partial_a(& S\vee  T    &) = \partial_a S \vee  \partial_a T                        \\
+\phantom{--}\partial_a(& S\land T    &) = \partial_a S \land \partial_a T
 \end{eqnarray*} \break\vspace{-0.45cm}
 \begin{eqnarray*}
 \delta(& \varnothing &)= \varnothing                                      \\
 \delta(& \varepsilon &)= \varepsilon                                      \\
 \delta(& a           &)= \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-\delta(& R\cdot S    &)= \delta(R) \land \delta(S)                        \\
-\delta(& R\vee S     &)= \delta(R) \vee  \delta(S)                        \\
-\delta(& R\land S    &)= \delta(R) \land \delta(S)
+\delta(& S\cdot T    &)= \delta(S) \land \delta(T)                        \\
+\delta(& S\vee T     &)= \delta(S) \vee  \delta(T)                        \\
+\delta(& S\land T    &)= \delta(S) \land \delta(T)
 \end{eqnarray*}
 \end{multicols}
 \end{definition}
 
 \begin{theorem}[Recognition]
-  For any regex \(E\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(E) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma E)\), where:
+  For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
 
   \[
-    \partial_\sigma (E): RE \rightarrow RE = \begin{cases}E &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a E) &\text{ if } E = a \cdot b, a \in \Sigma\end{cases}
+    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } R = a \cdot b, a \in \Sigma\end{cases}
   \]
 \end{theorem}
 
@@ -217,7 +217,7 @@ Suppose a PRAM-based model with 1 TFLOP throughput \(\approx 2^{40}\) FLOPS and 
 
 \noindent For example assuming, $n^3 = \bigl(2^9\bigr)^3 = 2^{27}, \log_2(n)=9$, hence we can estimate:
 
-\[T \approx \frac{2^{27} \cdot 9}{2^{32}} = \frac{9}{2^5} = \frac{9}{64} \approx 280 \text{ ms}\]
+\[T \approx \frac{2^{27} \cdot 9}{2^{32}} = \frac{9}{2^5} = \frac{9}{32} \approx 280 \text{ ms}\]
 
 \noindent Further optimizations are likely realizable via bitpacking and vectorization.
 
