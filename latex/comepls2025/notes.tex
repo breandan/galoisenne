@@ -90,16 +90,16 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \begin{theorem}[Generation]
   For any $(\varepsilon, \land)$-free regex, \(R\), to generate a witness $\sigma \sim \mathcal{L}(R)$:\\
 
-  $\texttt{follow}\:(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
+  $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
      \{R\} &\text{ if } R \in \Sigma \\
-     \texttt{follow}\:(S) &\text{ if } R = S \cdot T\\
-     \texttt{follow}\:(S)\cup\texttt{follow}\:(T) &\text{ if } R = S \lor T
+     \texttt{follow}(S) &\text{ if } R = S \cdot T\\
+     \texttt{follow}(S)\cup\texttt{follow}(T) &\text{ if } R = S \lor T
   \end{cases}\\\\
 
-  $\texttt{choose}\:(R):RE \rightarrow \Sigma^+$ = \begin{cases}
+  $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
      R &\text{ if } R \in \Sigma \\
-     \big(s\sim \texttt{follow}\:(R)\big)\cdot \texttt{choose}\:(\partial_sR) &\text{ if } R = S \cdot T\\
-     \texttt{choose}\:(R' \sim \{S, T\}) &\text{ if } R = S \lor T
+     \big(s\sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
+     \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
   \end{cases}
 \end{theorem}
 
@@ -183,7 +183,7 @@ One could construct $G_\cap$ like so,
   S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
 \end{align}
 
-\noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}\:(\varphi)$.
+\noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}(\varphi)$.
 \end{proof}
 \clearpage
 
@@ -202,7 +202,7 @@ To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevi
 \begin{theorem}[Enumeration]
   To enumerate, invoke $\bigcup_{i = 0}^{|R|}\texttt{enum}(R, i)$:\\
 
-  $\texttt{enum}\:(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
+  $\texttt{enum}(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
      R &\text{if } R \in \Sigma \\
      \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
      \big(n < |S|\big) \:\:?\: \texttt{enum}(S, n) \::\:\texttt{enum} (T, n - |S|) &\text{if } R = S \vee T
@@ -211,7 +211,7 @@ To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevi
 
 \section{Fermi estimation}
 
-Suppose a PRAM-based model with 1 TFLOP throughput \(\approx 2^{40}\) FLOPS and assume a \(2^{8}\) FLOP overhead per entry, \(n^3\) entries per matrix multiplication, and approximately \(\log_2(n)\) matrix multiplications. Thus, we would expect somewhere on the order of $~2^{10} n^3 \log_2(n)$ total FLOPS per instance with a ballpark latency:
+Suppose a PRAM-based model with 1 TFLOP throughput \(\approx 2^{40}\) FLOPS and assume a \(2^{8}\) FLOP overhead per entry, \(n^3\) entries per matrix multiplication, and approximately \(\log_2(n)\) matrix multiplications. Thus, we would expect somewhere on the order of $~2^{10} n^3 \log_2(n)$ total FLOPS per language intersection instance with a ballpark latency of:
 
 \[T \approx \frac{2^{8} \, n^3 \, \log_2(n)}{2^{40}} = \frac{n^3 \, \log_2(n)}{2^{32}} \text{ s}\]
 
@@ -226,7 +226,7 @@ Suppose a PRAM-based model with 1 TFLOP throughput \(\approx 2^{40}\) FLOPS and 
 Broadly interested in questions related to formal languages and finite model theory, following the Carnapian program of logical syntax. Encoding semantics into syntax would allow us to do type checking and static analysis in the parser. A few lines of attack here:
 
 \begin{result}[\href{https://link.springer.com/chapter/10.1007/978-1-4613-8928-6_22}{B\"uchi--Elgot--Trakhtenbrot}]
-  A language is regular iff it is MSO-definable. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
+  A language is regular iff it is MSO-definable. For every MSO formula, there is a corresponding FSA. Complexity may be superexponential.
 \end{result}
 
 \begin{result}[\href{https://ieeexplore.ieee.org/document/287565}{Pentus, 1993}]
