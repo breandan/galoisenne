@@ -141,19 +141,19 @@ One could construct $G_\cap$ like so,
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $S \vdash p \rightsquigarrow r$.\vspace{0.3cm}
+  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$.\vspace{0.3cm}
 
   \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
-    \item $p$ steps directly to $r$ in which case it suffices to check $\exists s.\big((p \overset{s}{\rightarrow} r)\in \delta \land (w \rightarrow s) \in P\big)$, or,
+    \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
     \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
 \noindent This decomposition suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
 \begin{align}
-    M_0[r, c, v] = \bigvee_{a\:\in\:\Sigma} \{a \mid (v \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
+    M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
 \end{align}
 
 \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
