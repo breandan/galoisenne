@@ -205,7 +205,7 @@ To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevi
   $\texttt{enum}\:(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
      R &\text{if } R \in \Sigma \\
      \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
-     \big(n < |T|\big) \:\:\:?\: \texttt{ enum}(S) \:\::\texttt{ enum} (T) &\text{if } R = S \vee T
+     \big(n < |S|\big) \:\:?\: \texttt{enum}(S, n) \::\:\texttt{enum} (T, n - |S|) &\text{if } R = S \vee T
   \end{cases}\\\\
 \end{theorem}
 
@@ -229,7 +229,7 @@ Broadly interested in questions related to formal languages and finite model the
   A language is regular iff it is MSO-definable. For every MSO formula, there is a corresponding FSA. Complexity may be nonelementary.
 \end{result}
 
-\begin{result}[\href{https://ieeexplore.ieee.org/document/287565}{Pentus, 1997}]
+\begin{result}[\href{https://ieeexplore.ieee.org/document/287565}{Pentus, 1993}]
   Lambek categorial grammars, a weak kind of substructural logic, recognize exactly the context-free languages.
 \end{result}
 
