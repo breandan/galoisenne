@@ -48,11 +48,12 @@
       \mathcal{L}(& a           & ) = \{a\}\\
     \end{eqnarray*} \break\vspace{-0.45cm}
     \begin{eqnarray*}
-      \mathcal{L}(& S\cdot T    & ) = \mathcal{L}(S) \times \mathcal{L}(T)\\
+      \mathcal{L}(& S\cdot T    & ) = \mathcal{L}(S) \times \mathcal{L}(T)\text{\footnotemark}\\
       \mathcal{L}(& S\vee  T    & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
       \mathcal{L}(& S\land T    & ) = \mathcal{L}(S) \cap \mathcal{L}(T)\\
     \end{eqnarray*}
   \end{multicols}
+  \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(S) \land b \in \mathcal{L}(T) \}$ to be more precise.}
 \end{definition}
 
 \begin{definition}[Brzozowski, 1964]
@@ -83,7 +84,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
   For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
 
   \[
-    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } R = a \cdot b, a \in \Sigma\end{cases}
+    \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
   \]
 \end{theorem}
 
