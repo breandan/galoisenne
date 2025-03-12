@@ -563,23 +563,26 @@ class SetValiantTest {
       print("" + rep1.size + ",")
     }
     println()
+    // Catalan numbers
+    // https://oeis.org/A000108
     for (i in 4..16 step 2) {
       val rep1 = Grammars.dyck.enumSeq(List(i) { "_" }).toSet()
       print("" + rep1.size + ",")
     }
     println()
     // Schröder numbers
+    // https://oeis.org/A006318/internal
     for (i in 4..16 step 2) {
       val rep1 = Grammars.dyck.startPTree(List(i) { "_" })
       print("" + rep1!!.totalTrees + ",")
     }
     println()
 
-    // Hmm
-    val r1 = Grammars.dyckUnambig.enumSeq(List(14) { "_" }).toSet()
-    val r2 = Grammars.dyck.enumSeq(List(14) { "_" }).toSet()
-    println(r1.size)
-    println(r2.size)
-    ((r2 - r1).forEach { println("" + (it in Grammars.dyckUnambig.language) + "/" + (it in Grammars.dyck.language)) })
+//    // Hmm
+//    val r1 = Grammars.dyckUnambig.enumSeq(List(14) { "_" }).toSet()
+//    val r2 = Grammars.dyck.enumSeq(List(14) { "_" }).toSet()
+//    println(r1.size)
+//    println(r2.size)
+//    ((r2 - r1).forEach { println("" + (it in Grammars.dyckUnambig.language) + "/" + (it in Grammars.dyck.language)) })
   }
 }
