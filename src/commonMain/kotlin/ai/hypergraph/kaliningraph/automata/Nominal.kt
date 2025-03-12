@@ -3,8 +3,8 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.types.*
 
-data class StrPred(val arg: Σᐩ): (Σᐩ) -> Boolean {
-  override operator fun invoke(s: Σᐩ) =
+data class StrPred(val arg: Σᐩ) {
+  operator fun invoke(s: Σᐩ) =
     if (arg == "[.*]") true
     else if (arg.startsWith("[!=]")) s != arg.drop(4)
     else s == arg
