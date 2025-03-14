@@ -111,4 +111,48 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
 
     result
   }
+
+  override val midpoints: List<List<List<Int>>> by lazy {
+    val fwdAdj = Array(numStates) { mutableListOf<Int>() }
+    val revAdj = Array(numStates) { mutableListOf<Int>() }
+
+    for ((fromLabel, _, toLabel) in Q) {
+      val i = stateMap[fromLabel]!!
+      val j = stateMap[toLabel]!!
+      fwdAdj[i].add(j)
+      revAdj[j].add(i)
+    }
+
+    // 1) Prepare KBitSets for post[] and pre[]
+    val post = Array(numStates) { KBitSet(numStates) }
+    val pre  = Array(numStates) { KBitSet(numStates) }
+
+    // 2) Compute post[i] in reverse topological order
+    for (i in (numStates - 1) downTo 0) {
+      post[i].set(i)
+      for (k in fwdAdj[i]) post[i].or(post[k])
+    }
+
+    // 3) Compute pre[i] in forward topological order
+    for (i in 0 until numStates) {
+      pre[i].set(i)
+      for (p in revAdj[i]) pre[i].or(pre[p])
+    }
+
+    // 4) Build allPairs by intersecting post[i] and pre[j]
+    //    We can skip the intersection if j not reachable from i,
+    //    i.e. if post[i].get(j) == false => empty set.
+    //
+    //    We'll reuse a single KBitSet 'tmp' to avoid allocations:
+    val result: List<MutableList<List<Int>>> = List(states.size) { MutableList(states.size) { mutableListOf() } }
+
+    for (i in 0 until numStates) for (j in i + 1 until numStates)
+      when {
+        !post[i].get(j) -> { }
+        // i < j and j is reachable from i => do the intersection of post[i] & pre[j].
+        else -> result[i][j] = KBitSet(numStates).apply { or(post[i]); and(pre[j]) }.toList()
+      }
+
+    result
+  }
 }

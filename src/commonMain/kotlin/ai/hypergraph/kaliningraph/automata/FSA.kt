@@ -32,7 +32,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   }
 
   val states: Set<Σᐩ> by lazy { Q.states() }
-  open val stateLst: List<Σᐩ> by lazy { states.toList() }
+  open val stateLst: List<Σᐩ> by lazy { TODO() } //states.toList() }
 
   fun allIndexedTxs1(unitProds: Set<Π2A<Σᐩ>>): List<Π3<Int, Σᐩ, Int>> {
     val triples = mutableListOf<Π3<Int, Σᐩ, Int>>()
@@ -70,15 +70,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     aps
   }
 
-  open val allPairs2: List<List<List<Int>>> by lazy {
-    val aps: List<MutableList<MutableList<Int>>> =
-      List(states.size) { MutableList(states.size) { mutableListOf() } }
-    graph.allPairs.entries.forEach { (a, b) ->
-      val temp = b.map { stateMap[it.label]!! }.toMutableList()
-      aps[stateMap[a.first.label]!!][stateMap[a.second.label]!!] = temp
-    }
-    aps
-  }
+  open val midpoints: List<List<List<Int>>> by lazy { TODO() }
 
   val finalIdxs by lazy { final.map { stateMap[it]!! }.filter { 0 < idsToCoords[it]!!.second } }
 
