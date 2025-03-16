@@ -89,7 +89,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 \end{theorem}
 
 \begin{theorem}[Generation]
-  For any $(\varepsilon, \land)$-free regex, \(R\), to generate a witness $\sigma \sim \mathcal{L}(R)$:\\
+  For any nonempty $(\varepsilon, \land)$-free regex, \(R\), to witness $\sigma \in \mathcal{L}(R)$:\\
 
   $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
      \{R\} &\text{ if } R \in \Sigma \\
@@ -99,7 +99,7 @@ To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 
   $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
      R &\text{ if } R \in \Sigma \\
-     \big(s\sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
+     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
      \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
   \end{cases}
 \end{theorem}
