@@ -116,7 +116,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:24.1.1")
+        implementation("org.graalvm.js:js:24.2.0")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
@@ -129,7 +129,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:7.0.0")
+        implementation("org.apache.datasketches:datasketches-java:7.0.1")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -163,10 +163,10 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("org.junit.jupiter:junit-jupiter:5.11.4")
+        implementation("org.junit.jupiter:junit-jupiter:5.12.1")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:26.0.1")
+        implementation("org.jetbrains:annotations:26.0.2")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
@@ -203,7 +203,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
         implementation(kotlin("test-annotations-common"))
-        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
       }
     }
   }
