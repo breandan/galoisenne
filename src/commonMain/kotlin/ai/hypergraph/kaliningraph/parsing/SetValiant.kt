@@ -53,7 +53,8 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
     val dp = Array(str.size + 1) { Array(str.size + 1) { BooleanArray(nonterminals.size) { false } } }
     str.map {
 //      if (it != "_" && tmMap[it] == null) println("What was this? \"$it\" / ${str.joinToString(" ")}")
-      if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+      if (it == "_") (0..<nonterminals.size).toList()
+      else if (it !in tmMap) return false
       else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1][vidx] = true } }
 
      for (dist: Int in 0 until dp.size) {
@@ -86,6 +87,7 @@ fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
     val dp = Array(str.size + 1) { Array(str.size + 1) { KBitSet(nonterminals.size) } }
     str.map {
       if (it == "_" || tmMap[it] == null) (0..<nonterminals.size).toList()
+      else if (it !in tmMap) return false
       else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
 
     for (dist: Int in 0 until dp.size) {

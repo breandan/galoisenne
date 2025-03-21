@@ -22,11 +22,11 @@ data class Segmentation(
         else -> cfg.parseInvalidWithMaximalFragments(line)
           .map { it.span }.filter { 2 < (it.last - it.first) }.flatten()
           .let { it to tokens.indices.filterNot { i -> i in it } }
-          .let { if (it.second.isEmpty() ) it.second to it.first else it }
-      }.let {
+          .let { if (it.second.isEmpty()) it.second to it.first else it }
+      }.let { (validIdxs, invalidIdxs) ->
         Segmentation(
-          valid = it.first,
-          invalid = it.second,
+          valid = validIdxs,
+          invalid = invalidIdxs,
           illegal = line.illegalWordIndices(cfg),
           line = line
         )
