@@ -201,12 +201,12 @@ To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevi
 \end{definition}
 
 \begin{theorem}[Enumeration]
-  To enumerate, invoke $\bigcup_{i = 0}^{|R|}\texttt{enum}(R, i)$:\\
+  To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
   $\texttt{enum}(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
      R &\text{if } R \in \Sigma \\
      \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
-     \big(n < |S|\big) \:\:?\: \texttt{enum}(S, n) \::\:\texttt{enum} (T, n - |S|) &\text{if } R = S \vee T
+     \texttt{enum}\big((S, T)_{\min(1, \lfloor\frac{n}{|S|}\rfloor)}, n-|S|\min(1, \lfloor\frac{n}{|S|}\rfloor)\big) &\text{if } R = S \vee T
   \end{cases}\\\\
 \end{theorem}
 
