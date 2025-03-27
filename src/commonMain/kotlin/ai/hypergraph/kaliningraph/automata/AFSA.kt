@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
+import kotlin.time.TimeSource
 
 // Acyclic finite state automaton
 class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val final: Set<Σᐩ>): FSA(Q, init, final) {
@@ -113,6 +114,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
   }
 
   override val midpoints: List<List<List<Int>>> by lazy {
+    val t0 = TimeSource.Monotonic.markNow()
     val fwdAdj = Array(numStates) { mutableListOf<Int>() }
     val revAdj = Array(numStates) { mutableListOf<Int>() }
 
@@ -153,6 +155,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
         else -> result[i][j] = KBitSet(numStates).apply { or(post[i]); and(pre[j]) }.toList()
       }
 
+    println("Computed midpoints in ${t0.elapsedNow()}")
     result
   }
 }
