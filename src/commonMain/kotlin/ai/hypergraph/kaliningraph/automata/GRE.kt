@@ -53,13 +53,11 @@ sealed class GRE(open vararg val args: GRE) {
       is SET -> yieldAll(s.toList().map { listOf(it) })
       is CUP -> for (a in args) yieldAll(a.enumerate(shouldContinue))
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
-      is CAT -> for (lhs in l.enumerate(shouldContinue)) for (rhs in r.enumerate(shouldContinue))
-        if (lhs.isEmpty()) {
-          if (rhs.isEmpty()) yield(emptyList()) else rhs
-        } else {
-          if (rhs.isEmpty()) yield(lhs)
-          else yield(lhs + rhs)
-        }
+      is CAT ->
+        for (lhs in l.enumerate(shouldContinue))
+        for (rhs in r.enumerate(shouldContinue))
+          if (lhs.isEmpty()) { if (rhs.isEmpty()) yield(emptyList()) else rhs              }
+          else               { if (rhs.isEmpty()) yield(lhs)         else yield(lhs + rhs) }
     }
   }
 
@@ -81,18 +79,15 @@ sealed class GRE(open vararg val args: GRE) {
         val orderedChoices = admits.toList()
           .map { -(ngrams[pfx + tmLst[it]] ?: 0.0) to it }
           .sortedBy { it.first }.map { it.second }
-        for (tk in orderedChoices)
-          for (g in args.filter { it.admits[tk] })
-            yieldAll(g.enumerateWithPriority(ngrams, tmLst, pfx + tmLst[tk]))
+        for (tk in orderedChoices) for (g in args.filter { it.admits[tk] })
+          yieldAll(g.enumerateWithPriority(ngrams, tmLst, pfx + tmLst[tk]))
       }
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
-      is CAT -> for (lhs in l.enumerateWithPriority(ngrams, tmLst, pfx))
+      is CAT ->
+        for (lhs in l.enumerateWithPriority(ngrams, tmLst, pfx))
         for (rhs in r.enumerateWithPriority(ngrams, tmLst, pfx))
-        if (lhs.isEmpty()) {
-          if (rhs.isEmpty()) yield(emptyList()) else rhs
-        } else {
-          if (rhs.isEmpty()) yield(lhs) else yield(lhs + rhs)
-        }
+            if (lhs.isEmpty()) { if (rhs.isEmpty()) yield(emptyList()) else rhs              }
+            else               { if (rhs.isEmpty()) yield(lhs)         else yield(lhs + rhs) }
     }
   }
 
