@@ -11,8 +11,7 @@ import kotlin.time.TimeSource
 typealias Arc = Π3A<Σᐩ>
 typealias TSA = Set<Arc>
 fun Arc.pretty() = "$π1 -<$π2>-> $π3"
-fun Σᐩ.coords(): Pair<Int, Int> =
-  (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
+fun Σᐩ.coords(): Pair<Int, Int> = (length / 2 - 1).let { substring(2, it + 2).toInt() to substring(it + 3).toInt() }
 // Triple representing (1) the global index of the state in the LA and the (2) x, (3) y coordinates
 typealias STC = Triple<Int, Int, Int>
 fun STC.coords() = π2 to π3
