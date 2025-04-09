@@ -120,7 +120,7 @@ kotlin {
         implementation("org.graalvm.js:js:24.2.0")
 
         // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.3")
