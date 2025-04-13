@@ -140,7 +140,7 @@ fun List<CEAProb>.normalizeAndSampleV0(bonusProbs: Map<ContextEdit, Int>?): CEAP
 
 fun CEADist.relevantEditActions(snippet: List<String>): List<CEAProb> {
   val relevantEditActions = mutableListOf<CEAProb>()
-  for (i in 0 until snippet.size - 2) {
+  for (i in 0..<snippet.size - 2) {
     val ctx = Context(snippet[i], snippet[i + 1], snippet[i + 2])
     P_insertOnCtx[Context(ctx.left, "", ctx.mid)]?.forEach {
       relevantEditActions.add(CEAProb(it, i, P_insert[it]!!))

@@ -389,7 +389,7 @@ class CDCL(private val solverType: SolverType = SolverType.INCREMENTAL) {
                         // if second watcher is true skip clause
                         if (getValue(brokenClause[0]) != VarValue.TRUE) {
                             var firstNotFalse = -1
-                            for (ind in 2 until brokenClause.size) {
+                            for (ind in 2..<brokenClause.size) {
                                 if (getValue(brokenClause[ind]) != VarValue.FALSE) {
                                     firstNotFalse = ind
                                     break

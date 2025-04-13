@@ -91,7 +91,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     }
 
     // 3) Compute pre[i] in forward topological order
-    for (i in 0 until numStates) {
+    for (i in 0..<numStates) {
       pre[i].set(i)
       for (p in revAdj[i]) pre[i].or(pre[p])
     }
@@ -103,7 +103,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     //    We'll reuse a single KBitSet 'tmp' to avoid allocations:
     val result: List<MutableList<List<Int>?>> = List(states.size) { MutableList(states.size) { null } }
 
-    for (i in 0 until numStates) for (j in i + 1 until numStates)
+    for (i in 0..<numStates) for (j in i + 1..<numStates)
       when {
         !post[i].get(j) -> { }
         // i < j and j is reachable from i => do the intersection of post[i] & pre[j].
@@ -118,9 +118,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     val fwdAdj = Array(numStates) { mutableListOf<Int>() }
     val revAdj = Array(numStates) { mutableListOf<Int>() }
 
-    for ((fromLabel, _, toLabel) in Q) {
-      val i = stateMap[fromLabel]!!
-      val j = stateMap[toLabel]!!
+    adjList.asList().windowed(2, 2).forEach { (i, j) ->
       fwdAdj[i].add(j)
       revAdj[j].add(i)
     }
@@ -136,7 +134,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     }
 
     // 3) Compute pre[i] in forward topological order
-    for (i in 0 until numStates) {
+    for (i in 0..<numStates) {
       pre[i].set(i)
       for (p in revAdj[i]) pre[i].or(pre[p])
     }
@@ -148,7 +146,7 @@ class AFSA(override val Q: TSA, override val init: Set<Σᐩ>, override val fina
     //    We'll reuse a single KBitSet 'tmp' to avoid allocations:
     val result: List<MutableList<List<Int>>> = List(states.size) { MutableList(states.size) { mutableListOf() } }
 
-    for (i in 0 until numStates) for (j in i + 1 until numStates)
+    for (i in 0..<numStates) for (j in i + 1..<numStates)
       when {
         !post[i].get(j) -> { }
         // i < j and j is reachable from i => do the intersection of post[i] & pre[j].

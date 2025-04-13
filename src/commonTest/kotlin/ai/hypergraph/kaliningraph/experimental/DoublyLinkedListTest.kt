@@ -28,7 +28,7 @@ class DoublyLinkedListTest {
   }
 
   private fun assertDLL(head: DLL<String>) =
-    (1 until head.size - 1).map { head[it] }.forEach {
+    (1..<head.size - 1).map { head[it] }.forEach {
       assertTrue("${it.next.prev} != $it") { it.next.prev === it && it.next !== it }
       assertTrue("${it.prev.next} != $it") { it.prev.next === it && it.prev !== it }
     }

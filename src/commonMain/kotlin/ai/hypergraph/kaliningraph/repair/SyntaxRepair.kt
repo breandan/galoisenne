@@ -272,7 +272,7 @@ fun CFG.rememberBigramPolarity(str: List<Σᐩ>, synthesizer: CFG.(List<Σᐩ>) 
 
 fun List<Tree>.allIndicesInsideParseableRegions(): Set<Int> =
   map { it.span }.filter { 3 < it.last - it.first }
-    .flatMap { (it.first + 1) until it.last }.toSet()
+    .flatMap { (it.first + 1)..<it.last }.toSet()
 
 /*
  * Generates all single character replacements and insertions.

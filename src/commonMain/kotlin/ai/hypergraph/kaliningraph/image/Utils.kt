@@ -58,8 +58,8 @@ fun Matrix<*, *, *>.matToBase64Img(
 ): String = "data:image/bmp;base64," + BMP().saveBMP(arr).encodeBase64ToString()
 
 fun Array<ℤⁿ>.enlarge(factor: Int = 2): Array<ℤⁿ> =
-  map { row -> row.flatMap { col -> (0 until factor).map { col } }
-    .let { r -> (0 until factor).map { r.toIntArray() } } }.flatten().toTypedArray()
+  map { row -> row.flatMap { col -> (0..<factor).map { col } }
+    .let { r -> (0..<factor).map { r.toIntArray() } } }.flatten().toTypedArray()
 
 class BMP {
   lateinit var bytes: ByteArray
@@ -110,7 +110,7 @@ class BMP {
     val offset = 54
     val rowLength: Int = rgbValues[row].size
     val padding = getPadding(rgbValues[0].size)
-    for (i in 0 until rowLength) {
+    for (i in 0..<rowLength) {
       val rgb = rgbValues[row][i]
       val temp = offset + 3 * (i + rowLength * row) + row * padding
       bytes[temp] = (rgb shr 16).toByte()
@@ -118,7 +118,7 @@ class BMP {
       bytes[temp + 2] = rgb.toByte()
     }
     val temp = offset + 3 * ((rowLength - 1) + rowLength * row) + row * padding + 3
-    for (j in 0 until padding) bytes[temp + j] = 0
+    for (j in 0..<padding) bytes[temp + j] = 0
   }
 
   private fun intToByteCouple(x: Int): ByteArray {
@@ -158,14 +158,14 @@ fun ByteArray.encodeBase64(): ByteArray {
     var b = this[position].toInt() and 0xFF shl 16 and 0xFFFFFF
     if (position + 1 < this.size) b = b or (this[position + 1].toInt() and 0xFF shl 8) else padding++
     if (position + 2 < this.size) b = b or (this[position + 2].toInt() and 0xFF) else padding++
-    for (i in 0 until 4 - padding) {
+    for (i in 0..<4 - padding) {
       val c = b and 0xFC0000 shr 18
       output.add(table[c].code)
       b = b shl 6
     }
     position += 3
   }
-  for (i in 0 until padding) output.add('='.code)
+  for (i in 0..<padding) output.add('='.code)
 
   return output.toIntArray().map { it.toByte() }.toByteArray()
 }

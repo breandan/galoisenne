@@ -64,7 +64,7 @@ fun Int.pow(n: Int): Int = when (n) {
   1 -> this
   else -> {
     var result = this
-    for (i in 1 until n) {
+    for (i in 1..<n) {
       result *= this
     }
     result
@@ -88,7 +88,7 @@ fun List<Int>.tupled(): Int {
     val subshellCount = (shell + 1).pow(sliceDims) - shell.pow(sliceDims)
     val indexI = this[dim]
     return if (indexI == shell) {
-      subshellCount * shell + ndBoxPair(List(sliceDims) { shell + 1 }, slice(dim + 1 until n))
+      subshellCount * shell + ndBoxPair(List(sliceDims) { shell + 1 }, slice(dim + 1..<n))
     } else {
       subshellCount * indexI + recursiveIndex(dim + 1)
     }

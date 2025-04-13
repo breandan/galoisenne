@@ -160,7 +160,7 @@ class KBitSet(val n: Int) {
 
   fun toList(): List<Int> {
     val result = mutableListOf<Int>()
-    for (i in 0 until n) if (get(i)) result.add(i)
+    for (i in 0..<n) if (get(i)) result.add(i)
     return result
   }
 }

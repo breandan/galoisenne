@@ -112,7 +112,7 @@ fun List<Pair<Int, Int>>.changedIndices(): List<Int> =
   indices.filter { this[it].run { first != second } }
 
 fun Patch.scan(i: Int, direction: Boolean, age: Edit.() -> Σᐩ): Σᐩ? =
-  (if (direction) (i + 1 until size) else (i - 1 downTo 0))
+  (if (direction) (i + 1..<size) else (i - 1 downTo 0))
     .firstOrNull { this[it].age() != "" }?.let { this[it].age() }
 
 // Scan [l]eft/[r]ight for first non-empty [n]ew/[o]ld token

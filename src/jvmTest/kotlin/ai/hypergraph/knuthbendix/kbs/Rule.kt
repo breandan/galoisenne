@@ -37,7 +37,7 @@ class Rule<T>(from: List<T>, to: List<T>) {
     var same = 0
     while (start < size - 1) {
       var miss = size
-      for (i in 0 until size) {
+      for (i in 0..<size) {
         if (i + start >= size || from[i] !== from[i + start]) {
           miss = i
           break
@@ -101,7 +101,7 @@ class Rule<T>(from: List<T>, to: List<T>) {
       iter.previous()
       if (to.size - i >= 0) iter.set(to[to.size - i]) else iter.remove()
     }
-    for (i in 0 until to.size - length) iter.add(to[i])
+    for (i in 0..<to.size - length) iter.add(to[i])
     return true
   }
 

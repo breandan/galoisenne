@@ -185,8 +185,8 @@ fun FSA.compat(a: STC, b: STC, nt: Int, compat: Array<Array<Array<Boolean>>>) =
 fun computeNTCompat(cfg: CFG, levStr: List<Σᐩ>): Array<Array<Array<Boolean>>> {
   val tbl = cfg.parseTableBln(levStr)
   val arr = Array(tbl.numRows) { Array(tbl.numCols) { Array(cfg.nonterminals.size) { false } } }
-  for (r in 0 until tbl.numRows)
-    for (c in r until tbl.numCols)
+  for (r in 0..<tbl.numRows)
+    for (c in r..<tbl.numCols)
       for (k in cfg.nonterminals.indices)
         arr[r][c][k] = tbl[r, c][k]
 

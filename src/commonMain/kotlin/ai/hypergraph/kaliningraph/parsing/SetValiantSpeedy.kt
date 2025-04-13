@@ -65,12 +65,12 @@ fun FastRandomSet<Edit>.resample(maxTake: Int,
       // and extrema are [0, strLen)
       val originalEditLocation = newEdit[idx].first
       val newEditLocation: Int =
-        originalEditLocation.newEditLoc(0 until strLen)
+        originalEditLocation.newEditLoc(0..<strLen)
       newEdit[idx] = newEditLocation to deck.random()
     }
 
 //    if (Random.nextBoolean())
-//      newEdit += newEdit.random().first.newEditLoc(0 until strLen) to deck.random()
+//      newEdit += newEdit.random().first.newEditLoc(0..<strLen) to deck.random()
 
     if (newEdit.hashCode() !in seen) edits.add(newEdit)
   }

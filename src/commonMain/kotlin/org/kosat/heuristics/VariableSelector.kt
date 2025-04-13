@@ -187,7 +187,7 @@ class VsidsWithoutQueue(private var numberOfVariables: Int = 0, private val solv
     private fun getMaxActivityVariable(vars: List<VarState>): Lit {
         var v: Int = -1
         var max = -1.0
-        for (i in 0 until numberOfVariables) {
+        for (i in 0..<numberOfVariables) {
             if (vars[i].value == VarValue.UNDEFINED && max < activity[i]) {
                 v = i
                 max = activity[i]

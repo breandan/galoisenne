@@ -146,8 +146,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val startIdx = bindex[START_SYMBOL]
 
       // For pairs (p,q) in topological order
-      for (dist in 1 until levFSA.numStates) {
-        for (iP in 0 until levFSA.numStates - dist) {
+      for (dist in 1..<levFSA.numStates) {
+        for (iP in 0..<levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
           if (aps[p][q] == null) continue
@@ -178,7 +178,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       upperBound: Int = 2 * MAX_RADIUS,
       monoEditBounds: Pair<Int, Int> = cfg.maxParsableFragmentB(brokeToks, pad = upperBound)
     ): Int =
-      (1 until upperBound).firstOrNull {
+      (1..<upperBound).firstOrNull {
         FSA.nonemptyLevInt(brokeToks, cfg, it, makeLevFSA(brokeToks, it, monoEditBounds))
       } ?: upperBound
 
@@ -209,8 +209,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       }
 
       // 3) CYK + Floyd Warshall parsing
-      for (dist in 1 until nStates) {
-        for (p in 0 until (nStates - dist)) {
+      for (dist in 1..<nStates) {
+        for (p in 0..<(nStates - dist)) {
           val q = p + dist
           if (levFSA.allPairs[p][q] == null) continue
           val appq = levFSA.allPairs[p][q]!!

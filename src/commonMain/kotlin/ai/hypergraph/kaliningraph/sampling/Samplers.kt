@@ -42,7 +42,7 @@ fun <T> findAll(
 
 fun all(i: List<Int>, l: List<Int> = emptyList()): Sequence<List<Int>> =
   if (i.isEmpty()) sequenceOf(l)
-  else (0 until i[0]).asSequence().flatMap { all(i.drop(1), l + it) }
+  else (0..<i[0]).asSequence().flatMap { all(i.drop(1), l + it) }
 
 // https://dl.acm.org/doi/pdf/10.1145/321765.321777
 // http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/ARTICLES/tgfsr3.pdf
@@ -182,7 +182,7 @@ private fun UInt.toBitList(len: Int): List<Boolean> =
 private fun ULong.toBitList2(len: Int): List<Boolean> {
   val bits = mutableListOf<Boolean>()
   var i = this
-  for (j in 0 until len) {
+  for (j in 0..<len) {
     bits.add(i and 1UL == 1UL)
     i = i shr 1
   }
@@ -252,7 +252,7 @@ inline fun <reified T> List<T>.choose(
   asArray: Array<T> = toTypedArray()
 ): Sequence<Set<T>> =
   if (size <= k) sequenceOf(toSet())
-  else (0 until numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
+  else (0..<numEl).asSequence().map { it.decodeCombo(k).map { asArray[it] }.toSet() }
 
 fun <T> List<T>.sampleWithGeomDecay(): T {
   if (isEmpty()) throw NoSuchElementException("List is empty.")

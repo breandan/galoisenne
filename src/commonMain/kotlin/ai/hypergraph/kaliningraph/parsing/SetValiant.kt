@@ -57,8 +57,8 @@ fun CFG.isValid(str: List<Σᐩ>): Bln =
       else if (it !in tmMap) return false
       else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1][vidx] = true } }
 
-     for (dist: Int in 0 until dp.size) {
-       for (iP: Int in 0 until dp.size - dist) {
+     for (dist: Int in 0..<dp.size) {
+       for (iP: Int in 0..<dp.size - dist) {
          val p = iP
          val q = iP + dist
          val appq = p..q
@@ -90,8 +90,8 @@ fun CFG.isValidAlt(str: List<Σᐩ>): Bln =
       else if (it !in tmMap) return false
       else tmToVidx[tmMap[it]!!] }.forEachIndexed { i, it -> it.forEach { vidx -> dp[i][i+1].set(vidx) } }
 
-    for (dist: Int in 0 until dp.size) {
-      for (iP: Int in 0 until dp.size - dist) {
+    for (dist: Int in 0..<dp.size) {
+      for (iP: Int in 0..<dp.size - dist) {
         val p = iP
         val q = iP + dist
         val appq = p..q
@@ -313,10 +313,10 @@ fun CFG.initialMatrix(
     else if (str[j - 1] == HOLE_MARKER)
       unitReach.values.flatten().toSet().map { root ->
         bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
-          .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
+          .map { Tree(root = root, terminal = it, span = i..<(i + 1)) }
       }.flatten().toSet()
     else bimap[listOf(str[j - 1])].map {
-      Tree(root = it, terminal = str[j - 1], span = (j - 1) until j)
+      Tree(root = it, terminal = str[j - 1], span = (j - 1)..<j)
     }.toSet()
   }
 

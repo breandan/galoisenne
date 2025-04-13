@@ -82,7 +82,7 @@ interface Matrix<T, A : Ring<T>, M : Matrix<T, A, M>> : SparseTensor<Π3<Int, In
 // Only include nonzero indices for sparse matrices?
 val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.idxs      by cache { allPairs(numRows, numCols) }
 val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.rows      by cache { data.chunked(numCols) }
-val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols      by cache { (0 until numCols).map { c -> rows.map { it[c] } } }
+val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.cols      by cache { (0..<numCols).map { c -> rows.map { it[c] } } }
 val <T, A : Ring<T>, M : Matrix<T, A, M>> Matrix<T, A, M>.transpose by cache { new(numCols, numRows, cols.flatten()) }
 
 // https://www.ijcai.org/Proceedings/2020/0685.pdf
@@ -357,8 +357,8 @@ open class UTMatrix<T> constructor(
   constructor(numRows: Int, numCols: Int, data: List<T>, alg: Ring<T>): this(
     diagonals = when (data.size) {
       numRows * numCols -> // Just take the upper diagonal entries of a rectangular matrix
-        (0 until numRows).map { r ->
-          (r + 1 until numCols).mapNotNull { c -> data[r * numCols + c] }
+        (0..<numRows).map { r ->
+          (r + 1..<numCols).mapNotNull { c -> data[r * numCols + c] }
         }.flip().dropLast(1)
       ((numRows * numCols) - numRows) / 2 -> // Take rows of a UTMatrix and flip them into diagonals
         (numCols - 1 downTo 1).fold(listOf<List<T>>() to 0) { acc, i ->

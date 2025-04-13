@@ -65,7 +65,7 @@ fun Σᐩ.carveSeams(toRemove: Regex = Regex("\\s{2,}")): Σᐩ =
   replace("  |  ", "    ")
     .lines().filter { it.isNotBlank() }.map { it.split('→') }.let { toMerge ->
     val minCols = toMerge.minOf { it.size }
-    val takeAway = (0 until minCols).map { toMerge.col(it).minOf { toRemove.find(it)!!.value.length } }
+    val takeAway = (0..<minCols).map { toMerge.col(it).minOf { toRemove.find(it)!!.value.length } }
     val subs = takeAway.map { List(it) { " " }.joinToString("") }
     toMerge.joinToString("\n", "\n") {
       it.mapIndexed { i, it -> if (i < minCols) it.replaceFirst(subs[i], "   ") else it }

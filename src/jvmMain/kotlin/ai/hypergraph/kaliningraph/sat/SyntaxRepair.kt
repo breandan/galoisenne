@@ -27,7 +27,7 @@ fun List<Σᐩ>.parallelSolve(
   fillers: Set<Σᐩ> = CFG.terminals - CFG.blocked,
   cores: Int = Runtime.getRuntime().availableProcessors().also { println("Cores: $it") }
 ) =
-  (0 until cores).toSet().parallelStream().flatMap { i ->
+  (0..<cores).toSet().parallelStream().flatMap { i ->
     MDSamplerWithoutReplacement(fillers, count { it == HOLE_MARKER })
       .filterIndexed { index, _ -> index % cores == i }
       .asStream()

@@ -17,7 +17,7 @@ class SamplingTest {
   fun testExhaustiveSearch() =
     // Checks whether the exhaustive search is truly exhaustive
     ((2..5) * (2..5)).forEach { (s, dim) ->
-      val base = (0 until s).map { "${it.digitToChar()}" }.toSet()
+      val base = (0..<s).map { "${it.digitToChar()}" }.toSet()
       val sfc = findAll(base, dim)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.toList().size)
       assertEquals(s.toDouble().pow(dim).toInt(), sfc.distinct().toList().size)

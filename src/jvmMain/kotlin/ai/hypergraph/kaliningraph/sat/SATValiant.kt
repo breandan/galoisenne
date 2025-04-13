@@ -309,7 +309,7 @@ fun SATRubix.eliminateImpossibleDerivations(cfg: CFG, tokens: List<Σᐩ>): SATR
   val litRbx: SATRubix = FreeMatrix(cfg.satAlgebra, tokens.size + 1) { r, c ->
     // Strictly upper triangular matrix entries
     if (r + 1 <= c) {
-      if (holeIndices.any { it in r until c }) parikhRubix[r, c]
+      if (holeIndices.any { it in r..<c }) parikhRubix[r, c]
       else litUDM[r, c]!!.toLitVec()
     }
     // Diagonal and subdiagonal

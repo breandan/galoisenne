@@ -184,8 +184,8 @@ class Parser {
         rightStart++
       }
       val result = ArrayList<Element>(leftEnd + rightSize - rightStart)
-      for (i in 0 until leftEnd) result.add(left[i])
-      for (i in rightStart until rightSize) result.add(right[i])
+      for (i in 0..<leftEnd) result.add(left[i])
+      for (i in rightStart..<rightSize) result.add(right[i])
       return result
     }
 

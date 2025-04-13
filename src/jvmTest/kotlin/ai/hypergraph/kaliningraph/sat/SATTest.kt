@@ -25,7 +25,7 @@ class SATTest {
     val dim = 10
     // https://www.koreascience.or.kr/article/JAKO200507523302678.pdf#page=3
     // "It is well known that the permutation matrices are the only invertible Boolean matrices..."
-    val p = (0 until dim).shuffled(rand)
+    val p = (0..<dim).shuffled(rand)
 //    println("Permutation:\n" + p.joinToString(" "))
     val A = FreeMatrix(SAT_ALGEBRA, dim) { i, j -> BLit(j == p[i]) }
     val P = BooleanMatrix(A.data.map { it.toBool() })
@@ -174,7 +174,7 @@ class SATTest {
   fun testSetIntersectionOneHot() = repeat(100) {
     val dim = 10
     val len = 6
-    val universe = (0 until dim).toList()
+    val universe = (0..<dim).toList()
 
     fun draw() = universe.shuffled(rand).take(len).map { universe.indexOf(it) }
 

@@ -97,7 +97,7 @@ fun makeLevFSA(
    * by this point in order to reach a parsable state. This proof is expensive to
    * find but worthwhile for long strings. See [smallestRangeWithNoSingleEditRepair].
    */
-  multiEditBounds: IntRange = 0 until str.size,
+  multiEditBounds: IntRange = 0..<str.size,
   digits: Int = (str.size * maxRad).toString().length,
 ): FSA {
   val clock = TimeSource.Monotonic.markNow()
@@ -273,7 +273,7 @@ fun CFG.hasMonoEditRepair(tokens: List<String>, unmaskedRange: IntRange, already
     else if (tokens.size <= unmaskedRange.last) premask + List(unmaskedRange.last - tokens.size) { "_" }
     else premask
 
-    val range = (maxOf(0, unmaskedRange.first) until minOf(tokens.size + 1, unmaskedRange.last + 2))
+    val range = (maxOf(0, unmaskedRange.first)..<minOf(tokens.size + 1, unmaskedRange.last + 2))
     val indices = range.toMutableList().apply { if (hypothesis in range) swap(0, hypothesis - range.first) }
 
     indices.filter { it !in alreadyChecked }.any { i -> (
@@ -318,13 +318,13 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
     var (start, end) = left to last
     // Binary search for rightmost lower bound
     while (left in (0.. last - 2)) {
-      val right = hasMonoEditRepair(tokens, left + 1 until last)
-      val me = hasMonoEditRepair(tokens, left until last)
+      val right = hasMonoEditRepair(tokens, left + 1..<last)
+      val me = hasMonoEditRepair(tokens, left..<last)
       if (right && !me) break
       else if (!right && !me) { start = left; left += (end - left) / 2 }
       else { end = left; val dec = (left - start) / 2; left -= dec.coerceAtLeast(1) }
     }
-    return left.coerceAtLeast(0) until last
+    return left.coerceAtLeast(0)..<last
   }
 
   fun IntRange.tryToShrinkRight(): IntRange {
@@ -332,8 +332,8 @@ fun CFG.tryToShrinkMultiEditRange(tokens: List<String>, range: IntRange): IntRan
     var (start, end) = first to right
     // Binary search for leftmost lower bound
     while (first < right - 2 && right <= tokens.size) {
-      val left = hasMonoEditRepair(tokens, first until right - 1)
-      val me = hasMonoEditRepair(tokens, first until right)
+      val left = hasMonoEditRepair(tokens, first..<right - 1)
+      val me = hasMonoEditRepair(tokens, first..<right)
       if (left && !me) break
       else if (!left && !me) { end = right; right -= (right - start) / 2 }
       if (0.6 * tokens.size < right - first) return 0..tokens.size
@@ -374,7 +374,7 @@ fun CFG.findMinimalMultiEditBounds(tokens: List<String>, pair: Pair<Int, Int>, l
   val meBoundsTimer = TimeSource.Monotonic.markNow()
   val (left, right) = (min(pair.first, pair.second) - levDist) to (max(pair.first, pair.second) + levDist)
 
-  val range = left until right
+  val range = left..<right
   val multiEditBounds = if (right - left <= 1) 0..tokens.size
   else if (hasMonoEditRepair(tokens, range)) tryGrowingMonoEditBounds(tokens, range)
   else tryToShrinkMultiEditRange(tokens, range)
@@ -400,8 +400,8 @@ fun levenshtein(s1: Σᐩ, s2: Σᐩ): Int =
 
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)
-  for (j in 0 until o2.size + 1) prev[j] = j
-  for (i in 1 until o1.size + 1) {
+  for (j in 0..<o2.size + 1) prev[j] = j
+  for (i in 1..<o1.size + 1) {
     val curr = IntArray(o2.size + 1)
     curr[0] = i
     for (j in 1 until o2.size + 1) {

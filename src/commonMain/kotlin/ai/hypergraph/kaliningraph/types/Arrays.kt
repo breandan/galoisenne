@@ -41,7 +41,7 @@ infix fun <A, B, C, Z> Π3<A, B, C>.to(that: Z) = Π(π1, π2, π3, that)
 infix fun <A, B, C, D, Z> Π4<A, B, C, D>.to(that: Z) = Π(π1, π2, π3, π4, that)
 
 fun allPairs(numRows: Int, numCols: Int): Set<V2<Int>> =
-  (0 until numRows) * (0 until numCols)
+  (0..<numRows) * (0 until numCols)
 
 operator fun IntProgression.times(s: IntProgression): Set<V2<Int>> =
   flatMap { s.map(it::cc).toSet() }.toSet()

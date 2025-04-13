@@ -16,7 +16,7 @@ import kotlin.time.*
 val NUM_CORES = Runtime.getRuntime().availableProcessors()
 
 fun <E> ((Int, Int) -> Sequence<E>).parallelize(cores: Int = NUM_CORES) =
-  (0 until cores).toSet().parallelStream()
+  (0..<cores).toSet().parallelStream()
   .flatMap { i -> this(cores, i).asStream() }
 
 class ConcurrentRankedProbabilisticSet<T>(

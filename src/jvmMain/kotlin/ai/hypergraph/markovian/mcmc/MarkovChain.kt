@@ -20,7 +20,7 @@ import kotlin.random.Random
  * producing a rank-(dims.size) tensor consisting of [dims].
  */
 fun NDArray<Double, DN>.sumOnto(vararg dims: Int = intArrayOf(0)) =
-  (0 until dim.d).fold(this to 0) { (t, r), b ->
+  (0..<dim.d).fold(this to 0) { (t, r), b ->
     if (b in dims) t to r + 1
     else mk.math.sum<Double, DN, DN>(t, r) to r
   }.first
@@ -33,7 +33,7 @@ fun NDArray<Double, DN>.disintegrate(dimToIdx: Map<Int, Int>): NDArray<Double, D
 // TODO: Is this really disintegration or something else?
 // http://www.stat.yale.edu/~jtc5/papers/ConditioningAsDisintegration.pdf
   // https://en.wikipedia.org/wiki/Disintegration_theorem
-  (0 until dim.d).fold(this to 0) { (t, r), b ->
+  (0..<dim.d).fold(this to 0) { (t, r), b ->
     if (b in dimToIdx) t.view(dimToIdx[b]!!, r).asDNArray() to r
     else t to r + 1
   }.first
@@ -137,7 +137,7 @@ open class MarkovChain<T>(
 
   operator fun get(vararg variables: Pair<Int, T?>): Double =
     variables.associate { (a, b) -> a to b }
-      .let { map -> (0 until memory).map { map[it] } }.let {
+      .let { map -> (0..<memory).map { map[it] } }.let {
         val n = counter.nrmCounts.getEstimate(it).toDouble()
         val d = counter.total.toDouble()
         n / d

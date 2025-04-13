@@ -177,7 +177,7 @@ fun CFG.dropVestigialProductions(
 
 
 fun CFG.LED(brokeToks: List<Σᐩ>): Int =
-  (1 until MAX_RADIUS).firstOrNull {
+  (1..<MAX_RADIUS).firstOrNull {
     try {
       intersectLevFSA(fsa = makeLevFSA(brokeToks, it)).isNotEmpty()
     } catch (_: Exception) { println("Failed $it, increasing..."); false }
