@@ -123,7 +123,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.9.3")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.10.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -320,7 +320,7 @@ tasks {
    * ./gradlew [build publishToMavenLocal] jupyterRun -x test
    */
 
-  val jupyterRun by creating(Exec::class) {
+  val jupyterRun by registering(Exec::class) {
     commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
   }
 }
