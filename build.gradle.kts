@@ -86,11 +86,7 @@ val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" 
 kotlin {
   jvm()
   js(IR) {
-    browser {
-      testTask {
-        enabled = false
-      }
-    }
+    browser { testTask { enabled = false } }
     binaries.executable()
   }
 
