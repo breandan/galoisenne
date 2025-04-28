@@ -117,7 +117,7 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:24.2.0")
+        implementation("org.graalvm.js:js:24.2.1")
 
         // Markovian deps
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
@@ -130,7 +130,7 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:7.0.1")
+        implementation("org.apache.datasketches:datasketches-java:8.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
