@@ -84,7 +84,7 @@ repositories {
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
 
 kotlin {
-  jvm()
+  jvm { compilerOptions.jvmTarget = JvmTarget.JVM_21 }
   js(IR) {
     browser { testTask { enabled = false } }
     binaries.executable()
@@ -255,10 +255,6 @@ data class TestDuration(val name: String, val duration: Duration) {
 val testDurations = mutableListOf<TestDuration>()
 
 tasks {
-  withType<KotlinCompile> {
-    compilerOptions.jvmTarget = JvmTarget.JVM_21
-  }
-
   withType<Test> {
     minHeapSize = "1g"
     maxHeapSize = "6g"
