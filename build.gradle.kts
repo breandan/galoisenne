@@ -288,7 +288,7 @@ tasks {
       testDurations.sortedBy { it.duration }.reversed().take(10).forEach { println(it) }
     }
 
-    if (project.hasProperty("leaseExcludeBenchmarks")) exclude("**/**Benchmarks.class")
+    if (providers.gradleProperty("leaseExcludeBenchmarks").isPresent) exclude("**/**Benchmarks.class")
   }
 
 //  processJupyterApiResources {
