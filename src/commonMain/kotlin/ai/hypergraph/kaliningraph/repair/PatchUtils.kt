@@ -57,6 +57,7 @@ fun minimizeFix(
 ): Sequence<Σᐩ> {
   val patch: Patch = extractPatch(brokeTokens, fixedTokens)
   val changedIndices = patch.changedIndices()
+  if (changedIndices.size <= 1) return sequenceOf(fixedTokens.joinToString(" "))
   val time = TimeSource.Monotonic.markNow()
   return deltaDebug(changedIndices,
     timeout = { 5 < time.elapsedNow().inWholeSeconds }
