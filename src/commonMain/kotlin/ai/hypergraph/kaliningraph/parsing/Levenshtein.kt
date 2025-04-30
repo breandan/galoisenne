@@ -211,8 +211,8 @@ fun List<Π5<Int, Int, Σᐩ, Int, Int>>.postProc(digits: Int) =
 /**
  * Levenshtein automata optimizations to identify ranges that must contain an edit to be parsable.
  * These serve as proofs for the unreachability of certain states in the Levenshtein automaton.
- * For example, if we know that a certain range must contain at least one to be parsable, then we
- * have a proof that any states which have not yet made an edit after that range are unreachable,
+ * For example, if we know a certain range must contain at least one edit to be parsable, then
+ * we have proven any states which have not yet made an edit after that range are unreachable,
  * and states which have exhausted all their edits before that range are also unreachable.
  */
 
