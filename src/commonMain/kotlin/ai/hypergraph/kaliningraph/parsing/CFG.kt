@@ -61,6 +61,7 @@ val CFG.symMap by cache { symLst.mapIndexed { i, s -> s to i }.toMap() }
 val CFG.tmLst: List<Σᐩ> by cache { terminals.toList() }
 val CFG.tmMap: Map<Σᐩ, Int> by cache { tmLst.mapIndexed { i, s -> s to i }.toMap() }
 val CFG.tmToVidx: List<List<Int>> by cache { List(tmLst.size) { bimap.TDEPS[tmLst[it]]!!.map { bindex[it] } } }
+val CFG.terminalLists: List<Set<Σᐩ>> by cache { nonterminals.map { bimap.UNITS[it] ?: emptySet() } }
 
 val CFG.tripleIntProds: Set<Π3A<Int>> by cache { bimap.TRIPL.map { (a, b, c) -> Triple(bindex[a], bindex[b], bindex[c]) }.toSet() }
 val CFG.revUnitProds: Map<Σᐩ, List<Int>> by cache { terminals.associate { it to bimap[listOf(it)].map { bindex[it] } } }
