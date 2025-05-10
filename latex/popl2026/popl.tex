@@ -1,0 +1,252 @@
+%% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,10pt,review,anonymous]{acmart}
+%\settopmatter{printfolios=false,printccs=false,printacmref=false}
+%% For double-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
+%% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%% For single-blind review submission, w/ CCS and ACM Reference
+%\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
+%% For final camera-ready submission, w/ required CCS and ACM Reference
+%\documentclass[sigplan,nonacm]{acmart}
+\documentclass[sigplan,review,acmsmall,nonacm,screen,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+
+%% Conference information
+%% Supplied to authors by publisher for camera-ready submission;
+%% use defaults for review submission.
+%\acmConference[SPLASH'24]{ACM SIGPLAN conference on Systems, Programming, Languages, and Applications: Software for Humanity}{October 22-27, 2024}{Pasadena, California, United States}
+%\acmConference{}{}{}
+%\acmYear{2018}
+%\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+%\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+%\startPage{1}
+
+%% Copyright information
+%% Supplied to authors (based on authors' rights management selection;
+%% see authors.acm.org) by publisher for camera-ready submission;
+%% use 'none' for review submission.
+\setcopyright{none}
+%\setcopyright{acmcopyright}
+%\setcopyright{acmlicensed}
+%\setcopyright{rightsretained}
+%\copyrightyear{2018}           %% If different from \acmYear
+
+%% Bibliography style
+\bibliographystyle{acmart}
+
+\input{preamble}
+
+\usepackage{draftwatermark}
+\SetWatermarkLightness{0.75}
+\SetWatermarkText{DRAFT}
+\makeatletter
+\let\@authorsaddresses\@empty
+\makeatother
+
+\begin{document}
+%
+  \title{Syntax Repair as Language Intersection}
+  %
+  \begin{abstract}
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages, and by extension, most programming langauges. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. The enumerated set should contain every repair within a few edits and no invalid repairs. To do so, we adapt the Bar-Hillel construction to acyclic automata and decode it in order of probability. This technique also admits a polylogarithmic decision procedure for finite CFL intersection, the first of its kind.
+    \keywords{Error correction \and CFL reachability \and Language games.}
+  \end{abstract}
+
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+  \author{Breandan Considine}
+  \email{bre@ndan.co}
+
+  \maketitle
+
+  \section{Introduction}
+
+  During programming, one often encounters scenarios where the editor enters an invalid state. Programmers must spend some time to localize and repair the error before proceeding. We attempt to solve this problem automatically.
+
+  \section{Background}
+
+  We will first give some background on Brozozowski differentiation. We will use a fragment of the full GRE langauge with concatenation, conjunction, disjunction.
+
+  \begin{definition}[Generalized Regex]
+    Let \( E \) be an expression defined by the grammar:
+    \[
+      E ::= \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
+    \]
+
+    Semantically, we interpret these expressions as denoting regular languages:
+    \setlength{\columnseprule}{0pt}
+    \setlength{\columnsep}{-3cm}
+    \begin{multicols}{2}
+      \begin{eqnarray*}
+        \mathcal{L}(& \varnothing & ) = \varnothing \\
+        \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
+        \mathcal{L}(& a           & ) = \{a\}
+      \end{eqnarray*} \break\vspace{-0.45cm}
+      \begin{eqnarray*}
+        \mathcal{L}(& S\cdot T    & ) = \mathcal{L}(S) \times \mathcal{L}(T)\text{\footnotemark}\\
+        \mathcal{L}(& S\vee  T    & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
+        \mathcal{L}(& S\land T    & ) = \mathcal{L}(S) \cap \mathcal{L}(T)
+      \end{eqnarray*}
+    \end{multicols}
+    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(S) \land b \in \mathcal{L}(T) \}$ to be more precise.}
+  \end{definition}
+
+  Brzozowski introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
+
+  \begin{definition}[Brzozowski, 1964]
+    To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
+
+    \vspace{-0.8cm}
+    \begin{multicols}{2}
+      \begin{eqnarray*}
+        \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
+        \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
+        \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
+        \phantom{--}\partial_a(& S\cdot T    &) = (\partial_a S)\cdot T \vee \delta(S)\cdot\partial_a T \\
+        \phantom{--}\partial_a(& S\vee  T    &) = \partial_a S \vee  \partial_a T                        \\
+        \phantom{--}\partial_a(& S\land T    &) = \partial_a S \land \partial_a T
+      \end{eqnarray*} \break\vspace{-0.45cm}
+      \begin{eqnarray*}
+        \delta(& \varnothing &)= \varnothing                                      \\
+        \delta(& \varepsilon &)= \varepsilon                                      \\
+        \delta(& a           &)= \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+        \delta(& S\cdot T    &)= \delta(S) \land \delta(T)                        \\
+        \delta(& S\vee T     &)= \delta(S) \vee  \delta(T)                        \\
+        \delta(& S\land T    &)= \delta(S) \land \delta(T)
+      \end{eqnarray*}
+    \end{multicols}
+  \end{definition}
+
+  Primarily, this gadget was designed to handle membership, for which purpose it has received considerable attention in the parsing literature:
+
+  \begin{theorem}[Recognition]
+    For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
+
+    \[
+      \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
+    \]
+  \end{theorem}
+
+  It can also be used, however, to decode witnesses. We will define this process in two steps:
+
+  \begin{theorem}[Generation]
+    For any nonempty $(\varepsilon, \land)$-free regex, \(R\), to witness $\sigma \in \mathcal{L}(R)$:\\
+
+    $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
+                                                     \{R\} &\text{ if } R \in \Sigma \\
+                                                     \texttt{follow}(S) &\text{ if } R = S \cdot T\\
+                                                     \texttt{follow}(S)\cup\texttt{follow}(T) &\text{ if } R = S \lor T
+    \end{cases}\\\\
+
+    $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
+                                                     R &\text{ if } R \in \Sigma \\
+                                                     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
+                                                     \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
+    \end{cases}
+  \end{theorem}
+
+  \section{Language intersection}
+
+  \begin{theorem}[Bar-Hillel, 1961]
+    For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+  \end{theorem}
+
+  \begin{definition}[Salomaa, 1973]
+    One could construct $G_\cap$ like so,
+
+    \noindent\begin{prooftree}
+        \hskip -1em
+        \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+        \RightLabel{$\sqrt{\phantom{S}}$}
+        \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+        \DisplayProof
+        \hskip 1em
+        \AxiomC{$(w \rightarrow a) \in P$}
+        \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+        \RightLabel{$\uparrow$}
+        \BinaryInfC{$\big(qwr\rightarrow a\big)\in P_\cap$}
+        \DisplayProof
+        \hskip 1em
+        \AxiomC{$\highlight{(w \rightarrow xz) \in P}$}
+        \AxiomC{$\highlight{\vphantom{(}p,q,r \in Q}$}
+        \RightLabel{$\Join$}
+        \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+    \end{prooftree}
+    however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is clearly excessive.
+  \end{definition}
+
+  \begin{theorem}%[Considine, 2025]
+    For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
+  \end{theorem}
+
+  \begin{proof}[Proof sketch]
+    WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$.\vspace{0.3cm}
+
+    \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+
+    \begin{enumerate}
+      \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
+      \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+    \end{enumerate}
+
+    \noindent This decomposition suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
+
+    \begin{align}
+      M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
+    \end{align}
+
+    \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
+
+    \begin{align}
+    [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
+    [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+    \end{align}
+
+    \noindent By slight abuse of notation\footnote{Traditionally, there is a $\frac{1}{k!}$ factor.}, we will redefine the matrix exponential over this domain as:
+
+    \begin{align}
+      \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
+    \end{align}
+
+    \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
+
+    \begin{align}
+      S(2n) \;=\; \begin{cases}
+                    M_0, & \text{if } n = 1,\\[6pt]
+                    S(n) + S(n)^2 & \text{otherwise}.
+      \end{cases}
+    \end{align}
+
+    \noindent Therefor, we only need a maximum of $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally,
+
+    \begin{align}
+      S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
+    \end{align}
+
+    \noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}(S_\cap)$.
+  \end{proof}
+
+  \section{Combinatorics}
+
+  To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevity.
+
+  \begin{definition}[Cardinality]
+    $|R|: RE \rightarrow \mathbb{N} =$ \begin{cases}
+                                         1  & \text{if } R \in \Sigma \\
+                                         S \times T  & \text{if } R = S \cdot T \\
+                                         S + T  & \text{if } R = S \vee T
+    \end{cases}\\
+  \end{definition}
+
+  \begin{theorem}[Enumeration]
+    To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
+
+    $\texttt{enum}(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
+                                                                         R &\text{if } R \in \Sigma \\
+                                                                         \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
+                                                                         \texttt{enum}\big((S, T)_{\min(1, \lfloor\frac{n}{|S|}\rfloor)}, n-|S|\min(1, \lfloor\frac{n}{|S|}\rfloor)\big) &\text{if } R = S \vee T
+    \end{cases}\\\\
+  \end{theorem}
+
+\end{document}
