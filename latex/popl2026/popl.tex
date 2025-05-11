@@ -48,7 +48,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages, and by extension, most programming langauges. Our work stems from the observation that syntax errors with a small repair typically have very few unique small repairs, which can usually be enumerated up to a small edit distance then quickly reranked. The enumerated set should contain every repair within a few edits and no invalid repairs. To do so, we adapt the Bar-Hillel construction to acyclic automata and decode it in order of probability. This technique also admits a polylogarithmic decision procedure for finite CFL intersection, the first of its kind.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of error corretion under a finite number of edits, which we solve by enumerating a language and ranking it by probability. To do this, we adapt the Bar-Hillel construction from formal language theory, guaranteeing the enumerated set is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
     \keywords{Error correction \and CFL reachability \and Language games.}
   \end{abstract}
 
@@ -71,7 +71,7 @@
   \begin{definition}[Generalized Regex]
     Let \( E \) be an expression defined by the grammar:
     \[
-      E ::= \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
+      E \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
     \]
 
     Semantically, we interpret these expressions as denoting regular languages:
@@ -84,9 +84,9 @@
         \mathcal{L}(& a           & ) = \{a\}
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \mathcal{L}(& S\cdot T    & ) = \mathcal{L}(S) \times \mathcal{L}(T)\text{\footnotemark}\\
-        \mathcal{L}(& S\vee  T    & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
-        \mathcal{L}(& S\land T    & ) = \mathcal{L}(S) \cap \mathcal{L}(T)
+        \mathcal{L}(& S\cdot T & ) = \mathcal{L}(S) \times \mathcal{L}(T)\text{\footnotemark}\\
+        \mathcal{L}(& S\vee  T & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
+        \mathcal{L}(& S\land T & ) = \mathcal{L}(S) \cap \mathcal{L}(T)
       \end{eqnarray*}
     \end{multicols}
     \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(S) \land b \in \mathcal{L}(T) \}$ to be more precise.}
@@ -108,12 +108,12 @@
         \phantom{--}\partial_a(& S\land T    &) = \partial_a S \land \partial_a T
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \delta(& \varnothing &)= \varnothing                                      \\
-        \delta(& \varepsilon &)= \varepsilon                                      \\
-        \delta(& a           &)= \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-        \delta(& S\cdot T    &)= \delta(S) \land \delta(T)                        \\
-        \delta(& S\vee T     &)= \delta(S) \vee  \delta(T)                        \\
-        \delta(& S\land T    &)= \delta(S) \land \delta(T)
+        \delta(& \varnothing &) = \varnothing                                      \\
+        \delta(& \varepsilon &) = \varepsilon                                      \\
+        \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+        \delta(& S\cdot T    &) = \delta(S) \land \delta(T)                        \\
+        \delta(& S\vee T     &) = \delta(S) \vee  \delta(T)                        \\
+        \delta(& S\land T    &) = \delta(S) \land \delta(T)
       \end{eqnarray*}
     \end{multicols}
   \end{definition}
@@ -134,15 +134,15 @@
     For any nonempty $(\varepsilon, \land)$-free regex, \(R\), to witness $\sigma \in \mathcal{L}(R)$:\\
 
     $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
-                                                     \{R\} &\text{ if } R \in \Sigma \\
-                                                     \texttt{follow}(S) &\text{ if } R = S \cdot T\\
-                                                     \texttt{follow}(S)\cup\texttt{follow}(T) &\text{ if } R = S \lor T
+     \{R\} &\text{ if } R \in \Sigma \\
+     \texttt{follow}(S) &\text{ if } R = S \cdot T\\
+     \texttt{follow}(S)\cup\texttt{follow}(T) &\text{ if } R = S \lor T
     \end{cases}\\\\
 
     $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
-                                                     R &\text{ if } R \in \Sigma \\
-                                                     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
-                                                     \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
+     R &\text{ if } R \in \Sigma \\
+     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
+     \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
     \end{cases}
   \end{theorem}
 
@@ -168,13 +168,14 @@
         \BinaryInfC{$\big(qwr\rightarrow a\big)\in P_\cap$}
         \DisplayProof
         \hskip 1em
-        \AxiomC{$\highlight{(w \rightarrow xz) \in P}$}
-        \AxiomC{$\highlight{\vphantom{(}p,q,r \in Q}$}
+        \AxiomC{$(w \rightarrow xz) \in P$}
+        \AxiomC{$\vphantom{(}p,q,r \in Q$}
         \RightLabel{$\Join$}
         \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
     \end{prooftree}
-    however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is clearly excessive.
   \end{definition}
+
+  However most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is clearly excessive.
 
   \begin{theorem}%[Considine, 2025]
     For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
@@ -199,8 +200,8 @@
     \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
 
     \begin{align}
-    [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
-    [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+      [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
+      [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
     \end{align}
 
     \noindent By slight abuse of notation\footnote{Traditionally, there is a $\frac{1}{k!}$ factor.}, we will redefine the matrix exponential over this domain as:
@@ -213,8 +214,8 @@
 
     \begin{align}
       S(2n) \;=\; \begin{cases}
-                    M_0, & \text{if } n = 1,\\[6pt]
-                    S(n) + S(n)^2 & \text{otherwise}.
+         M_0, & \text{if } n = 1,\\[6pt]
+         S(n) + S(n)^2 & \text{otherwise}.
       \end{cases}
     \end{align}
 
@@ -233,9 +234,9 @@
 
   \begin{definition}[Cardinality]
     $|R|: RE \rightarrow \mathbb{N} =$ \begin{cases}
-                                         1  & \text{if } R \in \Sigma \\
-                                         S \times T  & \text{if } R = S \cdot T \\
-                                         S + T  & \text{if } R = S \vee T
+      1  & \text{if } R \in \Sigma \\
+      S \times T  & \text{if } R = S \cdot T \\
+      S + T  & \text{if } R = S \vee T
     \end{cases}\\
   \end{definition}
 
@@ -243,9 +244,9 @@
     To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
     $\texttt{enum}(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
-                                                                         R &\text{if } R \in \Sigma \\
-                                                                         \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
-                                                                         \texttt{enum}\big((S, T)_{\min(1, \lfloor\frac{n}{|S|}\rfloor)}, n-|S|\min(1, \lfloor\frac{n}{|S|}\rfloor)\big) &\text{if } R = S \vee T
+         R &\text{if } R \in \Sigma \\
+         \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
+         \texttt{enum}\big((S, T)_{\min(1, \lfloor\frac{n}{|S|}\rfloor)}, n-|S|\min(1, \lfloor\frac{n}{|S|}\rfloor)\big) &\text{if } R = S \vee T
     \end{cases}\\\\
   \end{theorem}
 
