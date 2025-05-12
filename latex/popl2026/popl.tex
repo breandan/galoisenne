@@ -45,12 +45,12 @@
 
 \begin{document}
 %
-  \title{Syntax Repair as Language Intersection}
-  %
-  \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of error corretion under a finite number of edits, which we solve by enumerating a language and ranking it by probability. To do this, we adapt the Bar-Hillel construction from formal language theory, guaranteeing the enumerated set is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
-    \keywords{Error correction \and CFL reachability \and Language games.}
-  \end{abstract}
+\title{Syntax Repair as Language Intersection}
+%
+\begin{abstract}
+  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing the language is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+  \keywords{Error correction \and CFL reachability \and Language games.}
+\end{abstract}
 
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
@@ -62,19 +62,19 @@
 
   \section{Introduction}
 
-  During programming, one inevitably encounters a certain scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed expression. In such cases, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which provably includes the true repair, assuming that repair differs by no more than a few edits.
+  During programming, one invariably encounters a certain scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
 
   \section{Background}
 
-  We will first give some background on Brozozowski differentiation. We will use a fragment of the full GRE langauge with concatenation, conjunction, disjunction.
+  We will first give some background on Brozozowski differentiation. Let us consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
   \begin{definition}[Generalized Regex]
-    Let \( E \) be an expression defined by the grammar:
+    Let \( e \) be an expression defined by the grammar:
     \[
-      E \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid E \cdot E \mid E \lor E \mid E \land E
+      e \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
     \]
 
-    Semantically, we interpret these expressions as denoting regular languages:
+    Semantically, we can interpret these expressions as denoting regular languages:
     \setlength{\columnseprule}{0pt}
     \setlength{\columnsep}{-3cm}
     \begin{multicols}{2}
@@ -84,12 +84,12 @@
         \mathcal{L}(& a           & ) = \{a\}
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \mathcal{L}(& G\cdot D & ) = \mathcal{L}(G) \times \mathcal{L}(D)\text{\footnotemark}\\
-        \mathcal{L}(& G\vee  D & ) = \mathcal{L}(G) \cup   \mathcal{L}(D)\\
-        \mathcal{L}(& G\land D & ) = \mathcal{L}(G) \cap   \mathcal{L}(D)
+        \mathcal{L}(& x\cdot z & ) = \mathcal{L}(x) \times \mathcal{L}(z)\text{\footnotemark}\\
+        \mathcal{L}(& x\vee  z & ) = \mathcal{L}(x) \cup   \mathcal{L}(z)\\
+        \mathcal{L}(& x\land z & ) = \mathcal{L}(x) \cap   \mathcal{L}(z)
       \end{eqnarray*}
     \end{multicols}
-    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(G) \land b \in \mathcal{L}(D) \}$ to be more precise.}
+    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \}$ to be more precise, however we make no distinction.}
   \end{definition}
 
   Brzozowski introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
@@ -103,50 +103,52 @@
         \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
         \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
         \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-        \phantom{--}\partial_a(& G\cdot D    &) = (\partial_a G)\cdot D \vee \delta(G)\cdot\partial_a D \\
-        \phantom{--}\partial_a(& G\vee  D    &) =  \partial_a G \vee  \partial_a D                       \\
-        \phantom{--}\partial_a(& G\land D    &) =  \partial_a G \land \partial_a D
+        \phantom{--}\partial_a(& x\cdot z    &) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+        \phantom{--}\partial_a(& x\vee  z    &) =  \partial_a x \vee  \partial_a z                       \\
+        \phantom{--}\partial_a(& x\land z    &) =  \partial_a x \land \partial_a z
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
         \delta(& \varnothing &) = \varnothing                                      \\
         \delta(& \varepsilon &) = \varepsilon                                      \\
         \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-        \delta(& G\cdot D    &) = \delta(G) \land \delta(D)                        \\
-        \delta(& G\vee  D    &) = \delta(G) \vee  \delta(D)                        \\
-        \delta(& G\land D    &) = \delta(G) \land \delta(D)
+        \delta(& x\cdot z    &) = \delta(x) \land \delta(z)                        \\
+        \delta(& x\vee  z    &) = \delta(x) \vee  \delta(z)                        \\
+        \delta(& x\land z    &) = \delta(x) \land \delta(z)
       \end{eqnarray*}
     \end{multicols}
   \end{definition}
 
-  Primarily, this gadget was designed to handle membership, for which purpose it has received considerable attention in the parsing literature:
+  Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years:
 
   \begin{theorem}[Recognition]
-    For any regex \(R\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(R) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma R)\), where:
+    For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
 
     \[
-      \partial_\sigma (R): RE \rightarrow RE = \begin{cases}R &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a R) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
+      \partial_\sigma (e): E \rightarrow E = \begin{cases}e &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a e) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
     \]
   \end{theorem}
 
-  It can also be used, however, to decode witnesses. We will define this process in two steps:
+  It can also be used, however, to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
 
   \begin{theorem}[Generation]
-    For any nonempty $(\varepsilon, \land)$-free regex, \(R\), to witness $\sigma \in \mathcal{L}(R)$:\\
+    For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
 
-    $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
-     \{R\} &\text{ if } R \in \Sigma \\
-     \texttt{follow}(G) &\text{ if } R = G \cdot D\\
-     \texttt{follow}(G)\cup\texttt{follow}(D) &\text{ if } R = G \lor D
+    $\texttt{follow}(e):E \rightarrow 2^\Sigma$ = \begin{cases}
+     \{e\} &\text{ if } e \in \Sigma \\
+     \texttt{follow}(x) &\text{ if } e = x \cdot z\\
+     \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
     \end{cases}\\\\
 
-    $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
-     R &\text{ if } R \in \Sigma \\
-     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = G \cdot D\\
-     \texttt{choose}(R' \sim \{G, D\}) &\text{ if } R = G \lor D
+    $\texttt{choose}(e):E \rightarrow \Sigma^+$ = \begin{cases}
+     e &\text{ if } e \in \Sigma \\
+     \big(s \stackrel{\$}{\leftarrow} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
+     \texttt{choose}(e' \stackrel{\$}{\leftarrow} \{x, z\}) &\text{ if } e = x \lor z
     \end{cases}
   \end{theorem}
 
-  \section{Language intersection}
+Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
+
+\subsection{Language intersection}
 
   \begin{theorem}[Bar-Hillel, 1961]
     For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
@@ -175,7 +177,7 @@
     \end{prooftree}
   \end{definition}
 
-  However most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is clearly excessive.
+  However most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is excessive. We will instead proceed by constructing a parse chart that represents the intersection.
 
   \begin{theorem}%[Considine, 2025]
     For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
@@ -191,7 +193,7 @@
       \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
     \end{enumerate}
 
-    \noindent This decomposition suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
+    \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
     \begin{align}
       M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
@@ -204,7 +206,7 @@
       [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
     \end{align}
 
-    \noindent By slight abuse of notation\footnote{Traditionally, there is a $\frac{1}{k!}$ factor.}, we will redefine the matrix exponential over this domain as:
+    \noindent By slight abuse of notation\footnote{Traditionally, there is a $\frac{1}{k!}$ factor to suppress exploding entries.}, we will redefine the matrix exponential over this domain as:
 
     \begin{align}
       \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
@@ -228,25 +230,25 @@
     \noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}(S_\cap)$.
   \end{proof}
 
-  \section{Combinatorics}
+  \subsection{Combinatorics}
 
-  To enumerate, we first need $|\mathcal{L}(R)|$, which is denoted $|R|$ for brevity.
+  To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
 
   \begin{definition}[Cardinality]
-    $|R|: RE \rightarrow \mathbb{N} =$ \begin{cases}
+    $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
       1  & \text{if } R \in \Sigma \\
-      S \times T  & \text{if } R = S \cdot T \\
-      S + T  & \text{if } R = S \vee T
+      x \times z  & \text{if } e = x \cdot z \\
+      x + z  & \text{if } e = x \vee z
     \end{cases}\\
   \end{definition}
 
   \begin{theorem}[Enumeration]
     To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
-    $\texttt{enum}(R, n): RE \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
-         R &\text{if } R \in \Sigma \\
-         \texttt{enum}\big(S, \lfloor \frac{n}{|T|} \rfloor\big) \cdot \texttt{enum}\big(T,\, n \bmod |T|\big)  &\text{if } R = S \cdot T \\
-         \texttt{enum}\big((S, T)_{\min(1, \lfloor\frac{n}{|S|}\rfloor)}, n-|S|\min(1, \lfloor\frac{n}{|S|}\rfloor)\big) &\text{if } R = S \vee T
+    $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
+         e &\text{if } R \in \Sigma \\
+         \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
+         \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
     \end{cases}\\\\
   \end{theorem}
 
