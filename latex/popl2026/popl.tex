@@ -48,7 +48,7 @@
   \title{Syntax Repair as Language Intersection}
   %
   \begin{abstract}
-    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of error corretion under a finite number of edits, which we solve by enumerating a language and ranking it by probability. To do this, we adapt the Bar-Hillel construction from formal language theory, guaranteeing the enumerated set is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+    We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of error corretion under a finite number of edits, which we solve by enumerating a language and ranking it by probability. To do this, we adapt the Bar-Hillel construction from formal language theory, guaranteeing the enumerated set is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
     \keywords{Error correction \and CFL reachability \and Language games.}
   \end{abstract}
 
@@ -62,7 +62,7 @@
 
   \section{Introduction}
 
-  During programming, one often encounters scenarios where the editor enters an invalid state. Programmers must spend some time to localize and repair the error before proceeding. We attempt to solve this problem automatically.
+  During programming, one inevitably encounters a certain scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed expression. In such cases, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which provably includes the true repair, assuming that repair differs by no more than a few edits.
 
   \section{Background}
 
@@ -84,12 +84,12 @@
         \mathcal{L}(& a           & ) = \{a\}
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \mathcal{L}(& S\cdot T & ) = \mathcal{L}(S) \times \mathcal{L}(T)\text{\footnotemark}\\
-        \mathcal{L}(& S\vee  T & ) = \mathcal{L}(S) \cup \mathcal{L}(T)\\
-        \mathcal{L}(& S\land T & ) = \mathcal{L}(S) \cap \mathcal{L}(T)
+        \mathcal{L}(& G\cdot D & ) = \mathcal{L}(G) \times \mathcal{L}(D)\text{\footnotemark}\\
+        \mathcal{L}(& G\vee  D & ) = \mathcal{L}(G) \cup   \mathcal{L}(D)\\
+        \mathcal{L}(& G\land D & ) = \mathcal{L}(G) \cap   \mathcal{L}(D)
       \end{eqnarray*}
     \end{multicols}
-    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(S) \land b \in \mathcal{L}(T) \}$ to be more precise.}
+    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(G) \land b \in \mathcal{L}(D) \}$ to be more precise.}
   \end{definition}
 
   Brzozowski introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
@@ -103,17 +103,17 @@
         \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
         \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
         \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-        \phantom{--}\partial_a(& S\cdot T    &) = (\partial_a S)\cdot T \vee \delta(S)\cdot\partial_a T \\
-        \phantom{--}\partial_a(& S\vee  T    &) = \partial_a S \vee  \partial_a T                        \\
-        \phantom{--}\partial_a(& S\land T    &) = \partial_a S \land \partial_a T
+        \phantom{--}\partial_a(& G\cdot D    &) = (\partial_a G)\cdot D \vee \delta(G)\cdot\partial_a D \\
+        \phantom{--}\partial_a(& G\vee  D    &) =  \partial_a G \vee  \partial_a D                       \\
+        \phantom{--}\partial_a(& G\land D    &) =  \partial_a G \land \partial_a D
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
         \delta(& \varnothing &) = \varnothing                                      \\
         \delta(& \varepsilon &) = \varepsilon                                      \\
         \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-        \delta(& S\cdot T    &) = \delta(S) \land \delta(T)                        \\
-        \delta(& S\vee T     &) = \delta(S) \vee  \delta(T)                        \\
-        \delta(& S\land T    &) = \delta(S) \land \delta(T)
+        \delta(& G\cdot D    &) = \delta(G) \land \delta(D)                        \\
+        \delta(& G\vee  D    &) = \delta(G) \vee  \delta(D)                        \\
+        \delta(& G\land D    &) = \delta(G) \land \delta(D)
       \end{eqnarray*}
     \end{multicols}
   \end{definition}
@@ -135,14 +135,14 @@
 
     $\texttt{follow}(R):RE \rightarrow 2^\Sigma$ = \begin{cases}
      \{R\} &\text{ if } R \in \Sigma \\
-     \texttt{follow}(S) &\text{ if } R = S \cdot T\\
-     \texttt{follow}(S)\cup\texttt{follow}(T) &\text{ if } R = S \lor T
+     \texttt{follow}(G) &\text{ if } R = G \cdot D\\
+     \texttt{follow}(G)\cup\texttt{follow}(D) &\text{ if } R = G \lor D
     \end{cases}\\\\
 
     $\texttt{choose}(R):RE \rightarrow \Sigma^+$ = \begin{cases}
      R &\text{ if } R \in \Sigma \\
-     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = S \cdot T\\
-     \texttt{choose}(R' \sim \{S, T\}) &\text{ if } R = S \lor T
+     \big(s \sim \texttt{follow}(R)\big)\cdot \texttt{choose}(\partial_sR) &\text{ if } R = G \cdot D\\
+     \texttt{choose}(R' \sim \{G, D\}) &\text{ if } R = G \lor D
     \end{cases}
   \end{theorem}
 
