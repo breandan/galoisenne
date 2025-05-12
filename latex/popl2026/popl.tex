@@ -62,7 +62,7 @@
 
   \section{Introduction}
 
-  During programming, one invariably encounters a certain scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
+  During programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
 
   \section{Background}
 
@@ -177,7 +177,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     \end{prooftree}
   \end{definition}
 
-  However most synthetic productions in $P_\cap$ will be non-generating or unreachable. This naive method will construct a synthetic production for state pairs which are not even reachable, which is excessive. We will instead proceed by constructing a parse chart that represents the intersection.
+  However most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. We will instead proceed by constructing a parse chart that represents the intersection.
 
   \begin{theorem}%[Considine, 2025]
     For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
@@ -193,13 +193,13 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
       \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
     \end{enumerate}
 
-    \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $RE^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
+    \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
     \begin{align}
       M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
     \end{align}
 
-    \noindent The algebraic operations $\oplus, \otimes: RE^{2|V|} \rightarrow RE^{|V|}$ will be defined elementwise:
+    \noindent The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
 
     \begin{align}
       [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
@@ -251,5 +251,41 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
          \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
     \end{cases}\\\\
   \end{theorem}
+
+\section{Measuring the language intersection}
+
+We will now attempt to put a probability distribution over the language intersection. We will start with a few cursory but illumative approaches, then proceed towards a more refined solution.
+
+\subsection{Exact enumeration}
+
+A brute force solution would be to generate every path and rank every one by its probability. It should be obvious why is unviable due its worst case complexity, but bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
+
+\subsection{Mode collapse}
+
+Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
+
+$$
+S \rightarrow A\:B \: (0.9999) \hspace{20pt} S \rightarrow C\:C \: (0.0001)
+$$
+
+$$
+A \rightarrow a \: (1) \hspace{20pt} B  \rightarrow b \: (1) \hspace{20pt} C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)
+$$\\
+
+TDA sampling will almost always generate the string $a b$, but most of the language is concealed in the hidden branch, $S \rightarrow C C$. Although contrived example, it illustrates precisely why TDA sampling is unviable: we want a sampler that matches the true distribution over the finite CFL, not the PCFG's local approximation thereof.
+
+\subsection{Ambiguity}
+
+Another approach would be to sample trees and rerank them by their PCFG score. More pernicious is the issue of ambiguity. Since the CFG can be ambiguous, this causes certain repairs to be overrepresented, resulting in a subtle bias. Consider for example,
+
+\begin{lemma}\label{lemma:ambiguity}
+If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
+\end{lemma}
+
+\begin{proof}
+  Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+\end{proof}
+
+We would like the underlying sample space to be a proper set, \textit{not} a multiset.
 
 \end{document}
