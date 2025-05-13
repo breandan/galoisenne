@@ -236,9 +236,33 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
   \section{Examples}
 
-  In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of CFL-FSA intersection where the automaton which accepts a single word. Second, completion can be seen as a case of intersection where the hole locations are known, but can be filled. Finally, we will consider the case of repair, in which case we will need to intersect with a langauge representing all possible edits up to a fixed bound.
+  In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of language intersection with an automaton accepting a single word. Second, completion can be seen as a case of intersection with terminal wildcards in known locations. Finally, we will consider syntax repair, in which case we will intersect a langauge representing all possible edits to determine the location(s) and fill them with appropriate terminals.
 
-  \subsection{Parsing as intersection}
+  \subsection{Recognition as intersection}
+
+  In the case of ordinary parsing, the automaton accepts a single word, the word to be parsed:
+
+\begin{figure}[H]
+  \resizebox{0.5\textwidth}{!}{
+    \begin{tikzpicture}[
+  %->, % makes the edges directed
+      >=stealth',
+      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+  %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+      initial text=$ $, % sets the text that appears on the start arrow
+    ]
+      \node[state, initial]         (00) {$q_{0,0}$};
+      \node[state, right of=00]     (10) {$q_{1,0}$};
+      \node[state, right of=10, draw=none]     (20) {$\ldots$};
+      \node[state, accepting, right of=20] (30) {$q_{n,0}$};
+
+      \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+      \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+      \draw [->] (20) edge[below] node{$\sigma_n$} (30);
+    \end{tikzpicture}
+  }
+  \end{figure}
+
   Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
   \begin{align}
@@ -255,14 +279,14 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
                   &              &             &        & \varnothing  \\
                   &              &             &        & \hat\sigma_n \\
       \varnothing & \Cdots       &             &        & \varnothing
-    \end{pNiceMatrix} &\Rightarrow
+    \end{pNiceMatrix} & \Rightarrow
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \varnothing  \\
       \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
                   &              &             &        & \Lambda      \\
                   &              &             &        & \hat\sigma_n \\
       \varnothing & \Cdots       &             &        & \varnothing
-    \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
+    \end{pNiceMatrix} & \Rightarrow \ldots \Rightarrow M_\infty =
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
       \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \Lambda^*_\sigma \\
       \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots           \\
@@ -281,6 +305,33 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
   \begin{definition}[Porous completion]
     Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
+
+  Here the automaton takes a similar shape, but can have multiple arcs between subsequent states:
+
+  \begin{figure}[H]
+    \resizebox{0.5\textwidth}{!}{
+      \begin{tikzpicture}[
+      %->, % makes the edges directed
+        >=stealth',
+        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+      %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+        initial text=$ $, % sets the text that appears on the start arrow
+      ]
+        \node[state, initial]                (00) {$q_{0,0}$};
+        \node[state, right of=00]            (10) {$q_{1,0}$};
+        \node[state, right of=10]            (20) {$q_{2,0}$};
+        \node[state, right of=20]            (30) {$q_{3,0}$};
+
+        \draw [->] (00) edge[below]             node{$\sigma_1$} (10);
+        \draw [->] (10) edge[below]             node{$\ldots$}   (20);
+        \draw [->] (10) edge[below, bend left]  node{$\Sigma_1$} (20);
+        \draw [->] (10) edge[below, bend right] node{$\Sigma_n$} (20);
+        \draw [->] (20) edge[below]             node{$\ldots$}   (30);
+        \draw [->] (20) edge[below, bend left]  node{$\Sigma_1$} (30);
+        \draw [->] (20) edge[below, bend right] node{$\Sigma_n$} (30);
+      \end{tikzpicture}
+    }
+  \end{figure}
 
   Let us consider an example with two holes, $\sigma = 1$ \_ \_, and the context-free grammar being $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This grammar will first be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the powerset algebra we just defined, the matrix fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column below:\vspace{0.3cm}
 
