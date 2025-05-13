@@ -206,8 +206,8 @@
     \draw [->] (30) edge[bend left=10, left] node[shift={(-0.1cm,0cm)}]{\tiny{$\texttt{(}$}} (31);
     \draw [->] (30) edge[bend right=10, right] node{\tiny{$\texttt{)}$}} (31);
 
-    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (21);
-    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$}    (31);
+    \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$} (21);
+    \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.4cm,0.9cm)}]{$\texttt{)}$} (31);
     \node[align=center, yshift=2em, xshift=-1cm] (title) at (current bounding box.north) {Original Levenshtein automaton};
   \end{tikzpicture}
   }
@@ -267,11 +267,11 @@ So far, the intersection grammar now contains the following productions:\vspace{
 
 \begin{table}[H]
   \begin{tabular}{cc|ccccccccccccc}
-    $\sqrt{\phantom{S}}$ & & & & & & $\hat\uparrow$ & \\\hline
+   $\sqrt{\phantom{S}}$ & & & & & & $\hat\uparrow$ & \\\hline
     $S \rightarrow q_{00}Sq_{20}$ & & & $q_{00}Rq_{01} \rightarrow \texttt{)}$ & & $q_{10}Lq_{11} \rightarrow \texttt{(}$ & & $q_{20}Rq_{21} \rightarrow \texttt{)}$ & & $q_{01}Lq_{11} \rightarrow \texttt{(}$ \\
     $S \rightarrow q_{00}Sq_{30}$ & & & $q_{00}Rq_{11} \rightarrow \texttt{)}$ & & $q_{10}Lq_{21} \rightarrow \texttt{(}$ & & $q_{20}Rq_{31} \rightarrow \texttt{)}$ & & $q_{11}Rq_{21} \rightarrow \texttt{)}$ \\
     $S \rightarrow q_{00}Sq_{31}$ & & & $q_{00}Lq_{10} \rightarrow \texttt{(}$ & & $q_{10}Rq_{20} \rightarrow \texttt{)}$ & & $q_{20}Lq_{30} \rightarrow \texttt{(}$ & & $q_{21}Rq_{31} \rightarrow \texttt{)}$ \\
-                                  & & & $q_{30}Lq_{31} \rightarrow \texttt{(}$ & & $q_{10}Rq_{31} \rightarrow \texttt{)}$ & & $q_{30}Rq_{31} \rightarrow \texttt{)}$ & & $q_{00}Rq_{21} \rightarrow \texttt{)}$
+                        & & & $q_{30}Lq_{31} \rightarrow \texttt{(}$ & & $q_{10}Rq_{31} \rightarrow \texttt{)}$ & & $q_{30}Rq_{31} \rightarrow \texttt{)}$ & & $q_{00}Rq_{21} \rightarrow \texttt{)}$
   \end{tabular}
 \end{table}\vspace{-8pt}
 
@@ -767,25 +767,25 @@ First, we generate a synthetic grammar representing the intersection between the
   \begin{align*}
     M_0=
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing \\
-      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots\\
-                  &              &             &        & \varnothing\\
+      \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing  \\
+      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
+                  &              &             &        & \varnothing  \\
                   &              &             &        & \hat\sigma_n \\
       \varnothing & \Cdots       &             &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \varnothing \\
-      \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
-                  &              &         &        & \Lambda\\
-                  &              &         &        & \hat\sigma_n \\
-      \varnothing & \Cdots       &         &        & \varnothing
+      \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \varnothing  \\
+      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
+                  &              &             &        & \Lambda      \\
+                  &              &             &        & \hat\sigma_n \\
+      \varnothing & \Cdots       &             &        & \varnothing
     \end{pNiceMatrix} &\Rightarrow \ldots \Rightarrow M_\infty =
     \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \Lambda & \Cdots & \Lambda^*_\sigma\\
-      \Vdots      & \Ddots       & \Ddots  & \Ddots & \Vdots\\
-                  &              &         &        & \Lambda\\
-                  &              &         &        & \hat\sigma_n \\
-      \varnothing & \Cdots       &         &        & \varnothing
+      \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \Lambda^*_\sigma \\
+      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots           \\
+                  &              &             &        & \Lambda          \\
+                  &              &             &        & \hat\sigma_n     \\
+      \varnothing & \Cdots       &             &        & \varnothing
     \end{pNiceMatrix}
   \end{align*}
 
@@ -805,53 +805,53 @@ First, we generate a synthetic grammar representing the intersection between the
     \hline
     & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
     $M_0$ & \begin{pmatrix}
-              \phantom{V} & \tiny{\{N\}} &         &             \\
-              &              & \{N,O\} &             \\
-              &              &         & \{N,O\} \\
-              &              &         &
+              \phantom{V} & \tiny{\{N\}} &              &              \\
+                          &              & \{N,O\}      &              \\
+                          &              &              & \{N,O\}      \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & \ws\bs\ws\ws &              &              \\
-                      &              & \ws\bs\bs\ws &              \\
-                      &              &              & \ws\bs\bs\ws \\
-                      &              &              &
+              \phantom{V} & \ws\bs\ws\ws &              &              \\
+                          &              & \ws\bs\bs\ws &              \\
+                          &              &              & \ws\bs\bs\ws \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & V_{0, 1} &          &          \\
-                      &          & V_{1, 2} &          \\
-                      &          &          & V_{2, 3} \\
-                      &          &          &
+              \phantom{V} & V_{0, 1}     &              &              \\
+                          &              & V_{1, 2}     &              \\
+                          &              &              & V_{2, 3}     \\
+                          &              &              &
     \end{pmatrix} \\\hline
     $M_1$ & \begin{pmatrix}
-              \phantom{V} & \tiny{\{N\}} & \varnothing &         \\
-              &              & \{N,O\}     & \{L\}   \\
-              &              &             & \{N,O\} \\
-              &              &             &
+              \phantom{V} & \tiny{\{N\}} & \varnothing  &              \\
+                          &              & \{N,O\}      & \{L\}        \\
+                          &              &              & \{N,O\}      \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
-                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                      &              &              & \ws\bs\bs\ws \\
-                      &              &              &
+              \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
+                          &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                          &              &              & \ws\bs\bs\ws \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & V_{0, 1} & V_{0, 2} &          \\
-                      &          & V_{1, 2} & V_{1, 3} \\
-                      &          &          & V_{2, 3} \\
-                      &          &          &
+              \phantom{V} & V_{0, 1}     & V_{0, 2}     &              \\
+                          &              & V_{1, 2}     & V_{1, 3}     \\
+                          &              &              & V_{2, 3}     \\
+                          &              &              &
     \end{pmatrix} \\\hline
     \begin{tabular}{@{}c@{}}$M_2$\\$=$\\$M_\infty$\end{tabular} & \begin{pmatrix}
-                   \phantom{V} & \tiny{\{N\}} & \varnothing & \{S\}   \\
-                   &              & \{N,O\}     & \{L\}   \\
-                   &              &             & \{N,O\} \\
-                   &              &             &
+              \phantom{V} & \tiny{\{N\}} & \varnothing  & \{S\}        \\
+                          &              & \{N,O\}      & \{L\}        \\
+                          &              &              & \{N,O\}      \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
-                      &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                      &              &              & \ws\bs\bs\ws \\
-                      &              &              &
+              \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
+                          &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
+                          &              &              & \ws\bs\bs\ws \\
+                          &              &              &
     \end{pmatrix} & \begin{pmatrix}
-                      \phantom{V} & V_{0, 1} & V_{0, 2} & V_{0, 3} \\
-                      &          & V_{1, 2} & V_{1, 3} \\
-                      &          &          & V_{2, 3} \\
-                      &          &          &
-    \end{pmatrix}\\\hline
+              \phantom{V} & V_{0, 1}     & V_{0, 2}     & V_{0, 3}     \\
+                          &              & V_{1, 2}     & V_{1, 3}     \\
+                          &              &              & V_{2, 3}     \\
+                          &              &              &
+    \end{pmatrix} \\\hline
   \end{tabular}\\
   }
   \end{small}
