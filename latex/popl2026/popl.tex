@@ -36,19 +36,19 @@
 
 \input{preamble}
 
-\usepackage{draftwatermark}
-\SetWatermarkLightness{0.75}
-\SetWatermarkText{DRAFT}
-\makeatletter
-\let\@authorsaddresses\@empty
-\makeatother
+%\usepackage{draftwatermark}
+%\SetWatermarkLightness{0.75}
+%\SetWatermarkText{DRAFT}
+%\makeatletter
+%\let\@authorsaddresses\@empty
+%\makeatother
 
 \begin{document}
 %
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing the language is sound and complete with respect to the programming langauge grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming langauge's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
   \keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
@@ -240,7 +240,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
   \subsection{Recognition as intersection}
 
-  In the case of ordinary parsing, the automaton accepts a single word, the word to be parsed:
+  In the case of ordinary CFL recognition, the automaton accepts just a single word:
 
 \begin{figure}[H]
   \resizebox{0.5\textwidth}{!}{
@@ -300,13 +300,13 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
   \subsection{Completion as intersection}
 
-  We can also consider a more general automaton for completing a string with holes, representing missing terminals in known locations. The same procedure can be lifted to the domain of strings containing free variables, which we call the \textit{porous completion problem}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
+  We can also consider a more general automaton for completing a string with holes, representing edits in fixed locations which can be filled by any terminal, which we call \textit{completion}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
 
   \begin{definition}[Porous completion]
     Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
-  Here the automaton takes a similar shape, but can have multiple arcs between subsequent states:
+  Here, the FSA takes a similar shape but can have multiple arcs between subsequent states, e.g.:
 
   \begin{figure}[H]
     \resizebox{0.5\textwidth}{!}{
@@ -320,7 +320,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
         \node[state, initial]                (00) {$q_{0,0}$};
         \node[state, right of=00]            (10) {$q_{1,0}$};
         \node[state, right of=10]            (20) {$q_{2,0}$};
-        \node[state, right of=20]            (30) {$q_{3,0}$};
+        \node[state, accepting, right of=20] (30) {$q_{3,0}$};
 
         \draw [->] (00) edge[below]             node{$\sigma_1$} (10);
         \draw [->] (10) edge[below]             node{$\ldots$}   (20);
@@ -629,7 +629,18 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
   \end{prooftree}
 
-  Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the size of the construction to follow, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
+  Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the representation size, but does not affect the underlying semantics. Thus, it is essential to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-0.3cm}
+  \resizebox{0.4\textwidth}{!}{%
+    \input{partial_order}
+  }
+  \caption{Pairing function over $L(\sigma: \Sigma^5, 3)$.}\label{fig:pairing_fun}
+  \vspace{-0.5cm}
+\end{wrapfigure}
+
+Now, we need a partial order over the automata states. One such ordering is to simply use the Cantor pairing function and enumerate the states from least to greatest.\clearpage
 
 \section{Measuring the language intersection}
 
@@ -643,9 +654,9 @@ A brute force solution would be to generate every path and rank every one by its
 
   \begin{definition}[Cardinality]
     $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
-      1  & \text{if } R \in \Sigma \\
+      1           & \text{if } R \in \Sigma \\
       x \times z  & \text{if } e = x \cdot z \\
-      x + z  & \text{if } e = x \vee z
+      x + z       & \text{if } e = x \vee z
     \end{cases}\\
   \end{definition}
 
