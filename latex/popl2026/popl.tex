@@ -49,7 +49,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming langauge's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
   \keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
@@ -77,7 +77,6 @@
 
   Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-
   There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
   \begin{definition}[Generalized Regex]
@@ -87,6 +86,7 @@
     \]
 
     Semantically, we can interpret these expressions as denoting regular languages:
+
     \setlength{\columnseprule}{0pt}
     \setlength{\columnsep}{-3cm}
     \begin{multicols}{2}
@@ -104,7 +104,7 @@
     \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \}$ to be more precise, however we make no distinction.}
   \end{definition}
 
-  Brzozowski introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
+  Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
 
   \begin{definition}[Brzozowski, 1964]
     To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
@@ -140,18 +140,18 @@
     \]
   \end{theorem}
 
-  It can also be used, however, to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
+  Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
 
   \begin{theorem}[Generation]
     For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
 
-    $\texttt{follow}(e):E \rightarrow 2^\Sigma$ = \begin{cases}
+    $\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
      \{e\} &\text{ if } e \in \Sigma \\
      \texttt{follow}(x) &\text{ if } e = x \cdot z\\
      \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
     \end{cases}\\\\
 
-    $\texttt{choose}(e):E \rightarrow \Sigma^+$ = \begin{cases}
+    $\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
      e &\text{ if } e \in \Sigma \\
      \big(s \stackrel{\$}{\leftarrow} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
      \texttt{choose}(e' \stackrel{\$}{\leftarrow} \{x, z\}) &\text{ if } e = x \lor z
@@ -222,7 +222,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
       [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
     \end{align}
 
-    \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, however this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
+    \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
 
     \begin{align}
       \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
@@ -231,24 +231,24 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
 
     \begin{align}
-      S(2n) \;=\; \begin{cases}
+      T(2n) \;=\; \begin{cases}
          M_0, & \text{if } n = 1,\\[6pt]
-         S(n) + S(n)^2 & \text{otherwise}.
+         T(n) + T(n)^2 & \text{otherwise}.
       \end{cases}
     \end{align}
 
-    \noindent Therefor, we only need a maximum of $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally,
+    \noindent Therefor, we only need a maximum of $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
     \begin{align}
       S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
     \end{align}
 
-    \noindent To decode a witness in case of non-emptiness, we simply $\texttt{choose}(S_\cap)$.
+    \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$.
   \end{proof}\clearpage
 
   \section{Examples}
 
-  In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of language intersection with an automaton accepting a single word. Second, completion can be seen as a case of intersection with terminal wildcards in known locations. Thirdly, we will consider syntax repair, in which case we will intersect a langauge representing all possible word edits to determine the location(s) and fill them with appropriate terminals.
+  In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of language intersection with an automaton accepting a single word. Second, completion can be seen as a case of intersection with terminal wildcards in known locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths to determine the edit location(s) and fill them with appropriate terminals.
 
   \subsection{Recognition as intersection}
 
@@ -256,13 +256,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
 \begin{figure}[H]
   \resizebox{0.5\textwidth}{!}{
-    \begin{tikzpicture}[
-  %->, % makes the edges directed
-      >=stealth',
-      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
-  %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
-      initial text=$ $, % sets the text that appears on the start arrow
-    ]
+    \begin{tikzpicture}[>=stealth', node distance=2.5cm, initial text=$ $]
       \node[state, initial]         (00) {$q_{0,0}$};
       \node[state, right of=00]     (10) {$q_{1,0}$};
       \node[state, right of=10, draw=none]     (20) {$\ldots$};
@@ -281,7 +275,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
   \end{align}
 
-  \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. The fixedpoint iteration proceeds as follows:\vspace{-10pt}
+  \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. Omitting the exponentiation-by-squaring detail, the ordinary fixedpoint iteration simply fills successive diagonals:\vspace{-10pt}
 
   \begin{align*}
     M_0=
@@ -308,7 +302,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     \end{pNiceMatrix}
   \end{align*}
 
-  Once obtained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring}.
+  Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
 
   \subsection{Completion as intersection}
 
@@ -322,13 +316,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
   \begin{figure}[H]
     \resizebox{0.5\textwidth}{!}{
-      \begin{tikzpicture}[
-      %->, % makes the edges directed
-        >=stealth',
-        node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
-      %  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
-        initial text=$ $, % sets the text that appears on the start arrow
-      ]
+      \begin{tikzpicture}[>=stealth', node distance=2.5cm, initial text=$ $]
         \node[state, initial]                (00) {$q_{0,0}$};
         \node[state, right of=00]            (10) {$q_{1,0}$};
         \node[state, right of=10]            (20) {$q_{2,0}$};
@@ -649,10 +637,14 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
     \input{partial_order}
   }
   \caption{Pairing function over $L(\sigma: \Sigma^4, 3)$.}\label{fig:pairing_fun}
-  \vspace{-0.5cm}
+  \vspace{-0.3cm}
 \end{wrapfigure}
 
-Now, we need to order the automata states by increasing shortest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix using a max-plus semiring. While some form of sorting is unavoidable for arbitrary NFAs, if we assume our structure is a Levenshtein automaton, we can simply enumerate the state space by increasing Manhattan distance from the origin using, e.g., the Cantor pairing function to construct a valid ordering.\clearpage
+Now, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix using a max-plus semiring. While some form of sorting is unavoidable for arbitrary NFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate the state space by increasing Manhattan distance from the origin using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal in the parse tree.
+
+Nonzero expression vectors of the initial matrix, $M_0$, are depicted below: (TODO)
+
+\clearpage
 
 \section{Measuring the language intersection}
 
