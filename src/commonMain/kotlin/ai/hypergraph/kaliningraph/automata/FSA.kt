@@ -372,3 +372,44 @@ fun Σᐩ.parseFSA(): FSA {
   val final = Q.filter { it.π1 == "DONE" }.map { it.π3 }.toSet()
   return FSA(Q.filter { it.π1 !in setOf("INIT", "DONE") }.toSet(), init, final)
 }
+
+const val NEG_LITERAL = 0x40000000u //=1.shl(30)
+// Sparse index nonzero entries of the M_0 parse chart
+fun FSA.byteFormat(cfg: CFG): IntArray { // TODO: kernelize
+  val t0 = TimeSource.Monotonic.markNow()
+  val bindex = cfg.bindex
+  val terminalLists = cfg.terminalLists
+
+  // 0 and 1 are reserved for (0) no parse exists and (1) parse exists, but an internal nonterminal node
+  // Other byte values are used to denote the presence (+) or absence (-) of a leaf terminal
+  fun StrPred.predByte(A: Int): Int = (
+      if (arg == "[.*]" || (arg.startsWith("[!=]") && arg.drop(4) !in terminalLists[A])) Int.MAX_VALUE - 1 // All possible terminals
+      else if (arg.startsWith("[!=]")) (NEG_LITERAL.toInt() + (terminalLists[A].indexOf(arg.drop(4)) + 1).shl(1)) // Represent negation using sign bit
+      else (terminalLists[A].indexOf(arg) + 1).shl(1)
+      )
+
+  fun buildSparseChart(cfg: CFG, nominalForm: NOM, stateMap: Map<String, Int>, bindex: Bindex<String>): IntArray {
+    val rowCount = cfg.unitProductions.sumOf { (_, σ) -> nominalForm.flattenedTriples.count { arc -> arc.second(σ) } }
+
+    val out = IntArray(rowCount * 4)
+
+    var p = 0
+    for ((A, σ) in cfg.unitProductions) {
+      val Aidx = bindex[A]
+      for ((q0, sp, q1) in nominalForm.flattenedTriples) {
+        if (!sp(σ)) continue
+
+        out[p++] = stateMap[q0]!!          // q0
+        out[p++] = stateMap[q1]!!          // q1
+        out[p++] = Aidx                    // non‑terminal
+        out[p++] = sp.predByte(Aidx)   // terminal byte
+      }
+    }
+    return out
+  }
+
+  val sparseChart = buildSparseChart(cfg, nominalForm, stateMap, bindex)
+  println("Byte format took: ${t0.elapsedNow()}")
+  return sparseChart
+}
+
