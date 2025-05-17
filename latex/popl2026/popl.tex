@@ -67,7 +67,7 @@
 
   \section{Background}
 
-  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^*)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^+)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
   \begin{table}[H]
     \begin{tabular}{llll}
@@ -162,9 +162,13 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
 \subsection{Language intersection}
 
+We will now define intersection in a slightly more expressive manner, which has the side effect of being more readily parallelizable. Recall every regular language is context-free. Therefor, to take the intersection between two regular languages, we can treat one as a CFL, which often admits a more compact representation. Alternatively, we can take the intersection between a truly non-regular CFL (such as a programming language syntax) and some regular language.
+
   \begin{theorem}[Bar-Hillel, 1961]
     For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
   \end{theorem}
+
+Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient construction:
 
   \begin{definition}[Salomaa, 1973]
     One could construct $G_\cap$ like so,
@@ -237,7 +241,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
       \end{cases}
     \end{align}
 
-    \noindent Therefor, we only need a maximum of $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
+    \noindent Therefor, we only need at most $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
     \begin{align}
       S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
@@ -346,7 +350,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
                           &              &              & \{N,O\}      \\
                           &              &              &
     \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & \ws\bs\ws\ws &              &              \\
+              \phantom{V} & \overset{L}{\ws}\overset{N}{\bs}\overset{O}{\ws}\overset{S}{\ws} &              &              \\
                           &              & \ws\bs\bs\ws &              \\
                           &              &              & \ws\bs\bs\ws \\
                           &              &              &
@@ -640,19 +644,120 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
   \vspace{-0.3cm}
 \end{wrapfigure}
 
-Now, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix using a max-plus semiring. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate the state space by increasing Manhattan distance from the origin using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal in the parse tree.
-
-
-\setcounter{MaxMatrixCols}{20}
+Now, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix using a max-plus semiring. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
 
 \begin{wrapfigure}{r}{0.40\textwidth}
+  \vspace{-1cm}
 \resizebox{0.40\textwidth}{!}{
   \input{adj_mat}
 }
 \caption{Convergence of a single trajectory.}\label{fig:adj_matr}
+
+\vspace{0.5cm}
+\resizebox{0.4\textwidth}{!}{
+    \begin{tikzpicture}[
+%->, % makes the edges directed
+      >=stealth',
+      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+      initial text=$ $, % sets the text that appears on the start arrow
+    ]
+      \node[state, initial]                (00) {$q_{0,0}$};
+      \node[state, right of=00]            (10) {$q_{1,0}$};
+      \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+      \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+      \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+      \node[state, right of=01]                     (11) {$q_{1,1}$};
+      \node[state, right of=11]                     (21) {$q_{2,1}$};
+      \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+      \draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
+      \draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
+      \draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
+
+      \draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
+      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
+      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
+
+      \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+      \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+
+      \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+      \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+      \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+      \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+
+
+      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+    \end{tikzpicture}
+}
+  \caption{Simple Levenshtein automaton.}\label{fig:ex_atm}
+
+  \vspace{0.3cm}
+\resizebox{0.4\textwidth}{!}{
+  \[
+    \begin{array}{c|cccccccc}
+      M_0 & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
+      q_{00}       &        &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\bs}\overset{R}{\ws} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
+      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
+%      q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+      q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+      q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+      q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+      q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws \\ [6pt]
+      q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+      q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+      q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
+    \end{array}
+  \]
+}
+
+  \caption{Initial parse chart configuration.}\label{fig:initial_pc}
+
+  \vspace{0.3cm}
+\resizebox{0.4\textwidth}{!}{
+  \hspace{-0.18cm} \[
+  \begin{array}{c|cccccccc}
+    M_\infty & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
+    q_{00}       &        &
+    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\bs}\overset{R}{\ws} &
+    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+    \overset{S}{\bs}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
+    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
+    \overset{S}{\ws}\overset{F}{\bs}\overset{L}{\ws}\overset{R}{\ws} &
+    \overset{S}{\bs}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
+%    q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
+    q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
+    q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
+    q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+    q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws \\ [6pt]
+    q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
+    q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
+    q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
+  \end{array}
+\]
+}
+
+  \caption{Final parse chart configuration.}\label{fig:final_pc}
 \end{wrapfigure}
 
 Under such an ordering, the adjacency matrix takes an upper triangular form. Nonzero expression vectors of the initial matrix, $M_0$, are depicted to the right. Each entry of this initial matrix corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language, indicating the arc predicate belonging to $M_0[r, c, v]$ accepts at least one terminal generated by the nonterminal $v$. We iterate the fixpoint procedure until convergence, which takes three steps for this particular CFG and broken string, illustrated in Fig.~\ref{fig:adj_matr}.
+
+As a concrete example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Let us assume an ordering $S, F, L, R$ on $V$, and a topological ordering on $A$ of $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $L(G')\cap L(A)$.
+
+We will depict the initial matrix in Fig.~\ref{fig:initial_pc} and its fixpoint, post convergence, in Fig.~\ref{fig:final_pc}.
+
+Since $M_\infty[q_{00}, q_{31}, 0] = \bs$, this implies that $L(A)\cap L(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we can then perform a second pass over the nonempty entries to construct regular expression vectors representing finite languages for each constituent and decode a witness using the Brzozowski derivative.
 
 \clearpage
 
