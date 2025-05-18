@@ -49,127 +49,118 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-  We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
-  \keywords{Error correction \and CFL reachability \and Language games.}
+We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+\keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
 %\titlerunning{Abbreviated paper title}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
-  \author{Breandan Considine}
-  \email{bre@ndan.co}
+\author{Breandan Considine}
+\email{bre@ndan.co}
 
-  \maketitle
+\maketitle
 
-  \section{Introduction}
+\section{Introduction}
 
-  During programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
+During programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
 
-  Prior work in syntax repair has used stochastic and deterministic methods.
+Prior work in syntax repair has used stochastic and deterministic methods.
 
-\begin{wrapfigure}{r}{0.4\textwidth}
-  \vspace{-0.2cm}
-  \input{cfl_intersect}
-  \vspace{-0.3cm}
-  \caption{CFL intersection with the local edit region of a given broken code snippet.}
-  \vspace{-0.2cm}
-\end{wrapfigure}
-
-Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language, $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 \clearpage
 
-  \section{Background}
+\section{Background}
 
-  Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^+)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^+)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
-  \begin{table}[H]
-    \begin{tabular}{llll}
-      $G = \big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow G' = \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
-    \end{tabular}
-  \end{table}\vspace{-8pt}
+\begin{table}[H]
+  \begin{tabular}{llll}
+    $G = \big\{\;S \rightarrow S\:S \mid (\:S\:) \mid (\:)\;\big\} \Longrightarrow G' = \big\{\;S\rightarrow Q\:R \mid S\:S \mid L\:R,$ & $R \rightarrow\:),$ & $L \rightarrow (,$ & $Q\rightarrow L\:S\;\big\}$
+  \end{tabular}
+\end{table}\vspace{-8pt}
 
-  Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
+Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-  There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
+There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
-  \begin{definition}[Generalized Regex]
-    Let \( e \) be an expression defined by the grammar:
-    \[
-      e \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
-    \]
+\begin{definition}[Generalized Regex]
+  Let \( e \) be an expression defined by the grammar:
+  \[
+    e \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
+  \]
 
-    Semantically, we can interpret these expressions as denoting regular languages:
+  Semantically, we can interpret these expressions as denoting regular languages:\vspace{-0.8cm}
 
-    \setlength{\columnseprule}{0pt}
-    \setlength{\columnsep}{-3cm}
-    \begin{multicols}{2}
-      \begin{eqnarray*}
-        \mathcal{L}(& \varnothing & ) = \varnothing \\
-        \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
-        \mathcal{L}(& a           & ) = \{a\}
-      \end{eqnarray*} \break\vspace{-0.45cm}
-      \begin{eqnarray*}
-        \mathcal{L}(& x\cdot z & ) = \mathcal{L}(x) \times \mathcal{L}(z)\text{\footnotemark}\\
-        \mathcal{L}(& x\vee  z & ) = \mathcal{L}(x) \cup   \mathcal{L}(z)\\
-        \mathcal{L}(& x\land z & ) = \mathcal{L}(x) \cap   \mathcal{L}(z)
-      \end{eqnarray*}
-    \end{multicols}
-    \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \}$ to be more precise, however we make no distinction.}
-  \end{definition}
+  \setlength{\columnseprule}{0pt}
+  \setlength{\columnsep}{-3cm}
+  \begin{multicols}{2}
+    \begin{eqnarray*}
+      \mathcal{L}(& \varnothing & ) = \varnothing \\
+      \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
+      \mathcal{L}(& a           & ) = \{a\}
+    \end{eqnarray*} \break\vspace{-0.45cm}
+    \begin{eqnarray*}
+      \mathcal{L}(& x\cdot z & ) = \mathcal{L}(x) \times \mathcal{L}(z)\text{\footnotemark}\\
+      \mathcal{L}(& x\vee  z & ) = \mathcal{L}(x) \cup   \mathcal{L}(z)\\
+      \mathcal{L}(& x\land z & ) = \mathcal{L}(x) \cap   \mathcal{L}(z)
+    \end{eqnarray*}
+  \end{multicols}
+  \footnotetext{Or $\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \}$ to be more precise, however we make no distinction.}
+\end{definition}\vspace{-0.2cm}
 
-  Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
+Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
 
-  \begin{definition}[Brzozowski, 1964]
-    To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
+\begin{definition}[Brzozowski, 1964]
+  To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
 
-    \vspace{-0.8cm}
-    \begin{multicols}{2}
-      \begin{eqnarray*}
-        \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
-        \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
-        \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-        \phantom{--}\partial_a(& x\cdot z    &) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
-        \phantom{--}\partial_a(& x\vee  z    &) =  \partial_a x \vee  \partial_a z                       \\
-        \phantom{--}\partial_a(& x\land z    &) =  \partial_a x \land \partial_a z
-      \end{eqnarray*} \break\vspace{-0.45cm}
-      \begin{eqnarray*}
-        \delta(& \varnothing &) = \varnothing                                      \\
-        \delta(& \varepsilon &) = \varepsilon                                      \\
-        \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-        \delta(& x\cdot z    &) = \delta(x) \land \delta(z)                        \\
-        \delta(& x\vee  z    &) = \delta(x) \vee  \delta(z)                        \\
-        \delta(& x\land z    &) = \delta(x) \land \delta(z)
-      \end{eqnarray*}
-    \end{multicols}
-  \end{definition}
+  \vspace{-0.8cm}
+  \begin{multicols}{2}
+    \begin{eqnarray*}
+      \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
+      \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
+      \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
+      \phantom{--}\partial_a(& x\cdot z    &) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+      \phantom{--}\partial_a(& x\vee  z    &) =  \partial_a x \vee  \partial_a z                       \\
+      \phantom{--}\partial_a(& x\land z    &) =  \partial_a x \land \partial_a z
+    \end{eqnarray*} \break\vspace{-0.45cm}
+    \begin{eqnarray*}
+      \delta(& \varnothing &) = \varnothing                                      \\
+      \delta(& \varepsilon &) = \varepsilon                                      \\
+      \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+      \delta(& x\cdot z    &) = \delta(x) \land \delta(z)                        \\
+      \delta(& x\vee  z    &) = \delta(x) \vee  \delta(z)                        \\
+      \delta(& x\land z    &) = \delta(x) \land \delta(z)
+    \end{eqnarray*}
+  \end{multicols}
+\end{definition}
 
-  Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years:
+Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years:
 
-  \begin{theorem}[Recognition]
-    For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
+\begin{theorem}[Recognition]
+  For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
 
-    \[
-      \partial_\sigma (e): E \rightarrow E = \begin{cases}e &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a e) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
-    \]
-  \end{theorem}
+  \[
+    \partial_\sigma (e): E \rightarrow E = \begin{cases}e &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a e) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
+  \]
+\end{theorem}
 
-  Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
+Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
 
-  \begin{theorem}[Generation]
-    For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
+\begin{theorem}[Generation]
+  For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
 
-    $\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
-     \{e\} &\text{ if } e \in \Sigma \\
-     \texttt{follow}(x) &\text{ if } e = x \cdot z\\
-     \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
-    \end{cases}\\\\
+  $\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
+   \{e\} &\text{ if } e \in \Sigma \\
+   \texttt{follow}(x) &\text{ if } e = x \cdot z\\
+   \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
+  \end{cases}\\\\
 
-    $\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
-     e &\text{ if } e \in \Sigma \\
-     \big(s \stackrel{\$}{\leftarrow} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
-     \texttt{choose}(e' \stackrel{\$}{\leftarrow} \{x, z\}) &\text{ if } e = x \lor z
-    \end{cases}
-  \end{theorem}
+  $\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
+   e &\text{ if } e \in \Sigma \\
+   \big(s \stackrel{\$}{\leftarrow} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
+   \texttt{choose}(e' \stackrel{\$}{\leftarrow} \{x, z\}) &\text{ if } e = x \lor z
+  \end{cases}
+\end{theorem}
 
 Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
@@ -177,36 +168,48 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
 We will now define intersection in a slightly more expressive manner, which has the side effect of being more readily parallelizable. Recall every regular language is context-free. Therefor, to take the intersection between two regular languages, we can treat one as a CFL, which often admits a more compact representation. Alternatively, we can take the intersection between a truly non-regular CFL (such as a programming language syntax) and some regular language.
 
-  \begin{theorem}[Bar-Hillel, 1961]
-    For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
-  \end{theorem}
+\begin{theorem}[Bar-Hillel, 1961]
+  For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+\end{theorem}
 
 Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient construction:
 
-  \begin{definition}[Salomaa, 1973]
-    One could construct $G_\cap$ like so,
+\begin{definition}[Salomaa, 1973]
+  One could construct $G_\cap$ like so,
 
-    \noindent\begin{prooftree}
-        \hskip -1em
-        \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-        \RightLabel{$\sqrt{\phantom{S}}$}
-        \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
-        \DisplayProof
-        \hskip 1em
-        \AxiomC{$(w \rightarrow a) \in P$}
-        \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
-        \RightLabel{$\uparrow$}
-        \BinaryInfC{$\big(qwr\rightarrow a\big)\in P_\cap$}
-        \DisplayProof
-        \hskip 1em
-        \AxiomC{$(w \rightarrow xz) \in P$}
-        \AxiomC{$\vphantom{(}p,q,r \in Q$}
-        \RightLabel{$\Join$}
-        \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
-    \end{prooftree}
-  \end{definition}
+  \noindent\begin{prooftree}
+      \hskip -1em
+      \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
+      \RightLabel{$\sqrt{\phantom{S}}$}
+      \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
+      \DisplayProof
+      \hskip 1em
+      \AxiomC{$(w \rightarrow a) \in P$}
+      \AxiomC{$(q\overset{a}{\rightarrow}r) \in \delta$}
+      \RightLabel{$\uparrow$}
+      \BinaryInfC{$\big(qwr\rightarrow a\big)\in P_\cap$}
+      \DisplayProof
+      \hskip 1em
+      \AxiomC{$(w \rightarrow xz) \in P$}
+      \AxiomC{$\vphantom{(}p,q,r \in Q$}
+      \RightLabel{$\Join$}
+      \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
+  \end{prooftree}
+\end{definition}
 
-  \noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.\clearpage
+\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. % We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
+
+\subsection{Mapping source code to formal languages}
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+\vspace{-1cm}
+\input{figures/cfl_intersect}
+\vspace{-0.3cm}
+\caption{CFL intersection with the local edit region of a given broken code snippet.}
+\vspace{-0.2cm}
+\end{wrapfigure}
+
+Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 
 \clearpage\section{Problem statement}\label{sec:problem}
 
@@ -224,9 +227,9 @@ As the admissible set $\ell_\cap$ is typically under-constrained, we want a proc
 \begin{definition}[Ranked repair]\label{def:ranked-repair}
 Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
 \begin{equation}
-  R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
 \end{equation}
-  % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+% On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
@@ -250,563 +253,269 @@ Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a D
 
 \section{Method}
 
-  Our method is to treat finite language intersections as matrix exponentiation.
+Our method is to treat finite language intersections as matrix exponentiation.
 
-  \begin{theorem}%[Considine, 2025]
-    For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
-  \end{theorem}
+\begin{theorem}%[Considine, 2025]
+  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
+\end{theorem}
 
-  \begin{proof}[Proof]
-    WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$.\vspace{0.3cm}
+\begin{proof}[Proof]
+  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$.\vspace{0.3cm}
 
-    \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
-    \begin{enumerate}
-      \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
-      \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
-    \end{enumerate}
+  \begin{enumerate}
+    \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
+    \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+  \end{enumerate}
 
-    \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
+  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
-    \begin{align}
-      M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
-    \end{align}
+  \begin{align}
+    M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
+  \end{align}
 
-    \noindent The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
+  \noindent The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
 
-    \begin{align}
-      [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
-      [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
-    \end{align}
+  \begin{align}
+    [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
+    [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+  \end{align}
 
-    \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
+  \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
 
-    \begin{align}
-      \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
-    \end{align}
+  \begin{align}
+    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
+  \end{align}
 
-    \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
+  \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
 
-    \begin{align}
-      T(2n) \;=\; \begin{cases}
-         M_0, & \text{if } n = 1,\\[6pt]
-         T(n) + T(n)^2 & \text{otherwise}.
-      \end{cases}
-    \end{align}
+  \begin{align}
+    T(2n) \;=\; \begin{cases}
+       M_0, & \text{if } n = 1,\\[6pt]
+       T(n) + T(n)^2 & \text{otherwise}.
+    \end{cases}
+  \end{align}
 
-    \noindent Therefor, we only need at most $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
+  \noindent Therefor, we only need at most $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
-    \begin{align}
-      S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
-    \end{align}
+  \begin{align}
+    S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
+  \end{align}
 
-    \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$.
-  \end{proof}\clearpage
+  \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$.
+\end{proof}\clearpage
 
-  \section{Examples}
+\section{Examples}
 
-  In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of language intersection with an automaton accepting a single word. Second, completion can be seen as a case of intersection with terminal wildcards in known locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths to determine the edit location(s) and fill them with appropriate terminals.
+In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of language intersection with an automaton accepting a single word. Second, completion can be seen as a case of intersection with terminal wildcards in known locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths to determine the edit location(s) and fill them with appropriate terminals.
 
-  \subsection{Recognition as intersection}
+\subsection{Recognition as intersection}
 
-  In the case of ordinary CFL recognition, the automaton accepts just a single word:
+In the case of ordinary CFL recognition, the automaton accepts just a single word:
+
+\begin{figure}[H]
+\resizebox{0.5\textwidth}{!}{
+  \begin{tikzpicture}[>=stealth', node distance=2.5cm, initial text=$ $]
+    \node[state, initial]         (00) {$q_{0,0}$};
+    \node[state, right of=00]     (10) {$q_{1,0}$};
+    \node[state, right of=10, draw=none]     (20) {$\ldots$};
+    \node[state, accepting, right of=20] (30) {$q_{n,0}$};
+
+    \draw [->] (00) edge[below] node{$\sigma_1$} (10);
+    \draw [->] (10) edge[below] node{$\sigma_2$} (20);
+    \draw [->] (20) edge[below] node{$\sigma_n$} (30);
+  \end{tikzpicture}
+}
+\end{figure}
+
+Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+
+\begin{align}
+  X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
+\end{align}
+
+\noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. Omitting the exponentiation-by-squaring detail, the ordinary fixedpoint iteration simply fills successive diagonals:\vspace{-10pt}
+
+\begin{align*}
+  M_0=
+  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing  \\
+    \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
+                &              &             &        & \varnothing  \\
+                &              &             &        & \hat\sigma_n \\
+    \varnothing & \Cdots       &             &        & \varnothing
+  \end{pNiceMatrix} & \Rightarrow
+  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \varnothing  \\
+    \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
+                &              &             &        & \Lambda      \\
+                &              &             &        & \hat\sigma_n \\
+    \varnothing & \Cdots       &             &        & \varnothing
+  \end{pNiceMatrix} & \Rightarrow \ldots \Rightarrow M_\infty =
+  \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
+    \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \Lambda^*_\sigma \\
+    \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots           \\
+                &              &             &        & \Lambda          \\
+                &              &             &        & \hat\sigma_n     \\
+    \varnothing & \Cdots       &             &        & \varnothing
+  \end{pNiceMatrix}
+\end{align*}
+
+Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
+
+\subsection{Completion as intersection}
+
+We can also consider a more general automaton for completing a string with holes, representing edits in fixed locations which can be filled by any terminal, which we call \textit{completion}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
+
+\begin{definition}[Completion]
+  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
+\end{definition}
+
+Here, the FSA takes a similar shape but can have multiple arcs between subsequent states, e.g.:
 
 \begin{figure}[H]
   \resizebox{0.5\textwidth}{!}{
     \begin{tikzpicture}[>=stealth', node distance=2.5cm, initial text=$ $]
-      \node[state, initial]         (00) {$q_{0,0}$};
-      \node[state, right of=00]     (10) {$q_{1,0}$};
-      \node[state, right of=10, draw=none]     (20) {$\ldots$};
-      \node[state, accepting, right of=20] (30) {$q_{n,0}$};
+      \node[state, initial]                (00) {$q_{0,0}$};
+      \node[state, right of=00]            (10) {$q_{1,0}$};
+      \node[state, right of=10]            (20) {$q_{2,0}$};
+      \node[state, accepting, right of=20] (30) {$q_{3,0}$};
 
-      \draw [->] (00) edge[below] node{$\sigma_1$} (10);
-      \draw [->] (10) edge[below] node{$\sigma_2$} (20);
-      \draw [->] (20) edge[below] node{$\sigma_n$} (30);
+      \draw [->] (00) edge[below]             node{$\sigma_1$} (10);
+      \draw [->] (10) edge[below]             node{$\ldots$}   (20);
+      \draw [->] (10) edge[below, bend left]  node{$\Sigma_1$} (20);
+      \draw [->] (10) edge[below, bend right] node{$\Sigma_n$} (20);
+      \draw [->] (20) edge[below]             node{$\ldots$}   (30);
+      \draw [->] (20) edge[below, bend left]  node{$\Sigma_1$} (30);
+      \draw [->] (20) edge[below, bend right] node{$\Sigma_n$} (30);
     \end{tikzpicture}
   }
-  \end{figure}
+\end{figure}
 
-  Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer $R: \mathcal{G} \rightarrow \Sigma^n \rightarrow \mathbb{B}$ for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+\noindent This corresponds to a template with two holes, $\sigma = 1$ \_ \_. Suppose the context-free grammar is $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This grammar will first be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the powerset algebra we just defined, the matrix fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column below:\vspace{0.3cm}
 
-  \begin{align}
-    X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
-  \end{align}
+\input{figures/domain_fixpoints}
 
-  \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. Omitting the exponentiation-by-squaring detail, the ordinary fixedpoint iteration simply fills successive diagonals:\vspace{-10pt}
-
-  \begin{align*}
-    M_0=
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing  \\
-      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
-                  &              &             &        & \varnothing  \\
-                  &              &             &        & \hat\sigma_n \\
-      \varnothing & \Cdots       &             &        & \varnothing
-    \end{pNiceMatrix} & \Rightarrow
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \varnothing  \\
-      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
-                  &              &             &        & \Lambda      \\
-                  &              &             &        & \hat\sigma_n \\
-      \varnothing & \Cdots       &             &        & \varnothing
-    \end{pNiceMatrix} & \Rightarrow \ldots \Rightarrow M_\infty =
-    \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
-      \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \Lambda^*_\sigma \\
-      \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots           \\
-                  &              &             &        & \Lambda          \\
-                  &              &             &        & \hat\sigma_n     \\
-      \varnothing & \Cdots       &             &        & \varnothing
-    \end{pNiceMatrix}
-  \end{align*}
-
-  Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
-
-  \subsection{Completion as intersection}
-
-  We can also consider a more general automaton for completing a string with holes, representing edits in fixed locations which can be filled by any terminal, which we call \textit{completion}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
-
-  \begin{definition}[Completion]
-    Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
-  \end{definition}
-
-  Here, the FSA takes a similar shape but can have multiple arcs between subsequent states, e.g.:
-
-  \begin{figure}[H]
-    \resizebox{0.5\textwidth}{!}{
-      \begin{tikzpicture}[>=stealth', node distance=2.5cm, initial text=$ $]
-        \node[state, initial]                (00) {$q_{0,0}$};
-        \node[state, right of=00]            (10) {$q_{1,0}$};
-        \node[state, right of=10]            (20) {$q_{2,0}$};
-        \node[state, accepting, right of=20] (30) {$q_{3,0}$};
-
-        \draw [->] (00) edge[below]             node{$\sigma_1$} (10);
-        \draw [->] (10) edge[below]             node{$\ldots$}   (20);
-        \draw [->] (10) edge[below, bend left]  node{$\Sigma_1$} (20);
-        \draw [->] (10) edge[below, bend right] node{$\Sigma_n$} (20);
-        \draw [->] (20) edge[below]             node{$\ldots$}   (30);
-        \draw [->] (20) edge[below, bend left]  node{$\Sigma_1$} (30);
-        \draw [->] (20) edge[below, bend right] node{$\Sigma_n$} (30);
-      \end{tikzpicture}
-    }
-  \end{figure}
-
-  \noindent This corresponds to a template with two holes, $\sigma = 1$ \_ \_. Suppose the context-free grammar is $G=\{S\rightarrow N O N, O \rightarrow + \mid \times, N \rightarrow 0 \mid 1\}$. This grammar will first be rewritten into CNF as $G'= \{S \rightarrow N L, N \rightarrow 0 \mid 1, O \rightarrow \times \mid +, L \rightarrow O N\}$. Using the powerset algebra we just defined, the matrix fixpoint $M' = M + M^2$ can be computed as follows, shown in the leftmost column below:\vspace{0.3cm}
-
-  \begin{small}
-  {\renewcommand{\arraystretch}{1.2}
-  \noindent\phantom{...}\begin{tabular}{|c|c|c|c|}
-    \hline
-    & $2^V$ & $\mathbb{Z}_2^{|V|}$ & $\mathbb{Z}_2^{|V|}\rightarrow\mathbb{Z}_2^{|V|}$\\\hline
-    $M_0$ & \begin{pmatrix}
-              \phantom{V} & \tiny{\{N\}} &              &              \\
-                          &              & \{N,O\}      &              \\
-                          &              &              & \{N,O\}      \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & \overset{L}{\ws}\overset{N}{\bs}\overset{O}{\ws}\overset{S}{\ws} &              &              \\
-                          &              & \ws\bs\bs\ws &              \\
-                          &              &              & \ws\bs\bs\ws \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & V_{0, 1}     &              &              \\
-                          &              & V_{1, 2}     &              \\
-                          &              &              & V_{2, 3}     \\
-                          &              &              &
-    \end{pmatrix} \\\hline
-    $M_1$ & \begin{pmatrix}
-              \phantom{V} & \tiny{\{N\}} & \varnothing  &              \\
-                          &              & \{N,O\}      & \{L\}        \\
-                          &              &              & \{N,O\}      \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws &              \\
-                          &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                          &              &              & \ws\bs\bs\ws \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & V_{0, 1}     & V_{0, 2}     &              \\
-                          &              & V_{1, 2}     & V_{1, 3}     \\
-                          &              &              & V_{2, 3}     \\
-                          &              &              &
-    \end{pmatrix} \\\hline
-    \begin{tabular}{@{}c@{}}$M_2$\\$=$\\$M_\infty$\end{tabular} & \begin{pmatrix}
-              \phantom{V} & \tiny{\{N\}} & \varnothing  & \{S\}        \\
-                          &              & \{N,O\}      & \{L\}        \\
-                          &              &              & \{N,O\}      \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & \ws\bs\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\
-                          &              & \ws\bs\bs\ws & \bs\ws\ws\ws \\
-                          &              &              & \ws\bs\bs\ws \\
-                          &              &              &
-    \end{pmatrix} & \begin{pmatrix}
-              \phantom{V} & V_{0, 1}     & V_{0, 2}     & V_{0, 3}     \\
-                          &              & V_{1, 2}     & V_{1, 3}     \\
-                          &              &              & V_{2, 3}     \\
-                          &              &              &
-    \end{pmatrix} \\\hline
-  \end{tabular}\\
-  }
-  \end{small}
-
-  \vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A(\sigma)$, but $M_\infty$ does not explicitly reveal its identity.
+\vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A(\sigma)$, but $M_\infty$ does not explicitly reveal its identity.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-  To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:\vspace{-8pt}
+To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:\vspace{-8pt}
 
-  \begin{small}
-  \begin{align*}
-    V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}                         &  V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
-    &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]                                           &  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
-    &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
-    &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
-  \end{align*}
-  \end{small}\vspace{-8pt}
+\begin{small}
+\begin{align*}
+  V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}                         &  V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
+  &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]                                           &  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
+  &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
+  &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
+\end{align*}
+\end{small}\vspace{-8pt}
 
-  \noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
+\noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
 
-  \begin{align*}
-    V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
+\begin{align*}
+  V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
 %  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
-    &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
-  \end{align*}
+  &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
+\end{align*}
 
-  \noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
+\noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
 
-  \begin{align*}
-    V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
-    &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
-    &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
-    &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
-  \end{align*}
+\begin{align*}
+  V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
+  &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
+  &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
+  &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
+\end{align*}
 
-  Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
+Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
 
-  \subsection{Repair as intersection}
+\subsection{Repair as intersection}
 
-  Finally, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere in the string. In this case, we construct a lattice of all possible edit paths up to a fixed distance. This structure is called a Levenshtein automaton.
+Finally, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere in the string. In this case, we construct a lattice of all possible edit paths up to a fixed distance. This structure is called a Levenshtein automaton.
 
-  \begin{wrapfigure}{r}{0.5\textwidth}
-    \vspace{-0.3cm}
-    \begin{center}
-      \input{nfa_cfg}
-    \end{center}
-    \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
-    \vspace{-0.5cm}
-  \end{wrapfigure}
-
-  As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
-
-  \begin{prooftree}
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
-    \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
-    \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
-    \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
-    \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$\vphantom{|}$}
-    \RightLabel{$\textsc{Init}$}
-    \UnaryInfC{$q_{0,0} \in I$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$q_{i, j} \in Q$}
-    \AxiomC{$|n-i+j| \leq d_{\max}$}
-    \RightLabel{$\textsc{Done}$}
-    \BinaryInfC{$q_{i, j}\in F$}
-  \end{prooftree}
-
-  \newcommand{\substitutionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (24pt,8pt);
-      \draw [-to] (24pt,8pt) -- (32pt,8pt);
-      \draw [-to] (32pt,8pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\insertionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \fill[white] (16pt,0pt) circle [radius = 1.2pt];
-      \fill[white] (24pt,8pt) circle [radius = 1.2pt];
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (24pt,0pt);
-      \draw [-to] (24pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (32pt,8pt);
-      \draw [-to] (32pt,8pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\deletionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-      }
-      \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (24pt,0pt);
-      \draw [-to] (24pt,0pt) -- (40pt,8pt);
-    }
-  }
-
-  \newcommand{\doubleDeletionExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (24pt,16pt);
-      \draw [-to] (24pt,16pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\subDelExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\subSubExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \draw [-to] (0pt,0pt) -- (8pt,0pt);
-      \draw [-to] (8pt,0pt) -- (16pt,8pt);
-      \draw [-to] (16pt,8pt) -- (24pt,16pt);
-      \draw [-to] (24pt,16pt) -- (32pt,16pt);
-      \draw [-to] (32pt,16pt) -- (40pt,16pt);
-    }
-  }
-
-  \newcommand{\insertDeleteExample}{
-    \tikz{
-      \foreach \x in {0,8,16,24,32,40,48}{
-        \fill (\x pt,0pt) circle [radius = 1pt];
-        \fill (\x pt,8pt) circle [radius = 1pt];
-        \fill (\x pt,16pt) circle [radius = 1pt];
-      }
-      \fill[white] (16pt,16pt) circle [radius = 1.2pt];
-      \fill[white] (8pt,0pt) circle [radius = 1.2pt];
-      \fill[white] (16pt,8pt) circle [radius = 1.2pt];
-      \draw [-to] (0pt,0pt) -- (16pt,0pt);
-      \draw [-to] (16pt,0pt) -- (8pt,8pt);
-      \draw [-to] (8pt,8pt) -- (24pt,8pt);
-      \draw [-to] (24pt,8pt) -- (40pt,16pt);
-      \draw [-to] (40pt,16pt) -- (48pt,16pt);
-    }
-  }
-
-  Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of one or more terminals. Let us consider some illustrative cases.
-
-  \begin{table}[h!]
-    \begin{tabular}{ccccccc}
-
-      \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
-      \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
-      \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
-      \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
-
-      \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
-      \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
-      \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} &
-      \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
-      \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
-
-      \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
-    \end{tabular}
-  \end{table}
-
-  Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
-
-  To avoid creating a parallel bundle of arcs for each insertion and substitution point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
-
-  \begin{prooftree}
-    \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
-    \RightLabel{$\duparrow$}
-    \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
-    \RightLabel{$\ddiagarrow$}
-    \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-  \begin{prooftree}
-    \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
-    \RightLabel{$\drightarrow$}
-    \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-    \DisplayProof
-    \hskip 1.5em
-    \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
-    \RightLabel{$\knightarrow$}
-    \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
-  \end{prooftree}
-
-  Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the representation size, but does not affect the underlying semantics. Thus, it is important to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
-
-\begin{wrapfigure}{r}{0.4\textwidth}
+\begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-0.3cm}
-  \resizebox{0.4\textwidth}{!}{%
-    \input{partial_order}
-  }
-  \caption{Pairing function over $L(\sigma: \Sigma^4, 3)$.}\label{fig:pairing_fun}
-  \vspace{-0.3cm}
+  \begin{center}
+    \input{nfa_cfg}
+  \end{center}
+  \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
+  \vspace{-0.5cm}
 \end{wrapfigure}
 
-Now, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix using a max-plus semiring. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
+As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+
+\input{figures/arc_rules}
+
+
+Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
+
+To avoid creating a parallel bundle of arcs for each insertion and substitution point, we instead decorate each arc with a nominal predicate, accepting or rejecting $\sigma_i$. To distinguish this nominal variant from the original construction, we highlight the modified rules in orange below.
+
+\begin{prooftree}
+  \AxiomC{$i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\duparrow$}
+  \UnaryInfC{$(q_{i, j-1} \overset{{\color{orange}[\neq \sigma_{i+1}]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\ddiagarrow$}
+  \UnaryInfC{$(q_{i-1, j-1} \overset{{\color{orange}[\neq \sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
+  \RightLabel{$\drightarrow$}
+  \UnaryInfC{$(q_{i-1, j} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
+  \RightLabel{$\knightarrow$}
+  \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+
+Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the representation size, but does not affect the underlying semantics. Thus, it is important to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
 
 \begin{wrapfigure}{r}{0.40\textwidth}
-  \vspace{-1cm}
-\resizebox{0.40\textwidth}{!}{
-  \input{adj_mat}
+\vspace{-0.2cm}
+\resizebox{0.4\textwidth}{!}{%
+\input{figures/simp_lev}
 }
-\caption{State reachability matrix.}\label{fig:reach_matr}
+\caption{Simple Levenshtein automaton.}\label{fig:ex_atm}
 
-\vspace{0.5cm}
+\vspace{0.3cm}
+\resizebox{0.4\textwidth}{!}{%
+\input{figures/partial_order}
+}
+\caption{Pairing function over $L(\sigma: \Sigma^3, 1)$.}\label{fig:pairing_fun}
+
+\vspace{0.3cm}
+\begin{center}
+\resizebox{0.35\textwidth}{!}{%
+\input{figures/adj_mat}
+}
+\end{center}
+\caption{Adjacency and reachability matrix.}\label{fig:reach_matr}
+
+\vspace{0.3cm}
 \resizebox{0.4\textwidth}{!}{
-    \begin{tikzpicture}[
-%->, % makes the edges directed
-      >=stealth',
-      node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
-%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
-      initial text=$ $, % sets the text that appears on the start arrow
-    ]
-      \node[state, initial]                (00) {$q_{0,0}$};
-      \node[state, right of=00]            (10) {$q_{1,0}$};
-      \node[accepting, state, right of=10] (20) {$q_{2,0}$};
-      \node[accepting, state, right of=20] (30) {$q_{3,0}$};
-
-      \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
-      \node[state, right of=01]                     (11) {$q_{1,1}$};
-      \node[state, right of=11]                     (21) {$q_{2,1}$};
-      \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
-
-      \draw [->] (00) edge[below] node{\tiny{$[= \texttt{(}]$}} (10);
-      \draw [->] (10) edge[below] node{\tiny{$[= \texttt{)}]$}} (20);
-      \draw [->] (20) edge[below] node{\tiny{$[= \texttt{)}]$}} (30);
-
-      \draw [->] (01) edge[below] node{\tiny{$[= \texttt{(}]$}}                       (11);
-      \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
-      \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
-
-      \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
-      \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
-      \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
-
-      \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
-      \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
-      \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
-      \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
-
-
-      \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
-      \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
-    \end{tikzpicture}
+\input{figures/pc_init}
 }
-  \caption{Simple Levenshtein automaton.}\label{fig:ex_atm}
+\caption{Initial parse chart configuration.}\label{fig:initial_pc}
 
-  \vspace{0.3cm}
+\vspace{0.3cm}
 \resizebox{0.4\textwidth}{!}{
-  \[
-    \begin{array}{c|cccccccc}
-      M_0 & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
-      q_{00}       &        &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\bs}\overset{R}{\ws} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
-      \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
-%     q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-      q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-      q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-      q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-      q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws \\ [6pt]
-      q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-      q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
-      q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
-    \end{array}
-  \]
+\input{figures/pc_final}
 }
 
-  \caption{Initial parse chart configuration.}\label{fig:initial_pc}
-
-  \vspace{0.3cm}
-\resizebox{0.4\textwidth}{!}{
-  \hspace{-0.18cm} \[
-  \begin{array}{c|cccccccc}
-    M_\infty & q_{00} & q_{01} & q_{10} & q_{11} & q_{20} & q_{21} & q_{30} & q_{31} \\ \hline
-    q_{00}       &        &
-    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\bs}\overset{R}{\ws} &
-    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-    \overset{S}{\bs}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
-    \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
-    \overset{S}{\ws}\overset{F}{\bs}\overset{L}{\ws}\overset{R}{\ws} &
-    \overset{S}{\bs}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
-%   q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
-    q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
-    q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
-    q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
-    q_{20}       &        &              &              &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws \\ [6pt]
-    q_{21}       &        &              &              &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
-    q_{30}       &        &              &              &              &              &              &              & \ws\ws\bs\bs \\ [6pt]
-    q_{31}       &        &              &              &              &              &              &              &              \\ [6pt]
-  \end{array}
-\]
-}
-
-  \caption{Final parse chart configuration.}\label{fig:final_pc}
+\caption{Final parse chart configuration.}\label{fig:final_pc}
 \end{wrapfigure}
 
-Under such an ordering, the adjacency matrix takes an upper triangular form. Nonzero expression vectors of the initial matrix, $M_0$, are depicted to the right. Each entry of this initial matrix corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language, indicating the arc predicate belonging to $M_0[r, c, v]$ accepts at least one terminal generated by the nonterminal $v$. We iterate the fixpoint procedure until convergence, which takes three steps for this particular CFG and broken string, illustrated in Fig.~\ref{fig:adj_matr}.
-
 As a concrete example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$. Let us assume an ordering $S, F, L, R$ on $V$, and a topological ordering on $A$ of $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $L(G')\cap L(A)$.
+
+First, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin.% using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
+
+Under such an ordering, the adjacency matrix takes an upper triangular form. Nonzero expression vectors of the initial matrix, $M_0$, are depicted to the right. Each entry of this initial matrix corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language, indicating the arc predicate belonging to $M_0[r, c, v]$ accepts at least one terminal generated by the nonterminal $v$. Fig.~\ref{fig:reach_matr}.
 
 We will depict the initial matrix in Fig.~\ref{fig:initial_pc} and its fixpoint, post convergence, in Fig.~\ref{fig:final_pc}.
 
@@ -822,25 +531,25 @@ We will now attempt to put a probability distribution over the language intersec
 
 A brute force solution would be to generate every path and rank every one by its probability. It should be obvious why is unviable due its worst case complexity, but bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
 
-  To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
+To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
 
-  \begin{definition}[Cardinality]
-    $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
-      1           & \text{if } R \in \Sigma \\
-      x \times z  & \text{if } e = x \cdot z \\
-      x + z       & \text{if } e = x \vee z
-    \end{cases}\\
-  \end{definition}
+\begin{definition}[Cardinality]
+  $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
+    1           & \text{if } R \in \Sigma \\
+    x \times z  & \text{if } e = x \cdot z \\
+    x + z       & \text{if } e = x \vee z
+  \end{cases}\\
+\end{definition}
 
-  \begin{theorem}[Enumeration]
-    To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
+\begin{theorem}[Enumeration]
+  To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
-    $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
-         e &\text{if } R \in \Sigma \\
-         \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
-         \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
-    \end{cases}\\\\
-  \end{theorem}
+  $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
+       e &\text{if } R \in \Sigma \\
+       \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
+       \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
+  \end{cases}\\\\
+\end{theorem}
 
 \subsection{Mode collapse}
 
@@ -865,7 +574,7 @@ If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can
 \end{lemma}
 
 \begin{proof}
-  Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
 We would like the underlying sample space to be a proper set, \textit{not} a multiset.

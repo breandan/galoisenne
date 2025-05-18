@@ -1,0 +1,162 @@
+\begin{prooftree}
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [0, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\duparrow$}
+  \UnaryInfC{$(q_{i, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$s\in\Sigma \phantom{\land} i \in [1, n] \phantom{\land} j \in [1, d_{\max}]$}
+  \RightLabel{$\ddiagarrow$}
+  \UnaryInfC{$(q_{i-1, j-1} \overset{s}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$i \in [1, n] \phantom{\land} j \in [0, d_{\max}]$}
+  \RightLabel{$\drightarrow$}
+  \UnaryInfC{$(q_{i-1, j} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$d \in [1, d_{\max}] \phantom{\land} i \in [d + 1, n] \phantom{\land} j \in [d, d_{\max}]$}
+  \RightLabel{$\knightarrow$}
+  \UnaryInfC{$(q_{i-d-1, j-d} \overset{\sigma_i}{\rightarrow} q_{i,j}) \in \delta$}
+\end{prooftree}
+\begin{prooftree}
+  \AxiomC{$\vphantom{|}$}
+  \RightLabel{$\textsc{Init}$}
+  \UnaryInfC{$q_{0,0} \in I$}
+  \DisplayProof
+  \hskip 1.5em
+  \AxiomC{$q_{i, j} \in Q$}
+  \AxiomC{$|n-i+j| \leq d_{\max}$}
+  \RightLabel{$\textsc{Done}$}
+  \BinaryInfC{$q_{i, j}\in F$}
+\end{prooftree}
+
+\newcommand{\substitutionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (24pt,8pt);
+    \draw [-to] (24pt,8pt) -- (32pt,8pt);
+    \draw [-to] (32pt,8pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\insertionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \fill[white] (16pt,0pt) circle [radius = 1.2pt];
+    \fill[white] (24pt,8pt) circle [radius = 1.2pt];
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (24pt,0pt);
+    \draw [-to] (24pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (32pt,8pt);
+    \draw [-to] (32pt,8pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\deletionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+    }
+    \phantom{\fill (0pt,-8pt) circle [radius = 1pt];}
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (24pt,0pt);
+    \draw [-to] (24pt,0pt) -- (40pt,8pt);
+  }
+}
+
+\newcommand{\doubleDeletionExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (24pt,16pt);
+    \draw [-to] (24pt,16pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\subDelExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\subSubExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \draw [-to] (0pt,0pt) -- (8pt,0pt);
+    \draw [-to] (8pt,0pt) -- (16pt,8pt);
+    \draw [-to] (16pt,8pt) -- (24pt,16pt);
+    \draw [-to] (24pt,16pt) -- (32pt,16pt);
+    \draw [-to] (32pt,16pt) -- (40pt,16pt);
+  }
+}
+
+\newcommand{\insertDeleteExample}{
+  \tikz{
+    \foreach \x in {0,8,16,24,32,40,48}{
+      \fill (\x pt,0pt) circle [radius = 1pt];
+      \fill (\x pt,8pt) circle [radius = 1pt];
+      \fill (\x pt,16pt) circle [radius = 1pt];
+    }
+    \fill[white] (16pt,16pt) circle [radius = 1.2pt];
+    \fill[white] (8pt,0pt) circle [radius = 1.2pt];
+    \fill[white] (16pt,8pt) circle [radius = 1.2pt];
+    \draw [-to] (0pt,0pt) -- (16pt,0pt);
+    \draw [-to] (16pt,0pt) -- (8pt,8pt);
+    \draw [-to] (8pt,8pt) -- (24pt,8pt);
+    \draw [-to] (24pt,8pt) -- (40pt,16pt);
+    \draw [-to] (40pt,16pt) -- (48pt,16pt);
+  }
+}
+
+Each arc plays a specific role. $\duparrow$ handles insertions, $\ddiagarrow$ handles substitutions and $\knightarrow$ handles deletions of one or more terminals. Let us consider some illustrative cases.
+
+\begin{table}[h!]
+  \begin{tabular}{ccccccc}
+
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{[}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\hlred{x}\hspace{3pt})} &
+    \texttt{\hlred{.}\hspace{3pt}\hlred{+}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}\hlorange{.}\hspace{3pt}\hlred{(}\hspace{3pt}x\hspace{3pt};} &
+    \texttt{[\hspace{3pt}\hlorange{,}\hspace{3pt}\hlorange{x}\hspace{3pt}y\hspace{3pt}]} &
+    \texttt{[\hspace{3pt}\phantom{,}\hspace{3pt},\hspace{3pt}\hlred{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlorange{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}\hlgreen{(}\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}.\hspace{3pt}(\hspace{3pt}\phantom{x}\hspace{3pt})} &
+    \texttt{\phantom{f}\hspace{3pt}\phantom{.}\hspace{3pt}(\hspace{3pt}x\hspace{3pt})} &
+    \texttt{f\hspace{3pt}\hlorange{*}\hspace{3pt}\phantom{(}\hspace{3pt}x\hspace{3pt};} &
+    \texttt{[\hspace{3pt}\hlorange{x}\hspace{3pt}\hlorange{,}\hspace{3pt}y\hspace{3pt}]} &
+    \texttt{[\hspace{3pt}\hlgreen{x}\hspace{3pt},\hspace{3pt}\phantom{x}\hspace{3pt}y\hspace{3pt}]} \\
+
+    \substitutionExample & \insertionExample & \deletionExample & \doubleDeletionExample & \subDelExample & \subSubExample & \insertDeleteExample
+  \end{tabular}
+\end{table}\vspace{-0.3cm}
