@@ -63,7 +63,20 @@
 
   \section{Introduction}
 
-  During programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.\clearpage
+  During programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state, either due to an unfinished or malformed piece of code. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. We attempt to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits.
+
+  Prior work in syntax repair has used stochastic and deterministic methods.
+
+\begin{wrapfigure}{r}{0.4\textwidth}
+  \vspace{-0.2cm}
+  \input{cfl_intersect}
+  \vspace{-0.3cm}
+  \caption{CFL intersection with the local edit region of a given broken code snippet.}
+  \vspace{-0.2cm}
+\end{wrapfigure}
+
+Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language, $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
+\clearpage
 
   \section{Background}
 
@@ -195,6 +208,46 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
   \noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.\clearpage
 
+\clearpage\section{Problem statement}\label{sec:problem}
+
+Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
+
+\begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
+Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
+\end{definition}
+
+%  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
+%
+
+As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
+
+\begin{definition}[Ranked repair]\label{def:ranked-repair}
+Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum likelihood repairs under the language model. That is,
+\begin{equation}
+  R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+\end{equation}
+  % On average, across all $G, \sigma$ $\hat{R}$ should approximate $R$.
+%    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
+\end{definition}
+
+A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+
+As we will demonstrate, the ranked repair problem can be factorized into a bilevel objective: first maximal retrieval, then ranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing likelihood over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+
+Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
+
+\begin{definition}[Linear convergence]\label{def:linear-convergence}
+Given a finite CFL, $\ell$, we want a randomized generating function, $\bm{\varphi}: \mathbb{N}_{\leq|\ell|} \rightarrow 2^\ell$, whose rate of convergence is linear in expectation, i.e., $\mathbb{E}_{i \in [1, n]}|\bm{\varphi}(i)| \propto n$.
+\end{definition}
+
+\noindent This will ensure that if $|\ell_\cap|$ is sufficiently small and enough samples are drawn, $\bm\varphi$ is sure to include a representative subset, and additionally, will terminate after exhausting all valid repairs.
+
+To satisfy Def.~\ref{def:linear-convergence}, we can construct a bijection from syntax trees to integers (\S~\ref{sec:ptree}), sample integers uniformly without replacement, then decode them as trees. This will produce a set of unique trees, and each tree, assuming grammatical unambiguity, will correspond to a unique sentence in the language.  Finally, sentences can be scored and ranked by likelihood under a language model.
+
+Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a DFA, then decoded (\S~\ref{sec:decoding}) using an autoregressive language model or any suitably fast scoring function of the implementer's choice. In our case, we use a low-order Markov model for its inference speed, data efficiency, and simplicity. So long as the decoder samples $\ell$ without replacement, it will satisfy Def.~\ref{def:linear-convergence}.
+
+%  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
+
 \section{Method}
 
   Our method is to treat finite language intersections as matrix exponentiation.
@@ -312,7 +365,7 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
   We can also consider a more general automaton for completing a string with holes, representing edits in fixed locations which can be filled by any terminal, which we call \textit{completion}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
 
-  \begin{definition}[Porous completion]
+  \begin{definition}[Completion]
     Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
   \end{definition}
 
@@ -651,7 +704,7 @@ Now, we need to order the automata states by increasing longest-path distance fr
 \resizebox{0.40\textwidth}{!}{
   \input{adj_mat}
 }
-\caption{Convergence of a single trajectory.}\label{fig:adj_matr}
+\caption{State reachability matrix.}\label{fig:reach_matr}
 
 \vspace{0.5cm}
 \resizebox{0.4\textwidth}{!}{
@@ -709,7 +762,7 @@ Now, we need to order the automata states by increasing longest-path distance fr
       \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
       \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} &
       \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
-%      q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
+%     q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
       q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
       q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\ws & \ws\ws\ws\bs \\ [6pt]
       q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
@@ -736,7 +789,7 @@ Now, we need to order the automata states by increasing longest-path distance fr
     \overset{S}{\ws}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\bs} &
     \overset{S}{\ws}\overset{F}{\bs}\overset{L}{\ws}\overset{R}{\ws} &
     \overset{S}{\bs}\overset{F}{\ws}\overset{L}{\ws}\overset{R}{\ws} \\ [6pt]
-%    q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
+%   q_{00}       &        & \ws\ws\ws\bs & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\ws\ws & \ws\ws\ws\bs & \ws\bs\ws\ws & \bs\ws\ws\ws \\ [6pt]
     q_{01}       &        &              & \ws\ws\ws\ws & \ws\ws\bs\ws & \ws\ws\ws\ws & \bs\ws\ws\ws & \ws\ws\ws\ws & \ws\bs\ws\ws \\ [6pt]
     q_{10}       &        &              &              & \ws\ws\bs\ws & \ws\ws\ws\bs & \bs\ws\bs\ws & \ws\ws\ws\ws & \bs\bs\ws\bs \\ [6pt]
     q_{11}       &        &              &              &              & \ws\ws\ws\ws & \ws\ws\ws\bs & \ws\ws\ws\ws & \ws\ws\ws\ws \\ [6pt]
