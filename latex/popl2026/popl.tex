@@ -211,6 +211,8 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
 Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 
+Assume there exists a tokenizer from Unicode tokens to grammatical tokens, $\tau : (\Sigma_U^*) \rightarrow \Sigma_G$. Thus, the source language can be described as $\tau^{-1}(L(G))$.
+
 \clearpage\section{Problem statement}\label{sec:problem}
 
 Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
