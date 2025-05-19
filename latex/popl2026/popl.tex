@@ -166,7 +166,7 @@ Here, we use the $\stackrel{\$}{\leftarrow}$ operator to denote probabilistic ch
 
 \subsection{Language intersection}
 
-We will now define intersection in a slightly more expressive manner, which has the side effect of being more readily parallelizable. Recall every regular language is context-free. Therefor, to take the intersection between two regular languages, we can treat one as a CFL, which often admits a more compact representation. Alternatively, we can take the intersection between a truly non-regular CFL (such as a programming language syntax) and some regular language.
+We will now define intersection in a slightly more expressive manner, which has the added benefit of being more readily parallelizable. Recall every regular language is context-free. Therefor, to take the intersection between two regular languages, we can treat one as a CFL, which often admits a more compact representation. Alternatively, we can take the intersection between a truly non-regular CFL (such as a programming language syntax) and some regular language.
 
 \begin{theorem}[Bar-Hillel, 1961]
   For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
@@ -199,10 +199,18 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
 \noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. % We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
 
-\subsection{Mapping source code to formal languages}
+\clearpage\section{Informal statement}
+
+Assume there exists a transducer from Unicode tokens to grammatical tokens, $\tau: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $\tau$ is called a \textit{lexer} and would typically be regular under mild assumptions. Lexing abstracts over named identifiers and primitively typed literals, and removes whitespace or otherwise replaces them with an alphanumeric identifier in whitespace-sensitive languages. In this paper, we do not consider $\tau$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
+
+%Thus, the full source language can be described as $\tau^{-1}\big(L(G)\big)$
+
+%We designate a special token for tokens which are not recognized by the lexer, which are simply replaced by a hole.
+
+Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$, which we wish to repair. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
 
 \begin{wrapfigure}{r}{0.4\textwidth}
-\vspace{-1cm}
+\vspace{-0.3cm}
 \input{figures/cfl_intersect}
 \vspace{-0.3cm}
 \caption{CFL intersection with the local edit region of a given broken code snippet.}
@@ -211,11 +219,9 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
 Given the source code for a computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given Levenshtein distance from a reference string $\err\sigma$. We can intersect the language given by the Levenshtein automaton with the language of all valid programs given by the grammar $G$. The resulting language $\mathcal{L}(G_\cap)$ will contain every repair within the designated edit distance.
 
-Assume there exists a tokenizer from Unicode tokens to grammatical tokens, $\tau : (\Sigma_U^*) \rightarrow \Sigma_G$. Thus, the source language can be described as $\tau^{-1}(L(G))$.
+Once the repairs are retrieved, they can be mapped back into raw source code tokens in a straightforward manner. The core algorithm is formatting-oblivious. After the repairs are returned, we compute an edit alignment over lexical tokens, restore unmodified tokens to their Unicode form, add placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to return the concrete suggestions. Both the preprocessing and the formatting steps are tangential to this paper, in which we confine ourselves to a lexical alphabet.
 
-\clearpage\section{Problem statement}\label{sec:problem}
-
-Source code in a programming language can be treated as a string over a finite alphabet, $\Sigma$. We use a lexical alphabet for convenience. The language has a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
+\clearpage\section{Formal statement}\label{sec:problem}
 
 \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
 Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
@@ -253,7 +259,7 @@ Otherwise, if the grammar, $G_\ell$, is ambiguous, it can be translated into a D
 
 %  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
 
-\section{Method}
+\clearpage\section{Method}
 
 Our method is to treat finite language intersections as matrix exponentiation.
 
