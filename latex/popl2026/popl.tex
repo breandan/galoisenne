@@ -437,11 +437,11 @@ To extract the inhabitants, we can translate the bitwise procedure into an equat
   &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
 \end{align*}
 
-Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
+%Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
 
 \subsection{Repair as intersection}
 
-Finally, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere in the string. In this case, we construct a lattice of all possible edit paths up to a fixed distance. This structure is called a Levenshtein automaton.
+Finally, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere in the string. In this case, we construct a lattice of all possible edit paths within a fixed distance. This structure is called a Levenshtein automaton.
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-0.3cm}
@@ -485,7 +485,6 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
 Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the representation size, but does not affect the underlying semantics. Thus, it is important to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
 
 \begin{wrapfigure}{r}{0.40\textwidth}
-\vspace{-0.2cm}
 \resizebox{0.4\textwidth}{!}{%
 \input{figures/simp_lev}
 }
@@ -524,7 +523,7 @@ As a concrete example, suppose we have the string, $\sigma=\texttt{( ) )}$ and w
 First, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin. % using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
 So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $L(G')\cap L(A)$.
 
-Under such an ordering, the adjacency matrix takes an upper triangular form. This forms the template for the initial parse chart. The initial parse chart, $M_0$ (Fig.~\ref{fig:initial_pc}) and its fixpoint $M_\infty$, post convergence, (Fig.~\ref{fig:final_pc}). Each entry of this chart corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language. The adjacency and reachability matrices will always cover the expression vectors of the initial and final parse charts. In other words, we can always skip empty states in the reachability matrix.
+Under such an ordering, the adjacency matrix takes an upper triangular form. This forms the template for the initial parse chart. The initial parse chart, $M_0$ (Fig.~\ref{fig:initial_pc}) and its fixpoint $M_\infty$, post convergence, (Fig.~\ref{fig:final_pc}) are shown. Each entry of this chart corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language. The adjacency and reachability matrices will always cover the expression vectors of the initial and final parse charts. In other words, we can always skip empty states in the reachability matrix.
 
 Since $M_\infty[q_{00}, q_{31}, 0] = \bs$, this implies that $L(A)\cap L(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we can then perform a second pass over the nonempty entries to construct regular expression vectors representing finite languages for each constituent and decode a witness using the Brzozowski derivative.
 
