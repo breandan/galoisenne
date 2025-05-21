@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.repair
 import Grammars
 import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.automata.toDFA
+import ai.hypergraph.kaliningraph.automata.toLaTeX
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.*
@@ -466,9 +467,16 @@ class ProbabilisticLBH {
   @Test
   fun testDeadSimple() {
     val prompt = "( ) )"
-    val ds = Grammars.dsNorm
-    val la = makeLevFSA(prompt.tokenizeByWhitespace(), 1)
-    val ig = ds.intersectLevFSA(la)
+  val ds = Grammars.dsNorm
+  val la = makeLevFSA(prompt.tokenizeByWhitespace(), 4)
+
+//  println(la.stateLst)
+//  val tikzAdj   = la.adjMat().toLaTeX()
+//  val tikzReach = la.reachMat().toLaTeX()
+//  println(tikzAdj)
+//  println(tikzReach)
+
+  val ig = ds.intersectLevFSA(la)
 
     println(ig.prettyPrint())
 

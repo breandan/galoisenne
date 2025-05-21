@@ -5,6 +5,8 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.kaliningraph.types.*
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlin.time.TimeSource
 
@@ -339,6 +341,40 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       }
     """.trimIndent()
   }
+
+  fun adjMat(): BooleanArray {
+    val n   = numStates
+    val out = BooleanArray(n * n)
+    val e   = adjList
+    for (i in e.indices step 2) {
+      val from = e[i]
+      val to   = e[i + 1]
+      out[from * n + to] = true
+    }
+    return out
+  }
+
+  fun reachMat(): BooleanArray {
+    val n        = numStates
+    val reach    = BooleanArray(n * n)
+    val outgoing = Array(n) { mutableListOf<Int>() }
+
+    val e = adjList
+    for (i in e.indices step 2) outgoing[e[i]].add(e[i + 1])
+
+    val q        = ArrayDeque<Int>()
+    val visited  = BooleanArray(n)
+    repeat(n) { s ->
+      visited.fill(false)
+      q.clear(); q += s; visited[s] = true
+      while (q.isNotEmpty()) {
+        val u = q.removeFirst()
+        if (u != s) reach[s * n + u] = true
+        outgoing[u].forEach { v -> if (!visited[v]) { visited[v] = true; q += v } }
+      }
+    }
+    return reach
+  }
 }
 
 fun TSA.states() = flatMap { listOf(it.π1, it.π3) }.toSet()
@@ -413,3 +449,30 @@ fun FSA.byteFormat(cfg: CFG): IntArray { // TODO: kernelize
   return sparseChart
 }
 
+fun BooleanArray.toLaTeX(squareUnitSize: String = "0.3cm"): String {
+  if (isEmpty()) return """
+    \begin{tikzpicture}
+      % empty matrix
+    \end{tikzpicture}
+  """.trimIndent()
+
+  /* Infer N from |matrix| = N² and sanity-check. */
+  val n = sqrt(size.toDouble()).roundToInt()
+  require(n * n == size) { "BooleanArray size $size is not a perfect square." }
+
+  val body = buildString {
+    for (row in 0 until n) {
+      for (col in 0 until n) {
+        val idx   = row * n + col
+        val fill  = if (this@toLaTeX[idx]) "black" else "white"
+        val x     = col
+        val y     = n - 1 - row
+        appendLine("""  \path[fill=$fill] ($x,$y) rectangle ++(1,1);""")
+      }
+    }
+  }
+
+  return """\begin{tikzpicture}[x=$squareUnitSize, y=$squareUnitSize, draw=gray, very thin]
+    $body\end{tikzpicture}
+  """
+}
