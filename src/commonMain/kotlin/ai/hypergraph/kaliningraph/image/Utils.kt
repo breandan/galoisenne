@@ -3,6 +3,8 @@ package ai.hypergraph.kaliningraph.image
 import ai.hypergraph.kaliningraph.minMaxNorm
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.ℤⁿ
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.roundToInt
 
 fun String.escapeHTML() =
@@ -48,6 +50,7 @@ fun <T> FreeMatrix<T>.toHtmlPage(): String =
     </html>
   """.trimIndent()
 
+@OptIn(ExperimentalEncodingApi::class)
 fun Matrix<*, *, *>.matToBase64Img(
   pixelsPerEntry: Int = (200 / numRows).coerceIn(1..20),
   arr: Array<ℤⁿ> = when (this) {
@@ -55,7 +58,7 @@ fun Matrix<*, *, *>.matToBase64Img(
     is DoubleMatrix -> minMaxNorm().data.map { (it * 255).roundToInt() }
     else -> TODO("Renderer is undefined")
   }.let { FreeMatrix(it).rows.map { it.toIntArray() }.toTypedArray() }.enlarge(pixelsPerEntry),
-): String = "data:image/bmp;base64," + BMP().saveBMP(arr).encodeBase64ToString()
+): String = "data:image/bmp;base64," + Base64.encode(BMP().saveBMP(arr))
 
 fun Array<ℤⁿ>.enlarge(factor: Int = 2): Array<ℤⁿ> =
   map { row -> row.flatMap { col -> (0..<factor).map { col } }
@@ -144,28 +147,4 @@ class BMP {
   }
 
   private val BMP_CODE = 19778
-}
-
-fun ByteArray.encodeBase64ToString(): String =
-  encodeBase64().map { it.toInt().toChar() }.toCharArray().concatToString()
-
-fun ByteArray.encodeBase64(): ByteArray {
-  val table = (CharRange('A', 'Z') + CharRange('a', 'z') + CharRange('0', '9') + '+' + '/').toCharArray()
-  val output = mutableListOf<Int>()
-  var padding = 0
-  var position = 0
-  while (position < this.size) {
-    var b = this[position].toInt() and 0xFF shl 16 and 0xFFFFFF
-    if (position + 1 < this.size) b = b or (this[position + 1].toInt() and 0xFF shl 8) else padding++
-    if (position + 2 < this.size) b = b or (this[position + 2].toInt() and 0xFF) else padding++
-    for (i in 0..<4 - padding) {
-      val c = b and 0xFC0000 shr 18
-      output.add(table[c].code)
-      b = b shl 6
-    }
-    position += 3
-  }
-  for (i in 0..<padding) output.add('='.code)
-
-  return output.toIntArray().map { it.toByte() }.toByteArray()
 }
