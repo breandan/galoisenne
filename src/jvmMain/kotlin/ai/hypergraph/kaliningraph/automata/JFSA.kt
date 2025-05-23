@@ -86,7 +86,7 @@ fun PTree.toDFA(
       unit = { a -> if ("ε" in a.root) null else unitRule(a.root) }
     )
   }.also { println("Took ${it.duration} to build FSA") }.value
-  ?.also { println("Original automata had ${it
+  ?.also { println("Original automaton had ${it
     .let { "${it.numberOfStates} states and ${it.numberOfTransitions} transitions"}}")
     if (minimize) measureTimedValue { BAutomaton.minimize(it) }
       .also { println("Minimization took ${it.duration}") }.value
