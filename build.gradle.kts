@@ -176,7 +176,7 @@ kotlin {
         // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
         implementation("com.redislabs:jredisgraph:2.6.0-RC2")
-        implementation("io.lacuna:bifurcan:0.2.0-alpha7")
+        implementation("io.lacuna:bifurcan:0.2.0-rc1")
 
         val jgraphtVersion by extra { "1.5.2" }
         implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
