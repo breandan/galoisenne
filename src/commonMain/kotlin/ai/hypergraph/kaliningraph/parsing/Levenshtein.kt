@@ -124,8 +124,8 @@ fun makeLevFSA(
       AFSA(Q, initialStates, finalStates)
         .also { it.height = maxRad; it.width = str.size; it.levString = str }
 //        .nominalize()
-        .also { println("Reduced L-NFA(len=${str.size}, rad=$maxRad, states=${it.numStates}) " +
-            "from $initSize to ${Q.size} arcs in ${clock.elapsedNow()}") }
+//        .also { println("Reduced L-NFA(len=${str.size}, rad=$maxRad, states=${it.numStates}) " +
+//            "from $initSize to ${Q.size} arcs in ${clock.elapsedNow()}") }
     }
   return fsa
 }
