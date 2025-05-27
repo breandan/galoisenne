@@ -629,4 +629,41 @@ These are useful for visually checking different implementations.
   \caption{Lev(|\sigma|=6, \Delta=4) adjacency and reachability matrices.}
 \end{figure}
 
+
+\section{Levenshtein Automata Minimality}
+
+It is reasonable to ask whether the Levenshtein automaton defined is minimal, in the sense of whether there exists an automaton with fewer states than $A$ yet still generates $\mathcal{L}(G_\cap)$ when intersected with $\mathcal{L}(G)$. In other words, given $G$ and $\err\sigma$, is there an $A'$ such that $|Q_{A'}| < |Q_{A}|$ yet $\mathcal{L}(G) \cap \mathcal{L}(A') = \mathcal{L}(G) \cap \mathcal{L}(A)$ still holds? In fact, there is a trivial example:
+
+\begin{theorem}
+  Let $Q_{A'}$ be defined as $Q_A \setminus \{q_{n, 0}\}$.
+\end{theorem}
+
+Since $q_{n, 0}$ accepts the original string $\err\sigma$ which by definition is not in $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
+
+\begin{theorem}
+  $\varnothing = \mathcal{L}(\err\sigma_{1 \ldots (n-s)}\cdot\Sigma^s)\cap \mathcal{L}(G)$ implies the states $[q_{n-i, 0}]_{i \in 1\ldots s}$ are unnecessary.
+\end{theorem}
+
+Likewise, if we expend our entire edit budget in the first $p$ tokens, we will be unable to recover in a string where at least one repair must occur after the first $p$ tokens.
+
+\begin{theorem}
+  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_p)\cap \mathcal{L}(G)$ implies the states $[q_{i, d_\max}]_{i \in 0\ldots p}$ are unnecessary.
+\end{theorem}
+
+Therefor, we can eliminate $p+s$ states from $A$ by proving emptiness of $\mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots (n-s)}\cdot\Sigma^s) \cap \mathcal{L}(G)$, without affecting $\mathcal{L}(G_\cap)$. Pictorially,
+
+\begin{figure}[H]
+  \resizebox{0.47\textwidth}{!}{
+    \input{figures/original_nfa}
+  }
+  \resizebox{0.47\textwidth}{!}{
+    \input{figures/pruned_nfa}
+  }
+  \caption{Levenshtein NFA before and after pruning.}
+\end{figure}\vspace{-0.175cm}
+Pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with the grammar, $G = \{S \rightarrow ( S ) \mid [ S ] \mid 1\}$.
+
+\noindent\phantom{$\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
+\phantom{$\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+
 \end{document}
