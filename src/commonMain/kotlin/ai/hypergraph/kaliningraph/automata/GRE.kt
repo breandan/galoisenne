@@ -167,7 +167,7 @@ sealed class GRE(open vararg val args: GRE) {
 
       is CUP -> {
         if (!isLeafCup()) {
-          val id = declareNodeB(Key("CUP${g.hash()}", ""), "∪")
+          val id = declareNodeB(Key("CUP${g.hash()}", ""), "∨")
           for (child in g.args) { edgeDecl.append("  $id -> ${visit(child)};\n") }
           id
         } else {

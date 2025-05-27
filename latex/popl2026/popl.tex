@@ -516,6 +516,15 @@ Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\
 }
 
 \caption{Final parse chart configuration.}\label{fig:final_pc}
+
+\vspace{0.3cm}
+\begin{center}
+\resizebox{0.28\textwidth}{!}{
+  \includegraphics{figures/gre}
+}
+\end{center}
+\vspace{-0.2cm}
+\caption{Regular expression denoting $\mathcal{L}(G_\cap)$.}\label{fig:int_re}
 \end{wrapfigure}
 
 As a concrete example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
