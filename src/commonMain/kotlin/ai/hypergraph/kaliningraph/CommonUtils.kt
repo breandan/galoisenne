@@ -50,9 +50,8 @@ val ACT_TANH: (DoubleMatrix) -> DoubleMatrix = { it.elwise { tanh(it) } }
 val NORM_AVG: (DoubleMatrix) -> DoubleMatrix = { it.meanNorm() }
 
 fun DoubleMatrix.minMaxNorm() =
-  data.fold(0.0 cc 0.0) { (a, b), e ->
-    min(a, e) cc max(b, e)
-  }.let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
+  data.fold(0.0 cc 0.0) { (a, b), e -> min(a, e) cc max(b, e) }
+    .let { (min, max) -> elwise { e -> (e - min) / (max - min) } }
 
 fun DoubleMatrix.meanNorm() =
   data.fold(VT(0.0, 0.0, 0.0)) { (a, b, c), e ->
@@ -157,6 +156,8 @@ class KBitSet(val n: Int) {
   infix fun and(other: KBitSet) {
     for (i in data.indices) data[i] = data[i] and other.data[i]
   }
+
+  fun merge(other: KBitSet): KBitSet = KBitSet(n).also { it or other }.also { it or this }
 
   fun toList(): List<Int> {
     val result = mutableListOf<Int>()

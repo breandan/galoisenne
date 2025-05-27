@@ -647,7 +647,7 @@ Since $q_{n, 0}$ accepts the original string $\err\sigma$ which by definition is
 Likewise, if we expend our entire edit budget in the first $p$ tokens, we will be unable to recover in a string where at least one repair must occur after the first $p$ tokens.
 
 \begin{theorem}
-  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_p)\cap \mathcal{L}(G)$ implies the states $[q_{i, d_\max}]_{i \in 0\ldots p}$ are unnecessary.
+  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_p)\cap \mathcal{L}(G)$ implies the states $[q_{i, d_{\max}}]_{i \in 0\ldots p}$ are unnecessary.
 \end{theorem}
 
 Therefor, we can eliminate $p+s$ states from $A$ by proving emptiness of $\mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots (n-s)}\cdot\Sigma^s) \cap \mathcal{L}(G)$, without affecting $\mathcal{L}(G_\cap)$. Pictorially,

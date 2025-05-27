@@ -1,12 +1,10 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
-import Grammars.shortS2PParikhMap
 import ai.hypergraph.kaliningraph.automata.toDFA
-import ai.hypergraph.kaliningraph.automata.toLaTeX
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.markovian.*
+import ai.hypergraph.markovian.stdDev
 import org.junit.jupiter.api.Test
 import org.kosat.round
 import java.util.stream.Collectors
@@ -467,8 +465,11 @@ class ProbabilisticLBH {
   @Test
   fun testDeadSimple() {
     val prompt = "( ) )"
-  val ds = Grammars.dsNorm
-  val la = makeLevFSA(prompt.tokenizeByWhitespace(), 4)
+    val ds = Grammars.dsNorm
+    val la = makeLevFSA(prompt.tokenizeByWhitespace(), 4)
+
+//    val gre: GRE = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
+//    println(gre.toDOTGraph())
 
 //  println(la.stateLst)
 //  val tikzAdj   = la.adjMat().toLaTeX()
@@ -476,7 +477,7 @@ class ProbabilisticLBH {
 //  println(tikzAdj)
 //  println(tikzReach)
 
-  val ig = ds.intersectLevFSA(la)
+    val ig = ds.intersectLevFSA(la)
 
     println(ig.prettyPrint())
 
