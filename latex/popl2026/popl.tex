@@ -677,7 +677,7 @@ Therefor, we can eliminate $p+s$ states from $A$ by proving emptiness of $\mathc
   }
   \caption{Levenshtein NFA before and after pruning.}
 \end{figure}\vspace{-0.175cm}
-Pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with the grammar, $G = \{S \rightarrow ( S ) \mid [ S ] \mid 1\}$.
+Pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with $G = \{S \rightarrow ( S ) \mid [ S ] \mid S + S \mid 1\}$.
 
 \noindent\phantom{$\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
 \phantom{$\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
