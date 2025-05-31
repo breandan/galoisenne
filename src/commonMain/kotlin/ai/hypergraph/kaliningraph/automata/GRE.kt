@@ -163,7 +163,7 @@ sealed class GRE(open vararg val args: GRE) {
     fun visit(g: GRE): String = when (g) {
       is EPS -> declareNodeB(Key("EPS", ""), "ε", "plaintext")
 
-      is SET -> declareNodeA(g.s.labelize(), "box")
+      is SET -> declareNodeA(g.s.labelize(), "box", extra = ", width=0.5")
 
       is CUP -> {
         if (!isLeafCup()) {
@@ -363,7 +363,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
             maxChildren = list.size
             location = p to q
           }
-          dp[p][q][Aidx] = GRE.CUP(*list)
+          dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
       }
     }

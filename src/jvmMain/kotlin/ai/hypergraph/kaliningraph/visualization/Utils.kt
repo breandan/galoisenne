@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.visualization
 
 import ai.hypergraph.kaliningraph.automata.FSA
+import ai.hypergraph.kaliningraph.automata.GRE
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.image.*
 import ai.hypergraph.kaliningraph.tensor.Matrix
@@ -34,6 +35,14 @@ fun String.alsoCopy() = also {
       Toolkit.getDefaultToolkit().systemClipboard.setContents(it, it)
     }
   } catch (e: Exception) { println("Error copying to clipboard: $e") }
+}
+
+fun GRE.showEditable() {
+  ProcessBuilder(browserCmd,
+    URLEncoder.encode(toDOTGraph())
+      .replace("+", "%20")
+      .let { "https://dreampuf.github.io/GraphvizOnline/#$it" }
+  ).start()
 }
 
 fun String.show() = File.createTempFile("" + hashCode(), ".html")

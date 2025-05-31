@@ -469,7 +469,7 @@ class ProbabilisticLBH {
     val la = makeLevFSA(prompt.tokenizeByWhitespace(), 4)
 
 //    val gre: GRE = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
-//    println(gre.toDOTGraph())
+//    gre.showEditable()
 
 //  println(la.stateLst)
 //  val tikzAdj   = la.adjMat().toLaTeX()
