@@ -409,37 +409,39 @@ Here, the FSA takes a similar shape but can have multiple arcs between subsequen
 
 \input{figures/domain_fixpoints}
 
-\vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $[S\in V_{0, 3}]\Leftrightarrow [V_{0, 3, 3}=\bs] \Leftrightarrow [A(\sigma) \neq \varnothing]$. Since $V_{0, 3} = \{S\}$, we know there exists at least one solution $\sigma' \in A(\sigma)$, but $M_\infty$ does not explicitly reveal its identity.
+\vspace{8pt}The same procedure can be translated, without loss of generality, into the bit domain ($\mathbb{Z}_2^{|V|}$) using a lexicographic nonterminal ordering, however $M_\infty$ in both $2^V$ and $\mathbb{Z}_2^{|V|}$ represents a decision procedure, i.e., $\big[S\in M_\infty[0, 3]\big]\Leftrightarrow \big[M_\infty[0, 3, 3]=\bs\big] \Leftrightarrow \big[A(\sigma) \neq \varnothing\big]$. Since $M_\infty[0, 3] = \{S\}$, we know there is at least one $\sigma' \in A(\sigma)$, but neither $2^V$ or $\mathbb{Z}_2^V$ provides a witness.
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-To extract the inhabitants, we can translate the bitwise procedure into an equation with free variables. Here, we can encode the idempotency constraint directly as $M = M^2$. We first define $X \boxtimes Z = [X_2 \land Z_1, \bot, \bot, X_1 \land Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain, now over bitvectors. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $V_{0, 2}, V_{1, 3}$:\vspace{-8pt}
+To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to the GRE domain. We first define $X \boxtimes Z = [X_2 \cdot Z_1, \varnothing, \varnothing, X_1 \cdot Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $E_{0, 2}, E_{1, 3}$:\vspace{-8pt}
 
 \begin{small}
 \begin{align*}
-  V_{0, 2} &= V_{0, j} \cdot V_{j, 2} = V_{0, 1} \boxtimes V_{1, 2}                         &  V_{1, 3} &= V_{1, j} \cdot V_{j, 3} = V_{1, 2} \boxtimes V_{2, 3}\\
-  &= [L \in V_{0, 2}, \bot, \bot, S \in V_{0, 2}]                                           &  &= [L \in V_{1, 3}, \bot, \bot, S \in V_{1, 3}]\\
-  &= [O \in V_{0, 1} \land N \in V_{1, 2}, \bot, \bot, N \in V_{0, 1} \land L \in V_{1, 2}] &  &= [O \in V_{1, 2} \land N \in V_{2, 3}, \bot, \bot, N \in V_{1, 2} \land L \in V_{2, 3}]\\
-  &= [V_{0, 1, 2} \land V_{1, 2, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 2, 0}]             &  &= [V_{1, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{1, 2, 1} \land V_{2, 3, 0}]
+  E_{0, 2} &= E_{0, j} \cdot E_{j, 2} = E_{0, 1} \boxtimes E_{1, 2}                         &  E_{1, 3} &= E_{1, j} \cdot E_{j, 3} = E_{1, 2} \boxtimes E_{2, 3}\\
+  &= [L \in E_{0, 2}, \varnothing, \varnothing, S \in E_{0, 2}]                                           &  &= [L \in E_{1, 3}, \varnothing, \varnothing, S \in E_{1, 3}]\\
+  &= [O \in E_{0, 1} \cdot N \in E_{1, 2}, \varnothing, \varnothing, N \in E_{0, 1} \cdot L \in E_{1, 2}] &  &= [O \in E_{1, 2} \cdot N \in E_{2, 3}, \varnothing, \varnothing, N \in E_{1, 2} \cdot L \in E_{2, 3}]\\
+  &= [E_{0, 1, 2} \cdot E_{1, 2, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 2, 0}]             &  &= [E_{1, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{1, 2, 1} \cdot E_{2, 3, 0}]
 \end{align*}
 \end{small}\vspace{-8pt}
 
-\noindent Now we solve for the corner entry $V_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
+\noindent Now we solve for the corner entry $E_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
 
 \begin{align*}
-  V_{0, 3} &= V_{0, j} \cdot V_{j, 3} = (V_{0, 1} \boxtimes V_{1, 3}) \boxplus (V_{0, 2} \boxtimes V_{2, 3})\\
-%  &= [V_{0, 1, 2} \land V_{1, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0}] + [V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 2, 1} \land V_{2, 3, 0}]\\
-  &= [V_{0, 1, 2} \land V_{1, 3, 1} \lor V_{0, 2, 2} \land V_{2, 3, 1}, \bot, \bot, V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}]
+  E_{0, 3} &= E_{0, j} \cdot E_{j, 3} = (E_{0, 1} \boxtimes E_{1, 3}) \boxplus (E_{0, 2} \boxtimes E_{2, 3})\\
+%  &= [E_{0, 1, 2} \cdot E_{1, 3, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 3, 0}] + [E_{0, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{0, 2, 1} \cdot E_{2, 3, 0}]\\
+  &= [E_{0, 1, 2} \cdot E_{1, 3, 1} \lor E_{0, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 3, 0} \lor E_{0, 2, 1} \cdot E_{2, 3, 0}]
 \end{align*}
 
-\noindent Since we only care about $V_{0, 3, 3} \Leftrightarrow [S \in V_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
+\noindent Since we only care about $E_{0, 3, 3} \Leftrightarrow [S \in E_{0, 3}]$, we can ignore the first three entries and solve for:\vspace{-8pt}
 
 \begin{align*}
-  V_{0, 3, 3} &= V_{0, 1, 1} \land V_{1, 3, 0} \lor V_{0, 2, 1} \land V_{2, 3, 0}\\
-  &= V_{0, 1, 1} \land (V_{1, 2, 2} \land V_{2, 3, 1}) \lor V_{0, 2, 1} \land \bot\\
-  &= V_{0, 1, 1} \land V_{1, 2, 2} \land V_{2, 3, 1}\\
-  &= [N \in V_{0, 1}] \land [O \in V_{1, 2}] \land [N \in V_{2, 3}]
+  E_{0, 3, 3} &= E_{0, 1, 1} \cdot E_{1, 3, 0} \lor E_{0, 2, 1} \cdot E_{2, 3, 0}\\
+  &= E_{0, 1, 1} \cdot (E_{1, 2, 2} \cdot E_{2, 3, 1}) \lor E_{0, 2, 1} \cdot \varnothing\\
+  &= E_{0, 1, 1} \cdot E_{1, 2, 2} \cdot E_{2, 3, 1} \big(= [N \in E_{0, 1}] \cdot [O \in E_{1, 2}] \cdot [N \in E_{2, 3}]\big)\\
+  &= 1 \cdot \{+, \times\} \cdot \{0, 1\}
 \end{align*}
+
+\noindent Finally, to provide a witness, we can simply $\texttt{choose}\big(1 \cdot \{+, \times\} \cdot \{0, 1\}\big)$.
 
 %Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
 
@@ -527,7 +529,7 @@ Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\
 }
 \end{center}
 \vspace{-0.3cm}
-\caption{Regular expression denoting $\mathcal{L}(G_\cap)$.}\label{fig:int_re}
+\caption{Regular expression denoting $\mathcal{L}(G_\cap)$.}\label{fig:re_tree}
 \end{wrapfigure}
 
 As a concrete example, suppose we have the string, $\sigma=\texttt{( ) )}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
@@ -538,6 +540,8 @@ So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_
 Under such an ordering, the adjacency matrix takes an upper triangular form. This forms the template for the initial parse chart. The initial parse chart, $M_0$ (Fig.~\ref{fig:initial_pc}) and its fixpoint $M_\infty$, post convergence, (Fig.~\ref{fig:final_pc}) are shown. Each entry of this chart corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language. The adjacency and reachability matrices will always cover the expression vectors of the initial and final parse charts. In other words, we can always skip empty states in the reachability matrix.
 
 Since $M_\infty[q_{00}, q_{31}, 0] = \bs$, this implies that $L(A)\cap L(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we can then perform a second pass over the nonempty entries to construct regular expression vectors representing finite languages for each constituent and decode a witness using the Brzozowski derivative.
+
+As before, we will define $\boxplus, \boxtimes$ over regular expression vectors, $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_x\vee Z_z ]_{w\in V}$. Finally, we can construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. During this final pass, to avoid redundant work and accelerate convergence, we may skip over entries where $[M_{i,j,k} = \ws]$ holds in the binary domain. Once the regex is constructed, decoding simply requires invoking \texttt{choose}$(G_\cap)$ to produce a concrete repair.
 
 \clearpage
 
