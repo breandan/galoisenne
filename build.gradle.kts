@@ -160,7 +160,7 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("org.junit.jupiter:junit-jupiter:5.12.1")
+        implementation("org.junit.jupiter:junit-jupiter:5.13.0")
 
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:26.0.2")
