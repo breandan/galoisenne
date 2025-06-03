@@ -2,14 +2,12 @@ package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.repair.LED_BUFFER
-import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
-import ai.hypergraph.kaliningraph.sampling.randomString
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
-import kotlin.collections.plus
-import kotlin.math.absoluteValue
-import kotlin.math.max
+import kotlinx.coroutines.delay
+import kotlin.math.*
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.TimeSource
 
 // Generalized regular expression: https://planetmath.org/generalizedregularexpression
@@ -374,7 +372,138 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
   val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
-  val clock = TimeSource.Monotonic.markNow()
   // 5) Combine under a single GRE
+  return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
+}
+
+fun initiateSerialRepair(brokenStr: List<Σᐩ>, cfg: CFG): Sequence<Σᐩ> =
+  repairWithGRE(brokenStr, cfg)?.words(cfg.tmLst) ?: emptySequence()
+
+// Same as serial repair, but with strategic pauses to prevent stuttering on single-threaded runtimes
+suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
+  var i = 0
+  val upperBound = MAX_RADIUS * 3
+//  val monoEditBounds = cfg.maxParsableFragmentB(brokenStr, pad = upperBound)
+  val timer = TimeSource.Monotonic.markNow()
+  val bindex = cfg.bindex
+  val width = cfg.nonterminals.size
+  val vindex = cfg.vindex
+  val ups = cfg.unitProductions
+  val t2vs = cfg.tmToVidx
+  val maxBranch = vindex.maxOf { it.size }
+  val startIdx = bindex[START_SYMBOL]
+
+  suspend fun pause(freq: Int = 300_000) { if (i++ % freq == 0) { delay(50.nanoseconds) }}
+
+  suspend fun nonemptyLevInt(levFSA: FSA): Int? {
+    val ap: List<List<List<Int>?>> = levFSA.allPairs
+    val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
+
+    levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+    var minRad: Int = Int.MAX_VALUE
+
+    // For pairs (p,q) in topological order
+    for (dist: Int in 1..<dp.size) {
+      for (iP: Int in 0..<dp.size - dist) {
+        val p = iP
+        val q = iP + dist
+        if (ap[p][q] == null) continue
+        val appq = ap[p][q]!!
+        for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
+          pause()
+          outerloop@for(j: Int in 0..<indexArray.size step 2) {
+            val B = indexArray[j]
+            val C = indexArray[j + 1]
+            for (r in appq)
+              if (dp[p][r][B] && dp[r][q][C]) {
+                dp[p][q][A] = true
+                break@outerloop
+              }
+          }
+
+          if (p == 0 && A == startIdx && q in levFSA.finalIdxs && dp[p][q][A]) {
+            val (x, y) = levFSA.idsToCoords[q]!!
+            /** See final state conditions for [makeExactLevCFL] */
+            // The minimum radius such that this final state is included in the L-FSA
+            minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
+          }
+        }
+      }
+    }
+
+    return if (minRad == Int.MAX_VALUE) null else minRad
+  }
+
+  val led = (3..<upperBound)
+    .firstNotNullOfOrNull { nonemptyLevInt(makeLevFSA(brokenStr, it)) } ?:
+  upperBound.also { println("Hit upper bound") }
+  val radius = led + LED_BUFFER
+
+  println("Identified LED=$led, radius=$radius in ${timer.elapsedNow()}")
+
+  val levFSA = makeLevFSA(brokenStr, radius)
+
+  val nStates = levFSA.numStates
+  val tml = cfg.tmLst
+  val tms = tml.size
+  val tmm = cfg.tmMap
+
+  // 1) Create dp array of parse trees
+  val dp: Array<Array<Array<GRE?>>> = Array(nStates) { Array(nStates) { Array(width) { null } } }
+
+  // 2) Initialize terminal productions A -> a
+  val aitx = levFSA.allIndexedTxs1(ups)
+  for ((p, σ, q) in aitx) for (Aidx in t2vs[tmm[σ]!!])
+    dp[p][q][Aidx] = ((dp[p][q][Aidx] as? GRE.SET) ?: GRE.SET(tms))
+      .apply { pause(); s.set(tmm[σ]!!)/*; dq[p][q].set(Aidx)*/ }
+
+  var maxChildren = 0
+  var location = -1 to -1
+
+  // 3) CYK + Floyd Warshall parsing
+  for (dist in 1 until nStates) {
+    for (p in 0 until (nStates - dist)) {
+      val q = p + dist
+      if (levFSA.allPairs[p][q] == null) continue
+      val appq = levFSA.allPairs[p][q]!!
+
+      for ((Aidx, indexArray) in vindex.withIndex()) {
+        //      println("${cfg.bindex[Aidx]}(${pm!!.ntLengthBounds[Aidx]}):${levFSA.stateLst[p]}-${levFSA.stateLst[q]}(${levFSA.SPLP(p, q)})")
+        val rhsPairs = dp[p][q][Aidx]?.let { mutableListOf(it) } ?: mutableListOf()
+        outerLoop@for (j in 0..<indexArray.size step 2) {
+          pause()
+          val Bidx = indexArray[j]
+          val Cidx = indexArray[j + 1]
+          for (r in appq) {
+            val left = dp[p][r][Bidx]
+            if (left == null) continue
+            val right = dp[r][q][Cidx]
+            if (right == null) continue
+            // Found a parse for A
+            rhsPairs += left * right
+            //            if (rhsPairs.size > 10) break@outerLoop
+          }
+        }
+
+        val list = rhsPairs.toTypedArray()
+        if (rhsPairs.isNotEmpty()) {
+          if (list.size > maxChildren) {
+            maxChildren = list.size
+            location = p to q
+          }
+          dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
+        }
+      }
+    }
+  }
+
+  println("Completed parse matrix in: ${timer.elapsedNow()}")
+
+  // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
+  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+
+  println("Parsing took ${timer.elapsedNow()} with |σ|=${brokenStr.size}, " +
+      "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms, maxChildren=$maxChildren@$location")
+  // 5) Combine them under a single GRE
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
 }

@@ -86,6 +86,8 @@ kotlin {
         implementation(kotlin("reflect:2.1.0"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
+
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
       }
     }
 
@@ -98,9 +100,6 @@ kotlin {
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
         implementation("org.graalvm.js:js:24.2.1")
-
-        // Markovian deps
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.10.0")
