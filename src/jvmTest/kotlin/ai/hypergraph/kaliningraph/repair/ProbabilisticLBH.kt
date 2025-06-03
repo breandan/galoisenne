@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
+import ai.hypergraph.kaliningraph.automata.repairWithGRE
 import ai.hypergraph.kaliningraph.automata.toDFA
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
@@ -468,7 +469,7 @@ class ProbabilisticLBH {
     val ds = Grammars.dsNorm
     val la = makeLevFSA(prompt.tokenizeByWhitespace(), 4)
 
-//    val gre: GRE = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
+    val gre: GRE = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
 //    gre.showEditable()
 
 //  println(la.stateLst)

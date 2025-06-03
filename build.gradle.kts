@@ -1,10 +1,6 @@
-import io.github.gradlenexus.publishplugin.NexusPublishExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.gradle.targets.js.nodejs.*
 import kotlin.time.*
 import kotlin.time.DurationUnit.MILLISECONDS
 
@@ -37,7 +33,7 @@ if (keyId.isPresent && password.isPresent && secretKey.isPresent) {
   ext["ossrhPassword"] = sonatypeApiKey
 }
 
-if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
+if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent)
   nexusPublishing {
     repositories {
       sonatype {
@@ -49,9 +45,7 @@ if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent) {
       }
     }
   }
-} else {
-  logger.info("Sonatype API key not defined, skipping configuration of Maven Central publishing repository")
-}
+else logger.info("Sonatype API key not defined, skipping configuration of Maven Central publishing repository")
 
 fun getExtraString(name: String) = ext[name]?.toString()
 
@@ -60,25 +54,15 @@ signing {
   if (keyId.isPresent && password.isPresent) {
     useInMemoryPgpKeys(keyId.get(), secretKey.get(), password.get())
     sign(publishing.publications)
-  } else {
-    logger.info("PGP signing key not defined, skipping signing configuration")
-  }
+  } else logger.info("PGP signing key not defined, skipping signing configuration")
 }
 
 group = "ai.hypergraph"
 version = "0.2.2"
 
-repositories {
-  mavenCentral {
-    metadataSources {
-      mavenPom()
-    }
-  }
-  mavenCentral {
-    metadataSources {
-      artifact()
-    }
-  }
+repositories.mavenCentral {
+  metadataSources.mavenPom()
+  metadataSources.artifact()
 }
 
 val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
@@ -239,9 +223,7 @@ kotlin {
               organization = "McGill University"
             }
           }
-          scm {
-            url = "https://github.com/breandan/kaliningraph"
-          }
+          scm { url = "https://github.com/breandan/kaliningraph" }
         }
       }
     }

@@ -654,7 +654,7 @@ It is reasonable to ask whether the Levenshtein automaton defined is minimal, in
   Let $Q_{A'}$ be defined as $Q_A \setminus \{q_{n, 0}\}$.
 \end{theorem}
 
-Since $q_{n, 0}$ accepts the original string $\err\sigma$ which by definition is not in $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
+Since $q_{n, 0}$ accepts the original string $\err\sigma$ which is by definition outside $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
 
 \begin{theorem}
   $\varnothing = \mathcal{L}(\err\sigma_{1 \ldots (n-s)}\cdot\Sigma^s)\cap \mathcal{L}(G)$ implies the states $[q_{n-i, 0}]_{i \in 1\ldots s}$ are unnecessary.
