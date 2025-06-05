@@ -69,9 +69,9 @@ Prior research in syntax repair uses stochastic and deterministic methods. In th
 
 The primary issue with both of these approaches is that they generate a very low number of repairs. Even if the repair model is highly accurate, it is unlikely to generate the true repair when there are a large number of approximately equidistant or equiprobable repairs.
 
-To address this problem, our method explicitly generates and reranks every repair within a fixed edit distance. This ensures that the true repair is retrieved and scored, as long as it is only a few edits apart. Specifically, we employ the Bar-Hillel construction from formal language theory to generate a regular expression representing the finite language, then enumerate up to $2^{16}$ distinct words from this language, rerank the enumerated set using a neural language model, and present the top dozen or so results to the user, all within a few hundred milliseconds.
+To address this problem, our method explicitly generates and reranks every repair within a fixed edit distance. This ensures that the true repair is retrieved and scored, as long as it is only a few edits apart. Specifically, we employ the Bar-Hillel construction from formal language theory to generate a regular expression representing the finite language, then enumerate up to $2^{20}$ distinct words from this language, rerank the enumerated set using a neural language model, and present the top dozen or so results to the user, all within a few hundred milliseconds.
 
-We evaluate our approach on a dataset of human syntax errors and fixes fewer than five lexical edits apart and shorter than 120 tokens, large enough to fit a few lines of source code in realistic programming languages and editing scenarios. Our work shows this technique is extremely effective at predicting the true repair across a dataset of Python source code, on average 5x more accurately than the previous state of the art at the same latency.
+We evaluate our approach on a dataset of human syntax errors and fixes fewer than five lexical edits apart and shorter than 120 tokens, large enough to fit a few lines of source code in realistic programming languages and editing scenarios. Our work shows this technique is highly effective at predicting the true repair across a dataset of Python source code, on average 5x more accurately than the previous state of the art at the same latency.
 
 \clearpage
 
@@ -287,7 +287,7 @@ Our method is to treat finite language intersections as matrix exponentiation.
     M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
   \end{align}
 
-  \noindent The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
+  Now, our goal is to find $M=M^2$ such that $[M_0[r, c, w] \neq \varnothing] \implies [M[r, c, w] \neq \varnothing]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
 
   \begin{align}
     [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
@@ -300,7 +300,7 @@ Our method is to treat finite language intersections as matrix exponentiation.
     \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
   \end{align}
 
-  \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
+  \noindent To solve for the fixpoint , we can instead use exponentiation by squaring:
 
   \begin{align}
     T(2n) \;=\; \begin{cases}
