@@ -91,7 +91,7 @@ Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadrupl
 
 Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
 
-There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
+There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
 
 \begin{definition}[Generalized Regex]
   Let \( e \) be an expression defined by the grammar:
@@ -227,7 +227,7 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.2cm}
 \end{wrapfigure}
 
-Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given edit distance of $\err\sigma$. We can intersect this langauge with the language of all valid programs, $\mathcal{L}(G)$. The resulting language ($\ell_\cap$) will contain every repair within the given edit distance. This language can be decoded in order of probability to retrieve the top-k most probable repairs. Finally, we map the sequence back to Unicode, add placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the formatting steps are tangential to this paper, in which we confine ourselves to a lexical alphabet.
+Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given edit distance of $\err\sigma$. We can intersect this langauge with the language of all valid programs, $\mathcal{L}(G)$. The resulting language ($\ell_\cap$) will contain every repair within the given edit distance. This language can be decoded in order of probability to retrieve the top-k most natural repairs. Finally, we map the sequence back to Unicode, add placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the formatting steps are tangential to this paper, in which we confine ourselves to a lexical alphabet.
 
 \section{Formal statement}\label{sec:problem}
 
@@ -249,7 +249,7 @@ R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k}
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
-A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject invalid ($\sigma \notin \ell$) or unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ or invalid ($\sigma \notin \ell$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
 
 As we will demonstrate, the ranked repair problem can be factorized into two steps: first exact representation, then decoding. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing probability over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
 
@@ -451,7 +451,7 @@ To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to t
 
 \subsection{Repair as intersection}
 
-Now, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere in the string. In this case, we construct a lattice of all possible edit paths within a fixed distance. This structure is called a Levenshtein automaton.
+Now, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere inside the snippet. In this case, we construct a lattice of all possible edit paths up to a fixed distance. This structure is called a Levenshtein automaton.
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-0.3cm}
@@ -465,7 +465,6 @@ Now, we are ready to consider the general case of syntax repair, in which case t
 As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
 \input{figures/arc_rules}
-
 
 Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
 
@@ -604,6 +603,24 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 \end{proof}
 
 We would like the underlying sample space to be a proper set, \textit{not} a multiset.
+
+\section{Implementation}
+
+The implementation consists of five parts. We will make the simplifying assumption that each GPU kernel is a pure function taking as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more named arguments $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ each representing packed representations of some data structure, does some processing, and returns a single buffer $b_{\text{out}}: \mathbb{N}^{d}$. Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent thread which reads from the input buffers and has exclusive write access to a contiguous section of the output buffer. Importantly, the output buffer must be sized ahead of time, as no dynamic allocation is allowed inside GPU kernel execution.
+
+\begin{enumerate}
+  \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs the Levenshtein NFA.
+  \item $\texttt{cfl\_fx\_pt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{N}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
+  \item $\texttt{rgx\_build}: \mathbb{N}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
+  \item $\texttt{rgx\_dcode}: \text{REG} \rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
+  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\approx 1}$ -- returns a small set of the most probable repairs.
+\end{enumerate}
+
+For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ representation due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations, representation size is not a bottleneck. It is helpful to define indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
+
+The REG datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways.
+
+
 
 \clearpage\bibliography{../bib/acmart}
 
