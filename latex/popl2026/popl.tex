@@ -606,9 +606,7 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \section{Implementation}
 
-The implementation consists of five stages. We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$, does some arithmetic, and returns a single buffer $b_{\text{out}}: \mathbb{N}^{d}$.
-
-Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent thread which reads from the input buffers and has exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop subject to latency overhead. On a GPU, threads will effectively run simultaneously but memory must be sized ahead of time as no dynamic allocation is allowed during a GPU kernel's execution.
+The implementation essentially consists of five stages.
 
 \begin{enumerate}
   \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
@@ -618,11 +616,7 @@ Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent
   \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
-For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
-
-The REG datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways.\ldots
-
-We will define the serial version of the code for each procedure below:
+\noindent We will now elucidate the imperative pseudocode for each stage.
 
 \begin{algorithm}[H]
   \caption{\texttt{lev\_build} pseudocode}
@@ -645,10 +639,13 @@ We will define the serial version of the code for each procedure below:
   \end{algorithmic}
 \end{algorithm}
 
+Now, the \texttt{cfl\_fixpt} procedure will take an arbitrary acyclic NFA.
+
 \begin{algorithm}[H]
   \caption{\texttt{cfl\_fixpt} pseudocode}
   \label{alg:cfl_fixpt}
   \begin{algorithmic}[1]
+\Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e, denote a finite langauge).
 \Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
 \State $A \gets \big[\bs \textbf{ if } \exists s \in \Sigma \mid (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q,q' : Q}$ \Comment{Set up the adjacency matrix.}
 \State $R \gets \exp(A)$ \Comment{Solve for reachability matrix.}
@@ -666,7 +663,9 @@ We will define the serial version of the code for each procedure below:
   \end{algorithmic}
 \end{algorithm}
 
-Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$, otherwise if no such $q'$ exists, then it must be empty and we must increase $d_\max$.
+Note that we can short-circuit in two places: if $M_{i+1} = M_i$, or when two states $q, q'$ are unreachable. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$, otherwise if no such $q'$ exists, then it must be empty and we must increase $d_\max$.
+
+Now, we can proceed to build the regular expression representing $\ell_\cap$.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_build} pseudocode}
@@ -684,6 +683,8 @@ Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varn
   \end{algorithmic}
 \end{algorithm}
 
+Now, we can decode the regular expression.
+
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
   \label{alg:reg_dcode}
@@ -700,6 +701,8 @@ Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varn
   \end{algorithmic}
 \end{algorithm}
 
+Finally, we can take the highest-probability repairs.
+
 \begin{algorithm}[H]
   \caption{\texttt{sel\_top\_k} pseudocode}
   \label{alg:sel_top_k}
@@ -715,6 +718,18 @@ Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varn
     \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
   \end{algorithmic}
 \end{algorithm}
+
+\clearpage\subsection{GPU translation}
+
+Each stage is easily translatable to a GPU format, especially matrix multiplication which GPUs are specifically designed to accelerate.
+
+We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$, does some arithmetic, and returns a single buffer $b_{\text{out}}: \mathbb{N}^{d}$.
+
+Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent thread which reads from the input buffers and has exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop subject to latency overhead. On a GPU, threads will effectively run simultaneously but memory must be sized ahead of time as no dynamic allocation is allowed during a GPU kernel's execution.
+
+For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
+
+The REG datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways.\ldots
 
 \clearpage\bibliography{../bib/acmart}
 
