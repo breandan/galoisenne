@@ -630,18 +630,18 @@ We will define the serial version of the code for each procedure below:
   \begin{algorithmic}[1]
     \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
     \State $\delta \gets \varnothing$
-    \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.65cm}}
-      \State \vspace{-1.85cm}\[\hspace{1cm}\delta \gets \delta \cup\: \!\left\{
+    \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.58cm}}
+      \State \vspace{-1.78cm}\[\hspace{1cm}\delta \gets \delta \cup\: \!\left\{
           \begin{alignedat}{9}
-            &\;& q_{h,i} &\overset{[=\err\sigma_i]}{\rightarrow}    &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[2pt]
-            && q_{h,i}   &\overset{[\neq\err\sigma_i]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[2pt]
-            && q_{h,i}   &\overset{[\neq\err\sigma_i]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[2pt]
-            && q_{h,i}   &\overset{[=\err\sigma_i]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;\\[2pt]
+            &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[1pt]
+            && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\
+            && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\
+            && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
           \end{alignedat}
         \right\}\]
     \EndFor
     \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
-    \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a fully constructed Levenshtein automaton.}
+    \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
   \end{algorithmic}
 \end{algorithm}
 
@@ -649,17 +649,24 @@ We will define the serial version of the code for each procedure below:
   \caption{\texttt{cfl\_fixpt} pseudocode}
   \label{alg:cfl_fixpt}
   \begin{algorithmic}[1]
-    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
-    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
-%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-    \For{$\texttt{seed} < |T|$ and uninterrupted}
-      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
-      \State $\hat{A} \gets \hat{A} \cup \{t\}$
-%\Until{interrupted or $\texttt{seed} = |T|$.}
-    \EndFor
-    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+\Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
+\State $A \gets \big[\bs \textbf{ if } \exists s \in \Sigma \mid (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q,q' : Q}$ \Comment{Set up the adjacency matrix.}
+\State $R \gets \exp(A)$ \Comment{Solve for reachability matrix.}
+\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists v: V, w: \Sigma \mid (v \rightarrow w) \in P \land (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q, q' : Q, v : V}$
+\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$} \Comment{Solves matrix exponential $\exp(M_0)$.}
+\State $\textsc{done} \gets \bs$
+\For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
+  \State $\textbf{if } M[p, r, w] \textbf{ or not } R[p, r] \textbf{ then continue}$
+  \State $ M[p, r, w] \gets \bs \textbf{ if } \exists q: Q, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
+  \State $\textbf{if } M[p, r, w] \textbf{ then } \textsc{done} \gets \ws$
+\EndFor
+\State $\textbf{if }\textsc{done} \textbf{ then break}$
+\EndFor
+\State \Return $M$ \Comment{Returns the completed parse chart.}
   \end{algorithmic}
 \end{algorithm}
+
+Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$, otherwise if no such $q'$ exists, then it must be empty and we must increase $d_\max$.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_build} pseudocode}
