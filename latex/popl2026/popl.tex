@@ -606,21 +606,103 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \section{Implementation}
 
-The implementation consists of five parts. We will make the simplifying assumption that each GPU kernel is a pure function taking as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more named arguments $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ each representing packed representations of some data structure, does some processing, and returns a single buffer $b_{\text{out}}: \mathbb{N}^{d}$. Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent thread which reads from the input buffers and has exclusive write access to a contiguous section of the output buffer. Importantly, the output buffer must be sized ahead of time, as no dynamic allocation is allowed inside GPU kernel execution.
+The implementation consists of five stages. We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$, does some arithmetic, and returns a single buffer $b_{\text{out}}: \mathbb{N}^{d}$.
+
+Morally, each $\langle r, c, v\rangle$ triple will dispatch a single independent thread which reads from the input buffers and has exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop subject to latency overhead. On a GPU, threads will effectively run simultaneously but memory must be sized ahead of time as no dynamic allocation is allowed during a GPU kernel's execution.
 
 \begin{enumerate}
-  \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs the Levenshtein NFA.
-  \item $\texttt{cfl\_fx\_pt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{N}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
-  \item $\texttt{rgx\_build}: \mathbb{N}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{rgx\_dcode}: \text{REG} \rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
-  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\approx 1}$ -- returns a small set of the most probable repairs.
+  \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
+  \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
+  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
+  \item $\texttt{reg\_dcode}: \text{REG} \rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
+  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
-For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ representation due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations, representation size is not a bottleneck. It is helpful to define indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
+For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
 
-The REG datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways.
+The REG datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways.\ldots
 
+We will define the serial version of the code for each procedure below:
 
+\begin{algorithm}[H]
+  \caption{\texttt{lev\_build} pseudocode}
+  \label{alg:lev_build}
+  \begin{algorithmic}[1]
+    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
+    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+    \For{$\texttt{seed} < |T|$ and uninterrupted}
+      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+      \State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \EndFor
+    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{\texttt{cfl\_fixpt} pseudocode}
+  \label{alg:cfl_fixpt}
+  \begin{algorithmic}[1]
+    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
+    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+    \For{$\texttt{seed} < |T|$ and uninterrupted}
+      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+      \State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \EndFor
+    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{\texttt{reg\_build} pseudocode}
+  \label{alg:reg_build}
+  \begin{algorithmic}[1]
+    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
+    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+    \For{$\texttt{seed} < |T|$ and uninterrupted}
+      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+      \State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \EndFor
+    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{\texttt{reg\_dcode} pseudocode}
+  \label{alg:reg_dcode}
+  \begin{algorithmic}[1]
+    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
+    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+    \For{$\texttt{seed} < |T|$ and uninterrupted}
+      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+      \State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \EndFor
+    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{\texttt{sel\_top\_k} pseudocode}
+  \label{alg:sel_top_k}
+  \begin{algorithmic}[1]
+    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
+    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
+%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
+    \For{$\texttt{seed} < |T|$ and uninterrupted}
+      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
+      \State $\hat{A} \gets \hat{A} \cup \{t\}$
+%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \EndFor
+    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \end{algorithmic}
+\end{algorithm}
 
 \clearpage\bibliography{../bib/acmart}
 
