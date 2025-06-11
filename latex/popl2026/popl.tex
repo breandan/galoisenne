@@ -449,7 +449,7 @@ To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to t
 
 %Now we know that $\sigma =$ 1 \underline{O} \underline{N} is a valid solution, and we can take the product $\{1\}\times \hat\sigma_2^{-1}(O) \times \hat\sigma_3^{-1}(N)$ to recover the inhabitants, yielding $A=\{1+0, 1+1, 1\times 0, 1\times 1\}$. In this case, since $G$ is unambiguous, there is only one parse tree satisfying $V_{0, |\sigma|, 3}$.%, but in general, there can be multiple valid parse trees.
 
-\subsection{Repair as intersection}
+\subsection{Repair as intersection}\label{sec:repair_ex}
 
 Now, we are ready to consider the general case of syntax repair, in which case the edit locations are not localized but can occur anywhere inside the snippet. In this case, we construct a lattice of all possible edit paths up to a fixed distance. This structure is called a Levenshtein automaton.
 
@@ -606,7 +606,7 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \section{Implementation}
 
-The implementation essentially consists of five stages.
+The implementation essentially consists of five stages, each dependent on its predecessor.
 
 \begin{enumerate}
   \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
@@ -616,45 +616,45 @@ The implementation essentially consists of five stages.
   \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
-\noindent We will now elucidate the imperative pseudocode for each stage.
+\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in Sec.~\ref{sec:repair_ex}.
 
 \begin{algorithm}[H]
-  \caption{\texttt{lev\_build} pseudocode}
-  \label{alg:lev_build}
-  \begin{algorithmic}[1]
-    \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
-    \State $\delta \gets \varnothing$
-    \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.58cm}}
-      \State \vspace{-1.78cm}\[\hspace{1cm}\delta \gets \delta \cup\: \!\left\{
-          \begin{alignedat}{9}
-            &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[1pt]
-            && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\
-            && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\
-            && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
-          \end{alignedat}
-        \right\}\]
-    \EndFor
-    \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
-    \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
-  \end{algorithmic}
+\caption{\texttt{lev\_build} pseudocode}
+\label{alg:lev_build}
+\begin{algorithmic}[1]
+  \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
+  \State $\delta \gets \varnothing$
+  \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.58cm}}
+    \State \vspace{-1.78cm}\[\hspace{1cm}\delta \gets \delta \cup\: \!\left\{
+        \begin{alignedat}{9}
+          &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[1pt]
+          && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\
+          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\
+          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
+        \end{alignedat}
+      \right\}\]
+  \EndFor
+  \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
+  \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
+\end{algorithmic}
 \end{algorithm}
 
-Now, the \texttt{cfl\_fixpt} procedure will take an arbitrary acyclic NFA.
+Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boolean 3-tensor.
 
 \begin{algorithm}[H]
-  \caption{\texttt{cfl\_fixpt} pseudocode}
-  \label{alg:cfl_fixpt}
-  \begin{algorithmic}[1]
+\caption{\texttt{cfl\_fixpt} pseudocode}
+\label{alg:cfl_fixpt}
+\begin{algorithmic}[1]
 \Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e, denote a finite langauge).
 \Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
-\State $A \gets \big[\bs \textbf{ if } \exists s \in \Sigma \mid (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q,q' : Q}$ \Comment{Set up the adjacency matrix.}
-\State $R \gets \exp(A)$ \Comment{Solve for reachability matrix.}
+\State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists \sigma \in \Sigma^+ \mid q \overset{\sigma}{\rightsquigarrow} q' \textbf{ else } \ws\big]_{q,q' : Q}$ \Comment{Solve for reachability matrix.}
 \State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists v: V, w: \Sigma \mid (v \rightarrow w) \in P \land (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q, q' : Q, v : V}$
-\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$} \Comment{Solves matrix exponential $\exp(M_0)$.}
+\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$} \Comment{Solves matrix exponential, $\exp(M_0)$.}
 \State $\textsc{done} \gets \bs$
 \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
   \State $\textbf{if } M[p, r, w] \textbf{ or not } R[p, r] \textbf{ then continue}$
-  \State $ M[p, r, w] \gets \bs \textbf{ if } \exists q: Q, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
+  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider all states between p and r.}
+  \State $M[p, r, w] \gets \bs \textbf{ if } \exists q: Q_{pr}, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
   \State $\textbf{if } M[p, r, w] \textbf{ then } \textsc{done} \gets \ws$
 \EndFor
 \State $\textbf{if }\textsc{done} \textbf{ then break}$
@@ -663,27 +663,31 @@ Now, the \texttt{cfl\_fixpt} procedure will take an arbitrary acyclic NFA.
   \end{algorithmic}
 \end{algorithm}
 
-Note that we can short-circuit in two places: if $M_{i+1} = M_i$, or when two states $q, q'$ are unreachable. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$, otherwise if no such $q'$ exists, then it must be empty and we must increase $d_\max$.
+Note we may short-circuit in two places, if: $M_{i+1} = M_i$, or when two states $q, q'$ are unreachable. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged.
 
-Now, we can proceed to build the regular expression representing $\ell_\cap$.
+Now, we can proceed to build the regular expression representing $\ell_\cap = \mathcal{L}(G_\cap)$.
 
 \begin{algorithm}[H]
-  \caption{\texttt{reg\_build} pseudocode}
-  \label{alg:reg_build}
-  \begin{algorithmic}[1]
-    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
-    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
-%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-    \For{$\texttt{seed} < |T|$ and uninterrupted}
-      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
-      \State $\hat{A} \gets \hat{A} \cup \{t\}$
-%\Until{interrupted or $\texttt{seed} = |T|$.}
-    \EndFor
-    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
-  \end{algorithmic}
+\caption{\texttt{reg\_build} pseudocode}
+\label{alg:reg_build}
+\begin{algorithmic}[1]
+  \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
+  \State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,r : Q}$
+  \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q, q': Q, v: V}$
+  \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$}
+  \State $M' \gets M$
+  \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
+  \State $\textbf{if not } M_\mathbb{B}[p, r, w] \textbf{ then continue}$
+  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
+  \State \vspace{-0.42cm}\[\hspace{0.75cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\substack{q: Q_{pr}\\x, z: V}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]
+  \EndFor
+  \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
+  \EndFor \vspace{0.2cm}
+  \State \vspace{-0.42cm}\[\hspace{-7.7cm}\textbf{return }\bigvee_{q': F} M[q_{0, 0}, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.4cm}
+\end{algorithmic}
 \end{algorithm}
 
-Now, we can decode the regular expression.
+Once we have the regular expression for $G_\cap$, we can decode it to produce a set of repairs.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
