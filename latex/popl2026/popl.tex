@@ -578,7 +578,7 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
 
 \subsection{Mode collapse}
 
-Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
+Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs as the case for $G_\cap$, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
 
 $$
 S \rightarrow A\:B \: (0.9999) \hspace{20pt} S \rightarrow C\:C \: (0.0001)
@@ -623,16 +623,17 @@ The implementation essentially consists of five stages, each dependent on its pr
 \label{alg:lev_build}
 \begin{algorithmic}[1]
   \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
-  \State $\delta \gets \varnothing$
-  \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.58cm}}
-    \State \vspace{-1.78cm}\[\hspace{1cm}\delta \gets \delta \cup\: \!\left\{
+  \State $Q, \delta \gets \varnothing$
+  \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.34cm}}
+    \State \vspace{-1.65cm}\[\hspace{0.5cm}\delta' \gets \!\left\{
         \begin{alignedat}{9}
-          &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[1pt]
-          && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\
-          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\
+          &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[-2pt]
+          && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[-2pt]
+          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[-2pt]
           && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
         \end{alignedat}
-      \right\}\]
+      \right\phantom{\}}\]
+    \State $Q \gets Q \cup \{\pi_1(\delta'), \pi_3(\delta')\}, \delta \gets \delta \cup \{\delta'\}$
   \EndFor
   \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
   \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
@@ -653,7 +654,7 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
 \State $\textsc{done} \gets \bs$
 \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
   \State $\textbf{if } M[p, r, w] \textbf{ or not } R[p, r] \textbf{ then continue}$
-  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider all states between p and r.}
+  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider reachable states between p and r.}
   \State $M[p, r, w] \gets \bs \textbf{ if } \exists q: Q_{pr}, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
   \State $\textbf{if } M[p, r, w] \textbf{ then } \textsc{done} \gets \ws$
 \EndFor
@@ -665,29 +666,29 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
 
 Note we may short-circuit in two places, if: $M_{i+1} = M_i$, or when two states $q, q'$ are unreachable. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged.
 
-Now, we can proceed to build the regular expression representing $\ell_\cap = \mathcal{L}(G_\cap)$.
+Now we can proceed to build the regular expression representing $\ell_\cap = \mathcal{L}(G_\cap)$.
 
 \begin{algorithm}[H]
 \caption{\texttt{reg\_build} pseudocode}
 \label{alg:reg_build}
 \begin{algorithmic}[1]
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
-  \State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
+  \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
   \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
   \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$}
   \State $M' \gets M$
   \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
   \State $\textbf{if not } M_\mathbb{B}[p, r, w] \textbf{ then continue}$
-  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
-  \State \vspace{-0.42cm}\[\hspace{0.62cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\mathclap{\substack{q\,:\,Q_{pr}\\x,\,z\,:\,V}}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]
+  \State $Q_{pr} \gets \{q: Q \mid P[p, q] \land P[q, r]\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
+  \State \vspace{-0.42cm}\[\hspace{0.62cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\mathclap{\substack{q\,:\,Q_{pr}\\x,\,z\,:\,V}}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]\vspace{-0.2cm}
   \EndFor
   \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
   \EndFor \vspace{0.2cm}
-  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q\,:\,I,\,q'\,:\,F}} M[q, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.4cm}
+  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q\,:\,I,\,q'\,:\,F}} M[q, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.31cm}
 \end{algorithmic}
 \end{algorithm}
 
-Once we have the regular expression for $G_\cap$, we can decode it to produce a set of repairs.
+Once we have the expression for $G_\cap$, we can decode it to rapidly produce a large set of candidates.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
@@ -698,7 +699,7 @@ Once we have the regular expression for $G_\cap$, we can decode it to produce a 
     \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon^{c-1}, e\cdot \varepsilon^{c-1}, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
     \State \vspace{-0.55cm}\[\hspace{-4.71cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^*) =_{\text{def}} \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
     \Repeat
-        \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}$
+        \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}_0 \textbf{ off }\mathcal{E}$
         \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, p + \ln P(a\mid \sigma) \rangle \mid a \in \texttt{follow}(e)\big]$
         \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
         \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
@@ -707,7 +708,7 @@ Once we have the regular expression for $G_\cap$, we can decode it to produce a 
   \end{algorithmic}
 \end{algorithm}
 
-Finally, we can take the highest-probability repairs using a standard selection algorithm.
+Now we are ready to skim off the highest probability repairs using a standard selection algorithm.
 
 \begin{algorithm}[H]
   \caption{\texttt{sel\_top\_k} pseudocode}
@@ -721,6 +722,8 @@ Finally, we can take the highest-probability repairs using a standard selection 
     \State \Return $[\pi_1(a) \mid a \in \hat{A}]$ \Comment{Return top-k candidates.}
   \end{algorithmic}
 \end{algorithm}
+
+  Finally, we have our shortlist of repairs and after postprocessing, can present them to the user.
 
 \clearpage\subsection{GPU translation}
 
