@@ -612,8 +612,8 @@ The implementation essentially consists of five stages, each dependent on its pr
   \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
   \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
   \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{reg\_dcode}: \text{REG} \rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
-  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
+  \item $\texttt{reg\_dcode}: \text{REG} \times \mathbb{N}^{|\Sigma|^{c\approx 3}} \hspace{-0.12cm}\rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
+  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \times \mathbb{N} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
 \noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in Sec.~\ref{sec:repair_ex}.
@@ -647,8 +647,8 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
 \begin{algorithmic}[1]
 \Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e, denote a finite langauge).
 \Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
-\State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists \sigma \in \Sigma^+ \mid q \overset{\sigma}{\rightsquigarrow} q' \textbf{ else } \ws\big]_{q,q' : Q}$ \Comment{Solve for reachability matrix.}
-\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists v: V, w: \Sigma \mid (v \rightarrow w) \in P \land (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q, q' : Q, v : V}$
+\State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists \sigma \in \Sigma^+ \mid q \overset{\sigma}{\rightsquigarrow} q' \textbf{ else } \ws\big]_{q,\,q'\,:\, Q}$ \Comment{Solve for reachability matrix.}
+\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists v: V, w: \Sigma \mid (v \rightarrow w) \in P \land (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q,\,q'\,:\,Q,\,v\,:\,V}$
 \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$} \Comment{Solves matrix exponential, $\exp(M_0)$.}
 \State $\textsc{done} \gets \bs$
 \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
@@ -672,18 +672,18 @@ Now, we can proceed to build the regular expression representing $\ell_\cap = \m
 \label{alg:reg_build}
 \begin{algorithmic}[1]
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
-  \State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,r : Q}$
-  \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q, q': Q, v: V}$
+  \State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
+  \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
   \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$}
   \State $M' \gets M$
   \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
   \State $\textbf{if not } M_\mathbb{B}[p, r, w] \textbf{ then continue}$
   \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
-  \State \vspace{-0.42cm}\[\hspace{0.75cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\substack{q: Q_{pr}\\x, z: V}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]
+  \State \vspace{-0.42cm}\[\hspace{0.62cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\mathclap{\substack{q\,:\,Q_{pr}\\x,\,z\,:\,V}}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]
   \EndFor
   \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
   \EndFor \vspace{0.2cm}
-  \State \vspace{-0.42cm}\[\hspace{-7.7cm}\textbf{return }\bigvee_{q': F} M[q_{0, 0}, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.4cm}
+  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q\,:\,I,\,q'\,:\,F}} M[q, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.4cm}
 \end{algorithmic}
 \end{algorithm}
 
@@ -693,33 +693,32 @@ Once we have the regular expression for $G_\cap$, we can decode it to produce a 
   \caption{\texttt{reg\_dcode} pseudocode}
   \label{alg:reg_dcode}
   \begin{algorithmic}[1]
-    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
-    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
-%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-    \For{$\texttt{seed} < |T|$ and uninterrupted}
-      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
-      \State $\hat{A} \gets \hat{A} \cup \{t\}$
-%\Until{interrupted or $\texttt{seed} = |T|$.}
-    \EndFor
-    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+  \Require We expect the shortest word to exceed the Markov order in length, $c < |\sigma|, \forall\sigma: \mathcal{L}(e)$.
+  \Procedure{\texttt{reg\_dcode}$\big(e: \text{REG}, C: \mathbb{N}^{|\Sigma|^{c\approx 3}}\big)$}{}
+    \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon, e, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
+    \State \vspace{-0.55cm}\[\hspace{-4.71cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^*) =_{\text{def}} \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
+    \Repeat
+        \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}$
+        \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, p + \ln P(a\mid \sigma) \rangle \mid a \in \texttt{follow}(e)\big]$
+        \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
+        \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
+    \Until{interrupted or $\mathcal{E}$ is empty.}
+    \State \Return $\mathcal{T}$
   \end{algorithmic}
 \end{algorithm}
 
-Finally, we can take the highest-probability repairs.
+Finally, we can take the highest-probability repairs using a standard selection algorithm.
 
 \begin{algorithm}[H]
   \caption{\texttt{sel\_top\_k} pseudocode}
   \label{alg:sel_top_k}
   \begin{algorithmic}[1]
-    \Require $T: \mathbb{T}_2$ intersection grammar, PCFG Score$: \mathbb{T} \rightarrow \mathbb{R}$
-    \State $\hat{A} \gets \varnothing, \texttt{seed} \gets 0$ \Comment{Initialize set of parse trees.}
-%\State $[\mathcal{T, P}]\texttt{.comparator} = \lambda\langle\sigma, q, \gamma\rangle.(\frac{\gamma}{|\sigma|})$
-    \For{$\texttt{seed} < |T|$ and uninterrupted}
-      \State $t \gets \varphi'\big(T, \texttt{seed++})$ \Comment{Draw unique $\mathbb{Z}_{|T|}$ and decode into fresh parse tree.}
-      \State $\hat{A} \gets \hat{A} \cup \{t\}$
-%\Until{interrupted or $\texttt{seed} = |T|$.}
+    \Procedure{\texttt{sel\_top\_k}$\big(l: (\Sigma^* \times \mathbb{N})^{p\gg1}, k: \mathbb{N}\big)$}{}
+    \State $\hat{A}: (\Sigma^* \times \mathbb{N})^* \gets [l_0]}$ \Comment{Initialize a priority queue of nearly-optimal repairs.}
+    \For{$\langle\sigma, s\rangle \textbf{ in } l$}
+      \State $\textbf{if } s < \pi_2(\hat{A}_{|\hat{A}|}) \textbf{ then insert } \langle\sigma, s\rangle \textbf{ into } \hat{A} \textbf{ and drop } \hat{A}_{|k + 1|} \textbf{ if } |\hat{A}| > k$
     \EndFor
-    \State \Return $[\text{\textleaf}(a) \mid a \in \hat{A} \textbf{ ranked by } \text{Score}(a)]$ \Comment{Rerank by PCFG likelihood and defoliate.}
+    \State \Return $[\pi_1(a) \mid a \in \hat{A}]$ \Comment{Return top-k candidates.}
   \end{algorithmic}
 \end{algorithm}
 
