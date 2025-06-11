@@ -227,7 +227,7 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.2cm}
 \end{wrapfigure}
 
-Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given edit distance of $\err\sigma$. We can intersect this langauge with the language of all valid programs, $\mathcal{L}(G)$. The resulting language ($\ell_\cap$) will contain every repair within the given edit distance. This language can be decoded in order of probability to retrieve the top-k most natural repairs. Finally, we map the sequence back to Unicode, add placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the formatting steps are tangential to this paper, in which we confine ourselves to a lexical alphabet.
+Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given edit distance of $\err\sigma$. We can intersect this language with the language of all valid programs, $\mathcal{L}(G)$. The resulting language ($\ell_\cap$) will contain every possible repair within the given edit distance, which can be decoded in order of probability to retrieve the top-k most probable repairs. These we can map back into Unicode, adding placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the cosmetic postprocessing steps are tangential to this work, in which we confine ourselves to a lexical alphabet.
 
 \section{Formal statement}\label{sec:problem}
 
@@ -606,14 +606,14 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \section{Implementation}
 
-The implementation essentially consists of five stages, each dependent on its predecessor.
+The implementation essentially consists of four stages, each dependent on its predecessor.
 
 \begin{enumerate}
   \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
   \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
   \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{reg\_dcode}: \text{REG} \times \mathbb{N}^{|\Sigma|^{c\approx 3}} \hspace{-0.12cm}\rightarrow (\Sigma^* \times \mathbb{N})^{p\gg1}$ -- generates and scores a large number of repairs.
-  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \times \mathbb{N} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
+  \item $\texttt{reg\_dcode}: \text{REG} \times \mathbb{N}^{|\Sigma|^{c\approx 3}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10}$ -- returns a small set of the most probable repairs.
+%  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \times \mathbb{N} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
 \noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in Sec.~\ref{sec:repair_ex}.
@@ -638,7 +638,7 @@ The implementation essentially consists of five stages, each dependent on its pr
   \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
   \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
 \end{algorithmic}
-\end{algorithm}
+\end{algorithm}\vspace{-0.2cm}
 
 Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boolean 3-tensor.
 
@@ -660,18 +660,19 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
 \EndFor
 \State $\textbf{if }\textsc{done} \textbf{ then break}$
 \EndFor
-\State \Return $M$ \Comment{Returns the completed parse chart.}
+\State \Return $M$ \Comment{Returns the completed Boolean parse chart.}
   \end{algorithmic}
-\end{algorithm}
+\end{algorithm}\vspace{-0.2cm}
 
-Note we may short-circuit in two places, if: $M_{i+1} = M_i$, or when two states $q, q'$ are unreachable. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q_{0,0}, q', S] = \bs$ for some $q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged.
+Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q, q', S] = \bs$ for some $q: I, q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
 
-Now we can proceed to build the regular expression representing $\ell_\cap = \mathcal{L}(G_\cap)$.
+Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
 
 \begin{algorithm}[H]
 \caption{\texttt{reg\_build} pseudocode}
 \label{alg:reg_build}
 \begin{algorithmic}[1]
+  \Require $\exists q: I, q': F$ such that $M_{\mathbb{B}}[q, q', S] = \bs$ and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
   \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
   \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
@@ -688,42 +689,42 @@ Now we can proceed to build the regular expression representing $\ell_\cap = \ma
 \end{algorithmic}
 \end{algorithm}
 
-Once we have the expression for $G_\cap$, we can decode it to rapidly produce a large set of candidates.
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained c-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which point it is diverted to the total queue, and the top-k total trajectories are returned.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
   \label{alg:reg_dcode}
   \begin{algorithmic}[1]
   \Require We expect the shortest word to exceed the Markov order in length, $c < |\sigma|, \forall\sigma: \mathcal{L}(e)$.
-  \Procedure{\texttt{reg\_dcode}$\big(e: \text{REG}, C: \mathbb{N}^{|\Sigma|^{c\approx 3}}\big)$}{}
+  \Procedure{\texttt{reg\_dcode}$\big(e: \text{REG}, C: \mathbb{N}^{|\Sigma|^{c\approx 3}}, k: \mathbb{N}\big)$}{}
     \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon^{c-1}, e\cdot \varepsilon^{c-1}, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
-    \State \vspace{-0.55cm}\[\hspace{-4.71cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^*) =_{\text{def}} \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
+    \State \vspace{-0.55cm}\[\hspace{-4.58cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^{\geq c-1}) = \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
     \Repeat
         \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}_0 \textbf{ off }\mathcal{E}$
         \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, p + \ln P(a\mid \sigma) \rangle \mid a \in \texttt{follow}(e)\big]$
         \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
         \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
     \Until{interrupted or $\mathcal{E}$ is empty.}
-    \State \Return $\mathcal{T}$
+    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-k repairs by probability.}
   \end{algorithmic}
 \end{algorithm}
 
-Now we are ready to skim off the highest probability repairs using a standard selection algorithm.
+%Now we are ready to skim off the highest probability repairs using a standard selection algorithm.
+%
+%\begin{algorithm}[H]
+%  \caption{\texttt{sel\_top\_k} pseudocode}
+%  \label{alg:sel_top_k}
+%  \begin{algorithmic}[1]
+%    \Procedure{\texttt{sel\_top\_k}$\big(l: (\Sigma^* \times \mathbb{N})^{p\gg1}, k: \mathbb{N}\big)$}{}
+%    \State $\hat{A}: (\Sigma^* \times \mathbb{N})^* \gets [l_0]}$ \Comment{Initialize a priority queue of nearly-optimal repairs.}
+%    \For{$\langle\sigma, s\rangle \textbf{ in } l$}
+%      \State $\textbf{if } s < \pi_2(\hat{A}_{|\hat{A}|}) \textbf{ then insert } \langle\sigma, s\rangle \textbf{ into } \hat{A} \textbf{ and drop } \hat{A}_{|k + 1|} \textbf{ if } |\hat{A}| > k$
+%    \EndFor
+%    \State \Return $[\pi_1(a) \mid a \in \hat{A}]$ \Comment{Return top-k candidates.}
+%  \end{algorithmic}
+%\end{algorithm}
 
-\begin{algorithm}[H]
-  \caption{\texttt{sel\_top\_k} pseudocode}
-  \label{alg:sel_top_k}
-  \begin{algorithmic}[1]
-    \Procedure{\texttt{sel\_top\_k}$\big(l: (\Sigma^* \times \mathbb{N})^{p\gg1}, k: \mathbb{N}\big)$}{}
-    \State $\hat{A}: (\Sigma^* \times \mathbb{N})^* \gets [l_0]}$ \Comment{Initialize a priority queue of nearly-optimal repairs.}
-    \For{$\langle\sigma, s\rangle \textbf{ in } l$}
-      \State $\textbf{if } s < \pi_2(\hat{A}_{|\hat{A}|}) \textbf{ then insert } \langle\sigma, s\rangle \textbf{ into } \hat{A} \textbf{ and drop } \hat{A}_{|k + 1|} \textbf{ if } |\hat{A}| > k$
-    \EndFor
-    \State \Return $[\pi_1(a) \mid a \in \hat{A}]$ \Comment{Return top-k candidates.}
-  \end{algorithmic}
-\end{algorithm}
-
-  Finally, we have our shortlist of repairs and after postprocessing, can present them to the user.
+  Now, we have our shortlist of repairs and after cosmetic postprocessing, can present them to the user. With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., \~100ms, or otherwise terminate early should we succeed in exhaustively generating it.
 
 \clearpage\subsection{GPU translation}
 
