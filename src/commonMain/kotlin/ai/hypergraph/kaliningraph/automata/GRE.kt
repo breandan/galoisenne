@@ -26,8 +26,7 @@ sealed class GRE(open vararg val args: GRE) {
     terminals: List<Σᐩ>,
     ngrams: MutableMap<List<String>, Double>,
     shouldContinue: () -> Boolean = { true }
-  ) =
-    enumerateWithPriority(ngrams, terminals).takeWhile { shouldContinue() }.distinct()
+  ) = enumerateWithPriority(ngrams, terminals).takeWhile { shouldContinue() }.distinct()
       .map { it.mapNotNull { terminals[it].let { if (it == "ε") null else it } }.joinToString(" ") }
 
   val admits: KBitSet by lazy { followSet() }
@@ -376,8 +375,11 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
 }
 
-fun initiateSerialRepair(brokenStr: List<Σᐩ>, cfg: CFG): Sequence<Σᐩ> =
-  repairWithGRE(brokenStr, cfg)?.words(cfg.tmLst) ?: emptySequence()
+fun initiateSerialRepair(brokenStr: List<Σᐩ>, cfg: CFG): Sequence<Σᐩ> {
+  val repair = repairWithGRE(brokenStr, cfg)
+  val clock = TimeSource.Monotonic.markNow()
+  return repair?.words(cfg.tmLst) { clock.elapsedNow().inWholeMilliseconds < TIMEOUT_MS } ?: emptySequence()
+}
 
 // Same as serial repair, but with strategic pauses to prevent stuttering on single-threaded runtimes
 suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
