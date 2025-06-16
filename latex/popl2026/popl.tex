@@ -149,7 +149,7 @@ Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differenti
   \end{multicols}
 \end{definition}
 
-Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years:
+Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years~\cite{might2011parsing,adams2016complexity,stanford2021symbolic,varatalu2025re}:
 
 \begin{theorem}[Recognition]
   For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
@@ -164,13 +164,13 @@ Variations on this basic procedure can also be used for functional parsing and r
 \begin{theorem}[Generation]
   For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
 
-  $\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
+  \hspace{1.6cm}$\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
    \{e\} &\text{ if } e \in \Sigma \\
    \texttt{follow}(x) &\text{ if } e = x \cdot z\\
    \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
   \end{cases}\\\\
 
-  $\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
+  \hspace{1.6cm}$\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
    e &\text{ if } e \in \Sigma \\
    \big(s \stackrel{\$}{\gets} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
    \texttt{choose}(e' \stackrel{\$}{\gets} \{x, z\}) &\text{ if } e = x \lor z
@@ -179,9 +179,17 @@ Variations on this basic procedure can also be used for functional parsing and r
 
 Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
-\subsection{Language intersection}
+Recall that since every regular language is context-free. So, given a $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with start symbol \( S_e \) and productions \( P(e) \) as:
 
-We will now define intersection in a slightly more expressive manner, which has the added benefit of being more readily parallelizable. Recall every regular language is context-free. Therefor, to take the intersection between two regular languages, we can treat one as a CFL, which often admits a more compact representation. Alternatively, we can take the intersection between a truly non-regular CFL (such as a programming language syntax) and some regular language.
+\begin{equation}
+P(e) = \begin{cases}
+ \{ S_e \rightarrow \sigma \mid \sigma \in \Sigma \} & \text{if } e = \Sigma \\
+ P(x) \cup P(z) \cup \{ S_e \rightarrow S_x S_z \} & \text{if } e = x \cdot z \\
+ P(x) \cup P(z) \cup \{ S_e \rightarrow S_x, S_e \rightarrow S_z \} & \text{if } e = x \lor z \\
+\end{cases}
+\end{equation}\vspace{0.2cm}
+
+\noindent where the CFG is $G(e) = \langle V, \Sigma, P(e), S_e\rangle$ with $V$ being all nonterminals in $P(e)$. Therefor, to intersect two regular languages, we can treat one of them as a CFL. Alternatively, we can take the intersection between some truly non-regular CFL (say, a programming language syntax) and a regular language.
 
 \begin{theorem}[Bar-Hillel, 1961]
   For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
@@ -210,9 +218,9 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
       \RightLabel{$\Join$}
       \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
-\end{definition}
+\end{definition}\vspace{0.2cm}
 
-\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. % We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
+\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. In Sec.~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection language is finite.% We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
 
 \clearpage\section{Informal statement}
 
@@ -272,7 +280,7 @@ As we will demonstrate, the ranked repair problem can be factorized into two ste
 
 %  Finally, once we have a set of small and valid repairs, the problem of ranked repair reduces to sorting retrieved samples by likelihood, which can be approximated using an autoregressive language model or any suitable scoring function of the implementer's choice.
 
-\clearpage\section{Method}
+\clearpage\section{Method}\label{sec:method}
 
 Our method is to treat finite language intersections as matrix exponentiation.
 
