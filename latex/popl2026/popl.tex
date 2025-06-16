@@ -77,7 +77,12 @@ To operationalize this technique, we design, develop and benchmark a new develop
 
 Finally, we evaluate our approach on a dataset of human syntax errors and fixes fewer than five lexical edits and shorter than 120 tokens, large enough to fit a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the true repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
 
-\clearpage
+\begin{figure}[h!]
+  \includegraphics[width=\textwidth]{flow}\vspace{-1pt}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
+\end{figure}
+
+From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. We then proceed to stich this automaton together with a grammar to produce a regular expression. This regular expression is decoded with the help of a statistical model to produce a list of suggested repairs, which is reranked and truncated. This we depict in Fig. \ref{fig:arch_simp}.
 
 \section{Background}
 
@@ -291,7 +296,7 @@ Our method is to treat finite language intersections as matrix exponentiation.
     M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
   \end{align}
 
-  Now, our goal is to find $M=M^2$ such that $[M_0[r, c, w] \neq \varnothing] \implies [M[r, c, w] \neq \varnothing]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
+  Now, our goal is to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
 
   \begin{align}
     [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
@@ -764,13 +769,13 @@ This is a variation on a standard metric used in information retrieval and a com
 
 By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison with a na\"ive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and n-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
 
-We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is rejected and accepted, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
+We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 100 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is rejected and accepted, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
 The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
-The language intersection experiments were conducted on 40 Intel Skylake cores running at 2.4 GHz, with 150 GB of RAM, executing bytecode compiled for JVM 17.0.2. To train our scoring function, we use an order-5 Markov chain trained on 55 million BIFI tokens. Training takes roughly 10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures the Precision@\{1, 5, 10, All\} for varying latency cutoffs up to 90s, although it often exhausts the search space and halts before timeout.
+The language intersection experiments were conducted on a MacBook M4 Max with 16GB of memory. To train our scoring function, we use an order-4 Markov chain trained on 55 million BIFI tokens. Training takes ~10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures Precision@\{1, 5, 10, All\}.
 
 %  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
@@ -799,7 +804,7 @@ The language intersection experiments were conducted on 40 Intel Skylake cores r
 
 \subsection{Dataset statistics}\label{sec:rq1}
 
-In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., where pairwise Levenshtein distance is under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
+In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 100 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 100, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
 
 \begin{figure}[h!]
 \begin{tikzpicture}[scale=0.57]
@@ -975,7 +980,7 @@ height=0.3\textwidth
 \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
 \end{figure}
 
-We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
+We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 100 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
 
 For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
 
@@ -1311,5 +1316,285 @@ Pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with $G = \
 
 \noindent\phantom{$\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
 \phantom{$\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+
+\clearpage\section{Example Repairs}\label{sec:exaple_repairs}
+
+Below, we provide a few representative examples of broken code snippets and the corresponding human repairs that were successfully ranked first by our method. On the left is a complete snippet fed to the model and on the right, the corresponding human repair that was correctly predicted.
+
+\begin{figure}[H]
+\begin{tabular}{|m{6.6cm}|m{6.6cm}|}
+\hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
+\begin{smallpy}
+
+(*@\hlorange{form}@*) sympy import *
+x = Symbol('x', real=True)
+x, re(x), im(x)
+
+\end{smallpy} & \begin{smallpy}
+
+(*@\hlorange{\textbf{from}}@*) sympy import *
+x = Symbol('x', real=True)
+x, re(x), im(x)
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+result = (*@\hlorange{yeald}@*) From(item.create())
+raise Return(result)
+
+\end{smallpy} & \begin{smallpy}
+
+result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
+raise Return(result)
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
+
+\end{smallpy} & \begin{smallpy}
+
+df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
+
+\end{smallpy} \\\hline
+%        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{ad}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{\textbf{as}}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} \\\hline
+\begin{smallpy}
+
+sum(len(v) for v items.values())(*@\hlred{)}@*)
+
+\end{smallpy} & \begin{smallpy}
+
+sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+def average(values):
+if values == (1,2,3):
+return (1+2+3)/3
+(*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
+return (-3+2+8-1)/4
+
+\end{smallpy} & \begin{smallpy}
+
+def average(values):
+if values == (1,2,3):
+return (1+2+3)/3
+(*@\hlorange{elif}@*) values == (-3,2,8,-1):
+return (-3+2+8-1)/4
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+dict = {
+"Jan": 1
+"January": 1
+"Feb": 2 # and so on
+}
+
+\end{smallpy} & \begin{smallpy}
+
+dict = {
+"Jan": 1(*@\hlgreen{,}@*)
+"January": 1(*@\hlgreen{,}@*)
+"Feb": 2 # and so on
+}
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+class MixIn(object)
+def m():
+pass
+
+class classA(MixIn):
+
+class classB(MixIn):
+
+\end{smallpy} & \begin{smallpy}
+
+class MixIn(object)(*@\hlgreen{:}@*)
+def m():
+pass
+
+class classA(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+\end{smallpy} \\\hline
+\end{tabular}
+\end{figure}
+
+\clearpage\section{Raw data}\label{sec:raw_prec_data}
+
+Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the admissible set or a timeout of 30s is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20000 samples.
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{c|c|cccccccc}
+\hline\hline
+& $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
+$|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+Tidyparse
+& 1 & 0.56 & 0.44 & 0.43 & 0.49 & 0.55 & 0.55 & 0.53 & 0.57 \\
+& 2 & 0.37 & 0.28 & 0.26 & 0.24 & 0.19 & 0.25 & 0.23 & 0.18 \\
+& 3 & 0.18 & 0.20 & 0.19 & 0.15 & 0.10 & 0.09 & 0.11 & 0.11 \\ \hline
+Seq2Parse
+& 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
+& 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
+& 3 & 0.03 & 0.07 & 0.08 & 0.09 & 0.09 & 0.02 & 0.07 & 0.06 \\ \hline
+BIFI
+& 1 & 0.20 & 0.33 & 0.32 & 0.27 & 0.21 & 0.21 & 0.25 & 0.18 \\
+& 2 & 0.18 & 0.18 & 0.21 & 0.19 & 0.19 & 0.18 & 0.11 & 0.11 \\
+& 3 & 0.02 & 0.02 & 0.03 & 0.02 & 0.03 & 0.05 & 0.03 & 0.02 \\ \hline
+& & \multicolumn{8}{c}{Precision@All} \\ \hline
+Tidyparse
+& 1 & 1.00 & 1.00 & 1.00 & 0.99 & 0.99 & 1.00 & 0.97 & 0.97 \\
+& 2 & 1.00 & 0.99 & 0.98 & 1.00 & 1.00 & 1.00 & 0.94 & 0.90 \\
+& 3 & 1.00 & 0.98 & 0.80 & 0.70 & 0.55 & 0.42 & 0.42 & 0.31 \\ \hline
+BIFI
+& 1 & 0.65 & 0.67 & 0.70 & 0.65 & 0.60 & 0.62 & 0.60 & 0.64 \\
+& 2 & 0.52 & 0.41 & 0.37 & 0.32 & 0.27 & 0.27 & 0.21 & 0.24 \\
+& 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
+\end{tabular}
+\end{table}
+
+%Precision@1
+%===========
+%(|σ|∈[0, 10), Δ=1): Top-1/total: 56 / 100 = 0.56
+%(|σ|∈[0, 10), Δ=2): Top-1/total: 37 / 100 = 0.37
+%(|σ|∈[0, 10), Δ=3): Top-1/total: 9 / 50 = 0.18
+%
+%(|σ|∈[10, 20), Δ=1): Top-1/total: 44 / 100 = 0.44
+%(|σ|∈[10, 20), Δ=2): Top-1/total: 28 / 100 = 0.28
+%(|σ|∈[10, 20), Δ=3): Top-1/total: 20 / 100 = 0.2
+%
+%(|σ|∈[20, 30), Δ=1): Top-1/total: 43 / 100 = 0.43
+%(|σ|∈[20, 30), Δ=2): Top-1/total: 26 / 100 = 0.26
+%(|σ|∈[20, 30), Δ=3): Top-1/total: 19 / 99 = 0.1919191919191919
+%
+%(|σ|∈[30, 40), Δ=1): Top-1/total: 49 / 100 = 0.49
+%(|σ|∈[30, 40), Δ=2): Top-1/total: 24 / 100 = 0.24
+%(|σ|∈[30, 40), Δ=3): Top-1/total: 15 / 100 = 0.15
+%
+%(|σ|∈[40, 50), Δ=1): Top-1/total: 55 / 100 = 0.55
+%(|σ|∈[40, 50), Δ=2): Top-1/total: 19 / 100 = 0.19
+%(|σ|∈[40, 50), Δ=3): Top-1/total: 10 / 100 = 0.1
+%
+%(|σ|∈[50, 60), Δ=1): Top-1/total: 55 / 100 = 0.55
+%(|σ|∈[50, 60), Δ=2): Top-1/total: 25 / 100 = 0.25
+%(|σ|∈[50, 60), Δ=3): Top-1/total: 9 / 100 = 0.09
+%
+%(|σ|∈[60, 70), Δ=1): Top-1/total: 53 / 100 = 0.53
+%(|σ|∈[60, 70), Δ=2): Top-1/total: 23 / 100 = 0.23
+%(|σ|∈[60, 70), Δ=3): Top-1/total: 11 / 100 = 0.11
+%
+%(|σ|∈[70, 80), Δ=1): Top-1/total: 57 / 100 = 0.57
+%(|σ|∈[70, 80), Δ=2): Top-1/total: 18 / 100 = 0.18
+%(|σ|∈[70, 80), Δ=3): Top-1/total: 9 / 81 = 0.1111111111111111
+%
+%Precision@All
+%=============
+%(|σ|∈[0, 10), Δ=1): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[0, 10), Δ=2): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[0, 10), Δ=3): Top-1/total: 50 / 50 = 1.0
+%
+%(|σ|∈[10, 20), Δ=1): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[10, 20), Δ=2): Top-1/total: 99 / 100 = 0.99
+%(|σ|∈[10, 20), Δ=3): Top-1/total: 98 / 100 = 0.98
+%
+%(|σ|∈[20, 30), Δ=1): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[20, 30), Δ=2): Top-1/total: 98 / 100 = 0.98
+%(|σ|∈[20, 30), Δ=3): Top-1/total: 79 / 99 = 0.797979797979798
+%
+%(|σ|∈[30, 40), Δ=1): Top-1/total: 99 / 100 = 0.99
+%(|σ|∈[30, 40), Δ=2): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[30, 40), Δ=3): Top-1/total: 70 / 100 = 0.7
+%
+%(|σ|∈[40, 50), Δ=1): Top-1/total: 99 / 100 = 0.99
+%(|σ|∈[40, 50), Δ=2): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[40, 50), Δ=3): Top-1/total: 55 / 100 = 0.55
+%
+%(|σ|∈[50, 60), Δ=1): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[50, 60), Δ=2): Top-1/total: 100 / 100 = 1.0
+%(|σ|∈[50, 60), Δ=3): Top-1/total: 42 / 100 = 0.42
+%
+%(|σ|∈[60, 70), Δ=1): Top-1/total: 97 / 100 = 0.97
+%(|σ|∈[60, 70), Δ=2): Top-1/total: 94 / 100 = 0.94
+%(|σ|∈[60, 70), Δ=3): Top-1/total: 42 / 100 = 0.42
+%
+%(|σ|∈[70, 80), Δ=1): Top-1/total: 97 / 100 = 0.97
+%(|σ|∈[70, 80), Δ=2): Top-1/total: 90 / 100 = 0.9
+%(|σ|∈[70, 80), Δ=3): Top-1/total: 25 / 81 = 0.30864197530864196
+
+
+%  Synthetic evaluation
+%
+%  \begin{table}[!h]
+%    \centering
+%    \begin{tabular}{c|c|cccccccc}
+%      \hline\hline
+%      & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
+%      $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+%      Tidyparse
+%      & 1 & 1.00 & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 1.00 & 0.98 \\
+%      & 2 & 0.45 & 0.63 & 0.66 & 0.68 & 0.65 & 0.81 & 0.64 & 0.62 \\
+%      & 3 & 0.06 & 0.20 & 0.29 & 0.36 & 0.29 & 0.39 & 0.38 & 0.32 \\ \hline
+%      & & \multicolumn{8}{c}{Precision@All} \\ \hline
+%      Tidyparse
+%      & 1 & 1.00 & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 0.98 & 1.00 \\
+%      & 2 & 0.98 & 0.98 & 0.94 & 0.94 & 0.98 & 0.97 & 0.89 & 0.90 \\
+%      & 3 & 1.00 & 0.97 & 0.92 & 0.84 & 0.87 & 0.90 & 0.84 & 0.72 \\ \hline\hline
+%    \end{tabular}
+%  \end{table}
+
+\clearpage\section{Supplemental Proofs}
+
+The problem of syntax error correction under a finite number of typographic errors is reducible to the bounded Levenshtein-CFL reachability problem, which can be formally stated as follows:
+
+\begin{definition}
+The language edit distance (LED) is the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance.
+\end{definition}
+
+We seek to find the set of strings $S$ such that $\forall \sigma'\in S, \Delta(\err{\sigma}, \sigma') \leq q$, where $q$ is greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
+
+\begin{lemma}\label{lemma:upper-bound}
+For any nonempty language $\ell$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\sigma', m)$ such that $\sigma' \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
+\end{lemma}
+
+\begin{proof}
+Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\sigma'$ be the smallest such member. Since $\sigma'$ is a valid sentence in $\ell$, by definition it must be that $|\sigma'|<\infty$. Let $m\coloneqq|\sigma'|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\sigma' = \varepsilon$, or $0 < |\sigma'|$:
+
+\begin{itemize}
+\item If $\sigma' = \varepsilon$, then $\Delta(\err{\sigma}, \sigma') = n$ by full erasure of $\err{\sigma}$, or
+\item If $0 < m$, then $\Delta(\err{\sigma}, \sigma') \leq \max(m, n)$ by overwriting.
+\end{itemize}
+
+In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
+\end{proof}
+
+Let us now consider the maximum growth rate of the \textit{admissible set}, $\ell_\cap \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $\ell_\cap$.
+
+\begin{lemma}\label{lemma:interleaving}
+The complexity of enumerating $\ell_\cap$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
+\end{lemma}
+
+\begin{proof}
+We can overestimate the size of $\ell_\cap$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
+\end{proof}
+
+We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions. In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
+
+%  In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\sigma'\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
 
 \end{document}
