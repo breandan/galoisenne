@@ -71,18 +71,18 @@ In the latter case, the set of all strings is typically used as the sample space
 
 The primary shortcoming with both of these approaches is they generate too few repairs. Even if the model in question guarantees grammatical soundness or has good statistical generalization properties, it is likely to miss the intended repair in the presence of ambiguity or when there are many candidates from which to choose. Note however, that most syntactic errors require relatively minor alterations to repair, of which there are only a finite number of possibilities to consider.
 
-Thus we arrive at the core problem of this paper: how do we efficiently recover the most probable repairs in proximity to a syntactically broken code snippet? To address this problem, we propose to exhaustively evaluate every repair within a fixed edit distance and introduce an algorithm for doing so. Our algorithm constructs an expression denoting the language of nearby repairs, ranks its members by probability, then finally returns a small list of the most promising candidates.
+Thus we arrive at the core problem this paper aims to solve: how do we efficiently recover the most probable repairs in close proximity to a syntactically broken code snippet? To address this problem, we propose to exhaustively evaluate every repair within a fixed edit distance.
+
+Our algorithm first constructs an automaton representing all possible strings within a certain edit distance. This is used to compute a matrix denoting all valid repairs in the programming language and edit distance, then we construct a regular expression for that language. Finally, this regular expression is decoded using a fast pretrained statistical model to produce a finite list, which is then reranked and truncated to obtain the final repairs. The full pipeline is depicted in Fig.~\ref{fig:arch_simp}.
+
+\begin{figure}[h!]
+  \includegraphics[width=\textwidth]{flow}\vspace{-1pt}
+  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a regular expression representing the intersection of the two languages. This regular expression can be decoded to produce the final list of repairs.}\label{fig:arch_simp}
+\end{figure}
 
 To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair. This tool makes aggressive use of communication-free parallelism, making it readily executable by off-the-shelf GPU and SIMD co-processors. We provide a reference implementation of our tool on the WebGPU platform and show these computational resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
 
 Finally, we evaluate our approach on a dataset of human syntax errors and fixes fewer than five lexical edits and shorter than 120 tokens, large enough to fit a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the true repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
-
-\begin{figure}[h!]
-  \includegraphics[width=\textwidth]{flow}\vspace{-1pt}
-  \caption{Simplified dataflow. Given a grammar and broken code fragment, we create an automaton generating the language of small edits, then construct a grammar representing the intersection of the two languages. This grammar can be converted to a finite automaton, determinized, then decoded to produce a list of repairs.}\label{fig:arch_simp}
-\end{figure}
-
-From the lexical string, we build an automaton that represents all possible strings within a certain edit distance. We then proceed to stich this automaton together with a grammar to produce a regular expression. This regular expression is decoded with the help of a statistical model to produce a list of suggested repairs, which is reranked and truncated. This we depict in Fig. \ref{fig:arch_simp}.
 
 \section{Background}
 
@@ -677,7 +677,7 @@ Now we can perform a second sweep over nonempty entries of the Boolean parse cha
 \caption{\texttt{reg\_build} pseudocode}
 \label{alg:reg_build}
 \begin{algorithmic}[1]
-  \Require $\exists q: I, q': F$ such that $M_{\mathbb{B}}[q, q', S] = \bs$ and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
+  \Require $M_{\mathbb{B}}[q: I, q': F, S] = \bs$ for some $q, q'$ and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
   \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
   \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
