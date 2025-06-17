@@ -120,7 +120,7 @@ There is an equivalent characterization of the regular languages using an induct
       \mathcal{L}(& x\land z & ) = \mathcal{L}(x) \cap  \mathcal{L}(z)
     \end{eqnarray*}
   \end{multicols}
-  \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \}$.}
+  \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$.}
 \end{definition}\vspace{-0.2cm}
 
 Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
@@ -149,7 +149,7 @@ Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differenti
   \end{multicols}
 \end{definition}
 
-Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention in recent years~\cite{might2011parsing,adams2016complexity,stanford2021symbolic,varatalu2025re}:
+Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention~\cite{might2011parsing,adams2016complexity,stanford2021symbolic,varatalu2025re} in recent years:
 
 \begin{theorem}[Recognition]
   For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
@@ -159,9 +159,9 @@ Primarily, this gadget was designed to handle membership queries, for which purp
   \]
 \end{theorem}
 
-Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
+Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Less well known, perhaps, is that Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
 
-\begin{theorem}[Generation]
+\begin{theorem}[Generation]\label{thm:generation}
   For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
 
   \hspace{1.6cm}$\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
@@ -179,7 +179,7 @@ Variations on this basic procedure can also be used for functional parsing and r
 
 Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
-Recall that since every regular language is context-free. So, given a $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with start symbol \( S_e \) and productions \( P(e) \) as:
+Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with productions $P(e)$ as follows:
 
 \begin{equation}
 P(e) = \begin{cases}
@@ -201,9 +201,9 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
   One could construct $G_\cap$ like so,
 
   \noindent\begin{prooftree}
-      \hskip -1em
+      \hskip -0.5em
       \AxiomC{$q \in I \phantom{\land} r \in F\vphantom{\overset{a}{\rightarrow}}$}
-      \RightLabel{$\sqrt{\phantom{S}}$}
+      \RightLabel{$\mathcal{S}$}
       \UnaryInfC{$\big(S\rightarrow q S r\big) \in P_\cap$}
       \DisplayProof
       \hskip 1em
@@ -220,9 +220,9 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
   \end{prooftree}
 \end{definition}\vspace{0.2cm}
 
-\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This na\"ive method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. In Sec.~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection language is finite.% We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
+\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. In Sec.~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection is finite. But first, let us return to the broader question of syntax repair.% We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
 
-\clearpage\section{Informal statement}
+\subsection{Informal statement}
 
 Assume there exists a transducer from Unicode tokens to grammatical tokens, $\tau: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $\tau$ is called a \textit{lexer} and would typically be regular under mild assumptions. In this paper, we do not consider $\tau$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
 
@@ -240,12 +240,14 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.2cm}
 \end{wrapfigure}
 
-Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of valid strings within a given edit distance of $\err\sigma$. We can intersect this language with the language of all valid programs, $\mathcal{L}(G)$. The resulting language ($\ell_\cap$) will contain every possible repair within the given edit distance, which can be decoded in order of probability to retrieve the top-k most probable repairs. These we can map back into Unicode, adding placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the cosmetic postprocessing steps are tangential to this work, in which we confine ourselves to a lexical alphabet.
+Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of nearby programs, If we intersect this language with the language of gramatically valid programs, $\mathcal{L}(G)$, the resulting language ($\ell_\cap$) will contain every possible repair within the given edit distance, and we would like to retrieve the most probable repairs. These we can map back into Unicode, adding placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display the repairs. Both the preprocessing and the cosmetic postprocessing steps are tangential to this work, in which we confine ourselves to a lexical alphabet.
 
-\section{Formal statement}\label{sec:problem}
+\subsection{Formal statement}\label{sec:problem}
+
+Let us now restate our informal description of the syntax repair problem in more formal terms.
 
 \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
-Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $L(\err\sigma, d) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = L(\err\sigma, d) \cap \ell$.
+Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $\mathcal{L}\big(L(\err\sigma, d)\big) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$.
 \end{definition}
 
 %  To solve this problem, it is convenient to first consider intersections with a finite-length string with holes, then turn our attention back to BCFLR.
@@ -254,7 +256,7 @@ Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every
 As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure which surfaces natural and valid repairs over unnatural but valid repairs:
 
 \begin{definition}[Ranked repair]\label{def:ranked-repair}
-Given a finite language $\ell_\cap = L(\err\sigma, d) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum probability repairs under the language model. That is,
+Given a finite language $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, the ranked repair problem is to find the top-$k$ maximum probability repairs under the language model. That is,
 \begin{equation}
 R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
 \end{equation}
@@ -262,9 +264,9 @@ R(A, P_\theta) = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k}
 %    We want a procedure $\hat{R}$, minimizing $\mathbb{E}_{G, \sigma}\big[D_{\text{KL}}(\hat{R} \parallel R)\big]$ and wallclock runtime.
 \end{definition}
 
-A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of $\ell$ and $L(\err\sigma, d)$, it would be intractable to sample either $\ell$ or $L(\err\sigma, d)$, reject duplicates, then reject unreachable $\big(\sigma \notin L(\err\sigma, d)\big)$ or invalid ($\sigma \notin \ell$) edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
+A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of the languages involved, it would be intractable to sample either $\ell$ or $\mathcal{L}\big(L(\err\sigma, d)\big)$, reject duplicates, then reject unreachable or invalid edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do many neural language models.
 
-As we will demonstrate, the ranked repair problem can be factorized into two steps: first exact representation, then decoding. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap L(\err\sigma, d)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing probability over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
+As we will demonstrate, the ranked repair problem can be factorized into two steps: first exact representation, then decoding. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates the set $\ell \cap \mathcal{L}\big(L(\err\sigma, d)\big)$, then retrieve repairs from its language. By ensuring retrieval is sufficiently precise and exhaustive, maximizing probability over the retrieved set can be achieved with a much simpler, syntax-oblivious language model.
 
 %Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 %
@@ -282,10 +284,10 @@ As we will demonstrate, the ranked repair problem can be factorized into two ste
 
 \clearpage\section{Method}\label{sec:method}
 
-Our method is to treat finite language intersections as matrix exponentiation.
+The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a certain correspondence between CFL-REG intersection and a semiring algebra that allows us to quickly decide and witness intersection nonemptiness for finite languages.
 
 \begin{theorem}%[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q|)^c\big)$ time using $\mathcal{O}\big((|V||Q|)^k\big)$ parallel processors for some $c, k < \infty$.
+  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q||V|)^c\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -301,23 +303,23 @@ Our method is to treat finite language intersections as matrix exponentiation.
   \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
   \begin{align}
-    M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\}
+    M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
 
-  Now, our goal is to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ will be defined elementwise:
+  Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise,
+
+  \begin{equation}
+    [\ell \oplus r]_w  = [\ell_w \lor r_w],\hspace{1cm}
+    [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}
+  \end{equation}
+
+  \noindent and by slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
 
   \begin{align}
-    [\ell \oplus r]_w  &= [\ell_w \lor r_w]\\
-    [\ell \otimes r]_w &= \bigvee_{\mathclap{x, z\:\in\:V}}\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\}
+    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M$ is SUT.)}
   \end{align}
 
-  \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
-
-  \begin{align}
-    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{|Q|} M_0^i \text { (since $M$ is SUT.)}
-  \end{align}
-
-  \noindent To solve for the fixpoint, we can instead use exponentiation by squaring:
+  \noindent Note that $|Q||V|$ is an upper-bound and even under incremental summation, the sequence may converge in fewer steps. Instead, to solve for the fixpoint, we can use exponentiation by squaring:
 
   \begin{align}
     T(2n) \;=\; \begin{cases}
@@ -326,13 +328,13 @@ Our method is to treat finite language intersections as matrix exponentiation.
     \end{cases}
   \end{align}
 
-  \noindent Therefor, we only need at most $\lceil\log_2 |Q|\rceil$ sequential steps to reach the fixpoint. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
+  \noindent Therefor, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
   \begin{align}
     S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
   \end{align}
 
-  \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$.
+  \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}).
 \end{proof}\clearpage
 
 \section{Examples}
@@ -401,7 +403,7 @@ We can also consider a more general automaton for completing a string with holes
   Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
 \end{definition}
 
-Here, the FSA takes a similar shape but can have multiple arcs between subsequent states, e.g.:
+Here, the FSA takes a similar shape but can have multiple arcs between adjacent states, e.g.:
 
 \begin{figure}[H]
   \resizebox{0.5\textwidth}{!}{
@@ -471,11 +473,11 @@ Now, we are ready to consider the general case of syntax repair, in which case t
   \begin{center}
     \input{nfa_cfg}
   \end{center}
-  \caption{NFA recognizing Levenshtein $L(\sigma: \Sigma^5, 3)$.}\label{fig:lev_nfa}
+  \caption{Levenshtein NFA recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$.}\label{fig:lev_nfa}
   \vspace{-0.5cm}
 \end{wrapfigure}
 
-As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and considerably simplifies the language intersection to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $L(\sigma: \Sigma^5, 3)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and simplifies the description to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
 \input{figures/arc_rules}
 
@@ -516,7 +518,7 @@ Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\
 \resizebox{0.4\textwidth}{!}{%
 \input{figures/partial_order}
 }
-\caption{Pairing function over $L(\sigma: \Sigma^3, 1)$.}\label{fig:pairing_fun}
+\caption{Pairing function over $\mathcal{L}\big(L(\sigma: \Sigma^3, 1)\big)$.}\label{fig:pairing_fun}
 
 \vspace{0.3cm}
 \begin{center}
