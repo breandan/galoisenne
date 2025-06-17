@@ -63,7 +63,7 @@ We introduce a new technique for correcting syntax errors in arbitrary context-f
 
 \section{Introduction}
 
-When programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. In the following paper, we solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits from the broken source code.
+When programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. In the following paper, we propose to solve this problem automatically by generating a list of candidate repairs which contains with high probability the true repair, assuming this repair differs by no more than a few edits from the broken source code.
 
 Prior research on syntax repair can be classified into exact and approximate methods. In the former, rule-based methods are used to locate a suitable alternative. While appealing for their interpretability and well-understood algorithmic properties, these methods are too weak to model the full distribution of natural source code and must rely on relatively brittle heuristics.
 
@@ -86,7 +86,7 @@ Finally, we evaluate our approach on a dataset of human syntax errors and fixes 
 
 \section{Background}
 
-Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $(P\colon V \rightarrow (V \mid \Sigma)^+)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
+Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadruple consisting of terminals $(\Sigma)$, nonterminals $(V)$, productions $\big(P\colon V \rightarrow (V \mid \Sigma)^+\big)$, and a start symbol, $(S)$. Every CFG is reducible to so-called \textit{Chomsky Normal Form}~\cite{chomsky1959certain}, $P'\colon V \rightarrow (V^2 \mid \Sigma)$, where every production is either (1) a binary production $w \rightarrow xz$, or (2) a unit production $w \rightarrow t$, where $w, x, z: V$ and $t: \Sigma$. For example:\vspace{-3pt}
 
 \begin{table}[H]
   \begin{tabular}{llll}
@@ -94,17 +94,17 @@ Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadrupl
   \end{tabular}
 \end{table}\vspace{-8pt}
 
-Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. We will adhere to this notation in the following sections.
+Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. These generally come in two varieties, deterministic and nondeterministic depending on whether or not $\delta$ maps each pair $\langle q, s \rangle$ to a unique $q'$.
 
-There is an equivalent characterization of the regular languages using an inductively defined datatype which is often more elegant to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
+There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
 
-\begin{definition}[Generalized Regex]
+\begin{definition}[Generalized regular expression]
   Let \( e \) be an expression defined by the grammar:
   \[
-    e \Coloneqq \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
+    e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
   \]
 
-  Semantically, we can interpret these expressions as denoting regular languages:\vspace{-0.8cm}
+\noindent Semantically, we can interpret these expressions as denoting regular languages:\vspace{-0.8cm}
 
   \setlength{\columnseprule}{0pt}
   \setlength{\columnsep}{-3cm}
@@ -123,7 +123,7 @@ There is an equivalent characterization of the regular languages using an induct
   \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$.}
 \end{definition}\vspace{-0.2cm}
 
-Brzozowski~\cite{brzozowski1964derivatives} introduces the concept of differentiation, which allows us to quotient a regular language by some given prefix.
+\noindent Brzozowski~\cite{brzozowski1964derivatives} introduces an operator, $\partial$, which lets us quotient a language by some prefix,
 
 \begin{definition}[Brzozowski, 1964]
   To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
@@ -192,10 +192,10 @@ P(e) = \begin{cases}
 \noindent where the CFG is $G(e) = \langle V, \Sigma, P(e), S_e\rangle$ with $V$ being all nonterminals in $P(e)$. Therefor, to intersect two regular languages, we can treat one of them as a CFL. Alternatively, we can take the intersection between some truly non-regular CFL (say, a programming language syntax) and a regular language.
 
 \begin{theorem}[Bar-Hillel, 1961]
-  For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata, $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+  For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata (NFA), $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
 \end{theorem}
 
-Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient construction:
+Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient construction for the intersection grammar:
 
 \begin{definition}[Salomaa, 1973]
   One could construct $G_\cap$ like so,
@@ -214,7 +214,7 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
       \DisplayProof
       \hskip 1em
       \AxiomC{$(w \rightarrow xz) \in P$}
-      \AxiomC{$\vphantom{(}p,q,r \in Q$}
+      \AxiomC{$\vphantom{(}p,q,r \in Q\vphantom{\overset{a}{\rightarrow}}$}
       \RightLabel{$\Join$}
       \BinaryInfC{$\big(pwr\rightarrow (pxq)(qzr)\big) \in P_\cap$}
   \end{prooftree}
@@ -291,9 +291,7 @@ The key to solving this problem is to treat finite language intersections as mat
 \end{theorem}
 
 \begin{proof}[Proof]
-  WTS there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$.\vspace{0.3cm}
-
-  \noindent There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  We want to show there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$. There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
@@ -306,20 +304,20 @@ The key to solving this problem is to treat finite language intersections as mat
     M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
 
-  Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise,
+  Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
 
   \begin{equation}
-    [\ell \oplus r]_w  = [\ell_w \lor r_w],\hspace{1cm}
+    [\ell \oplus r]_w  = [\ell_w \lor r_w]\hspace{0.5cm}\text{and}\hspace{0.5cm}
     [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}
   \end{equation}
 
-  \noindent and by slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
+  \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
 
   \begin{align}
     \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M$ is SUT.)}
   \end{align}
 
-  \noindent Note that $|Q||V|$ is an upper-bound and even under incremental summation, the sequence may converge in fewer steps. Instead, to solve for the fixpoint, we can use exponentiation by squaring:
+  \noindent While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will employ exponentiation-by-squaring:
 
   \begin{align}
     T(2n) \;=\; \begin{cases}
@@ -328,13 +326,13 @@ The key to solving this problem is to treat finite language intersections as mat
     \end{cases}
   \end{align}
 
-  \noindent Therefor, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
+  \noindent Therefor, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps in the limit. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
   \begin{align}
     S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
   \end{align}
 
-  \noindent To decode a witness in case of non-emptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}).
+  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, to decode a witness one may simply $\texttt{choose}(S_\cap)$ (see Thm.~\ref{thm:generation}).
 \end{proof}\clearpage
 
 \section{Examples}
@@ -551,10 +549,10 @@ Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\
 \caption{Regular expression denoting $\mathcal{L}(G_\cap)$.}\label{fig:re_tree}
 \end{wrapfigure}
 
-As a concrete example, suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
+As a concrete example, suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\big\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
 
 First, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin. % using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
-So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute $[\mathcal{L}(G')\cap \mathcal{L}(A) \neq \varnothing]$.
+So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute whether $[\mathcal{L}(G')\cap \mathcal{L}(A) \neq \varnothing]$.
 
 Under such an ordering, the adjacency matrix takes an upper triangular form and becomes the template for the initial parse chart, $M_0$ (Fig.~\ref{fig:initial_pc}). Each entry of this chart corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language. Likewise, the reachability matrix signifies a subset of state pairs which can participate in the language intersection. The adjacency and reachability matrices will always cover the expression vectors of the initial and final parse charts, respectively. In other words, we may safely ignore absent $\langle q, q'\rangle$ pairs in the reachability matrix, as these state pairs definitely cannot participate in the intersection.
 
@@ -569,9 +567,23 @@ Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X 
 
 We will now attempt to put a probability distribution over the language intersection. We will start with a few cursory but illumative approaches, then proceed towards a more refined solution.
 
+\subsection{Mode collapse}
+
+Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs as the case for $G_\cap$, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
+
+$$
+S \rightarrow A\:B \: (0.9999) \hspace{20pt} S \rightarrow C\:C \: (0.0001)
+$$
+
+$$
+A \rightarrow a \: (1) \hspace{20pt} B  \rightarrow b \: (1) \hspace{20pt} C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)
+$$\vspace{0.1cm}
+
+TDA sampling will almost always generate the string $a b$, but most of the language is concealed in the hidden branch, $S \rightarrow C C$. Although contrived example, it illustrates precisely why TDA sampling is unviable: we want a sampler that matches the true distribution over the finite CFL, not the PCFG's local approximation thereof.
+
 \subsection{Exact enumeration}
 
-A brute force solution would be to generate every path and rank every one by its probability. It should be obvious why is unviable due its worst case complexity, but bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
+To correct for mode collapse, a brute force solution would be to generate every path and rank it by probability. While this is unviable due its worst case complexity, it bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
 
 To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
 
@@ -590,26 +602,14 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
        e &\text{if } R \in \Sigma \\
        \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
        \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
-  \end{cases}\\\\
+  \end{cases}
 \end{theorem}
 
-\subsection{Mode collapse}
-
-Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs as the case for $G_\cap$, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
-
-$$
-S \rightarrow A\:B \: (0.9999) \hspace{20pt} S \rightarrow C\:C \: (0.0001)
-$$
-
-$$
-A \rightarrow a \: (1) \hspace{20pt} B  \rightarrow b \: (1) \hspace{20pt} C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)
-$$\\
-
-TDA sampling will almost always generate the string $a b$, but most of the language is concealed in the hidden branch, $S \rightarrow C C$. Although contrived example, it illustrates precisely why TDA sampling is unviable: we want a sampler that matches the true distribution over the finite CFL, not the PCFG's local approximation thereof.
+This can be converted to a uniform sampler by drawing integers without replacement using a pseudorandom number generator, however, if $|e|$ is very large this can fail to capture modes.
 
 \subsection{Ambiguity}
 
-Another approach would be to sample trees and rerank them by their PCFG score. More pernicious is the issue of ambiguity. Since the CFG can be ambiguous, this causes certain repairs to be overrepresented, resulting in a subtle bias. Consider for example,
+Another approach would be to sample whole trees and rerank them by their PCFG score. More pernicious is the issue of ambiguity. Since the CFG can be ambiguous, this causes certain repairs to be overrepresented, resulting in a subtle bias. Consider for example,
 
 \begin{lemma}\label{lemma:ambiguity}
 If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
