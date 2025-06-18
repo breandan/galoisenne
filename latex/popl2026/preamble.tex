@@ -651,3 +651,26 @@ fill=green!30]
 \definecolor{royalblue8762253}{RGB}{87,62,253}
 
 \usepackage{sankey}
+
+\newcommand\source[1]{%
+    \tikz[remember picture,baseline,inner sep=0pt] {%
+        \node [name=source,anchor=base]{$#1$};
+    }%
+    \setcounter{target}{0}
+}
+
+\newcounter{target}
+\newcommand\target[1]{%
+    \tikz[remember picture,baseline,inner sep=0pt] {%
+        \node [name=target-\thetarget,anchor=base]{$#1$};
+    }%
+    \stepcounter{target}%
+}
+
+\newcommand\drawarrows{
+    \tikz[remember picture, overlay, bend left=20, -latex] {
+        \foreach \i [evaluate=\i as \n using int(\i-1)] in {1,...,\thetarget} {
+            \draw (source.north) to (target-\n.north);
+        }
+    }
+}
