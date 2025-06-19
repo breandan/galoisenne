@@ -224,7 +224,7 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
 
 \subsection{Informal statement}
 
-Assume there exists a transducer from Unicode tokens to grammatical tokens, $\tau: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $\tau$ is called a \textit{lexer} and would typically be regular under mild assumptions. In this paper, we do not consider $\tau$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
+Assume there exists a transducer from Unicode tokens to grammatical tokens, $\tau: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $\tau$ is called a \textit{lexer} and would typically be regular under mild conditions. In this paper, we do not consider $\tau$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
 
 %Thus, the full source language can be described as $\tau^{-1}\big(L(G)\big)$
 
@@ -287,11 +287,11 @@ As we will demonstrate, the ranked repair problem can be factorized into two ste
 The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a certain correspondence between CFL-REG intersection and a semiring algebra that allows us to quickly decide and witness intersection nonemptiness for finite languages.
 
 \begin{theorem}%[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big((\log |Q||V|)^c\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
+  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^c |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
 \end{theorem}
 
 \begin{proof}[Proof]
-  We want to show there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$. There are two cases, at least one of which must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  To prove nonemptiness, we must show there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$. At least one two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
@@ -332,7 +332,7 @@ The key to solving this problem is to treat finite language intersections as mat
     S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
   \end{align}
 
-  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, to decode a witness one may simply $\texttt{choose}(S_\cap)$ (see Thm.~\ref{thm:generation}).
+  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably terminates in $\mathcal{O}(\log^c |Q||V|)$ parallel time for finite $c$.
 \end{proof}\clearpage
 
 \section{Examples}
@@ -745,7 +745,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-Each stage is translatable to a GPU format, especially matrix multiplication which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as massively parallel map reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
+Each stage is translatable to a GPU format, especially matrix multiplication which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as a massively parallel map-reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming becomes mapping complex datatypes to and from an integer format.
 
@@ -762,10 +762,10 @@ The parse chart $M$ can be represented as an integer matrix $\texttt{uint32}^{|Q
 Once \texttt{cfl\_fixpt} is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. The GRE datatype is slightly more complex to flatten, as being an algebraic datatype it can be simplified in various ways. We will use the following memory layout to encode a GRE, however this choice is somewhat arbitrary,
 
 \[
-\big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0} \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n
+\big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0}, \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n
 \]
 
-\noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores the pointers to memory locations in the same data structure. These pointers must also be linked back to locations in the parse chart to obtain the terminal subsets for adjacent states and unit nonterminals.
+\noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores the pointers to memory locations in the same data structure. These pointers must also be tied to locations in the parse chart to obtain the terminal subsets for adjacent states and unit nonterminals when decoding.
 
 \clearpage\section{Evaluation}
 
@@ -1126,7 +1126,7 @@ Our primary insight leading to state-of-the-art precision is that repairs are ty
 
 There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@1 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the data and compute for training and inference. As Tidyparse uses its own grammar, it can sample directly from the formal language specification and does not require a stochastic language model to suggest nearby valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which may be overlooked by neural models.
 
-Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the likelihood of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design (Def.~\ref{def:linear-convergence}) and evaluation (Fig.~\ref{fig:throughput}).
+Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design (Def.~\ref{def:linear-convergence}) and evaluation (Fig.~\ref{fig:throughput}).
 
 \clearpage\subsection{Limitations and future work}
 
@@ -1210,7 +1210,7 @@ Our work focuses on errors arising from human factors in computer programming, i
 
 \subsection{Decoding}
 
-Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, its goal is find the maximum likelihood samples. A classic example is Viterbi decoding, which is used to find the most likely sequence of transitions in a hidden Markov model (HMM) and is closely related to probabilistic parsing. For PCFGs, the problem is more challenging, as the solution space can be exponentially larger than HMMs relative to the number of transitions.
+Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, the goal is find the maximum likelihood samples. A classic example is Viterbi decoding, which is used to find the most likely sequence of transitions in a hidden Markov model (HMM) and is closely related to probabilistic parsing. For PCFGs, the problem is more challenging, as the solution space can be exponentially larger than HMMs relative to the number of transitions.
 
 In particular, we care about the problem of \textit{top-k decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing likelihood. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic PCFGs is often intractable, but we can approximate it using a beam search or cube-pruning technique.
 
@@ -1258,7 +1258,7 @@ We have implemented our approach and demonstrated its viability as a tool for sy
 
 \section*{Data-Availability Statement}
 
-An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}} While the browser demo is single-threaded and does not support ranking synthetic repairs by naturalness, it is capable of automatically repairing syntax errors in arbitrary context-free languages. The data and source code for the experiments contained in this paper will be made available upon publication.
+An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}}. The data and source code for the experiments contained in this paper will be made available upon publication.
 
 \clearpage\bibliography{../bib/acmart}
 
