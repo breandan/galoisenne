@@ -767,6 +767,28 @@ Once \texttt{cfl\_fixpt} is complete, we can calculate the total amount of memor
 
 \noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores the pointers to memory locations in the same data structure. These pointers must also be tied to locations in the parse chart to obtain the terminal subsets for adjacent states and unit nonterminals when decoding.
 
+\clearpage\section{Training the reranker}
+
+The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat natural, however the list may still be quite long. No reasonable user would be willing to skim through $10^5$ suggestions to find their intended repair, especially since they could have easily written it themselves in a few seconds.
+
+So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the ``learning-to-rank'' problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
+
+The model we use is fairly run-of-the-mill and by no means novel. To introduce it, we will need to overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss function'' instead of a langauge, and the derivative operator~\footnote{There is a connection to the Brzozowski derivative, but to refrain from digression we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
+
+We omit the definition of a transformer-encoder in lieu of Strobl et al.'s excellent survey~\cite{strobl2024formal}, except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$. This we will use to embed the query and documents, then we will use a multilayer perceptron (MLP) to return a numerical score for the relevance labels. The full architecture will be something like:
+
+\[
+f_\theta(\err\sigma: \Sigma^+, \sigma: \Sigma^+): \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
+\]
+
+The model will be used to predict a relevance score $f_\theta(q, d)$ for a given query $q$ and item $d$. The training objective is to minimize the listwise cross-entropy loss:
+\begin{equation}
+\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\big)} \right)
+\end{equation}
+where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. This loss function encourages the model to assign higher scores to natural repairs, thereby learning to rank them above unnatural ones.
+
+We will train it all up via stochastic gradient descent (SGD) with a batch size of 16 for 11,200 steps.
+
 \clearpage\section{Evaluation}
 
 We call our method Tidyparse and consider the following research questions:
@@ -799,7 +821,7 @@ We compare our method against two external baselines, Seq2Parse and Break-It-Fix
 
 The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
-The language intersection experiments were conducted on a MacBook M4 Max with 16GB of memory. To train our scoring function, we use an order-4 Markov chain trained on 55 million BIFI tokens. Training takes ~10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures Precision@\{1, 5, 10, All\}.
+The language intersection experiments were conducted on a MacBook M4 Max with 16GB of memory. To train our n-gram model, we use an order-4 Markov chain trained on 55 million BIFI tokens. Training takes ~10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures Precision@\{1, 5, 10, All\}.
 
 %  Pairwise naturally-occurring errors and human fixes are the most authentic source of real-world syntax repairs, but can be difficult to obtain due to the paucity of parallel syntax error corpi. In the absence of natural syntax repairs, one viable alternative is to collect a dataset of syntactically valid code, and synthetically corrupt it. The original source code becomes the ground truth repair for the synthetically generated typo, and the target for evaluating the precision of our repair procedure.
 
