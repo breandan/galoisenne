@@ -98,7 +98,7 @@ Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q
 
 There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
 
-\begin{definition}[Generalized regular expression]
+\begin{definition}[GRE fragment]
   Let \( e \) be an expression defined by the grammar:
   \[
     e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
@@ -179,7 +179,7 @@ Variations on this basic procedure can also be used for functional parsing and r
 
 Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
-Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with productions $P(e)$ as follows:
+Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression,~\footnote{Loosely equivalent to a star-free regular expression in the parlance of formal language theory, sans complementation.} we can construct an equivalent CFG with productions $P(e)$ as follows:
 
 \begin{equation}
 P(e) = \begin{cases}
@@ -192,7 +192,7 @@ P(e) = \begin{cases}
 \noindent where the CFG is $G(e) = \langle V, \Sigma, P(e), S_e\rangle$ with $V$ being all nonterminals in $P(e)$. Therefor, to intersect two regular languages, we can treat one of them as a CFL. Alternatively, we can take the intersection between some truly non-regular CFL (say, a programming language syntax) and a regular language.
 
 \begin{theorem}[Bar-Hillel, 1961]
-  For any context-free grammar (CFG), $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata (NFA), $A = \langle Q, \Sigma, \delta, I, F\rangle$, there exists a CFG \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) such that $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
+  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata (NFA), $A = \langle Q, \Sigma, \delta, I, F\rangle$, there is a CFG, \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) s.t. $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
 \end{theorem}
 
 Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient construction for the intersection grammar:
@@ -287,11 +287,11 @@ As we will demonstrate, the ranked repair problem can be factorized into two ste
 The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a certain correspondence between CFL-REG intersection and a semiring algebra that allows us to quickly decide and witness intersection nonemptiness for finite languages.
 
 \begin{theorem}%[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), A, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^c |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
+  For every CFG, G, and every acyclic NFA (ANFA), $A$, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^c |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
 \end{theorem}
 
 \begin{proof}[Proof]
-  To prove nonemptiness, we must show there exists a path $p \rightsquigarrow r$ in A such that $p\in I, r\in F$ where $p \rightsquigarrow r \vdash S$. At least one two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  To prove nonemptiness, we must show there exists a path $p \rightsquigarrow r$ in A such that $p\in I$, $r\in F$ where $p \rightsquigarrow r \vdash S$. At least one two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
@@ -311,7 +311,7 @@ The key to solving this problem is to treat finite language intersections as mat
     [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}
   \end{equation}
 
-  \noindent By slight abuse of notation\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.}, we will redefine the matrix exponential over this domain as:
+  \noindent By slight abuse of notation,\footnote{Customarily, there is a $\frac{1}{k!}$ factor to suppress exploding entries, but alas this domain has no multiplicative inverse.} we will redefine the matrix exponential over this domain as:
 
   \begin{align}
     \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M$ is SUT.)}
@@ -395,7 +395,7 @@ Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sig
 
 \subsection{Completion as intersection}
 
-We can also consider a more general automaton for completing a string with holes, representing edits in fixed locations which can be filled by any terminal, which we call \textit{completion}. In this case, the fixpoint is characterized by a system of language equations, whose solutions are the set of all sentences consistent with the template.
+We may also consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. This problem we call \textit{completion}. Formally,
 
 \begin{definition}[Completion]
   Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
@@ -559,7 +559,7 @@ Under such an ordering, the adjacency matrix takes an upper triangular form and 
 From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constraints n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_x\vee Z_z ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$ to produce concrete repairs. In this case, there are only three in total, \texttt{()},\texttt{ ()()} and \texttt{(())}.
+Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_x\vee Z_z ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$ to produce concrete repairs. It is clear in this case there are only three: \texttt{()},\texttt{ ()()} and \texttt{(())}.
 
 \clearpage
 
@@ -569,21 +569,19 @@ We will now attempt to put a probability distribution over the language intersec
 
 \subsection{Mode collapse}
 
-Ordinarily, we would use top-down PCFG sampling, however in the case of non-recursive CFGs as the case for $G_\cap$, this method is highly degenerate, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
-
+Ordinarily, we would use top-down PCFG sampling, however this method is highly degenerate in the case of finite languages, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
 $$
-S \rightarrow A\:B \: (0.9999) \hspace{20pt} S \rightarrow C\:C \: (0.0001)
+G=\left\{ S \rightarrow A\:B \: \left(\frac{10^4 - 1}{10^4}\right), \hspace{2pt}
+     S \rightarrow C\:C \: \left(\frac{1}{10^4}\right), \hspace{2pt}
+     A \rightarrow a \: (1), \hspace{2pt}
+     B  \rightarrow b \: (1), \hspace{2pt}
+     C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)\right\}
 $$
-
-$$
-A \rightarrow a \: (1) \hspace{20pt} B  \rightarrow b \: (1) \hspace{20pt} C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)
-$$\vspace{0.1cm}
-
 TDA sampling will almost always generate the string $a b$, but most of the language is concealed in the hidden branch, $S \rightarrow C C$. Although contrived example, it illustrates precisely why TDA sampling is unviable: we want a sampler that matches the true distribution over the finite CFL, not the PCFG's local approximation thereof.
 
 \subsection{Exact enumeration}
 
-To correct for mode collapse, a brute force solution would be to generate every path and rank it by probability. While this is unviable due its worst case complexity, it bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
+To correct for mode collapse, a brute force solution would be to generate every tree and rank it by probability. While this is unviable due its worst case complexity, it bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
 
 To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
 
@@ -607,9 +605,9 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
 
 This can be converted to a uniform sampler by drawing integers without replacement using a pseudorandom number generator, however, if $|e|$ is very large this can fail to capture modes.
 
-\subsection{Ambiguity}
+\subsection{The problem with ambiguity}
 
-Another approach would be to sample whole trees and rerank them by their PCFG score. More pernicious is the issue of ambiguity. Since the CFG can be ambiguous, this causes certain repairs to be overrepresented, resulting in a subtle bias. Consider for example,
+The problem with the previous approach is that it counts distinct trees, and this overcounts the total number of words. Since the grammar can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
 
 \begin{lemma}\label{lemma:ambiguity}
 If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
@@ -621,7 +619,80 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 
 We would like the underlying sample space to be a proper set, \textit{not} a multiset.
 
-\section{Implementation}
+\subsection{Disambiguation}
+
+To count the number of unique repairs, we will first proceed by converting $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be representable as an FSA. Recalling the standard definition, we will define an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$ which takes the following form: %$Q_{e} = N_Q(e), \delta_{z} = N_\delta(e), $:
+\begin{equation}
+  \hspace{-0.2cm}N(e) =
+  \begin{cases}
+    \begin{alignedat}{8}
+      &\big\langle \{q_\alpha, q_\omega\}
+      &&\,,\, \{ q_\alpha \overset{\sigma}{\rightarrow} q_\omega \mid \sigma \in \Sigma \}
+      &&\,,\, q_\alpha\,\,, \{q_{\omega}\}
+      &&\big\rangle
+      &&\quad \text{if } e = \Sigma \\[0.5em]
+
+      &\big\langle Q_{x} \cup Q_{z}
+      &&\,,\, \{ q \overset{\sigma}{\rightarrow} q_{\alpha z} \mid q \overset{\sigma}{\rightarrow} q_{\omega}^{\in F_x} \} \cup \delta_{x} \cup \delta_{z}
+      &&\,,\, q_{\alpha x}\,, F_{z}
+      &&\big\rangle
+      &&\quad \text{if } e = x \cdot z \\[0.5em]
+
+      &\big\langle Q_{x} \cup Q_{z} \cup \{q_{\alpha e}\}
+      &&\,,\, \{ q_{\alpha e} \overset{\sigma}{\rightarrow} q \mid q_{\alpha\{x, z\}} \overset{\sigma}{\rightarrow} q \}  \cup \delta_{x} \cup \delta_{z}
+      &&\,,\, q_{\alpha e}\,, F_{x} \cup F_{z}
+      &&\big\rangle
+      &&\quad \text{if } e = x \lor z\hspace{-0.5cm}
+    \end{alignedat}
+  \end{cases}
+\end{equation}
+
+\noindent This NFA can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1962canonical} and finally analyzed to count the number of unique paths.
+
+For example, suppose we have the syntactically invalid Python string, \texttt{NAME = NAME . NAME ( NUM : , NUM : )}. The GRE recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\textwidth]{exampleDFA}
+  \caption{Minimal DFA recognizing the language $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
+  \label{fig:exampleDFA}
+\end{figure}
+
+%The advantage of dealing with formal language representations is that we can reason about them algebraically. Consider the context-free grammar: the arrow $\rightarrow$ becomes an $=$ sign, $\mid$ becomes $+$ and $AB$ becomes $A \times B$. The ambiguous Dyck grammar, then, can be seen as a system of equations.
+%
+%\begin{equation}
+%  S \rightarrow ( ) \mid ( S ) \mid S S \Longleftrightarrow f(x) = x^2 + x^2 f(x) + f(x)^2
+%\end{equation}
+%
+%\noindent We will now solve for $f(x)$, giving us the generating function for the language:
+%
+%\begin{equation}
+%  0 = f(x)^2 + x^2 f(x) - f(x) + x^2
+%\end{equation}
+%
+%\noindent Now, using the quadratic equation, where $a = 1, b = x^2 - 1, c = x^2$, we have:
+%
+%\begin{equation}
+%  f(x) = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} = \frac{-x^2 + 1 \pm \sqrt{x^4 - 6x^2 + 1}}{2}
+%\end{equation}
+%
+%\noindent Note there are two solutions, but only one where $\lim_{x\rightarrow 0} = 1$. From the ordinary generating function (OGF), we also have that $f(x)=\sum _{n=0}^{\infty }f_nx^{n}$. Expanding $\sqrt{x^4 - 6x^2 + 1}$ via the generalized binomial theorem, we have:
+%
+%\begin{align}
+%  f(x) = (1+u)^{\alpha }&=\sum _{k=0}^{\infty }\;{\binom {\alpha }{k}}\;u^{k}\\
+%  &=\sum _{k=0}^{\infty }\;{\binom {\frac{1}{2} }{k}}\;(x^4 - 6x^2)^{k} \text{ where } u = x^4-6x^2
+%\end{align}
+%
+%Now, to obtain the number of ambiguous Dyck trees of size $n$, we can extract the $x^n$-th coefficient using the binomial series:
+%
+%\begin{align}
+%[x^n]f(x) &= [x^n]\frac{-x^2 + 1}{2} + \frac{1}{2}[x^n]\sum _{k=0}^{\infty }\;{\binom {\frac{1}{2} }{k}}\;(x^4 - 6x^2)^{k}\\
+%[x^n]f(x) &= \frac{1}{2}{\binom {\frac{1}{2} }{n}}\;[x^n](x^4 - 6x^2)^n = \frac{1}{2}{\binom {\frac{1}{2} }{n}}\;[x^n](x^2 - 6x)^n
+%\end{align}
+%
+%We can use this technique, first described by Flajolet \& Sedgewick~\cite{flajolet2009analytic}, to count the number of trees of a given size or distinct words in an unambiguous CFG. This lets us understand grammars as a kind of algebra, which is useful for enumerative combinatorics on words and syntax-guided synthesis. We use use this in our setting to count the total number of words in the intersection grammar.
+
+\clearpage\section{Implementation}
 
 The implementation essentially consists of four stages, each dependent on its predecessor.
 
@@ -745,7 +816,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-Each stage is translatable to a GPU format, especially matrix multiplication which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as a massively parallel map-reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
+This pipeline can be translated to series of GPU kernels, especially vector and tensor operations which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as a massively parallel map-reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming becomes mapping complex datatypes to and from an integer format.
 
@@ -850,183 +921,14 @@ The language intersection experiments were conducted on a MacBook M4 Max with 16
 
 \subsection{Dataset statistics}\label{sec:rq1}
 
-In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 100 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 100, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
+In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
 
 \begin{figure}[h!]
-\begin{tikzpicture}[scale=0.57]
-\begin{axis}[
-ybar,
-bar width=5pt,
-xlabel={Snippet length, $|\err\sigma|$},
-ylabel={Frequency},
-title={Cumulative length distribution},
-axis x line*=bottom,
-axis y line*=left,
-ymin=0,
-ymax=65,
-xtick=data,
-xticklabels={,<20,,<40,,<60,,<80,,<100},
-ymajorgrids=true,
-grid style=dashed,
-width=0.45\textwidth,
-height=0.3\textwidth
-]
-
-\addplot[fill=black!30] table {
-X Y
-1 7.60
-2 14.52
-3 22.01
-4 30.54
-5 37.82
-6 44.30
-7 49.68
-8 55.21
-9 59.75
-10 63.59
-};
-\draw[red, dashed] (axis cs:8.5,0) -- (axis cs:8.5,65);
-\end{axis}
-\end{tikzpicture}
-\begin{tikzpicture}[scale=0.57]
-\begin{axis}[
-ybar,
-bar width=5pt,
-title={Human repair distance},
-xlabel={Edit distance, $\Delta(\err\sigma, \sigma')$},
-ylabel={Frequency},
-axis x line*=bottom,
-axis y line*=left,
-xtick=data,
-ymajorgrids=true,
-grid style=dashed,
-xticklabels={,\leq 2,,\leq 4,,\leq 6,,\leq 8,,\leq 10},
-ytick={0, 20, 40, 60, 80, 100},
-ymin=0,
-width=0.45\textwidth,
-height=0.3\textwidth
-]
-\addplot[fill=black!30] table {
-X Y
-1  31.48
-2  47.52
-3  54.89
-4  60.44
-5  63.88
-6  66.38
-7  68.02
-8  70.04
-9  71.49
-10 72.22
-};
-\draw[red, dashed] (axis cs:4.5,0) -- (axis cs:4.5,80);
-\end{axis}
-\end{tikzpicture}
-\begin{tikzpicture}[scale=0.57]
-\begin{axis}[
-ybar,
-bar width=5pt,
-xlabel={Beginning $\longleftrightarrow$ End},
-ylabel={Frequency},
-title={Normalized edit locations},
-axis x line*=bottom,
-axis y line*=left,
-ymin=0,
-ymax=35,
-xtick=data,
-xticklabels={,20\%,,40\%,,60\%,,80\%,,100\%},
-ymajorgrids=true,
-grid style=dashed,
-width=0.45\textwidth,
-height=0.3\textwidth
-]
-
-\addplot[fill=black!30] table {
-X Y
-10 11.6539
-20 5.7252
-30 6.2087
-40 5.9542
-50 5.5980
-60 7.9389
-70 7.0738
-80 6.9466
-90 12.4173
-100 30.4835
-};
-\end{axis}
-\end{tikzpicture}
-%    \begin{tikzpicture}
-%      \begin{axis}[
-%        ybar,
-%        bar width=5pt,
-%        title={Intra-patch edit distance},
-%        xlabel={Caret distance},
-%        ylabel={Frequency},
-%        axis x line*=bottom,
-%        axis y line*=left,
-%        xtick=data,
-%        ymajorgrids=true,
-%        grid style=dashed,
-%        xticklabels={1,2,3,4,5,6,7,8,9,10+},
-%        width=0.45\textwidth,
-%        height=0.3\textwidth
-%      ]
-%
-%        \addplot table {
-%          X Y
-%          1 40.66
-%          2 15.00
-%          3 5.80
-%          4 4.86
-%          5 4.26
-%          6 2.98
-%          7 2.05
-%          8 2.73
-%          9 1.62
-%          10 13.64
-%        };
-%      \end{axis}
-%    \end{tikzpicture}
-\begin{tikzpicture}[scale=0.57]
-\begin{axis}[
-legend cell align={left},
-legend style={fill opacity=1, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=south east},
-xlabel={Snippet length, $|\err\sigma|$},
-ylabel={Stable region},
-title={Stability profile},
-ybar,
-axis lines*=left,
-xtick={0, 10, 20, 30, 40, 50, 60, 70},
-ytick={0, 0.2, 0.4, 0.6, 0.8, 1.0},
-xticklabels={, {[}10{,}20{)}, , {[}30{,}40{)}, , {[}50{,}60{)}, , {[}70{,}80{)}},
-yticklabels={0, 0.2, 0.4, 0.6, 0.8, 1.0},
-x tick label style={font=\scriptsize},
-ymax=1.0,
-ymin=0.0,
-bar width=3pt,
-grid style=dashed,
-ymajorgrids=true,
-width=0.45\textwidth,
-height=0.3\textwidth
-]
-\addlegendimage{empty legend}
-\addlegendentry{$\Delta(\err\sigma, \sigma')=$}
-\addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
-\addlegendentry{1,}
-\addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
-\addlegendentry{2,}
-\addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
-\addlegendentry{3}
-\addplot[green, fill=green!50] coordinates {(0, 0.80) (10, 0.91) (20, 0.96) (30, 0.97) (40, 0.99) (50, 0.99) (60, 0.99) (70, 0.99)};
-\addplot[blue, fill=blue!50] coordinates {(0, 0.35) (10, 0.59) (20, 0.69) (30, 0.73) (40, 0.79) (50, 0.82) (60, 0.84) (70, 0.86)};
-\addplot[orange, fill=orange!50] coordinates {(0, 0.23) (10, 0.45) (20, 0.58) (30, 0.66) (40, 0.70) (50, 0.77) (60, 0.78) (70, 0.86)};
-\end{axis}
-\end{tikzpicture}
+\input{repair_statistics}
 \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$30s and $\sim$150 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
 \end{figure}
 
-We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 100 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
+We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
 
 For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
 
