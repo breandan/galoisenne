@@ -8,10 +8,10 @@ import ai.hypergraph.kaliningraph.types.filter
 
 // Alternate to FSA; bypasses graph subtyping, basically just record types
 class DFSM(
-  Q: Set<String>,
-  deltaMap: Map<String, Map<Int, String>>,
-  q_alpha: String,
-  F: Set<String>,
+  override val Q: Set<String>,
+  val deltaMap: Map<String, Map<Int, String>>,
+  override val q_alpha: String,
+  override val F: Set<String>,
   val width: Int
 ) : NFSM(
   Q,
@@ -20,13 +20,31 @@ class DFSM(
   }.toSet(),
   q_alpha,
   F
-)
+) {
+  fun countWords(): Long {
+    val memo = mutableMapOf<String, Long>()
+
+    fun countFrom(q: String): Long {
+      if (memo.containsKey(q)) return memo[q]!!
+      val transitions = deltaMap[q] ?: emptyMap()
+      var sum = 0L
+      for ((_, next) in transitions) {
+        sum += countFrom(next)
+      }
+      val result = if (q in F) 1L + sum else sum
+      memo[q] = result
+      return result
+    }
+
+    return countFrom(q_alpha)
+  }
+}
 
 open class NFSM(
-  val Q: Set<String>,                  // Set of state names
+  open val Q: Set<String>,                  // Set of state names
   val delta: Set<Triple<String, Int, String>>, // Transitions: (from, symbol_index, to)
-  val q_alpha: String,                 // Initial state
-  val F: Set<String>                   // Final states
+  open val q_alpha: String,                 // Initial state
+  open val F: Set<String>                   // Final states
 ) {
   open fun toDOT(terminals: List<String>? = null): String {
     fun toSubscriptString(i: Int): String {
@@ -205,14 +223,14 @@ open class NFSM(
   }
 }
 
-fun GRE.toNFA(): NFSM {
+fun GRE.toNFSM(): NFSM {
   var stateCounter = 0
-  fun newState(): String = "q${stateCounter++}"
+  fun freshState(): String = "q${stateCounter++}"
 
-  fun buildNFA(g: GRE): NFSM = when (g) {
+  fun buildNFSM(g: GRE): NFSM = when (g) {
     is EPS -> {
       // NFA accepting only the empty string
-      val q0 = newState()
+      val q0 = freshState()
       NFSM(
         Q = setOf(q0),
         delta = emptySet(),
@@ -222,8 +240,8 @@ fun GRE.toNFA(): NFSM {
     }
     is SET -> {
       // NFA accepting single symbols whose indices are in s
-      val q_alpha = newState()
-      val q_omega = newState()
+      val q_alpha = freshState()
+      val q_omega = freshState()
       val transitions = g.s.toList().map { Triple(q_alpha, it, q_omega) }.toSet()
       NFSM(
         Q = setOf(q_alpha, q_omega),
@@ -234,8 +252,8 @@ fun GRE.toNFA(): NFSM {
     }
     is CUP -> {
       // Union of sub-expressions
-      val subNFAs = g.args.map { buildNFA(it) }
-      val q_new = newState()
+      val subNFAs = g.args.map { buildNFSM(it) }
+      val q_new = freshState()
       val Q = subNFAs.flatMap { it.Q }.toSet() + q_new
       val delta = subNFAs.flatMap { it.delta }.toSet()
       val F = subNFAs.flatMap { it.F }.toSet()
@@ -245,9 +263,7 @@ fun GRE.toNFA(): NFSM {
         val targets = subNFAs.flatMap { nfa ->
           nfa.delta.filter { it.first == nfa.q_alpha && it.second == σ }.map { it.third }
         }
-        for (target in targets) {
-          newTransitions.add(Triple(q_new, σ, target))
-        }
+        for (target in targets) newTransitions.add(Triple(q_new, σ, target))
       }
       NFSM(
         Q = Q,
@@ -258,9 +274,9 @@ fun GRE.toNFA(): NFSM {
     }
     is CAT -> {
       // Concatenation of l and r
-      val nfaL = buildNFA(g.l)
-      val nfaR = buildNFA(g.r)
-      val q_new = newState()
+      val nfaL = buildNFSM(g.l)
+      val nfaR = buildNFSM(g.r)
+      val q_new = freshState()
       val Q = nfaL.Q + nfaR.Q + q_new
       val delta = nfaL.delta + nfaR.delta
       val newTransitions = mutableSetOf<Triple<String, Int, String>>()
@@ -269,12 +285,8 @@ fun GRE.toNFA(): NFSM {
       for (σ in allSigma) {
         val S = mutableSetOf<String>()
         S.addAll(nfaL.delta.filter { it.first == nfaL.q_alpha && it.second == σ }.map { it.third })
-        if (g.l.nullable) {
-          S.addAll(nfaR.delta.filter { it.first == nfaR.q_alpha && it.second == σ }.map { it.third })
-        }
-        for (target in S) {
-          newTransitions.add(Triple(q_new, σ, target))
-        }
+        if (g.l.nullable) S.addAll(nfaR.delta.filter { it.first == nfaR.q_alpha && it.second == σ }.map { it.third })
+        for (target in S) newTransitions.add(Triple(q_new, σ, target))
       }
       // Transitions from final states of l to states reachable from r's initial state
       for (f in nfaL.F)
@@ -291,7 +303,7 @@ fun GRE.toNFA(): NFSM {
       )
     }
   }
-  return buildNFA(this)
+  return buildNFSM(this)
 }
 
 fun GRE.toDFSM(): DFSM {

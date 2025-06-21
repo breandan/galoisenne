@@ -622,32 +622,40 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 \subsection{Disambiguation}
 
 To count the number of unique repairs, we will first proceed by converting $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be representable as an FSA. Recalling the standard definition, we will define an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$ which takes the following form:
-\begin{equation}
-  \hspace{-0.2cm}N(e) =
-  \begin{cases}
-    \begin{alignedat}{8}
-      &\big\langle \{q_\alpha, q_\omega\}
-      &&\,,\, \{ q_\alpha \overset{\sigma}{\rightarrow} q_\omega \mid \sigma \in \Sigma \}
-      &&\,,\, q_\alpha\,\,, \{q_{\omega}\}
-      &&\big\rangle
-      &&\quad \text{if } e = \Sigma \\[0.5em]
 
-      &\big\langle Q_{x} \cup Q_{z}
-      &&\,,\, \{ q \overset{\sigma}{\rightarrow} q_{\alpha z} \mid q \overset{\sigma}{\rightarrow} q_{\omega}^{\in F_x} \} \cup \delta_{x} \cup \delta_{z}
-      &&\,,\, q_{\alpha x}\,, F_{z}
-      &&\big\rangle
-      &&\quad \text{if } e = x \cdot z \\[0.5em]
+\begin{equation*}
+N(e) =
+\begin{cases}
+  \begin{alignedat}{8}
+    &\big\langle \{q_\alpha, q_\omega\}
+    &&\,,\, \{ q_\alpha \overset{\sigma}{\rightarrow} q_\omega \mid \sigma \in \Sigma \}
+    &&\,,\, q_\alpha\,\,, \{q_{\omega}\}
+    &&\big\rangle
+    &&\:\: \text{if } e = \Sigma \\[0.5em]
 
-      &\big\langle Q_{x} \cup Q_{z} \cup \{q_{\alpha e}\}
-      &&\,,\, \{ q_{\alpha e} \overset{\sigma}{\rightarrow} q \mid q_{\alpha\{x, z\}} \overset{\sigma}{\rightarrow} q \}  \cup \delta_{x} \cup \delta_{z}
-      &&\,,\, q_{\alpha e}\,, F_{x} \cup F_{z}
-      &&\big\rangle
-      &&\quad \text{if } e = x \lor z\hspace{-0.5cm}
-    \end{alignedat}
-  \end{cases}
-\end{equation}
+    &\big\langle Q_{x} \cup Q_{z}
+    &&\,,\, \{ q \overset{\sigma}{\rightarrow} q_{\alpha z} \mid (q \overset{\sigma}{\rightarrow} q_{\omega}^{\in F_x}) \in \delta_x \} \cup \delta_{x} \cup \delta_{z}
+    &&\,,\, q_{\alpha x}\,, F_{z}
+    &&\big\rangle
+    &&\:\: \text{if } e = x \cdot z \\[0.5em]
 
-\noindent This NFA can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1962canonical} and finally analyzed to count the number of unique paths.
+    &\big\langle Q_{x} \cup Q_{z} \cup \{q_{\alpha e}\}
+    &&\,,\, \{ q_{\alpha e} \overset{\sigma}{\rightarrow} q \mid (q_{\alpha x, \alpha z} \overset{\sigma}{\rightarrow} q) \in \delta_{x, z} \}  \cup \delta_{x} \cup \delta_{z}
+    &&\,,\, q_{\alpha e}\,, F_{x} \cup F_{z}
+    &&\big\rangle
+    &&\:\: \text{if } e = x \lor z\hspace{-0.5cm}\\[-0.5em]
+    \multicolumn{9}{c}{\tiny{\text{- - - - - - - - - - - - or - - - - - - - - - - - -}}} \\[-0.5em]
+    &\Bigg\langle   \begin{matrix} Q_{x}\cup \{q_{\alpha e}\}\:\cup\\ Q_{z} \cup \{q_{\omega e}\}\phantom{\:\cup} \end{matrix}
+    &&\,,\, \begin{matrix}\{ q_{\alpha e} \overset{\sigma}{\rightarrow} q \mid (q_{\alpha x, \alpha z} \overset{\sigma}{\rightarrow} q)\in \delta_{x, z} \} \cup \delta_{x}\:\cup\\
+    \{ q \overset{\sigma}{\rightarrow} q_{\omega e} \mid (q \overset{\sigma}{\rightarrow} q_{\omega}^{\in F_{x,z}})\in \delta_{x, z} \}\cup \delta_{z}\phantom{\,\:\cup}\end{matrix}
+    &&\,,\, q_{\alpha e}\,, \{q_{\omega e}\}
+    &&\Bigg\rangle
+    &&\:\:\text{if } e = x \lor z
+  \end{alignedat}
+\end{cases}\vspace{0.2cm}
+\end{equation*}
+
+\noindent Though slightly more complex to express, we find the topology induced by the second version of the $\lor$ case is more favorable to minimization. This NFA can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1962canonical} and finally analyzed to count the number of unique paths.
 
 Continuing with our running example from Sec.~\ref{sec:repair_ex}, we will have the following NFA and DFA:
 

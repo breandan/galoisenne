@@ -151,3 +151,52 @@ fun BAutomaton.decodeDFA(
   dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings because BAutomata uses Unicode
   take: Int = 10_000,
 ) = getFiniteStrings(take).map { it.map { dec[it]!! }.joinToString(" ") }
+
+fun BAutomaton.toDFSM(): DFSM {
+  // Ensure the automaton is deterministic
+  require(this.isDeterministic) { "Automaton must be deterministic" }
+
+  // Get all states and assign unique string names (e.g., "q0", "q1", ...)
+  val states = this.states.toList()
+  val stateToName = states.mapIndexed { index, state -> state to "q$index" }.toMap()
+
+  // Set of all state names
+  val Q = stateToName.values.toSet()
+
+  // Initial state
+  val initialState = this.initialState
+  val q_alpha = stateToName[initialState]!!
+
+  // Set of accepting states
+  val F = states.filter { it.isAccept }.map { stateToName[it]!! }.toSet()
+
+  // Compute the alphabet size (width) by finding the maximum symbol used
+  var maxSymbol = -1
+  for (state in states) {
+    for (transition in state.transitions) {
+      val max = transition.max.toInt()
+      if (max > maxSymbol) maxSymbol = max
+    }
+  }
+  val width = if (maxSymbol >= 0) maxSymbol + 1 else 0
+
+  // Build the transition map
+  val deltaMap = mutableMapOf<String, MutableMap<Int, String>>()
+  for (state in states) {
+    val stateName = stateToName[state]!!
+    val symbolToNext = mutableMapOf<Int, String>()
+    for (transition in state.transitions) {
+      val min = transition.min.toInt()
+      val max = transition.max.toInt()
+      val nextStateName = stateToName[transition.dest]!!
+      // Expand the character range into individual symbol transitions
+      for (symbol in min..max) {
+        symbolToNext[symbol] = nextStateName
+      }
+    }
+    deltaMap[stateName] = symbolToNext
+  }
+
+  // Construct and return the DFSM
+  return DFSM(Q, deltaMap, q_alpha, F, width)
+}

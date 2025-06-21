@@ -475,7 +475,7 @@ class ProbabilisticLBH {
 
 //    LED_BUFFER = 5
 //    val gre = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
-//    println(gre.toNFA().pruneDeadStates().simplify().toDOT())
+//    println(gre.toNFSM().pruneDeadStates().simplify().toDOT())
 
 //  println(la.stateLst)
 //  val tikzAdj   = la.adjMat().toLaTeX()
@@ -484,9 +484,9 @@ class ProbabilisticLBH {
 //  println(tikzReach)
 
     val ig = ds.intersectLevFSA(la)
-//    println(ig.toPTree().toDFA(false))
 
-    println(ig.prettyPrint())
+//    println("Total words: " + ig.toPTree().toDFA(false)?.toDFSM()?.countWords())
+//    ig.toPTree().sampleStrWithoutReplacement().toSet().forEachIndexed { i, s -> println("$i: $s") }
 
     assertTrue("( )" in ds.language)
     assertFalse(prompt in ds.language)
