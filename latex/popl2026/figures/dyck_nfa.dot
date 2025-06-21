@@ -1,0 +1,16 @@
+digraph NFA {
+    rankdir = LR;
+    edge[ fontname="JetBrains Mono" ];
+  node [shape=circle, label=""];
+  b0 [shape=doublecircle, label=""];
+  start [label="", shape=none];
+  start -> b1;
+  b4 -> b3 [label=")"];
+  b6 -> b0 [label=")"];
+  b3 -> b6 [label="("];
+  b5 -> b6 [label=")"];
+  b2 -> b5 [label="("];
+  b1 -> b4 [label="("];
+  b1 -> b6 [label="("];
+  b1 -> b2 [label="("];
+}

@@ -649,13 +649,13 @@ To count the number of unique repairs, we will first proceed by converting $G_\c
 
 \noindent This NFA can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1962canonical} and finally analyzed to count the number of unique paths.
 
-For example, suppose we have the syntactically invalid Python string, \texttt{NAME = NAME . NAME ( NUM : , NUM : )}. The GRE recognizing the language intersection can be translated into an equivalent DFA. After minimization, this will take the following form:
+Continuing with our running example from Sec.~\ref{sec:repair_ex}, we will have the following NFA and DFA:
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.9\textwidth]{exampleDFA}
-  \caption{Minimal DFA recognizing the language $L(\footnotesize{\texttt{NAME = NAME . NAME ( NUM : , NUM : )}}, 2) \cap \ell_\textsc{Python}$.}
-  \label{fig:exampleDFA}
+  \includegraphics[width=0.4\textwidth]{figures/dyck_nfa}
+  \includegraphics[width=0.47\textwidth]{figures/dyck_dfa}
+  \caption{NFA and DFA for $\ell_\cap$.}
 \end{figure}
 
 %The advantage of dealing with formal language representations is that we can reason about them algebraically. Consider the context-free grammar: the arrow $\rightarrow$ becomes an $=$ sign, $\mid$ becomes $+$ and $AB$ becomes $A \times B$. The ambiguous Dyck grammar, then, can be seen as a system of equations.
@@ -816,7 +816,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-This pipeline can be translated to series of GPU kernels, especially vector and tensor operations which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as a massively parallel map-reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
+This pipeline can be translated to series of GPU kernels, essentially vector and tensor operations which GPUs are specifically designed to accelerate. Our strategy will be to treat each stage as a massively parallel map-reduce job, where each thread is responsible for populating a single entry of a large buffer, independently and without communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming becomes mapping complex datatypes to and from an integer format.
 
@@ -840,25 +840,25 @@ Once \texttt{cfl\_fixpt} is complete, we can calculate the total amount of memor
 
 \clearpage\section{Training the reranker}
 
-The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat natural, however the list may still be quite long. No reasonable user would be willing to skim through $10^5$ suggestions to find their intended repair, especially since they could have easily written it themselves in a few seconds.
+The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however the list may still be quite long. No reasonable user would be willing to skim through $10^5$ suggestions to find their intended repair, especially since they could have easily written it themselves in a few seconds.
 
-So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the ``learning-to-rank'' problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
+So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
 
-The model we use is fairly run-of-the-mill and by no means novel. To introduce it, we will need to overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss function'' instead of a langauge, and the derivative operator~\footnote{There is a connection to the Brzozowski derivative, but to refrain from digression we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
+To introduce the model, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss'' instead of a langauge, and the derivative operator~\footnote{There is a connection to the Brzozowski derivative, but to refrain from digression we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
 
-We omit the definition of a transformer-encoder in lieu of Strobl et al.'s excellent survey~\cite{strobl2024formal}, except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$. This we will use to embed the query and documents, then we will use a multilayer perceptron (MLP) to return a numerical score for the relevance labels. The full architecture will be something like:
+We omit the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters trained via gradient descent. This we will use to embed the query and documents, then return a numerical score for the relevance labels using a series of linear layers from a multilayer perceptron (MLP) as follows:
 
 \[
-f_\theta(\err\sigma: \Sigma^+, \sigma: \Sigma^+): \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
+f_\theta(\err\sigma: \ell^\complement, \sigma: \ell_\cap): \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
 \]
 
 The model will be used to predict a relevance score $f_\theta(q, d)$ for a given query $q$ and item $d$. The training objective is to minimize the listwise cross-entropy loss:
 \begin{equation}
 \mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\big)} \right)
 \end{equation}
-where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. This loss function encourages the model to assign higher scores to natural repairs, thereby learning to rank them above unnatural ones.
+where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. %This loss function encourages the model to assign higher scores to natural repairs, thereby learning to rank them above unnatural ones.
 
-We will train it all up via stochastic gradient descent (SGD) with a batch size of 16 for 11,200 steps.
+
 
 \clearpage\section{Evaluation}
 
