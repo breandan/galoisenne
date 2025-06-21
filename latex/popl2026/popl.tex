@@ -98,7 +98,7 @@ Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q
 
 There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
 
-\begin{definition}[GRE fragment]
+\begin{definition}[Star-free GRE fragment]
   Let \( e \) be an expression defined by the grammar:
   \[
     e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
@@ -179,7 +179,7 @@ Variations on this basic procedure can also be used for functional parsing and r
 
 Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
-Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression,~\footnote{Loosely equivalent to a star-free regular expression in the parlance of formal language theory, sans complementation.} we can construct an equivalent CFG with productions $P(e)$ as follows:
+Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with productions $P(e)$ as follows:
 
 \begin{equation}
 P(e) = \begin{cases}
@@ -621,7 +621,7 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \subsection{Disambiguation}
 
-To count the number of unique repairs, we will first proceed by converting $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be representable as an FSA. Recalling the standard definition, we will define an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$ which takes the following form: %$Q_{e} = N_Q(e), \delta_{z} = N_\delta(e), $:
+To count the number of unique repairs, we will first proceed by converting $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be representable as an FSA. Recalling the standard definition, we will define an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$ which takes the following form:
 \begin{equation}
   \hspace{-0.2cm}N(e) =
   \begin{cases}
@@ -653,10 +653,13 @@ Continuing with our running example from Sec.~\ref{sec:repair_ex}, we will have 
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\textwidth]{figures/dyck_nfa}
-  \includegraphics[width=0.47\textwidth]{figures/dyck_dfa}
-  \caption{NFA and DFA for $\ell_\cap$.}
+  \includegraphics[width=0.27\textwidth]{figures/dyck_nfa_orig}
+  \includegraphics[width=0.27\textwidth]{figures/dyck_nfa}
+  \includegraphics[width=0.30\textwidth]{figures/dyck_dfa}
+  \caption{FSA for $\ell_\cap$ before and after determinization.}
 \end{figure}
+
+This however requires going through the NFA, which is fairly tedious. Instead, a more direct route is to construct a DFA directly, then minimize it.
 
 %The advantage of dealing with formal language representations is that we can reason about them algebraically. Consider the context-free grammar: the arrow $\rightarrow$ becomes an $=$ sign, $\mid$ becomes $+$ and $AB$ becomes $A \times B$. The ambiguous Dyck grammar, then, can be seen as a system of equations.
 %

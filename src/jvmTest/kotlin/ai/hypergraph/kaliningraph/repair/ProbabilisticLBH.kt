@@ -473,6 +473,10 @@ class ProbabilisticLBH {
 //    val gre: GRE = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
 //    gre.showEditable()
 
+//    LED_BUFFER = 5
+//    val gre = repairWithGRE(prompt.tokenizeByWhitespace(), ds)!!
+//    println(gre.toNFA().pruneDeadStates().simplify().toDOT())
+
 //  println(la.stateLst)
 //  val tikzAdj   = la.adjMat().toLaTeX()
 //  val tikzReach = la.reachMat().toLaTeX()
@@ -480,6 +484,7 @@ class ProbabilisticLBH {
 //  println(tikzReach)
 
     val ig = ds.intersectLevFSA(la)
+//    println(ig.toPTree().toDFA(false))
 
     println(ig.prettyPrint())
 

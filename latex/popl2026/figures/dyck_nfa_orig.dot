@@ -1,0 +1,20 @@
+digraph NFA {
+rankdir=LR;
+edge[ fontname="JetBrains Mono" ];
+node [shape=circle, label=""];
+q8 [shape=doublecircle, label=""];
+q14 [shape=doublecircle, label=""];
+q24 [shape=doublecircle, label=""];
+start [label="", shape=none];
+start -> q51;
+q1 -> q3 [label=")"];
+q6 -> q8 [label=")"];
+q3 -> q6 [label="("];
+q12 -> q14 [label=")"];
+q19 -> q21 [label=")"];
+q21 -> q24 [label=")"];
+q17 -> q19 [label="("];
+q51 -> q1 [label="("];
+q51 -> q12 [label="("];
+q51 -> q17 [label="("];
+}

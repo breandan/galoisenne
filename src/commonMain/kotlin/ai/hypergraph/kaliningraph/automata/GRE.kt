@@ -102,6 +102,31 @@ sealed class GRE(open vararg val args: GRE) {
     is CAT -> (l.dv(σ) * r).let { dl -> if (l.nullable) dl + r.dv(σ) else dl }
   }
 
+//  fun dv(σ: Int): GRE? = when (this) {
+//    is EPS -> null // ∂_σ(ε) = ∅
+//    is SET -> if (s[σ]) EPS() else null // ∂_σ({a}) = ε if σ = a, else ∅
+//    is CUP -> {
+//      val derivatives = args.mapNotNull { it.dv(σ) }
+//      if (derivatives.isEmpty()) null
+//      else derivatives.reduce { acc, next -> CUP(acc, next) }
+//    }
+//    is CAT -> {
+//      val dl = l.dv(σ) // Left derivative
+//      val leftPart = dl?.let { CAT(it, r) }
+//      if (l.nullable) {
+//        val dr = r.dv(σ) // Right derivative
+//        when {
+//          leftPart != null && dr != null -> CUP(leftPart, dr)
+//          leftPart != null -> leftPart
+//          dr != null -> dr
+//          else -> null
+//        }
+//      } else {
+//        leftPart
+//      }
+//    }
+//  }
+
   val nullable by lazy { isNullable() }
 
   // Check whether 'g' accepts the empty string ε.
