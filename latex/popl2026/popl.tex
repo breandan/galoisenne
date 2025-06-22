@@ -621,7 +621,7 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \subsection{Disambiguation}
 
-To count the number of unique repairs, we will first proceed by converting $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be representable as an FSA. Recalling the standard definition, we will define an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$ which takes the following form:
+To count the number of unique repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
 
 \begin{equation*}
 N(e) =
@@ -655,19 +655,63 @@ N(e) =
 \end{cases}\vspace{0.2cm}
 \end{equation*}
 
-\noindent Though slightly more complex to express, we find the topology induced by the second version of the $\lor$ case is more favorable to minimization. This NFA can be determinized, minimized using Brzozowski's algorithm~\cite{brzozowski1962canonical} and finally analyzed to count the number of unique paths.
+\noindent Though slightly more verbose, we find the topology induced by the second version of the $\lor$ case is more favorable to minimization. For minimization, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to obtain the unique minimal DFA, $\mathcal{L}(D^*_\cap)$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
 
-Continuing with our running example from Sec.~\ref{sec:repair_ex}, we will have the following NFA and DFA:
+Continuing with our running example from Sec.~\ref{sec:repair_ex}, this will result in the following construction:
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.27\textwidth]{figures/dyck_nfa_orig}
   \includegraphics[width=0.27\textwidth]{figures/dyck_nfa}
   \includegraphics[width=0.30\textwidth]{figures/dyck_dfa}
-  \caption{FSA for $\ell_\cap$ before and after determinization.}
+  \caption{FSA for $\ell_\cap$ (a) with or (b) without $\lor$-branching, and then (c) post-determinization.}\label{fig:fsas_for_re}
 \end{figure}
-
-This however requires going through the NFA, which is fairly tedious. Instead, a more direct route is to construct a DFA directly, then minimize it.
+Now, for any DFA, we can ascertain the size of its langauge by counting walks through the DFA. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists \sigma: \Sigma \text{ s.t. } (q \overset{\sigma}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given by powers of the adjacency matrix, that is,
+\begin{align}
+  C_{D_\cap^*}(q_\alpha: Q, F: 2^Q): \mathbb{N} = \sum_{q_\omega \in F}(I-A)^{-1}[q_\alpha, q_\omega] &= (I + A + A^2 + \ldots + A^{|Q|-1})[q_\alpha, q_\omega]
+\end{align}
+\noindent So, plugging in powers of the transfer matrix for the DFA shown in Fig.~\ref{fig:fsas_for_re}.(c), we arrive at the total:
+\begin{align}
+(I-A)^{-1} &= \hspace{1cm}I + A \hspace{1cm}+\hspace{1.05cm} A^2 \hspace{1.07cm}+\hspace{1cm} A^3 \hspace{0.9cm}+\hspace{0.9cm} A^4\\
+  &=\begin{tiny}\begin{pmatrix}
+       1 & 1 &   &   &   &   \\
+        & 1  & 1 & 1 &   &   \\
+        &   & 1  &   & 1 &   \\
+        &   &   & 1  & 1 &   \\
+        &   &   &   & 1  & 1 \\
+        &   &   &   &   & 1  \\
+  \end{pmatrix} + \begin{pmatrix}
+              &   & 1 & 1 &   &   \\
+              &   &   &   & 2 &   \\
+              &   &   &   &   & 1 \\
+              &   &   &   &   & 1 \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+  \end{pmatrix} + \begin{pmatrix}
+              &   &   &   & 2 &   \\
+              &   &   &   &   & 2 \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+  \end{pmatrix} + \begin{pmatrix}
+              &   &   &   &   & 2 \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+              &   &   &   &   &   \\
+  \end{pmatrix}\end{tiny}\\
+  &= \begin{tiny}\begin{pmatrix}
+          1   & 1  & 1  & \underline{1} & 2 & \underline{2} \\
+              & 1  & 1  & 1 & 2 & 2 \\
+              &    & 1  &   & 1 & 1 \\
+              &    &    & 1 & 1 & 1 \\
+              &    &    &   & 1 & 1 \\
+              &    &    &   &   & 1 \\
+\end{pmatrix}\end{tiny} \text{ therefor, } |\ell_\cap| = C(q_\alpha, \{q_3, q_5\}) = \underline{1} + \underline{2} = 3.
+\end{align}
+Note that the model counting problem is strictly harder than deciding intersection nonemptiness, as it requires a separate determinization step, however, weak bounds may be obtained by applying $C$ to the automaton generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous.
 
 %The advantage of dealing with formal language representations is that we can reason about them algebraically. Consider the context-free grammar: the arrow $\rightarrow$ becomes an $=$ sign, $\mid$ becomes $+$ and $AB$ becomes $A \times B$. The ambiguous Dyck grammar, then, can be seen as a system of equations.
 %
