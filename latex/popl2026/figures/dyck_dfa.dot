@@ -1,17 +1,17 @@
 digraph Automaton {
     rankdir = LR;
     edge[ fontname="JetBrains Mono" ];
-    0 [shape=circle,label=""];
+    0 [shape=circle,label="q₂"];
     0 -> 3 [label=")"]
-    1 [shape=circle,label=""];
+    1 [shape=circle,label="q₁"];
     1 -> 0 [label="("]
     1 -> 4 [label=")"]
-    2 [shape=doublecircle,label=""];
-    3 [shape=circle,label=""];
+    2 [shape=doublecircle,label="q₅"];
+    3 [shape=circle,label="q₄"];
     3 -> 2 [label=")"]
-    4 [shape=doublecircle,label=""];
+    4 [shape=doublecircle,label="q₃"];
     4 -> 3 [label="("]
-    5 [shape=circle,label=""];
+    5 [shape=circle,label="q₀"];
     initial [shape=plaintext,label=""];
     initial -> 5
     5 -> 1 [label="("]
