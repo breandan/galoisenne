@@ -364,3 +364,96 @@ fun GRE.toDFSM(): DFSM {
 
   return DFSM(Q, deltaMap, q0, F, width)
 }
+
+fun DFSM.printAdjMatrixPowers() {
+  // Build adjacency list from deltaMap
+  val adj = Q.associateWith { q -> deltaMap[q]?.values?.toSet() ?: emptySet() }
+
+  // Compute in-degrees for topological sort
+  val inDegree: MutableMap<String, Int> = mutableMapOf<String, Int>()
+  for (q in Q) {
+    inDegree[q] = 0
+  }
+  for (q in Q) {
+    for (r in adj[q]!!) {
+      inDegree[r] = inDegree.getOrElse(r) { 0 } + 1
+    }
+  }
+
+  // Perform topological sort using Kahn's algorithm
+  val order = mutableListOf<String>()
+  val queue = ArrayDeque<String>()
+  for (q in Q) {
+    if (inDegree[q] == 0) {
+      queue.add(q)
+    }
+  }
+  while (queue.isNotEmpty()) {
+    val q = queue.removeFirst()
+    order.add(q)
+    for (r in adj[q]!!) {
+      inDegree[r] = inDegree[r]!! - 1
+      if (inDegree[r] == 0) {
+        queue.add(r)
+      }
+    }
+  }
+
+  // Map states to indices based on topological order
+  val stateToIndex = order.mapIndexed { index, state -> state to index }.toMap()
+  val n = Q.size
+
+  // Construct adjacency matrix
+  val AA = List(n) { MutableList(n) { 0 } }
+  for (q in Q) {
+    val i = stateToIndex[q]!!
+    for (r in adj[q]!!) {
+      val j = stateToIndex[r]!!
+      AA[i][j] = 1
+    }
+  }
+
+  val A: List<List<Int>> = AA
+
+  // Helper function to multiply two matrices
+  fun multiply(M1: List<List<Int>>, M2: List<List<Int>>): List<List<Int>> {
+    val C = List(n) { MutableList(n) { 0 } }
+    for (i in 0 until n) {
+      for (j in 0 until n) {
+        for (k in 0 until n) {
+          C[i][j] += M1[i][k] * M2[k][j]
+        }
+      }
+    }
+    return C
+  }
+
+  // Helper function to check if a matrix is all zeros
+  fun isZeroMatrix(M: List<List<Int>>): Boolean {
+    return M.all { row -> row.all { it == 0 } }
+  }
+
+  // Helper function to convert matrix to LaTeX bmatrix
+  fun matrixToLatex(M: List<List<Int>>): String {
+    val sb = StringBuilder()
+    sb.append("\\begin{bmatrix}\n")
+    for (row in M) {
+      sb.append(row.joinToString(" & "))
+      sb.append(" \\\\\n")
+    }
+    sb.append("\\end{bmatrix}")
+    return sb.toString()
+  }
+
+  // Print the state ordering for reference
+  println("States ordered as: " + order.joinToString(", "))
+
+  // Compute and print matrix powers until zero
+  var current = A
+  var k = 1
+  while (!isZeroMatrix(current)) {
+    println("A^{$k} = " + matrixToLatex(current))
+    current = multiply(current, A)
+    k++
+  }
+}

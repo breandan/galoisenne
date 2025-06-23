@@ -173,7 +173,7 @@ Variations on this basic procedure can also be used for functional parsing and r
   \hspace{1.6cm}$\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
    e &\text{ if } e \in \Sigma \\
    \big(s \stackrel{\$}{\gets} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
-   \texttt{choose}(e' \stackrel{\$}{\gets} \{x, z\}) &\text{ if } e = x \lor z
+   \texttt{choose}\big(e' \stackrel{\$}{\gets} \{x, z\}\big) &\text{ if } e = x \lor z
   \end{cases}
 \end{theorem}
 
@@ -183,7 +183,7 @@ Recall that every regular language is also context-free a fortiori. So, given an
 
 \begin{equation}
 P(e) = \begin{cases}
- \{ S_e \rightarrow \sigma \mid \sigma \in \Sigma \} & \text{if } e = \Sigma \\
+ \{ S_e \rightarrow e \} & \text{if } e \in \Sigma \\
  P(x) \cup P(z) \cup \{ S_e \rightarrow S_x S_z \} & \text{if } e = x \cdot z \\
  P(x) \cup P(z) \cup \{ S_e \rightarrow S_x, S_e \rightarrow S_z \} & \text{if } e = x \lor z \\
 \end{cases}
@@ -220,7 +220,7 @@ Salomaa~\cite{salomaa1973formal} introduces a direct, but inefficient constructi
   \end{prooftree}
 \end{definition}\vspace{0.2cm}
 
-\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. In Sec.~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection is finite. But first, let us return to the broader question of syntax repair.% We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
+\noindent however most synthetic productions in $P_\cap$ will be non-generating or unreachable. This method will construct a synthetic production for state pairs which are not even connected by any path, which is clearly excessive. In \S~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection is finite. But first, let us return to the broader question of syntax repair.% We will instead proceed by considering a simpler problem, then construct a parse chart which efficiently computes the intersection.
 
 \subsection{Informal statement}
 
@@ -332,7 +332,7 @@ The key to solving this problem is to treat finite language intersections as mat
     S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
   \end{align}
 
-  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably terminates in $\mathcal{O}(\log^c |Q||V|)$ parallel time for finite $c$.
+  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably terminates in $\mathcal{O}\big(\log^c |Q||V|\big)$ parallel time for finite $c$.
 \end{proof}\clearpage
 
 \section{Examples}
@@ -391,7 +391,7 @@ Given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a
   \end{pNiceMatrix}
 \end{align*}
 
-Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$ decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.}. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
+Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.} decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
 
 \subsection{Completion as intersection}
 
@@ -504,7 +504,7 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
   \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
 \end{prooftree}
 
-Nominalizing the NFA eliminates the creation of $e=2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs over the entire Levenshtein automaton and drastically reduces the representation size, but does not affect the underlying semantics. Thus, it is important to first nominalize the automaton before proceeding to avoid a large blowup in the intermediate grammar.
+Nominalizing the NFA eliminates the creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ unnecessary arcs and drastically reduces the representation size of the Levenshtein automaton, but does not affect the underlying semantics. Thus, it is important to first nominalize the automaton before proceeding.
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
@@ -559,7 +559,7 @@ Under such an ordering, the adjacency matrix takes an upper triangular form and 
 From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constraints n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_x\vee Z_z ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$ to produce concrete repairs. It is clear in this case there are only three: \texttt{()},\texttt{ ()()} and \texttt{(())}.
+Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$ to produce concrete repairs. It is clear in this case there are only three: \texttt{()},\texttt{ ()()} and \texttt{(())}.
 
 \clearpage
 
@@ -569,7 +569,7 @@ We will now attempt to put a probability distribution over the language intersec
 
 \subsection{Mode collapse}
 
-Ordinarily, we would use top-down PCFG sampling, however this method is highly degenerate in the case of finite languages, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
+Ordinarily, one might think to use top-down PCFG sampling using a treebank of well-formed code snippets, however this method is highly degenerate in the case of finite languages, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
 $$
 G=\left\{ S \rightarrow A\:B \: \left(\frac{10^4 - 1}{10^4}\right), \hspace{2pt}
      S \rightarrow C\:C \: \left(\frac{1}{10^4}\right), \hspace{2pt}
@@ -577,7 +577,7 @@ G=\left\{ S \rightarrow A\:B \: \left(\frac{10^4 - 1}{10^4}\right), \hspace{2pt}
      B  \rightarrow b \: (1), \hspace{2pt}
      C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)\right\}
 $$
-TDA sampling will almost always generate the string $a b$, but most of the language is concealed in the hidden branch, $S \rightarrow C C$. Although contrived example, it illustrates precisely why TDA sampling is unviable: we want a sampler that matches the true distribution over the finite CFL, not the PCFG's local approximation thereof.
+Such a sampler will almost always yield $a b$, but most of $\mathcal{L}(G)$ is concealed in the hidden branch, $S \rightarrow C C$. Though a contrived example, it illustrates why TDA sampling is unviable: our sampler should match the true distribution over the finite CFL, not the PCFG's local approximation thereof.
 
 \subsection{Exact enumeration}
 
@@ -587,7 +587,7 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
 
 \begin{definition}[Cardinality]
   $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
-    1           & \text{if } R \in \Sigma \\
+    1           & \text{if } e \in \Sigma \\
     x \times z  & \text{if } e = x \cdot z \\
     x + z       & \text{if } e = x \vee z
   \end{cases}\\
@@ -597,7 +597,7 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
   To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
   $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
-       e &\text{if } R \in \Sigma \\
+       e &\text{if } e \in \Sigma \\
        \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
        \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
   \end{cases}
@@ -607,7 +607,7 @@ This can be converted to a uniform sampler by drawing integers without replaceme
 
 \subsection{The problem with ambiguity}
 
-The problem with the previous approach is that it counts distinct trees, and this overcounts the total number of words. Since the grammar can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
+The problem with the previous approach is that it counts distinct trees, which overcounts the total number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
 
 \begin{lemma}\label{lemma:ambiguity}
 If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
@@ -628,10 +628,10 @@ N(e) =
 \begin{cases}
   \begin{alignedat}{8}
     &\big\langle \{q_\alpha, q_\omega\}
-    &&\,,\, \{ q_\alpha \overset{\sigma}{\rightarrow} q_\omega \mid \sigma \in \Sigma \}
+    &&\,,\, \{ q_\alpha \overset{e}{\rightarrow} q_\omega \}
     &&\,,\, q_\alpha\,\,, \{q_{\omega}\}
     &&\big\rangle
-    &&\:\: \text{if } e = \Sigma \\[0.5em]
+    &&\:\: \text{if } e \in \Sigma \\[0.5em]
 
     &\big\langle Q_{x} \cup Q_{z}
     &&\,,\, \{ q \overset{\sigma}{\rightarrow} q_{\alpha z} \mid (q \overset{\sigma}{\rightarrow} q_{\omega}^{\in F_x}) \in \delta_x \} \cup \delta_{x} \cup \delta_{z}
@@ -655,9 +655,9 @@ N(e) =
 \end{cases}\vspace{0.2cm}
 \end{equation*}
 
-\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be more favorable to minimization. For minimization, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to obtain the unique minimal DFA, $\mathcal{L}(D^*_\cap)$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
+\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable to minimization. For minimization, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to obtain the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
 
-Continuing with our running example from Sec.~\ref{sec:repair_ex}, this will result in the following construction:
+Continuing with our running example from \S~\ref{sec:repair_ex}, this will result in the following construction:
 
 \begin{figure}[H]
   \centering
@@ -670,7 +670,7 @@ Now, for any DFA, we can ascertain the size of its language by counting walks fr
 \begin{align}
   C_{D_\cap^*}(q_\alpha: Q, F: 2^Q): \mathbb{N} = \sum_{q_\omega \in F}(I-A)^{-1}[q_\alpha, q_\omega] &= (I + A + A^2 + \ldots + A^{|Q|-1})[q_\alpha, q_\omega]
 \end{align}
-\noindent So, plugging in powers of the transfer matrix for the DFA shown in Fig.~\ref{fig:fsas_for_re}.(c), we arrive at the total:
+\noindent Plugging in powers of the adjacency matrix for the DFA shown in Fig.~\ref{fig:fsas_for_re}.(c), we arrive at the total:
 \begin{align}
 (I-A)^{-1} &= \hspace{1cm}I + A \hspace{1cm}+\hspace{1.05cm} A^2 \hspace{1.07cm}+\hspace{1cm} A^3 \hspace{0.9cm}+\hspace{0.9cm} A^4\\
   &=\begin{tiny}\begin{pmatrix}
@@ -709,7 +709,7 @@ Now, for any DFA, we can ascertain the size of its language by counting walks fr
               &    &    & 1 & 1 & 1 \\
               &    &    &   & 1 & 1 \\
               &    &    &   &   & 1 \\
-\end{pmatrix}\end{tiny} \text{ therefor, } |\ell_\cap| = C(q_0, \{q_3, q_5\}) = \underline{1} + \underline{2} = 3.
+\end{pmatrix}\end{tiny} \text{ therefor, } |\mathcal{L}(D_\cap^*)| = C(q_0, \{q_3, q_5\}) = \underline{1} + \underline{2} = 3.
 \end{align}
 Note that the model counting problem is strictly harder than deciding intersection nonemptiness, as it requires a separate determinization step, however, weak bounds may be obtained by applying $C$ to the automaton generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous.
 
@@ -759,7 +759,7 @@ The implementation essentially consists of four stages, each dependent on its pr
 %  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \times \mathbb{N} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
-\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in Sec.~\ref{sec:repair_ex}.
+\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
 
 \begin{algorithm}[H]
 \caption{\texttt{lev\_build} pseudocode}
@@ -807,7 +807,7 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
   \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
-Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking $M_\infty[q, q', S] = \bs$ for some $q: I, q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
+Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q, q', S] = \bs$ for some $q: I, q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
 
 Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
 
@@ -895,7 +895,7 @@ Once \texttt{cfl\_fixpt} is complete, we can calculate the total amount of memor
 
 \clearpage\section{Training the reranker}
 
-The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however the list may still be quite long. No reasonable user would be willing to skim through $10^5$ suggestions to find their intended repair, especially since they could have easily written it themselves in a few seconds.
+The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however it is possible the list may be quite long. No reasonable user would be expected to skim through $10^5$ suggestions to select their intended repair, especially since they could have easily written it themselves in a few seconds.
 
 So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
 
@@ -1237,7 +1237,7 @@ We have implemented our approach and demonstrated its viability as a tool for sy
 
 \section*{Data-Availability Statement}
 
-An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}}. The data and source code for the experiments contained in this paper will be made available upon publication.
+An artifact for Tidyparse is currently available as a browser application~\footnote{\url{https://tidyparse.github.io}}. The data and source code for the experiments contained in this paper will be made available upon publication.
 
 \clearpage\bibliography{../bib/acmart}
 

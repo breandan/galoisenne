@@ -2,8 +2,10 @@ package ai.hypergraph.kaliningraph.repair
 
 import Grammars
 import ai.hypergraph.kaliningraph.automata.GRE
+import ai.hypergraph.kaliningraph.automata.printAdjMatrixPowers
 import ai.hypergraph.kaliningraph.automata.repairWithGRE
 import ai.hypergraph.kaliningraph.automata.toDFA
+import ai.hypergraph.kaliningraph.automata.toDFSM
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
@@ -484,6 +486,8 @@ class ProbabilisticLBH {
 //  println(tikzReach)
 
     val ig = ds.intersectLevFSA(la)
+
+//    ig.toPTree().toDFA(true)?.apply{ minimize() }?.toDFSM()?.printAdjMatrixPowers()
 
 //    println("Total words: " + ig.toPTree().toDFA(false)?.toDFSM()?.countWords())
 //    ig.toPTree().sampleStrWithoutReplacement().toSet().forEachIndexed { i, s -> println("$i: $s") }
