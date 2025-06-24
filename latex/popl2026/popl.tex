@@ -559,13 +559,13 @@ Under such an ordering, the adjacency matrix takes an upper triangular form and 
 From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constraints n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$ to produce concrete repairs. It is clear in this case there are only three: \texttt{()},\texttt{ ()()} and \texttt{(())}.
+Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
 
 \clearpage
 
 \section{Measuring the language intersection}
 
-We will now attempt to put a probability distribution over the language intersection. We will start with a few cursory but illumative approaches, then proceed towards a more refined solution.
+We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illumative approaches, then proceed towards a more refined solution.
 
 \subsection{Mode collapse}
 
@@ -581,9 +581,7 @@ Such a sampler will almost always yield $a b$, but most of $\mathcal{L}(G)$ is c
 
 \subsection{Exact enumeration}
 
-To correct for mode collapse, a brute force solution would be to generate every tree and rank it by probability. While this is unviable due its worst case complexity, it bears mentioning due to its global optimality. In certain cases, it can be realized when the intersection language is small.
-
-To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevity.
+To correct for mode collapse, a brute force solution would be to simply generate every tree. While this set can be fully materialized in some cases when the intersection language is small, this strategy is clearly suboptimal due to its worst-case complexity. Nevertheless, it is useful for checking completeness. To enumerate trees, we first need the total number of trees, which is denoted $|e|$.
 
 \begin{definition}[Cardinality]
   $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
@@ -594,7 +592,7 @@ To enumerate, we first need $|\mathcal{L}(e)|$, which is denoted $|e|$ for brevi
 \end{definition}
 
 \begin{theorem}[Enumeration]
-  To enumerate, invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
+  To enumerate, we can invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
 
   $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
        e &\text{if } e \in \Sigma \\
@@ -607,7 +605,7 @@ This can be converted to a uniform sampler by drawing integers without replaceme
 
 \subsection{The problem with ambiguity}
 
-The problem with the previous approach is that it counts distinct trees, which overcounts the total number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
+The main problem with the previous approach is that it counts distinct trees, which overcounts the total number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
 
 \begin{lemma}\label{lemma:ambiguity}
 If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
@@ -617,11 +615,11 @@ If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can
 Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
-We would like the underlying sample space to be a proper set, \textit{not} a multiset.
+\noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset.
 
 \subsection{Disambiguation}
 
-To count the number of unique repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
+To count the number of distinct repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
 
 \begin{equation*}
 N(e) =
@@ -655,7 +653,7 @@ N(e) =
 \end{cases}\vspace{0.2cm}
 \end{equation*}
 
-\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable for minimization. To minimize, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
+\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable for minimization. To minimize, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular adjacency matrix under a topological ordering of $\delta$.
 
 Continuing with our running example from \S~\ref{sec:repair_ex}, this will result in the following construction:
 
@@ -666,9 +664,9 @@ Continuing with our running example from \S~\ref{sec:repair_ex}, this will resul
   \includegraphics[width=0.30\textwidth]{figures/dyck_dfa}
   \caption{FSA for $\mathcal{L}\big(L(\texttt{())}, 1)\big)\cap\mathcal{L}(G')$ (a) with or (b) without $\lor$-merging, and then (c) post-determinization.}\label{fig:fsas_for_re}
 \end{figure}
-Now, for any DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given by powers of the adjacency matrix, that is,
+Now, for any DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given via the transfer matrix method~\cite{flajolet2009analytic}, that is,
 \begin{align}
-  C(A, F): \mathbb{N}^{|Q|\times|Q|} \times 2^Q \rightarrow \mathbb{N} = \sum_{\mathclap{q_\omega \in F}}(I-A)^{-1}[q_\alpha, q_\omega] &= (I + A + A^2 + \ldots + A^{|Q|-1})[q_\alpha, q_\omega]
+  C(A, q_\alpha, F): \mathbb{N}^{|Q|\times|Q|} \times Q \times 2^Q \rightarrow \mathbb{N} = \sum_{\mathclap{q_\omega \in F}}(I-A)^{-1}[q_\alpha, q_\omega] &= \sum_{\mathclap{q_\omega \in F}}\sum_{i = 0}^{\mathclap{|Q|-1}}A^i[q_\alpha, q_\omega]
 \end{align}
 \noindent Plugging in powers of the adjacency matrix for the DFA shown in Fig.~\ref{fig:fsas_for_re}.(c), we arrive at the total:
 \begin{align}
@@ -709,9 +707,9 @@ Now, for any DFA, we can ascertain the size of its language by counting walks fr
               &    &    & 1 & 1 & 1 \\
               &    &    &   & 1 & 1 \\
               &    &    &   &   & 1 \\
-\end{pmatrix}\end{tiny} \text{ therefor, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(A, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
+\end{pmatrix}\end{tiny} \text{ therefor, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(A, q_0, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
 \end{align}
-Note that the model counting problem is strictly harder than deciding intersection nonemptiness, as it requires a separate determinization step, however, weak bounds may be obtained by applying $C$ to the automaton generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous, whereas $C_{D_\cap^*}$ is exact.
+Note the model counting problem is strictly harder than deciding intersection nonemptiness, as it requires a separate determinization step, however, weak bounds may be obtained by applying $C$ to the automaton generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous, whereas $C_{D_\cap^*}$ is exact.
 
 %The advantage of dealing with formal language representations is that we can reason about them algebraically. Consider the context-free grammar: the arrow $\rightarrow$ becomes an $=$ sign, $\mid$ becomes $+$ and $AB$ becomes $A \times B$. The ambiguous Dyck grammar, then, can be seen as a system of equations.
 %
