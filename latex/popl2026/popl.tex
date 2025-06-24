@@ -96,7 +96,7 @@ Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadrupl
 
 Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. These generally come in two varieties, deterministic and nondeterministic depending on whether or not $\delta$ maps each pair $\langle q, s \rangle$ to a unique $q'$.
 
-There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE or REG) fragment containing concatenation, conjunction and disjunction:
+There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
 \begin{definition}[Star-free GRE fragment]
   Let \( e \) be an expression defined by the grammar:
@@ -284,14 +284,14 @@ As we will demonstrate, the ranked repair problem can be factorized into two ste
 
 \clearpage\section{Method}\label{sec:method}
 
-The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a certain correspondence between CFL-REG intersection and a semiring algebra that allows us to quickly decide and witness intersection nonemptiness for finite languages.
+The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a certain correspondence between CFL-REG intersections and a semiring algebra that allows us to quickly decide and witness intersection nonemptiness for finite languages.
 
 \begin{theorem}%[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), $A$, there exists a decision procedure $\varphi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\varphi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^c |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
+  For every CFG, G, and every acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^c |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^k\big)$ parallel processors for some $c, k < \infty$.
 \end{theorem}
 
 \begin{proof}[Proof]
-  To prove nonemptiness, we must show there exists a path $p \rightsquigarrow r$ in A such that $p\in I$, $r\in F$ where $p \rightsquigarrow r \vdash S$. At least one two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  To prove nonemptiness, we must show there exists a path $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
@@ -301,7 +301,7 @@ The key to solving this problem is to treat finite language intersections as mat
   \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
 
   \begin{align}
-    M_0[r, c, w] = \bigvee_{a\:\in\:\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
+    M_0[r, c, w] = \bigvee_{a\::\:\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
 
   Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
@@ -329,10 +329,10 @@ The key to solving this problem is to treat finite language intersections as mat
   \noindent Therefor, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps in the limit. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
 
   \begin{align}
-    S_\cap = \bigvee_{\mathclap{q \in I,\:q' \in F}}\exp(M)[q, q', S] \text{ and } \varphi = [S_\cap \neq \varnothing]
+    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{ and } \Psi = [S_\cap \neq \varnothing]
   \end{align}
 
-  \noindent Note we can check $\varphi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably terminates in $\mathcal{O}\big(\log^c |Q||V|\big)$ parallel time for finite $c$.
+  \noindent Note we can check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in case of nonemptiness. Should that occur, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably terminates in $\mathcal{O}\big(\log^c |Q||V|\big)$ parallel time for finite $c$.
 \end{proof}\clearpage
 
 \section{Examples}
@@ -621,7 +621,7 @@ We would like the underlying sample space to be a proper set, \textit{not} a mul
 
 \subsection{Disambiguation}
 
-To count the number of unique repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\mathcal{N} = \langle Q, \Sigma, \delta, q_\alpha, F \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
+To count the number of unique repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
 
 \begin{equation*}
 N(e) =
@@ -655,7 +655,7 @@ N(e) =
 \end{cases}\vspace{0.2cm}
 \end{equation*}
 
-\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable to minimization. For minimization, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to obtain the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
+\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable for minimization. To minimize, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to obtain the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular matrix under a topological ordering of $\delta$.
 
 Continuing with our running example from \S~\ref{sec:repair_ex}, this will result in the following construction:
 
@@ -709,7 +709,7 @@ Now, for any DFA, we can ascertain the size of its language by counting walks fr
               &    &    & 1 & 1 & 1 \\
               &    &    &   & 1 & 1 \\
               &    &    &   &   & 1 \\
-\end{pmatrix}\end{tiny} \text{ therefor, } |\mathcal{L}(D_\cap^*)| = C(q_0, \{q_3, q_5\}) = \underline{1} + \underline{2} = 3.
+\end{pmatrix}\end{tiny} \text{ therefor, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(q_0, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
 \end{align}
 Note that the model counting problem is strictly harder than deciding intersection nonemptiness, as it requires a separate determinization step, however, weak bounds may be obtained by applying $C$ to the automaton generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous.
 
@@ -754,8 +754,8 @@ The implementation essentially consists of four stages, each dependent on its pr
 \begin{enumerate}
   \item $\texttt{lev\_build}: \Sigma^{|Q|-1} \times \mathbb{N}^{3} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
   \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
-  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{REG}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{reg\_dcode}: \text{REG} \times \mathbb{N}^{|\Sigma|^{c\approx 3}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10}$ -- returns a small set of the most probable repairs.
+  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{GRE}$ -- constructs the regular expression for $G_\cap$.
+  \item $\texttt{reg\_dcode}: \text{GRE} \times \mathbb{N}^{|\Sigma|^{c\approx 3}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10}$ -- returns a small set of the most probable repairs.
 %  \item $\texttt{sel\_top\_k}: (\Sigma^* \times \mathbb{N})^{p\gg1} \times \mathbb{N} \rightarrow (\Sigma^*)^{k\ll p}$ -- returns a small set of the most probable repairs.
 \end{enumerate}
 
@@ -770,16 +770,16 @@ The implementation essentially consists of four stages, each dependent on its pr
   \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.34cm}}
     \State \vspace{-1.65cm}\[\hspace{0.5cm}\delta' \gets \!\left\{
         \begin{alignedat}{9}
-          &\;& q_{h,i} &\hspace{-0.1cm}\overset{[\neq\sigma_{j+1}]}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[-2pt]
-          && q_{h,i}   &\overset{[\neq\sigma_j]}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[-2pt]
-          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[-2pt]
-          && q_{h,i}   &\overset{[=\sigma_j]}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
+          &\;& q_{h,i} &\hspace{-0.1cm}\overset{{\color{orange}[\neq\sigma_{j+1}]}}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[\neq\sigma_j]}}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
         \end{alignedat}
       \right\phantom{\}}\]
-    \State $Q \gets Q \cup \{\pi_1(\delta'), \pi_3(\delta')\}, \delta \gets \delta \cup \{\delta'\}$
+    \State $Q \gets Q \cup \big\{\pi_1(\delta'), \pi_3(\delta')\big\}, \delta \gets \delta \cup \{\delta'\}$
   \EndFor
   \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
-  \State \Return $\langle Q, \Sigma, \delta, I, F\rangle$  \Comment{Returns a Levenshtein automaton.}
+  \State \Return $\langle Q, \Sigma, \delta = Q \times {\color{orange}(\Sigma \rightarrow \mathbb{B})} \times Q, I, F\rangle$  \Comment{Returns a [nominal] Levenshtein automaton.}
 \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
@@ -789,15 +789,15 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
 \caption{\texttt{cfl\_fixpt} pseudocode}
 \label{alg:cfl_fixpt}
 \begin{algorithmic}[1]
-\Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e, denote a finite langauge).
-\Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
+\Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e., denote a finite langauge).
+\Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
 \State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists \sigma \in \Sigma^+ \mid q \overset{\sigma}{\rightsquigarrow} q' \textbf{ else } \ws\big]_{q,\,q'\,:\, Q}$ \Comment{Solve for reachability matrix.}
-\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists v: V, w: \Sigma \mid (v \rightarrow w) \in P \land (q \overset{s}{\rightarrow} q') \in \delta \textbf{ else } \ws\big]_{q,\,q'\,:\,Q,\,v\,:\,V}$
-\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$} \Comment{Solves matrix exponential, $\exp(M_0)$.}
+\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists s: \Sigma \mid (v \rightarrow s) \in P \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land {\color{orange}\varphi(}s{\color{orange})} \textbf{ else } \ws\big]_{q,\,q'\,:\,Q,\,v\,:\,V}$
+\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q||V|)\rceil\big]$} \Comment{Solves matrix exponential, $\exp(M_0)$.}
 \State $\textsc{done} \gets \bs$
 \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
   \State $\textbf{if } M[p, r, w] \textbf{ or not } R[p, r] \textbf{ then continue}$
-  \State $Q_{pr} \gets \{q: Q \mid R[p, q] \land R[q, r]\}$ \Comment{Consider reachable states between p and r.}
+  \State $Q_{pr} \gets \big\{q: Q \mid R[p, q] \land R[q, r]\big\}$ \Comment{Consider reachable states between p and r.}
   \State $M[p, r, w] \gets \bs \textbf{ if } \exists q: Q_{pr}, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
   \State $\textbf{if } M[p, r, w] \textbf{ then } \textsc{done} \gets \ws$
 \EndFor
@@ -807,7 +807,7 @@ Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boole
   \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
-Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q, q', S] = \bs$ for some $q: I, q': F$. Otherwise if no such $q'$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
+Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
 
 Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
 
@@ -815,20 +815,20 @@ Now we can perform a second sweep over nonempty entries of the Boolean parse cha
 \caption{\texttt{reg\_build} pseudocode}
 \label{alg:reg_build}
 \begin{algorithmic}[1]
-  \Require $M_{\mathbb{B}}[q: I, q': F, S] = \bs$ for some $q, q'$ and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
-  \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, I, F\rangle: \text{NFA}\big)$}{}
+  \Require Same as \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}), $M_{\mathbb{B}}[q_\alpha, q_\omega: F, S] = \bs$ for some $q_\omega$, and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
+  \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
   \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
-  \State $M: \text{REG}^{|Q|\times |Q| \times |V|} \gets \big[\{w \mid M[q, q', v] \land (q \overset{w}{\rightarrow} q') \in \delta \land (v\rightarrow w) \in P\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
-  \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q|)\rceil\big]$}
+  \State $M: \text{GRE}^{|Q|\times |Q| \times |V|} \gets \big[\{s: \Sigma \mid M[q, q', v] \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land (v\rightarrow s) \in P \land {\color{orange}\varphi(}s{\color{orange})}\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
+  \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q||V|)\rceil\big]$}
   \State $M' \gets M$
   \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
   \State $\textbf{if not } M_\mathbb{B}[p, r, w] \textbf{ then continue}$
-  \State $Q_{pr} \gets \{q: Q \mid P[p, q] \land P[q, r]\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
+  \State $Q_{pr} \gets \big\{q: Q \mid P[p, q] \land P[q, r]\big\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
   \State \vspace{-0.42cm}\[\hspace{0.62cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\mathclap{\substack{q\,:\,Q_{pr}\\x,\,z\,:\,V}}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]\vspace{-0.2cm}
   \EndFor
   \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
   \EndFor \vspace{0.2cm}
-  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q\,:\,I,\,q'\,:\,F}} M[q, q', S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.31cm}
+  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q_\omega\,:\,F}} M[q_\alpha, q_\omega, S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.31cm}
 \end{algorithmic}
 \end{algorithm}
 
@@ -839,7 +839,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
   \label{alg:reg_dcode}
   \begin{algorithmic}[1]
   \Require We expect the shortest word to exceed the Markov order in length, $c < |\sigma|, \forall\sigma: \mathcal{L}(e)$.
-  \Procedure{\texttt{reg\_dcode}$\big(e: \text{REG}, C: \mathbb{N}^{|\Sigma|^{c\approx 3}}, k: \mathbb{N}\big)$}{}
+  \Procedure{\texttt{reg\_dcode}$\big(e: \text{GRE}, C: \mathbb{N}^{|\Sigma|^{c\approx 3}}, k: \mathbb{N}\big)$}{}
     \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon^{c-1}, e\cdot \varepsilon^{c-1}, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
     \State \vspace{-0.55cm}\[\hspace{-4.58cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^{\geq c-1}) = \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
     \Repeat
@@ -899,12 +899,12 @@ The candidate repairs contain every nearby edit, filtered by grammatical admissi
 
 So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
 
-To introduce the model, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss'' instead of a langauge, and the derivative operator~\footnote{There is a connection to the Brzozowski derivative, but to refrain from digression we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
+To introduce the model, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss'' instead of a langauge, and the derivative operator~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
 
-We omit the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters trained via gradient descent. This we will use to embed the query and documents, then return a numerical score for the relevance labels using a series of linear layers from a multilayer perceptron (MLP) as follows:
+We omit the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters trained via gradient descent. This we will use to embed the query and documents, then return a numerical score for the relevance labels by applying a series of linear layers from a multilayer perceptron (MLP):
 
 \[
-f_\theta(\err\sigma: \ell^\complement, \sigma: \ell_\cap): \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
+f_\theta(\err\sigma: \bar\ell, \sigma: \ell_\cap): \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
 \]
 
 The model will be used to predict a relevance score $f_\theta(q, d)$ for a given query $q$ and item $d$. The training objective is to minimize the listwise cross-entropy loss:
@@ -934,7 +934,7 @@ We use syntax errors and fixes from the Python language to validate our approach
 To evaluate accuracy, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$ of pairwise aligned errors ($\sigma^\dagger$) and fixes ($\sigma'$), we define Precision@k as:
 
 \begin{equation}
-\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\big[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{Score}(\sigma)\big]
+\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{Score}(\sigma)\right]
 \end{equation}
 
 This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
@@ -1292,7 +1292,7 @@ It is reasonable to ask whether the Levenshtein automaton defined is minimal, in
   Let $Q_{A'}$ be defined as $Q_A \setminus \{q_{n, 0}\}$.
 \end{theorem}
 
-Since $q_{n, 0}$ accepts the original string $\err\sigma$ which is by definition outside $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
+Since $q_{n, 0}$ accepts the original string $\err\sigma: \bar\ell \cap \Sigma^n$ which is by definition outside $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
 
 \begin{theorem}
   $\varnothing = \mathcal{L}(\err\sigma_{1 \ldots (n-s)}\cdot\Sigma^s)\cap \mathcal{L}(G)$ implies the states $[q_{n-i, 0}]_{i \in 1\ldots s}$ are unnecessary.
@@ -1301,7 +1301,7 @@ Since $q_{n, 0}$ accepts the original string $\err\sigma$ which is by definition
 Likewise, if we expend our entire edit budget in the first $p$ tokens, we will be unable to recover in a string where at least one repair must occur after the first $p$ tokens.
 
 \begin{theorem}
-  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_p)\cap \mathcal{L}(G)$ implies the states $[q_{i, d_{\max}}]_{i \in 0\ldots p}$ are unnecessary.
+  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots n})\cap \mathcal{L}(G)$ implies the states $[q_{i, d_{\max}}]_{i \in 0\ldots p}$ are unnecessary.
 \end{theorem}
 
 Therefor, we can eliminate $p+s$ states from $A$ by proving emptiness of $\mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots (n-s)}\cdot\Sigma^s) \cap \mathcal{L}(G)$, without affecting $\mathcal{L}(G_\cap)$. Pictorially,
@@ -1383,42 +1383,42 @@ sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
 \begin{smallpy}
 
 def average(values):
-if values == (1,2,3):
-return (1+2+3)/3
-(*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
-return (-3+2+8-1)/4
+  if values == (1,2,3):
+    return (1+2+3)/3
+  (*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
+    return (-3+2+8-1)/4
 
 \end{smallpy} & \begin{smallpy}
 
 def average(values):
-if values == (1,2,3):
-return (1+2+3)/3
-(*@\hlorange{elif}@*) values == (-3,2,8,-1):
-return (-3+2+8-1)/4
+  if values == (1,2,3):
+    return (1+2+3)/3
+  (*@\hlorange{elif}@*) values == (-3,2,8,-1):
+    return (-3+2+8-1)/4
 
 \end{smallpy} \\\hline
 \begin{smallpy}
 
 dict = {
-"Jan": 1
-"January": 1
-"Feb": 2 # and so on
+  "Jan": 1
+  "January": 1
+  "Feb": 2 # and so on
 }
 
 \end{smallpy} & \begin{smallpy}
 
 dict = {
-"Jan": 1(*@\hlgreen{,}@*)
-"January": 1(*@\hlgreen{,}@*)
-"Feb": 2 # and so on
+  "Jan": 1(*@\hlgreen{,}@*)
+  "January": 1(*@\hlgreen{,}@*)
+  "Feb": 2 # and so on
 }
 
 \end{smallpy} \\\hline
 \begin{smallpy}
 
 class MixIn(object)
-def m():
-pass
+  def m():
+    pass
 
 class classA(MixIn):
 
@@ -1427,8 +1427,8 @@ class classB(MixIn):
 \end{smallpy} & \begin{smallpy}
 
 class MixIn(object)(*@\hlgreen{:}@*)
-def m():
-pass
+  def m():
+    pass
 
 class classA(MixIn): (*@\hlgreen{\textbf{pass}}@*)
 
