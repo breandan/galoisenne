@@ -563,7 +563,7 @@ Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X 
 
 \clearpage
 
-\section{Measuring the language intersection}
+\section{Measuring the language intersection}\label{sec:measurement}
 
 We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illumative approaches, then proceed towards a more refined solution.
 
@@ -617,7 +617,7 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 
 \noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset.
 
-\subsection{Disambiguation}
+\subsection{Disambiguation}\label{sec:transfer_method}
 
 To count the number of distinct repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
 
@@ -989,11 +989,16 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 
 %  then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet. This dataset is effectively unlimited as we can generate as many synthetic errors across any range of edit distances and snippet lengths, however these repairs may be less representative of human syntax errors.
 
-\begin{figure}
-    \centering
-    \input{figures/scatter_plot.tex}
-    \caption{Scatter Plot of Length vs. Log(Lang Size) by Lev Margin}
-\end{figure}
+\begin{wrapfigure}{r}{0.35\textwidth}
+\vspace{-0.4cm}
+\resizebox{.35\textwidth}{!}{\input{figures/scatter_plot.tex}}
+\vspace{-0.8cm}
+\caption{Log volume versus snippet length and Levenshtein margin.}
+\label{fig:timings}
+\vspace{-0.4cm}
+\end{wrapfigure}
+
+For an intuition about the sizes of the langauge intersections involved, volumetric analysis will be helpful. We are also interested in understanding the influence of snippet length and edit distance on language intersection volume. To calculate intersection volume we form the Levenshein-$L\big(\err\sigma, \text{LED}(\err\sigma) + n\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression, compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset, we observe strong correlation between the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if the Levenshtein radius extends past the langauge edit distance (LED) by up to one edit, beyond which it grows too large to exhaustively generate and must be sampled.
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 

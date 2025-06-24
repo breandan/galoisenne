@@ -21,7 +21,7 @@ if missing_cols:
 df = df[required_cols]
 
 # Compute the natural logarithm of lang_size
-df['log_lang_size'] = np.log(df['lang_size'])
+df['log_lang_size'] = df['lang_size']
 
 # Get unique lev_margin values
 unique_margins = df['lev_margin'].unique()
@@ -33,14 +33,13 @@ colors = [cmap(i % cmap.N) for i in range(len(unique_margins))]
 # Create figure and axes with width 3x height
 fig, ax = plt.subplots(figsize=(12, 4))
 
-# Create the scatter plot with smaller dots (s=18)
 for i, margin in enumerate(unique_margins):
     subset = df[df['lev_margin'] == margin]
-    ax.scatter(subset['length'], subset['log_lang_size'], s=18, color=colors[i], label=f'Lev Margin {margin}')
+    ax.scatter(subset['length'], subset['log_lang_size'], color=colors[i], label=f'Lev Margin {margin}')
 
 # Add labels and title with LaTeX formatting
 ax.set_xlabel(r'$|\sigma|$')
-ax.set_ylabel(r'$\log_2|\ell_\cap|$')
+ax.set_ylabel(r'$|\ell_\cap|$')
 ax.set_title('Scatter Plot of Length vs. Log(Lang Size) by Lev Margin')
 
 # Add legend
