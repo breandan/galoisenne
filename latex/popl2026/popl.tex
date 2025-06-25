@@ -891,7 +891,7 @@ Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculat
 
 \noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores the pointers to memory locations in the same data structure. These pointers must also be tied to locations in the parse chart to obtain the terminal subsets for adjacent states and unit nonterminals when decoding.
 
-\clearpage\section{Training the reranker}
+\clearpage\subsection{Training the reranker}
 
 The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however it is possible the list may be quite long. No reasonable user would be expected to skim through $10^5$ suggestions to select their intended repair, especially since they could have easily written it themselves in a few seconds.
 
@@ -974,13 +974,11 @@ The language intersection experiments were conducted on a MacBook M4 Max with 16
 
 \subsection{Dataset statistics}\label{sec:rq1}
 
-In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits ($|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5$). We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.
-
+In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits $\big(|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5\big)$. We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.\vspace{-0.2cm}
 \begin{figure}[h!]
 \input{repair_statistics}
-\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}
+\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.4cm}
 \end{figure}
-
 We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
 
 For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
@@ -989,16 +987,17 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 
 %  then synthetically corrupt them by introducing synthetic syntax errors and measure the Precision@k of our repair procedure at recovering the original, uncorrupted snippet. This dataset is effectively unlimited as we can generate as many synthetic errors across any range of edit distances and snippet lengths, however these repairs may be less representative of human syntax errors.
 
-\begin{wrapfigure}{r}{0.35\textwidth}
+\begin{wrapfigure}{r}{0.45\textwidth}
 \vspace{-0.4cm}
-\resizebox{.35\textwidth}{!}{\input{figures/scatter_plot.tex}}
+\resizebox{.45\textwidth}{!}{\input{figures/scatter_plot.tex}}
 \vspace{-0.8cm}
-\caption{Log volume versus snippet length and Levenshtein margin.}
-\label{fig:timings}
-\vspace{-0.4cm}
+\caption{Log language volume versus snippet length and edit distance for Python repairs.}
+\label{fig:volumetric_plot}
+\vspace{-0.2cm}
 \end{wrapfigure}
 
-For an intuition about the sizes of the langauge intersections involved, volumetric analysis will be helpful. We are also interested in understanding the influence of snippet length and edit distance on language intersection volume. To calculate intersection volume we form the Levenshein-$L\big(\err\sigma, \text{LED}(\err\sigma) + n\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression, compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset, we observe strong correlation between the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if the Levenshtein radius extends past the langauge edit distance (LED) by up to one edit, beyond which it grows too large to exhaustively generate and must be sampled.
+For an intuition about the size of the langauge intersections involved in syntax repair, volumetric analysis will be helpful, particularly in understanding the influence of snippet length and edit distance on language intersection volume. To measure the intersection volume we will form the $L\big(\err\sigma, \Delta(\err{\sigma}, \sigma')\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression, and finally compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset (Fig.~\ref{fig:volumetric_plot}), we observe a strong positive correlation with the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if we extend the Levenshtein radius one edit beyond the langauge edit distance (LED) $\big(\text{i.e., } d_{\max} \leq \text{LED}(\err\sigma)$\footnote{Where $\text{LED}(\err\sigma)$ is shorthand for $\text{LED}(\err\sigma, \ell) = \min \big\{d_{\max}: \mathbb{N}\mid \mathcal{L}\big(L(\sigma, d_{\max})\big) \cap \ell \neq \varnothing\big\}$ with $\ell$ being the Python language.}$+ 1\big)$ after which it grows too large to exhaustively generate and must be sampled. Across all snippets where $\Delta(\err{\sigma}, \sigma') < 5$, approximately 61\% matched $\text{LED}(\err\sigma)$, 31\% had an edit distance of $\text{LED}(\err\sigma) + 1$ and 8\% had a distance of $\text{LED}(\err\sigma) + 2$.
+%Note that this analysis does not depend on our method, but is rather an empirical observation about naturally-occurring Python syntax errors and repairs. Furthermore, it does not tell us how many of those repairs were semantically admissible, i.e., typesafe, the quantity of which may be an order of magnitude smaller.
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
