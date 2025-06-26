@@ -29,9 +29,7 @@ ax.set_xlabel("Length")
 ax.set_ylabel('log(ms)')
 # ax.legend()
 
-# Use Matplotlib's pgf backend for LaTeX compatibility
-plt.rcParams.update({"text.usetex": True,
-                     "pgf.rcfonts": False})  # Avoid font issues
+plt.rcParams.update({"text.usetex": True, "pgf.rcfonts": False})
 
 # Save as a .pgf file (LaTeX ready)
 # plt.show()
