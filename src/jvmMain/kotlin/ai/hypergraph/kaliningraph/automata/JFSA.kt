@@ -1,5 +1,9 @@
 package ai.hypergraph.kaliningraph.automata
 
+import ai.hypergraph.kaliningraph.automata.GRE.CAT
+import ai.hypergraph.kaliningraph.automata.GRE.CUP
+import ai.hypergraph.kaliningraph.automata.GRE.EPS
+import ai.hypergraph.kaliningraph.automata.GRE.SET
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.markovian.mcmc.MarkovChain
@@ -151,6 +155,17 @@ fun BAutomaton.decodeDFA(
   dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings because BAutomata uses Unicode
   take: Int = 10_000,
 ) = getFiniteStrings(take).map { it.map { dec[it]!! }.joinToString(" ") }
+
+fun GRE.toDFA(
+  unitRule: (String) -> dk.brics.automaton.Automaton = {
+    BAutomaton.makeChar(Random(it.hashCode()).nextInt().toChar())
+  }
+): BAutomaton = when (this) {
+  is EPS -> TODO()
+  is SET -> BAutomaton.union(s.toList().map { unitRule(it.toString()) })
+  is CUP -> BAutomaton.union(args.map { it.toDFA() })
+  is CAT -> l.toDFA().concatenate(r.toDFA())
+}
 
 fun BAutomaton.toDFSM(): DFSM {
   // Ensure the automaton is deterministic
