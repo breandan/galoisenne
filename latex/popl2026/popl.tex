@@ -94,7 +94,7 @@ Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadrupl
   \end{tabular}
 \end{table}\vspace{-8pt}
 
-Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, I, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, and $I, F \subseteq Q$ are the set of initial and final states, respectively. These generally come in two varieties, deterministic and nondeterministic depending on whether or not $\delta$ maps each pair $\langle q, s \rangle$ to a unique $q'$.
+Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, q_\alpha, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, $q_\alpha$ is the initial state, and $F \subseteq Q$ are the accepting states. These generally come in two varieties, deterministic and nondeterministic depending on whether or not $\delta$ maps each pair $\langle q, s \rangle$ to a unique $q'$.
 
 There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
@@ -559,7 +559,7 @@ Under such an ordering, the adjacency matrix takes an upper triangular form and 
 From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constraints n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $G_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(G_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
+Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $S_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(S_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
 
 \clearpage
 
@@ -766,15 +766,15 @@ The implementation essentially consists of four stages, each dependent on its pr
   \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
   \State $Q, \delta \gets \varnothing$
   \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.34cm}}
-    \State \vspace{-1.65cm}\[\hspace{0.5cm}\delta' \gets \!\left\{
+    \State \vspace{-1.65cm}\[\hspace{1.15cm}\delta\,\gets \delta\,\cup\:\!\left\{
         \begin{alignedat}{9}
           &\;& q_{h,i} &\hspace{-0.1cm}\overset{{\color{orange}[\neq\sigma_{j+1}]}}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[-2pt]
           && q_{h,i}   &\overset{{\color{orange}[\neq\sigma_j]}}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[-2pt]
           && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[-2pt]
           && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
         \end{alignedat}
-      \right\phantom{\}}\]
-    \State $Q \gets Q \cup \big\{\pi_1(\delta'), \pi_3(\delta')\big\}, \delta \gets \delta \cup \{\delta'\}$
+      \right\}\]
+    \State $Q \gets Q \cup \{q_{h,i}, q_{j,k}\}$
   \EndFor
   \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
   \State \Return $\langle Q, \Sigma, \delta = Q \times (\Sigma\:{\color{orange}\rightarrow \mathbb{B}}) \times Q, q_\alpha, F\rangle$  \Comment{Returns a [nominal] Levenshtein automaton.}
@@ -975,10 +975,12 @@ The language intersection experiments were conducted on a MacBook M4 Max with 16
 \subsection{Dataset statistics}\label{sec:rq1}
 
 In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits $\big(|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5\big)$. We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.\vspace{-0.2cm}
+
 \begin{figure}[h!]
 \input{repair_statistics}
 \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.4cm}
 \end{figure}
+
 We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
 
 For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma')\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
@@ -996,7 +998,7 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 \vspace{-0.2cm}
 \end{wrapfigure}
 
-For an intuition about the size of the langauge intersections involved in syntax repair, volumetric analysis will be helpful, particularly in understanding the influence of snippet length and edit distance on language intersection volume. To measure the intersection volume we will form the $L\big(\err\sigma, \Delta(\err{\sigma}, \sigma')\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression, and finally compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset (Fig.~\ref{fig:volumetric_plot}), we observe a strong positive correlation with the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if we extend the Levenshtein radius one edit beyond the langauge edit distance (LED) $\big(\text{i.e., } d_{\max} \leq \text{LED}(\err\sigma)$\footnote{Where $\text{LED}(\err\sigma)$ is shorthand for $\text{LED}(\err\sigma, \ell) = \min \big\{d_{\max}: \mathbb{N}\mid \mathcal{L}\big(L(\sigma, d_{\max})\big) \cap \ell \neq \varnothing\big\}$ with $\ell$ being the Python language.}$+ 1\big)$ after which it grows too large to exhaustively generate and must be sampled. Across all snippets where $\Delta(\err{\sigma}, \sigma') < 5$, approximately 61\% matched $\text{LED}(\err\sigma)$, 31\% had an edit distance of $\text{LED}(\err\sigma) + 1$ and 8\% had a distance of $\text{LED}(\err\sigma) + 2$.
+For an intuition about the size of the langauge intersections involved in syntax repair, volumetric analysis will be helpful, particularly in understanding the influence of snippet length and edit distance on language intersection volume. To measure the intersection volume we will form the $L\big(\err\sigma, \Delta(\err{\sigma}, \sigma')\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression and finally compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset (Fig.~\ref{fig:volumetric_plot}), we observe a strong positive correlation with the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if we extend the Levenshtein radius up to one edit beyond the langauge edit distance (LED) $\big(\text{i.e., } d_{\max} \leq \text{LED}(\err\sigma)$\footnote{Where $\text{LED}(\err\sigma)$ is shorthand for $\text{LED}(\err\sigma, \ell) = \min \big\{d_{\max}: \mathbb{N}\mid \mathcal{L}\big(L(\err\sigma, d_{\max})\big) \cap \ell \neq \varnothing\big\}$ with $\ell$ being the Python language.}$+ 1\big)$ after which it grows too large to exhaustively generate and must be sampled. Across all snippets where $\Delta(\err{\sigma}, \sigma') < 5$, approximately 54\% matched $\text{LED}(\err\sigma)$, 35\% had an edit distance of $\text{LED}(\err\sigma) + 1$ and 11\% had a distance of $\text{LED}(\err\sigma) + 2$.
 %Note that this analysis does not depend on our method, but is rather an empirical observation about naturally-occurring Python syntax errors and repairs. Furthermore, it does not tell us how many of those repairs were semantically admissible, i.e., typesafe, the quantity of which may be an order of magnitude smaller.
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
