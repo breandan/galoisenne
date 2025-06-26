@@ -164,7 +164,7 @@ fun GRE.toDFA(
   }
 ): BAutomaton = when (this) {
   is EPS -> TODO()
-  is SET -> BAutomaton.union(s.toList().map { unitRule(if(terms== null) it.toString() else terms[it]) })
+  is SET -> BAutomaton.union(s.toList().map { unitRule(if (terms== null) it.toString() else terms[it]) })
   is CUP -> BAutomaton.union(args.map { it.toDFA(terms) })
   is CAT -> l.toDFA(terms).concatenate(r.toDFA(terms))
 }
