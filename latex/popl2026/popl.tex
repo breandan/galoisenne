@@ -104,20 +104,20 @@ There is an equivalent characterization of the regular languages via an inductiv
     e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
   \]
 
-\noindent Semantically, we can interpret these expressions as denoting regular languages:\vspace{-0.8cm}
+where $\varepsilon$ is the empty symbol. Semantically, we interpret these expressions as denoting languages:\vspace{-0.8cm}
 
   \setlength{\columnseprule}{0pt}
   \setlength{\columnsep}{-3cm}
   \begin{multicols}{2}
     \begin{eqnarray*}
-      \mathcal{L}(& \varnothing & ) = \varnothing \\
-      \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
-      \mathcal{L}(& a           & ) = \{a\}
+      \mathcal{L}(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing \\
+      \mathcal{L}(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \{\varepsilon\} \\
+      \mathcal{L}(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \{a\}
     \end{eqnarray*} \break\vspace{-0.45cm}
     \begin{eqnarray*}
-      \mathcal{L}(& x\cdot z & ) = \mathcal{L}(x) \circ \mathcal{L}(z)\text{\footnotemark}\\
-      \mathcal{L}(& x\vee  z & ) = \mathcal{L}(x) \cup  \mathcal{L}(z)\\
-      \mathcal{L}(& x\land z & ) = \mathcal{L}(x) \cap  \mathcal{L}(z)
+      \mathcal{L}(&\hspace{-0.35cm} x\cdot z \hspace{-0.35cm}&) = \mathcal{L}(x) \circ \mathcal{L}(z)\text{\footnotemark}\\
+      \mathcal{L}(&\hspace{-0.35cm} x\vee  z \hspace{-0.35cm}&) = \mathcal{L}(x) \cup  \mathcal{L}(z)\\
+      \mathcal{L}(&\hspace{-0.35cm} x\land z \hspace{-0.35cm}&) = \mathcal{L}(x) \cap  \mathcal{L}(z)
     \end{eqnarray*}
   \end{multicols}
   \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$.}
@@ -131,20 +131,20 @@ There is an equivalent characterization of the regular languages via an inductiv
   \vspace{-0.8cm}
   \begin{multicols}{2}
     \begin{eqnarray*}
-      \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
-      \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
-      \phantom{--}\partial_a(& b           &) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-      \phantom{--}\partial_a(& x\cdot z    &) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
-      \phantom{--}\partial_a(& x\vee  z    &) =  \partial_a x \vee  \partial_a z                       \\
-      \phantom{--}\partial_a(& x\land z    &) =  \partial_a x \land \partial_a z
+      \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
     \end{eqnarray*} \break\vspace{-0.45cm}
     \begin{eqnarray*}
-      \delta(& \varnothing &) = \varnothing                                      \\
-      \delta(& \varepsilon &) = \varepsilon                                      \\
-      \delta(& a           &) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-      \delta(& x\cdot z    &) = \delta(x) \land \delta(z)                        \\
-      \delta(& x\vee  z    &) = \delta(x) \vee  \delta(z)                        \\
-      \delta(& x\land z    &) = \delta(x) \land \delta(z)
+      \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
+      \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\
+      \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+      \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
+      \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
+      \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
     \end{eqnarray*}
   \end{multicols}
 \end{definition}
@@ -745,7 +745,7 @@ Note the model counting problem is strictly harder than deciding intersection no
 %
 %We can use this technique, first described by Flajolet \& Sedgewick~\cite{flajolet2009analytic}, to count the number of trees of a given size or distinct words in an unambiguous CFG. This lets us understand grammars as a kind of algebra, which is useful for enumerative combinatorics on words and syntax-guided synthesis. We use use this in our setting to count the total number of words in the intersection grammar.
 
-\clearpage\section{Implementation}
+\clearpage\section{Implementation}\label{sec:implementation}
 
 The implementation essentially consists of four stages, each dependent on its predecessor.
 
@@ -953,7 +953,8 @@ In the following experiments, we use a dataset of Python snippets consisting of 
 
 \begin{figure}[h!]
 \input{repair_statistics}
-\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.4cm}
+\vspace{-0.6cm}
+\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.2cm}
 \end{figure}
 
 We observe that slightly over half of the code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and five lexical edits, which our method can easily handle (\S~\ref{sec:rq2}). The distribution across edit locations indicates a large fraction of human edits occur near the boundaries of the broken code snippet, however we do not exploit this prior anywhere in the repair process.
@@ -1023,9 +1024,10 @@ We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We 
 \begin{wrapfigure}{r}{0.35\textwidth}
 \vspace{-0.4cm}
 \resizebox{.35\textwidth}{!}{\input{throughput}}
-\caption{Distinct repairs found in 30s.}
+\vspace{-0.6cm}
+\caption{Distinct repairs found in 10s.}
 \label{fig:throughput}
-\vspace{-0.4cm}
+\vspace{-0.3cm}
 \end{wrapfigure}
 
 End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
@@ -1033,12 +1035,13 @@ End-to-end throughput varies significantly with the edit distance of the repair.
 \begin{wrapfigure}{l}{0.35\textwidth}
 \vspace{-0.4cm}
 \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
+\vspace{-0.7cm}
 \caption{End-to-end repair timings.}
 \label{fig:timings}
-\vspace{-0.4cm}
+\vspace{-0.3cm}
 \end{wrapfigure}
 
-In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by collecting 1000 samples balanced across length and edit distance, then measure the wallclock time until the sampler retrieves the human repair and report the log latency. While short repairs finish quickly, latency is positively correlated with length and edit distance. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before timeout, while 4+-edit throughput starts becoming constrained by compute around 30s, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout or additional CPU cores. We anticipate that a much longer delay will begin to tax the patience of most users, and so we consider 30s a reasonable upper bound for repair latency. As we will now show, end-to-end latency can be improved by doing rejection sampling, albeit at the cost of naturalness and sample efficiency.
+In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by collecting 1,645 samples balanced across length and edit distance, then measure the wallclock runtime of the single core implementation of the repair algorithm (\S~\ref{sec:implementation}). This wall-clock runtime corroborates the complexity analysis (\S~\ref{sec:method}) showing a distinct lower bound. While short repairs finish quickly, latency is positively correlated with length and edit distance. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before timeout, while 4+-edit throughput starts becoming constrained by compute around 10s, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout or additional processor cores. We anticipate that a much longer delay will begin to tax the patience of most users, and so we consider 10s a reasonable upper bound for repair latency.
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
@@ -1074,7 +1077,7 @@ Finally, we evaluate the impact of increased parallelism on repair throughput. W
 \label{fig:speedup}
 \end{wrapfigure}
 
-We measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls.
+We measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.~\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls.
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
