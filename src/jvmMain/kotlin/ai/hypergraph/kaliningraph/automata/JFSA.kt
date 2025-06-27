@@ -157,14 +157,16 @@ fun BAutomaton.decodeDFA(
 ) = getFiniteStrings(take).map { it.map { dec[it]!! }.joinToString(" ") }
 
 fun GRE.toDFA(
+  terms: List<String>? = null,
   unitRule: (String) -> dk.brics.automaton.Automaton = {
+    if (terms.isNullOrEmpty()) null!!
     BAutomaton.makeChar(Random(it.hashCode()).nextInt().toChar())
   }
 ): BAutomaton = when (this) {
   is EPS -> TODO()
-  is SET -> BAutomaton.union(s.toList().map { unitRule(it.toString()) })
-  is CUP -> BAutomaton.union(args.map { it.toDFA() })
-  is CAT -> l.toDFA().concatenate(r.toDFA())
+  is SET -> BAutomaton.union(s.toList().map { unitRule(if (terms== null) it.toString() else terms[it]) })
+  is CUP -> BAutomaton.union(args.map { it.toDFA(terms) })
+  is CAT -> l.toDFA(terms).concatenate(r.toDFA(terms))
 }
 
 fun BAutomaton.toDFSM(): DFSM {
