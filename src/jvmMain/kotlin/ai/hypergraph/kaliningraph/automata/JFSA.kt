@@ -111,7 +111,7 @@ fun BAutomaton.decodeDFA(
   dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings
   callback: (Σᐩ) -> Unit = {},
   timeout: Duration = Duration.INFINITE,
-  beamWidth: Long = 1_000_000L, // Maximum number of trajectories to keep at each step
+  beamWidth: Long = 40_000_000L, // Maximum number of trajectories to keep at each step
 ): List<Σᐩ> {
   val startTime = TimeSource.Monotonic.markNow()
   val fullTrajectories = PriorityBlockingQueue<FSATrajectory>(10000) // Max-heap for full trajectories

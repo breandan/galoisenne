@@ -452,7 +452,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val led = (3..<upperBound)
     .firstNotNullOfOrNull { nonemptyLevInt(makeLevFSA(brokenStr, it)) } ?:
   upperBound.also { println("Hit upper bound") }
-  val radius = (led + LED_BUFFER).coerceAtMost(MAX_RADIUS)
+  val radius = (led + LED_BUFFER).coerceAtMost(MAX_RADIUS.coerceAtLeast(led))
 
   println("Identified LED=$led, radius=$radius in ${timer.elapsedNow()}")
 
