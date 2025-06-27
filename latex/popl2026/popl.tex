@@ -549,7 +549,7 @@ Nominalizing the NFA eliminates the creation of $2(|\Sigma| - 1)\cdot|\sigma|\cd
 \caption{Regular expression denoting $\mathcal{L}(G_\cap)$.}\label{fig:re_tree}
 \end{wrapfigure}
 
-As a concrete example, suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow (, R \rightarrow )\big\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
+As a concrete example, suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. We will initially have the Levenshtein automaton, $A$, depicted in Fig.~\ref{fig:ex_atm}. To check for non-emptiness, we will perform the following procedure. Suppose we have a CNF CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow \hspace{-0.05cm}\texttt{(}, R \rightarrow\hspace{-0.05cm}\texttt{)}\big\}$ and let us assume an ordering of $S, F, L, R$ on $V$.
 
 First, we need to order the automata states by increasing longest-path distance from $q_0$. One approach would be to topologically sort the adjacency matrix. While some form of sorting is unavoidable for arbitrary ANFAs, if we know ahead of time that our structure is a Levenshtein automaton, we can simply enumerate its state space by increasing Manhattan distance from the origin. % using, e.g., the Cantor pairing function to construct a valid ordering. This ordering will form the row and column indices of our intersection matrix, and each entry will represent the existence of some path between a two states yielding a given nonterminal.
 So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_{21}, q_{30}, q_{31}$. Now, we want to compute whether $[\mathcal{L}(G')\cap \mathcal{L}(A) \neq \varnothing]$.
@@ -653,18 +653,18 @@ N(e) =
 \end{cases}\vspace{0.2cm}
 \end{equation*}
 
-\noindent Though slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be slightly more favorable for minimization. To minimize, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$. Since $\mathcal{L}(G_\cap)$ is finite, the DFA must be acyclic and thus representable as an upper triangular adjacency matrix under a topological ordering of $\delta$.
-
-Continuing with our running example from \S~\ref{sec:repair_ex}, this will result in the following construction:
+\noindent Though less conventional than Thompson's construction, $N(e)$ avoids the creation of unnecessary $\varepsilon$ arcs. And while slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be more favorable for minimization. Continuing with our running example from \S~\ref{sec:repair_ex}, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$: \vspace{-0.4cm}
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.27\textwidth]{figures/dyck_nfa}
   \includegraphics[width=0.27\textwidth]{figures/dyck_nfa_orig}
   \includegraphics[width=0.30\textwidth]{figures/dyck_dfa}
-  \caption{FSA for $\mathcal{L}\big(L(\texttt{())}, 1)\big)\cap\mathcal{L}(G')$ (a) with or (b) without $\lor$-merging, and then (c) post-determinization.}\label{fig:fsas_for_re}
+  \vspace{-0.2cm}
+  \caption{FSA for $\mathcal{L}\big(L(\texttt{())}, 1)\big)\cap\mathcal{L}(G')$ (a) with or (b) without $\lor$-merging, and then (c) post-minimization.}\label{fig:fsas_for_re}
+  \vspace{-0.2cm}
 \end{figure}
-Now, for any DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given via the transfer matrix method~\cite{flajolet2009analytic}, that is,
+Since $\mathcal{L}(G_\cap)$ is necessarily finite, we can infer the corresponding DFA is acyclic and thus representable as an upper triangular adjacency matrix under a topological ordering of $\delta$. For any such DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given via the transfer matrix method~\cite{flajolet2009analytic}, that is,
 \begin{align}
   C(A, q_\alpha, F): \mathbb{N}^{|Q|\times|Q|} \times Q \times 2^Q \rightarrow \mathbb{N} = \sum_{\mathclap{q_\omega \in F}}(I-A)^{-1}[q_\alpha, q_\omega] &= \sum_{\mathclap{q_\omega \in F}}\sum_{i = 0}^{\mathclap{|Q|-1}}A^i[q_\alpha, q_\omega]
 \end{align}
@@ -869,27 +869,29 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-This architecture can be translated to series of high-performance GPU kernels, essentially vector and tensor operations which optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job, where each thread is responsible for writing a single entry to a large buffer, independently and without inter-thread communication.
+This architecture can be translated to series of high-performance GPU kernels, essentially vector and tensor operations which are optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job, where each thread is responsible for writing a single entry to a large buffer, independently and without external communication.
 
-We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming becomes mapping complex datatypes to and from an integer format.
+We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming then becomes mapping aggregate datatypes to and from an integer format.
 
-Morally, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a slight challenge for constructing the GRE datatype, though surmountable with careful reference counting.
+Morally, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a minor challenge for constructing the GRE datatype, though surmountable with careful reference counting.
 
-For CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{enc}: \Sigma \rightarrow 2^V$ and $\texttt{dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
+For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$ and $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
 
-The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout encodes up to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3) the next five bits memoize the minimum iteration where $M_{i_{\min}}[q, q', v] \& 1 = \bs$ (if parsable) allowing us to short circuit on Line 7 of \texttt{reg\_build} (Alg.~\ref{alg:reg_build}), and the last bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note that a pair $(q, q')$ can be simultaneously an arc and a path, so both possibilities must be acknowledged during decoding. This is depicted below in little-endian format:\vspace{-0.1cm}
+The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout encodes up to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3) the next five bits memoize the minimum iteration where $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
 
 \[
 \big[\overset{\overset{{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s: \Sigma \Leftrightarrow \mathbb{B}^{25}}, \overbrace{\ws, \bs, \ws, \bs, \bs}^{i_{\min}:\mathbb{N}_{\leq 32}\Leftrightarrow \mathbb{B}^{5}}, \overset{\overset{v: V}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
 \]
 
-Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. The GRE datatype is slightly more complex to flatten, as being an algebraic datatype it can be encoded in various ways. We will use the following memory layout to encode a GRE, however this choice is somewhat arbitrary,\vspace{-0.1cm}
+Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE datatype can be flattened in various ways. We will use the following memory layout,\vspace{-0.1cm}
 
 \[
 \big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0}, \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n
 \]
 
-\noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers must also be tied to locations in the parse chart $M[q, q', v]$ in order to obtain the terminal subsets for unit nonterminals when decoding. In total, the GPU should have at least 4 GB of onboard memory to safely handle intersections with up to 1k states and nonterminals $\big(|Q|^2\times|V|=10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$.
+\noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers should also be tied to locations in the parse chart $M[q, q', v]$ to recover the terminal subsets for unit productions.
+
+In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to 1k states and nonterminals $\big(|Q|^2\times|V|=10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$, however occupancy can be roughly halved by recalling the matrix $M$ is strictly upper triangular.
 
 \clearpage\subsection{Training the reranker}
 
@@ -910,8 +912,6 @@ The model will be used to predict a relevance score $f_\theta(q, d)$ for a given
 \mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\big)} \right)
 \end{equation}
 where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. %This loss function encourages the model to assign higher scores to natural repairs, thereby learning to rank them above unnatural ones.
-
-
 
 \clearpage\section{Evaluation}
 
