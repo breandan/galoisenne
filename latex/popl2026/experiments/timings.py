@@ -1,26 +1,23 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import tikzplotlib
+import matplot2tikz as tikzplotlib
 
 
 # Load your data (assuming it's in 'data.csv')
-df = pd.read_csv("bar_hillel_results_positive_reduce_threshold_and_retry.csv")
+df = pd.read_csv("timings.csv")
 
 # Calculate Y values
 df['y'] = df['total_ms']
 
 # Color mapping for lev_dist
-color_map = {1: 'red', 2: 'blue', 3: 'green', 4: 'violet'}  # Add more colors as needed
+color_map = {1: 'green', 2: 'blue', 3: 'red', 4: 'violet'}
 
 fig, ax = plt.subplots()
 
 # Scatter plot with different colors based on lev_dist
 for lev_dist in df['lev_dist'].unique():
     data = df[df['lev_dist'] == lev_dist]
-    ax.scatter(data['length'], data['y'],
-               color=color_map[lev_dist],
-               label=f'lev\_dist = {lev_dist}',
-               s=60)
+    ax.scatter(data['length'], data['y'], color=color_map[lev_dist], label=f'lev\_dist = {lev_dist}', s=60)
 
 # Labels and legend
 ax.set_yscale('log')
