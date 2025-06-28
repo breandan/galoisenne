@@ -869,18 +869,18 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-This architecture can be translated to series of high-performance GPU kernels, essentially vector and tensor operations which are optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job, where each thread is responsible for writing a single entry to a large buffer, independently and without external communication.
+This architecture can be translated to series of high-performance GPU kernels, essentially vector and tensor operations which are optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job. Each thread will be responsible for writing a single entry to a large buffer, independently and without external communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming then becomes mapping aggregate datatypes to and from an integer format.
 
-Morally, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a minor challenge for constructing the GRE datatype, though surmountable with careful reference counting.
+Morally, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU, but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a minor challenge for constructing the GRE datatype, though surmountable with careful reference counting.
 
 For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$ and $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
 
-The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout encodes up to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3) the next five bits memoize the minimum iteration where $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
+The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout testifies to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3)~the next five bits memoize the minimum $i_{\min}$ such that $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
 
 \[
-\big[\overset{\overset{{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s: \Sigma \Leftrightarrow \mathbb{B}^{25}}, \overbrace{\ws, \bs, \ws, \bs, \bs}^{i_{\min}:\mathbb{N}_{\leq 32}\Leftrightarrow \mathbb{B}^{5}}, \overset{\overset{v: V}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
+\big[\overset{\overset{{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s:\:\Sigma \Leftrightarrow \mathbb{B}^{25}}, \overbrace{\ws, \ws, \ws, \ws, \bs}^{i_{\min}:\:\mathbb{N}_{\leq 32}\Leftrightarrow \mathbb{B}^{5}}, \overset{\overset{v:\:V}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
 \]
 
 Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE datatype can be flattened in various ways. We will use the following memory layout,\vspace{-0.1cm}
@@ -895,23 +895,28 @@ In total, the GPU should have at least 4 GB of onboard memory to accommodate lan
 
 \clearpage\subsection{Training the reranker}
 
-The candidate repairs contain every nearby edit, filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however it is possible the list may be quite long. No reasonable user would be expected to skim through $10^5$ suggestions to select their intended repair, especially since they could have easily written it themselves in a few seconds.
+The candidate repairs contain nearby edits filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through $10^5$ suggestions to select their intended repair, especially since they could have easily written it themselves in a few seconds.
 
-So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. If we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
+So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. As long as we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
 
 To introduce the model, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss'' instead of a langauge, and the derivative operator~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
 
-We omit the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $T_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters trained via gradient descent. This we will use to embed the query and documents, then return a numerical score for the relevance labels by applying a series of linear layers from a multilayer perceptron (MLP):
+The reranker employs a transformer-encoder to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repairs, denoted $\sigma: \ell_\cap$) to a $k$-dimensional real vector space $\mathbb{R}^k$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $E_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters. When applied to a string, this will produce an embedding that captures the semantic content of the inputs. A multilayer perceptron, $\text{MLP}_\theta: \mathbb{R}^k \times \mathbb{R}^k \rightarrow \mathbb{R}$, then processes the embeddings to produce a relevance score:
+
 
 \[
-f_\theta(\err\sigma, \sigma): \bar\ell \times \ell_\cap \rightarrow \mathbb{R} = \text{MLP}_{\theta}\big(T_\theta(\err\sigma), T_\theta(\sigma)\big)
+f_\theta(\err\sigma, \sigma): \bar\ell \times \ell_\cap \rightarrow \mathbb{R} = \text{MLP}_{\theta}\big(E_\theta(\err\sigma), E_\theta(\sigma)\big)
 \]
 
-The model will be used to predict a relevance score $f_\theta(q, d)$ for a given query $q$ and item $d$. The training objective is to minimize the listwise cross-entropy loss:
+\noindent The training objective is to minimize the tempered listwise cross-entropy loss, defined as follows:
+
 \begin{equation}
-\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\big)} \right)
+\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
 \end{equation}
-where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. %This loss function encourages the model to assign higher scores to natural repairs, thereby learning to rank them above unnatural ones.
+
+\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging true documents to receive a higher score. We use $\tau = 10^{-1}$.
+
+The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder will be pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum.
 
 \clearpage\section{Evaluation}
 
@@ -1219,7 +1224,7 @@ We have implemented our approach and demonstrated its viability as a tool for sy
 
 \section*{Data-Availability Statement}
 
-An artifact for Tidyparse is currently available as a browser application~\footnote{\url{https://tidyparse.github.io}}. The data and source code for the experiments contained in this paper will be made available upon publication.
+An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}} The data and source code for the experiments contained in this paper will be made available upon publication.
 
 \clearpage\bibliography{../bib/acmart}
 
