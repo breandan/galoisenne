@@ -664,7 +664,7 @@ N(e) =
   \caption{FSA for $\mathcal{L}\big(L(\texttt{())}, 1)\big)\cap\mathcal{L}(G')$ (a) with or (b) without $\lor$-merging, and then (c) post-minimization.}\label{fig:fsas_for_re}
   \vspace{-0.2cm}
 \end{figure}
-Since $\mathcal{L}(G_\cap)$ is necessarily finite, we can infer the corresponding DFA is acyclic and thus representable as an upper triangular adjacency matrix under a topological ordering of $\delta$. For any such DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given via the transfer matrix method~\cite{flajolet2009analytic}, that is,
+Since $\mathcal{L}(G_\cap)$ is necessarily finite, we can infer that the corresponding DFA is acyclic and thus representable as an upper triangular adjacency matrix under a topological ordering of $\delta$. For any such DFA, we can ascertain the size of its language by counting walks from $q_\alpha$ to $q_\omega \in F$. Letting $A$ be the adjacency matrix for $D_\cap^*$, i.e., $A[q, q'] = \big[1 \text{ if } \exists s: \Sigma \text{ s.t. } (q \overset{s}{\rightarrow} q') \in \delta \text{ else } 0\big]$, the number of words it recognizes is given via the transfer matrix method~\cite{flajolet2009analytic}, that is,
 \begin{align}
   C(A, q_\alpha, F): \mathbb{N}^{|Q|\times|Q|} \times Q \times 2^Q \rightarrow \mathbb{N} = \sum_{\mathclap{q_\omega \in F}}(I-A)^{-1}[q_\alpha, q_\omega] &= \sum_{\mathclap{q_\omega \in F}}\sum_{i = 0}^{\mathclap{|Q|-1}}A^i[q_\alpha, q_\omega]
 \end{align}
@@ -869,7 +869,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}
 
-This architecture can be translated to series of high-performance GPU kernels, essentially vector and tensor operations which are optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job. Each thread will be responsible for writing a single entry to a large buffer, independently and without external communication.
+This architecture can be translated to series of high-performance GPU kernels, essentially binary tensor contractions which are optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce job. Each thread will be responsible for writing a single entry to a large buffer, independently and without external communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming then becomes mapping aggregate datatypes to and from an integer format.
 
@@ -891,7 +891,7 @@ Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculat
 
 \noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers should also be tied to locations in the parse chart $M[q, q', v]$ to recover the terminal subsets for unit productions.
 
-In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to 1k states and nonterminals $\big(|Q|^2\times|V|=10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$, however occupancy can be roughly halved by recalling the matrix $M$ is strictly upper triangular.
+In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to 1k states and nonterminals $\big(|Q|^2\times|V|=10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
 
 \clearpage\subsection{Training the reranker}
 
@@ -914,7 +914,7 @@ f_\theta(\err\sigma, \sigma): \bar\ell \times \ell_\cap \rightarrow \mathbb{R} =
 \mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
 \end{equation}
 
-\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging true documents to receive a higher score. We use $\tau = 10^{-1}$.
+\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging true documents to receive a higher score -- we use $\tau = 10^{-1}$.
 
 The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder will be pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum.
 
@@ -984,7 +984,6 @@ For our first experiment, we measure the precision of our repair procedure at va
 
 \begin{figure}[h!]
 \resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
 \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
@@ -996,14 +995,11 @@ Next, we measure the precision at various ranking cutoffs and wall-clock timeout
 
 \begin{figure}[h!]
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair}}
-\resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_1}}
-\resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_2}}
-\resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_3}}
-\resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_4}}
-%    \resizebox{.24\textwidth}{!}{\input{bar_hillel_repair_5}}
-%\resizebox{.3\textwidth}{!}{\input{repair1_plot}}
-%\resizebox{.307\textwidth}{!}{\input{repair2_plot}}
-\caption{Human repair benchmarks. Note the y-axis across different edit distance plots has varying ranges. The red line indicates Seq2Parse and the orange line indicates BIFI's Precision@1 on the same repairs.}\label{fig:human}
+\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p100}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p1000}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
+\caption{Higher precision values.}\label{fig:human}
 \end{figure}
 
 \begin{wrapfigure}{r}{0.38\textwidth}
