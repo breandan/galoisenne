@@ -236,7 +236,7 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.3cm}
 \input{figures/cfl_intersect}
 \vspace{-0.3cm}
-\caption{CFL intersection with the local edit region of a given broken code snippet.}
+\caption{CFL intersection with the local edit region around a given broken code snippet.}
 \vspace{-0.2cm}
 \end{wrapfigure}
 
@@ -895,28 +895,49 @@ In total, the GPU should have at least 4 GB of onboard memory to accommodate lan
 
 \clearpage\subsection{Training the reranker}
 
-The candidate repairs contain nearby edits filtered by grammatical admissibility. So every repair will be valid, simple and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through $10^5$ suggestions to select their intended repair, especially since they could have easily written it themselves in a few seconds.
+Decoding returns a list of repair candidates that are all valid, nearby and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through more than a few dozen candidates to select their intended repair, especially since they could have easily written it themselves in a few seconds. So, we will sort this list by a reranking model. As long as we can guarantee the documents are sufficiently exhaustive, they should with high probability include the true repair, which then need only be surfaced to the top of the list.
 
-So, we will sort this list by a neural reranker. The ensuing technique falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning. In their terminology, the broken code snippet is a ``query'' and the list of candidates are ``documents''. As long as we can guarantee the documents are exhaustive, they will necessarily include the true repair which need only be surfaced.
+The ensuing method falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning -- using their terminology, the broken code snippet would be called a \textit{query} and the list of repairs, \textit{documents}. To introduce the reranker, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a \textit{loss} instead of a langauge, and the derivative~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same, except now over the reals.
 
-To introduce the model, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a ``loss'' instead of a langauge, and the derivative operator~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same as before, except now over the reals.
-
-The reranker employs a transformer-encoder to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repairs, denoted $\sigma: \ell_\cap$) to a $k$-dimensional real vector space $\mathbb{R}^k$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function $E_\theta: \Sigma^* \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters. When applied to a string, this will produce an embedding that captures the semantic content of the inputs. A multilayer perceptron, $\text{MLP}_\theta: \mathbb{R}^k \times \mathbb{R}^k \rightarrow \mathbb{R}$, then processes the embeddings to produce a relevance score:
+The reranker employs a transformer-encoder architecture to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repair, denoted $\sigma: \ell_\cap$) to a $k$-dimensional real vector space $\mathbb{R}^k$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function, $\text{E}_\theta$, which takes a string and a positional encoding, and returns an embedding, $\text{E}_\theta: (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^k$ where $\theta$ are learnable parameters. To these, we will introduce a third argument, a Levenshtein alignment $(\text{LA}: \Sigma^n \times \Sigma^m \rightarrow \mathbb{N}^{\max(m, n)})$, which, when applied to a query-document pair will produce a vector that tracks edit locations and types. Finally, a multilayer perceptron $(\text{MLP}_\theta: \mathbb{R}^k \rightarrow \mathbb{R}^+)$ processes the embedding to produce a relevance score:
 
 
 \[
-f_\theta(\err\sigma, \sigma): \bar\ell \times \ell_\cap \rightarrow \mathbb{R} = \text{MLP}_{\theta}\big(E_\theta(\err\sigma), E_\theta(\sigma)\big)
+f_\theta(\err\sigma, \sigma): \bar\ell \times \ell_\cap \rightarrow \mathbb{R}^+ = \text{MLP}_{\theta}\Big(\text{E}_\theta\big(\err\sigma \cdot \sigma, 0\ldots <|\err\sigma|\cdot 0\ldots <|\sigma|, 0^n\cdot\text{LA}(\err\sigma, \sigma)\big)\Big)
 \]
 
-\noindent The training objective is to minimize the tempered listwise cross-entropy loss, defined as follows:
+\noindent The training objective is to minimize the tempered \textit{softmax} or listwise cross-entropy loss,
 
 \begin{equation}
-\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d_q^+)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
+\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d^*)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
 \end{equation}
 
-\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d_q^+ \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging true documents to receive a higher score -- we use $\tau = 10^{-1}$.
+\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d^* \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging parameter settings that result in the the true repair being assigned higher priority -- the closer to zero, the greater the loss will be for underestimating the relevance of the true repair.
 
-The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder will be pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum.
+%The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder will be pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters.
+
+\begin{wrapfigure}{r}{0.40\textwidth}\vspace{-0.3cm}
+\resizebox{0.4\textwidth}{!}{%
+\begin{equation*}
+  \begin{array}{r@{\hskip 0.5em}c|ccccccc}
+    \text{$q$:}         & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \texttt{)} & \texttt{NAME} & & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & & \\\hline
+    \text{$d_1$:}  & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \hlorange{\texttt{(}} & \texttt{NAME} &  \hlgreen{\texttt{)}} & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & 5 &\\
+    \text{LA:} & & 0 & 0 & 0 & 2 & 0 & 1 &\\\hline
+    \text{$d_2$:}  & & \texttt{NAME} & \hlorange{\texttt{(}} & \texttt{NAME} & \texttt{)} & \hlred{\texttt{NAME}} & & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & &  \\
+    \text{LA:} & & 0 & 2 & 0 & 0 & 3 & & \\\hline
+    \text{$d_3$:}  & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \hlorange{\texttt{.}} & \texttt{NAME} & \hlgreen{\texttt{(}} & \hlgreen{\texttt{)}} \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & 5 & 6 \\
+    \text{LA:} & & 0 & 0 & 0 & 2 & 0 & 1 & 1 \\
+  \end{array}
+\end{equation*}
+}
+\caption{Transformer data encoding.}\label{fig:tx_data_encoding}
+\end{wrapfigure}
+
+More concretely, we depict a single instance of the training data in Fig.~\ref{fig:tx_data_encoding}. The reranking model sees a (1)~query, (2)~document, (3)~positional encoding and (4)~Levenshtein alignment, and returns a numerical score. Once the relevance scores are obtained, we calculate the cross-entropy loss across the top-$k$ scoring documents and backpropagate the error. In practice, this update is averaged across a batch $\langle q_i, [d_j]_{0\ldots k}\rangle_{i=0\ldots |B|^{\approx 16}}$ of repair instances. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta' \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum (AdamW), where the learning rate is in the range $\alpha\approx10^{-4}$. A more exhaustive description of the architectural details and hyperparameter settings used for training the reranker is provided in the appendix.
 
 \clearpage\section{Evaluation}
 
@@ -954,7 +975,7 @@ The language intersection experiments were conducted on a MacBook M4 Max with 16
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
-In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits $\big(|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 5\big)$. We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.\vspace{-0.2cm}
+In the following experiments, we use a dataset of Python snippets consisting of 20,500 pairwise-aligned human errors and fixes from StackOverflow~\cite{wong2019syntax}. We preprocess the dataset to lexicalize all code snippets, then filter by length and distance shorter than 80 lexical tokens and under five edits, i.e., with Levenshtein distance under five lexical edits $\big(|\Sigma| = 50, |\err{\sigma}| < 80, \Delta(\err{\sigma}, \sigma') < 4\big)$. We depict the length, edit distance, normalized edit locations and stability profile in Fig.~\ref{fig:patch_stats}.\vspace{-0.2cm}
 
 \begin{figure}[h!]
 \input{repair_statistics}
@@ -975,7 +996,7 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 \vspace{-0.2cm}
 \end{wrapfigure}
 
-For an intuition about the size of the langauge intersections involved in syntax repair, volumetric analysis will be helpful, particularly in understanding the influence of snippet length and edit distance on language intersection volume. To measure the intersection volume we will form the $L\big(\err\sigma, \Delta(\err{\sigma}, \sigma')\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression and finally compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset (Fig.~\ref{fig:volumetric_plot}), we observe a strong positive correlation with the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if we extend the Levenshtein radius up to one edit beyond the langauge edit distance (LED) $\big(\text{i.e., } d_{\max} \leq \text{LED}(\err\sigma)$\footnote{Where $\text{LED}(\err\sigma)$ is shorthand for $\text{LED}(\err\sigma, \ell) = \min \big\{d_{\max}: \mathbb{N}\mid \mathcal{L}\big(L(\err\sigma, d_{\max})\big) \cap \ell \neq \varnothing\big\}$ with $\ell$ being the Python language.}$+ 1\big)$ after which it grows too large to exhaustively generate and must be sampled. Across all snippets where $\Delta(\err{\sigma}, \sigma') < 5$, approximately 54\% matched $\text{LED}(\err\sigma)$, 35\% had an edit distance of $\text{LED}(\err\sigma) + 1$ and 11\% had a distance of $\text{LED}(\err\sigma) + 2$.
+For an intuition about the size of the langauge intersections involved in syntax repair, volumetric analysis will be helpful, particularly in understanding the influence of snippet length and edit distance on language intersection volume. To measure the intersection volume we will form the $L\big(\err\sigma, \Delta(\err{\sigma}, \sigma')\big)$ automaton, intersect it with the Python grammar, then automatize the resulting regular expression and finally compute the DFA transfer matrix using the method described in \S~\ref{sec:transfer_method} to obtain the exact volume. For a given (error, fix) pair, this tells us how many repairs of equal or lesser distance exist in the Python langauge. Plotting intersection volume across the full dataset (Fig.~\ref{fig:volumetric_plot}), we observe a strong positive correlation with the Levenshtein margin and a mild correlation with snippet length. Fully materializing $\ell_\cap$ is typically only feasible if we extend the Levenshtein radius up to one edit beyond the langauge edit distance (LED) $\big(\text{i.e., } d_{\max} \leq \text{LED}(\err\sigma)$\footnote{Where $\text{LED}(\err\sigma)$ is shorthand for $\text{LED}(\err\sigma, \ell) = \min \big\{d_{\max}: \mathbb{N}\mid \mathcal{L}\big(L(\err\sigma, d_{\max})\big) \cap \ell \neq \varnothing\big\}$ with $\ell$ being the Python language.}$+ 1\big)$ after which it grows too large to exhaustively generate and must be sampled. Across all snippets where $\Delta(\err{\sigma}, \sigma') < 4$, approximately 54\% matched $\text{LED}(\err\sigma)$, 35\% had an edit distance of $\text{LED}(\err\sigma) + 1$ and 11\% had a distance of $\text{LED}(\err\sigma) + 2$.
 %Note that this analysis does not depend on our method, but is rather an empirical observation about naturally-occurring Python syntax errors and repairs. Furthermore, it does not tell us how many of those repairs were semantically admissible, i.e., typesafe, the quantity of which may be an order of magnitude smaller.
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
