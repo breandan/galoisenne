@@ -266,7 +266,7 @@ R(\ell_\cap, P_\theta): 2^{\Sigma^*} \times (\Sigma^* \rightarrow \mathbb{R}) \r
 
 A popular approach to ranked repair involves learning a distribution over strings, however this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of the languages involved, it would be intractable to sample either $\ell$ or $\mathcal{L}\big(L(\err\sigma, d)\big)$, reject duplicates, then reject unreachable or invalid edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do most neural language models.
 
-As we will demonstrate, the ranked repair problem can be factorized into three subproblems: (1) exact representation, (2) decoding and (3) reranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates $\ell \cap \mathcal{L}\big(L(\err\sigma, d)\big)$, then decode repairs from its language. By ensuring decoding is sufficiently precise and exhaustive, ensuring the retrieved set contains the true repair can be achieved with a much simpler, syntax-oblivious model. Finally, we will train a model to rerank the repair candidates and take the top-$k$ results.
+As we will demonstrate, the ranked repair problem can be factorized into three subproblems: (1) exact representation, (2) decoding and (3) reranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates $\ell \cap \mathcal{L}\big(L(\err\sigma, d)\big)$, then decode repairs from its language. By ensuring decoding is sufficiently precise and exhaustive, ensuring the retrieved set contains the true repair can be achieved with a much simpler, syntax-oblivious model. Finally, we will train a language model to rerank the repair candidates and take the top-$k$ results.
 
 %Assuming we have a grammar that recognizes the Levenshtein-CFL intersection, the question then becomes how to maximize the number of unique valid sentences in a given number of samples. Top-down incremental sampling with replacement eventually converges to the language, but does so superlinearly~\cite{flajolet1992birthday}. Due to practical considerations including latency, we require the sampler to converge linearly, ensuring with much higher probability that natural repairs are retrieved in a timely manner. This motivates the need for a specialized generating function. More precisely,
 %
@@ -284,10 +284,10 @@ As we will demonstrate, the ranked repair problem can be factorized into three s
 
 \clearpage\section{Method}\label{sec:method}
 
-The key to solving this problem is to treat finite language intersections as matrix exponentiation. We will show a correspondence between CFL-REG intersections and a semiring algebra that allows us to provably decide finite intersection nonemptiness (FINE) in polylogarithmic parallel time.
+The key to solving this problem is to treat finite language intersections as matrix exponentiation, using a correspondence between CFL-REG intersections and a certain semiring algebra. We show that if one of the participants in the language intersection is presented as an acyclic FSA, the finite intersection nonemptiness (FINE) problem is polylogarithmic parallel time decidable. Formally,
 
 \begin{theorem}%[Considine, 2025]
-  For every CFG, G, and every acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log_2 |Q||V|\big)$ time using $\mathcal{O}\big((|Q||V|)^2\big)$ parallel processors.
+  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log_2 |Q||V|\big)$ time using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel processors.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -298,21 +298,21 @@ The key to solving this problem is to treat finite language intersections as mat
     \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$  indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initiate it thusly:
+  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$ indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initialize it thusly:
   \begin{align}
-    M_0[r, c, w] = \bigvee_{a\::\:\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
+    M_0[r, c, w] = \bigvee_{a\in\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
 
   Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
   \begin{equation}
     [\ell \oplus r]_w  = [\ell_w \lor r_w]\hspace{0.5cm}\text{and}\hspace{0.5cm}
-    [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}
+    [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}.
   \end{equation}
-  By slight abuse of notation,\footnote{Customarily, there is a $\frac{1}{k!}$ factor to modulate exploding values, but alas this domain has no multiplicative inverse.} we will redefine the matrix exponential over this domain as:
+  By slight abuse of notation,\footnote{Customarily, there is a $\frac{1}{k!}$ factor to modulate exploding values, but alas this domain has no multiplicative inverse.} we will redefine the matrix exponential over this domain as,
   \begin{align}
-    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M_0$ is SUT and thus nilpotent.)}
+    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M_0$ is SUT and thus nilpotent).}
   \end{align}
-  While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will employ exponentiation-by-squaring:
+  While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will use exponentiation-by-squaring:
   \begin{align}
     \sum_{i = 0}^{2n} M_0^i = T(2n) \;=\; \begin{cases}
        M_0, & \text{if } n = 1,\\
@@ -321,9 +321,9 @@ The key to solving this problem is to treat finite language intersections as mat
   \end{align}
   Therefor, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps in the limit. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
   \begin{align}
-    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{ and } \Psi = [S_\cap \neq \varnothing]
+    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
   \end{align}
-  Note it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in as few as $\Omega(\log_2 p^*)$ steps, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ to decode a witness (see Thm.~\ref{thm:generation}). In either case, the algorithm provably decides FINE in $\mathcal{O}\big(\log_2 |Q||V|\big)$ parallel time with $(|Q||V|)^2$ processors.
+  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the FINE algorithm provably terminates in $\mathcal{O}\big(\log_2 |Q||V|\big)$ parallel time with $|Q|^2|V|$ processors.
 \end{proof}\clearpage
 
 \section{Examples}
