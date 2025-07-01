@@ -287,7 +287,7 @@ As we will demonstrate, the ranked repair problem can be factorized into three s
 The key to solving this problem is to treat finite language intersections as matrix exponentiation, using a correspondence between CFL-REG intersections and a certain semiring algebra. We show that if one of the participants in the language intersection is presented as an acyclic FSA, the finite intersection nonemptiness (FINE) problem is polylogarithmic parallel time decidable. Formally,
 
 \begin{theorem}%[Considine, 2025]
-  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log_2 |Q||V|\big)$ time using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel processors.
+  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^2|Q|+\log|Q||V|\big)$ time using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel processors.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -298,7 +298,7 @@ The key to solving this problem is to treat finite language intersections as mat
     \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$ indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Initialize it thusly:
+  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$ indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Note $Q$ can be ordered topologically in $\mathcal{O}(\log^2 |Q|)$ time~\cite{dekel1981parallel} using matrix multiplication. We initialize $M$ thusly:
   \begin{align}
     M_0[r, c, w] = \bigvee_{a\in\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
@@ -323,7 +323,7 @@ The key to solving this problem is to treat finite language intersections as mat
   \begin{align}
     S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
   \end{align}
-  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the FINE algorithm provably terminates in $\mathcal{O}\big(\log_2 |Q||V|\big)$ parallel time with $|Q|^2|V|$ processors.
+  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the FINE algorithm terminates in $\mathcal{O}(\log^2 |Q| + \log |Q||V|)$ parallel time with $\mathcal{O}(|Q|^2|V|)$ processors.
 \end{proof}\clearpage
 
 \section{Examples}
@@ -1555,44 +1555,4 @@ BIFI
 %      & 3 & 1.00 & 0.97 & 0.92 & 0.84 & 0.87 & 0.90 & 0.84 & 0.72 \\ \hline\hline
 %    \end{tabular}
 %  \end{table}
-
-\clearpage\section{Supplemental Proofs}
-
-The problem of syntax error correction under a finite number of typographic errors is reducible to the bounded Levenshtein-CFL reachability problem, which can be formally stated as follows:
-
-\begin{definition}
-The language edit distance (LED) is the minimum number of edits required to transform an invalid string into a valid one, where validity is defined as containment in a context-free language, $\ell$, i.e., $\Delta^*(\err{\sigma}, \ell) \coloneqq \min_{\sigma \in \ell}\Delta(\err{\sigma}, \sigma)$, and $\Delta$ is the Levenshtein distance.
-\end{definition}
-
-We seek to find the set of strings $S$ such that $\forall \sigma'\in S, \Delta(\err{\sigma}, \sigma') \leq q$, where $q$ is greater than or equal to the language edit distance. We call this set the \textit{Levenshtein ball} of $\err{\sigma}$ and denote it $\Delta_q(\err{\sigma})$. Since $1 \leq \Delta^*(\err{\sigma}, \ell) \leq q$, we have $1 \leq q$. We now consider an upper bound on $\Delta^*(\err{\sigma}, \ell)$, i.e., the greatest lower bound on $q$ such that $\Delta_q(\err{\sigma}) \cap \ell \neq \varnothing$.
-
-\begin{lemma}\label{lemma:upper-bound}
-For any nonempty language $\ell$ and invalid string $\err{\sigma}: \Sigma^n \cap \bar\ell$, there exists an $(\sigma', m)$ such that $\sigma' \in \ell\cap\Sigma^m$ and $0 < \Delta(\err{\sigma}, \ell) \leq \max(m, n) < \infty$.
-\end{lemma}
-
-\begin{proof}
-Since $\ell$ is nonempty, it must have at least one inhabitant $\sigma \in \ell$. Let $\sigma'$ be the smallest such member. Since $\sigma'$ is a valid sentence in $\ell$, by definition it must be that $|\sigma'|<\infty$. Let $m\coloneqq|\sigma'|$. Since we know $\err{\sigma} \notin \ell$, it follows that $0 < \Delta(\err{\sigma}, \ell)$. Let us consider two cases, either $\sigma' = \varepsilon$, or $0 < |\sigma'|$:
-
-\begin{itemize}
-\item If $\sigma' = \varepsilon$, then $\Delta(\err{\sigma}, \sigma') = n$ by full erasure of $\err{\sigma}$, or
-\item If $0 < m$, then $\Delta(\err{\sigma}, \sigma') \leq \max(m, n)$ by overwriting.
-\end{itemize}
-
-In either case, it follows $\Delta(\err{\sigma}, \ell) \leq \max(m, n)$ and $\ell$ is always reachable via a finite nonempty set of Levenshtein edits, i.e., $0 < \Delta(\err{\sigma}, \ell) < \infty$.
-\end{proof}
-
-Let us now consider the maximum growth rate of the \textit{admissible set}, $\ell_\cap \coloneqq \Delta_q(\err{\sigma}) \cap \ell$, as a function of $q$ and $n$. Let $\bar\ell \coloneqq \{\err{\sigma}\}$. Since $\bar\ell$ is finite and thus regular, $\ell = \Sigma^* \setminus \{\err{\sigma}\}$ is regular by the closure of regular languages under complementation, and thus context-free a fortiori. Since $\ell$ accepts every string except $\err{\sigma}$, it represents the worst CFL in terms of asymptotic growth of $\ell_\cap$.
-
-\begin{lemma}\label{lemma:interleaving}
-The complexity of enumerating $\ell_\cap$ is upper bounded by $\mathcal{O}\left(\sum_{c=1}^q{{cn + n + c} \choose c}(|\Sigma| + 1)^c\right)$.
-\end{lemma}
-
-\begin{proof}
-We can overestimate the size of $\ell_\cap$ by considering the number of unique ways to insert, delete, or substitute $c$ terminals into a string $\err{\sigma}$ of length $n$. This can be overaproximated by interleaving $\varepsilon^c$ around every token, i.e., $\err{\sigma}_\varepsilon\coloneqq \left(\varepsilon^c\err{\sigma}_i\right)_{i=1}^n\varepsilon^c$, where $|\err{\sigma}_\varepsilon| = cn + n + c$, and only considering substitution. We augment $\Sigma_\varepsilon \coloneqq \Sigma \cup \{\varepsilon\}$ so that deletions and insertions may be treated as special cases of substitution. Thus, we have $cn + n + c$ positions to substitute $(|\Sigma_\varepsilon|)$ tokens, i.e., ${{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$ ways to edit $\err{\sigma}_\varepsilon$ for each $c \in [1, q]$. This upper bound is not tight, as overcounts many identical edits w.r.t. $\err{\sigma}$. Nonetheless, it is sufficient to show $|A| < \sum_{c=1}^q{{cn + n + c} \choose c}|\Sigma_\varepsilon|^c$.
-\end{proof}
-
-We note that the above bound applies to all strings and languages, and relates to the Hamming bound on $H_q(\err{\sigma}_\varepsilon)$, which only considers substitutions. In practice, much tighter bounds may be obtained by considering the structure of $\ell$ and $\err{\sigma}$. For example, based on an empirical evaluation from a dataset of human errors and repairs in Python code snippets ($|\Sigma| = 50, |\err{\sigma}| < 40, \Delta(\err{\sigma}, \ell) \in [1, 3]$), we estimate the \textit{filtration rate}, i.e., the density of the admissible set relative to the Levenshtein ball, $D=|A|/|\Delta_q(\err{\sigma})|$ to have empirical mean $E_\sigma[D] \approx 2.6\times 10^{-4}$, and variance $\mathrm{Var}_\sigma[D] \approx 3.8\times10^{-7}$.
-
-%  In practice, this problem is ill-posed even when $q = \Delta^*(\err{\sigma}, \ell) \approx 1$. For example, consider the language of ursine dietary preferences. Although $\err{\sigma}\coloneqq$ ``Bears like to eat plastic'' is not a valid sentence, e.g., $\sigma'\coloneqq$``Bears like to eat'' is $(\Delta^*=1)$, however there are many others with roughly the same edit distance, e.g., ``Bears like to eat \{\hlorange{berries}, \hlorange{honey}, \hlorange{fish}\}'', or ``\{\hlgreen{Polar}, \hlgreen{Panda}\} bears like to eat \{\hlgreen{seals}, \hlgreen{bamboo}\}''. In general, there are usually many strings nearby $\err{\sigma}$, and we seek to find those among them which are both syntactically valid and semantically plausible as quickly as possible.
-
 \end{document}
