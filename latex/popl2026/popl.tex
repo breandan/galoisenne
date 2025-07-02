@@ -328,7 +328,7 @@ The key to solving this problem is to treat finite language intersections as mat
 
 \section{Examples}
 
-In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of intersection with a singleton language. Second, we will introduce \textit{completion} as intersection which admits terminal wildcards in fixed locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths within a certain distance to determine the location(s) and fill them with the appropriate terminal(s).
+In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of intersection with a singleton language. Second, we will introduce \textit{completion} as an intersection which admits terminal wildcards in fixed locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths within a certain distance to determine the location(s) and fill them with the appropriate terminal(s).
 
 \subsection{Recognition as intersection}
 
@@ -928,7 +928,7 @@ f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ 
 \caption{Transformer data encoding.}\label{fig:tx_data_encoding}
 \end{wrapfigure}
 
-More concretely, we depict a single instance of the training data in Fig.~\ref{fig:tx_data_encoding}. The reranking model sees a (1)~query, (2)~document, (3)~positional encoding and (4)~Levenshtein alignment, and returns a numerical score. Once the relevance scores are obtained, we calculate the cross-entropy loss across the top-$k$ scoring documents and backpropagate. In practice, this update is averaged across a batch $\langle q_i, [d_j]_{0\ldots k}\rangle_{i=0\ldots |B|^{\approx 16}}$ of repair instances to reduce noise. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta' \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum (AdamW), where the learning rate is in the range $\alpha\approx10^{-4}$. A more exhaustive description of the architectural details and hyperparameter settings used for training the reranker can be found in the appendix.
+More concretely, we depict a single instance of the training data in Fig.~\ref{fig:tx_data_encoding}. The reranking model sees a (1)~query, (2)~document, (3)~positional encoding and (4)~Levenshtein alignment, and returns a numerical score. Once the relevance scores are obtained, we calculate the cross-entropy loss across the top-$k$ scoring documents and backpropagate. In practice, this update is averaged across a batch $\langle q_i, [d_j]_{0\ldots k}\rangle_{i=0\ldots |B|^{\approx 16}}$ of repair instances to reduce noise. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta' \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum (AdamW), where the learning rate is in the range $\alpha\approx10^{-4}$. A more exhaustive description of the architectural details and hyperparameter settings used for training the reranker can be found in Appendix~\ref{sec:hyperparams}.
 
 \clearpage\section{Evaluation}
 
@@ -937,32 +937,32 @@ We call our method Tidyparse and consider the following research questions:
 \begin{itemize}
 \item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
 \item \textbf{RQ 2}: How performant is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
-\item \textbf{RQ 3}: Which design choices are most significant? (e.g., sampling, decoding, parallelism)
+\item \textbf{RQ 3}: Which design choices are most significant? (e.g., decoding, reranking, parallelism)
 \end{itemize}
 
 We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on repair precision.
 
 \subsection{Experimental setup}
 
-We use syntax errors and fixes from the Python language to validate our approach.  Python source code fragments are abstracted as a sequence of lexical tokens using the official Python lexer, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set by checking for lexical equivalence with the ground-truth repair, following Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
+In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
-To evaluate accuracy, we use the Precision@k statistic, which measures the frequency of repairs in the top-k results matching the true repair. Specifically, given a repair model, $R: \Sigma^* \rightarrow 2^{\Sigma^*}$ and a test set $\mathcal{D}_{\text{test}}$ of pairwise aligned errors ($\sigma^\dagger$) and fixes ($\sigma'$), we define Precision@k as:
+We use the Precision@k statistic, which measures the frequency the true repair appeared in the top-k results, across a dataset of instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, consisting of pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:
 
 \begin{equation}
-\text{Precision@k}(R) = \frac{1}{|\mathcal{D}_{\text{test}}|}\sum_{\langle\sigma^\dagger, \sigma'\rangle \in \mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma' \in \argmax_{\bm{\sigma} \subseteq R(\sigma^\dagger), |\bm{\sigma}| \leq k}\sum_{\sigma \in \bm{\sigma}}\text{Score}(\sigma)\right]
+\text{Precision@k}(R) = |\mathcal{D}_{\text{test}}|^{-1}\sum_{\mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma' \in R(\err\sigma)_{0\ldots k}\right]
 \end{equation}
 
-This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
+%This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
 
 %By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison with a na\"ive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and c-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
 
-We compare our method against two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and their corresponding human fixes from StackOverflow, and is used to compare the precision of each method at blind recovery of the ground truth repair across varying edit distances, snippet lengths and latency cutoffs. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 100 tokens and fewer than five Levenshtein edits apart, whose broken and fixed form is rejected and accepted, respectively, by the Python 3.8.11 parser. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance.
+We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow and is used to compare the precision of each method at blind recovery of the ground truth repair. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than three Levenshtein edits apart. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance, resulting in a test set of 1,755 pairs, with approximately 70 repairs in each (length, distance) bin.
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. Since it was unclear how to extract multiple repairs from their model, we only take a single repair prediction. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
-The language intersection experiments were conducted on a MacBook M4 Max with 16GB of memory. To train our c-gram model, we use an order-4 Markov chain trained on 55 million BIFI tokens. Training takes ~10 minutes, after which re-ranking is nearly instantaneous. Sequences are scored using NLL with Laplace smoothing and our evaluation measures Precision@\{1, 5, 10, All\}.
+To train the reranker, we prepare a training set of 10k repair instances from the StackOverflow dataset, where $\mathcal{D}_{\text{train}} \cap \mathcal{D}_{\text{test}} = \varnothing$. Each instance contains a single syntax error, $\err\sigma$, the ground truth repair, $\sigma'$, and up to $10^3$ confounders sampled without replacement from the $\mathcal{L}\bigl(L(\err\sigma, d^* + 1)\bigr)\cap \ell$ intersection using the pretrained $c$-gram model. This model is trained for 20k steps on a standard MacBook Pro, which takes about 24 hours. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
@@ -1027,7 +1027,7 @@ Next, we measure the precision at various ranking cutoffs and wall-clock timeout
 
 We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
-\clearpage The remaining experiments in this section were run on a 10-core ARM64 M1 with 16 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
+\clearpage The remaining experiments in this section were run on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 
 \begin{figure}[h!]
 \input{sample_efficiency}
@@ -1238,7 +1238,7 @@ An artifact for Tidyparse is currently available as a browser application.~\foot
 
 \pagebreak\appendix
 
-\section{Levenshtein Automata Matrices}
+\section{Levenshtein automata matrices}
 
 These are useful for visually checking different implementations.
 
@@ -1279,7 +1279,7 @@ These are useful for visually checking different implementations.
 \end{figure}
 
 
-\section{Levenshtein Automata Minimality}
+\section{Levenshtein automata minimality}
 
 It is reasonable to ask whether the Levenshtein automaton defined is minimal, in the sense of whether there exists an automaton with fewer states than $A$ yet still generates $\mathcal{L}(G_\cap)$ when intersected with $\mathcal{L}(G)$. In other words, given $G$ and $\err\sigma$, is there an $A'$ such that $|Q_{A'}| < |Q_{A}|$ yet $\mathcal{L}(G) \cap \mathcal{L}(A') = \mathcal{L}(G) \cap \mathcal{L}(A)$ still holds? In fact, there is a trivial example:
 
@@ -1314,6 +1314,27 @@ Pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with $G = \
 
 \noindent\phantom{$\sigma$: }\texttt{\_ \_ + ) ]}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}\emoji{check-mark-button}\\
 \phantom{$\sigma$: }\texttt{[ ( + \_ \_}\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}\emoji{check-mark-button}
+
+\section{Hyperparameter settings}\label{sec:hyperparams}
+
+Below is a listing of the hyperparameter settings used for training the reranking model:
+
+\begin{multicols}{3}
+\begin{itemize}
+\item Input dimension: 100
+\item Encoder dimension: 512
+\item Attention heads: 4
+\item Encoder layers: 4
+\item Vocab size, $|\Sigma|= 94$
+\item Learning rate, $\alpha= 10^{-3}$
+\item Temperature, $\tau= 10^{-1}$
+\item Optimizer: AdamW
+\item Negative rate: $10^{-2}$
+\item Batch size: 8
+\item Dropout: $10^{-1}$
+\item Activation: GELU
+\end{itemize}
+\end{multicols}
 
 \clearpage\section{Example Repairs}\label{sec:exaple_repairs}
 
