@@ -124,7 +124,7 @@ fun BAutomaton.decodeDFA(
     beam.isNotEmpty() &&
     startTime.elapsedNow() < timeout
   ) {
-    val nextBeam = beam.parallelStream().flatMap { partTraj ->
+    val nextBeam = beam.stream().flatMap { partTraj ->
       val lastToks = partTraj.traj.take(mc.memory - 1).reversed()
       partTraj.lastState.transitions.flatMap { next ->
         (next.min..next.max).map { tok ->
