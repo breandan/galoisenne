@@ -944,7 +944,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 \subsection{Experimental setup}
 
-In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
+In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing strings, numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
 We use the Precision@k statistic, which measures the frequency the true repair appeared in the top-k results, across a dataset of instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, consisting of pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:
 
@@ -1060,17 +1060,17 @@ In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by collecting 1
 
 \clearpage\subsection{Subcomponent ablation}\label{sec:rq3}
 
-Originally, we used an adaptive rejection-based sampler, which did not sample directly from the admissible set, but the entire Levenshtein ball, and then rejected invalid samples. Although rejection sampling has a much lower minimum latency threshold to return admissible repairs, i.e., a few hundred milliseconds, the average time required to attain a desired precision on human repairs is much higher. We present the results from the rejection-based evaluation for comparison below.
+The primary question of interest is, to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair, sans reranking. That is, we form the language intersection, decode it with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$. This simplified approach generally has good completeness, but its Precision@1 leaves much to be desired.
 
 \begin{figure}[H]
-\resizebox{.24\textwidth}{!}{\input{repair1-3_10s_plot}}
-\resizebox{.25\textwidth}{!}{\input{repair1_10s_plot}}
-\resizebox{.24\textwidth}{!}{\input{repair2_10s_plot}}
-\resizebox{.24\textwidth}{!}{\input{repair3_10s_plot}}
-\caption{Adaptive sampling repairs. The red line indicates Seq2Parse Precision@1, and the orange indicates BIFI's precision at single-shot repair, all three of which were evaluated on the exact same repairs.}\label{fig:adaptive}
+\resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p10}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p100}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1000}}
+\caption{4-gram repairs. Precision@1000 is an upper bound.}\label{fig:adaptive}
 \end{figure}
 
-We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
+%We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
 
 %Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 %
