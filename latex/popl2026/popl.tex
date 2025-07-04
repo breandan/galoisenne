@@ -82,7 +82,7 @@ Our algorithm first constructs an automaton representing all possible strings wi
 
 To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair. This tool makes aggressive use of communication-free parallelism, making it readily executable by off-the-shelf GPU and SIMD co-processors. We provide a reference implementation of our tool on the WebGPU platform and show these computational resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
 
-Finally, we show the efficacy of this technique for locating and repairing syntax errors of up to three edits and a hundred lexical tokens in under a second, practical for a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the human repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
+Finally, we show the efficacy of this technique for locating and repairing syntax errors of up to three edits and eighty lexical tokens in under a second, practical for a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the human repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
 
 \section{Background}
 
@@ -332,7 +332,7 @@ In this section, we will consider three examples of intersections with finite la
 
 \subsection{Recognition as intersection}
 
-In the case of ordinary CFL recognition, the automaton forming a single row that accepts one word:
+In the case of ordinary CFL recognition, the automaton forms a single row and accepts one word:
 
 \begin{figure}[H]
 \resizebox{0.5\textwidth}{!}{
@@ -349,7 +349,7 @@ In the case of ordinary CFL recognition, the automaton forming a single row that
 }
 \end{figure}
 
-Since we already know what the word will be, we just need to keep track of nonterminal subsets for each substring. So, given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
+Since the word is predetermined, we just need to keep track of nonterminal subsets for each substring. So, given a CFG, $G' : \mathcal{G}$ in Chomsky Normal Form (CNF), we can construct a recognizer for strings $\sigma: \Sigma^n$ as follows. Let $2^V$ be our domain, $0$ be $\varnothing$, $\oplus$ be $\cup$, and $\otimes$ be defined as:\vspace{-10pt}
 
 \begin{align}
   X \otimes Z = \big\{\;w \mid \langle x, z\rangle \in X \times Z, (w\rightarrow xz) \in P\;\big\}
@@ -386,7 +386,7 @@ Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sig
 
 \subsection{Completion as intersection}
 
-We may also consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. This problem we call \textit{completion}. Formally,
+Let us now consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. This problem we call \textit{completion}. Formally,
 
 \begin{definition}[Completion]
   Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
@@ -874,7 +874,7 @@ The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{u
 \big[\overset{\overset{{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s:\:\Sigma \Leftrightarrow \mathbb{B}^{25}}, \overbrace{\ws, \ws, \ws, \ws, \bs}^{i_{\min}:\:\mathbb{N}_{\leq 32}\Leftrightarrow \mathbb{B}^{5}}, \overset{\overset{v:\:V}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
 \]
 
-Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE datatype can be flattened in various ways. We will use the following memory layout,\vspace{-0.1cm}
+Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE can be flattened in various ways. We will use the following memory layout,\vspace{-0.1cm}
 
 \[
 \big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0}, \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n
@@ -946,7 +946,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing strings, numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
-We use the Precision@k statistic, which measures the frequency the true repair appeared in the top-k results, across a dataset of instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, consisting of pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:
+We use the Precision@k statistic, which measures the frequency of true repair appearing in the top-k results, across a dataset of repair instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, containing pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:
 
 \begin{equation}
 \text{Precision@k}(R) = |\mathcal{D}_{\text{test}}|^{-1}\sum_{\mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma' \in R(\err\sigma)_{0\ldots k}\right]
@@ -954,15 +954,13 @@ We use the Precision@k statistic, which measures the frequency the true repair a
 
 %This is a variation on a standard metric used in information retrieval and a common way of measuring the quality of ranked results in machine translation and recommender systems. Precision@All or completeness may be seen as a special case where $k=\infty$.
 
-%By default, Tidyparse uses the DFA decoder (Alg. 3) for all experiments, however, we also include a comparison with a na\"ive rejection-based edit sampler, as well as enumerative sampling with PCFG reranking (Alg. 1) and c-gram reranking (Alg. 2) in our ablation study (\S~\ref{sec:rq3}).
-
-We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} on a single test set. This dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow and is used to compare the precision of each method at blind recovery of the ground truth repair. We preprocess all source code by filtering for broken-fixed snippet pairs shorter than 80 tokens and fewer than three Levenshtein edits apart. We then balance the dataset by sampling an equal number of repairs from each length and Levenshtein edit distance, resulting in a test set of 1,755 pairs, with approximately 70 repairs in each (length, distance) bin.
-
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 1,200 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing exactly 50 instances.
 
-To train the reranker, we prepare a training set of 10k repair instances from the StackOverflow dataset, where $\mathcal{D}_{\text{train}} \cap \mathcal{D}_{\text{test}} = \varnothing$. Each instance contains a single syntax error, $\err\sigma$, the ground truth repair, $\sigma'$, and up to $10^3$ confounders sampled without replacement from the $\mathcal{L}\bigl(L(\err\sigma, d^* + 1)\bigr)\cap \ell$ intersection using the pretrained $c$-gram model. This model is trained for 20k steps on a standard MacBook Pro, which takes about 24 hours. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
+To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 20k steps, which takes \~24 hours and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
+
+We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, on the same test set. The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
