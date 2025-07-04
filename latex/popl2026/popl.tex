@@ -956,7 +956,7 @@ We use the Precision@k statistic, which measures the frequency of true repair ap
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 1,200 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing exactly 50 instances.
+Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 1,200 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing at least 50 instances.
 
 To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 20k steps, which takes \~24 hours and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
 
@@ -990,40 +990,37 @@ For an intuition about the size of the language intersections involved in syntax
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
-For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances. We rebalance the StackOverflow dataset across each length interval and edit distance, sample uniformly from each category and compare Precision@1 of our method against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
+For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
 
 \begin{figure}[h!]
-\resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
+\resizebox{.31\textwidth}{!}{\input{len_dist_tidy}}
+\resizebox{.31\textwidth}{!}{\input{len_dist_s2p}}
+\resizebox{.31\textwidth}{!}{\input{len_dist_bifi}}
 \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
 \end{figure}
 
-As we can see, Tidyparse has a highly competitive top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances, and attains a significant advantage in the few-edit regime. The Precision@1 of our method is even competitive with BIFI's Precision@20k, whereas our Precision@All is Pareto-dominant across all lengths and edit distances, while requiring only a fraction of the data and compute. We report the raw data from these experiments in Appendix~\ref{sec:raw_prec_data}.
+As we can see, Tidyparse has a SOTA top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances. The Precision@10 of our method even outperforms with BIFI's Precision@20k, whereas our Precision@10 is Pareto-dominant across all lengths and edit distances and precision values. We report the raw data from these experiments in Appendix~\ref{sec:raw_prec_data}.
 
-Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
-
+%Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
+%
 \begin{figure}[h!]
+\resizebox{.31\textwidth}{!}{\input{len_dist_bifi_all}}
+\resizebox{.31\textwidth}{!}{\input{len_dist_tidy_p10}}
 %    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p100}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p1000}}
-\resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
 \caption{Higher precision values.}\label{fig:human}
 \end{figure}
 
-\begin{wrapfigure}{r}{0.38\textwidth}
-\vspace{-1cm}
-\hspace{-0.4cm}
-\resizebox{.44\textwidth}{!}{\input{sankey}}
-\vspace{-1.1cm}
-\caption{Outcomes in the repair pipeline.}
-\label{fig:sankey}
-\end{wrapfigure}
-
-%We believe that rewriting the sampler in CUDA or using a more informed prior could significantly improve the latency-precision tradeoff.
-
-We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
+%\begin{wrapfigure}{r}{0.38\textwidth}
+%\vspace{-1cm}
+%\hspace{-0.4cm}
+%\resizebox{.44\textwidth}{!}{\input{sankey}}
+%\vspace{-1.1cm}
+%\caption{Outcomes in the repair pipeline.}
+%\label{fig:sankey}
+%\end{wrapfigure}
+%
+%
+%We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
 \clearpage The remaining experiments in this section were run on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 
@@ -1065,7 +1062,7 @@ The primary question of interest is, to what extent does the neural reranker imp
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p10}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p100}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1000}}
-\caption{4-gram repairs. Precision@1000 is an upper bound.}\label{fig:adaptive}
+\caption{4-gram repairs. 4-gram Precision@1000 is an upper bound on Tidyparse Precision@k, since our reranker takes as input the 1000 most probable 4-gram samples.}\label{fig:adaptive}
 \end{figure}
 
 %We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
