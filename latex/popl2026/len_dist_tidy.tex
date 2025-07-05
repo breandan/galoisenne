@@ -1,5 +1,7 @@
 \begin{tikzpicture}
   \begin{axis}[
+    legend cell align={left},
+    legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east},
     xlabel={Snippet length, $|\sigma|$},
     ylabel={Precision@1},
     title={\Large\textbf{Tidyparse Repair Precision@1}},
@@ -9,19 +11,21 @@
     ytick={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
     xticklabels={{(}0{,}10{)}, {[}10{,}20{)}, {[}20{,}30{)}, {[}30{,}40{)}, {[}40{,}50{)}, {[}50{,}60{)}, {[}60{,}70{)}, {[}70{,}80{)}},
     x tick label style={font=\scriptsize},
-    ymax=0.6,
+    ymax=1.0,
     ymin=0.0,
     bar width=4pt,
   ]
-%  \addplot[green, fill=green!50] coordinates { (0, 0.5) (10, 0.1827956989247312) (20, 0.08366533864541832) (30, 0.06572769953051644) (40, 0.016) (50, 0.020833333333333332) (60, 0.0) (70, 0.014705882352941176) };
-%  \addplot[blue, fill=blue!50] coordinates { (0, 0.39285714285714285) (10, 0.42105263157894735) (20, 0.2037037037037037) (30, 0.20588235294117646) (40, 0.14666666666666667) (50, 0.06349206349206349) (60, 0.08) (70, 0.08571428571428572) };
-%  \addplot[orange, fill=orange!50] coordinates { (0, 0.0) (10, 0.0) (20, 0.03125) (30, 0.10526315789473684) (40, 0.0) (50, 0.08333333333333333) (60, 0.06666666666666667) (70, 0.0) };
-%  \addplot[green, fill=green!50] coordinates { (0, 1.0) (10, 1.0) (20, 1.0) (30, 1.0) (40, 1.0) (50, 1.0) (60, 1.0) (70, 1.0) };
-%  \addplot[blue, fill=blue!50] coordinates { (0, 1.0) (10, 1.0) (20, 1.0) (30, 1.0) (40, 1.0) (50, 1.0) (60, 1.0) (70, 1.0) };
-%  \addplot[orange, fill=orange!50] coordinates { (0, 0.25) (10, 0.14285714285714285) (20, 0.3125) (30, 0.42105263157894735) (40, 0.375) (50, 0.25) (60, 0.6) (70, 0.3333333333333333) };
-  \addplot[green, fill=green!50] coordinates { (0, 0.53125) (10, 0.22043010752688172) (20, 0.14741035856573706) (30, 0.0892018779342723) (40, 0.048) (50, 0.03125) (60, 0.0) (70, 0.029411764705882353) };
-  \addplot[blue, fill=blue!50] coordinates { (0, 0.39285714285714285) (10, 0.3684210526315789) (20, 0.17592592592592593) (30, 0.18627450980392157) (40, 0.14666666666666667) (50, 0.09523809523809523) (60, 0.04) (70, 0.11428571428571428) };
-  \addplot[orange, fill=orange!50] coordinates { (0, 0.0) (10, 0.0) (20, 0.03125) (30, 0.10526315789473684) (40, 0.0) (50, 0.16666666666666666) (60, 0.06666666666666667) (70, 0.0) };
+  \addlegendimage{empty legend}
+  \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+  \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+  \addlegendentry{1,}
+  \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+  \addlegendentry{2,}
+  \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+  \addlegendentry{3}
+  \addplot[green, fill=green!50] coordinates { (0, 0.3684210526315789) (10, 0.5208333333333334) (20, 0.437125748502994) (30, 0.3969465648854962) (40, 0.37962962962962965) (50, 0.3442622950819672) (60, 0.425531914893617) (70, 0.27450980392156865) };
+  \addplot[blue, fill=blue!50] coordinates { (0, 0.6451612903225806) (10, 0.6417910447761194) (20, 0.5568181818181818) (30, 0.5) (40, 0.42) (50, 0.4807692307692308) (60, 0.3) (70, 0.32) };
+  \addplot[orange, fill=orange!50] coordinates { (0, 0.20689655172413793) (10, 0.15294117647058825) (20, 0.1206896551724138) (30, 0.13043478260869565) (40, 0.12781954887218044) (50, 0.1774193548387097) (60, 0.15454545454545454) (70, 0.10256410256410256) };
   \end{axis}
 \end{tikzpicture}
 

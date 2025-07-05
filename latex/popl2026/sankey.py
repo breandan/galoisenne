@@ -1,18 +1,18 @@
 from matplotlib.sankey import Sankey
 import matplotlib.pyplot as plt
-import tikzplotlib
+import matplot2tikz
 
 fig = plt.figure(figsize = [10,10])
 ax = fig.add_subplot(1,1,1)
 
 Sankey(
-  ax=ax, flows = [5136,-1725,-737,-730,-1646,-108,-48,-142],
-  labels = ['Total', 'Top-1', 'Top-[2-10]', 'Top-11-99', 'Top-100+', 'NG', 'NR', 'OOM'],
-  orientations = [0, -1, -1, -1, -1, -1, -1, -1],
-  scale= 1/2500, trunklength=0.5,
+  ax=ax, flows = [2211,-677,-344,-97,-377,-716],
+  labels = ['Total', 'Top-1', 'Top-[2-10]', 'Top-11-99', 'Top-100+', 'NR'],
+  orientations = [0, 1, 1, 1, 1, -1],
+  scale= 1/3500, trunklength=1,
   edgecolor = '#099368', facecolor = '#099368'
 ).finish()
 plt.axis("off")
-plt.show()
+# plt.show()
 
-# tikzplotlib.save("sankey.tex")
+matplot2tikz.save("sankey.tex")

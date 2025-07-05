@@ -1,0 +1,40 @@
+\begin{tikzpicture}
+  \begin{axis}[
+  legend cell align={left},
+  legend style={at={(0.85,0.88)}, fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=1, legend pos=north},
+  width=14cm,
+  height=7cm,
+  ybar,
+  axis lines*=left,
+  title={\LARGE\textbf{Rank of true repair before and after reranking}},
+  xlabel={Rank},
+  ylabel={Log frequency},
+  ymode=log,
+  ymin=1,
+  enlarge x limits={lower,abs=15pt},
+  log ticks with fixed point,
+  y filter/.code={\pgfmathparse{\pgfmathresult <= 0 ? 1 : \pgfmathresult}},
+  xtick={0,100,...,1000},
+  xticklabels={0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000+},
+  x tick label style={/pgf/number format/fixed},
+  bar width=4pt,
+  ]
+  \addplot[fill=blue!50] coordinates {
+    (0,1295) (50,18) (100,7) (150,6) (200,2)  (250,2)
+    (300,0)  (350,0) (400,0) (450,1) (500,2)  (550,1)
+    (600,0)  (650,0) (700,0) (750,0) (800,0)  (850,0)
+    (900,0)  (950,0) (1000,874)
+  };
+
+  \addplot[fill=red!50] coordinates {
+    (0,733) (50,144) (100,92)  (150,61)  (200,45) (250,42)
+    (300,31) (350,31) (400,19) (450,23)  (500,12) (550,13)
+    (600,16) (650,10) (700,12) (750,13)  (800,10) (850,7)
+    (900,9)  (950,11) (1000,874)
+  };
+  \addlegendimage{ybar,ybar legend,fill=red!50,draw=green!50}
+  \addlegendentry{With neural reranker}
+  \addlegendimage{ybar,ybar legend,fill=blue!50,draw=blue!60}
+  \addlegendentry{Raw $c$-gram probability}
+  \end{axis}
+\end{tikzpicture}

@@ -1,7 +1,9 @@
 \begin{tikzpicture}
   \begin{axis}[
+  legend cell align={left},
+  legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east},
   xlabel={Snippet length, $|\sigma|$},
-  ylabel={Precision@1},
+  ylabel={Precision@10},
   title={\Large\textbf{Tidyparse Repair Precision@10}},
   ybar,
   axis lines*=left,
@@ -13,8 +15,16 @@
   ymin=0.0,
   bar width=4pt,
   ]
-  \addplot[green, fill=green!50] coordinates { (0, 0.71875) (10, 0.6075268817204301) (20, 0.44621513944223107) (30, 0.3427230046948357) (40, 0.288) (50, 0.19791666666666666) (60, 0.03333333333333333) (70, 0.08823529411764706) };
-  \addplot[blue, fill=blue!50] coordinates { (0, 0.7142857142857143) (10, 0.7789473684210526) (20, 0.5277777777777778) (30, 0.4803921568627451) (40, 0.37333333333333335) (50, 0.2857142857142857) (60, 0.26) (70, 0.22857142857142856) };
-  \addplot[orange, fill=orange!50] coordinates { (0, 0.0) (10, 0.03571428571428571) (20, 0.25) (30, 0.18421052631578946) (40, 0.20833333333333334) (50, 0.16666666666666666) (60, 0.06666666666666667) (70, 0.06666666666666667) };
+  \addlegendimage{empty legend}
+  \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+  \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+  \addlegendentry{1,}
+  \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+  \addlegendentry{2,}
+  \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+  \addlegendentry{3}
+  \addplot[green, fill=green!50] coordinates { (0, 0.8421052631578947) (10, 0.8888888888888888) (20, 0.8622754491017964) (30, 0.8320610687022901) (40, 0.7777777777777778) (50, 0.7868852459016393) (60, 0.7659574468085106) (70, 0.7843137254901961) };
+  \addplot[blue, fill=blue!50] coordinates { (0, 0.9354838709677419) (10, 0.8208955223880597) (20, 0.7272727272727273) (30, 0.6617647058823529) (40, 0.6) (50, 0.5961538461538461) (60, 0.7) (70, 0.56) };
+  \addplot[orange, fill=orange!50] coordinates { (0, 0.3275862068965517) (10, 0.2411764705882353) (20, 0.23563218390804597) (30, 0.2360248447204969) (40, 0.2932330827067669) (50, 0.3548387096774194) (60, 0.32727272727272727) (70, 0.24358974358974358) };
   \end{axis}
 \end{tikzpicture}
