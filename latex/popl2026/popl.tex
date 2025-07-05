@@ -956,7 +956,7 @@ We use the Precision@k statistic, which measures the frequency of true repair ap
 
 %  In our synthetic experiments, we apply the pretrained BIFI breaker to synthetically corrupt Python snippets from the BIFI good code test set, using the clean source as the ground truth repair, and filter broken-fixed snippet pairs by the same criteria.
 
-Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 1,200 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing at least 50 instances.
+Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 2,211 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing at least 50 instances.
 
 To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 20k steps, which takes \~24 hours and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
 
@@ -1055,7 +1055,7 @@ In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by collecting 1
 
 \clearpage\subsection{Subcomponent ablation}\label{sec:rq3}
 
-The primary question of interest is, to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair, sans reranking. That is, we form the language intersection, decode it with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$. This simplified approach generally has good completeness, but its Precision@1 leaves much to be desired.
+The primary question of interest is, to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair, sans reranking. That is, we form the language intersection, decode it with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$.
 
 \begin{figure}[H]
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1}}
@@ -1069,12 +1069,15 @@ The primary question of interest is, to what extent does the neural reranker imp
 
 %Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 %
-%\begin{figure}[h]
+\begin{wrapfigure}{r}{0.4\textwidth}
 %\input{experiments/ablation_enumeration_pcfg}
 %\input{experiments/ablation_enumeration_markov}
-%\input{experiments/ablation_dfa_walker}
-%\end{figure}
-%
+\resizebox{.4\textwidth}{!}{\input{rank_freq}}
+\caption{Observed improvement in rank prior and subsequent to neural reranking.}
+\end{wrapfigure}
+
+We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k by the 4-gram model, after reranking, the true repair rarely appears beyond 50\textsuperscript{th} in the list.
+
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
 Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
