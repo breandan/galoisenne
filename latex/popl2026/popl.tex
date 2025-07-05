@@ -871,7 +871,7 @@ In total, the GPU should have at least 4 GB of onboard memory to accommodate lan
 
 \clearpage\subsection{Training the reranker}
 
-Decoding returns a list of repair candidates that are all valid, nearby and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through more than a few dozen candidates to select their intended repair, especially since they could have easily written it themselves in a few seconds. So, we will need to rerank the list. As long as we can guarantee the repairs are sufficiently exhaustive, they should include with high probability the true repair, which then need only be surfaced into the user's field of view.
+After decoding, we have a list of repair candidates that are all valid, nearby and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through more than a few dozen candidates to select their intended repair, especially since they could have presumably written it themselves in a few seconds. So, we will proceed to rerank the list. If we can guarantee the candidate repairs are sufficiently exhaustive, they should include with high probability the true repair, which then need only be surfaced into the user's field of view.
 
 The ensuing method falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning -- using their terminology, the broken code snippet would be called a \textit{query} and the list of repairs, \textit{documents}. To discuss the reranker, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a \textit{loss} instead of a language, and the derivative~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same, except now over the reals.
 
@@ -1145,7 +1145,7 @@ There is related work on string constraints in the constraint programing literat
 
 \subsection{Error correcting codes}
 
-Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
+Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
 
 \subsection{Decoding}
 
@@ -1153,7 +1153,7 @@ Decoding is a key problem in machine translation, speech recognition, and other 
 
 In particular, we care about the problem of \textit{top-k decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing likelihood. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic PCFGs is often intractable, but we can approximate it using a beam search or cube-pruning technique.
 
-A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, huang2007forest, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs. Our approach is also complementary to work by Zhang and McDonald~\cite{zhang2012generalized}, but specialized to language intersections.
+A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, chiang2007hierarchical}, which samples maximum likelihood paths through a hypergraph. We take inspiration from this technique, and adapt it to the setting of constrained decoding from finite CFGs.
 
 An alternate line of work originates from combinatorics~\cite{hickey1983uniform, gore1997quasi} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. Unlike our method, distinctness or convergence guarantees for arbitrary finite CFLs are not provided.
 
@@ -1208,45 +1208,36 @@ An artifact for Tidyparse is currently available as a browser application.~\foot
 These are useful for visually checking different implementations.
 
 \begin{figure}[H]
-  \begin{center}
-  \includegraphics[width=4cm]{figures/lev_nfa_6x1.pdf}\hspace{0.5cm}
-    \resizebox{0.4\textwidth}{!}{%
-      \input{figures/lev_nfa_6x1}
-    }
-  \end{center}
-  \caption{Lev(|\sigma|=6, \Delta=1) automaton, adjacency and reachability matrix.}
-\end{figure}
-
-\begin{figure}[H]
-  \begin{center}
-\includegraphics[width=4cm]{figures/lev_nfa_6x2.pdf}\hspace{0.5cm}
-    \resizebox{0.4\textwidth}{!}{%
-      \input{figures/lev_nfa_6x2}
-    }
-  \end{center}
-  \caption{Lev(|\sigma|=6, \Delta=2) automaton, adjacency and reachability matrix.}
+\begin{center}
+\adjustbox{valign=m}{\includegraphics[width=4cm]{figures/lev_nfa_6x1.pdf}}
+\adjustbox{valign=m}{\resizebox{0.4\textwidth}{!}{\input{figures/lev_nfa_6x1}}}
+\end{center}
+\caption{Lev(|\sigma|=6, \Delta=1) automaton, adjacency and reachability matrix.}
 \end{figure}
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[width=4cm]{figures/lev_nfa_6x3.pdf}\hspace{0.5cm}
-  \resizebox{0.4\textwidth}{!}{%
-    \input{figures/lev_nfa_6x3}
-  }
+\adjustbox{valign=m}{\includegraphics[width=4cm]{figures/lev_nfa_6x2.pdf}}
+\adjustbox{valign=m}{\resizebox{0.4\textwidth}{!}{\input{figures/lev_nfa_6x2}}}
 \end{center}
-  \caption{Lev(|\sigma|=6, \Delta=3) automaton, adjacency and reachability matrix.}
+\caption{Lev(|\sigma|=6, \Delta=2) automaton, adjacency and reachability matrix.}
 \end{figure}
 
 \begin{figure}[H]
-  \begin{center}
-\includegraphics[height=4cm]{figures/lev_nfa_6x4.pdf}\hspace{0.5cm}
-    \resizebox{0.4\textwidth}{!}{%
-      \input{figures/lev_nfa_6x4}
-    }
-  \end{center}
-  \caption{Lev(|\sigma|=6, \Delta=4) automaton, adjacency and reachability matrix.}
+\begin{center}
+\adjustbox{valign=m}{\includegraphics[width=4cm]{figures/lev_nfa_6x3.pdf}}
+\adjustbox{valign=m}{\resizebox{0.4\textwidth}{!}{\input{figures/lev_nfa_6x3}}}
+\end{center}
+\caption{Lev(|\sigma|=6, \Delta=3) automaton, adjacency and reachability matrix.}
 \end{figure}
 
+\begin{figure}[H]
+\begin{center}
+\adjustbox{valign=m}{\includegraphics[height=4cm]{figures/lev_nfa_6x4.pdf}}
+\adjustbox{valign=m}{\resizebox{0.4\textwidth}{!}{\input{figures/lev_nfa_6x4}}}
+\end{center}
+\caption{Lev(|\sigma|=6, \Delta=4) automaton, adjacency and reachability matrix.}
+\end{figure}
 
 \section{Levenshtein automata minimality}
 
@@ -1306,7 +1297,7 @@ Below is a listing of the hyperparameter settings used for training the rerankin
 \end{itemize}
 \end{multicols}
 
-The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder will be pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. We train the model for 13k steps, which takes \~4 hours on an Nvidia H100.
+The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder is pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. We train the encoder for 20k steps and the reranker for 13k steps, taking \~4 hours on an Nvidia H100.
 
 \clearpage\section{Example Repairs}\label{sec:exaple_repairs}
 
