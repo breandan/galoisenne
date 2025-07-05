@@ -98,6 +98,14 @@ fun FSA.showEditable() {
   ).start()
 }
 
+fun FSA.showLevEditable() {
+  ProcessBuilder(browserCmd,
+    URLEncoder.encode(levToDot())
+      .replace("+", "%20")
+      .let { "https://dreampuf.github.io/GraphvizOnline/#$it" }
+  ).start()
+}
+
 operator fun MutableNode.minus(target: LinkTarget): Link = addLink(target).links().last()!!
 
 fun FSA.toGraphviz() =

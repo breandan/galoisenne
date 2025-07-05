@@ -342,6 +342,36 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     """.trimIndent()
   }
 
+  fun levToDot(): String {
+    fun String.htmlify() =
+      replace("<", "&lt;").replace(">", "&gt;")
+    return """
+      strict digraph {
+          nodesep=0.25;
+          splines=ortho;
+          graph ["concentrate"="false","rankdir"="LR","bgcolor"="transparent","margin"="0.0","compound"="true","nslimit"="20"]
+          ${
+      states.sortedBy { it.split("/").last() }.reversed().joinToString("\n") {
+        """"${it.htmlify()}" [group=${it.split("/").last().toInt()}]["color"="black","fontcolor"="black","fontname"="JetBrains Mono","fontsize"="15","penwidth"="2.0","shape"="rect"${if(it in final)""",peripheries=2""" else ""}, margin="0.8,0.2"]""" }
+    } 
+      ${edgeLabels.entries.joinToString("\n") { (v, e) ->
+      val (src, tgt) = v.first to v.second
+      val (s1, s2) = src.drop(2).split("/").map { it.toInt() }
+      val (t1, t2) = tgt.drop(2).split("/").map { it.toInt() }
+      fun Int.toColor() = when (this) {
+        3 -> "blue"
+        5 -> "red"
+        7 -> "purple"
+        9 -> "fuchsia"
+        else -> "black"
+      }
+      val color = ((t2-s2)+(t1-s1)).toColor()
+      """"$src" -> "$tgt" ["arrowhead"="normal", minlen="2.5", "penwidth"="2.0", color=$color]""" }
+    }
+      }
+    """.trimIndent()
+  }
+
   fun adjMat(): BooleanArray {
     val n   = numStates
     val out = BooleanArray(n * n)
