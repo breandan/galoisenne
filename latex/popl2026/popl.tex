@@ -990,55 +990,52 @@ For an intuition about the size of the language intersections involved in syntax
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
-For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse, vanilla BIFI and BIFI with a beam size and precision at $2\times10^4$ distinct samples.
+For our first experiment, we measure the precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse, and BIFI on the same test set.
 
 \begin{figure}[h!]
-\resizebox{.31\textwidth}{!}{\input{len_dist_tidy}}
-\resizebox{.31\textwidth}{!}{\input{len_dist_s2p}}
-\resizebox{.31\textwidth}{!}{\input{len_dist_bifi}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_tidy}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_s2p}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_bifi}}
+\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
+%\resizebox{.19\textwidth}{!}{\input{len_dist_bifi_all}}
 \caption{Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
 \end{figure}
 
-As we can see, Tidyparse has a SOTA top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances. The Precision@10 of our method even outperforms with BIFI's Precision@20k, whereas our Precision@10 is Pareto-dominant across all lengths and edit distances and precision values. We report the raw data from these experiments in Appendix~\ref{sec:raw_prec_data}.
+Tidyparse attains SoTA top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances. The Precision@10 of our method even outperforms with BIFI's Precision@20k, whereas our Precision@10 is Pareto-dominant across all lengths and edit distances and precision values. We report the raw data from these experiments in Appendix~\ref{sec:raw_prec_data}.
 
 %Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 %
-\begin{figure}[h!]
-\resizebox{.31\textwidth}{!}{\input{len_dist_tidy_p10}}
-\resizebox{.31\textwidth}{!}{\input{len_dist_bifi_all}}
-%    \resizebox{.19\textwidth}{!}{\input{bar_hillel_repair}}
-\caption{Higher precision values.}\label{fig:human}
-\end{figure}
 
 %\begin{wrapfigure}{r}{0.38\textwidth}
-%\vspace{-1cm}
-%\hspace{-0.4cm}
-%\resizebox{.44\textwidth}{!}{\input{sankey}}
-%\vspace{-1.1cm}
+%\vspace{-2cm}
+%\begin{center}
+%\resizebox{.44\textwidth}{!}{\hspace{-0.8cm}\input{sankey}}
+%\end{center}
+%\vspace{-0.5cm}
 %\caption{Outcomes in the repair pipeline.}
 %\label{fig:sankey}
 %\end{wrapfigure}
 %
 %
-%We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2247 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
+%We present a Sankey diagram of our repair pipeline in Fig.~\ref{fig:sankey}. We drew 2211 total repairs from the StackOverflow dataset balanced evenly across lengths and edit distances ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$) with a timeout of 30s and tracked individual outcomes. In 101 cases, the intersection grammar was too large to construct and threw an out-of-memory (OOM) error, in 45 cases the human repair was not recognized, in 253 cases the sampler timed out before drawing the human repair, in 1226 cases the human repair was drawn but not ranked first, and in the remaining 622 cases the first prediction matched the human repair.
 
-\clearpage The remaining experiments in this section were run on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
-
-\begin{figure}[h!]
-\input{sample_efficiency}
-\caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
-\end{figure}
-
-\begin{wrapfigure}{r}{0.35\textwidth}
-\vspace{-0.4cm}
-\resizebox{.35\textwidth}{!}{\input{throughput}}
-\vspace{-0.6cm}
-\caption{Distinct repairs found in 10s.}
-\label{fig:throughput}
-\vspace{-0.3cm}
-\end{wrapfigure}
-
-End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
+The remaining experiments in this section were conducted on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
+%
+%\begin{figure}[h!]
+%\input{sample_efficiency}
+%\caption{Sample efficiency of Tidyparse at varying Levenshtein radii. After drawing up to $\sim10^5$ samples without replacement we can usually retrieve the human repair for almost all repairs fewer than four edits.}\label{fig:sample_efficiency}
+%\end{figure}
+%
+%\begin{wrapfigure}{r}{0.35\textwidth}
+%\vspace{-0.4cm}
+%\resizebox{.35\textwidth}{!}{\input{throughput}}
+%\vspace{-0.6cm}
+%\caption{Distinct repairs found in 10s.}
+%\label{fig:throughput}
+%\vspace{-0.3cm}
+%\end{wrapfigure}
+%
+%End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
 
 \begin{wrapfigure}{l}{0.35\textwidth}
 \vspace{-0.4cm}
@@ -1076,7 +1073,7 @@ The primary question of interest is, to what extent does the neural reranker imp
 \caption{Observed improvement in rank prior and subsequent to neural reranking.}
 \end{wrapfigure}
 
-We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k by the 4-gram model, after reranking, the true repair rarely appears beyond 50\textsuperscript{th} in the list.
+We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
 
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
@@ -1100,9 +1097,9 @@ There is a clear tradeoff between latency and precision for any repair model. Wh
 
 Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design and evaluation (Fig.~\ref{fig:throughput}).
 
-\subsection{Limitations and future work}
+\clearpage\subsection{Limitations and future work}
 
-%  We identify three broad categories of limitations in evaluating Tidyparse and suggest directions for future work: naturalness, complexity, and semantics.
+%  We identify three broad categories of limitations in evaluating Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integeration.
 
 \subsubsection{Naturalness}
 
@@ -1126,11 +1123,9 @@ Program slicing is an important preprocessing consideration that has so far gone
 
 Additionally, the generated repairs must be spliced back into the surrounding context, which requires careful editor integration. One approach would be to filter all repairs through an incremental compiler or linter, however, the latency necessary to check every repair may be non-negligible.
 
-%We leave this aspect for future work.
-
 We envision a few primary use cases for Tidyparse: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
 
-\section{Related Work}\label{sec:related}
+\clearpage\section{Related Work}\label{sec:related}
 
 Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, (6) decoding and finally (7) neural program repair.
 
@@ -1141,8 +1136,6 @@ Context-free language (CFL) parsing is the well-studied problem of how to turn a
 General CFL parsing allows ambiguity (non-unique trees) and can be formulated as a dynamic programming problem, as shown by Cocke-Younger-Kasami (CYK)~\cite{sakai1961syntax}, Earley~\cite{earley1970efficient} and others. These parsers have roughly cubic complexity with respect to the length of the input string.
 
 As shown by Valiant~\cite{valiant1975general}, Lee~\cite{lee2002fast} and others, general CFL recognition is in some sense equivalent to binary matrix multiplication, another well-studied combinatorial problem with broad applications, known to be at worst subcubic. This reduction opens the door to a range of complexity-theoretic speedups to CFL recognition, however large constants tend to limit their practical utility.
-
-%  Okhotin~\cite{okhotin2001conjunctive} extends CFGs with language conjunction in \textit{conjunctive grammars}, followed by Zhang \& Su~\cite{zhang2017context} who apply conjunctive language reachability to dataflow analysis.
 
 From a more applied perspective, parsers are ubiquitous in present-day software engineering, but none are designed to handle arbitrary CFGs or recover from arbitrary errors. Parr and Quong introduce ANTLR~\cite{parr1995antlr} which can handle LL(k) grammars and offers an IDE plugin with limited support for error recovery. Scott and Johnstone~\cite{scott2010gll} introduce GLL parsing, which supports linear-time parsing for LL grammars and cubic for arbitrary CFGs, but does not support error correction. Inspired by their work, we introduce a method for repairing small syntax errors in arbitrary CFLs.
 
@@ -1162,23 +1155,13 @@ In finite languages, syntax repair corresponds to spelling correction, a more re
 
 When a sentence is grammatically invalid, parsing grows more challenging. Like spelling, the problem is to find the minimum number of edits required to transform an arbitrary string into a syntactically valid one, where validity is defined as containment in a (typically) context-free language. Early work, including Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} propose a dynamic programming algorithm to compute the minimum number of edits required to fix an invalid string. Prior work on error correcting parsing only considers the nearest edit(s), and does not study edits of varying distance in the Levenshtein ball. Furthermore, the problem of repair is not generally well-posed, as there can be many valid solutions. We instead focus on maximum likelihood Levenshtein-CFL reachability, which attempts to find the most natural repair within a fixed Levenshtein distance.
 
-%Bar-Hillel~\cite{bar1961formal} establishes the closure of CFLs under intersection with regular languages, and can be used to construct the corresponding minimum-cost CFG in a straightforward manner. However while generally quite expressive, CFLs are themselves not closed under intersection and have other practical limitations, i.e., are unable to express indentation or variable binding. These limitations motivate us towards more expressive yet still efficiently parsable formalisms.
-
-%Conveniently, Okhotin~\cite{okhotin2001conjunctive} offers exactly the formalism needed: language equations augmented with logical operators like conjunction or disjunction. These operators afford us the flexibility to encode both language union and intersection, which are difficult or impossible to express using a single grammar, as well as incorporate extra-syntactic side-constraints during solving.
-
-%Naively, one might think to enumerate all edits within a certain Levenshtein radius and reject invalid strings. However, this approach is intractable for long strings. Another approach is to compute the \textit{edit distance} between the string and the language as proposed by Aho. This approach is also intractable depending on the size of the grammar. A third approach is to use a language equation to compute the intersection between the Levenshtein hypersphere and the language.
-
-%The literature on parsers is vast and deep, covering far more ground than we could possibly hope to survey. We take inspiration from their findings, but restrict ourselves to a dozen most closely related papers, in four major research areas: (1) formal language theory, (2) constraint satisfaction (3) program synthesis, and (4) error correction. We survey each of these areas in turn.
-%
-%It was Noam Chomsky who first developed the algebraic theory of \textit{context-free grammars} (CFGs) in 1959~\cite{chomsky1959algebraic}, and since then, CFGs have been the subject of extensive research in formal language theory and program analysis. In particular, we take inspiration from Leslie Valiant~\cite{valiant1975general} who first discovered the connection to matrix multiplication in 1975 and Alexander Okhotin~\cite{okhotin2001conjunctive} who later introduced the idea of \textit{conjunctive grammars} in 2001. More recently, Azimov \& Grigorev~\cite{azimov2018cfpq} and Qirun Zhang shed light into the practical applicability of these ideas and made the theory of CFG reachability more accessible to the general public. In our work, we show how to compile their ideas onto a SAT solver to fix syntax errors, which seems like a perfectly natural extension, but was heretofore previously never considered to the best of our knowledge.
-
 \subsection{String solving}
 
-There is related work on string constraints in the constraint programing literature, featuring solvers like CFGAnalyzer and HAMPI~\cite{kiezun2009hampi}, which consider bounded context free grammars and intersections thereof. Boja{\'n}czyk et al. (2014)~\cite{bojanczyk2014automata} introduce the theory of nominal automata. Around the same time, D'Antoni et al. (2014) introduce \textit{symbolic automata}~\cite{dantoni2014minimization}, a generalization of finite automata which allow infinite alphabets and symbolic expressions over them. Hague et al. (2024)~\cite{hague2024parikh} use Parikh's theorem in the context of symbolic automata to speed up string constraint solving, from which we draw partial inspiration for the Levenshtein-Bar-Hillel construction in \S~\ref{sec:lev_bh}. In none of the constraint programming literature we surveyed do any of the approaches specifically consider the problem of syntax error correction, which is the main focus of our work.
+There is related work on string constraints in the constraint programing literature, featuring solvers like CFGAnalyzer and HAMPI~\cite{kiezun2009hampi}, which consider bounded context free grammars and intersections thereof. Boja{\'n}czyk et al. (2014)~\cite{bojanczyk2014automata} introduce the theory of nominal automata. Around the same time, D'Antoni et al. (2014) introduce \textit{symbolic automata}~\cite{dantoni2014minimization}, a generalization of finite automata which allow infinite alphabets and symbolic expressions over them. Hague et al. (2024)~\cite{hague2024parikh} use Parikh's theorem in the context of symbolic automata to speed up string constraint solving, from which we draw partial inspiration for the Levenshtein-Bar-Hillel construction. In none of the constraint programming literature we surveyed do any of the approaches specifically consider the problem of syntax error correction, which is the main focus of our work.
 
-%\subsection{Error correcting codes}
-%
-%Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
+\subsection{Error correcting codes}
+
+Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming, dong2023number} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
 
 \subsection{Decoding}
 
@@ -1202,7 +1185,7 @@ In particular, two papers stand out being closely related to our own: Break-It-F
 
 Recent work by Merrill et al.~\cite{merrill2022saturated} and Chiang et al.~\cite{chiang2023tighter} suggest that the issue with generalization may be more foundational: transformer-based language models, a popular class of neural language models used in probabilistic program repair, are fundamentally less expressive than context-free grammars, which formally describe the syntax of most programming languages. This suggests such models, despite their useful approximation properties, are ill-suited for the task of end-to-end syntax repair. Yet, they may still be useful for resolving ambiguity between valid repairs of differing likelihood or searching a large sample space for the most likely repair.
 
-\section{Conclusion}\label{sec:conclusion}
+\clearpage\section{Conclusion}\label{sec:conclusion}
 
 Our work, while a case study on syntax repair, is part of a broader line of inquiry in program synthesis that investigates how to weave formal language theory and machine learning into helpful programming tools for everyday developers. In some ways, syntax repair serves as a test bench for integrating learning and language theory, as it lacks the intricacies of type-checking and semantic analysis, but is still rich enough to be an interesting challenge. By starting with syntax repair, we hope to lay the foundation for more organic hybrid approaches to program synthesis.
 
@@ -1463,9 +1446,9 @@ Raw data from Precision@k experiments across snippet length and Levenshtein dist
 & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
 $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
 Tidyparse
-& 1 & 0.56 & 0.44 & 0.43 & 0.49 & 0.55 & 0.55 & 0.53 & 0.57 \\
-& 2 & 0.37 & 0.28 & 0.26 & 0.24 & 0.19 & 0.25 & 0.23 & 0.18 \\
-& 3 & 0.18 & 0.20 & 0.19 & 0.15 & 0.10 & 0.09 & 0.11 & 0.11 \\ \hline
+& 1 & 0.37 & 0.52 & 0.44 & 0.40 & 0.38 & 0.34 & 0.43 & 0.27 \\
+& 2 & 0.65 & 0.64 & 0.56 & 0.50 & 0.42 & 0.48 & 0.30 & 0.32 \\
+& 3 & 0.21 & 0.15 & 0.12 & 0.13 & 0.13 & 0.18 & 0.15 & 0.10 \\ \hline
 Seq2Parse
 & 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
 & 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
@@ -1485,93 +1468,4 @@ BIFI
 & 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
 \end{tabular}
 \end{table}
-
-%Precision@1
-%===========
-%(|σ|∈[0, 10), Δ=1): Top-1/total: 56 / 100 = 0.56
-%(|σ|∈[0, 10), Δ=2): Top-1/total: 37 / 100 = 0.37
-%(|σ|∈[0, 10), Δ=3): Top-1/total: 9 / 50 = 0.18
-%
-%(|σ|∈[10, 20), Δ=1): Top-1/total: 44 / 100 = 0.44
-%(|σ|∈[10, 20), Δ=2): Top-1/total: 28 / 100 = 0.28
-%(|σ|∈[10, 20), Δ=3): Top-1/total: 20 / 100 = 0.2
-%
-%(|σ|∈[20, 30), Δ=1): Top-1/total: 43 / 100 = 0.43
-%(|σ|∈[20, 30), Δ=2): Top-1/total: 26 / 100 = 0.26
-%(|σ|∈[20, 30), Δ=3): Top-1/total: 19 / 99 = 0.1919191919191919
-%
-%(|σ|∈[30, 40), Δ=1): Top-1/total: 49 / 100 = 0.49
-%(|σ|∈[30, 40), Δ=2): Top-1/total: 24 / 100 = 0.24
-%(|σ|∈[30, 40), Δ=3): Top-1/total: 15 / 100 = 0.15
-%
-%(|σ|∈[40, 50), Δ=1): Top-1/total: 55 / 100 = 0.55
-%(|σ|∈[40, 50), Δ=2): Top-1/total: 19 / 100 = 0.19
-%(|σ|∈[40, 50), Δ=3): Top-1/total: 10 / 100 = 0.1
-%
-%(|σ|∈[50, 60), Δ=1): Top-1/total: 55 / 100 = 0.55
-%(|σ|∈[50, 60), Δ=2): Top-1/total: 25 / 100 = 0.25
-%(|σ|∈[50, 60), Δ=3): Top-1/total: 9 / 100 = 0.09
-%
-%(|σ|∈[60, 70), Δ=1): Top-1/total: 53 / 100 = 0.53
-%(|σ|∈[60, 70), Δ=2): Top-1/total: 23 / 100 = 0.23
-%(|σ|∈[60, 70), Δ=3): Top-1/total: 11 / 100 = 0.11
-%
-%(|σ|∈[70, 80), Δ=1): Top-1/total: 57 / 100 = 0.57
-%(|σ|∈[70, 80), Δ=2): Top-1/total: 18 / 100 = 0.18
-%(|σ|∈[70, 80), Δ=3): Top-1/total: 9 / 81 = 0.1111111111111111
-%
-%Precision@All
-%=============
-%(|σ|∈[0, 10), Δ=1): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[0, 10), Δ=2): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[0, 10), Δ=3): Top-1/total: 50 / 50 = 1.0
-%
-%(|σ|∈[10, 20), Δ=1): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[10, 20), Δ=2): Top-1/total: 99 / 100 = 0.99
-%(|σ|∈[10, 20), Δ=3): Top-1/total: 98 / 100 = 0.98
-%
-%(|σ|∈[20, 30), Δ=1): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[20, 30), Δ=2): Top-1/total: 98 / 100 = 0.98
-%(|σ|∈[20, 30), Δ=3): Top-1/total: 79 / 99 = 0.797979797979798
-%
-%(|σ|∈[30, 40), Δ=1): Top-1/total: 99 / 100 = 0.99
-%(|σ|∈[30, 40), Δ=2): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[30, 40), Δ=3): Top-1/total: 70 / 100 = 0.7
-%
-%(|σ|∈[40, 50), Δ=1): Top-1/total: 99 / 100 = 0.99
-%(|σ|∈[40, 50), Δ=2): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[40, 50), Δ=3): Top-1/total: 55 / 100 = 0.55
-%
-%(|σ|∈[50, 60), Δ=1): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[50, 60), Δ=2): Top-1/total: 100 / 100 = 1.0
-%(|σ|∈[50, 60), Δ=3): Top-1/total: 42 / 100 = 0.42
-%
-%(|σ|∈[60, 70), Δ=1): Top-1/total: 97 / 100 = 0.97
-%(|σ|∈[60, 70), Δ=2): Top-1/total: 94 / 100 = 0.94
-%(|σ|∈[60, 70), Δ=3): Top-1/total: 42 / 100 = 0.42
-%
-%(|σ|∈[70, 80), Δ=1): Top-1/total: 97 / 100 = 0.97
-%(|σ|∈[70, 80), Δ=2): Top-1/total: 90 / 100 = 0.9
-%(|σ|∈[70, 80), Δ=3): Top-1/total: 25 / 81 = 0.30864197530864196
-
-
-%  Synthetic evaluation
-%
-%  \begin{table}[!h]
-%    \centering
-%    \begin{tabular}{c|c|cccccccc}
-%      \hline\hline
-%      & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
-%      $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
-%      Tidyparse
-%      & 1 & 1.00 & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 1.00 & 0.98 \\
-%      & 2 & 0.45 & 0.63 & 0.66 & 0.68 & 0.65 & 0.81 & 0.64 & 0.62 \\
-%      & 3 & 0.06 & 0.20 & 0.29 & 0.36 & 0.29 & 0.39 & 0.38 & 0.32 \\ \hline
-%      & & \multicolumn{8}{c}{Precision@All} \\ \hline
-%      Tidyparse
-%      & 1 & 1.00 & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 0.98 & 1.00 \\
-%      & 2 & 0.98 & 0.98 & 0.94 & 0.94 & 0.98 & 0.97 & 0.89 & 0.90 \\
-%      & 3 & 1.00 & 0.97 & 0.92 & 0.84 & 0.87 & 0.90 & 0.84 & 0.72 \\ \hline\hline
-%    \end{tabular}
-%  \end{table}
 \end{document}
