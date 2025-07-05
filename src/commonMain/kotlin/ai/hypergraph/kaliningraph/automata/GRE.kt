@@ -399,6 +399,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
   return (if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()) to diff)
 }
 
+var latestLangEditDistance = 0
 fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val upperBound = MAX_RADIUS * 3
 //  val monoEditBounds = cfg.maxParsableFragmentB(brokenStr, pad = upperBound)
@@ -453,6 +454,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
     .firstNotNullOfOrNull { nonemptyLevInt(makeLevFSA(brokenStr, it)) } ?:
   upperBound.also { println("Hit upper bound") }
   val radius = (led + LED_BUFFER).coerceAtMost(MAX_RADIUS.coerceAtLeast(led))
+  latestLangEditDistance = led
 
   println("Identified LED=$led, radius=$radius in ${timer.elapsedNow()}")
 
