@@ -962,7 +962,7 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 
 \begin{wrapfigure}{r}{0.45\textwidth}
 \vspace{-0.4cm}
-\resizebox{.45\textwidth}{!}{\input{figures/scatter_plot}}
+\resizebox{.45\textwidth}{!}{\input{figures/volumetric_plot}}
 \vspace{-0.8cm}
 \caption{Log language volume versus snippet length and edit distance for Python repairs.}
 \label{fig:volumetric_plot}
@@ -1021,16 +1021,7 @@ The remaining experiments in this section were conducted on a 16-core ARM64 M4 M
 %
 %End-to-end throughput varies significantly with the edit distance of the repair. Some errors are trivial to fix, while others require a large number of edits to be sampled before the ground truth is discovered. We evaluate throughput by sampling patches across invalid strings $|\err\sigma| \leq 40$ from the StackOverflow dataset balanced across length and distance, and measure the total number of unique valid patches discovered, as a function of string length and edit distance $\Delta\in[1, 4]$. Each trial is terminated after 10 seconds, and the experiment is repeated across 7.3k total repairs. Note the y-axis is log-scaled, as the number of admissible repairs increases sharply with edit distance. Our approach discovers a large number of syntactic repairs in a relatively short amount of time, and is able to quickly saturate the admissible set for $\Delta(\err\sigma, \sigma') \in [1, 4]$ before timeout.
 
-\begin{wrapfigure}{l}{0.35\textwidth}
-\vspace{-0.4cm}
-\resizebox{.35\textwidth}{!}{\input{experiments/timings}}
-\vspace{-0.7cm}
-\caption{End-to-end repair timings.}
-\label{fig:timings}
-\vspace{-0.3cm}
-\end{wrapfigure}
 
-In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by collecting 1,645 samples balanced across length and edit distance, then measure the wallclock runtime of the single core implementation of the repair algorithm (\S~\ref{sec:implementation}). This wall-clock runtime corroborates the complexity analysis (\S~\ref{sec:method}) showing a distinct lower bound. While short repairs finish quickly, latency is positively correlated with length and edit distance. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before timeout, while 4+-edit throughput starts becoming constrained by compute around 10s, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout or additional processor cores. We anticipate that a much longer delay will begin to tax the patience of most users, and so we consider 10s a reasonable upper bound for repair latency.
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
@@ -1050,26 +1041,35 @@ The primary question of interest is, to what extent does the neural reranker imp
 
 %Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 %
-\begin{wrapfigure}{r}{0.4\textwidth}
+\vspace{-0.3cm}
+\begin{wrapfigure}{r}{0.45\textwidth}
 %\input{experiments/ablation_enumeration_pcfg}
 %\input{experiments/ablation_enumeration_markov}
-\resizebox{.4\textwidth}{!}{\input{rank_freq}}
-\caption{Observed improvement in rank prior and subsequent to neural reranking.}
+\resizebox{.45\textwidth}{!}{\input{rank_freq}}
+\caption{Observed improvement in rank prior and subsequent to neural reranking (note, y-axis is log-scaled).}
 \end{wrapfigure}
 
-We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
+We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k results by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
 
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
-Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 30 seconds, then measure the total number of unique valid repairs discovered as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it.
+Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 10s, then measure the total wallclock runtime to retrieve the full set of candidate repairs as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it. We compare this with the GPU sampler on the same dataset.
 
-\begin{wrapfigure}{r}{0.4\textwidth}
-\input{experiments/parallel_speedup}
-\caption{Observed improvement in throughput relative to total CPU cores assigned.}
-\label{fig:speedup}
+\begin{wrapfigure}{l}{0.35\textwidth}
+\vspace{-0.4cm}
+\resizebox{.35\textwidth}{!}{\input{experiments/timings}}
+\vspace{-0.7cm}
+\caption{End-to-end repair timings.}
+\label{fig:timings}
+\vspace{-0.3cm}
 \end{wrapfigure}
+%\begin{wrapfigure}{r}{0.4\textwidth}
+%\input{experiments/parallel_speedup}
+%\caption{Observed improvement in throughput relative to total CPU cores assigned.}
+%\label{fig:speedup}
+%\end{wrapfigure}
 
-We measure the relative improvement in throughput (measured by the number of distinct repairs found after 30s) as a function of the number of additional CPU cores, averaged across 1000 trials. We observe from Fig.~\ref{fig:speedup} the relative throughput increases logarithmically with the number of additional CPU cores, with at least four CPU cores needed to offset the parallelization overhead. Generally, increasing parallelism only helps when the size of the admissible set is large enough to absorb the additional computation, which is seldom the case for small-radii Levenshtein balls.
+In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by measuring the wallclock runtime of the repair algorithm (\S~\ref{sec:implementation}) across the test-set. This wall-clock runtime corroborates the complexity analysis (\S~\ref{sec:method}) showing a distinct lower bound. While short repairs finish quickly, latency is positively correlated with length and edit distance. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before timeout, while 4+-edit throughput starts becoming constrained by compute around 10s, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout, however we anticipate that a much longer delay will begin to tax the patience of most users, and so we consider 10s a reasonable upper bound for repair latency.
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
@@ -1197,7 +1197,7 @@ We have implemented our approach and demonstrated its viability as a tool for sy
 
 \section*{Data-Availability Statement}
 
-An artifact for Tidyparse is currently available as a browser application.~\footnote{\url{https://tidyparse.github.io}} The data and source code for the experiments contained in this paper will be made available upon publication.
+An artifact for Tidyparse is currently available as a browser application,~\footnote{\url{https://tidyparse.github.io/python}} supporting single-line syntax repairs in the Python language. The data, source code and transformer models necessary for reproducing the full experiments contained in this paper will be made available for artifact review.
 
 \clearpage\bibliography{../bib/acmart}
 
@@ -1297,7 +1297,7 @@ Below is a listing of the hyperparameter settings used for training the rerankin
 \end{itemize}
 \end{multicols}
 
-The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder is pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. We train the encoder for 20k steps and the reranker for 13k steps, taking \~4 hours on an Nvidia H100.
+The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder is pretrained on next-token prediction, then fine tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. We train the encoder for 20k steps and the reranker for 13k steps, taking $\sim 4$ hours on an Nvidia H100 GPU.
 
 \clearpage\section{Example Repairs}\label{sec:exaple_repairs}
 
