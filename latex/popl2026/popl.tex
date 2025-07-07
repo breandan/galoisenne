@@ -843,7 +843,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \noindent Now, we have our shortlist of repairs and after cosmetic postprocessing, can present them to the user. With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., \~100ms, or otherwise terminate early should we succeed in exhaustively generating it.
 
-\clearpage\subsection{GPU translation}
+\clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
 The foregoing architecture can be translated to series of high-performance GPU kernels, essentially binary tensor contractions optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce query. Each thread will be responsible for writing a single entry to a large buffer, independently and without external communication.
 
@@ -1025,7 +1025,7 @@ The remaining experiments in this section were conducted on a 16-core ARM64 M4 M
 
 %  In the following benchmark, we measure the Precision@k of our repair procedure against human repairs of varying edit distances and latency cutoffs, using an adaptive resampling procedure described in \S\ref{sec:adaptive}. This sampler maintains a buffer of successful repairs ranked by perplexity and uses stochastic local search to resample edits within a neighborhood. Initially, edits are sampled uniformly at random. Over time and as the admissible set grows, it prioritizes edits nearby low-perplexity repairs. This technique offers a significant advantage in the low-latency setting.
 
-\clearpage\subsection{Subcomponent ablation}\label{sec:rq3}
+\clearpage\subsection{Internal evaluation}\label{sec:rq3}
 
 The primary question of interest is, to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair, sans reranking. That is, we form the language intersection, decode it with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$.
 
@@ -1034,7 +1034,7 @@ The primary question of interest is, to what extent does the neural reranker imp
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p10}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p100}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1000}}
-\caption{4-gram repairs. 4-gram Precision@1000 is an upper bound on Tidyparse Precision@k, since our reranker takes as input the 1000 most probable 4-gram samples.}\label{fig:adaptive}
+\caption{4-gram repairs. 4-gram Precision@1000 is an upper bound on Tidyparse Precision@k, since the latter only reranks the top-1k most probable 4-gram sampled repairs from the language intersection.}\label{fig:adaptive}
 \end{figure}
 
 %We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
@@ -1042,47 +1042,41 @@ The primary question of interest is, to what extent does the neural reranker imp
 %Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 %
 \begin{wrapfigure}{r}{0.45\textwidth}
-\vspace{-0.3cm}
+\vspace{-0.35cm}
 %\input{experiments/ablation_enumeration_pcfg}
 %\input{experiments/ablation_enumeration_markov}
-\resizebox{.46\textwidth}{!}{\input{experiments/rank_cdf}}
+\resizebox{.45\textwidth}{!}{\input{experiments/rank_cdf}}
 \vspace{-0.8cm}
-\caption{Observed improvement in rank before and after applying the transformer-reranker.}
+\caption{Observed improvement in repair rank with and without the transformer-reranker.}
 \label{fig:rank_cdf}
 \vspace{-0.3cm}
 \end{wrapfigure}
 
-We can quantify the improvement in rank by comparing CDF of the true repair's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k results by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
+We can quantify the ranking improvement by comparing a CDF of the true repair's rank across the test set of human repairs, before and after using the transformer to rerank the top thousand sampled repairs. Since we decode but do not rerank less probable repairs, reranking does not affect repairs originally ranked lower than 1k. Repairs that were initially ranked in the top thousand results by 4-gram probability tend to place between 1\textsuperscript{st} and 10\textsuperscript{th} in about 75\% of repair instances after reranking.
 
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
-Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 10s, then measure the total wallclock runtime to retrieve the full set of candidate repairs as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it. We compare this with the GPU sampler on the same dataset.
-
-\begin{wrapfigure}{l}{0.35\textwidth}
+Finally, we investigate the impact of increased parallelism on repair throughput. Using the same dataset, we measure the total wallclock runtime to construct the Levenshtein automaton, form the intersection grammar, decode and rank the entire intersection langauge $(\ell_\cap)$. Then, using a GPU implementation of the algorithm described in \S~\ref{sec:implementation} as a drop-in replacement for the CPU version, we plot the individual repair timings across the test set.
+\begin{wrapfigure}{l}{0.38\textwidth}
 \vspace{-0.2cm}
-\resizebox{.35\textwidth}{!}{\input{experiments/timings}}
+\resizebox{.38\textwidth}{!}{\input{experiments/timings}}
 \vspace{-0.7cm}
 \caption{End-to-end repair timings.}
 \label{fig:timings}
 \vspace{-0.3cm}
 \end{wrapfigure}
-%\begin{wrapfigure}{r}{0.4\textwidth}
-%\input{experiments/parallel_speedup}
-%\caption{Observed improvement in throughput relative to total CPU cores assigned.}
-%\label{fig:speedup}
-%\end{wrapfigure}
 
-In Fig.~\ref{fig:timings}, we plot the end-to-end repair timings by measuring the wallclock runtime of the repair algorithm (\S~\ref{sec:implementation}) across the test-set. This wall-clock runtime corroborates the complexity analysis (\S~\ref{sec:method}) showing a distinct lower bound. While short repairs finish quickly, latency is positively correlated with length and edit distance. Our method is typically able to saturate the admissible set for 1- and 2-edit repairs before timeout, while 4+-edit throughput starts becoming constrained by compute around 10s, when Python's admissible set approaches a volume of $10^5$ valid edits. This bottleneck can be relaxed with a longer timeout, however we anticipate that a much longer delay will begin to tax the patience of most users, and so we consider 10s a reasonable upper bound for repair latency.
+\noindent As shown in Fig.~\ref{fig:timings}, latency depends on various factors but supports the complexity analysis (\S~\ref{sec:method}), exhibiting a clearly superlinear but subexponential runtime profile. While real world performance can vary based on edit distance, intersection volume and other environmental factors, GPU runtime generally has lower variance and confers a noticeable speedup, on average 2-3x for most repair scenarios. Our GPU implementation is typically able to exhaustively decode the intersection for single-edit repairs shorter than 80 tokens before 10s, whereas longer, multi-edit repairs can begin to strain throughput. This timeout can be arbitrarily extended, however we anticipate a much longer delay would begin to tax the patience of most users, and consider it a reasonable upper bound for repair latency.
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
-The main lesson we draw from our experiments is that it is possible to leverage compute to compete with large language models on practical program repair tasks. Though sample-efficient, their size comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability during the repair process.
+The main lesson we draw from these experiments is that it is possible to dramatically improve the precision of syntax repair by incorporating syntactic constraints. Though sample-efficient, LLM decoding comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision, using the transformer-encoder only to rerank the retrieved set. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability during the repair process.
 
 Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked. For larger radii, we can still achieve competitive precision by using an efficient decoder to sample the admissible set.
 
 There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@1 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the data and compute for training and inference. As Tidyparse uses its own grammar, it can sample directly from the formal language specification and does not require a stochastic language model to suggest nearby valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which may be overlooked by neural models.
 
-Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the scoring function the best chance of ranking them successfully. For this reason, we prioritize throughput heavily in our design and evaluation (Fig.~\ref{fig:throughput}).
+Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the scoring function the best chance of ranking them successfully.
 
 \clearpage\subsection{Limitations and future work}
 
