@@ -236,7 +236,7 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.3cm}
 \input{figures/cfl_intersect}
 \vspace{-0.3cm}
-\caption{CFL intersection with the local edit region around a broken code snippet, where $d^*=3$ is the langauge edit distance (LED).}
+\caption{CFL intersection with the local edit region around a broken code snippet, where $d^*=3$ is the language edit distance (LED).}
 \vspace{-0.3cm}
 \end{wrapfigure}
 
@@ -964,7 +964,7 @@ For the stability profile, we enumerate repairs for each syntax error and estima
 \vspace{-0.4cm}
 \resizebox{.45\textwidth}{!}{\input{figures/volumetric_plot}}
 \vspace{-0.8cm}
-\caption{Log language volume versus snippet length and edit distance for Python repairs.}
+\caption{Language volume versus snippet length and edit distance for Python repairs.}
 \label{fig:volumetric_plot}
 \vspace{-0.2cm}
 \end{wrapfigure}
@@ -1041,22 +1041,25 @@ The primary question of interest is, to what extent does the neural reranker imp
 
 %Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
 %
-\vspace{-0.3cm}
 \begin{wrapfigure}{r}{0.45\textwidth}
+\vspace{-0.3cm}
 %\input{experiments/ablation_enumeration_pcfg}
 %\input{experiments/ablation_enumeration_markov}
-\resizebox{.45\textwidth}{!}{\input{rank_freq}}
-\caption{Observed improvement in rank prior and subsequent to neural reranking (note, y-axis is log-scaled).}
+\resizebox{.46\textwidth}{!}{\input{experiments/rank_cdf}}
+\vspace{-0.8cm}
+\caption{Observed improvement in rank before and after applying the transformer-reranker.}
+\label{fig:rank_cdf}
+\vspace{-0.3cm}
 \end{wrapfigure}
 
-We can quantify the improvement in rank by comparing the histogram of the true document's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k results by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
+We can quantify the improvement in rank by comparing CDF of the true repair's rank across the test set, with and without reranking the top-1,000 4-gram sampled repairs using the neural reranker. Since we sample but do not modify the ranks of repairs beyond the top-1000, these remain unchanged. If initially ranked in the top-1k results by the 4-gram model, the true repair rarely appears below 50\textsuperscript{th} in the reranked list.
 
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
 Finally, we evaluate the impact of increased parallelism on repair throughput. We balance the StackOverflow dataset across edit distances and run DFA sampler for up to 10s, then measure the total wallclock runtime to retrieve the full set of candidate repairs as a function of the number of additional CPU cores assigned, which we exercise to both construct the intersection grammar and sample from it. We compare this with the GPU sampler on the same dataset.
 
 \begin{wrapfigure}{l}{0.35\textwidth}
-\vspace{-0.4cm}
+\vspace{-0.2cm}
 \resizebox{.35\textwidth}{!}{\input{experiments/timings}}
 \vspace{-0.7cm}
 \caption{End-to-end repair timings.}
