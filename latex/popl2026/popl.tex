@@ -82,7 +82,7 @@ Our algorithm first constructs an automaton representing all possible strings wi
 
 To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair. This tool makes aggressive use of communication-free parallelism, making it readily executable by off-the-shelf GPU and SIMD co-processors. We provide a reference implementation of our tool on the WebGPU platform and show these computational resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
 
-Finally, we show the efficacy of this technique for locating and repairing syntax errors of up to three edits and eighty lexical tokens in under a second, practical for a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the human repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
+Finally, we show the efficacy of this technique for locating and repairing syntax errors of up to three edits and eighty lexical tokens in under ten seconds, practical for a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the human repair across a dataset of Python source code, on average 5x more accurately than previous state of the art methods at comparable latency and compute thresholds.
 
 \section{Background}
 
@@ -224,13 +224,13 @@ P(e): E \rightarrow \big(V \rightarrow (\Sigma \mid V \mid V^2)\big) = \begin{ca
 
 \subsection{Informal statement}
 
-Assume there exists a transducer from Unicode tokens to grammatical tokens, $\tau: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $\tau$ is called a \textit{lexer} and would typically be regular under mild conditions. In this paper, we do not consider $\tau$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
+Assume there exists a transducer from Unicode tokens to grammatical tokens, $t: \Sigma_U^* \rightarrow \Sigma_G^*$. In the compiler nomenclature $t$ is called a \textit{lexer} and would typically be regular under mild conditions. In this paper, we do not consider $t$ and strictly deal with languages over $\Sigma_G^*$, or simply $\Sigma^*$ for brevity.
 
 %Thus, the full source language can be described as $\tau^{-1}\big(L(G)\big)$
 
 %We designate a special token for tokens which are not recognized by the lexer, which are simply replaced by a hole.
 
-Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$, that we wish to repair. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose target language is known.
+Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptable program. A syntax error is an unacceptable string, $\err\sigma \notin \ell$, that we wish to repair. We can model syntax repair as a language intersection between a context-free language (CFL) and a regular language. Henceforth, $\err\sigma$ will always and only be used to denote a syntactically invalid string whose intended language is known.
 
 \begin{wrapfigure}{r}{0.4\textwidth}
 \vspace{-0.3cm}
@@ -845,7 +845,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
-The foregoing architecture can be translated to series of high-performance GPU kernels, essentially binary tensor contractions optimized for GPU acceleration. Our strategy will be to treat each stage of the repair pipeline as a massively parallel map-reduce query. Each thread will be responsible for writing a single entry to a large buffer, independently and without external communication.
+The foregoing architecture can be translated to series of high-performance GPU kernels. Our strategy will be maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated location of a shared buffer without locking or external communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming then becomes mapping aggregate datatypes to and from an integer format.
 
@@ -875,7 +875,7 @@ After decoding, we have a list of repair candidates that are all valid, nearby a
 
 The ensuing method falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning -- using their terminology, the broken code snippet would be called a \textit{query} and the list of repairs, \textit{documents}. To discuss the reranker, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a \textit{loss} instead of a language, and the derivative~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same, except now over the reals.
 
-The reranker employs a transformer-encoder architecture to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repair, denoted $\sigma: \ell_\cap$) to a $p$-dimensional real vector space $\mathbb{R}^p$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function, $\text{E}_\theta$, which takes a string and a positional encoding, and returns an embedding, $\text{E}_\theta: (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p$ where $\theta$ are learnable parameters. To these, we will introduce a Levenshtein alignment $(\text{LA}: \Sigma^n \times \Sigma^m \rightarrow \mathbb{N}^{[m, n]})$ as a third argument that, when applied to a query-document pair, will produce a vector tracking edit locations and types. Finally, a multilayer perceptron $(\text{MLP}_\theta: \mathbb{R}^p \times \mathbb{R}^p \rightarrow \mathbb{R}^+)$ processes the embedding to produce a relevance score:
+The reranker employs a transformer-encoder architecture to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repair, denoted $\sigma: \ell_\cap$) to a $p$-dimensional real vector space $\mathbb{R}^p$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function, $\text{E}_\theta$, which takes a string and a positional encoding, and returns an embedding, $\text{E}_\theta: (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p$ where $\theta$ are learnable parameters. To these, we will introduce a Levenshtein alignment $(\text{LA}: \Sigma^n \times \Sigma^m \rightarrow \mathbb{N}^{[m, n]})$ as a third argument that, when applied to a query-document pair, will produce a vector tracking edit locations and types. Finally, a third  $(\text{MLP}_\theta: \mathbb{R}^p \times \mathbb{R}^p \rightarrow \mathbb{R}^+)$ processes the embedding to produce a relevance score:
 
 
 \[
@@ -942,7 +942,7 @@ We use the Precision@k statistic, which measures the frequency of true repair ap
 
 Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 2,238 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma'\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma') \in [1, 3]\}$, each test bin containing at least 50 instances.
 
-To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 20k steps, which takes \~24 hours and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
+To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 13k steps which takes $\sim 4$ hours, and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
 
 For our repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same pretrained $4$-gram model used in reranker training, and pass the top 1k results by 4-gram probability to the transformer encoder, then finally rerank the top 1k by the softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
 
@@ -990,12 +990,14 @@ For our first experiment, we measure the top-1 precision of our repair procedure
 Tidyparse attains state-of-the-art top-1 repair precision versus both models by a wide margin. Unexpectedly, precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are also mixed for the 2-edit repair case. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all three models, as does a slightly negative correlation between repair length and precision.
 
 \begin{wrapfigure}{r}{0.50\textwidth}
+\vspace{-0.1cm}
 \resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_bifi_all}}
 \caption{Probability of the true repair being in the first ten Tidyparse repairs, and the first 20k BIFI repairs.}\label{fig:len_dist_prec}
+\vspace{-0.3cm}
 \end{wrapfigure}
 
-For the next experiment, we evaluate the BIFI model, giving it a generous compute and latency advantage with unlimited time to sample 20k repairs, and compare the Precision@10 of our approach with a timeout of 10s. As Tidyparse uses a 4-gram model for decoding, it can sample a much larger candidate set in the time allotted, but must use a transformer-based reranker. Since the Seq2Parse reference implementation does not support sampling more than one repair, we do not compare its Precision@k for higher k values. The raw data from these experiments can be found in Appendix~\ref{sec:raw_prec_data}.
+For the next experiment, we evaluate the BIFI model, giving it a generous compute and latency advantage with an unlimited time budget to sample 20k repairs, and compare the Precision@10 of our approach with a 10s timeout. As Tidyparse uses a 4-gram model for decoding, it can sample a much larger candidate set in the time allotted, but must use a transformer-based reranker after decoding to sort the top 1k repairs. Since the Seq2Parse reference implementation does not support sampling more than one repair, we do not compare its Precision@k for higher k values. The raw data from these experiments can be found in Appendix~\ref{sec:raw_prec_data}.
 
 %Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 %
@@ -1008,7 +1010,7 @@ For the next experiment, we evaluate the BIFI model, giving it a generous comput
 \label{fig:sankey}
 \end{wrapfigure}
 
-\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 607 cases, the human repair was not contained in the language intersection and thus never sampled, in 1,631 cases the human repair was sampled, of which 675 cases the first prediction matched the human repair, in 1,242 cases, the human repair was in the top-10 results, and in the remaining 389 cases the human repair was drawn, but ranked lower than tenth in the final results.
+\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 607 cases, the true repair was not contained in the language intersection and thus never sampled, in 1,631 cases the human repair was sampled, of which 675 cases the first prediction matched the human repair, in 1,242 cases, the true repair was in the top-10 results, and in the remaining 389 cases the true repair was drawn, but ranked lower than 10\textsuperscript{th} in the final results.
 
 %The remaining experiments in this section were conducted on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 %
@@ -1049,7 +1051,7 @@ The primary question of interest here is to what extent does the neural reranker
 %\input{experiments/ablation_enumeration_markov}
 \resizebox{.45\textwidth}{!}{\input{experiments/rank_cdf}}
 \vspace{-0.8cm}
-\caption{Observed improvement in repair rank with and without the transformer-reranker.}
+\caption{Observed improvement in repair rank with and without the transformer reranker.}
 \label{fig:rank_cdf}
 \vspace{-0.3cm}
 \end{wrapfigure}
