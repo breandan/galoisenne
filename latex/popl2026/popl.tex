@@ -928,7 +928,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 \subsection{Experimental setup}
 
-In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing strings, numbers and identifiers, but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
+In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing alphanumeric identifiers and literals but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
 We use the Precision@k statistic, which measures the frequency of true repair appearing in the top-k results, across a dataset of repair instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, containing pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:
 
@@ -944,7 +944,9 @@ Our full dataset~\cite{wong2019syntax} consists of 20k naturally-occurring pairs
 
 To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma': \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 10^3}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma')$, and up to $10^3$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 20k steps, which takes \~24 hours and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameter settings are provided in Appendix~\ref{sec:hyperparams}.
 
-We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, on the same test set. The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs, for $k=\{1, 5, 10, 2\times10^4\}$.
+For our repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same pretrained $4$-gram model used in reranker training, and pass the top 1k results by 4-gram probability to the transformer encoder, then finally rerank the top 1k by the softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
+
+We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, on the same test set. The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-k repairs. Finally, for Tidyparse, we use a standard Apple MacBook M4 Max with 128 GB of memory.
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
@@ -985,7 +987,7 @@ For our first experiment, we measure the top-1 precision of our repair procedure
 \caption{Probability of the first recommendation matching the true repair for Tidyparse, Seq2Parse and BIFI repair precision at various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
 \end{figure}\vspace{-0.2cm}
 
-Tidyparse attains SoTA top-1 precision versus Seq2Parse and BIFI across all lengths and edit distances, with a slightly negative correlation between length and precision. Unexpectedly, precision does not monotonically decrease with edit distance, where Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a weak margin, these results are also mixed for the double-edit repair case. The nonlinear correlation between edit distance and repair precision clearly holds across all three models.
+Tidyparse attains state-of-the-art top-1 repair precision versus both models by a wide margin. Unexpectedly, precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are also mixed for the 2-edit repair case. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all three models, as does a slightly negative correlation between repair length and precision.
 
 \begin{wrapfigure}{r}{0.50\textwidth}
 \resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
@@ -993,7 +995,7 @@ Tidyparse attains SoTA top-1 precision versus Seq2Parse and BIFI across all leng
 \caption{Probability of the true repair being in the first ten Tidyparse repairs, and the first 20k BIFI repairs.}\label{fig:len_dist_prec}
 \end{wrapfigure}
 
-For the next experiment, we evaluate the BIFI model, giving it a significant compute and latency advantage with unlimited time to sample 20k repairs and compare against the Precision@10 of our approach with a timeout of 10s. Since Tidyparse does use an LLM for next-token decoding, it can  evaluate and rerank a much larger set of repairs in the allotted time. In the case of Seq2Parse, the authors' default implementation does not support sampling more than a single repair, so we did not compare its Precision@k for higher k. The raw data from these experiments can be found in Appendix~\ref{sec:raw_prec_data}.
+For the next experiment, we evaluate the BIFI model, giving it a generous compute and latency advantage with unlimited time to sample 20k repairs, and compare the Precision@10 of our approach with a timeout of 10s. As Tidyparse uses a 4-gram model for decoding, it can sample a much larger candidate set in the time allotted, but must use a transformer-based reranker. Since the Seq2Parse reference implementation does not support sampling more than one repair, we do not compare its Precision@k for higher k values. The raw data from these experiments can be found in Appendix~\ref{sec:raw_prec_data}.
 
 %Next, we measure the precision at various ranking cutoffs and wall-clock timeouts. Our method attains the same precision as Seq2Parse and BIFI for 1-edit repairs at comparable latency, however Tidyparse takes longer to attain the same precision for 2- and 3-edit repairs. BIFI and Seq2Parse both have subsecond single-shot latency but are neural models trained on a much larger dataset.
 %
@@ -1006,7 +1008,7 @@ For the next experiment, we evaluate the BIFI model, giving it a significant com
 \label{fig:sankey}
 \end{wrapfigure}
 
-\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 607 cases, the human repair was not contained in the langauge intersection and thus never sampled, in 1,631 cases the human repair was sampled, of which 675 cases the first prediction matched the human repair, in 1,242 cases, the human repair was in the top-10 results, and in the remaining 389 cases the human repair was drawn, but ranked lower than tenth in the final results.
+\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma') < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 607 cases, the human repair was not contained in the language intersection and thus never sampled, in 1,631 cases the human repair was sampled, of which 675 cases the first prediction matched the human repair, in 1,242 cases, the human repair was in the top-10 results, and in the remaining 389 cases the human repair was drawn, but ranked lower than tenth in the final results.
 
 %The remaining experiments in this section were conducted on a 16-core ARM64 M4 Max with 128 GB of memory. We balance the StackOverflow dataset across Levenshtein distances, then measure the number of samples required to draw the exact human repair across varying Levenshtein radii. This tells us of how many samples are required on average to saturate the admissible set.
 %
@@ -1032,20 +1034,15 @@ For the next experiment, we evaluate the BIFI model, giving it a significant com
 
 \clearpage\subsection{Internal evaluation}\label{sec:rq3}
 
-The primary question of interest here is to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair sans reranking. That is, we decode the langauge intersection with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$.
-
+The primary question of interest here is to what extent does the neural reranker improve precision relative to a na\"ive decoding strategy? For comparison, we use an 4-gram based repair sans reranking. That is, we decode the language intersection with a 4-gram model, sort the repairs by their respective 4-gram probabilities, and without further processing evaluate Precision@$10^{\{0, 1, 2, 3\}}$.\vspace{-0.2cm}
 \begin{figure}[H]
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p10}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p100}}
 \resizebox{.24\textwidth}{!}{\input{len_dist_ngram_p1000}}
 \caption{4-gram repairs. 4-gram Precision@1000 is an upper bound on Tidyparse Precision@k, since the latter only reranks the top-1k most probable 4-gram sampled repairs from the language intersection.}\label{fig:adaptive}
-\end{figure}
+\end{figure}\vspace{-0.2cm}
 
-%We also evaluate Seq2Parse on the same dataset. Seq2Parse only supports Precision@1 repairs, and so we only report Seq2parse Precision@1 from the StackOverflow benchmark for comparison. Unlike our approach, which only produces syntactically correct repairs, Seq2Parse and BIFI also produce syntactically incorrect repairs in practice. The overall latency of Seq2Parse varies depending on the length of the repair, averaging 1.5s for $\Delta=1$ to 2.7s for $\Delta=3$, across the entire StackOverflow dataset, while BIFI consistently achieves subsecond latency across all repairs and distances.
-
-%Next, we conduct an ablation study across three decoding strategies to compare their relative effectiveness. In each experiment, we balance the StackOverflow dataset across edit distances and run the candidate sampler for up to 30 seconds. In Alg.~\ref{alg:enum_pcfg}, we use the enumerative sampler and rank all repairs by PCFG score, in Alg.~\ref{alg:enum_ngram}, we use the same approach but rank the repairs by c-gram log-likelihood, and in Alg.~\ref{alg:dfa_walk}, we translate the BH intersection grammar into a DFA then sample trajectories according to a c-gram transition probability, as described in \S~\ref{sec:decoding}. We compare the Precision@1 of each method at recovering the ground truth human repair.
-%
 \begin{wrapfigure}{r}{0.45\textwidth}
 \vspace{-0.35cm}
 %\input{experiments/ablation_enumeration_pcfg}
@@ -1057,11 +1054,11 @@ The primary question of interest here is to what extent does the neural reranker
 \vspace{-0.3cm}
 \end{wrapfigure}
 
-We can quantify the ranking improvement by comparing a CDF of the true repair's rank across the test set of human repairs, before and after using the transformer to rerank the top thousand sampled repairs. Since we decode but do not rerank less probable repairs, reranking does not affect repairs originally ranked lower than 1k. Repairs that were initially ranked in the top thousand results by 4-gram probability tend to place between 1\textsuperscript{st} and 10\textsuperscript{th} in about 75\% of repair instances after reranking.
+We can quantify the ranking improvement by comparing CDFs of the true repair's rank across the test set of human repairs, before and after reranking the top 1k sampled repairs (Fig.~\ref{fig:rank_cdf}). Since we decode but do not consider less probable repairs, reranking does not affect those originally ranked lower than 1k. Repairs initially ranked in the top 1k results by 4-gram probability tend to place between 1\textsuperscript{st} and 10\textsuperscript{th} in about 75\% of instances after reranking. It is possible the true repair can be ranked higher before reranking than after, which occurs in $\sim4\%$ of cases.
 
 %In general, c-gram likelihood appears to have a significant advantage over PCFG scoring, however this margin may decrease with PCFG models that consider higher-order nonterminal dependencies. Alg.~\ref{alg:enum_pcfg} is efficient, but also the least precise, being a poor model for lexical alignment. Alg.~\ref{alg:enum_ngram} offers competitive precision for Python, but can produce duplicate samples in highly ambiguous CFGs. Alg.~\ref{alg:dfa_walk} has the best performance across all edit distances and languages, but is also the most computationally expensive, requiring a determinization and minimization preprocessing step.
 
-Finally, we investigate the impact of increased parallelism on repair throughput. Using the same dataset, we measure the total wallclock runtime to construct the Levenshtein automaton, form the intersection grammar, decode and rank the entire intersection langauge $(\ell_\cap)$. Then, using a GPU implementation of the algorithm described in \S~\ref{sec:implementation} as a drop-in replacement for the CPU version, we plot the individual repair timings across the test set.
+Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection grammar, decode and rank the entire intersection language $(\ell_\cap)$. Then, we swap in a GPU implementation of the algorithm described in \S~\ref{sec:implementation} as a replacement for the CPU version and plot the individual repair timings across the same test set.
 \begin{wrapfigure}{l}{0.38\textwidth}
 \vspace{-0.2cm}
 \resizebox{.38\textwidth}{!}{\input{experiments/timings}}
@@ -1071,7 +1068,7 @@ Finally, we investigate the impact of increased parallelism on repair throughput
 \vspace{-0.3cm}
 \end{wrapfigure}
 
-\noindent As shown in Fig.~\ref{fig:timings}, latency depends on various factors but supports the complexity analysis (\S~\ref{sec:method}), exhibiting a clearly superlinear but subexponential runtime profile. While real world performance can vary based on edit distance, intersection volume and other environmental factors, GPU runtime generally has lower variance and confers a noticeable speedup, on average 2-3x for most repair scenarios. Our GPU implementation is typically able to exhaustively decode the intersection for single-edit repairs shorter than 80 tokens before 10s, whereas longer, multi-edit repairs can begin to strain throughput. This timeout can be arbitrarily extended, however we anticipate a much longer delay would begin to tax the patience of most users, and consider it a reasonable upper bound for repair latency.
+\noindent As shown in Fig.~\ref{fig:timings}, latency depends on various factors but supports the complexity analysis (\S~\ref{sec:method}), exhibiting a clearly superlinear but subexponential runtime profile. While real world performance can vary based on LED, intersection volume and other load factors, the GPU runtime generally has lower variance and confers a 2-3x speedup across most common repair scenarios. Our GPU implementation is able to exhaustively decode the intersection for almost all instances before 10s, however the equivalent CPU version may struggle to meet the same latency target, especially on longer or multi-edit repairs. While the 10s timeout can be arbitrarily extended, we anticipate a much longer delay would begin to tax the patience of most users, and therefor consider it a reasonable upper bound for repair latency.
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
