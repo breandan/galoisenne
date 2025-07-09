@@ -49,8 +49,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we model as a language intersection problem, by defining a finite language that provably generates every grammatically valid repair within a certain edit distance of a broken code snippet. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we prove that syntax repair under a finite number of typographic edits is polylogarithmic parallel time-decidable and validate this technique and its effective implementation by demonstrating state-of-the-art precision on a dataset of Python syntax repairs.
-\keywords{Error correction \and CFL reachability \and Language games.}
+We introduce a new technique for repairing syntax errors in arbitrary context-free languages. This technique models syntax repair as a language intersection problem by defining a finite language that provably generates every syntactically valid repair within a given edit distance. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we prove that repairability in a finite number of typographic edits is polylogarithmic parallel time decidable and provide an enumeration algorithm based on the Brzozowski derivative. Finally, we evaluate this algorithm and its implementation, demonstrating state-of-the-art results on a Python syntax repair benchmark.\keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
 %\titlerunning{Abbreviated paper title}
@@ -1151,7 +1150,7 @@ When a sentence is grammatically invalid, parsing grows more challenging. Like s
 
 Diekmann and Tratt~\cite{diekmann2018dont} present a rule-based syntax repair tool that retrieves the complete set of minimum-cost repairs, but only works for deterministic CFLs, a proper subset of the CFL family which admit a linear-time parser. Their cost model is based on insertion and deletion, and does not consider probability or non-minimal edit distance. Tidyparse can handle arbitrary CFLs and generate repairs within an arbitrary edit distance, using a Levenshtein cost model.
 
-Zhang et al.~\cite{zhang2023ordinalfix} introduce OrdinalFix, which uses CFL reachability to repair compiler errors, however their method only returns admissible repairs and not necessarily probable ones. As they do not consider the problem of maximum-probability repairs, nor use any form of reranking to sort the results by human likelihood, we do not compare with their work.
+Zhang et al.~\cite{zhang2023ordinalfix} introduce OrdinalFix, which uses CFL reachability to repair compiler errors, however their method only returns admissible repairs and not necessarily probable ones. As they do not consider the problem of maximum-probability repairs, nor use any form of ranking to sort the results by naturalness or probability, we do not compare with their work.
 
 %\subsection{String solving}
 %
