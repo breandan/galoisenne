@@ -49,7 +49,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature.
+We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. This technique also admits a polylogarithmic time algorithm for deciding intersection nonemptiness between CFLs and acyclic NFAs, the first of its kind in the parsing literature. We validate this technique and its effective implementation by demonstrating state-of-the-art precision on a dataset of Python syntax repairs.
 \keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
@@ -69,16 +69,16 @@ Prior research on syntax repair can be classified into exact and approximate met
 
 In the latter case, the set of all strings is typically used as the sample space for a distribution whose parameters are learned from a dataset of pairwise errors and fixes. Though statistically more robust, these methods typically use some form of approximate inference and thus require expensive postprocessing or rejection sampling to ensure the generated results conform to the grammar.
 
-The primary shortcoming with both of these approaches is they generate too few repairs. Even if the model in question guarantees grammatical soundness or has good statistical generalization properties, it is likely to miss the intended repair in the presence of ambiguity or when there are many candidates from which to choose. Most syntax errors, however, require only a few alterations to repair, of which there are only a finite number of possibilities to consider.
+The primary shortcoming with both of these approaches is they generate far too few repairs. Even if the model in question guarantees grammatical soundness or has good statistical generalization properties, it is likely to miss the intended repair in ambiguous scenarios or when there are many candidates from which to choose. Most syntax errors, however, require only a few modifications to repair, of which there are only a finite number of possibilities to consider.
 
 Thus we arrive at the core problem this paper aims to solve: how can we quickly recover the most probable repairs in proximity to a syntactically broken code snippet? To address this problem, we propose to extensively evaluate the probability of every repair within a fixed edit distance. At first, this might seem to take longer than generating a single repair, but if we intend to quickly generate probable repairs and not just valid ones, extensive search becomes highly advantageous. To ensure the search space is well-defined, we will construct and decode a regular expression that generates all and only valid repairs within a fixed edit distance, thereby avoiding rejection sampling entirely without missing any nearby valid repairs. This construction is shown in Fig.~\ref{fig:arch_simp}.
 
-\begin{figure}[h!]
-  \includegraphics[width=\textwidth]{flow}\vspace{-1pt}
+\begin{figure}[H]
+  \includegraphics[width=\textwidth]{flow}\vspace{-0.1cm}
   \caption{
     Our algorithm first constructs an automaton representing all strings within a certain edit distance. This automaton is parsed with a matrix denoting all valid repairs in the programming language and edit distance. We construct a regular expression (RE) from the matrix, and finally decode the RE using an n-gram model to produce a finite list of samples, then rerank and truncate this list to obtain our final repairs.
 %    Given a grammar and broken code fragment, our method creates an automaton generating the language of local edits, then constructs a regular expression. This regular expression can be decoded to produce a list which is then reranked and truncated to obtain the most probable repairs.
-  }\label{fig:arch_simp}
+  }\label{fig:arch_simp}\vspace{-0.2cm}
 \end{figure}
 
 To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair which is readily executable on off-the-shelf GPUs. We provide a reference implementation of our tool on the WebGPU platform and show these computational resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
@@ -422,11 +422,11 @@ Here, the FSA takes a similar shape but can have multiple arcs between adjacent 
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to the GRE domain. We first define $X \boxtimes Z = [X_2 \cdot Z_1, \varnothing, \varnothing, X_1 \cdot Z_0]$ and $X \boxplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\boxtimes$. To solve for $M_\infty$, we proceed by first computing $E_{0, 2}, E_{1, 3}$:\vspace{-8pt}
+To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to the GRE domain. We first define $X \otimes Z = [X_2 \cdot Z_1, \varnothing, \varnothing, X_1 \cdot Z_0]$ and $X \oplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $E_{0, 2}, E_{1, 3}$:\vspace{-8pt}
 
 \begin{small}
 \begin{align*}
-  E_{0, 2} &= E_{0, j} \cdot E_{j, 2} = E_{0, 1} \boxtimes E_{1, 2}                         &  E_{1, 3} &= E_{1, j} \cdot E_{j, 3} = E_{1, 2} \boxtimes E_{2, 3}\\
+  E_{0, 2} &= E_{0, j} \cdot E_{j, 2} = E_{0, 1} \otimes E_{1, 2}                         &  E_{1, 3} &= E_{1, j} \cdot E_{j, 3} = E_{1, 2} \otimes E_{2, 3}\\
   &= [L \in E_{0, 2}, \varnothing, \varnothing, S \in E_{0, 2}]                                           &  &= [L \in E_{1, 3}, \varnothing, \varnothing, S \in E_{1, 3}]\\
   &= [O \in E_{0, 1} \cdot N \in E_{1, 2}, \varnothing, \varnothing, N \in E_{0, 1} \cdot L \in E_{1, 2}] &  &= [O \in E_{1, 2} \cdot N \in E_{2, 3}, \varnothing, \varnothing, N \in E_{1, 2} \cdot L \in E_{2, 3}]\\
   &= [E_{0, 1, 2} \cdot E_{1, 2, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 2, 0}]             &  &= [E_{1, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{1, 2, 1} \cdot E_{2, 3, 0}]
@@ -436,7 +436,7 @@ To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to t
 \noindent Now we solve for the corner entry $E_{0, 3}$ by dotting the first row and last column, which yields:\vspace{-8pt}
 
 \begin{align*}
-  E_{0, 3} &= E_{0, j} \cdot E_{j, 3} = (E_{0, 1} \boxtimes E_{1, 3}) \boxplus (E_{0, 2} \boxtimes E_{2, 3})\\
+  E_{0, 3} &= E_{0, j} \cdot E_{j, 3} = (E_{0, 1} \otimes E_{1, 3}) \oplus (E_{0, 2} \otimes E_{2, 3})\\
 %  &= [E_{0, 1, 2} \cdot E_{1, 3, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 3, 0}] + [E_{0, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{0, 2, 1} \cdot E_{2, 3, 0}]\\
   &= [E_{0, 1, 2} \cdot E_{1, 3, 1} \lor E_{0, 2, 2} \cdot E_{2, 3, 1}, \varnothing, \varnothing, E_{0, 1, 1} \cdot E_{1, 3, 0} \lor E_{0, 2, 1} \cdot E_{2, 3, 0}]
 \end{align*}
@@ -467,7 +467,7 @@ Now, we are ready to consider the general case of syntax repair, in which case t
   \vspace{-0.5cm}
 \end{wrapfigure}
 
-As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and simplifies the description to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not any contain $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a nominal form which supports infinite alphabets and simplifies the description to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not contain any $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
 \input{figures/arc_rules}
 
@@ -548,16 +548,16 @@ So, a valid ordering on $Q$ would be $q_{00}, q_{01}, q_{10}, q_{11}, q_{20}, q_
 
 Under such an ordering, the adjacency matrix takes an upper triangular form and becomes the template for the initial parse chart, $M_0$ (Fig.~\ref{fig:initial_pc}). Each entry of this chart corresponds to a vector of expressions $E^{|V|}$ with at least one expression denoting a nonempty language. Likewise, the reachability matrix signifies a subset of state pairs which can participate in the language intersection. The adjacency and reachability matrices will always cover the expression vectors of the initial and final parse charts, respectively. In other words, we may safely ignore absent $\langle q, q'\rangle$ pairs in the reachability matrix, as these state pairs definitely cannot participate in the intersection.
 
-From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constraints n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
+From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constrains n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\boxplus, \boxtimes$ over GRE vectors, where $X \boxtimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \boxplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $S_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(S_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
+Just as before, we will define $\oplus, \otimes$ over GRE vectors, where $X \otimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \oplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $S_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(S_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
 
 \clearpage
 
 \section{Measuring the language intersection}\label{sec:measurement}
 
-We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illumative approaches, then proceed towards a more refined solution.
+We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illuminative approaches, then proceed towards a more refined solution.
 
 \subsection{Mode collapse}
 
@@ -699,7 +699,7 @@ Since $\mathcal{L}(G_\cap)$ is necessarily finite, we can infer that the corresp
               &    &    & 1 & 1 & 1 \\
               &    &    &   & 1 & 1 \\
               &    &    &   &   & 1 \\
-\end{pmatrix}\end{tiny} \text{ therefor, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(A, q_0, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
+\end{pmatrix}\end{tiny} \text{ therefore, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(A, q_0, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
 \end{align}
 Note the model counting problem for arbitrary GREs is strictly harder than deciding intersection nonemptiness as it requires determinization, however, weak bounds may be obtained by applying $C$ to the FSA generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous, whereas $C_{D_\cap^*}$ is exact.
 
@@ -846,11 +846,11 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
-The foregoing architecture can be translated to series of high-performance GPU kernels. Our strategy will be maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated location of a shared buffer without locking or external communication.
+The foregoing architecture can be translated to series of high-performance GPU kernels. Our strategy will be to maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated location of a shared buffer without locking or external communication.
 
 We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. The main challenge of GPU programming then becomes mapping aggregate datatypes to and from an integer format.
 
-Morally, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU, but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a minor challenge for constructing the GRE datatype, though surmountable with careful reference counting.
+Conceptually, each $\langle r, c, v\rangle$ triple will dispatch a single isolated GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency overhead. Each thread is effectively executed simultaneously on a GPU, but all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. This presents a minor challenge for constructing the GRE datatype, though surmountable with careful reference counting.
 
 For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$ and $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
 
@@ -889,7 +889,7 @@ f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ 
 \mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d^*)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
 \end{equation}
 
-\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d^* \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging parameter settings that result in the the true repair being assigned higher priority -- the closer to zero, the greater the loss will be for underestimating the relevance of the true repair.
+\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d^* \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging parameter settings that result in the true repair being assigned higher priority -- the closer to zero, the greater the loss will be for underestimating the relevance of the true repair.
 
 
 \begin{wrapfigure}{r}{0.40\textwidth}
@@ -1071,7 +1071,7 @@ Finally, we investigate the impact of increased parallelism on repair throughput
 \vspace{-0.3cm}
 \end{wrapfigure}
 
-\noindent As shown in Fig.~\ref{fig:timings}, latency depends on various factors but supports the complexity analysis (\S~\ref{sec:method}), exhibiting a clearly superlinear but subexponential runtime profile. While real world performance can vary based on LED, intersection volume and other load factors, the GPU runtime generally has lower variance and confers a 2-3x speedup across most common repair scenarios. Our GPU implementation is able to exhaustively decode the intersection for almost all instances before 10s, however the equivalent CPU version may struggle to meet the same latency target, especially on longer or multi-edit repairs. While the 10s timeout can be arbitrarily extended, we anticipate a much longer delay would begin to tax the patience of most users, and therefor consider it a reasonable upper bound for repair latency.
+\noindent As shown in Fig.~\ref{fig:timings}, latency depends on various factors but supports the complexity analysis (\S~\ref{sec:method}), exhibiting a clearly superlinear but subexponential runtime profile. While real world performance can vary based on LED, intersection volume and other load factors, the GPU runtime generally has lower variance and confers a 2-3x speedup across most common repair scenarios. Our GPU implementation is able to exhaustively decode the intersection for almost all instances before 10s, however the equivalent CPU version may struggle to meet the same latency target, especially on longer or multi-edit repairs. While the 10s timeout can be arbitrarily extended, we anticipate a much longer delay would begin to tax the patience of most users, and therefore consider it a reasonable upper bound for repair latency.
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
@@ -1421,7 +1421,7 @@ class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
 
 \clearpage\section{Raw data}\label{sec:raw_prec_data}
 
-Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the admissible set or a timeout of 30s is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20000 samples.
+Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the admissible set or a 10 second timeout is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
 
 \begin{table}[!h]
 \centering
@@ -1452,4 +1452,30 @@ BIFI
 & 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
 \end{tabular}
 \end{table}
+
+\section{Symbols at a glance}
+
+Below we provide an inexhaustive listing of some common notation used throughout this paper.
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{c|l}
+\hline
+Notation & Meaning \\ \hline
+$G=\langle \Sigma, V, P,S \rangle$ & CFG with terminals, $\Sigma$, nonterminals, $V$, productions, $P$, and start symbol $S$. \\
+$A=\langle Q,\Sigma, \delta, q_\alpha, F \rangle$ & Automaton with states, $Q$, transitions, $\delta$, start state, $q_\alpha$ and final states, $F$. \\
+$\err\sigma$ & Syntactically invalid input string with a known target language. \\
+$|\sigma|$ & Length (number of terminals) of string, $\sigma$. \\
+$G^*$ & Chomsky normal form (CNF) grammar. \\
+$G_\cap$ & Intersection grammar formed by intersecting an automaton with a CFG. \\
+$\ell_\cap$ & Intersection langauge generated by some $G_\cap$. \\
+$L(\err\sigma, k)$ & Levenshtein automaton of radius $k$ for a broken string, $\err\sigma$. \\
+${\color{orange}[\ldots]}$ & Orange text is related to the nominal predicate in the Levenshtein automaton.\\
+$d_{\max}$ & Maximum permitted Levenshtein edit distance (repair radius). \\
+$M$ & Matrix encoding the product construction $\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, k)\big)$. \\
+$P@k$ & Precision at rank $k$ evaluation metric.\\
+\end{tabular}\vspace{-2cm}
+\end{table}
+
+
 \end{document}
