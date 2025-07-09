@@ -49,7 +49,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we solve by defining a finite language that provably generates every repair within a certain edit distance. To do this, we adapt the Bar-Hillel construction from formal languages, guaranteeing this language is sound and complete with respect to a programming language's grammar. Using a connection between the Bar-Hillel construction and CFL reachability, we prove the syntax-repair problem is polylogarithmic time decidable and validate this technique and its effective implementation by demonstrating state-of-the-art precision on a dataset of Python syntax repairs.
+We introduce a new technique for correcting syntax errors in arbitrary context-free languages. Our work addresses the problem of syntax error correction, which we model as a language intersection problem, by defining a finite language that provably generates every grammatically valid repair within a certain edit distance of a broken code snippet. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we prove that syntax repair under a finite number of typographic edits is polylogarithmic parallel time-decidable and validate this technique and its effective implementation by demonstrating state-of-the-art precision on a dataset of Python syntax repairs.
 \keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
