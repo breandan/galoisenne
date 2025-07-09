@@ -49,7 +49,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-We introduce a new technique for repairing syntax errors in arbitrary context-free languages. This technique models syntax repair as a language intersection problem by defining a finite language that provably generates every syntactically valid repair within a given edit distance. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we prove that repairability in a finite number of typographic edits is polylogarithmic parallel time decidable and provide an enumeration algorithm based on the Brzozowski derivative. Finally, we evaluate this algorithm and its implementation, demonstrating state-of-the-art results on a Python syntax repair benchmark.\keywords{Error correction \and CFL reachability \and Language games.}
+We introduce a new technique for repairing syntax errors in arbitrary context-free languages. This technique models syntax repair as a language intersection problem by defining a finite language that provably generates every syntactically valid repair within a given edit distance. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we show that repairability in a finite number of typographic edits is polylogarithmic parallel time decidable and provide an enumeration algorithm based on the Brzozowski derivative. Finally, we evaluate this algorithm and its implementation, demonstrating state-of-the-art results on a Python syntax repair benchmark.\keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
 %\titlerunning{Abbreviated paper title}
@@ -68,9 +68,9 @@ Prior research on syntax repair can be classified into exact and approximate met
 
 In the latter case, the set of all strings is typically used as the sample space for a distribution whose parameters are learned from a dataset of pairwise errors and fixes. Though statistically more robust, these methods typically use some form of approximate inference and thus require expensive postprocessing or rejection sampling to ensure the generated results conform to the grammar.
 
-The primary shortcoming with both of these approaches is they generate far too few repairs. Even if the model in question guarantees grammatical soundness or has good statistical generalization properties, it is likely to miss the intended repair in ambiguous scenarios or when there are many candidates from which to choose. Most syntax errors, however, require only a few modifications to repair, of which there are only a finite number of possibilities to consider.
+The primary shortcoming with both of these approaches is they generate far too few repairs. Even if the model in question guarantees grammatical soundness or has good statistical generalization properties, it is likely to miss the intended repair in ambiguous scenarios or when there are many candidates from which to choose. Most syntax errors, however, require only a few typographic modifications to repair, of which there are only a finite number of possibilities to consider.
 
-Thus we arrive at the core problem this paper aims to solve: how can we quickly recover the most probable repairs in proximity to a syntactically broken code snippet? To address this problem, we propose to extensively evaluate the probability of every repair within a fixed edit distance. At first, this might seem to take longer than generating a single repair, but if we intend to quickly generate probable repairs and not just valid ones, extensive search becomes highly advantageous. To ensure the search space is well-defined, we will construct and decode a regular expression that generates all and only valid repairs within a fixed edit distance, thereby avoiding rejection sampling entirely without missing any nearby valid repairs. This construction is shown in Fig.~\ref{fig:arch_simp}.
+Thus we arrive at the core problem this paper aims to solve: how can we quickly recover the most probable repairs in proximity to a syntactically broken code snippet? To address this problem, we propose to extensively evaluate the probability of every repair within a fixed edit distance. At first, this might seem to take much longer than generating a single repair, but if we intend to quickly generate probable repairs and not just valid ones, extensive search becomes highly advantageous. To ensure the search space is well-defined, we will construct and decode a regular expression that generates all and only valid repairs within a fixed edit distance, thereby avoiding rejection sampling entirely without skipping any nearby valid repairs. This construction is shown in Fig.~\ref{fig:arch_simp}.
 
 \begin{figure}[H]
   \includegraphics[width=\textwidth]{flow}\vspace{-0.1cm}
@@ -149,7 +149,7 @@ where $\varepsilon$ is the empty symbol. Semantically, we interpret these expres
   \end{multicols}
 \end{definition}
 
-Primarily, this gadget was designed to handle membership queries, for which purpose it has received considerable attention~\cite{might2011parsing,stanford2021symbolic,varatalu2025re} in recent years:
+Primarily, this gadget was designed to handle membership queries, for which purpose it has  found a number of applications~\cite{might2011parsing,stanford2021symbolic,varatalu2025re} in recent years:
 
 \begin{theorem}[Recognition]
   For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
@@ -284,7 +284,7 @@ As we will demonstrate, the ranked repair problem can be factorized into three s
 
 \clearpage\section{Method}\label{sec:method}
 
-The key to solving this problem is to treat finite language intersections as matrix exponentiation, exploiting a correspondence between the Bar-Hillel construction and CFL reachability. We show that if one of the participants in the language intersection is presented as an acyclic FSA, the bounded edit syntax repair problem is polylogarithmic parallel time decidable. Formally,
+The key to solving this problem is to treat finite language intersections as matrix exponentiation, exploiting a correspondence between the Bar-Hillel construction and CFL reachability. We show that if one of the participants in the language intersection is presented as an acyclic FSA, the finite intersection nonemptiness problem is polylogarithmic parallel time decidable. Formally,
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
   For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ which requires $\mathcal{O}\big(\log^2|Q|+\log|Q||V|\big)$ time using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel processors.
@@ -1074,17 +1074,19 @@ Finally, we investigate the impact of increased parallelism on repair throughput
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
-The main lesson we draw from these experiments is that it is possible to dramatically improve the precision of syntax repair by incorporating syntactic constraints. Though sample-efficient, LLM decoding comes at the cost of expensive training, and domain adaptation requires fine-tuning or retraining on pairwise repairs. Our approach uses a small grammar and a relatively cheap ranking metric to achieve significantly higher precision, using the transformer-encoder only to rerank the retrieved set. This allows us to repair errors in languages with little to no training data and provides far more flexibility and controllability during the repair process.
+The main lesson we draw from these experiments is that it is possible to significantly improve the precision of syntax repair by incorporating syntactic constraints, then sampling and evaluating a large set of candidate repairs. Though sample-efficient, transformer decoding comes at a considerable cost to repair throughput, and can hallucinate or miss obvious repairs.
+
+Our approach uses a small grammar and a relatively high-throughput decoding metric to fetch the initial candidate repairs, then uses the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in languages very little training data and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs.
 
 Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked. For larger radii, we can still achieve competitive precision by using an efficient decoder to sample the admissible set.
 
-There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@1 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the data and compute for training and inference. As Tidyparse uses its own grammar, it can sample directly from the formal language specification and does not require a stochastic language model to suggest nearby valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which may be overlooked by neural models.
+There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@10 of our method is competitive with BIFI's Precision@20k, while requiring only a fraction of the inference time. As Tidyparse uses its own grammar, it can sample directly from the formal language specification and does not require a stochastic language model to suggest nearby valid repairs, only to rank them by naturalness. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which are easily overlooked by neural models.
 
 Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate scoring function, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the scoring function the best chance of ranking them successfully.
 
-\clearpage\subsection{Limitations and future work}
+\subsection{Limitations and future work}
 
-%  We identify three broad categories of limitations in evaluating Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integeration.
+We identify four broad categories of limitations Tidyparse and suggest directions for future work: naturalness, complexity, toolchain integration, and type error repair.
 
 \subsubsection{Naturalness}
 
@@ -1098,11 +1100,9 @@ Furthermore, the scoring function only considers each candidate repair $P_\theta
 
 Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, without any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
 
-Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary synthetic productions is a critical factor in scaling up our technique.
+Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with more precise criteria to avoid creating superfluous productions, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary productions is a critical factor in scaling up our technique.
 
 \subsubsection{Toolchain integration}
-
-Lastly and perhaps most significantly, Tidyparse does not incorporate semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be type safe. It may be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs naturally provide.
 
 Program slicing is an important preprocessing consideration that has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage editor information to identify the boundaries of the repairable fragment. This could be achieved by analyzing historical editor states or via ad hoc slicing techniques.
 
@@ -1110,17 +1110,16 @@ Additionally, the generated repairs must be spliced back into the surrounding co
 
 We envision a few primary use cases for Tidyparse: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
 
+\subsubsection{Type error repair}
+
+Lastly and perhaps most significantly, Tidyparse does not incorporate semantic constraints, so its repairs whilst syntactically admissible, are not guaranteed to be type safe. It may be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs naturally provide.
+
+When considering the problem of type error repair, we begin to leave the domain of syntax and enter the much more complex world of semantics - here one must contend with difficult questions in mathematical logic and finite model theory. Nevertheless there are a few directions to consider. One direction would be to collapse these problems down to automata theory using MSO over words via the B\"uchi--Elgot--Trakhtenbrot theorem. Another direction would be to increase the expressivity of the grammar, using something like conjunctive grammars. A third approach would be to use something like substructural logic or Lambek grammars, then study the behavior of Levenshtein edit distance and modal reachability in those systems.
+
 \clearpage\section{Related Work}\label{sec:related}
 
-Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, (6) decoding and finally (7) neural program repair.
-
-\subsection{CFL reachability}
-
-Our work is most closely related to the literature on CFL reachability. For a comprehensive overview, see Zhang and Su~\cite{zhang2017context}. In brief, the CFL reachability problem seeks to determine, given an edge-labeled graph and distinguished vertex pair, $\langle v, v' \rangle$, whether there is some path $v \rightsquigarrow v'$ whose concatenated edge labels are contained in the CFL. This problem has broad applications to program analysis~\cite{kodumal2004set, reps1998program} and, as we show in this work, the problem of syntax error repair.
-
-From a complexity-theoretic perpsective, the CFL reachability problem is known to be subcubic~\cite{chistikov2022subcubic} with polylogarithmic time factors. Koutrus and Deep~\cite{koutris2023fine} present a fine-grained complexity analysis, with concurrent work by Istomina et al.~\cite{istomina2023fine} expanding on fine-grained reductions. Muravev and Grigorev explore how to accelerate this on a GPU~\cite{muravev2025universal}.
-
-Conspicuously missing from literature on CFL reachability, seems to be the connection to the Bar-Hillel construction, star-free regular expressions, or the use of Brzozowski's derivative for incremental decoding - our work draws a threefold connection between well-known techniques in (1) formal langauge theory, (2) program analysis and (3) incremental decoding. The proof of Theorem~\ref{thm:parallel_decision_complexity} is a novel proof of witnessability for finite langauge intersections which borrows the matrix multiplication technique from CFL reachability to construct a star-free regular expression, which we then decode using the Brzozowski derivative. This technique admits an extremely fast and simple syntax repair implementation which is highly compatible with left-to-right incremental decoding techniques in probabilistic langauge modeling.
+Our work draws a threefold connection between well-known techniques in (1) formal langauge theory, (2) program analysis and (3) incremental decoding.
+%Three important questions arise when repairing syntax errors: (1) is the program broken in the first place? (2) if so, where are the errors located? (3) how should those locations then be altered? Those questions are addressed by three theoretical areas, (1)~parsing, (2)~language equations and (3)~syntax repair. We survey each of those areas, then turn our attention to more engineering-oriented research, including (4) string solving, (5) error-correction, (6) decoding and finally (7) neural program repair.
 
 \subsection{Parsing}
 
@@ -1130,15 +1129,23 @@ General CFL parsing allows ambiguity (non-unique trees) and can be formulated as
 
 As shown by Valiant~\cite{valiant1975general}, Lee~\cite{lee2002fast} and others, general CFL recognition is in some sense equivalent to binary matrix multiplication, another well-studied combinatorial problem with broad applications, known to be at worst subcubic. This reduction opens the door to a range of complexity-theoretic speedups to CFL recognition, however large constants tend to limit their practical utility.
 
-From a more applied perspective, parsers are ubiquitous in present-day software engineering, but none are designed to handle arbitrary CFGs or recover from arbitrary errors. Parr and Quong introduce ANTLR~\cite{parr1995antlr} which can handle LL(k) grammars and offers an IDE plugin with limited support for error recovery. Scott and Johnstone~\cite{scott2010gll} introduce GLL parsing, which supports linear-time parsing for LL grammars and cubic for arbitrary CFGs, but does not support error correction. Inspired by their work, we introduce a method for repairing small syntax errors in arbitrary CFLs.
+From a more applied perspective, parsers are ubiquitous in software engineering, but none are designed to handle arbitrary CFGs or recover from arbitrary errors. Parr and Quong introduce ANTLR~\cite{parr1995antlr} which can handle LL(k) grammars and offers an IDE plugin with limited support for error recovery. Scott and Johnstone~\cite{scott2010gll} introduce GLL parsing, which supports linear-time parsing for LL grammars and cubic for arbitrary CFGs, but does not support error correction. Inspired by their work, we introduce a method for repairing small syntax errors in arbitrary CFLs.
 
-\clearpage\subsection{Language equations}
+\subsection{CFL reachability}
+
+Our work is most closely related to the literature on CFL reachability. For a comprehensive overview, see Zhang and Su~\cite{zhang2017context}. In brief, the CFL reachability problem seeks to determine, given an edge-labeled graph and distinguished vertex pair, $\langle v, v' \rangle$, whether there is some path $v \rightsquigarrow v'$ whose concatenated edge labels are contained in the CFL. This problem has broad applications to program analysis~\cite{kodumal2004set, reps1998program} and, as we show in this work, the problem of syntax error repair.
+
+From a complexity-theoretic perpsective, the CFL reachability problem is known to be subcubic~\cite{chistikov2022subcubic} with polylogarithmic time factors. Koutrus and Deep~\cite{koutris2023fine} present a fine-grained complexity analysis, with concurrent work by Istomina et al.~\cite{istomina2023fine} expanding on fine-grained reductions. Muravev and Grigorev explore how to accelerate this on a GPU~\cite{muravev2025universal}.
+
+Conspicuously missing from literature on CFL reachability, seems to be the connection to the Bar-Hillel construction, star-free regular expressions, or the use of Brzozowski's derivative for incremental decoding. The proof of Theorem~\ref{thm:parallel_decision_complexity} is a constructive proof of repairability which reuses the matrix multiplication technique from CFL reachability to build a star-free regular expression, which we then decode using the Brzozowski derivative. This technique admits an extremely fast and simple syntax repair implementation which is highly compatible with left-to-right incremental decoding techniques in probabilistic langauge modeling.
+
+\subsection{Language equations}
 
 Language equations are a powerful tool for reasoning about formal languages and their inhabitants. First proposed by Ginsburg et al.~\cite{ginsburg1962two} for the ALGOL language, language equations are essentially systems of inequalities with variables representing \textit{holes}, i.e., unknown values, in the language or grammar. Solutions to these equations can be obtained using various fixpoint techniques, yielding members of the language. This insight reveals the true algebraic nature of CFLs and their cousins.
 
 Being an algebraic formalism, language equations naturally give rise to a kind of calculus, vaguely reminiscent of Leibniz' and Newton's. First studied by Brzozowski~\cite{brzozowski1964derivatives, brzozowski1980equations} and Antimirov~\cite{antimirov1996partial}, one can take the derivative of a language equation, which can be interpreted as a kind of continuation or language quotient, revealing the suffixes that complete a given prefix. This technique leads to an elegant family of algorithms for incremental parsing~\cite{might2011parsing, adams2016complexity}.
 
-Bar-Hillel~\cite{bar1961formal} establishes the closure of CFLs under intersection with regular languages, but does not elaborate on how to construct the corresponding grammar in order to recognize it. Salomaa~\cite{salomaa1973formal} and Pasti et al.~\cite{pasti2023intersection} provide helpful insights into the construction of the intersection grammar, and Nederhof and Satta~\cite{nederhof2004language} specifically consider finite CFL intersections, but neither considers finite language intersections. Our work specializes Bar-Hillel intersections to finite langauge intersections in general, and Levenshtein automata in particular, and more generally acyclic automata using a refinement of Salomaa's construction~\cite{salomaa1973formal}.
+Bar-Hillel~\cite{bar1961formal} establishes the closure of CFLs under intersection with regular languages, but does not elaborate on how to construct the corresponding grammar in order to recognize it. Salomaa~\cite{salomaa1973formal} and Pasti et al.~\cite{pasti2023intersection} provide helpful insights into the construction of the intersection grammar, and Nederhof and Satta~\cite{nederhof2004language} specifically consider finite CFL intersections, but do not recognize the connection to CFL reachability. Our work specializes Bar-Hillel intersections to finite langauge intersections in general, and Levenshtein automata in particular, and more generally acyclic automata using a refinement of Salomaa's construction~\cite{salomaa1973formal} via CFL reachability.
 
 More concretely, we restrict our attention to language equations over CFLs whose variables coincide with edit locations in the source code of a computer program, and solutions correspond to syntax repairs. While prior work has studied the use of language equations for parsing~\cite{might2011parsing}, to our knowledge they were never specifically applied to code completion or syntax error correction.
 
@@ -1160,7 +1167,7 @@ Zhang et al.~\cite{zhang2023ordinalfix} introduce OrdinalFix, which uses CFL rea
 %
 %Our work focuses on errors arising from human factors in computer programming, in particular \textit{syntax error correction}, which is the problem of fixing partially corrupted programs. Modern research on error correction, however, can be traced back to the early days of coding theory when researchers designed \textit{error-correcting codes} (ECCs) to denoise transmission errors induced by external interference, e.g., collision with a high-energy proton, manipulation by an adversary or even typographical mistake. In this context, \textit{code} can be any logical representation for communicating information between two parties (such as a human and a computer), and an ECC is a carefully-designed scheme which ensures that even if some portion of the message should become corrupted, one can still recover the original message by solving a linear system of equations. When designing ECCs, one typically assumes a noise model over a certain sample space, such as the Hamming~\cite{titsias2017hamming} or Levenshtein~\cite{levenshtein1966binary, becerra2008learning, barlev2021levenshtein} balls, from which we draw inspiration for this work.
 
-\clearpage\subsection{Decoding}
+\subsection{Decoding}
 
 Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, the goal is find the maximum probability samples. A classic example is Viterbi decoding, which is used to find the most likely path through a hidden Markov model (HMM), a kind of weighted automaton.
 
@@ -1170,7 +1177,9 @@ A popular solution to k-best decoding in the NLP literature is a technique calle
 
 An alternate line of work originates from combinatorics~\cite{hickey1983uniform, gore1997quasi} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. Unlike our method, distinctness or convergence guarantees for arbitrary finite CFLs are not provided.
 
-A third approach would be to use some form of constrained decoding such as sequential Monte Carlo (SMC) to steer a transformer-based LLM, as proposed by Lew et al.~\cite{lew2023sequential}. This technique shows promise for constrained decoding, however distinctly sampling from an LLM is slow and still unclear how to do properly, being a fundamentally non-Markovian process. One solution proposed by Shi and Bieber~\cite{shi2020incremental} assumes trace injectivity and constructs a trie, however can introduce a significant latency overhead.
+A third approach would be to use some form of constrained decoding~\cite{loula2025syntactic} such as sequential Monte Carlo (SMC) to steer a transformer-based LLM, as proposed by Lew et al.~\cite{lew2023sequential}. These techniques show promise for constrained decoding, but distinctly sampling from an LLM fundamentally non-Markovian, however these methods can introduce a significant latency overhead.
+
+The question of whether to use left-to-right decoding or some other strategy is still not fully resolved in the machine learning community. An alternate class of flow-based or discrete denoising diffusion models~\cite{austin2021structured} sample multiple edits at random locations at each step, with recent applications to code generation. Very recent work by Havasi et al.~\cite{havasi2025edit} adapt this to the Levenshtein edit model, but do not work with CFGs directly.
 
 %Our approach is complementary to existing work in constrained decoding. The bijection proposed in Eq.~\ref{eq:pairing} guarantees that all repairs are well-formed and converge linearly to the exact top-k maximum probability samples. This method is completely stateless and can be used to enumerate a bounded Levenshtein ball with linear parallelization speedup. Alternately, in the case of approximate ranked repair over a very large sample space, this technique can be adapted to sample with high probability a representative subset of the most likely sentences in a finite but large PCFG.
 
@@ -1178,7 +1187,7 @@ A third approach would be to use some form of constrained decoding such as seque
 
 A number of approximate repair techniques have been introduced using neural models to predict the most likely repair~\cite{allamanis2021self, chirkova2021empirical, drain2021generating}. These approaches typically employ large language models (LLMs) and treat the problem as a sequence-to-sequence transformation. While capable of generating natural repairs, these models are susceptible to misgeneralization, costly to train, and challenging to customize thereafter. Furthermore, the generated repairs are not necessarily sound without additional filtering, and we observe the released models often hallucinate false positive repairs.
 
-In particular, two papers stand out being closely related to our own: Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised learning to generate synthetic errors in clean code and fixes them. This reduces the need for pairwise training data, but generalizes poorly to lengthy or out-of-distribution repairs. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest far more repairs at much higher precision.
+Two prior works specifically address syntax repair, Break-It-Fix-It (BIFI)~\cite{yasunaga2021break} and Seq2Parse~\cite{sakkas2022seq2parse}. BIFI adapts techniques from semi-supervised learning to generate synthetic errors in clean code and fixes them. This reduces the need for pairwise training data, but generalizes poorly to lengthy or out-of-distribution repairs. Seq2Parse combines a transformer-based model with an augmented version of the Early parser to suggest error rules, but only suggests a single repair. Our work differs from both in that we suggest far more repairs at much higher precision.
 
 Recent work by Merrill et al.~\cite{merrill2022saturated} and Chiang et al.~\cite{chiang2023tighter} suggest that the issue with generalization may be more foundational: transformer-based language models, a popular class of neural language models used in probabilistic program repair, are fundamentally less expressive than context-free grammars, which formally describe the syntax of most programming languages. This suggests such models, despite their useful approximation properties, are ill-suited for the task of end-to-end syntax repair. Yet, as our work demonstrates, they can be useful for resolving ambiguity between valid repairs of differing probability or reranking a set of repair candidates drawn from a CFL.
 
@@ -1481,7 +1490,7 @@ $\err\sigma$ & Syntactically invalid input string with a known target language. 
 $|\sigma|$ & Length (number of terminals) of string, $\sigma$. \\
 $G^*$ & Chomsky normal form (CNF) grammar. \\
 $G_\cap$ & Intersection grammar formed by intersecting an automaton with a CFG. \\
-$\ell_\cap$ & Intersection langauge generated by some $G_\cap$. \\
+$\ell_\cap, \mathcal{L}(G_\cap)$ & Intersection langauge generated by some $G_\cap$. \\
 $L(\err\sigma, k)$ & Levenshtein automaton of radius $k$ for a broken string, $\err\sigma$. \\
 ${\color{orange}[\ldots]}$ & Orange text is related to the nominal predicate in the Levenshtein automaton.\\
 $d_{\max}$ & Maximum permitted Levenshtein edit distance (repair radius). \\
