@@ -1082,7 +1082,7 @@ There is a clear tradeoff between latency and precision for any repair model. Wh
 
 Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate reranker, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the reranker the best chance of surfacing them to the user.
 
-One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy is a complete nonstarter. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes an tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
+One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy would be mistaken. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes an tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
 
 Likewise, methods that rely decoding on large language models appear to face a similar dilemma. As we show in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
 
@@ -1205,7 +1205,7 @@ We have implemented our approach and demonstrated its viability as a tool for sy
 
 \section*{Data-Availability Statement}
 
-An artifact for Tidyparse is currently available as a browser application,~\footnote{\url{https://tidyparse.github.io/python}} supporting single-line syntax repairs in the Python language. The data, source code and transformer models necessary for reproducing the full experiments contained in this paper will be provided for artifact review.
+An artifact for Tidyparse is currently available as a browser application,~\footnote{\url{https://tidyparse.github.io/python}} supporting single-line syntax repairs in the Python language. The data, source code and models necessary for reproducing the full experiments contained in this paper will be provided, contingent upon artifact review.
 
 \clearpage\bibliography{../bib/acmart}\vspace{-1cm}
 
