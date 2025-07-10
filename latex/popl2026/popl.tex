@@ -99,7 +99,7 @@ Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q
 There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
 
 \begin{definition}[Star-free GRE fragment]
-  Let \( e \) be an expression defined by the grammar:
+  Let \( e: E \) be an expression defined by the grammar:
   \[
     e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
   \]
@@ -123,7 +123,7 @@ where $\varepsilon$ is the empty symbol. Semantically, we interpret these expres
   \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$.}
 \end{definition}\vspace{-0.2cm}
 
-\noindent Brzozowski~\cite{brzozowski1964derivatives} introduces an operator, $\partial$, which lets us quotient a language by some prefix,
+\noindent Brzozowski~\cite{brzozowski1964derivatives} introduces an operator, $\partial: E \times \Sigma \rightarrow E$, which quotients a language by some prefix,
 
 \begin{definition}[Brzozowski, 1964]
   To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
@@ -845,11 +845,11 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 \clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
-The foregoing architecture can be translated to series of high-performance GPU kernels. Our strategy will be to maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated location of a shared buffer without locking or external communication.
+The foregoing architecture can be translated to series of high-performance GPU kernels. Our strategy will be to maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated portion of a shared buffer without locking or external communication.
 
-We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. On a GPU, all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. The main challenge of GPU programming then, becomes careful memory management and efficiently mapping aggregate datatypes to and from the integers. Conceptually, each $\langle r, c, v\rangle$ triple will be dispatched to a single GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Following the PRAM model used in Theorem~\ref{thm:parallel_decision_complexity}, each thread will correspond to a single processor, with $|Q|^2|V|$ threads in total. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency.
+We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. On a GPU, all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. The main challenge of GPU programming then, becomes careful memory management and efficiently mapping aggregate datatypes to and from the integers. Conceptually, each $\langle r, c, v\rangle$ triple will be dispatched to a single GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Consistent with the PRAM model used in Theorem~\ref{thm:parallel_decision_complexity}, each thread will correspond to a single processor, with $|Q|^2|V|$ threads in total. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency.
 
-For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define two indices $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$ and $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and bijections $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$ for getting into and out of the integer domain -- these we omit for brevity but are trivial to define.
+For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define characteristic functions $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$, $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and index sets $\Sigma \leftrightarrow \mathbb{N}$, $V \leftrightarrow \mathbb{N}$, $Q \leftrightarrow \mathbb{N}$ for getting in and out of the \texttt{uint} domain, with $|V|, |Q| \lesssim 10^3$ adjustable upward if memory permits.
 
 The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout testifies to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3)~the next five bits memoize the minimum $i_{\min}$ such that $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
 
@@ -865,7 +865,7 @@ Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculat
 
 \noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers should also be tied to locations in the parse chart $M[q, q', v]$ to recover the terminal subsets for unit productions.
 
-In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V|=10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
+In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V| \lesssim 10^6\times10^3\times 32 \text{ bits} \approx \text{4 GB}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
 
 \clearpage\subsection{Training the reranker}
 
@@ -922,7 +922,7 @@ We call our method Tidyparse and consider the following research questions:
 \item \textbf{RQ 3}: Which design choices are most significant? (e.g., decoding, reranking, parallelism)
 \end{itemize}
 
-We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on repair precision.
+We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on precision and latency.
 
 \subsection{Experimental setup}
 
@@ -1092,7 +1092,7 @@ Taken together, these results provide strong evidence to support the central cla
 
 \clearpage\subsection{Limitations and future work}
 
-We identify four broad categories of limitations Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integration.
+We identify four broad categories of limitations in Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integration.
 
 \subsubsection{Naturalness}
 
