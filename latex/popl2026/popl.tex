@@ -246,7 +246,7 @@ Let us now restate our informal description of the syntax repair problem in more
 Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., letting $\Delta$ be the Levenshtein metric and $\mathcal{L}\big(L(\err\sigma, d)\big) = \{\sigma' \mid \Delta(\err{\sigma}, \sigma') \leq d\}$ be the Levenshtein $d$-ball, we seek to find $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$.
 \end{definition}
 
-As the admissible set $\ell_\cap$ is typically under-constrained, we want a procedure that surfaces natural and valid repairs over unnatural but valid repairs:
+As the intersection language, $\ell_\cap$, typically contains a large number of possible repairs, we want a procedure that surfaces both natural and valid repairs over unnatural but valid repairs:
 
 \begin{definition}[Ranked repair]\label{def:ranked-repair}
 Given a finite language $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, find the top-$k$ maximum probability repairs. That is,
@@ -470,7 +470,7 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
   \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
 \end{prooftree}
 
-Using a symbolic predicate in the construction of the NFA avoids the unnecessary the creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Thm.~\ref{thm:gre_def}).
+Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:gre_def}).
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
@@ -982,23 +982,23 @@ The main lesson we draw from \S~\ref{sec:eval} is that it is feasible to signifi
 
 Our approach uses a grammar and a high-throughput c-gram decoder to fetch the initial candidate repairs, then employs the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in real-world programming languages and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs and ultimately, a smoother user experience.
 
-Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the admissible set is small enough to be completely enumerated and ranked. For larger radii, we can still achieve state-of-the-art precision by sampling a representative subset within a fixed timeout.
+Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than one-shot neural repair. This is especially true for small-radii Levenshtein balls, where the intersection language  is small enough to be completely enumerated and ranked. For larger radii, we can still achieve state-of-the-art precision by sampling a representative subset within a fixed timeout.
 
-There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@10 of our method is competitive with BIFI's Precision@$2\times 10^4$, while requiring only a fraction of the inference time. Unlike neural syntax repair models, Tidyparse can sample directly from the language specification without any hallucination. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which are easily overlooked by neural models.
+There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@10 of our method is competitive with BIFI's Precision@$2\times 10^4$, while requiring only a fraction of the inference time. Unlike neural syntax repair models, Tidyparse can sample directly from the language specification, removing the possibility of hallucination. The emphasis on completeness is especially useful for discovering small or contextually unlikely repairs, which are easily overlooked by neural models.
 
 Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate reranker, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the reranker the best chance of surfacing them to the user.
 
 One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy would be mistaken. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes a tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
 
-Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As we show in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
+Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
 
 %As shown in Fig.~\ref{fig:sankey}, about 27\% of repairs with fewer than 4 edits were outside the language intersection, which is comprised of all repairs within distance LED+1. This could be fixed by increasing the edit distance, but we find that LED+2 reduces overall repair precision.
 
-Taken together, these results provide strong evidence to support the central claim made in the introduction (\S~\ref{sec:intro}): \textit{existing syntax repair methods simply generate far too few repairs to be effective}. By extensively generating and evaluating a large quantity of repairs within a fixed edit distance, we show it is possible to predict the author's intent far more reliably, with greater precision and lower latency than competing methods which rely solely on transformer-based neural networks.
+Taken together, these results provide strong evidence to support the central claim made in the introduction (\S~\ref{sec:intro}): \textit{existing syntax repair methods simply generate far too few repairs to be effective}. By extensively generating and evaluating a large quantity of repairs within a fixed edit distance, we show it is possible to predict the author's intent far more reliably, with greater precision and lower latency than competing methods which rely solely on transformer-based neural networks.% A listing of repairs that were correctly predicted by our method can be found in Appendix~\ref{sec:exaple_repairs}.\vspace{-2cm}
 
 \clearpage\subsection{Limitations and future work}
 
-We identify four broad categories of limitations in Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integration.
+We identify three broad categories of limitations in Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integration.
 
 \subsubsection{Naturalness}
 
@@ -1114,7 +1114,7 @@ An artifact for Tidyparse is currently available as a browser application,~ supp
 
 \pagebreak\appendix
 
-\section{Levenshtein automata matrices}
+\section{Levenshtein topology and matrices}
 
 These are useful for visually checking different implementations.
 
@@ -1330,7 +1330,7 @@ class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
 
 \clearpage\section{Raw data}\label{sec:raw_prec_data}
 
-Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the admissible set or a 10 second timeout is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
+Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the intersection or a 10 second timeout is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
 
 \begin{table}[!h]
 \centering
