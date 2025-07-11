@@ -154,27 +154,31 @@ Primarily, this gadget was designed to handle membership queries, for which purp
 \begin{theorem}[Recognition]
   For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
 
-  \[
+  \begin{equation}
     \partial_\sigma (e): E \rightarrow E = \begin{cases}e &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a e) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
-  \]
+  \end{equation}
 \end{theorem}
 
 Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Less well known, perhaps, is that Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
 
 \begin{theorem}[Generation]\label{thm:generation}
-  For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:\\
+  For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:
 
-  \hspace{1.6cm}$\texttt{follow}(e): E \rightarrow 2^\Sigma$ = \begin{cases}
+\begin{equation}
+  \hspace{-1cm}\texttt{follow}(e): E \rightarrow 2^\Sigma = \begin{cases}
    \{e\} &\text{ if } e \in \Sigma \\
    \texttt{follow}(x) &\text{ if } e = x \cdot z\\
    \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
-  \end{cases}\\\\
+  \end{cases}
+\end{equation}
 
-  \hspace{1.6cm}$\texttt{choose}(e): E \rightarrow \Sigma^+$ = \begin{cases}
+\begin{equation}\label{eq:choose}
+  \texttt{choose}(e): E \rightarrow \Sigma^+ = \begin{cases}
    e &\text{ if } e \in \Sigma \\
    \big(s \stackrel{\$}{\gets} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
    \texttt{choose}\big(e' \stackrel{\$}{\gets} \{x, z\}\big) &\text{ if } e = x \lor z
   \end{cases}
+\end{equation}
 \end{theorem}
 
 Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however, any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
@@ -300,7 +304,7 @@ The key to solving this problem is to treat finite language intersections as mat
   \begin{align}
     S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
   \end{align}
-  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Theorem~\ref{thm:generation}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the algorithm terminates in $\mathcal{O}(\log^2 |Q| + \log |Q||V|)$ parallel time with $\mathcal{O}(|Q|^2|V|)$ processors.
+  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Eq.~\ref{eq:choose}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the decision procedure terminates in $\mathcal{O}(\log^2 |Q| + \log |Q||V|)$ parallel time with $\mathcal{O}(|Q|^2|V|)$ processors.
 \end{proof}\clearpage
 
 \section{Examples}
@@ -426,7 +430,7 @@ To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to t
   &= 1 \cdot \{+, \times\} \cdot \{0, 1\}
 \end{align*}
 
-\noindent Finally, to recover a witness, we can simply $\texttt{choose}\big(1 \cdot \{+, \times\} \cdot \{0, 1\}\big)$.
+\noindent Finally, to recover a witness, we can simply $\texttt{choose}\big(1 \cdot \{+, \times\} \cdot \{0, 1\}\big)$  (see Eq.~\ref{eq:choose}).
 
 \subsection{Repair as intersection}\label{sec:repair_ex}
 
@@ -525,7 +529,7 @@ Under such an ordering, the adjacency matrix takes an upper triangular form and 
 From the reachability matrix we can construct the parse chart via matrix exponentiation. We note that n-step reachability constrains n-step parseability, i.e., $\sum_{i=0}^n A^i[q, q'] = \ws \vdash M_n[q, q', v] = \ws$, thus we can avoid substantial work via memoization. In this example, since $M_\infty[q_{00}, q_{31}, S] = \bs$, this implies that $\mathcal{L}(A)\cap \mathcal{L}(G') \neq \varnothing$, hence $\text{LED}(\sigma, G) = 1$. Using the same matrix, we will then perform a second pass to construct regular expressions representing finite languages for each nonempty constituent. Once again, we can skip $\langle q, q', v\rangle$ entries when $M_\infty[q, q', v] = \ws$ to hasten convergence.
 
 \enlargethispage{4\baselineskip}
-Just as before, we will define $\oplus, \otimes$ over GRE vectors, where $X \otimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \oplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $S_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(S_\cap)$. In this case there are only a few choices, but in general, there can be a vast multitude.
+Just as before, we will define $\oplus, \otimes$ over GRE vectors, where $X \otimes Z = [X_x\cdot Z_z \mid (w\rightarrow xz) \in P]_{w\in V}$ and $X \oplus Z= [ X_w\vee Z_w ]_{w\in V}$. Finally, we will repeat the matrix exponential, using $M_\infty$ in the binary domain as a guide. This allows us to construct the regular expression tree for $S_\cap = q_{00}Sq_{20}\vee q_{00}Sq_{31}$ shown in Fig.~\ref{fig:re_tree}. Once this regex is constructed, decoding becomes simply a matter of invoking \texttt{choose}$(S_\cap)$. In this case, there are only a few choices, but in general, there can be a vast multitude.
 
 \clearpage
 
@@ -815,9 +819,9 @@ The ensuing method falls under the umbrella of the \textit{learning-to-rank} (LT
 
 The reranker employs a transformer-encoder architecture to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repair, denoted $\sigma: \ell_\cap$) to a $p$-dimensional real vector space $\mathbb{R}^p$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function, $\text{E}_\theta$, which takes a string and a positional encoding, and returns an embedding, $\text{E}_\theta: (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p$ where $\theta$ are learnable parameters. To these, we will introduce a Levenshtein alignment $(\text{LA}: \Sigma^n \times \Sigma^m \rightarrow \mathbb{N}^{[m, n]})$ as a third argument that, when applied to a query-document pair, will produce a vector tracking edit locations and types. Finally, a multilayer perceptron $(\text{MLP}_\theta: \mathbb{R}^p \times \mathbb{R}^p \rightarrow \mathbb{R}^+)$ processes the embedding to produce a relevance score:
 
-\[
+\begin{equation}
 f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ = \text{MLP}_{\theta}\Big(\text{E}_\theta\big(\err\sigma, [i]_{i\in [0, n)}\big), \text{E}_\theta'\big(\sigma, [i]_{i \in [0, m)}, \text{LA}(\err\sigma, \sigma)\big)\Big)
-\]
+\end{equation}
 
 \noindent Our training objective will be to minimize the tempered \textit{softmax} or listwise cross-entropy loss,
 
