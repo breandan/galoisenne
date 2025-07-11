@@ -62,7 +62,7 @@ We introduce a new technique for repairing syntax errors in arbitrary context-fr
 
 \section{Introduction}\label{sec:intro}
 
-When programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. In the following paper, we propose to solve this problem automatically by generating a list of candidate repairs that contains with high probability the true repair, assuming this repair differs by no more than a few edits from the broken source code.
+When programming, one invariably encounters a recurring scenario in which the editor occupies an unparseable state. Faced with this predicament, programmers must spend time to locate and repair the error before proceeding. In the following paper, we propose to solve this problem automatically by generating a short list of suggestions that anticipate with high probability the author's intended repair, assuming this repair differs by no more than a few edits from the broken source code.
 
 Prior research on syntax repair can be classified into exact and approximate methods. In the former, specialized parsers with error recovery rules are used to propose a single, least-cost repair. While appealing for their interpretability and well-understood algorithmic properties, these methods are unable to handle ambiguity and must rely on relatively brittle heuristics to select the repair.
 
@@ -80,7 +80,7 @@ Thus we arrive at the core problem this paper aims to solve: how can we quickly 
   }\label{fig:arch_simp}\vspace{-0.2cm}
 \end{figure}
 
-To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair which is readily executable on off-the-shelf GPUs. We provide a reference implementation of our tool on the WebGPU platform and show these computational resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
+To operationalize this technique, we design, develop and benchmark a new developer tool for syntax repair which is readily executable on multicore CPUs and GPUs. We provide a reference implementation of our tool and show these parallel computing resources, which typically sit idle during text editing, can be profitably used to accelerate real-time program repair.
 
 Finally, we show the efficacy of this technique for locating and repairing syntax errors of up to three edits and eighty lexical tokens in under ten seconds, practical for a few lines of source code in realistic programming languages. Our work shows this technique is highly effective at predicting the human repair across a dataset of Python source code, up to 5x more accurately than previous state-of-the-art methods at comparable latency and compute thresholds.
 
@@ -1010,7 +1010,7 @@ The reranker is currently evaluated over lexical tokens, but we expect that a mo
 
 Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, without any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
 
-Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with encoding tricks and a more efficient GPU implementation, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton, then eliminating unnecessary productions, is a critical factor in scaling up our technique.
+Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with various encoding tricks and a more efficient GPU implementation, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton and using an efficient representation, are critical factors in scaling up our technique.
 
 \subsubsection{Toolchain integration}
 
