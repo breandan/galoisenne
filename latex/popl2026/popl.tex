@@ -10,7 +10,7 @@
 %\documentclass[sigplan,review]{acmart}\settopmatter{printfolios=true}
 %% For final camera-ready submission, w/ required CCS and ACM Reference
 %\documentclass[sigplan,nonacm]{acmart}
-\documentclass[sigplan,review,acmsmall,nonacm,screen,anonymous]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
+\documentclass[sigplan,acmsmall,nonacm,screen]{acmart}\settopmatter{printfolios=false,printccs=false,printacmref=false}
 
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
@@ -40,9 +40,9 @@
 %\usepackage{draftwatermark}
 %\SetWatermarkLightness{0.75}
 %\SetWatermarkText{DRAFT}
-%\makeatletter
-%\let\@authorsaddresses\@empty
-%\makeatother
+\makeatletter
+\let\@authorsaddresses\@empty
+\makeatother
 
 \begin{document}
 %
@@ -338,8 +338,8 @@ Since the word is predetermined, we just need to keep track of nonterminal subse
 
 \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. Omitting the exponentiation-by-squaring detail, the ordinary fixedpoint iteration simply fills successive diagonals:\vspace{-10pt}
 
-\begin{align*}
-  M_0=
+\begin{equation}
+  \hspace{-0.2cm}M_0=
   \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
     \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing  \\
     \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots       \\
@@ -353,7 +353,7 @@ Since the word is predetermined, we just need to keep track of nonterminal subse
                 &              &             &        & \Lambda      \\
                 &              &             &        & \hat\sigma_n \\
     \varnothing & \Cdots       &             &        & \varnothing
-  \end{pNiceMatrix}\,,\,\ldots & \hspace{-0.6cm}\,,\,M_\infty =
+  \end{pNiceMatrix}\,,\,\ldots & \,,\,M_\infty =
   \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
     \varnothing & \hat\sigma_1 & \Lambda     & \Cdots & \Lambda^*_\sigma \\
     \Vdots      & \Ddots       & \Ddots      & \Ddots & \Vdots           \\
@@ -361,7 +361,7 @@ Since the word is predetermined, we just need to keep track of nonterminal subse
                 &              &             &        & \hat\sigma_n     \\
     \varnothing & \Cdots       &             &        & \varnothing
   \end{pNiceMatrix}
-\end{align*}
+\end{equation}
 
 Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.} decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{Grune2008}.
 
@@ -370,7 +370,7 @@ Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sig
 Let us now consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. This problem we call \textit{completion}. Formally,
 
 \begin{definition}[Completion]
-  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all inhabitants $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid inhabitants, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
+  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all members $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid members, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
 \end{definition}
 
 Here, the FSA takes a similar shape but can have multiple arcs between adjacent states, e.g.:
@@ -551,24 +551,28 @@ Such a sampler will almost always yield $a b$, but most of $\mathcal{L}(G)$ is c
 
 \subsection{Exact enumeration}
 
-To correct for mode collapse, a brute force solution would be to simply generate every tree. While the whole set can be materialized in some cases when the intersection language is small, this strategy is clearly suboptimal due to its worst-case complexity. Nevertheless, it is useful for checking completeness. To enumerate trees, we first need the total number of trees, which is denoted $|e|$.
-
-\begin{definition}[Cardinality]
-  $|e|: E \rightarrow \mathbb{N} =$ \begin{cases}
-    1           & \text{if } e \in \Sigma \\
-    x \times z  & \text{if } e = x \cdot z \\
-    x + z       & \text{if } e = x \vee z
-  \end{cases}\\
-\end{definition}
+To correct for mode collapse, a brute force solution would be to simply generate every tree. While the whole set can be materialized in some cases when the intersection language is small, this strategy is clearly suboptimal in the worst-case. Nevertheless, it is useful for checking completeness.
 
 \begin{theorem}[Enumeration]
-  To enumerate, we can invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:\\
+  We will first denote the number of unique trees in a regex as $|e|$:
 
-  $\texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^*$ = \begin{cases}
-       e &\text{if } e \in \Sigma \\
-       \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
-       \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
-  \end{cases}
+  \begin{equation}
+    |e|: E \rightarrow \mathbb{N} = \begin{cases}
+        1           & \text{if } e \in \Sigma \\
+        x \times z  & \text{if } e = x \cdot z \\
+        x + z       & \text{if } e = x \vee z
+    \end{cases}
+  \end{equation}
+
+  To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|R|}\{\texttt{enum}(R, i)\}$:
+
+  \begin{equation}
+    \texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^* = \begin{cases}
+         e &\text{if } e \in \Sigma \\
+         \texttt{enum}\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
+         \texttt{enum}\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
+    \end{cases}
+  \end{equation}
 \end{theorem}
 
 This can be converted to a uniform sampler by drawing integers without replacement using a pseudorandom number generator, however, if $|e|$ is very large, \texttt{enum} can fail to capture modes.
@@ -1006,7 +1010,7 @@ We identify three broad categories of limitations in Tidyparse and suggest direc
 
 \subsubsection{Naturalness}
 
-Firstly, Tidyparse does not currently support intersections between weighted CFGs and weighted finite automata, a la Pasti et al.~\cite{pasti2023intersection}. This feature would allow us to put transition probabilities on the Levenshtein automaton corresponding to edit probability, then construct a weighted intersection grammar. With this, one could preemptively discard unlikely productions from $G_\cap$ to reduce the complexity of intersection in exchange for relaxed completeness. We also hope to explore alternate sampling strategies such as sequential Monte-Carlo~\cite{lew2023sequential} and denoising diffusion models~\cite{austin2021structured} with structured sampling priors for Levenshtein edits.
+Firstly, Tidyparse does not currently support intersections between weighted CFGs and weighted finite automata, a la Pasti et al.~\cite{pasti2023intersection}. This feature would allow us to put transition probabilities on the Levenshtein automaton corresponding to edit probability, then construct a weighted intersection grammar. With this, one could preemptively discard unlikely productions from $G_\cap$ to reduce the complexity of intersection in exchange for relaxed completeness. We also hope to explore alternate sampling strategies such as sequential Monte-Carlo~\cite{lew2023sequential} and denoising diffusion models~\cite{austin2021structured} with an inductive bias for structured sampling via Levenshtein edits.
 
 The reranker is currently evaluated over lexical tokens, but we expect that a more precise ranking function could be constructed by incorporating names and numbers from the original source code and then scoring plaintext. Furthermore, the decoder only considers each candidate repair $P_\theta(\sigma')$ in isolation, returning the most probable candidates independent of the original error. This could be improved by conditioning the decoding on the broken sequence ($\err\sigma$), parser error message ($m$), original source ($s$), and possibly other contextual priors to assist sample efficiency.
 
@@ -1060,7 +1064,7 @@ More concretely, we restrict our attention to language equations over CFLs whose
 
 In finite languages, syntax repair corresponds to spelling correction, a more restrictive and largely solved problem. Schulz and Stoyan~\cite{schulz2002fast} construct a finite automaton that returns the nearest dictionary entry by Levenshtein edit distance. Though considerably simpler than syntax correction, their work shares similar challenges and offers insights for handling more general repair scenarios.
 
-When a sentence is grammatically invalid, parsing grows more challenging. Like spelling, the problem is to find the minimum number of edits required to transform an arbitrary string into a syntactically valid one, where validity is defined as containment in a (typically) context-free language. Early work, including Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} propose a dynamic programming algorithm to compute the minimum number of edits required to fix an invalid string. Prior work on error correcting parsers only considers the nearest edit(s), and does not study edits of varying distance in the Levenshtein ball. Furthermore, the problem of repair is not generally well-posed, as there can be many valid solutions. We instead focus on maximum probability Levenshtein-CFL reachability, which attempts to find the most natural repair within a fixed Levenshtein distance.
+When a sentence is grammatically invalid, parsing grows more challenging. Like spelling, the problem is to find the minimum number of edits required to transform an arbitrary string into a syntactically valid one, where validity is defined as containment in a (typically) context-free language. Early work, including Irons~\cite{irons1963error} and Aho~\cite{aho1972minimum} propose a dynamic programming algorithm to compute the minimum number of edits required to fix an invalid string. Prior work on error correcting parsers only considers the nearest edit(s), and does not study edits of varying distance in the Levenshtein ball. Furthermore, the problem of repair is not generally well-posed, as there can be many valid solutions. We instead focus on maximum probability Levenshtein-CFL reachability, which seeks to find the most natural syntactically valid repair within a fixed Levenshtein distance.
 
 Diekmann and Tratt~\cite{diekmann2018dont} present a rule-based syntax repair tool that retrieves the complete set of minimum-cost repairs, but only works for deterministic CFLs, a proper subset of the CFL family which admit a linear-time parser. Their cost model is based on insertion and deletion, and does not consider probability or non-minimal edit distance. Tidyparse can handle arbitrary CFLs and generate repairs within an arbitrary edit distance, using a Levenshtein cost model.
 
