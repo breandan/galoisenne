@@ -44,6 +44,12 @@
 \let\@authorsaddresses\@empty
 \makeatother
 
+% arXiv does not support LuaLaTeX. Use the following options to submit:
+%\pdfextension info {/Creator() /Producer()}
+%\pdfvariable suppressoptionalinfo \numexpr 1+2+4+8+16+32+64+128+256+512 \relax
+% Recompile, then run: sed -e '/PTEX\./s/./ /g' < popl.pdf > tidyparse.pdf
+% Finally, use "Print to PDF" on MacOS Preview.
+
 \begin{document}
 %
 \title{Syntax Repair as Language Intersection}
@@ -1112,11 +1118,7 @@ Our work takes a more pragmatic tack - by incorporating the distance metric into
 
 There is a delicate balance in formal methods between soundness and completeness. Often these two seem at odds because the target language is too expressive to achieve them both simultaneously. In syntax repair, we also care about naturalness. Fortunately, syntax repair is tractable enough to achieve all three by modeling the problem using language intersection. Completeness helps us to avoid missing simple repairs that might be easily overlooked, soundness guarantees all repairs will be valid, and naturalness ensures the most probable repairs receive the highest priority.
 
-We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse is capable of generating repairs for invalid source code in a range of practical languages, in addition to Python. We plan to continue expanding the prototype's autocorrection functionality to cover an even broader range of real-world programming languages. We envision a few primary use cases for it: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
-
-\section*{Data-Availability Statement}
-
-An artifact for Tidyparse is currently available as a browser application,~ supporting single-line syntax repairs in Python~\footnote{\url{https://tidyparse.github.io/python}} and other CFLs.~\footnote{\url{https://tidyparse.github.io/}} The data, source code, and models necessary for reproducing the experimental evaluation will be provided, contingent upon artifact review.
+We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse~\footnote{An artifact for Tidyparse is currently available as a browser application, supporting single-line syntax repairs in Python and other CFLs: \url{https://tidyparse.github.io/}.} is capable of generating repairs for invalid source code in a range of practical languages, in addition to Python. We plan to continue expanding the prototype's autocorrection functionality to cover an even broader range of real-world programming languages. We envision a few primary use cases for it: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
 
 \clearpage\bibliography{../bib/acmart}\vspace{-1cm}
 
