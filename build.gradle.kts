@@ -99,10 +99,10 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:24.2.1")
+        implementation("org.graalvm.js:js:24.2.2")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.10.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.11.0")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
@@ -170,7 +170,7 @@ kotlin {
         implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
         implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
-        val eccVersion = "12.0.0.M3"
+        val eccVersion = "13.0.0"
         implementation("org.eclipse.collections:eclipse-collections-api:$eccVersion")
         implementation("org.eclipse.collections:eclipse-collections:$eccVersion")
 
