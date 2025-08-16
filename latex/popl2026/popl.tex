@@ -376,7 +376,7 @@ Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sig
 Let us now consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. This problem we call \textit{completion}. Formally,
 
 \begin{definition}[Completion]
-  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all members $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^*$ we seek all syntactically valid members, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
+  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all members $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^+$ we seek all syntactically valid members, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
 \end{definition}
 
 Here, the FSA takes a similar shape but can have multiple arcs between adjacent states, e.g.:
@@ -392,10 +392,10 @@ Here, the FSA takes a similar shape but can have multiple arcs between adjacent 
       \draw [->] (00) edge[below]             node{$\sigma_1$} (10);
       \draw [->] (10) edge[below]             node{$\ldots$}   (20);
       \draw [->] (10) edge[below, bend left]  node{$\Sigma_1$} (20);
-      \draw [->] (10) edge[below, bend right] node{$\Sigma_n$} (20);
+      \draw [->] (10) edge[below, bend right] node{$\Sigma_{|\Sigma|}$} (20);
       \draw [->] (20) edge[below]             node{$\ldots$}   (30);
       \draw [->] (20) edge[below, bend left]  node{$\Sigma_1$} (30);
-      \draw [->] (20) edge[below, bend right] node{$\Sigma_n$} (30);
+      \draw [->] (20) edge[below, bend right] node{$\Sigma_{|\Sigma|}$} (30);
     \end{tikzpicture}
   }
 \end{figure}
@@ -758,7 +758,7 @@ The implementation essentially consists of four stages, each dependent on its pr
 \caption{\texttt{reg\_build} pseudocode}
 \label{alg:reg_build}
 \begin{algorithmic}[1]
-  \Require Same as \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}), $M_{\mathbb{B}}[q_\alpha, q_\omega: F, S] = \bs$ for some $q_\omega$, and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
+  \Require Same as \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}), $M_{\mathbb{B}}[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$, and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
   \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
   \State $M: \text{GRE}^{|Q|\times |Q| \times |V|} \gets \big[\{s: \Sigma \mid M[q, q', v] \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land (v\rightarrow s) \in P \land {\color{orange}\varphi(}s{\color{orange})}\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
