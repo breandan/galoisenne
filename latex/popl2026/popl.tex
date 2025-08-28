@@ -181,13 +181,13 @@ Variations on this basic procedure can also be used for functional parsing and r
 \begin{equation}\label{eq:choose}
   \texttt{choose}(e): E \rightarrow \Sigma^+ = \begin{cases}
    e &\text{ if } e \in \Sigma \\
-   \big(s \stackrel{\$}{\gets} \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
-   \texttt{choose}\big(e' \stackrel{\$}{\gets} \{x, z\}\big) &\text{ if } e = x \lor z
+   \big(s \leftsquigarrow \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
+   \texttt{choose}\big(e' \leftsquigarrow \{x, z\}\big) &\text{ if } e = x \lor z
   \end{cases}
 \end{equation}
 \end{theorem}
 
-Here, we use the $\stackrel{\$}{\gets}$ operator to denote probabilistic choice, however, any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
+Here, we use the $\leftsquigarrow$ operator to denote probabilistic choice, however, any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
 
 Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with productions $P(e)$ as follows:
 
@@ -265,7 +265,7 @@ R(\ell_\cap, P_\theta): 2^{\Sigma^*} \times (\Sigma^* \rightarrow \mathbb{R}) \r
 \end{equation}
 \end{definition}
 
-A popular approach to ranked repair involves learning a distribution over strings, however, this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \sim \ell_\cap$, due to the size of the languages involved, it would be intractable to sample either $\ell$ or $\mathcal{L}\big(L(\err\sigma, d)\big)$, reject duplicates, then reject unreachable or invalid edits, and completely out of the question to sample $\sigma \sim \Sigma^*$ as do most neural language models.
+A popular approach to ranked repair involves learning a distribution over strings, however, this is highly sample-inefficient and generalizes poorly to new languages. Approximating a distribution over $\Sigma^*$ forces the model to jointly learn syntax and stylometry. Furthermore, even with an extremely efficient approximate sampler for $\sigma \leftsquigarrow \ell_\cap$, due to the size of the languages involved, it would be intractable to sample either $\ell$ or $\mathcal{L}\big(L(\err\sigma, d)\big)$, reject duplicates, then reject unreachable or invalid edits, and completely out of the question to sample $\sigma \leftsquigarrow \Sigma^*$, as do most neural language models.
 
 As we will demonstrate, the ranked repair problem can be factorized into three subproblems: (1) exact representation, (2) decoding and (3) reranking. Instead of working with strings, we will explicitly construct a grammar which soundly and completely generates $\ell \cap \mathcal{L}\big(L(\err\sigma, d)\big)$, then decode repairs from its language. By ensuring decoding is sufficiently precise and extensive, ensuring the retrieved set contains the true repair can be achieved with a much simpler, syntax-oblivious model. Finally, we will train a language model to rerank the repair candidates and take the top-$k$ results.
 
@@ -1004,7 +1004,7 @@ Although latency and precision are ultimately the deciding usability factors, re
 
 One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy would be mistaken. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes a tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
 
-Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
+Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's Precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
 
 %As shown in Fig.~\ref{fig:sankey}, about 27\% of repairs with fewer than 4 edits were outside the language intersection, which is comprised of all repairs within distance LED+1. This could be fixed by increasing the edit distance, but we find that LED+2 reduces overall repair precision.
 
