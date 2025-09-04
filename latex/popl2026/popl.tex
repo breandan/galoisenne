@@ -775,7 +775,7 @@ The implementation essentially consists of four stages, each dependent on its pr
 \end{algorithmic}
 \end{algorithm}
 
-Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained c-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-$k$ total trajectories are returned.
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained $c$-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-$k$ total trajectories are returned.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
@@ -791,7 +791,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
         \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
         \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
     \Until{interrupted or $\mathcal{E}$ is empty.}
-    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by c-gram probability.}
+    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by $c$-gram probability.}
   \end{algorithmic}
 \end{algorithm}
 
@@ -994,7 +994,7 @@ Finally, we investigate the impact of increased parallelism on repair throughput
 
 The main lesson we draw from \S~\ref{sec:eval} is that it is feasible to significantly improve the precision of real-time syntax repair by incorporating syntactic constraints such as edit distance, then sampling and evaluating a large set of candidate repairs using a fast primary decoder and a more intensive secondary reranker. Though sample-efficient, transformer decoding comes at considerable cost to throughput, resulting in fewer repairs being discovered in a fixed amount of time.
 
-Our approach uses a grammar and a high-throughput c-gram decoder to fetch the initial candidate repairs, then employs the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in real-world programming languages and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs and ultimately, a smoother user experience.
+Our approach uses a grammar and a high-throughput $c$-gram decoder to fetch the initial candidate repairs, then employs the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in real-world programming languages and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs and ultimately, a smoother user experience.
 
 Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than single-shot neural repair. This is especially true for small-radii Levenshtein balls, where the intersection language  is small enough to be completely enumerated and ranked. For larger radii, we can still achieve state-of-the-art precision by sampling a representative subset within a fixed timeout.
 
@@ -1004,7 +1004,7 @@ Although latency and precision are ultimately the deciding usability factors, re
 
 One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy would be mistaken. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes a tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
 
-Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive c-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's Precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
+Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive $c$-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's Precision@$2\times 10^4$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
 
 %As shown in Fig.~\ref{fig:sankey}, about 27\% of repairs with fewer than 4 edits were outside the language intersection, which is comprised of all repairs within distance LED+1. This could be fixed by increasing the edit distance, but we find that LED+2 reduces overall repair precision.
 
@@ -1088,7 +1088,7 @@ Zhang et al.~\cite{zhang2023ordinalfix} introduce OrdinalFix, which uses CFL rea
 
 Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, the goal is to find the maximum probability samples. A classic example is Viterbi decoding, which is used to find the most likely path through a hidden Markov model (HMM), a kind of weighted automaton.
 
-In particular, we care about the problem of \textit{top-$k$ decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing probability. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic CFGs is often intractable, but we can approximate it using a beam search over c-grams, then rerank top-scoring results.
+In particular, we care about the problem of \textit{top-$k$ decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing probability. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic CFGs is often intractable, but we can approximate it using a beam search over $c$-grams, then rerank top-scoring results.
 
 A popular solution to $k$-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, chiang2007hierarchical}, which samples maximum probability paths through a hypergraph. We take inspiration from this technique and adapt it to the setting of constrained decoding from finite CFGs.
 
