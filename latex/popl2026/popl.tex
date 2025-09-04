@@ -775,7 +775,7 @@ The implementation essentially consists of four stages, each dependent on its pr
 \end{algorithmic}
 \end{algorithm}
 
-Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained c-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-k total trajectories are returned.
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained c-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-$k$ total trajectories are returned.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
@@ -791,7 +791,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
         \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
         \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
     \Until{interrupted or $\mathcal{E}$ is empty.}
-    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-k repairs by c-gram probability.}
+    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by c-gram probability.}
   \end{algorithmic}
 \end{algorithm}
 
@@ -880,7 +880,7 @@ We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of na
 
 In the following set of experiments, we use syntax errors and fixes from the Python language. Python code snippets are abstracted as a sequence of lexical tokens using the official Python 3.8.11 parser, erasing alphanumeric identifiers and literals but retaining all other keywords. Accuracy is evaluated across a test set of pairwise errors and repairs by checking for lexical equivalence with the ground-truth repair, following the same methodology as Sakkas et al. (2022)~\cite{sakkas2022seq2parse}.
 
-We use the Precision@k statistic, which measures the frequency of the true repair appearing in the top-k results, across a dataset of repair instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, containing pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:\vspace{-0.1cm}
+We use the Precision@k statistic, which measures the frequency of the true repair appearing in the top-$k$ results, across a dataset of repair instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, containing pairwise aligned errors ($\err\sigma$) and fixes ($\sigma'$), we define Precision@k as:\vspace{-0.1cm}
 
 \begin{equation}
 \text{Precision@k}(R) = |\mathcal{D}_{\text{test}}|^{-1}\sum_{\mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma' \in R(\err\sigma)_{0\ldots k}\right]
@@ -1088,9 +1088,9 @@ Zhang et al.~\cite{zhang2023ordinalfix} introduce OrdinalFix, which uses CFL rea
 
 Decoding is a key problem in machine translation, speech recognition, and other sequence-to-sequence tasks. Given a compressed encoding of some finite distribution, the goal is to find the maximum probability samples. A classic example is Viterbi decoding, which is used to find the most likely path through a hidden Markov model (HMM), a kind of weighted automaton.
 
-In particular, we care about the problem of \textit{top-k decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing probability. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic CFGs is often intractable, but we can approximate it using a beam search over c-grams, then rerank top-scoring results.
+In particular, we care about the problem of \textit{top-$k$ decoding}, which attempts to find the exact or approximate $k$-most likely samples in order of decreasing probability. This is closely related to the $k$-best enumeration~\cite{eppstein2014k} problem, a carefully studied problem in graph theory and combinatorial optimization. An exact solution to this problem for large acyclic CFGs is often intractable, but we can approximate it using a beam search over c-grams, then rerank top-scoring results.
 
-A popular solution to k-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, chiang2007hierarchical}, which samples maximum probability paths through a hypergraph. We take inspiration from this technique and adapt it to the setting of constrained decoding from finite CFGs.
+A popular solution to $k$-best decoding in the NLP literature is a technique called cube-pruning~\cite{huang2005better, chiang2007hierarchical}, which samples maximum probability paths through a hypergraph. We take inspiration from this technique and adapt it to the setting of constrained decoding from finite CFGs.
 
 An alternate line of work originates from combinatorics~\cite{hickey1983uniform} and Boltzmann sampling~\cite{duchon2004boltzmann}, which constructs a generating function for the language and samples it uniformly. This technique has applications to constraint satisfaction and model counting problems in formal languages.
 
