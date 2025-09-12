@@ -152,8 +152,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
         for (iP in 0..<levFSA.numStates - dist) {
           val p = iP
           val q = iP + dist
-          if (aps[p][q] == null) continue
-          val appq = aps[p][q]!!
+          val appq = aps[p][q] ?: continue
           for ((A, indexArray) in vindex.withIndex()) {
             outerloop@for(j in 0..<indexArray.size step 2) {
               val B = indexArray[j]
@@ -214,18 +213,15 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       for (dist in 1..<nStates) {
         for (p in 0..<(nStates - dist)) {
           val q = p + dist
-          if (levFSA.allPairs[p][q] == null) continue
-          val appq = levFSA.allPairs[p][q]!!
+          val appq = levFSA.allPairs[p][q] ?: continue
           for ((Aidx, indexArray) in vindex.withIndex()) {
             val rhsPairs = dp[p][q][Aidx]?.branches?.toMutableList() ?: mutableListOf()
             outerLoop@for (j in 0..<indexArray.size step 2) {
               val Bidx = indexArray[j]
               val Cidx = indexArray[j + 1]
               for (r in appq) {
-                val left = dp[p][r][Bidx]
-                if (left == null) continue
-                val right = dp[r][q][Cidx]
-                if (right == null) continue
+                val left = dp[p][r][Bidx] ?: continue
+                val right = dp[r][q][Cidx] ?: continue
                 rhsPairs += left to right
               }
             }

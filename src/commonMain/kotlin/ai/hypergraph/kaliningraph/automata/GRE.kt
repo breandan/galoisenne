@@ -303,8 +303,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
       for (iP: Int in 0..<dp.size - dist) {
         val p = iP
         val q = iP + dist
-        if (ap[p][q] == null) continue
-        val appq = ap[p][q]!!
+        val appq = ap[p][q] ?: continue
         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           outerloop@for(j: Int in 0..<indexArray.size step 2) {
             val B = indexArray[j]
@@ -360,8 +359,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
   for (dist in 1..<nStates) {
     for (p in 0..<(nStates - dist)) {
       val q = p + dist
-      if (levFSA.allPairs[p][q] == null) continue
-      val appq = levFSA.allPairs[p][q]!!
+      val appq = levFSA.allPairs[p][q] ?: continue
 
       for ((Aidx, indexArray) in vindex.withIndex()) {
         //      println("${cfg.bindex[Aidx]}(${pm!!.ntLengthBounds[Aidx]}):${levFSA.stateLst[p]}-${levFSA.stateLst[q]}(${levFSA.SPLP(p, q)})")
@@ -370,10 +368,8 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
           val Bidx = indexArray[j]
           val Cidx = indexArray[j + 1]
           for (r in appq) {
-            val left = dp[p][r][Bidx]
-            if (left == null) continue
-            val right = dp[r][q][Cidx]
-            if (right == null) continue
+            val left = dp[p][r][Bidx] ?: continue
+            val right = dp[r][q][Cidx] ?: continue
             // Found a parse for A
             rhsPairs += left * right
             //            if (rhsPairs.size > 10) break@outerLoop
@@ -424,8 +420,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
       for (iP: Int in 0..<dp.size - dist) {
         val p = iP
         val q = iP + dist
-        if (ap[p][q] == null) continue
-        val appq = ap[p][q]!!
+        val appq = ap[p][q] ?: continue
         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           outerloop@for(j: Int in 0..<indexArray.size step 2) {
             val B = indexArray[j]
@@ -481,8 +476,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   for (dist in 1..<nStates) {
     for (p in 0..<(nStates - dist)) {
       val q = p + dist
-      if (levFSA.allPairs[p][q] == null) continue
-      val appq = levFSA.allPairs[p][q]!!
+      val appq = levFSA.allPairs[p][q] ?: continue
 
       for ((Aidx, indexArray) in vindex.withIndex()) {
         //      println("${cfg.bindex[Aidx]}(${pm!!.ntLengthBounds[Aidx]}):${levFSA.stateLst[p]}-${levFSA.stateLst[q]}(${levFSA.SPLP(p, q)})")
@@ -556,8 +550,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
       for (iP: Int in 0..<dp.size - dist) {
         val p = iP
         val q = iP + dist
-        if (ap[p][q] == null) continue
-        val appq = ap[p][q]!!
+        val appq = ap[p][q] ?: continue
         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           pause()
           outerloop@for(j: Int in 0..<indexArray.size step 2) {
@@ -613,8 +606,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   for (dist in 1 until nStates) {
     for (p in 0 until (nStates - dist)) {
       val q = p + dist
-      if (levFSA.allPairs[p][q] == null) continue
-      val appq = levFSA.allPairs[p][q]!!
+      val appq = levFSA.allPairs[p][q] ?: continue
 
       for ((Aidx, indexArray) in vindex.withIndex()) {
         //      println("${cfg.bindex[Aidx]}(${pm!!.ntLengthBounds[Aidx]}):${levFSA.stateLst[p]}-${levFSA.stateLst[q]}(${levFSA.SPLP(p, q)})")
@@ -624,10 +616,8 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
           val Bidx = indexArray[j]
           val Cidx = indexArray[j + 1]
           for (r in appq) {
-            val left = dp[p][r][Bidx]
-            if (left == null) continue
-            val right = dp[r][q][Cidx]
-            if (right == null) continue
+            val left = dp[p][r][Bidx] ?: continue
+            val right = dp[r][q][Cidx] ?: continue
             // Found a parse for A
             rhsPairs += left * right
             //            if (rhsPairs.size > 10) break@outerLoop
