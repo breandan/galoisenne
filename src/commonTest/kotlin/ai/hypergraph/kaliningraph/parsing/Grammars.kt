@@ -49,6 +49,12 @@ object Grammars {
     C -> START B
   """.parseCFG().noEpsilonOrNonterminalStubs }
 
+  val revCNorm by lazy { """
+    START -> START B
+    START -> a
+    B -> b
+  """.parseCFG().noEpsilonOrNonterminalStubs }
+
   val ocamlCFG by lazy { """
     S -> X
     X -> A | V | ( X , X ) | X X | ( X )

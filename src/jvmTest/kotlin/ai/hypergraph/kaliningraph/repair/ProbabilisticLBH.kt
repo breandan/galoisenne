@@ -1,12 +1,9 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
-import ai.hypergraph.kaliningraph.automata.GRE
-import ai.hypergraph.kaliningraph.automata.printAdjMatrixPowers
-import ai.hypergraph.kaliningraph.automata.repairWithGRE
 import ai.hypergraph.kaliningraph.automata.toDFA
-import ai.hypergraph.kaliningraph.automata.toDFSM
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.sat.summarizeT
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
 import org.junit.jupiter.api.Test
@@ -461,6 +458,18 @@ class ProbabilisticLBH {
         println()
       }
     }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRevC"
+*/
+  @Test
+  fun testRevC() {
+    val cfg = Grammars.revCNorm
+    println(cfg.prettyPrint())
+
+    val m = cfg.initialUTBMatrix("a b b b b".tokenizeByWhitespace())
+    println(m.seekFixpoint(debug = { println(it.toFullMatrix().summarizeT()) }).toFullMatrix().summarizeT())
   }
 
   /*

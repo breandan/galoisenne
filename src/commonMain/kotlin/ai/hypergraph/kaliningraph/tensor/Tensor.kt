@@ -400,7 +400,7 @@ open class UTMatrix<T> constructor(
     //    (3) column beneath an element (inclusive)
     carry: List<Triple<T, List<T>, List<T>>> =
       diagonals.last().map { it to listOf(it) to listOf(it) },
-//    debug: (UTMatrix<T>) -> Unit =  { },
+    debug: (UTMatrix<T>) -> Unit =  { },
     iteration: Int = 0,
     maxIterations: Int = diagonals.first().size
   ): UTMatrix<T> =
@@ -419,8 +419,12 @@ open class UTMatrix<T> constructor(
         diagonals = diagonals + listOf(next.map { it.π1 }),
         algebra = algebra
       )
+        .also {
+          debug(it)
+//          println(iteration)
+        }
 //        .also { debug(it) }
-        .seekFixpoint(next, iteration + 1, maxIterations)
+        .seekFixpoint(next, debug, iteration + 1, maxIterations)
     }
 
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
@@ -428,8 +432,8 @@ open class UTMatrix<T> constructor(
     (diagonals + if (diagonals.last().size != 1) {
       ((diagonals.last().size - 1)..1).map { List(it) { algebra.nil } }
     } else emptyList()).let { diagonals ->
-      FreeMatrix(algebra, diagonals.size + 1, diagonals.size + 1) { r, c ->
-        if (c <= r) algebra.nil else diagonals[c - r - 1][r]
+      FreeMatrix(algebra, numRows, numCols) { r, c ->
+        if (c <= r) algebra.nil else try {diagonals[c - r - 1][r] } catch (e: Exception) { algebra.nil }
       }
     }
 
