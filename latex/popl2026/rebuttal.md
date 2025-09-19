@@ -50,7 +50,7 @@ $$
 
 #### Proof Sketch
 
-By struructural induction on $e$. WTS: $\texttt{choose}(e) \in \mathcal{L}(e)$.
+By structural induction on $e$. WTS: $\texttt{choose}(e) \in \mathcal{L}(e)$.
 
 * Base case ($e \in \Sigma$): Then $\texttt{choose}(e) = e$ with $e \in \mathcal{L}(e) = \{e\}$ trivially.
 * Induction hypothesis (IH): Assume the claim holds for all subexpressions of $e$.
@@ -74,7 +74,7 @@ Finite possibilities: Obvious, if we assume a finite number of typographic modif
 
 > the quotient ... ${b \mid ab \in L}$ --> the quotient ... ${x \mid ax \in L}$
 
-Incorrect. The full statement for the left quotient is ${b \mid ab \in L}$ where $a: \Sigma$, $b: \Sigma^*$. We only use $x, z: E$ to denote the left and right subexpressions, respectively, or the regular expression $e: E$.
+Incorrect. The full statement for the left quotient is ${b \mid ab \in L}$ where $a: \Sigma$, $b: \Sigma^*$. We only use $x, z: E$ to denote the left and right subexpressions, respectively, of the regular expression $e: E$.
 
 > witnesses -- you use the word witness without introducing its meaning
 
@@ -82,7 +82,7 @@ In model theory, a "witness" refers to an explicit instance of an existentially 
 
 > to witness \sigma -- there is no \sigma in the text that follows
 
-$\texttt{choose}: E \rightarrow \Sigma^+$ has a string return type. $\sigma$ is used to denote a string, should be understood to mean the witness that $\texttt{choose}$ returns.
+$\texttt{choose}: E \rightarrow \Sigma^+$ has a string return type. $\sigma$ is used to denote a string, which should be understood to mean the witness that $\texttt{choose}$ returns.
 
 > follow 117 choose -- you use the terms without introducing their meaning
 
@@ -91,7 +91,7 @@ The meaning is explicitly defined on lines 111-117. $\texttt{follow}$ returns th
 Review #252C
 ===========================================================================
 
-These concise remarks of this reviewer reflect a deep understanding of the parsing literature. We have reproduced and acknowledge the flaw in the proof of Theorem 3.1. Furthermore, we appreciate their advice on how to salvage the upper bound via Brent and Goldschlager (1983) which previously escaped our notice. This paper is indeed a hidden gem which should be more widely known. We will rebase the proof on Brent and Goldschlager's time bound, fallback to a fixpoint-detection based test for the implementation, and discuss the discrepancy more carefully.
+The concise remarks of this reviewer reflect a deep understanding of the parsing literature. We have reproduced and acknowledge the flaw in the proof of Theorem 3.1. Furthermore, we appreciate their advice on how to salvage the upper bound via Brent and Goldschlager (1983) which previously escaped our notice. This paper is indeed a hidden gem which should be more widely known. We will rebase the proof on Brent and Goldschlager's time bound, fallback to a fixpoint-detection based test for the implementation, and discuss the discrepancy more carefully.
 
 Anecdotally, when the iteration bounds on Line 4 of $\texttt{reg_build}$ are relaxed to $[0, \infty)$, we did not observe any measurable downstream improvement due to the escape condition on Line 10 of the same algorithm, which detects the fixpoint and terminates in well under $\log(|Q||V|)$ iterations on the Python syntax repair benchmark.
 
@@ -152,4 +152,4 @@ Most popular constrained LLM decoding frameworks do not support CFG-NFA intersec
 
 > The role of symbolic predicates in automata is underspecified... Please be formal also wrt line 352 in the paper 
 
-Noted. The symbolic predicate is mostly syntactic sugar for presentation clarity, but does not affect the regular expression, which always uses terminal literals. As this symbolic predicate only appears in a very limited scope (namely storing and decoding of unit nonterminals in the parse chart), introducing the EBA and associative derivative machinery seems like an unnecessary notational burden on the reader, who is already taxed as the reviewer rightly points out.
+Noted. The symbolic predicate is mostly syntactic sugar for presentation clarity, but does not affect the regular expression, which always uses terminal literals. As this symbolic predicate only appears in a very limited scope (namely storing and decoding of unit nonterminals in the parse chart), introducing the EBA and associated derivative machinery seems like an unnecessary notational burden on the reader, who is already taxed as the reviewer rightly points out.
