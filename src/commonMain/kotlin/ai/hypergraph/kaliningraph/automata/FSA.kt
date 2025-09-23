@@ -436,6 +436,7 @@ fun Σᐩ.parseFSA(): FSA {
 }
 
 const val NEG_LITERAL = 0x40000000u //=1.shl(30)
+const val NEG_STR_LIT = "${NEG_LITERAL}u"
 // Sparse index nonzero entries of the M_0 parse chart
 fun FSA.byteFormat(cfg: CFG): IntArray { // TODO: kernelize
   val t0 = TimeSource.Monotonic.markNow()
