@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalStdlibApi::class)
+
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
@@ -435,8 +437,9 @@ fun Σᐩ.parseFSA(): FSA {
   return FSA(Q.filter { it.π1 !in setOf("INIT", "DONE") }.toSet(), init, final)
 }
 
-const val NEG_LITERAL = 0x40000000u //=1.shl(30)
-const val NEG_STR_LIT = "${NEG_LITERAL}u"
+val hexFmt = HexFormat { number.prefix = "0x"; number.suffix = "u" }
+const val NEG_STR_LIT = "0x40000000u" //=1.shl(30)
+val NEG_LITERAL = NEG_STR_LIT.drop(2).dropLast(1).toUInt(16)
 // Sparse index nonzero entries of the M_0 parse chart
 fun FSA.byteFormat(cfg: CFG): IntArray { // TODO: kernelize
   val t0 = TimeSource.Monotonic.markNow()
