@@ -599,7 +599,7 @@ Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt
 
 \subsection{Disambiguation}\label{sec:transfer_method}
 
-To count the number of distinct repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \lor e \mid e \land e$, we will proceed by structural induction on the regex:
+To count the number of distinct repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \cdot e \mid e \lor e$, we will proceed by structural induction on the regex:
 
 \begin{equation*}
 N(e) =
