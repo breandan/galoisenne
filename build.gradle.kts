@@ -237,8 +237,8 @@ val testDurations = mutableListOf<TestDuration>()
 
 tasks {
   withType<Test> {
-    minHeapSize = "1g"
-    maxHeapSize = "6g"
+    minHeapSize = "4g"
+    maxHeapSize = "12g"
     useJUnitPlatform()
     testLogging {
       events = setOf(

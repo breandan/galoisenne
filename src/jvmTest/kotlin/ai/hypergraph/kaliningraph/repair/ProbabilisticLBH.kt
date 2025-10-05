@@ -1,9 +1,11 @@
 package ai.hypergraph.kaliningraph.repair
 
 import Grammars
+import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.automata.toDFA
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sat.summarizeT
+import ai.hypergraph.kaliningraph.sat.synthesize
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
 import org.junit.jupiter.api.Test
@@ -509,6 +511,22 @@ class ProbabilisticLBH {
     solutions.forEach { println(it) }
 
     println(ig.toPTree().toDFA(true)!!.toDot())
+  }
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniML"
+*/
+  @Test
+  fun testMiniML() {
+    val cfg = minimlcfg
+
+    println(cfg.nonterminals.size)
+    val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1  0 ) * x ; f1 ( 1 )"
+
+    println(str.matches(cfg))
+
+    initiateSerialRepair(str.tokenizeByWhitespace(), cfg)
+      .take(10).forEach { println(levenshteinAlign(str, it).paintANSIColors()) }
   }
 }
 
