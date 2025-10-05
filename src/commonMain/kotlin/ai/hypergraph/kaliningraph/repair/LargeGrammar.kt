@@ -4,7 +4,7 @@ import ai.hypergraph.kaliningraph.parsing.freeze
 import ai.hypergraph.kaliningraph.parsing.noNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.parseCFG
 
-val miniml by lazy {
+val minikt by lazy {
   """
 START -> P[Ff0_?,N0]
 P[Ff0_?,N0] -> fun f1 ( ) : Int = E[I,Vempty,vNempty,Ff0_Z_I,fNempty,S0] ; P[Ff0_Z_I,N0] | fun f1 ( ) : Bool = E[B,Vempty,vNempty,Ff0_Z_B,fNempty,S0] ; P[Ff0_Z_B,N0] | fun f1 ( x : Int ) : Int = E[I,VI,vN0,Ff0_I_I,fNempty,S0] ; P[Ff0_I_I,N0] | fun f1 ( x : Int ) : Bool = E[B,VI,vN0,Ff0_I_B,fNempty,S0] ; P[Ff0_I_B,N0] | fun f1 ( x : Bool ) : Int = E[I,VB,vN0,Ff0_B_I,fNempty,S0] ; P[Ff0_B_I,N0] | fun f1 ( x : Bool ) : Bool = E[B,VB,vN0,Ff0_B_B,fNempty,S0] ; P[Ff0_B_B,N0] | fun f1 ( x : Int , y : Int ) : Int = E[I,VII,vN0_1,Ff0_II_I,fNempty,S0] ; P[Ff0_II_I,N0] | fun f1 ( x : Int , y : Int ) : Bool = E[B,VII,vN0_1,Ff0_II_B,fNempty,S0] ; P[Ff0_II_B,N0] | fun f1 ( x : Int , y : Bool ) : Int = E[I,VIB,vN0_1,Ff0_IB_I,fNempty,S0] ; P[Ff0_IB_I,N0] | fun f1 ( x : Int , y : Bool ) : Bool = E[B,VIB,vN0_1,Ff0_IB_B,fNempty,S0] ; P[Ff0_IB_B,N0] | fun f1 ( x : Bool , y : Int ) : Int = E[I,VBI,vN0_1,Ff0_BI_I,fNempty,S0] ; P[Ff0_BI_I,N0] | fun f1 ( x : Bool , y : Int ) : Bool = E[B,VBI,vN0_1,Ff0_BI_B,fNempty,S0] ; P[Ff0_BI_B,N0] | fun f1 ( x : Bool , y : Bool ) : Int = E[I,VBB,vN0_1,Ff0_BB_I,fNempty,S0] ; P[Ff0_BB_I,N0] | fun f1 ( x : Bool , y : Bool ) : Bool = E[B,VBB,vN0_1,Ff0_BB_B,fNempty,S0] ; P[Ff0_BB_B,N0]
@@ -171,4 +171,4 @@ E[B,Vempty,vNempty,Ff0_BB_B,fN0,S_] -> E[I,Vempty,vNempty,Ff0_BB_B,fN0,S_] CMPI 
   """.trimIndent()
 }
 
-val minimlcfg by lazy { miniml.parseCFG().noNonterminalStubs.freeze() } // With Epsilon
+val miniktcfg by lazy { minikt.parseCFG().noNonterminalStubs.freeze() } // With Epsilon

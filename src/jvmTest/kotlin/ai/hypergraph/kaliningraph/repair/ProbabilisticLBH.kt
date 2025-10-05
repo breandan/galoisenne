@@ -518,7 +518,7 @@ class ProbabilisticLBH {
 */
   @Test
   fun testMiniML() {
-    val cfg = minimlcfg
+    val cfg = miniktcfg
 
     println(cfg.nonterminals.size)
     val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1  0 ) * x ; f1 ( 1 )"
