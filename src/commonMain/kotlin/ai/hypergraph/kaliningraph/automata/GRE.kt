@@ -485,10 +485,8 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
           val Bidx = indexArray[j]
           val Cidx = indexArray[j + 1]
           for (r in appq) {
-            val left = dp[p][r][Bidx]
-            if (left == null) continue
-            val right = dp[r][q][Cidx]
-            if (right == null) continue
+            val left = dp[p][r][Bidx] ?: continue
+            val right = dp[r][q][Cidx] ?: continue
             // Found a parse for A
             rhsPairs += left * right
             //            if (rhsPairs.size > 10) break@outerLoop
