@@ -1,7 +1,12 @@
 package ai.hypergraph.kaliningraph.visualization
 
+import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.automata.FSA
 import ai.hypergraph.kaliningraph.automata.GRE
+import ai.hypergraph.kaliningraph.automata.GRE.CAT
+import ai.hypergraph.kaliningraph.automata.GRE.CUP
+import ai.hypergraph.kaliningraph.automata.GRE.EPS
+import ai.hypergraph.kaliningraph.automata.GRE.SET
 import ai.hypergraph.kaliningraph.graphs.*
 import ai.hypergraph.kaliningraph.image.*
 import ai.hypergraph.kaliningraph.tensor.Matrix
@@ -22,6 +27,8 @@ import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.*
+import kotlin.IllegalArgumentException
+import kotlin.text.StringBuilder
 
 const val THICKNESS = 4.0
 const val DARKMODE = false
@@ -35,6 +42,86 @@ fun String.alsoCopy() = also {
       Toolkit.getDefaultToolkit().systemClipboard.setContents(it, it)
     }
   } catch (e: Exception) { println("Error copying to clipboard: $e") }
+}
+
+fun GRE.toDOTGraph(rankDir: String = "TB", font: String = "Helvetica", dedupLeaves: Boolean = true): String {
+  fun Int.toUnicodeSubscript(): String = when (this) {
+    0 -> "\u2080"
+    1 -> "\u2081"
+    2 -> "\u2082"
+    3 -> "\u2083"
+    4 -> "\u2084"
+    5 -> "\u2085"
+    6 -> "\u2086"
+    7 -> "\u2087"
+    8 -> "\u2088"
+    9 -> "\u2089"
+    else -> throw IllegalArgumentException("Input must be between 0 and 9")
+  }
+
+  fun KBitSet.labelize(): String =
+    (0 until n).mapNotNull {  if (this[it]) "Σ${it.toUnicodeSubscript()}" else null }.joinToString(",", "{", "}")
+
+  data class Key(val kind: String, val payload: String)
+
+  val nodeId   = mutableMapOf<Int, String>()
+  val nodeDecl = StringBuilder()
+  val edgeDecl = StringBuilder()
+  var nextId = 0
+
+  fun newNodeId() = "n${nextId++}"
+
+  var i = 0
+  fun declareNodeA(label: String, shape: String = "circle", style: String = ", style=\"rounded\"", extra: String = ""): String =
+    nodeId.getOrPut(i++) {
+      val id = newNodeId()
+      nodeDecl.append("  $id [label=\"$label\", shape=$shape $style $extra];\n")
+      id
+    }
+
+  fun declareNodeB(key: Key, label: String, shape: String = "circle"): String =
+    nodeId.getOrPut(i++) {
+      val id = newNodeId()
+      nodeDecl.append("  $id [label=\"$label\", shape=$shape, style=\"rounded\"];\n")
+      id
+    }
+
+  fun visit(g: GRE): String = when (g) {
+    is EPS -> declareNodeB(Key("EPS", ""), "ε", "plaintext")
+
+    is SET -> declareNodeA(g.s.labelize(), "box", extra = ", width=0.5")
+
+    is CUP -> {
+      if (!isLeafCup()) {
+        val id = declareNodeB(Key("CUP${g.hash()}", ""), "∨")
+        for (child in g.args) { edgeDecl.append("  $id -> ${visit(child)};\n") }
+        id
+      } else {
+        val q = g.toSet() as SET
+        val key = if (dedupLeaves) Key("SET", q.s.toString())
+        else Key("SET${g.hashCode()}", "")
+        declareNodeB(key, q.s.labelize(), "box")
+      }
+    }
+
+    is CAT -> {
+      val id = declareNodeA("·", "invhouse", ",", "width=0.5")
+      val lId = visit(g.l);  edgeDecl.append("  $id -> $lId;\n")
+      val rId = visit(g.r);  edgeDecl.append("  $id -> $rId;\n")
+      id
+    }
+  }
+
+  visit(this)
+
+  return buildString {
+    appendLine("strict digraph GRE {")
+    appendLine("  rankdir=$rankDir;")
+    appendLine("  node [order=out];")
+    append(nodeDecl)
+    append(edgeDecl)
+    appendLine("}")
+  }
 }
 
 fun GRE.showEditable() {

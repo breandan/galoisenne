@@ -102,31 +102,6 @@ sealed class GRE(open vararg val args: GRE) {
     is CAT -> (l.dv(σ) * r).let { dl -> if (l.nullable) dl + r.dv(σ) else dl }
   }
 
-//  fun dv(σ: Int): GRE? = when (this) {
-//    is EPS -> null // ∂_σ(ε) = ∅
-//    is SET -> if (s[σ]) EPS() else null // ∂_σ({a}) = ε if σ = a, else ∅
-//    is CUP -> {
-//      val derivatives = args.mapNotNull { it.dv(σ) }
-//      if (derivatives.isEmpty()) null
-//      else derivatives.reduce { acc, next -> CUP(acc, next) }
-//    }
-//    is CAT -> {
-//      val dl = l.dv(σ) // Left derivative
-//      val leftPart = dl?.let { CAT(it, r) }
-//      if (l.nullable) {
-//        val dr = r.dv(σ) // Right derivative
-//        when {
-//          leftPart != null && dr != null -> CUP(leftPart, dr)
-//          leftPart != null -> leftPart
-//          dr != null -> dr
-//          else -> null
-//        }
-//      } else {
-//        leftPart
-//      }
-//    }
-//  }
-
   val nullable by lazy { isNullable() }
 
   // Check whether 'g' accepts the empty string ε.
@@ -139,86 +114,6 @@ sealed class GRE(open vararg val args: GRE) {
 
   operator fun plus(g: GRE): GRE = CUP(this, g)
   operator fun times(g: GRE): GRE = CAT(this, g)
-
-  fun toDOTGraph(rankDir: String = "TB", font: String = "Helvetica", dedupLeaves: Boolean = true): String {
-    fun Int.toUnicodeSubscript(): String = when (this) {
-      0 -> "\u2080"
-      1 -> "\u2081"
-      2 -> "\u2082"
-      3 -> "\u2083"
-      4 -> "\u2084"
-      5 -> "\u2085"
-      6 -> "\u2086"
-      7 -> "\u2087"
-      8 -> "\u2088"
-      9 -> "\u2089"
-      else -> throw IllegalArgumentException("Input must be between 0 and 9")
-    }
-
-    fun KBitSet.labelize(): String =
-      (0 until n).mapNotNull {  if (this[it]) "Σ${it.toUnicodeSubscript()}" else null }.joinToString(",", "{", "}")
-
-    data class Key(val kind: String, val payload: String)
-
-    val nodeId   = mutableMapOf<Int, String>()
-    val nodeDecl = StringBuilder()
-    val edgeDecl = StringBuilder()
-    var nextId = 0
-
-    fun newNodeId() = "n${nextId++}"
-
-    var i = 0
-    fun declareNodeA(label: String, shape: String = "circle", style: String = ", style=\"rounded\"", extra: String = ""): String =
-      nodeId.getOrPut(i++) {
-        val id = newNodeId()
-        nodeDecl.append("  $id [label=\"$label\", shape=$shape $style $extra];\n")
-        id
-      }
-
-    fun declareNodeB(key: Key, label: String, shape: String = "circle"): String =
-      nodeId.getOrPut(i++) {
-        val id = newNodeId()
-        nodeDecl.append("  $id [label=\"$label\", shape=$shape, style=\"rounded\"];\n")
-        id
-      }
-
-    fun visit(g: GRE): String = when (g) {
-      is EPS -> declareNodeB(Key("EPS", ""), "ε", "plaintext")
-
-      is SET -> declareNodeA(g.s.labelize(), "box", extra = ", width=0.5")
-
-      is CUP -> {
-        if (!isLeafCup()) {
-          val id = declareNodeB(Key("CUP${g.hash()}", ""), "∨")
-          for (child in g.args) { edgeDecl.append("  $id -> ${visit(child)};\n") }
-          id
-        } else {
-          val q = g.toSet() as SET
-          val key = if (dedupLeaves) Key("SET", q.s.toString())
-          else Key("SET${g.hashCode()}", "")
-          declareNodeB(key, q.s.labelize(), "box")
-        }
-      }
-
-      is CAT -> {
-        val id = declareNodeA("·", "invhouse", ",", "width=0.5")
-        val lId = visit(g.l);  edgeDecl.append("  $id -> $lId;\n")
-        val rId = visit(g.r);  edgeDecl.append("  $id -> $rId;\n")
-        id
-      }
-    }
-
-    visit(this)
-
-    return buildString {
-      appendLine("strict digraph GRE {")
-      appendLine("  rankdir=$rankDir;")
-      appendLine("  node [order=out];")
-      append(nodeDecl)
-      append(edgeDecl)
-      appendLine("}")
-    }
-  }
 
   fun flatunion(): GRE =
     if (this is CUP && args.all { it is CUP }) CUP(*args.flatMap { it.args.toList() }.toTypedArray())
@@ -286,7 +181,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
   val bindex = cfg.bindex
   val width = cfg.nonterminals.size
   val vindex = cfg.vindex
-  val ups = cfg.unitProductions
+  val ups = cfg.grpUPs
   val t2vs = cfg.tmToVidx
   val maxBranch = vindex.maxOf { it.size }
   val startIdx = bindex[START_SYMBOL]
@@ -353,7 +248,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
       .apply { s.set(tmm[σ]!!)/*; dq[p][q].set(Aidx)*/ }
 
   var maxChildren = 0
-  var location = -1 to -1
+//  var location = -1 to -1
 
   // 3) CYK + Floyd Warshall parsing
   for (dist in 1..<nStates) {
@@ -380,7 +275,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
         if (rhsPairs.isNotEmpty()) {
           if (list.size > maxChildren) {
             maxChildren = list.size
-            location = p to q
+//            location = p to q
           }
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
@@ -403,7 +298,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val bindex = cfg.bindex
   val width = cfg.nonterminals.size
   val vindex = cfg.vindex
-  val ups = cfg.unitProductions
+  val ups = cfg.grpUPs
   val t2vs = cfg.tmToVidx
   val maxBranch = vindex.maxOf { it.size }
   val startIdx = bindex[START_SYMBOL]
@@ -470,7 +365,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
       .apply { s.set(tmm[σ]!!)/*; dq[p][q].set(Aidx)*/ }
 
   var maxChildren = 0
-  var location = -1 to -1
+//  var location = -1 to -1
 
   // 3) CYK + Floyd Warshall parsing
   for (dist in 1..<nStates) {
@@ -497,7 +392,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
         if (rhsPairs.isNotEmpty()) {
           if (list.size > maxChildren) {
             maxChildren = list.size
-            location = p to q
+//            location = p to q
           }
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
@@ -529,7 +424,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val bindex = cfg.bindex
   val width = cfg.nonterminals.size
   val vindex = cfg.vindex
-  val ups = cfg.unitProductions
+  val ups = cfg.grpUPs
   val t2vs = cfg.tmToVidx
   val maxBranch = vindex.maxOf { it.size }
   val startIdx = bindex[START_SYMBOL]
@@ -598,7 +493,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
       .apply { pause(); s.set(tmm[σ]!!)/*; dq[p][q].set(Aidx)*/ }
 
   var maxChildren = 0
-  var location = -1 to -1
+//  var location = -1 to -1
 
   // 3) CYK + Floyd Warshall parsing
   for (dist in 1 until nStates) {
@@ -626,7 +521,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
         if (rhsPairs.isNotEmpty()) {
           if (list.size > maxChildren) {
             maxChildren = list.size
-            location = p to q
+//            location = p to q
           }
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
@@ -640,7 +535,8 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
   println("Parsing took ${timer.elapsedNow()} with |σ|=${brokenStr.size}, " +
-      "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms, maxChildren=$maxChildren@$location")
+//      "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms, maxChildren=$maxChildren@$location")
+      "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms")
   // 5) Combine them under a single GRE
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
 }

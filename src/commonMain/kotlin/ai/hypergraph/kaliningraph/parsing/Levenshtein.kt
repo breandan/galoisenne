@@ -80,6 +80,33 @@ fun makeExactLevCFL(
 fun makeLevFSA(
   str: List<Σᐩ>,
   maxRad: Int, // Maximum Levenshtein distance the automaton should accept
+  digits: Int = (str.size * maxRad).toString().length,
+): FSA {
+  val clock = TimeSource.Monotonic.markNow()
+  var initSize = 0
+  val fsa = (upArcs(str, maxRad, digits) +
+      diagArcs(str, maxRad, digits) +
+      str.mapIndexed { i, it -> rightArcs(i, maxRad, it, digits) }.flatten() +
+      str.mapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) }.flatten())
+    .also { initSize = it.size }
+    .let { Q ->
+      val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
+      val finalStates =
+        Q.states().filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue <= maxRad) } }
+
+      AFSA(Q, initialStates, finalStates)
+        .also { it.height = maxRad; it.width = str.size; it.levString = str }
+//        .nominalize()
+//        .also { println("Reduced L-NFA(len=${str.size}, rad=$maxRad, states=${it.numStates}) " +
+//            "from $initSize to ${Q.size} arcs in ${clock.elapsedNow()}") }
+    }
+  return fsa
+}
+
+/** Uses nominal arc predicates. See [NOM] for denominalization. */
+fun makeLevFSA(
+  str: List<Σᐩ>,
+  maxRad: Int, // Maximum Levenshtein distance the automaton should accept
   /**
    * (x, y) where x is the first index where 1+ edit must have occurred already, and y
    * is the last index where there is at least one more edit left to make in the string.

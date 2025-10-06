@@ -43,6 +43,7 @@ val CFG.symbols: Set<Σᐩ> by cache { nonterminals + flatMap { it.RHS } }
 val CFG.terminals: Set<Σᐩ> by cache { symbols - nonterminals }
 val CFG.terminalUnitProductions: Set<Production> by cache { filter { it.RHS.size == 1 && it.RHS[0] !in nonterminals } }
 val CFG.unitProductions: Set<Pair<Σᐩ, Σᐩ>> by cache { filter { it.RHS.size == 1 }.map { it.LHS to it.RHS[0] }.toSet() }
+val CFG.grpUPs: Map<Σᐩ, List<Σᐩ>> by cache { unitProductions.groupBy({ it.first }, { it.second }) }
 val CFG.nonterminalProductions: Set<Production> by cache { filter { it !in terminalUnitProductions } }
 val CFG.unitNonterminals: Set<Σᐩ> by cache { terminalUnitProductions.map { it.LHS }.toSet() }
 val CFG.bimap: BiMap by cache { BiMap(this) }

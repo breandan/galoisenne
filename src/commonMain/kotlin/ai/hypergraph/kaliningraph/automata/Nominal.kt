@@ -32,6 +32,41 @@ class NOM(override val Q: TSA, override val init: Set<Σᐩ>, override val final
         mapF[it]?.filter { it.first(sym) }?.map { it.second } ?: emptyList()
       }.toSet()
     }.any { it in final }
+
+//  enum class PredKind { Wild, Eq, Ne }
+//  data class IEdge(val from: Int, val to: Int)
+//  data class ClassArc(val kind: PredKind, val sym: String?, val edge: IEdge)
+//
+//  override val stateLst by lazy { states.groupBy { it.coords().let { (a, b) -> a + b } }.values.flatten() }
+//
+//  val classifiedArcs: List<ClassArc> by lazy {
+//    Q.map { (a, b, c) ->
+//      val from = stateMap[a]!!
+//      val to   = stateMap[c]!!
+//      val (kind, sym) = when {
+//        b == "[.*]"                  -> PredKind.Wild to null
+//        b.startsWith("[!=]") -> PredKind.Ne   to b.drop(4)
+//        else                         -> PredKind.Eq   to b
+//      }
+//      ClassArc(kind, sym, IEdge(from, to))
+//    }
+//  }
+//
+//  val wildArcs: List<IEdge> by lazy { classifiedArcs.asSequence().filter { it.kind == PredKind.Wild }.map { it.edge }.toList() }
+//
+//  val eqArcs: Map<String, List<IEdge>> by lazy {
+//    classifiedArcs.asSequence()
+//      .filter { it.kind == PredKind.Eq }
+//      .groupBy({ it.sym!! }, { it.edge })
+//  }
+//
+//  val neArcs: Map<String, List<IEdge>> by lazy {
+//    classifiedArcs.asSequence()
+//      .filter { it.kind == PredKind.Ne }
+//      .groupBy({ it.sym!! }, { it.edge }) // arcs that match any σ != key
+//  }
+//
+//  val allNeArcs: List<IEdge> by lazy { neArcs.values.flatten() }
 }
 
 fun FSA.nominalize() = NOM(Q, init, final)

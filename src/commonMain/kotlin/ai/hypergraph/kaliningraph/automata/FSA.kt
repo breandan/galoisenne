@@ -37,17 +37,65 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   val states: Set<Σᐩ> by lazy { Q.states() }
   open val stateLst: List<Σᐩ> by lazy { TODO() } //states.toList() }
 
-  fun allIndexedTxs1(unitProds: Set<Π2A<Σᐩ>>): List<Π3<Int, Σᐩ, Int>> {
+  fun allIndexedTxs1(unitProds: Map<Σᐩ, List<Σᐩ>>): List<Π3<Int, Σᐩ, Int>> {
     val triples = mutableListOf<Π3<Int, Σᐩ, Int>>()
-    for ((A, σ) in unitProds) for (arc in nominalForm.flattenedTriples)
+    for ((A, σs) in unitProds) for (σ in σs) for (arc in nominalForm.flattenedTriples)
       if (arc.π2(σ)) triples.add(Triple(stateMap[arc.π1]!!, σ, stateMap[arc.π3]!!))
     return triples
   }
 
-  fun allIndexedTxs0(unitProds: Set<Π2A<Σᐩ>>, bindex: Bindex<Σᐩ>): List<Π3A<Int>> {
+//  fun allIndexedTxs0(unitProds: Map<String, List<String>>, bindex: Bindex<String>): List<Π3A<Int>> {
+//    // Local refs to avoid virtual lookups inside loops
+//    val wild = nominalForm.wildArcs
+//    val eq   = nominalForm.eqArcs
+//    val ne   = nominalForm.neArcs
+//    val neAll = nominalForm.allNeArcs
+//
+//    val out = ArrayList<Π3A<Int>>(unitProds.size * (wild.size + neAll.size + 8))
+//
+//    unitProds.forEach { (A, σs) ->
+//      if (σs.isEmpty()) return@forEach
+//      val Aint = bindex[A]
+//
+//      // 1) Wildcards match iff sigmas non-empty
+//      for (e in wild) out.add(Triple(e.from, Aint, e.to))
+//
+//      when (σs.size) {
+//        1 -> {
+//          val only = σs[0]
+//          // 2a) Eq arcs: only for that literal
+//          eq[only]?.forEach { e -> out.add(Triple(e.from, Aint, e.to)) }
+//          // 2b) Ne arcs: all except those excluding 'only'
+//          ne.forEach { (x, edges) ->
+//            if (x != only) edges.forEach { e -> out.add(Triple(e.from, Aint, e.to)) }
+//          }
+//        }
+//        else -> {
+//          // |σs| >= 2
+//          // 2a) Eq arcs: for each member (dedup keys cheaply if big)
+//          val iter = if (σs.size > 8) σs.toHashSet() else σs
+//          for (s in iter) eq[s]?.forEach { e -> out.add(Triple(e.from, Aint, e.to)) }
+//          // 2b) Ne arcs: ALWAYS match when there are at least two distinct σ
+//          for (e in neAll) out.add(Triple(e.from, Aint, e.to))
+//        }
+//      }
+//    }
+//    return out
+//  }
+  open fun allIndexedTxs0(unitProds: Map<Σᐩ, List<Σᐩ>>, bindex: Bindex<Σᐩ>): List<Π3A<Int>> {
     val triples = mutableListOf<Π3A<Int>>()
-    for ((A, σ) in unitProds) for (arc in nominalForm.flattenedTriples)
-        if (arc.π2(σ)) triples.add(Triple(stateMap[arc.π1]!!, bindex[A], stateMap[arc.π3]!!))
+    for ((A, σs) in unitProds.entries) {
+      val Aint = bindex[A]
+      for (σ in σs) for (arc in nominalForm.flattenedTriples)
+        if (arc.π2(σ))
+          triples.add(
+            Triple(
+              stateMap[arc.π1]!!,
+              Aint,
+              stateMap[arc.π3]!!
+            )
+          )
+    }
     return triples
   }
 
@@ -141,7 +189,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val bindex = cfg.bindex
       val width = cfg.nonterminals.size
       val vindex = cfg.vindex
-      val ups = cfg.unitProductions
+      val ups = cfg.grpUPs
       val aps: List<List<List<Int>?>> = levFSA.allPairs
       val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
 
@@ -193,7 +241,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       val bimap = cfg.bimap
       val width = cfg.nonterminals.size
       val vindex = cfg.vindex
-      val ups = cfg.unitProductions
+      val ups = cfg.grpUPs
 
       val nStates = levFSA.numStates
       val startIdx = bindex[START_SYMBOL]

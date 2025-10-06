@@ -1,7 +1,9 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.KBitSet
+import ai.hypergraph.kaliningraph.parsing.Bindex
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
+import ai.hypergraph.kaliningraph.types.Π3A
 import kotlin.time.TimeSource
 
 // Acyclic finite state automaton

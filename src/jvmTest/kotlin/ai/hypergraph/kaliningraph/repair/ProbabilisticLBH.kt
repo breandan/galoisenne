@@ -22,7 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 */
 class ProbabilisticLBH {
   init { LangCache.prepopPythonLangCache() }
-  val pythonTestCases =
+  val pythonTestCases by lazy {
     invalidPythonStatements.lines().zip(validPythonStatements.lines())
       // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
 //    .map { it.first.tokenizeByWhitespace().map { if (it in vanillaS2PCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
@@ -32,6 +32,7 @@ class ProbabilisticLBH {
             && ("$b NEWLINE" in vanillaS2PCFG.language).also { if (!it) println("Failed valid") }
             && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
       }.distinct().filter { it.first.tokenizeByWhitespace().size < 23 }
+  }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
 */
@@ -513,7 +514,7 @@ class ProbabilisticLBH {
     println(ig.toPTree().toDFA(true)!!.toDot())
   }
 
-  /*
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniML"
 */
   @Test
@@ -521,12 +522,25 @@ class ProbabilisticLBH {
     val cfg = miniktcfg
 
     println(cfg.nonterminals.size)
+//    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( 1 , 2 )"
     val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1  0 ) * x ; f1 ( 1 )"
 
     println(str.matches(cfg))
 
     initiateSerialRepair(str.tokenizeByWhitespace(), cfg)
       .take(10).forEach { println(levenshteinAlign(str, it).paintANSIColors()) }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
+*/
+  @Test
+  fun testPythonRepairs() {
+    val cfg = vanillaS2PCFG
+    pythonTestCases.take(100).forEach { (broke, fixed) ->
+      initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
+        .take(100).forEach { println(levenshteinAlign(broke, it).paintANSIColors()) }
+    }
   }
 }
 
