@@ -286,7 +286,9 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
 fun CFG.startPTree(tokens: List<String>, nt: Σᐩ = START_SYMBOL) = //measureTimedValue {
 //  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
 //}.also { println("Took ${it.duration} to compute parse forest") }.value
-  initPTreeListMat(tokens).seekFixpoint().diagonals.last()[0][bindex[nt]]
+  initPTreeListMat(tokens).seekFixpoint()
+//    .also { println(it.toFullMatrix().map { "" + it.count { it != null } }.toString()) }
+    .diagonals.last()[0][bindex[nt]]
 
 // Instead of defining a special case, we instead represent the unit production
 // as a left child whose sibling is empty like so: Left child to Right child
