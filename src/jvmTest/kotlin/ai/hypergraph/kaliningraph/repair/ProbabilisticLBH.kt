@@ -27,11 +27,13 @@ class ProbabilisticLBH {
       // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
 //    .map { it.first.tokenizeByWhitespace().map { if (it in vanillaS2PCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
       .filter { it.first.tokenizeByWhitespace().all { it in vanillaS2PCFG.terminals } }
-      .shuffled(Random(seed = 1)).filter { (a, b) ->
-        ("$a NEWLINE" !in vanillaS2PCFG.language).also { if (!it) println("Failed invalid") }
-            && ("$b NEWLINE" in vanillaS2PCFG.language).also { if (!it) println("Failed valid") }
-            && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
-      }.distinct().filter { it.first.tokenizeByWhitespace().size < 23 }
+      .shuffled(Random(seed = 1))
+//      .filter { (a, b) ->
+//        ("$a NEWLINE" !in vanillaS2PCFG.language).also { if (!it) println("Failed invalid") }
+//            && ("$b NEWLINE" in vanillaS2PCFG.language).also { if (!it) println("Failed valid") }
+//            && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
+//      }
+      .distinct().filter { it.first.tokenizeByWhitespace().size < 43 }
   }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
@@ -537,10 +539,16 @@ class ProbabilisticLBH {
   @Test
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
-    pythonTestCases.take(100).forEach { (broke, fixed) ->
-      initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-        .take(100).forEach { println(levenshteinAlign(broke, it).paintANSIColors()) }
+    var precision = 0
+    val total = 1000
+    pythonTestCases.take(total).forEach { (broke, fixed) ->
+      val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
+        .take(1_000_000).map { it.dropLast(8) }
+//      println("Fixed: $fixed")
+      if (fixed in t) precision++
+    //.forEach { println(levenshteinAlign(broke, it.dropLast(8)).paintANSIColors()) }
     }
+    println("Precision: ${precision / total.toDouble()}")
   }
 }
 

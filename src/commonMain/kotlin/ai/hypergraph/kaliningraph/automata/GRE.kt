@@ -319,7 +319,6 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
     levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
 
     var minRad = Int.MAX_VALUE
-    val start = startIdx
 
     // O(1) final-state membership
     val finalMark = BooleanArray(levFSA.numStates).also { fm -> for (f in levFSA.finalIdxs) fm[f] = true }
@@ -353,20 +352,18 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
           while (j < indexArray.size) {
             val B = indexArray[j]
             val C = indexArray[j + 1]
-            if (X[B] && Z[C]) {
-              dp[p][q][A] = true
-              break
-            }
+            if (X[B] && Z[C]) { dp[p][q][A] = true; break }
             j += 2
           }
 
           // LED update when start derives span (0,q)
-          if (p == 0 && A == start && dp[p][q][A] && finalMark[q]) {
+          if (p == 0 && A == startIdx && dp[p][q][A] && finalMark[q]) {
             val (x, y) = levFSA.idsToCoords[q]!!
             /** See final state conditions for [makeExactLevCFL] */
             // The minimum radius such that this final state is included in the L-FSA
             val rad = abs(brokenStr.size - x + y)
             if (rad < minRad) minRad = rad
+            if (minRad == 1) return 1
           }
         }
 
@@ -521,10 +518,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
           while (j < indexArray.size) {
             val B = indexArray[j]
             val C = indexArray[j + 1]
-            if (X[B] && Z[C]) {
-              dp[p][q][A] = true
-              break
-            }
+            if (X[B] && Z[C]) { dp[p][q][A] = true; break }
             j += 2
           }
 
@@ -535,6 +529,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
             // The minimum radius such that this final state is included in the L-FSA
             val rad = abs(brokenStr.size - x + y)
             if (rad < minRad) minRad = rad
+            if (minRad == 1) return 1
           }
         }
 
