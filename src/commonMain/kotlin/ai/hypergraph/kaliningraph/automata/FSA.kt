@@ -99,6 +99,25 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
     return triples
   }
 
+  data class Int3(val a: Int, val b: Int, val c: Int)
+
+  open fun allIndexedTxs2(unitProds: Map<Σᐩ, List<Σᐩ>>, bindex: Bindex<Σᐩ>): List<Int3> {
+    val triples = mutableListOf<Int3>()
+    for ((A, σs) in unitProds.entries) {
+      val Aint = bindex[A]
+      for (σ in σs) for (arc in nominalForm.flattenedTriples)
+        if (arc.π2(σ))
+          triples.add(
+            Int3(
+              stateMap[arc.π1]!!,
+              Aint,
+              stateMap[arc.π3]!!
+            )
+          )
+    }
+    return triples
+  }
+
   val numStates: Int by lazy { states.size }
 
   val stateMap: Map<Σᐩ, Int> by lazy { stateLst.withIndex().associate { it.value to it.index } }

@@ -307,7 +307,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   fun nonemptyLevInt(levFSA: FSA): Int? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
     val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
-    levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+    levFSA.allIndexedTxs2(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
     var minRad = Int.MAX_VALUE
     // For pairs (p,q) in topological order
     for (dist in 1..<dp.size) {
@@ -322,15 +322,15 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
             for (r in appq)
               if (dp[p][r][B] && dp[r][q][C]) {
                 dp[p][q][A] = true
+                if (p == 0 && A == startIdx && levFSA.isFinal[q]) {
+                  val (x, y) = levFSA.idsToCoords[q]!!
+                  /** See final state conditions for [makeExactLevCFL] */
+                  // The minimum radius such that this final state is included in the L-FSA
+                  minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
+                  if (minRad == 1) return 1
+                }
                 break@outerloop
               }
-          }
-          if (p == 0 && A == startIdx && levFSA.isFinal[q] && dp[p][q][A]) {
-            val (x, y) = levFSA.idsToCoords[q]!!
-            /** See final state conditions for [makeExactLevCFL] */
-            // The minimum radius such that this final state is included in the L-FSA
-            minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
-            if (minRad == 1) return 1
           }
         }
       }
@@ -444,7 +444,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
     val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
 
-    levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
+    levFSA.allIndexedTxs2(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
     var minRad: Int = Int.MAX_VALUE
 
     // For pairs (p,q) in topological order
@@ -461,15 +461,15 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
             for (r in appq)
               if (dp[p][r][B] && dp[r][q][C]) {
                 dp[p][q][A] = true
+                if (p == 0 && A == startIdx && levFSA.isFinal[q]) {
+                  val (x, y) = levFSA.idsToCoords[q]!!
+                  /** See final state conditions for [makeExactLevCFL] */
+                  // The minimum radius such that this final state is included in the L-FSA
+                  minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
+                  if (minRad == 1) return 1
+                }
                 break@outerloop
               }
-          }
-
-          if (p == 0 && A == startIdx && levFSA.isFinal[q] && dp[p][q][A]) {
-            val (x, y) = levFSA.idsToCoords[q]!!
-            /** See final state conditions for [makeExactLevCFL] */
-            // The minimum radius such that this final state is included in the L-FSA
-            minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
           }
         }
       }
