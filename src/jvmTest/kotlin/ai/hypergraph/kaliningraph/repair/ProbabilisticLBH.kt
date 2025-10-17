@@ -10,6 +10,7 @@ import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
 import org.junit.jupiter.api.Test
 import org.kosat.round
+import java.io.File
 import java.util.stream.Collectors
 import kotlin.random.Random
 import kotlin.reflect.KFunction2
@@ -516,16 +517,22 @@ class ProbabilisticLBH {
     println(ig.toPTree().toDFA(true)!!.toDot())
   }
 
+  val miniktcfg by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/cnf_cfg.txt")
+      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniML"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniKT"
 */
   @Test
-  fun testMiniML() {
+  fun testMiniKT() {
     val cfg = miniktcfg
 
-    println(cfg.nonterminals.size)
-//    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( 1 , 2 )"
-    val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1  0 ) * x ; f1 ( 1 )"
+    println("Nonterminals: " + cfg.nonterminals.size)
+//    val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
+//      val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( 0 , 1 )"
+    val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1 , 0 ) * x ; f1 ( 1 , )"
 
     println(str.matches(cfg))
 
