@@ -291,14 +291,6 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
 }
 
 
-inline fun orInto(dst: BooleanArray, src: BooleanArray, width: Int) {
-  var i = 0
-  while (i < width) {
-    dst[i] = dst[i] or src[i]
-    i++
-  }
-}
-
 var latestLangEditDistance = 0
 fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val upperBound = MAX_RADIUS * 3
@@ -314,63 +306,35 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
   fun nonemptyLevInt(levFSA: FSA): Int? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
-    val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) } }
-
+    val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
     levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
-
     var minRad = Int.MAX_VALUE
-
-    // O(1) final-state membership
-    val finalMark = BooleanArray(levFSA.numStates).also { fm -> for (f in levFSA.finalIdxs) fm[f] = true }
-
-    // Reusable scratch (collapsed frontiers over r)
-    val X = BooleanArray(width)
-    val Z = BooleanArray(width)
-
     // For pairs (p,q) in topological order
-    val n = dp.size
-    for (dist in 1 until n) {
-      var p = 0
-      while (p < n - dist) {
-        val q = p + dist
-        val t = ap[p][q]
-        if (t == null) { p++; continue }
-        val appq = t
-
-        // 1) Collapse the split dimension once:
-        X.fill(false)
-        Z.fill(false)
-        for (r in appq) {
-          orInto(X, dp[p][r], width)
-          orInto(Z, dp[r][q], width)
-        }
-
-        // 2) Per-A early exit using collapsed frontiers
+    for (dist in 1..<dp.size) {
+      for (iP in 0..<dp.size - dist) {
+        val p = iP
+        val q = iP + dist
+        val appq = ap[p][q] ?: continue
         for ((A, indexArray) in vindex.withIndex()) {
-          if (dp[p][q][A]) continue
-          var j = 0
-          while (j < indexArray.size) {
+          outerloop@for(j in 0..<indexArray.size step 2) {
             val B = indexArray[j]
             val C = indexArray[j + 1]
-            if (X[B] && Z[C]) { dp[p][q][A] = true; break }
-            j += 2
+            for (r in appq)
+              if (dp[p][r][B] && dp[r][q][C]) {
+                dp[p][q][A] = true
+                break@outerloop
+              }
           }
-
-          // LED update when start derives span (0,q)
-          if (p == 0 && A == startIdx && dp[p][q][A] && finalMark[q]) {
+          if (p == 0 && A == startIdx && levFSA.isFinal[q] && dp[p][q][A]) {
             val (x, y) = levFSA.idsToCoords[q]!!
             /** See final state conditions for [makeExactLevCFL] */
             // The minimum radius such that this final state is included in the L-FSA
-            val rad = abs(brokenStr.size - x + y)
-            if (rad < minRad) minRad = rad
+            minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
             if (minRad == 1) return 1
           }
         }
-
-        p++
       }
     }
-
     return if (minRad == Int.MAX_VALUE) null else minRad
   }
 
@@ -478,62 +442,36 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
   suspend fun nonemptyLevInt(levFSA: FSA): Int? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
-    val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) } }
+    val dp = Array(levFSA.numStates) { Array(levFSA.numStates) { BooleanArray(width) { false } } }
 
     levFSA.allIndexedTxs0(ups, bindex).forEach { (q0, nt, q1) -> dp[q0][q1][nt] = true }
-
-    var minRad = Int.MAX_VALUE
-    val start = startIdx
-
-    // O(1) final-state membership
-    val finalMark = BooleanArray(levFSA.numStates).also { fm -> for (f in levFSA.finalIdxs) fm[f] = true }
-
-    // Reusable scratch (collapsed frontiers over r)
-    val X = BooleanArray(width)
-    val Z = BooleanArray(width)
+    var minRad: Int = Int.MAX_VALUE
 
     // For pairs (p,q) in topological order
-    val n = dp.size
-    for (dist in 1 until n) {
-      var p = 0
-      while (p < n - dist) {
-        val q = p + dist
-        val t = ap[p][q]
-        if (t == null) { p++; continue }
-        val appq = t
-
-        // 1) Collapse the split dimension once:
-        X.fill(false)
-        Z.fill(false)
-        for (r in appq) {
-          orInto(X, dp[p][r], width)
-          orInto(Z, dp[r][q], width)
-        }
-
-        // 2) Per-A early exit using collapsed frontiers
-        for ((A, indexArray) in vindex.withIndex()) {
+    for (dist: Int in 1..<dp.size) {
+      for (iP: Int in 0..<dp.size - dist) {
+        val p = iP
+        val q = iP + dist
+        val appq = ap[p][q] ?: continue
+        for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           pause()
-          if (dp[p][q][A]) continue
-          var j = 0
-          while (j < indexArray.size) {
+          outerloop@for(j: Int in 0..<indexArray.size step 2) {
             val B = indexArray[j]
             val C = indexArray[j + 1]
-            if (X[B] && Z[C]) { dp[p][q][A] = true; break }
-            j += 2
+            for (r in appq)
+              if (dp[p][r][B] && dp[r][q][C]) {
+                dp[p][q][A] = true
+                break@outerloop
+              }
           }
 
-          // LED update when start derives span (0,q)
-          if (p == 0 && A == start && dp[p][q][A] && finalMark[q]) {
+          if (p == 0 && A == startIdx && levFSA.isFinal[q] && dp[p][q][A]) {
             val (x, y) = levFSA.idsToCoords[q]!!
             /** See final state conditions for [makeExactLevCFL] */
             // The minimum radius such that this final state is included in the L-FSA
-            val rad = abs(brokenStr.size - x + y)
-            if (rad < minRad) minRad = rad
-            if (minRad == 1) return 1
+            minRad = minOf(minRad, (brokenStr.size - x + y).absoluteValue)
           }
         }
-
-        p++
       }
     }
 

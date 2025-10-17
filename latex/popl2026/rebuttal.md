@@ -1,4 +1,4 @@
-We thank all four reviewers for their time, particularly `A`, `C`, and `D` who made an effort to read our POPL submission and provide their earnest feedback. In particular, Reviewer `D` should be commended for their counterexample, which is exemplary of a good review and far more valuable than lukewarm praise or vague stylistic critique. The manuscript will be withdrawn.
+We thank all four reviewers for their time, particularly `A`, `C`, and `D` who made an effort to read our POPL submission and provide their earnest feedback. In particular, Reviewer `C` should be commended for their counterexample, which is exemplary of a good review and far more valuable than lukewarm praise or vague stylistic critique. The manuscript will be withdrawn.
 
 Review #252A
 ===========================================================================

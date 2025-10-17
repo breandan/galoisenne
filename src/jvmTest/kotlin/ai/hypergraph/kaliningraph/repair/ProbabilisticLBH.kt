@@ -529,8 +529,11 @@ class ProbabilisticLBH {
 
     println(str.matches(cfg))
 
-    initiateSerialRepair(str.tokenizeByWhitespace(), cfg)
-      .take(10).forEach { println(levenshteinAlign(str, it).paintANSIColors()) }
+    val t = initiateSerialRepair(str.tokenizeByWhitespace(), cfg)
+      .take(10).toList()
+    assertTrue(t.isNotEmpty())
+
+    t.forEach { println(levenshteinAlign(str, it).paintANSIColors()) }
   }
 
 /*
@@ -540,13 +543,15 @@ class ProbabilisticLBH {
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
     var precision = 0
-    val total = 1000
+    val total = 100
     pythonTestCases.take(total).forEach { (broke, fixed) ->
       val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-        .take(1_000_000).map { it.dropLast(8) }
-//      println("Fixed: $fixed")
+        .take(100)
+        .onEach {
+          assertTrue(it in vanillaS2PCFG.language)
+          if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
+        }
       if (fixed in t) precision++
-    //.forEach { println(levenshteinAlign(broke, it.dropLast(8)).paintANSIColors()) }
     }
     println("Precision: ${precision / total.toDouble()}")
   }
