@@ -87,6 +87,52 @@ val CFG.vindex2: Array<List<List<Int>>> by cache {
   }
 }
 
+data class PackedAdj(val other: IntArray, val aIdx: IntArray) {
+  inline fun forEachIfIn(bitset: KBitSet, f: (c: Int, a: Int) -> Unit) {
+    val os = other; val asz = aIdx
+    var i = 0
+    while (i < os.size) {
+      val c = os[i]
+      if (bitset[c]) f(c, asz[i])
+      i++
+    }
+  }
+}
+
+val CFG.leftAdj by cache {
+  val W = nonterminals.size
+  val bags = Array(W) { mutableListOf<Pair<Int, Int>>() } // per B: (C,A)
+
+  vindex.forEachIndexed { A, indexArray ->
+    var j = 0
+    while (j < indexArray.size) {
+      val B = indexArray[j]
+      val C = indexArray.getOrElse(j + 1) { -1 }
+      if (C >= 0) bags[B].add(C to A)
+      j += 2
+    }
+  }
+
+  val out = arrayOfNulls<PackedAdj>(W)
+  var b = 0
+  while (b < W) {
+    val lst = bags[b]
+    if (lst.isNotEmpty()) {
+      val os = IntArray(lst.size)
+      val asz = IntArray(lst.size)
+      var i = 0
+      while (i < lst.size) {
+        val (c, a) = lst[i]
+        os[i] = c; asz[i] = a; i++
+      }
+      out[b] = PackedAdj(os, asz)
+    }
+    b++
+  }
+
+  out
+}
+
 val CFG.bindex: Bindex<Σᐩ> by cache { Bindex(nonterminals) }
 val CFG.normalForm: CFG by cache { normalize() }
 val CFG.depGraph: LabeledGraph by cache { dependencyGraph() }

@@ -57,9 +57,9 @@ sealed class GRE(open vararg val args: GRE) {
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
       is CAT ->
         for (lhs in l.enumerate(shouldContinue))
-        for (rhs in r.enumerate(shouldContinue))
-          if (lhs.isEmpty()) { if (rhs.isEmpty()) yield(emptyList()) else rhs              }
-          else               { if (rhs.isEmpty()) yield(lhs)         else yield(lhs + rhs) }
+          for (rhs in r.enumerate(shouldContinue))
+            if (lhs.isEmpty()) { if (rhs.isEmpty()) yield(emptyList()) else rhs              }
+            else               { if (rhs.isEmpty()) yield(lhs)         else yield(lhs + rhs) }
     }
   }
 
@@ -87,7 +87,7 @@ sealed class GRE(open vararg val args: GRE) {
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
       is CAT ->
         for (lhs in l.enumerateWithPriority(ngrams, tmLst, pfx))
-        for (rhs in r.enumerateWithPriority(ngrams, tmLst, pfx))
+          for (rhs in r.enumerateWithPriority(ngrams, tmLst, pfx))
             if (lhs.isEmpty()) { if (rhs.isEmpty()) yield(emptyList()) else rhs              }
             else               { if (rhs.isEmpty()) yield(lhs)         else yield(lhs + rhs) }
     }
@@ -195,9 +195,8 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
 
     // For pairs (p,q) in topological order
     for (dist: Int in 1..<dp.size) {
-      for (iP: Int in 0..<dp.size - dist) {
-        val p = iP
-        val q = iP + dist
+      for (p: Int in 0..<dp.size - dist) {
+        val q = p + dist
         val appq = ap[p][q] ?: continue
         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           outerloop@for(j: Int in 0..<indexArray.size step 2) {
@@ -273,10 +272,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
 
         val list = rhsPairs.toTypedArray()
         if (rhsPairs.isNotEmpty()) {
-          if (list.size > maxChildren) {
-            maxChildren = list.size
-//            location = p to q
-          }
+          if (list.size > maxChildren) maxChildren = list.size
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
       }
@@ -289,7 +285,6 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
   // 5) Combine under a single GRE
   return (if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()) to diff)
 }
-
 
 var latestLangEditDistance = 0
 fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
@@ -311,9 +306,8 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
     var minRad = Int.MAX_VALUE
     // For pairs (p,q) in topological order
     for (dist in 1..<dp.size) {
-      for (iP in 0..<dp.size - dist) {
-        val p = iP
-        val q = iP + dist
+      for (p in 0..<dp.size - dist) {
+        val q = p + dist
         val appq = ap[p][q] ?: continue
         for ((A, indexArray) in vindex.withIndex()) {
           outerloop@for(j in 0..<indexArray.size step 2) {
@@ -388,10 +382,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
         val list = rhsPairs.toTypedArray()
         if (rhsPairs.isNotEmpty()) {
-          if (list.size > maxChildren) {
-            maxChildren = list.size
-//            location = p to q
-          }
+          if (list.size > maxChildren) maxChildren = list.size
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
       }
@@ -399,15 +390,12 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   }
 
 //  var max = 0
-//
-//  for (p in 0..<nStates) {
-//    for (q in 0..<nStates) {
-//      val cnt = dp[p][q].count { it != null }
-//      if (cnt > max) max = cnt
-//    }
-//  }
-//
-//  println("Max: $max / ${cfg.nonterminals.size}")
+//  var tot = 0
+//  var dnm = 0
+//  val nts = cfg.nonterminals.size
+//  for (p in 0..<nStates) for (q in 0..<nStates)
+//    dp[p][q].count { it != null }.also { cnt -> tot += cnt; dnm += nts; if (cnt > max) max = cnt }
+//  println("Max: $max / tot: $tot / avg: ${tot.toDouble() / dnm} / NTs: ${cfg.nonterminals.size}")
 
   println("Completed parse matrix in: ${timer.elapsedNow()}")
 
@@ -419,14 +407,14 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 }
 
 fun initiateSerialRepair(brokenStr: List<Σᐩ>, cfg: CFG): Sequence<Σᐩ> {
-  val repair = repairWithGRE(brokenStr, cfg)
+  val repair = repairWithSparseGRE(brokenStr, cfg)
+//  val repair = repairWithGRE(brokenStr, cfg)
   val clock = TimeSource.Monotonic.markNow()
   return repair?.words(cfg.tmLst) { clock.elapsedNow().inWholeMilliseconds < TIMEOUT_MS } ?: emptySequence()
 }
 
 // Same as serial repair, but with strategic pauses to prevent stuttering on single-threaded runtimes
 suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
-  var i = 0
   val upperBound = MAX_RADIUS * 3
 //  val monoEditBounds = cfg.maxParsableFragmentB(brokenStr, pad = upperBound)
   val timer = TimeSource.Monotonic.markNow()
@@ -438,7 +426,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val maxBranch = vindex.maxOf { it.size }
   val startIdx = bindex[START_SYMBOL]
 
-  suspend fun pause(freq: Int = 300_000) { if (i++ % freq == 0) { delay(50.nanoseconds) }}
+  var i = 0; suspend fun pause(freq: Int = 300_000) { if (i++ % freq == 0) { delay(50.nanoseconds) }}
 
   suspend fun nonemptyLevInt(levFSA: FSA): Int? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
@@ -449,9 +437,8 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
     // For pairs (p,q) in topological order
     for (dist: Int in 1..<dp.size) {
-      for (iP: Int in 0..<dp.size - dist) {
-        val p = iP
-        val q = iP + dist
+      for (p: Int in 0..<dp.size - dist) {
+        val q = p + dist
         val appq = ap[p][q] ?: continue
         for ((A: Int, indexArray: IntArray) in vindex.withIndex()) {
           pause()
@@ -528,10 +515,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
         val list = rhsPairs.toTypedArray()
         if (rhsPairs.isNotEmpty()) {
-          if (list.size > maxChildren) {
-            maxChildren = list.size
-//            location = p to q
-          }
+          if (list.size > maxChildren) maxChildren = list.size
           dp[p][q][Aidx] = if (list.size == 1) list.first() else GRE.CUP(*list)
         }
       }
@@ -548,4 +532,152 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
       "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms")
   // 5) Combine them under a single GRE
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
+}
+
+// Sparse repair, for large grammars w/ 10^9+ nonterminals
+fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
+  val upperBound = MAX_RADIUS * 3
+  val timer = TimeSource.Monotonic.markNow()
+  val startIdx = cfg.bindex[START_SYMBOL]
+
+  fun nonemptyLevIntSparse(levFSA: FSA): Int? {
+    val n = levFSA.numStates
+    val ap = levFSA.allPairs
+    val W = cfg.nonterminals.size
+
+    val dp = Array(n) { Array(n) { KBitSet(W) } }
+    // aCount[p][q]: quick zero test to skip empty chart entries
+    val aCount = Array(n) { IntArray(n) }
+
+    levFSA.allIndexedTxs2(cfg.grpUPs, cfg.bindex)
+      .forEach { (p, nt, q) -> if (!dp[p][q][nt]) { dp[p][q].set(nt); aCount[p][q]++ } }
+
+    var minRad = Int.MAX_VALUE
+
+    for (dist in 1 until n) {
+      var p = 0
+      while (p < n - dist) {
+        val q = p + dist
+        val appq = ap[p][q]
+        if (appq != null) {
+          val tgt = dp[p][q]
+
+          var i = 0
+          while (i < appq.size) {
+            val r = appq[i]
+
+            if (aCount[p][r] == 0 || aCount[r][q] == 0) { i++; continue }
+
+            val leftBits = dp[p][r]
+            val rightBits = dp[r][q]
+
+            for (B in leftBits.iterator()) {
+              val adj = cfg.leftAdj[B] ?: continue
+              adj.forEachIfIn(rightBits) { _, A ->
+                if (!tgt[A]) {
+                  tgt.set(A); aCount[p][q]++
+
+                  if (p == 0 && A == startIdx && levFSA.isFinal[q]) {
+                    val (x, y) = levFSA.idsToCoords[q]!!
+                    minRad = minOf(minRad, abs(brokenStr.size - x + y))
+                    if (minRad == 1) return 1
+                  }
+                }
+              }
+            }
+            i++
+          }
+        }
+        p++
+      }
+    }
+
+    return if (minRad == Int.MAX_VALUE) null else minRad
+  }
+
+  val led = (3..<upperBound).firstNotNullOfOrNull { r -> nonemptyLevIntSparse(makeLevFSA(brokenStr, r)) }
+    ?: upperBound.also { println("Hit upper bound") }
+
+  val radius = (led + LED_BUFFER).coerceAtMost(MAX_RADIUS.coerceAtLeast(led))
+  latestLangEditDistance = led
+  println("Identified LED=$led, radius=$radius in ${timer.elapsedNow()}")
+
+  val levFSA = makeLevFSA(brokenStr, radius)
+  val n = levFSA.numStates
+  val tmm = cfg.tmMap
+  val t2vs = cfg.tmToVidx
+  val tms = cfg.tmLst.size
+  val W = cfg.nonterminals.size
+
+  val active: Array<Array<KBitSet>> = Array(n) { Array(n) { KBitSet(W) } }
+  val dp: Array<Array<MutableMap<Int, GRE>>> = Array(n) { Array(n) { mutableMapOf() } }
+
+  levFSA.allIndexedTxs1(cfg.grpUPs).forEach { (p, σ, q) ->
+    val tIdx = tmm[σ] ?: return@forEach
+    val cell = dp[p][q]
+    for (A in t2vs[tIdx]) {
+      if (!active[p][q][A]) active[p][q].set(A)
+      val existing = cell[A] as? GRE.SET
+      cell[A] = (existing ?: GRE.SET(tms)).apply { s.set(tIdx) }
+    }
+  }
+
+  var maxChildren = 0
+
+  for (dist in 1 until n) {
+    var p = 0
+    while (p < n - dist) {
+      val q = p + dist
+      val appq = levFSA.allPairs[p][q]; if (appq == null) { p++; continue }
+
+      val acc: MutableMap<Int, MutableList<GRE>> = hashMapOf()
+
+      var i = 0
+      while (i < appq.size) {
+        val r = appq[i]
+        val leftBits = active[p][r]
+        val rightBits = active[r][q]
+        val leftMap = dp[p][r]
+        val rightMap = dp[r][q]
+
+          for (B in leftBits.iterator()) {
+            val adj = cfg.leftAdj[B] ?: continue
+            adj.forEachIfIn(rightBits) { C, A ->
+              val l = leftMap[B] ?: return@forEachIfIn
+              val rgre = rightMap[C] ?: return@forEachIfIn
+              acc.getOrPut(A) { mutableListOf() }.add(l * rgre)
+            }
+          }
+
+        i++
+      }
+
+      if (acc.isNotEmpty()) {
+        val cell = dp[p][q]
+        val actBits = active[p][q]
+        for ((A, parts) in acc) {
+          if (!actBits[A]) actBits.set(A)
+          val combined = if (parts.size == 1) parts[0] else GRE.CUP(*parts.toTypedArray()).flatunion()
+          val prev = cell[A]
+          cell[A] = if (prev == null) combined else (prev + combined).flatunion()
+          if (parts.size > maxChildren) maxChildren = parts.size
+        }
+      }
+
+      p++
+    }
+  }
+
+//    var max = 0; var tot = 0; var dnm = 0
+//    for (p in 0 until n) for (q in 0 until n) {
+//      val cnt = dp[p][q].size
+//      tot += cnt; dnm += W
+//      if (cnt > max) max = cnt
+//    }
+//    println("Sparse Max: $max / tot: $tot / avg: ${tot.toDouble() / dnm} / NTs: $W")
+
+  println("Completed sparse parse matrix in: ${timer.elapsedNow()} |Q|=$n, |G|=${cfg.size}, |V|=$W, |Σ|=$tms, maxChildren=$maxChildren")
+
+  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+  return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()).flatunion()
 }

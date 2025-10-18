@@ -530,9 +530,9 @@ class ProbabilisticLBH {
     val cfg = miniktcfg
 
     println("Nonterminals: " + cfg.nonterminals.size)
-//    val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
-//      val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( 0 , 1 )"
-    val str = "fun f1 ( x : Int , y : Int ) : Int = if y < x then y + x else f1 ( 1 , 0 ) * x ; f1 ( 1 , )"
+//  val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
+//    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( _ _ _ )"
+    val str = "fun f1 ( x : Int , x  Int ) : Int = if y < x then y + x else f1 ( 1 , 0 ) * x ; f1 ( 0 , )"
 
     println(str.matches(cfg))
 
@@ -546,7 +546,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */
-  @Test
+  @Test // ~1m 8.16s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
     var precision = 0
@@ -557,7 +557,7 @@ class ProbabilisticLBH {
         .onEach {
           assertTrue(it in vanillaS2PCFG.language)
           if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
-        }
+        }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
       if (fixed in t) precision++
     }
     println("Precision: ${precision / total.toDouble()}")

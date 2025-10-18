@@ -159,6 +159,38 @@ class KBitSet(val n: Int) {
 
   fun merge(other: KBitSet): KBitSet = KBitSet(n).also { it or other }.also { it or this }
 
+  fun iterator(): Iterable<Int> = object : Iterable<Int> {
+    override fun iterator(): Iterator<Int> = object : Iterator<Int> {
+      private var wordIndex = 0
+      private var currentWord = data.getOrNull(0) ?: 0L
+      private var nextIndex: Int? = findNextSetBit()
+
+      private fun findNextSetBit(): Int? {
+        while (wordIndex < data.size) {
+          if (currentWord != 0L) {
+            val bitIndex = currentWord.countTrailingZeroBits()
+            val index = (wordIndex shl 6) + bitIndex
+            if (index < n) {
+              currentWord = currentWord and (currentWord - 1) // Clear the lowest set bit
+              return index
+            }
+          }
+          wordIndex++
+          currentWord = data.getOrNull(wordIndex) ?: 0L
+        }
+        return null
+      }
+
+      override fun hasNext(): Boolean = nextIndex != null
+
+      override fun next(): Int {
+        val result = nextIndex ?: throw NoSuchElementException()
+        nextIndex = findNextSetBit()
+        return result
+      }
+    }
+  }
+
   fun toList(): List<Int> {
     val result = mutableListOf<Int>()
     for (i in 0..<n) if (get(i)) result.add(i)
