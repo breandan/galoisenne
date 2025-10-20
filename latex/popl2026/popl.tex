@@ -699,7 +699,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \item $\texttt{lev\_build}: \Sigma^n \times \mathbb{N} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
   \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
   \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{GRE}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{reg\_dcode}: \text{GRE} \times \mathbb{N}^{|\Sigma|^{c\approx 4}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10}$ -- returns a small set of the most probable repairs.
+  \item $\texttt{reg\_dcode}: \text{GRE} \times \mathbb{N}^{|\Sigma|^{c\approx 4}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10^4}$ -- returns a short list of high-probability repairs.
 \end{enumerate}
 
 \noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
@@ -795,7 +795,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
   \end{algorithmic}
 \end{algorithm}
 
-\noindent Now, we have our shortlist of repairs and after cosmetic postprocessing, can present them to the user. With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., 100ms, or otherwise terminate early should we succeed in exhaustively generating it.
+\noindent With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., 100ms, or else terminate early should we succeed in exhaustively generating it. After reranking, truncation, and cosmetic postprocessing, the resulting repairs can then be displayed.
 
 \clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
