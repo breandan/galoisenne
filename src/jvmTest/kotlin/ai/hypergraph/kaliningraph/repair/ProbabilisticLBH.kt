@@ -554,38 +554,58 @@ class ProbabilisticLBH {
   @Test
   fun testMiniKTAPI() {
     val cfg = miniktcfgapi
+    val timer = TimeSource.Monotonic.markNow()
 
 //  val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
 //    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( _ _ _ )"
-    val str = "fun f0 ( p1 : Float , p2 : Float ) : Int = ( if ( p1 == p2 ) { 1 } else { 1 } ) + 1"
+    val str = "fun f0 ( p1 : Float , p2 : Float ) : Bool = ( if ( p1 == p2 ) { 1 } else { 1 } ) + 1"
 
-    println(str.matches(cfg))
-    println(KotlinTypeChecker.typeChecks(str))
+    println("CFG recognizes: " + str.matches(cfg))
+    println("Kotlin recognizes: " + KotlinTypeChecker.typeChecks(str))
 
-    val t = initiateSerialRepair(str.tokenizeByWhitespace(), cfg).take(10).toList()
+//    val t = initiateSerialRepair(str.tokenizeByWhitespace(), cfg).take(10).toList()
+    val t = repairWithSparseGRE(str.tokenizeByWhitespace(), cfg)!!
+      .also {
+        println("GRE obtained in: ${timer.elapsedNow()}")
+        println("Total words: ${it.toDFSM(cfg.tmLst).countWords()}")
+      }
+      .toDFA(cfg.tmLst).apply {
+        println("Pre-minimization: ${states.size} states")
+        minimize()
+        println("DFA minimization in ${timer.elapsedNow()} with ${states.size} states")
+      }
+      .decodeDFA(cfg.tmDict).take(1000)
+      .also { println("Found ${it.size} words empirically") }
     assertTrue(t.isNotEmpty())
-    t.forEach {
+    t.forEachIndexed { i, it ->
       assertTrue(KotlinTypeChecker.typeChecks(it), "Failed type check! $it")
-      println("✔ " + levenshteinAlign(str, it).paintANSIColors())
+      if (i < 10) println("✔ " + levenshteinAlign(str, it).paintANSIColors())
     }
+
+    println("Repair finished in ${timer.elapsedNow()}")
 
     benchmarkMiniKt()
   }
 
   fun benchmarkMiniKt() {
     val cfg = miniktcfgapi
-    val tempLen = 25
+    val tempLen = 20
     val timer = TimeSource.Monotonic.markNow()
     var avgDelay = 0L
     var initDelay = 0L
     var avgDelayTimer = TimeSource.Monotonic.markNow()
     val samples = 1000
-    cfg.sampleSeq(List(tempLen) {"_"}).take(1000).forEachIndexed { i, pp -> /*println(pp);*/
+    val pt = cfg.startGRE(List(tempLen) {"_"})!!
+    println("Parsed (_)^$tempLen in: ${timer.elapsedNow()}")
+    val dfsm = pt.toDFSM(cfg.tmLst)
+    println("|L_∩|: ${dfsm.countWords()} (in ${timer.elapsedNow()})")
+    dfsm.sampleUniformly(cfg.tmLst).take(1000).onEachIndexed { i, pp ->
       if (i == 0) initDelay = timer.elapsedNow().inWholeMilliseconds
       avgDelay += avgDelayTimer.elapsedNow().inWholeMilliseconds
       avgDelayTimer = TimeSource.Monotonic.markNow()
-    }
-    println("Sampled length-$tempLen template from (${cfg.nonterminals.size}, ${cfg.tripleIntProds.size})-CFG in ${initDelay}ms (TTFS), ${avgDelay / samples.toDouble()} (μDELAY)")
+      if (i < 10) println(pp)
+    }.take(1000).toList().also { println("Found ${it.size} words empirically") }
+    println("Sampled length-$tempLen template from (${cfg.nonterminals.size}, ${cfg.tripleIntProds.size})-CFG in ${initDelay}ms (TTFS), ${avgDelay / samples.toDouble()}ms (μDELAY)")
   }
 
 /*
@@ -608,44 +628,3 @@ class ProbabilisticLBH {
     println("Precision: ${precision / total.toDouble()}")
   }
 }
-
-// NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class ** STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , NAME = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , STRING = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , NUMBER = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ... = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ) = ( ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME ( NAME ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class * STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , class not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , not + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ) ( STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , * + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING ( ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ** + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , * - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ) = STRING ( ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , * not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ( ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , + + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ** - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , None = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ** not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , - + STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , + - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , True = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , not - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , ) = ( STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , - - STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , [ ] = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , { } = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , not not STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( ( STRING , ) = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( [ STRING , ] = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( STRING , lambda : STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE
-//    NAME . NAME ( { STRING , } = STRING ) . NAME ( STRING , NAME = NAME . NAME ( STRING ) ) NEWLINE

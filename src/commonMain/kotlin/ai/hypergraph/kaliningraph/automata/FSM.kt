@@ -4,7 +4,11 @@ import ai.hypergraph.kaliningraph.automata.GRE.CAT
 import ai.hypergraph.kaliningraph.automata.GRE.CUP
 import ai.hypergraph.kaliningraph.automata.GRE.EPS
 import ai.hypergraph.kaliningraph.automata.GRE.SET
+import ai.hypergraph.kaliningraph.sampling.LFSR
+import ai.hypergraph.kaliningraph.sampling.bigLFSRSequence
+import ai.hypergraph.kaliningraph.sampling.longLFSRSequence
 import ai.hypergraph.kaliningraph.types.filter
+import com.ionspin.kotlin.bignum.integer.BigInteger
 
 // Alternate to FSA; bypasses graph subtyping, basically just record types
 class DFSM(
@@ -223,6 +227,66 @@ open class NFSM(
   }
 }
 
+fun NFSM.toDFSM(width: Int): DFSM {
+  // Pre-index NFA transitions: from -> (symbol -> {to,...})
+  val tmap: Map<String, Map<Int, Set<String>>> = run {
+    val tmp = mutableMapOf<String, MutableMap<Int, MutableSet<String>>>()
+    for ((from, a, to) in delta) {
+      val row = tmp.getOrPut(from) { mutableMapOf() }
+      row.getOrPut(a) { mutableSetOf() }.add(to)
+    }
+    tmp.mapValues { (_, row) -> row.mapValues { it.value.toSet() } }
+  }
+
+  fun succ(states: Set<String>, a: Int): Set<String> {
+    if (states.isEmpty()) return emptySet()
+    val out = mutableSetOf<String>()
+    for (s in states) {
+      val row = tmap[s] ?: continue
+      val tgt = row[a] ?: continue
+      out.addAll(tgt)
+    }
+    return out
+  }
+
+  // Canonical name for a subset of NFA states
+  fun nameOf(S: Set<String>) = S.sorted().joinToString("|").ifEmpty { "∅" }
+
+  val alphabet = 0 until width
+  val q0set = setOf(q_alpha)
+
+  val subset2name = LinkedHashMap<Set<String>, String>()
+  val queue = ArrayDeque<Set<String>>()
+  val deltaMap = mutableMapOf<String, MutableMap<Int, String>>()
+  val finals = mutableSetOf<String>()
+
+  subset2name[q0set] = "q0"
+  queue.add(q0set)
+
+  while (queue.isNotEmpty()) {
+    val S = queue.removeFirst()
+    val sName = subset2name[S]!!
+    if (S.any { it in F }) finals.add(sName)
+
+    val row = deltaMap.getOrPut(sName) { mutableMapOf() }
+    for (a in alphabet) {
+      val T = succ(S, a)
+      if (T.isEmpty()) continue // no sink
+      val tName = subset2name.getOrPut(T) {
+        val n = "q${subset2name.size}"
+        queue.add(T)
+        n
+      }
+      row[a] = tName
+    }
+  }
+
+  val Qd = subset2name.values.toSet()
+  return DFSM(Qd, deltaMap, "q0", finals, width)
+}
+
+fun GRE.toDFSM(terms: List<String>): DFSM = toNFSM().toDFSM(terms.size)
+
 fun GRE.toNFSM(): NFSM {
   var stateCounter = 0
   fun freshState(): String = "q${stateCounter++}"
@@ -304,65 +368,6 @@ fun GRE.toNFSM(): NFSM {
     }
   }
   return buildNFSM(this)
-}
-
-fun GRE.toDFSM(): DFSM {
-  val width = this.width
-  val alphabet = 0 until width
-
-  // Handle empty language
-  if (enumerate().none()) {
-    val sink = "sink"
-    return DFSM(
-      Q = setOf(sink),
-      deltaMap = mapOf(sink to alphabet.associateWith { sink }),
-      q_alpha = sink,
-      F = emptySet(),
-      width = width
-    )
-  }
-
-  val languageToState = mutableMapOf<String, String>()
-  val queue = ArrayDeque<GRE>()
-  val deltaMap = mutableMapOf<String, MutableMap<Int, String>>()
-  val F = mutableSetOf<String>()
-  val sink = "sink"
-
-  // Initial state
-  val q0 = "q0"
-  languageToState[hash()] = q0
-  queue.add(this)
-
-  while (queue.isNotEmpty()) {
-    val currentGRE = queue.removeFirst()
-    val currentLang = currentGRE.hash()
-    val currentState = languageToState[currentLang]!!
-
-    // Set accepting state
-    if (currentGRE.nullable) F.add(currentState)
-
-    // Compute transitions
-    for (σ in alphabet) {
-      val derivative = currentGRE.dv(σ)
-      val targetState = if (derivative != null) {
-        val derivLang = derivative.hash()
-        languageToState.getOrPut(derivLang) {
-          val newState = "q${languageToState.size}"
-          queue.add(derivative)
-          newState
-        }
-      } else {
-        sink
-      }
-      deltaMap.getOrPut(currentState) { mutableMapOf() }[σ] = targetState
-    }
-  }
-
-  // Configure sink state
-  deltaMap[sink] = alphabet.associateWith { sink }.toMutableMap()
-  val Q = languageToState.values.toSet() + sink
-
-  return DFSM(Q, deltaMap, q0, F, width)
 }
 
 fun DFSM.printAdjMatrixPowers() {
@@ -456,4 +461,54 @@ fun DFSM.printAdjMatrixPowers() {
     current = multiply(current, A)
     k++
   }
+}
+
+fun DFSM.sampleUniformly(tmLst: List<String>): Sequence<String> = sequence {
+  // Precompute (and memoize) the number of accepted words from each state.
+  val memo = HashMap<String, Long>()
+  fun countFrom(q: String): Long {
+    memo[q]?.let { return it }
+    val row = deltaMap[q].orEmpty()
+    var sum = 0L
+    for ((_, next) in row) sum += countFrom(next)
+    val res = if (q in F) 1L + sum else sum // +1 for epsilon at finals
+    memo[q] = res
+    return res
+  }
+
+  val total = countFrom(q_alpha)
+  require(total > 0L) { "Language is empty; no words to sample." }
+
+  // Decode a rank r ∈ [0, total) into a word (as symbol indices joined by spaces).
+  fun decode(r0: Long): String {
+    var r = r0
+    var q = q_alpha
+    val out = mutableListOf<Int>()
+
+    while (true) {
+      // If current state is final, epsilon contributes the first block of mass.
+      if (q in F) {
+        if (r == 0L) return out.joinToString(" ") { tmLst[it] }
+        r -= 1L
+      }
+
+      // Walk one symbol along the unique branch containing r.
+      val row = deltaMap[q].orEmpty()
+      var stepped = false
+      for (a in row.keys.sorted()) {
+        val nxt = row[a]!!
+        val cnt = memo[nxt] ?: countFrom(nxt)
+        if (r < cnt) {
+          out += a
+          q = nxt
+          stepped = true
+          break
+        }
+        r -= cnt
+      }
+      check(stepped) { "Rank out of range while decoding (graph must be acyclic and counts finite)." }
+    }
+  }
+
+  for (r in longLFSRSequence(total)) yield(decode(r))
 }

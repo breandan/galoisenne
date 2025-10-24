@@ -282,6 +282,14 @@ fun bigLFSRSequence(maxVal: BigInteger): Sequence<BigInteger> =
   BigLFSR(makeBigIntFromTaps(Polynomials.xlinz[maxVal.bitLength()]!!), makeRandBigInt(maxVal.bitLength()))
     .sequence().filter { it < maxVal }
 
+fun longLFSRSequence(maxVal: Long): Sequence<Long> =
+  if (maxVal <= 0L) emptySequence() else run {
+    var p = 1UL; var d = 0
+    val lim = (maxVal + 1L).toULong()
+    while (p < lim) { p = p shl 1; d++ }
+    LFSR(d).map { it.toLong() }.filter { it <= maxVal }.map { it - 1L } // 0..maxVal-1
+  }
+
 fun makeBigIntFromTaps(taps: List<Int>): BigInteger =
   taps.map {
     BigInteger.parseString(Array(it + 1) { if (it == 0) '1' else '0' }.joinToString(""), 2)

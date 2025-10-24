@@ -13,7 +13,7 @@ object KotlinTypeChecker {
   }
 
   fun typeChecks(src: String): Boolean = try {
-    (engine as Compilable).compile(src)  // compile only
+    (engine as Compilable).compile(src.replace("Bool", "Boolean"))
     true
   } catch (e: ScriptException) {
     System.err.println(e.message)
