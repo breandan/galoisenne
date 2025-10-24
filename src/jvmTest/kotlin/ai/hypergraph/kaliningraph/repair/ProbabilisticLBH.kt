@@ -543,6 +543,51 @@ class ProbabilisticLBH {
     t.forEach { println(levenshteinAlign(str, it).paintANSIColors()) }
   }
 
+  val miniktcfgapi by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/api_cnf_cfg.txt")
+      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+
+  /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniKTAPI"
+*/
+  @Test
+  fun testMiniKTAPI() {
+    val cfg = miniktcfgapi
+
+//  val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
+//    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( _ _ _ )"
+    val str = "fun f0 ( p1 : Float , p2 : Float ) : Int = ( if ( p1 == p2 ) { 1 } else { 1 } ) + 1"
+
+    println(str.matches(cfg))
+    println(KotlinTypeChecker.typeChecks(str))
+
+    val t = initiateSerialRepair(str.tokenizeByWhitespace(), cfg).take(10).toList()
+    assertTrue(t.isNotEmpty())
+    t.forEach {
+      assertTrue(KotlinTypeChecker.typeChecks(it), "Failed type check! $it")
+      println("✔ " + levenshteinAlign(str, it).paintANSIColors())
+    }
+
+    benchmarkMiniKt()
+  }
+
+  fun benchmarkMiniKt() {
+    val cfg = miniktcfgapi
+    val tempLen = 25
+    val timer = TimeSource.Monotonic.markNow()
+    var avgDelay = 0L
+    var initDelay = 0L
+    var avgDelayTimer = TimeSource.Monotonic.markNow()
+    val samples = 1000
+    cfg.sampleSeq(List(tempLen) {"_"}).take(1000).forEachIndexed { i, pp -> /*println(pp);*/
+      if (i == 0) initDelay = timer.elapsedNow().inWholeMilliseconds
+      avgDelay += avgDelayTimer.elapsedNow().inWholeMilliseconds
+      avgDelayTimer = TimeSource.Monotonic.markNow()
+    }
+    println("Sampled length-$tempLen template from (${cfg.nonterminals.size}, ${cfg.tripleIntProds.size})-CFG in ${initDelay}ms (TTFS), ${avgDelay / samples.toDouble()} (μDELAY)")
+  }
+
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */

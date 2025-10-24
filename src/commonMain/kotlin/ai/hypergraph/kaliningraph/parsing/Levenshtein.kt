@@ -58,23 +58,6 @@ fun Σᐩ.unpackCoordinates() =
   substringAfter('_').split('/')
     .let { (i, j) -> i.toInt() to j.toInt() }
 
-fun makeAllHolesFSA(len: Int): FSA {
-  require(len >= 0) { "len must be non-negative" }
-
-  // States: q_0/0, q_1/0, ..., q_len/0
-  // Arcs:   q_{i-1}/0 --[!=]_-> q_i/0   for i = 1..len
-  val arcs: TSA = (1..len).map { i -> "q_${i - 1}/0" to "[!=]_" to "q_${i}/0" }.toSet()
-
-  val initial = setOf("q_0/0")
-  val finals  = setOf("q_${len}/0")
-
-  return AFSA(arcs, initial, finals).also {
-    it.height = 0            // single row
-    it.width = len           // number of columns
-    it.levString = List(len) { "_" } // template metadata (all holes)
-  }
-}
-
 fun makeExactLevCFL(
   str: List<Σᐩ>,
   radius: Int, // Levenshtein distance
