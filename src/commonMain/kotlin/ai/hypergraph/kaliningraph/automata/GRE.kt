@@ -539,6 +539,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val upperBound = MAX_RADIUS * 3
   val timer = TimeSource.Monotonic.markNow()
   val startIdx = cfg.bindex[START_SYMBOL]
+  val ladj = cfg.leftAdj
 
   fun nonemptyLevIntSparse(levFSA: FSA): Int? {
     val n = levFSA.numStates
@@ -572,7 +573,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
             val rightBits = dp[r][q]
 
             for (B in leftBits.iterator()) {
-              val adj = cfg.leftAdj[B] ?: continue
+              val adj = ladj[B] ?: continue
               adj.forEachIfIn(rightBits) { _, A ->
                 if (!tgt[A]) {
                   tgt.set(A); aCount[p][q]++
@@ -641,7 +642,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
         val rightMap = dp[r][q]
 
           for (B in leftBits.iterator()) {
-            val adj = cfg.leftAdj[B] ?: continue
+            val adj = ladj[B] ?: continue
             adj.forEachIfIn(rightBits) { C, A ->
               val l = leftMap[B] ?: return@forEachIfIn
               val rgre = rightMap[C] ?: return@forEachIfIn
@@ -691,13 +692,13 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   val tmm = cfg.tmMap        // terminal -> terminal index
   val t2vs = cfg.tmToVidx    // terminal index -> IntArray of NT indices
   val unitNTs = cfg.unitNonterminals  // nonterminals that can appear over a HOLE
-  val units = cfg.bimap.UNITS        // Map<Σᐩ, List<Σᐩ>> of unit expansions
+  val units = cfg.bimap.UNITS         // Map<Σᐩ, List<Σᐩ>> of unit expansions
+  val ladj = cfg.leftAdj
 
   // -------------------------------
   // PASS 1: Boolean CYK chart
   // -------------------------------
 
-  // active[i][j]: KBitSet of nonterminals that derive template[i..j)
   val active: Array<Array<KBitSet>> = Array(nTok + 1) { Array(nTok + 1) { KBitSet(W) } }
 
   // Base case: spans of length 1 (i, i+1)
@@ -705,7 +706,6 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
     val tok = template[i]
     val cellBits = active[i][i + 1]
 
-    // Treat "_" and HOLE_MARKER as holes
     if (tok == "_" || tok == HOLE_MARKER) {
       // Any NT that has at least one unit expansion can sit on a hole
       for (nt in unitNTs) {
@@ -717,9 +717,7 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
     } else {
       // Ordinary terminal: hook into the lexical index
       val tIdx = tmm[tok] ?: continue
-      for (A in t2vs[tIdx]) {
-        cellBits.set(A)
-      }
+      for (A in t2vs[tIdx]) cellBits.set(A)
     }
   }
 
@@ -736,16 +734,8 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
         val rightBits = active[k][j]
         if (leftBits.isEmpty() || rightBits.isEmpty()) { k++; continue }
 
-        // For each B that can derive [i, k)
-        for (B in leftBits.iterator()) {
-          val adj = cfg.leftAdj[B] ?: continue
-          // adj.forEachIfIn iterates over C in rightBits such that B C -> A exists
-          adj.forEachIfIn(rightBits) { _, A ->
-            if (!tgtBits[A]) {
-              tgtBits.set(A)
-            }
-          }
-        }
+        for (B in leftBits.iterator())
+          (ladj[B] ?: continue).forEachIfIn(rightBits) { _, A -> if (!tgtBits[A]) tgtBits.set(A) }
         k++
       }
 
@@ -759,7 +749,7 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   }
 
   // -------------------------------
-  // PASS 2: PTree chart
+  // PASS 2: PTree chart (branch-accumulating)
   // -------------------------------
 
   // trees[i][j][A]: PTree for nonterminal A deriving template[i..j), or null
@@ -771,29 +761,35 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
     val cellTrees = trees[i][i + 1]
     val cellBits = active[i][i + 1]
 
+    // Scratch: branchesAcc[A] = all branches we want for this (i, i+1, A)
+    val branchesAcc = arrayOfNulls<MutableList<Π2A<PTree>>>(W)
+
     if (tok == "_" || tok == HOLE_MARKER) {
       // For each NT that was marked active on this hole, attach its unit expansions
       for (nt in unitNTs) {
-        val ntIdx = cfg.bindex[nt] ?: continue
+        val ntIdx = cfg.bindex[nt]
         if (!cellBits[ntIdx]) continue
 
         val exp = units[nt] ?: continue
         if (exp.isEmpty()) continue
 
+        val list = branchesAcc[ntIdx] ?: mutableListOf<Π2A<PTree>>().also { branchesAcc[ntIdx] = it }
+
         // Each unit expansion contributes PSingleton(terminal)
-        val branches = exp.flatMap { term -> PSingleton(term) }
-        val newTree = PTree(nt, branches)
-        val prev = cellTrees[ntIdx]
-        cellTrees[ntIdx] = prev?.plus(newTree) ?: newTree
+        for (term in exp) { list += PSingleton(term) }
       }
+
+      // Now materialize exactly one PTree per active ntIdx
+      for (A in 0 until W) cellTrees[A] = PTree("", branchesAcc[A] ?: continue)
     } else {
       val tIdx = tmm[tok] ?: continue
       for (A in t2vs[tIdx]) {
         if (!cellBits[A]) continue
-        val newTree = PTree("", PSingleton(tok))
-        val prev = cellTrees[A]
-        cellTrees[A] = prev?.plus(newTree) ?: newTree
+        val list = branchesAcc[A] ?: mutableListOf<Π2A<PTree>>().also { branchesAcc[A] = it }
+        list += PSingleton(tok)
       }
+
+      for (A in 0 until W) cellTrees[A] = PTree("", branchesAcc[A] ?: continue)
     }
   }
 
@@ -808,6 +804,9 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
 
       val cellTrees = trees[i][j]
 
+      // branchesAcc[A] will collect all (leftTree, rightTree) branches
+      val branchesAcc = arrayOfNulls<MutableList<Π2A<PTree>>>(W)
+
       var k = i + 1
       while (k < j) {
         val leftBits = active[i][k]
@@ -817,24 +816,35 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
         val leftRow = trees[i][k]
         val rightRow = trees[k][j]
 
-        // For each B in leftBits, try to combine with C in rightBits via B C -> A
         for (B in leftBits.iterator()) {
           val leftTree = leftRow[B] ?: continue
-          val adj = cfg.leftAdj[B] ?: continue
+          val adj = ladj[B] ?: continue
 
           adj.forEachIfIn(rightBits) { C, A ->
-            if (!tgtBits[A]) return@forEachIfIn // sanity: should already be true by pass 1
+            if (!tgtBits[A]) return@forEachIfIn
             val rightTree = rightRow[C] ?: return@forEachIfIn
-
-            // Build one binary branch for A, then union into the forest
-            val branch = listOf(leftTree to rightTree)
-            val newTree = PTree("", branch)
-            val prev = cellTrees[A]
-            cellTrees[A] = prev?.plus(newTree) ?: newTree
+            (branchesAcc[A] ?: mutableListOf<Π2A<PTree>>().also { branchesAcc[A] = it })
+              .add(leftTree to rightTree)
           }
         }
 
         k++
+      }
+
+      // After all splits k, build one PTree per A (and merge with any existing ones once)
+      for (A in 0 until W) {
+        val newBranches = branchesAcc[A] ?: continue
+        val prev = cellTrees[A]
+
+        // First time we see A in this cell
+        if (prev == null) cellTrees[A] = PTree("", newBranches)
+        else {
+          // Merge previous and new branches in a single list
+          val merged = ArrayList<Π2A<PTree>>(prev.branches.size + newBranches.size)
+          merged.addAll(prev.branches)
+          merged.addAll(newBranches)
+          cellTrees[A] = PTree(prev.root, merged)
+        }
       }
 
       i++
