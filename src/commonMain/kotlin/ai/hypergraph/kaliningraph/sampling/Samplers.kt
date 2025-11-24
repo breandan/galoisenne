@@ -283,7 +283,7 @@ fun bigLFSRSequence(maxVal: BigInteger): Sequence<BigInteger> =
     .sequence().filter { it < maxVal }
 
 fun longLFSRSequence(maxVal: Long): Sequence<Long> =
-  if (maxVal <= 0L) emptySequence() else run {
+  if (maxVal <= 0L) emptySequence() else {
     var p = 1UL; var d = 0
     val lim = (maxVal + 1L).toULong()
     while (p < lim) { p = p shl 1; d++ }

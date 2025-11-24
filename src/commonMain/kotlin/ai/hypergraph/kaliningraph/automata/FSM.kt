@@ -1,14 +1,9 @@
 package ai.hypergraph.kaliningraph.automata
 
-import ai.hypergraph.kaliningraph.automata.GRE.CAT
-import ai.hypergraph.kaliningraph.automata.GRE.CUP
-import ai.hypergraph.kaliningraph.automata.GRE.EPS
-import ai.hypergraph.kaliningraph.automata.GRE.SET
-import ai.hypergraph.kaliningraph.sampling.LFSR
-import ai.hypergraph.kaliningraph.sampling.bigLFSRSequence
+import ai.hypergraph.kaliningraph.KBitSet
+import ai.hypergraph.kaliningraph.automata.GRE.*
 import ai.hypergraph.kaliningraph.sampling.longLFSRSequence
 import ai.hypergraph.kaliningraph.types.filter
-import com.ionspin.kotlin.bignum.integer.BigInteger
 
 // Alternate to FSA; bypasses graph subtyping, basically just record types
 class DFSM(
@@ -494,21 +489,155 @@ fun DFSM.sampleUniformly(tmLst: List<String>): Sequence<String> = sequence {
 
       // Walk one symbol along the unique branch containing r.
       val row = deltaMap[q].orEmpty()
-      var stepped = false
       for (a in row.keys.sorted()) {
         val nxt = row[a]!!
         val cnt = memo[nxt] ?: countFrom(nxt)
-        if (r < cnt) {
-          out += a
-          q = nxt
-          stepped = true
-          break
-        }
-        r -= cnt
+        if (r < cnt) { out += a; q = nxt } else { r -= cnt }
       }
-      check(stepped) { "Rank out of range while decoding (graph must be acyclic and counts finite)." }
     }
   }
 
   for (r in longLFSRSequence(total)) yield(decode(r))
+}
+
+fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
+  val sigma = tmLst.size                // real alphabet size
+  val END = sigma                       // internal endmarker symbol index
+
+  // Build GRE' = (this) · #
+  val endSet = GRE.SET(KBitSet(sigma + 1).apply { set(END) })
+  val root = GRE.CAT(this, endSet)
+
+  // Pass 1: give every SET occurrence a unique position id
+  val posId = mutableMapOf<GRE, Int>()
+  val posSyms = mutableListOf<KBitSet>()   // per-position symbol set
+  fun index(g: GRE) {
+    when (g) {
+      is GRE.SET -> {
+        if (g !in posId) {
+          posId.put(g, posSyms.size)
+          posSyms += g.s // (KBitSet) symbol-set for this position
+        }
+      }
+      is GRE.CUP -> g.args.forEach(::index)
+      is GRE.CAT -> { index(g.l); index(g.r) }
+      is GRE.EPS -> {}
+    }
+  }
+  index(root)
+
+  val P = posSyms.size
+  val endPos = posId[endSet] ?: error("Internal endmarker not indexed")
+
+  // follow[pos] is a set of positions
+  val follow = Array(P) { KBitSet(P) }
+
+  // Small helpers over position-sets
+  fun emptyPosSet() = KBitSet(P)
+  fun union(a: KBitSet, b: KBitSet): KBitSet = KBitSet(P).apply { or(a); or(b) }
+
+  data class Info(val first: KBitSet, val last: KBitSet, val nullable: Boolean)
+
+  // Pass 2: compute first/last/nullable and fill follow by recursion
+  fun info(g: GRE): Info = when (g) {
+    is GRE.EPS -> Info(emptyPosSet(), emptyPosSet(), true)
+
+    is GRE.SET -> {
+      val id = posId[g]!!
+      val one = emptyPosSet().apply { set(id) }
+      Info(one, one, false)
+    }
+
+    is GRE.CUP -> {
+      // fold union across children
+      var first = emptyPosSet()
+      var last  = emptyPosSet()
+      var nullb = false
+      for (c in g.args) {
+        val I = info(c)
+        first.or(I.first)
+        last.or(I.last)
+        nullb = nullb || I.nullable
+      }
+      Info(first, last, nullb)
+    }
+
+    is GRE.CAT -> {
+      val L = info(g.l)
+      val R = info(g.r)
+      // For every i in last(L) and j in first(R), add i -> j to follow
+      for (i in L.last.iterator()) follow[i].or(R.first)
+
+      val first = union(L.first, if (L.nullable) R.first else emptyPosSet())
+      val last  = union(R.last, if (R.nullable) L.last else emptyPosSet())
+      Info(first, last, L.nullable && R.nullable)
+    }
+  }
+
+  val rootInfo = info(root)
+
+  // Precompute: positions that carry each real symbol a ∈ [0, sigma)
+  val posBySym: Array<IntArray> = Array(sigma) { a ->
+    val acc = ArrayList<Int>()
+    for (p in 0 until P) if (p != endPos) {
+      // copy real-alphabet part only
+      // (endPos has END bit set; others may have multiple real bits)
+      if (posSyms[p][a]) acc += p
+    }
+    acc.toIntArray()
+  }
+
+  // BFS subset construction over position-sets (as KBitSet)
+  val start = rootInfo.first // contains endPos iff GRE was nullable
+  data class IntKey(val a: IntArray) { override fun hashCode() = a.contentHashCode()
+    override fun equals(o: Any?) = o is IntKey && a.contentEquals(o.a) }
+  fun keyOf(bits: KBitSet): IntKey {
+    val xs = ArrayList<Int>()
+    for (i in bits.iterator()) xs += i
+    return IntKey(xs.toIntArray())
+  }
+
+  val subset2name = LinkedHashMap<IntKey, String>()
+  val queue = ArrayDeque<KBitSet>()
+  val deltaMap = mutableMapOf<String, MutableMap<Int, String>>()
+  val finals = mutableSetOf<String>()
+
+  run {
+    val k = keyOf(start)
+    subset2name[k] = "q0"
+    queue.add(start)
+  }
+
+  while (queue.isNotEmpty()) {
+    val S = queue.removeFirst()
+    val sName = subset2name[keyOf(S)]!!
+    if (S[endPos]) finals.add(sName)
+
+    val row = deltaMap.getOrPut(sName) { mutableMapOf() }
+
+    // For each real symbol a, T = ⋃_{p∈S∩posBySym[a]} follow[p]
+    for (a in 0 until sigma) {
+      var any = false
+      val T = KBitSet(P)
+      val candidates = posBySym[a]
+      var i = 0
+      while (i < candidates.size) {
+        val p = candidates[i]
+        if (S[p]) { T.or(follow[p]); any = true }
+        i++
+      }
+      if (!any) continue // no outgoing edge on a
+
+      val k = keyOf(T)
+      val tName = subset2name.getOrPut(k) {
+        val n = "q${subset2name.size}"
+        queue.add(T)
+        n
+      }
+      row[a] = tName
+    }
+  }
+
+  val Qd = subset2name.values.toSet()
+  return DFSM(Qd, deltaMap, "q0", finals, sigma)
 }

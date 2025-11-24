@@ -283,10 +283,20 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
 //  }
 }
 
+suspend fun CFG.startPTreeSuspendable(tokens: List<String>, nt: Σᐩ = START_SYMBOL, suspender: suspend () -> Unit = { }) = //measureTimedValue {
+//  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
+//}.also { println("Took ${it.duration} to compute parse forest") }.value
+  measureTimedValue { initPTreeListMat(tokens) }.also { println("Initialized parse matrix in ${it.duration}") }
+    .value.seekFixpointSuspendable(suspender=suspender)
+//    .also { println(it.toFullMatrix().map { "" + it.count { it != null } }.toString()) }
+    .diagonals.last()[0][bindex[nt]]
+
 fun CFG.startPTree(tokens: List<String>, nt: Σᐩ = START_SYMBOL) = //measureTimedValue {
 //  initPForestMat(tokens).seekFixpoint().diagonals.last()[0][START_SYMBOL]
 //}.also { println("Took ${it.duration} to compute parse forest") }.value
-  initPTreeListMat(tokens).seekFixpoint()
+  measureTimedValue { initPTreeListMat(tokens) }
+    .also { println("Initialized parse matrix in ${it.duration}") }.value
+  .seekFixpoint()
 //    .also { println(it.toFullMatrix().map { "" + it.count { it != null } }.toString()) }
     .diagonals.last()[0][bindex[nt]]
 
@@ -423,6 +433,9 @@ fun CFG.enumSeqSmart(tokens: List<String>): Sequence<String> =
       tokens.solve(this)
     }
   } ?: sequenceOf()
+
+suspend fun CFG.enumSeqSmartSuspendable(tokens: List<String>, suspender: suspend () -> Unit = {}): Sequence<String> =
+  startPTreeSuspendable(tokens, suspender=suspender)?.sampleWithReplacement() ?: sequenceOf()
 
 // This is generally the fastest method, but may return duplicates
 fun CFG.sampleSeq(tokens: List<String>): Sequence<String> =

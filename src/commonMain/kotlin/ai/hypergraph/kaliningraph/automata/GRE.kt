@@ -53,7 +53,7 @@ sealed class GRE(open vararg val args: GRE) {
     else when (this@GRE) {
       is EPS -> emptyList<Int>()
       is SET -> yieldAll(s.toList().map { listOf(it) })
-      is CUP -> for (a in args) yieldAll(a.enumerate(shouldContinue))
+      is CUP -> for (a in args.toList().shuffled()) yieldAll(a.enumerate(shouldContinue))
 //      yieldAll(args.map { it.enumerate().toSet() }.reduce { a, b -> a + b })
       is CAT ->
         for (lhs in l.enumerate(shouldContinue))
@@ -680,4 +680,182 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
   val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()).flatunion()
+}
+
+fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
+  val timer = TimeSource.Monotonic.markNow()
+
+  if (template.isEmpty()) {
+    // You can special-case ε here if your CFG supports it.
+    println("Template was empty; no completion attempted.")
+    return null
+  }
+
+  val startIdx = cfg.bindex[START_SYMBOL]
+
+  val W = cfg.nonterminals.size
+  val nTok = template.size
+  val n = nTok // we index substrings as [i, j) with 0 ≤ i < j ≤ nTok
+
+  val tmm = cfg.tmMap        // terminal -> terminal index
+  val t2vs = cfg.tmToVidx    // terminal index -> IntArray of NT indices
+  val unitNTs = cfg.unitNonterminals  // nonterminals that can appear over a HOLE
+  val units = cfg.bimap.UNITS        // Map<Σᐩ, List<Σᐩ>> of unit expansions
+
+  // -------------------------------
+  // PASS 1: Boolean CYK chart
+  // -------------------------------
+
+  // active[i][j]: KBitSet of nonterminals that derive template[i..j)
+  val active: Array<Array<KBitSet>> =
+    Array(nTok + 1) { Array(nTok + 1) { KBitSet(W) } }
+
+  // Base case: spans of length 1 (i, i+1)
+  for (i in 0 until nTok) {
+    val tok = template[i]
+    val cellBits = active[i][i + 1]
+
+    // Treat "_" and HOLE_MARKER as holes
+    if (tok == "_" || tok == HOLE_MARKER) {
+      // Any NT that has at least one unit expansion can sit on a hole
+      for (nt in unitNTs) {
+        val exp = units[nt] ?: continue
+        if (exp.isEmpty()) continue
+        val ntIdx = cfg.bindex[nt]
+        cellBits.set(ntIdx)
+      }
+    } else {
+      // Ordinary terminal: hook into the lexical index
+      val tIdx = tmm[tok] ?: continue
+      for (A in t2vs[tIdx]) {
+        cellBits.set(A)
+      }
+    }
+  }
+
+  // CYK-style DP for spans of length ≥ 2
+  for (len in 2..nTok) {
+    var i = 0
+    while (i + len <= nTok) {
+      val j = i + len
+      val tgtBits = active[i][j]
+
+      var k = i + 1
+      while (k < j) {
+        val leftBits = active[i][k]
+        val rightBits = active[k][j]
+        if (leftBits.isEmpty() || rightBits.isEmpty()) { k++; continue }
+
+        // For each B that can derive [i, k)
+        for (B in leftBits.iterator()) {
+          val adj = cfg.leftAdj[B] ?: continue
+          // adj.forEachIfIn iterates over C in rightBits such that B C -> A exists
+          adj.forEachIfIn(rightBits) { _, A ->
+            if (!tgtBits[A]) {
+              tgtBits.set(A)
+            }
+          }
+        }
+        k++
+      }
+
+      i++
+    }
+  }
+
+  if (!active[0][nTok][startIdx]) {
+    println("No completion: START does not derive the template under the hole semantics.")
+    return null
+  }
+
+  // -------------------------------
+  // PASS 2: PTree chart
+  // -------------------------------
+
+  // trees[i][j][A]: PTree for nonterminal A deriving template[i..j), or null
+  val trees: Array<Array<Array<PTree?>>> =
+    Array(nTok + 1) { Array(nTok + 1) { arrayOfNulls<PTree>(W) } }
+
+  // Base case: spans of length 1
+  for (i in 0 until nTok) {
+    val tok = template[i]
+    val cellTrees = trees[i][i + 1]
+    val cellBits = active[i][i + 1]
+
+    if (tok == "_" || tok == HOLE_MARKER) {
+      // For each NT that was marked active on this hole, attach its unit expansions
+      for (nt in unitNTs) {
+        val ntIdx = cfg.bindex[nt] ?: continue
+        if (!cellBits[ntIdx]) continue
+
+        val exp = units[nt] ?: continue
+        if (exp.isEmpty()) continue
+
+        // Each unit expansion contributes PSingleton(terminal)
+        val branches = exp.flatMap { term -> PSingleton(term) }
+        val newTree = PTree(nt, branches)
+        val prev = cellTrees[ntIdx]
+        cellTrees[ntIdx] = prev?.plus(newTree) ?: newTree
+      }
+    } else {
+      val tIdx = tmm[tok] ?: continue
+      for (A in t2vs[tIdx]) {
+        if (!cellBits[A]) continue
+        val newTree = PTree("", PSingleton(tok))
+        val prev = cellTrees[A]
+        cellTrees[A] = prev?.plus(newTree) ?: newTree
+      }
+    }
+  }
+
+  // Internal spans: 2..nTok
+  for (len in 2..nTok) {
+    var i = 0
+    while (i + len <= nTok) {
+      val j = i + len
+
+      val tgtBits = active[i][j]
+      if (tgtBits.isEmpty()) {
+        i++
+        continue
+      }
+
+      val cellTrees = trees[i][j]
+
+      var k = i + 1
+      while (k < j) {
+        val leftBits = active[i][k]
+        val rightBits = active[k][j]
+        if (leftBits.isEmpty() || rightBits.isEmpty()) { k++; continue }
+
+        val leftRow = trees[i][k]
+        val rightRow = trees[k][j]
+
+        // For each B in leftBits, try to combine with C in rightBits via B C -> A
+        for (B in leftBits.iterator()) {
+          val leftTree = leftRow[B] ?: continue
+          val adj = cfg.leftAdj[B] ?: continue
+
+          adj.forEachIfIn(rightBits) { C, A ->
+            if (!tgtBits[A]) return@forEachIfIn // sanity: should already be true by pass 1
+            val rightTree = rightRow[C] ?: return@forEachIfIn
+
+            // Build one binary branch for A, then union into the forest
+            val branch = listOf(leftTree to rightTree)
+            val newTree = PTree("", branch)
+            val prev = cellTrees[A]
+            cellTrees[A] = prev?.plus(newTree) ?: newTree
+          }
+        }
+
+        k++
+      }
+
+      i++
+    }
+  }
+
+  val result = trees[0][nTok][startIdx]
+  println("Completed sparse completion chart in ${timer.elapsedNow()} |w|=$nTok, |V|=$W")
+  return result
 }

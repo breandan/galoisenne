@@ -427,6 +427,42 @@ open class UTMatrix<T> constructor(
         .seekFixpoint(next, debug, iteration + 1, maxIterations)
     }
 
+  open suspend fun seekFixpointSuspendable(
+    // Carries a triple of:
+    //    (1) the element itself,
+    //    (2) row to an element's left (inclusive)
+    //    (3) column beneath an element (inclusive)
+    carry: List<Triple<T, List<T>, List<T>>> =
+      diagonals.last().map { it to listOf(it) to listOf(it) },
+    debug: suspend (UTMatrix<T>) -> Unit =  { },
+    suspender: suspend () -> Unit = { },
+    iteration: Int = 0,
+    maxIterations: Int = diagonals.first().size
+  ): UTMatrix<T> =
+    if (diagonals.last().size == 1) this
+    // Populate the remaining diagonals with nils
+    else if (iteration == maxIterations)
+      UTMatrix(
+        diagonals = diagonals + ((diagonals.last().size - 1) downTo 1).map { i -> List(i) { algebra.nil } },
+        algebra = algebra
+      )
+    else carry.windowed(2, 1).map { window ->
+      suspender()
+      algebra.dot(window[0].π2, window[1].π3)
+        .let { it to (window[0].π2 + it) to (listOf(it) + window[1].π3) }
+    }.let { next ->
+      UTMatrix(
+        diagonals = diagonals + listOf(next.map { it.π1 }),
+        algebra = algebra
+      )
+        .also {
+          debug(it)
+//          println(iteration)
+        }
+//        .also { debug(it) }
+        .seekFixpointSuspendable(next, debug, suspender, iteration + 1, maxIterations)
+    }
+
   // Offsets diagonals by one when converting back to matrix (superdiagonal)
   fun toFullMatrix() =
     (diagonals + if (diagonals.last().size != 1) {

@@ -131,7 +131,13 @@ class KBitSet(val n: Int) {
   constructor(n: Int, v: Int) : this(n) { set(v) }
   constructor(n: Int, v: Collection<Int>) : this(n) { v.forEach { set(it) } }
   // Each element of 'data' holds 64 bits, covering up to n bits total.
-  private val data = LongArray((n + 63) ushr 6)
+  val data = LongArray((n + 63) ushr 6)
+
+  // Mask for the last (possibly partial) word so we never yield indices >= n.
+  val lastMask: Long = run {
+    val rem = n and 63
+    if (rem == 0) -1L else ((1L shl rem) - 1L)
+  }
 
   fun set(index: Int) {
     val word = index ushr 6
@@ -139,7 +145,14 @@ class KBitSet(val n: Int) {
     data[word] = data[word] or (1L shl bit)
   }
 
-  fun setAll() { (0..<n).forEach { set(it) } }
+  fun setAll() {
+    val last = data.lastIndex
+    if (last < 0) return
+    // Fill all full words with 1s.
+    for (i in 0 until last) data[i] = -1L
+    // Last word masked to n.
+    data[last] = lastMask
+  }
 
   operator fun get(index: Int): Boolean {
     val word = index ushr 6
@@ -159,41 +172,84 @@ class KBitSet(val n: Int) {
 
   fun merge(other: KBitSet): KBitSet = KBitSet(n).also { it or other }.also { it or this }
 
-  fun iterator(): Iterable<Int> = object : Iterable<Int> {
-    override fun iterator(): Iterator<Int> = object : Iterator<Int> {
-      private var wordIndex = 0
-      private var currentWord = data.getOrNull(0) ?: 0L
-      private var nextIndex: Int? = findNextSetBit()
+  /** Fast, allocation-free scan of set bits. Prefer this in hot loops. */
+  inline fun forEachSetBit(action: (Int) -> Unit) {
+    val last = data.lastIndex
+    if (last < 0) return
+    var wi = 0
+    var base = 0
+    var word = if (wi == last) (data[0] and lastMask) else data[0]
 
-      private fun findNextSetBit(): Int? {
-        while (wordIndex < data.size) {
-          if (currentWord != 0L) {
-            val bitIndex = currentWord.countTrailingZeroBits()
-            val index = (wordIndex shl 6) + bitIndex
-            if (index < n) {
-              currentWord = currentWord and (currentWord - 1) // Clear the lowest set bit
-              return index
-            }
-          }
-          wordIndex++
-          currentWord = data.getOrNull(wordIndex) ?: 0L
+    while (true) {
+      // Pop lowest set bit
+      while (word != 0L) {
+        val lsb = word and -word
+        val bit = lsb.countTrailingZeroBits()
+        action(base + bit)
+        word = word xor lsb
+      }
+      // Advance to next word
+      wi++
+      if (wi > last) break
+      base += 64
+      word = if (wi == last) (data[wi] and lastMask) else data[wi]
+    }
+  }
+
+  /**
+   * Backwards-compatible iterable. Still much faster:
+   *  - no getOrNull
+   *  - masked last word
+   *  - no nullable nextIndex
+   */
+  fun iterator(): Iterable<Int> = object : Iterable<Int> {
+    override fun iterator(): Iterator<Int> = object : IntIterator() {
+      private val last = data.lastIndex
+      private var wi = 0
+      private var base = 0
+      private var word: Long =
+        if (last >= 0) (if (0 == last) (data[0] and lastMask) else data[0]) else 0L
+
+      private fun advance() {
+        while (word == 0L && wi < last) {
+          wi++
+          base += 64
+          word = if (wi == last) (data[wi] and lastMask) else data[wi]
         }
-        return null
       }
 
-      override fun hasNext(): Boolean = nextIndex != null
+      override fun hasNext(): Boolean {
+        advance()
+        return word != 0L
+      }
 
-      override fun next(): Int {
-        val result = nextIndex ?: throw NoSuchElementException()
-        nextIndex = findNextSetBit()
-        return result
+      override fun nextInt(): Int {
+        advance()
+        if (word == 0L) throw NoSuchElementException()
+        val lsb = word and -word
+        val bit = lsb.countTrailingZeroBits()
+        word = word xor lsb
+        return base + bit
       }
     }
   }
 
   fun toList(): List<Int> {
-    val result = mutableListOf<Int>()
-    for (i in 0..<n) if (get(i)) result.add(i)
-    return result
+    val out = ArrayList<Int>()
+    forEachSetBit { out.add(it) }
+    return out
+  }
+
+  /** Optional helpers that can shave branches in higher-level code. */
+  fun isEmpty(): Boolean {
+    val last = data.lastIndex
+    if (last < 0) return true
+    for (i in 0 until last) if (data[i] != 0L) return false
+    return (data[last] and lastMask) == 0L
+  }
+
+  fun intersects(other: KBitSet): Boolean {
+    for (i in data.indices) if ((data[i] and other.data[i]) != 0L) return true
+    return false
   }
 }

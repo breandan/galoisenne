@@ -197,16 +197,15 @@ fun fastJoin(/**[vindex]*/vidx: Array<ℤⁿ>, left: Blns, right: Blns): Blns {
 }
 
 fun <T> fastGenericJoin(
-  /**[vindex]*/vidx: Array<ℤⁿ>, strMap: List<Σᐩ>,
+  /**[vindex]*/vidx: Array<ℤⁿ>,
   left: List<T?>, right: List<T?>,
-  t: (List<Pair<T, T>>, Σᐩ) -> T
+  t: (List<Pair<T, T>>) -> T
 ): List<T?> {
   if (left.isEmpty() || right.isEmpty()) return listOf()
 
   val result = MutableList<T?>(vidx.size) { null }
   for ((i, indexArray) in vidx.withIndex()) {
     var j = 0
-    val rt = strMap[i]
     val ls = mutableListOf<Pair<T, T>>()
     while (j < indexArray.size) {
       val (l, r) = left[indexArray[j]] to right[indexArray[j + 1]]
@@ -214,7 +213,7 @@ fun <T> fastGenericJoin(
       j += 2
     }
 
-    if (ls.isNotEmpty()) result[i] = t(ls, rt)
+    if (ls.isNotEmpty()) result[i] = t(ls)
   }
 
   return result
@@ -265,7 +264,9 @@ val CFG.ptreeListAlgebra: Ring<List<PTree?>> by cache {
     Ring.of(
       nil = List(nonterminals.size) { null },
       plus = { x, y -> ptreeUnion(x, y) },
-      times = { x, y -> fastGenericJoin(it, bindex.indexedNTs, x, y) { ls, rt -> PTree(rt, ls) } }
+      times = { x, y ->
+        fastGenericJoin(it, x, y) { ls -> PTree("", ls) }
+      }
     )
   }
 }
