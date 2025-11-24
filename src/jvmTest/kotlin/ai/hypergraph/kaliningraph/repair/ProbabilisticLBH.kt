@@ -5,7 +5,6 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.automata.toDFA
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.sat.summarizeT
-import ai.hypergraph.kaliningraph.sat.synthesize
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
 import org.junit.jupiter.api.Test
@@ -14,6 +13,7 @@ import java.io.File
 import java.util.stream.Collectors
 import kotlin.random.Random
 import kotlin.reflect.KFunction2
+import kotlin.system.measureTimeMillis
 import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
@@ -548,6 +548,19 @@ class ProbabilisticLBH {
       .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
   }
 
+  val k1 by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/fun_k1.cnf")
+      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+  val k2 by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/fun_k2.cnf")
+      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+  val k3 by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/fun_k3.cnf")
+      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+
   /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniKTAPI"
 */
@@ -559,12 +572,17 @@ class ProbabilisticLBH {
 //  val str = "fun f1 ( ) : Int = 1 ; f1 ( )"
 //    val str = "fun f1 ( x : Int , y : Int ) : Int = x + y ; f1 ( _ _ _ )"
     val str = "fun f0 ( p1 : Float , p2 : Float ) : Bool = ( if ( p1 == p2 ) { 1 } else { 1 } ) + 1"
+//    val str = "fun f0 ( ) : Bool = 3 < 3 * 1 == 2 < f0 ( ) * 2 * 1 + 1"
 
     println("CFG recognizes: " + str.matches(cfg))
     println("Kotlin recognizes: " + KotlinTypeChecker.typeChecks(str))
 
 //    val t = initiateSerialRepair(str.tokenizeByWhitespace(), cfg).take(10).toList()
     val t = repairWithSparseGRE(str.tokenizeByWhitespace(), cfg)!!
+      .also {
+        val dfsm: DFSM = it.toDFSMDirect(cfg.tmLst)
+        println("DFSM had ${dfsm.Q.size} total states")
+      }
       .also {
         println("GRE obtained in: ${timer.elapsedNow()}")
         println("Total words: ${it.toDFSM(cfg.tmLst).countWords()}")
@@ -583,13 +601,15 @@ class ProbabilisticLBH {
     }
 
     println("Repair finished in ${timer.elapsedNow()}")
-
-    benchmarkMiniKt()
   }
 
-  fun benchmarkMiniKt() {
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testBenchmarkMiniKt"
+*/
+  @Test
+  fun testBenchmarkMiniKt() {
     val cfg = miniktcfgapi
-    val tempLen = 20
+    val tempLen = 23
     val timer = TimeSource.Monotonic.markNow()
     var avgDelay = 0L
     var initDelay = 0L
@@ -601,11 +621,140 @@ class ProbabilisticLBH {
     println("|L_∩|: ${dfsm.countWords()} (in ${timer.elapsedNow()})")
     dfsm.sampleUniformly(cfg.tmLst).take(1000).onEachIndexed { i, pp ->
       if (i == 0) initDelay = timer.elapsedNow().inWholeMilliseconds
-      avgDelay += avgDelayTimer.elapsedNow().inWholeMilliseconds
-      avgDelayTimer = TimeSource.Monotonic.markNow()
+      avgDelay += avgDelayTimer.elapsedNow().inWholeMilliseconds.also { avgDelayTimer = TimeSource.Monotonic.markNow() }
       if (i < 10) println(pp)
     }.take(1000).toList().also { println("Found ${it.size} words empirically") }
-    println("Sampled length-$tempLen template from (${cfg.nonterminals.size}, ${cfg.tripleIntProds.size})-CFG in ${initDelay}ms (TTFS), ${avgDelay / samples.toDouble()}ms (μDELAY)")
+    println("Sampled length-$tempLen template from (${cfg.nonterminals.size}, ${cfg.tripleIntProds.size})-CFG " +
+        "in ${initDelay}ms (TTFS), ${avgDelay / samples.toDouble()}ms (μDELAY)")
+  }
+
+  data class SliceRow(val n: Int, val k: Int, val meanDtNs: Double)
+
+  private fun benchSliceOnce(cfg: CFG, n: Int, k: Int, samples: Int): SliceRow {
+    val gre = cfg.startGRE(List(n) { "_" })!!
+    val seq = gre.enumerate().take(samples)
+
+    var count = 0
+    var sumNs = 0L
+    var tick = TimeSource.Monotonic.markNow()
+
+    for (it in seq) {
+      val dt = tick.elapsedNow().inWholeNanoseconds
+      sumNs += dt
+      tick = TimeSource.Monotonic.markNow()
+      count++
+    }
+
+    val meanDtNs = (sumNs / count.toDouble())
+    return SliceRow(n = n, k = k, meanDtNs = meanDtNs)
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.sliceSampleBenchmarks"
+  */
+//  @Test
+  fun sliceSampleBenchmarks() {
+    val Ns = (20..50 step 1).toList().toIntArray()
+    val samples = 1_000
+
+    // Compare arities
+    val scenarios: List<Pair<Int, CFG>> = listOf(1 to k1, 2 to k2, 3 to k3)
+
+    println("n,k,mean_dt_ns")
+
+    for ((k, cfg) in scenarios) {
+      // Optional warmup
+      benchSliceOnce(cfg, n = 8, k = k, samples = 10_000)
+
+      for (n in Ns) {
+        val r = benchSliceOnce(cfg, n, k, samples)
+        println("${r.n},$k,${r.meanDtNs}")
+      }
+      println()
+    }
+  }
+
+  /*
+  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testTypeInferenceBenchmark"
+  */
+
+//  @Test
+  fun testTypeInferenceBenchmark() {
+    // Lengths to evaluate and number of queries per length
+    val Ns = (20..50 step 1).toList()
+    val queriesPerN = 120
+
+    val scenarios: List<Pair<Int, CFG>> = listOf(1 to k1, 2 to k2, 3 to k3)
+
+    println("n,k,mean_ttfs_ms")
+
+    for ((k, cfg) in scenarios) {
+
+      val qGrewarmup = cfg.startGRE(List(20){"_"}) ?: continue
+      for (n in Ns) {
+        val tmLst = cfg.tmLst
+        val tmpl = List(n) { "_" }
+        val baseGre = cfg.startPTree(tmpl)
+        val words = baseGre!!.sampleStrWithoutReplacement().take(queriesPerN)
+
+//        val words = List(queriesPerN) { tmpl.joinToString() }
+        var ttfsSumMs = 0L
+        var counted = 0
+
+        for (w in words) {
+          val t = w
+//            .tokenizeByWhitespace().map { "_" }
+            .replace(Regex("\\) :\\s.*?\\s="), ") : _ =").tokenizeByWhitespace()
+
+//          println("ORIGW: $w")
+//          println("QUERY: " + t.joinToString(" "))
+          // Build GRE/DFSM for this specific query
+          val t0 = TimeSource.Monotonic.markNow()
+          val qGre = cfg.startGRE(t) ?: continue
+          val seq = qGre
+            .enumerate().map { it.joinToString(" ") { tmLst[it] } }
+//            .toDFSM(cfg.tmLst).sampleUniformly(cfg.tmLst)
+
+          // Measure time to *first* sample
+          var ttfsMs = 0L
+          seq.take(1).forEach {
+            ttfsMs = t0.elapsedNow().inWholeMilliseconds
+//            println("SAMPL: $it")
+//            assertEquals(it, queryStr)
+          }
+
+          ttfsSumMs += ttfsMs
+          counted += 1
+        }
+
+        val meanTtfsMs = if (counted > 0) ttfsSumMs / counted.toDouble() else Double.NaN
+        println("$n,$k,${"%.3f".format(meanTtfsMs)}")
+      }
+      println()
+    }
+  }
+
+  val slp by lazy {
+    File(File("").absolutePath + "/src/jvmTest/resources/slp.cnf").readText().trimIndent().lines()
+      .map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPs"
+*/
+//  @Test
+  fun testSLPs() {
+//    val pt = k2.startPTree(List(35) { "_" })!!
+    val pt = completeWithSparseGRE(List(35) { "_" }, k2)!!
+    pt.sampleStrWithoutReplacement().take(1000)//.filter { it.length <= 80 }
+      .forEach { println("\\texttt{ " + it.replace("{", "\\{")
+        .replace("}", "\\}") + "}\\\\") }
+
+//    val broke = "fn f0 ( p1 : T , p2 : T ) -> T { let mut p3 = add ( p1 , p1 ) ; p3 = mul ( p1 , p1 ) ; p3 }"
+//
+//    println(broke in slp.language)
+//    initiateSerialRepair(broke.tokenizeByWhitespace(), slp).take(100)
+//      .forEach { println(levenshteinAlign(broke,it).paintANSIColors()) }
   }
 
 /*

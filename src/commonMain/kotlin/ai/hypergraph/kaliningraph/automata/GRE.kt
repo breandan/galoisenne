@@ -684,18 +684,9 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
 fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   val timer = TimeSource.Monotonic.markNow()
-
-  if (template.isEmpty()) {
-    // You can special-case ε here if your CFG supports it.
-    println("Template was empty; no completion attempted.")
-    return null
-  }
-
   val startIdx = cfg.bindex[START_SYMBOL]
-
   val W = cfg.nonterminals.size
   val nTok = template.size
-  val n = nTok // we index substrings as [i, j) with 0 ≤ i < j ≤ nTok
 
   val tmm = cfg.tmMap        // terminal -> terminal index
   val t2vs = cfg.tmToVidx    // terminal index -> IntArray of NT indices
@@ -707,8 +698,7 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   // -------------------------------
 
   // active[i][j]: KBitSet of nonterminals that derive template[i..j)
-  val active: Array<Array<KBitSet>> =
-    Array(nTok + 1) { Array(nTok + 1) { KBitSet(W) } }
+  val active: Array<Array<KBitSet>> = Array(nTok + 1) { Array(nTok + 1) { KBitSet(W) } }
 
   // Base case: spans of length 1 (i, i+1)
   for (i in 0 until nTok) {
@@ -773,8 +763,7 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   // -------------------------------
 
   // trees[i][j][A]: PTree for nonterminal A deriving template[i..j), or null
-  val trees: Array<Array<Array<PTree?>>> =
-    Array(nTok + 1) { Array(nTok + 1) { arrayOfNulls<PTree>(W) } }
+  val trees: Array<Array<Array<PTree?>>> = Array(nTok + 1) { Array(nTok + 1) { arrayOfNulls(W) } }
 
   // Base case: spans of length 1
   for (i in 0 until nTok) {
@@ -815,10 +804,7 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
       val j = i + len
 
       val tgtBits = active[i][j]
-      if (tgtBits.isEmpty()) {
-        i++
-        continue
-      }
+      if (tgtBits.isEmpty()) { i++; continue }
 
       val cellTrees = trees[i][j]
 
