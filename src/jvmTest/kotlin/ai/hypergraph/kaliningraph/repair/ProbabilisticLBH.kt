@@ -742,10 +742,10 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPs"
 */
-//  @Test
+  @Test
   fun testSLPs() {
 //    val pt = k2.startPTree(List(35) { "_" })!!
-    val pt = completeWithSparseGRE(List(35) { "_" }, k2)!!
+    val pt = completeWithSparseGRE(List(20) { "_" }, k3)!!
     pt.sampleStrWithoutReplacement().take(1000)//.filter { it.length <= 80 }
       .forEach { println("\\texttt{ " + it.replace("{", "\\{")
         .replace("}", "\\}") + "}\\\\") }

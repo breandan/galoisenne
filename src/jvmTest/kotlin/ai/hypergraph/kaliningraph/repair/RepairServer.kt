@@ -15,23 +15,18 @@ class RepairServer {
 
   fun handleRequest(template: String, cfg: String): String {
     val cfgHash = cfg.hashCode()
-    val cfg = if (cfgHash in map) map[cfgHash] else {
-      cfg.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }
-        .toSet().freeze()
-    }!!
+    val cfg = if (cfgHash in map) map[cfgHash]!!
+    else cfg.trimIndent().lines().map { it.split(" -> ").let { it[0] to it[1].split(" ") } }.toSet().freeze()
 
     val tks = template.tokenizeByWhitespace()
-    return (if (tks.any { it == "_" })
-      cfg.startPTree(tks)?.sampleStrWithoutReplacement()
-    else
-      initiateSerialRepair(tks,cfg)
-    )?.take(1000000)?.joinToString("\n")?: "null"
+    return (if (tks.any { it == "_" }) cfg.startPTree(tks)?.sampleStrWithoutReplacement()
+    else initiateSerialRepair(tks, cfg))?.take(1000000)?.joinToString("\n")?: "null"
   }
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.RepairServer.testRepairServer"
 */
-//  @Test
+  @Test
   fun testRepairServer() {
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", 8088), 0)
 
@@ -53,7 +48,7 @@ class RepairServer {
         val s2 = decodeB64ToUtf8(params["s2_b64"])
 
         // Log first 10 code points of each (emoji-safe)
-        println("RepairServer: s1[0..10]='${firstTen(s1)}' | s2[0..10]='${firstTen(s2)}'")
+        println("RepairServer: s1[0..10]='${s1.take(10)}' | s2[0..10]='${s2.take(10)}'")
 
         // Respond with concatenation of the *decoded* strings
         val resp = handleRequest(s1, s2)
@@ -87,7 +82,7 @@ class RepairServer {
     if (s.isEmpty()) emptyMap() else buildMap {
       s.split("&").forEach { kv ->
         val i = kv.indexOf('=')
-        if (i >= 0) put(urlDecode(kv.substring(0, i)), urlDecode(kv.substring(i + 1)))
+        if (i >= 0) put(urlDecode(kv.take(i)), urlDecode(kv.substring(i + 1)))
         else if (kv.isNotEmpty()) put(urlDecode(kv), "")
       }
     }
@@ -95,16 +90,5 @@ class RepairServer {
   private fun urlDecode(x: String) = URLDecoder.decode(x, StandardCharsets.UTF_8)
 
   private fun decodeB64ToUtf8(b64: String?): String =
-    try {
-      if (b64.isNullOrEmpty()) ""
-      else String(Base64.getDecoder().decode(b64), StandardCharsets.UTF_8)
-    } catch (_: IllegalArgumentException) {
-      "" // invalid Base64 -> treat as empty
-    }
-
-  private fun firstTen(s: String): String {
-    val want = min(10, s.codePointCount(0, s.length))
-    val endIdx = s.offsetByCodePoints(0, want)
-    return s.take(endIdx)
-  }
+    if (b64.isNullOrEmpty()) "" else String(Base64.getDecoder().decode(b64), StandardCharsets.UTF_8)
 }

@@ -237,8 +237,8 @@ val testDurations = mutableListOf<TestDuration>()
 
 tasks {
   withType<Test> {
-    minHeapSize = "1g"
-    maxHeapSize = "6g"
+    minHeapSize = "32g"
+    maxHeapSize = "120g"
     useJUnitPlatform()
     testLogging {
       events = setOf(
@@ -275,17 +275,6 @@ tasks {
 //  processJupyterApiResources {
 //    libraryProducers = listOf("ai.hypergraph.kaliningraph.notebook.Integration")
 //  }
-
-  listOf(
-    "Rewriter", "PrefAttach",
-    "rewriting.CipherSolver",
-    "RegexDemo", "smt.TestSMT"
-  ).forEach { fileName ->
-    register(fileName, org.gradle.api.tasks.JavaExec::class) {
-      mainClass = "ai.hypergraph.kaliningraph.${fileName}Kt"
-      classpath += objects.fileCollection().from(configurations.named("jvmTestCompileClasspath"))
-    }
-  }
 
   /*
    * To deploy to Maven Local and start the notebook, run:
