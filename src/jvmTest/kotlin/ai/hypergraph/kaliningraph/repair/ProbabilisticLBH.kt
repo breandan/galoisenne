@@ -561,7 +561,7 @@ class ProbabilisticLBH {
       .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
   }
 
-  /*
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniKTAPI"
 */
   @Test

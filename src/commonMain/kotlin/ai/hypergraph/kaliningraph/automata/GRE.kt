@@ -625,13 +625,15 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
   var maxChildren = 0
 
+  val acc: MutableMap<Int, MutableList<GRE>> = hashMapOf()
+
   for (dist in 1 until n) {
     var p = 0
     while (p < n - dist) {
       val q = p + dist
       val appq = levFSA.allPairs[p][q]; if (appq == null) { p++; continue }
 
-      val acc: MutableMap<Int, MutableList<GRE>> = hashMapOf()
+      acc.clear()
 
       var i = 0
       while (i < appq.size) {
