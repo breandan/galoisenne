@@ -7,7 +7,8 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.3.0"
+  // Updating to 2.2.0+ causes an error because the stacktrace format is different (see getCaller() in Graph.kt)
+  kotlin("multiplatform") version "2.1.21"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.53.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -82,8 +83,8 @@ kotlin {
 //    }
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common:2.3.0"))
-        implementation(kotlin("reflect:2.3.0"))
+        implementation(kotlin("stdlib-common:2.1.21"))
+        implementation(kotlin("reflect:2.1.21"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
 
