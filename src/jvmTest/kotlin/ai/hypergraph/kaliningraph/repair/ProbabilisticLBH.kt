@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 import org.kosat.round
 import java.io.File
 import java.util.stream.Collectors
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.random.Random
 import kotlin.reflect.KFunction2
 import kotlin.system.measureTimeMillis

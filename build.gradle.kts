@@ -109,7 +109,8 @@ kotlin {
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:9.0.0")
+        // Updating to 9.0 requires updating MarkovChain
+        implementation("org.apache.datasketches:datasketches-java:8.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
