@@ -7,9 +7,9 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.1.0"
+  kotlin("multiplatform") version "2.3.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.52.0"
+  id("com.github.ben-manes.versions") version "0.53.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -82,8 +82,8 @@ kotlin {
 //    }
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common:2.1.0"))
-        implementation(kotlin("reflect:2.1.0"))
+        implementation(kotlin("stdlib-common:2.3.0"))
+        implementation(kotlin("reflect:2.3.0"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
 
@@ -99,17 +99,17 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:24.2.2")
+        implementation("org.graalvm.js:js:25.0.1")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.11.0")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.12.1")
 
 //  https://arxiv.org/pdf/1908.10693.pdf
 //  implementation("com.datadoghq:sketches-java:0.7.0")
 
         // Cache PMF/CDF lookups for common queries
 
-        implementation("org.apache.datasketches:datasketches-java:8.0.0")
+        implementation("org.apache.datasketches:datasketches-java:9.0.0")
 
 //  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
 
@@ -146,7 +146,7 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.13.1")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:26.0.2")
+        implementation("org.jetbrains:annotations:26.0.2-1")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
@@ -199,34 +199,34 @@ kotlin {
    * Adapted from: https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-going-public-4a8k
    */
 
-  publishing {
-    publications {
-      withType<MavenPublication> {
-        artifact(javadocJar.get())
-        pom {
-          url = "https://github.com/breandan/kaliningraph"
-          name = "Kaliningraph"
-          description = "A purely functional algebraic graph library"
-          licenses {
-            license {
-              name = "The Apache Software License, Version 2.0"
-              url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-              distribution = "repo"
-            }
-          }
-          developers {
-            developer {
-              id = "Breandan Considine"
-              name = "Breandan Considine"
-              email = "bre@ndan.co"
-              organization = "McGill University"
-            }
-          }
-          scm { url = "https://github.com/breandan/kaliningraph" }
-        }
-      }
-    }
-  }
+//  publishing {
+//    publications {
+//      withType<MavenPublication> {
+//        artifact(javadocJar.get())
+//        pom {
+//          url = "https://github.com/breandan/kaliningraph"
+//          name = "Kaliningraph"
+//          description = "A purely functional algebraic graph library"
+//          licenses {
+//            license {
+//              name = "The Apache Software License, Version 2.0"
+//              url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+//              distribution = "repo"
+//            }
+//          }
+//          developers {
+//            developer {
+//              id = "Breandan Considine"
+//              name = "Breandan Considine"
+//              email = "bre@ndan.co"
+//              organization = "McGill University"
+//            }
+//          }
+//          scm { url = "https://github.com/breandan/kaliningraph" }
+//        }
+//      }
+//    }
+//  }
 }
 
 data class TestDuration(val name: String, val duration: Duration) {
