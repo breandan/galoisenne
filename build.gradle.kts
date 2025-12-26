@@ -239,8 +239,13 @@ val testDurations = mutableListOf<TestDuration>()
 
 tasks {
   withType<Test> {
-    minHeapSize = "32g"
-    maxHeapSize = "120g"
+    if (System.getenv("GITHUB_ACTIONS")?.toBooleanStrictOrNull() == true) {
+      minHeapSize = "1g"
+      maxHeapSize = "6g"
+    } else {
+      minHeapSize = "32g"
+      maxHeapSize = "120g"
+    }
     useJUnitPlatform()
     testLogging {
       events = setOf(
