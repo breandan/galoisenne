@@ -744,7 +744,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPs"
 */
-  @Test
+//  @Test // This test requires a lot of memory (more than GHCI can provide)
   fun testSLPs() {
 //    val pt = k2.startPTree(List(35) { "_" })!!
     val pt = completeWithSparseGRE(List(20) { "_" }, k3)!!
