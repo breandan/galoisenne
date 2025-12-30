@@ -26,7 +26,7 @@ class RepairServer {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.RepairServer.testRepairServer"
 */
-  @Test
+//  @Test
   fun testRepairServer() {
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", 8088), 0)
 

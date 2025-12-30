@@ -28,7 +28,7 @@ val Production.RHS: List<Σᐩ> get() = second
  * will be slow to compute the first time, but much faster on subsequent calls.
  * Storing the hashCode() in a field avoids recomputing it on every read.
  */
-fun CFG.freeze(): CFG = if (this is FrozenCFG) this else FrozenCFG(this)
+fun CFG.freeze(): CFG = this as? FrozenCFG ?: FrozenCFG(this)
 private class FrozenCFG(val cfg: CFG): CFG by cfg {
   val cfgId = cfg.hashCode()
   override fun equals(other: Any?) =
@@ -156,17 +156,219 @@ val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
-val CFG.unitReachability by cache {
-  symbols.associateWith { from ->
-    LabeledGraph {
-      unitProductions.map { it.first to it.second }
-//      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
-        .forEach { (a, b) -> a - b }
-    }.let {
-      setOf(from) + (it.transitiveClosure(setOf(from)) +
-        it.reversed().transitiveClosure(setOf(from)))
-    }.filter { it in nonterminals }
+//val CFG.unitReachability: Map<Σᐩ, Set<Σᐩ>> by cache {
+//  symbols.associateWith { from ->
+//    LabeledGraph {
+//      unitProductions.map { it.first to it.second }
+////      .filter { (a, b) -> nonterminals.containsAll(listOf(a, b)) }
+//        .forEach { (a, b) -> a - b }
+//    }.let {
+//      setOf(from) + (it.transitiveClosure(setOf(from)) +
+//        it.reversed().transitiveClosure(setOf(from)))
+//    }.filter { it in nonterminals }
+//  }
+//}
+
+val CFG.unitReachability: Map<Σᐩ, Set<Σᐩ>> by cache { unitReachabilityFast() }
+
+private fun CFG.unitReachabilityFast(): Map<Σᐩ, Set<Σᐩ>> {
+  class IVec(cap: Int = 8) {
+    private var a = IntArray(cap)
+    var size = 0; private set
+    fun add(x: Int) { if (size == a.size) a = a.copyOf(a.size * 2); a[size++] = x }
+    operator fun get(i: Int) = a[i]
   }
+  fun csr(n: Int, deg: IntArray, u: IVec, v: IVec): Pair<IntArray, IntArray> {
+    val off = IntArray(n + 1)
+    var s = 0
+    for (i in 0 until n) { off[i] = s; s += deg[i] }
+    off[n] = s
+    val to = IntArray(s)
+    val cur = off.copyOf()
+    for (i in 0 until u.size) {
+      val uu = u[i]
+      val p = cur[uu]
+      cur[uu] = p + 1
+      to[p] = v[i]
+    }
+    return off to to
+  }
+  fun ctz(x: Long): Int {
+    var n = 0
+    var y = x
+    while ((y and 1L) == 0L) { y = y ushr 1; n++ }
+    return n
+  }
+
+  val nts = nonterminals.toList()
+  val W = nts.size
+  if (W == 0) return symbols.associateWith { emptySet() }
+
+  val id = HashMap<Σᐩ, Int>(W * 2).apply { nts.forEachIndexed { i, s -> put(s, i) } }
+
+  val outDeg = IntArray(W)
+  val inDeg = IntArray(W)
+  val eu = IVec(); val ev = IVec()
+  val termGen = HashMap<Σᐩ, IVec>() // symbol -> A indices where A -> symbol
+
+  for ((a, b) in unitProductions) {
+    val ai = id[a] ?: continue
+    val bi = id[b]
+    if (bi != null) {
+      eu.add(ai); ev.add(bi); outDeg[ai] = outDeg[ai] + 1; inDeg[bi] = inDeg[bi] + 1
+    } else termGen.getOrPut(b) { IVec() }.add(ai)
+  }
+
+  val (outOff, outTo) = csr(W, outDeg, eu, ev)
+  val (inOff, inTo)   = csr(W, inDeg, ev, eu) // reverse
+
+  // ---- Kosaraju SCC (iterative) ----
+  val order = IntArray(W)
+  run {
+    val seen = BooleanArray(W)
+    val st = IntArray(W * 2)
+    val it = IntArray(W * 2)
+    var os = 0
+    for (s in 0 until W) if (!seen[s]) {
+      var sp = 0
+      st[sp] = s; it[sp] = outOff[s]; sp++; seen[s] = true
+      while (sp > 0) {
+        val v = st[sp - 1]
+        val p = it[sp - 1]
+        val end = outOff[v + 1]
+        if (p < end) {
+          val w = outTo[p]
+          it[sp - 1] = p + 1
+          if (!seen[w]) { st[sp] = w; it[sp] = outOff[w]; sp++; seen[w] = true }
+        } else { sp--; order[os++] = v }
+      }
+    }
+  }
+
+  val comp = IntArray(W) { -1 }
+  val members = ArrayList<IVec>()
+  var C = 0
+  run {
+    val st = IntArray(W)
+    for (k in W - 1 downTo 0) {
+      val s = order[k]
+      if (comp[s] != -1) continue
+      val c = C++
+      val mem = IVec(); members.add(mem)
+      var sp = 0
+      st[sp++] = s; comp[s] = c
+      while (sp > 0) {
+        val v = st[--sp]
+        mem.add(v)
+        for (i in inOff[v] until inOff[v + 1]) {
+          val w = inTo[i]
+          if (comp[w] == -1) { comp[w] = c; st[sp++] = w }
+        }
+      }
+    }
+  }
+
+  // ---- Condensation DAG ----
+  val compOut = Array(C) { IVec() }
+  val indegC = IntArray(C)
+  val seenT = IntArray(C); var stamp = 1
+  for (c in 0 until C) {
+    stamp++
+    val mem = members[c]
+    for (mi in 0 until mem.size) {
+      val u = mem[mi]
+      for (ei in outOff[u] until outOff[u + 1]) {
+        val d = comp[outTo[ei]]
+        if (d == c) continue
+        if (seenT[d] != stamp) {
+          seenT[d] = stamp
+          compOut[c].add(d)
+          indegC[d] = indegC[d] + 1
+        }
+      }
+    }
+  }
+
+  // topo order
+  val topo = IntArray(C)
+  run {
+    val q = IntArray(C)
+    val indeg = indegC.copyOf()
+    var h = 0; var t = 0; var z = 0
+    for (c in 0 until C) if (indeg[c] == 0) q[t++] = c
+    while (h < t) {
+      val c = q[h++]
+      topo[z++] = c
+      val outs = compOut[c]
+      for (i in 0 until outs.size) {
+        val d = outs[i]
+        val nd = indeg[d] - 1
+        indeg[d] = nd
+        if (nd == 0) q[t++] = d
+      }
+    }
+  }
+
+  // ---- Bitset DP: anc/desc over components ----
+  val words = (W + 63) ushr 6
+  fun bits() = LongArray(words)
+  fun setBit(b: LongArray, i: Int) { val w = i ushr 6; b[w] = b[w] or (1L shl (i and 63)) }
+  fun orInto(a: LongArray, b: LongArray) { for (i in a.indices) a[i] = a[i] or b[i] }
+
+  val anc = Array(C) { bits() }
+  val desc = Array(C) { bits() }
+
+  for (c in 0 until C) {
+    val mem = members[c]
+    for (i in 0 until mem.size) {
+      val v = mem[i]
+      setBit(anc[c], v); setBit(desc[c], v)
+    }
+  }
+
+  for (ti in 0 until C) { // ancestors
+    val c = topo[ti]
+    val outs = compOut[c]
+    for (i in 0 until outs.size) orInto(anc[outs[i]], anc[c])
+  }
+  for (ti in C - 1 downTo 0) { // descendants
+    val c = topo[ti]
+    val outs = compOut[c]
+    for (i in 0 until outs.size) orInto(desc[c], desc[outs[i]])
+  }
+
+  fun toSet(b: LongArray): Set<Σᐩ> {
+    val out = LinkedHashSet<Σᐩ>()
+    for (wi in b.indices) {
+      var w = b[wi]
+      while (w != 0L) {
+        val lsb = w and -w
+        val bit = ctz(lsb)
+        out.add(nts[(wi shl 6) + bit])
+        w = w xor lsb
+      }
+    }
+    return out
+  }
+
+  val rel = Array(C) { c ->
+    val b = bits(); orInto(b, anc[c]); orInto(b, desc[c]); toSet(b)
+  }
+
+  val res = HashMap<Σᐩ, Set<Σᐩ>>(symbols.size * 2)
+  for (i in 0 until W) res[nts[i]] = rel[comp[i]]
+
+  for (s in symbols) if (s !in nonterminals) {
+    val gens = termGen[s]
+    if (gens == null || gens.size == 0) res[s] = emptySet()
+    else {
+      val b = bits()
+      for (i in 0 until gens.size) orInto(b, anc[comp[gens[i]]])
+      res[s] = toSet(b)
+    }
+  }
+
+  return res
 }
 
 val CFG.noNonterminalStubs: CFG by cache {

@@ -40,14 +40,14 @@ fun CFG.normalize(): CFG =
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
 
-fun CFG.transformIntoCNF(): CFG =
-  addEpsilonProduction()
-    .refactorEpsilonProds()
-    .elimVarUnitProds()
-//    .binarizeRHSByFrequency()
-    .binarizeRHSByRightmost()
-    .terminalsToUnitProds()
-    .removeUselessSymbols()
+fun CFG.transformIntoCNF(): CFG = transformIntoCNFFast()
+//  addEpsilonProduction()
+//    .refactorEpsilonProds()
+//    .elimVarUnitProds()
+////    .binarizeRHSByFrequency()
+//    .binarizeRHSByRightmost()
+//    .terminalsToUnitProds()
+//    .removeUselessSymbols()
 
 val START_SYMBOL = "START"
 
@@ -318,4 +318,332 @@ private tailrec fun CFG.terminalsToUnitProds(): CFG {
   val newProd = freshName to listOf(mixProd.RHS[termIdx])
   val newGrammar = this - mixProd + (mixProd.LHS to freshRHS) + newProd
   return if (this == newGrammar) this else newGrammar.freeze().terminalsToUnitProds()
+}
+
+// One-shot CNF transform: ε-refactor + unit-closure + terminal lifting + binarization + prune
+fun CFG.transformIntoCNFFast(): CFG {
+  // ---------- helpers ----------
+  fun isNt(sym: Σᐩ, nts: Set<Σᐩ>) = sym in nts
+  fun isTerminal(sym: Σᐩ, nts: Set<Σᐩ>) = sym !in nts
+
+  // Build initial NT set from LHSs
+  val nts0 = LinkedHashSet<Σᐩ>(this.size * 2).apply { for ((l, _) in this@transformIntoCNFFast) add(l) }
+
+  // If user forgot START, mimic addGlobalStartSymbol() behavior
+  val baseProds = ArrayList<Production>(this.size + nts0.size + 8)
+  baseProds.addAll(this)
+  if (START_SYMBOL !in nts0) {
+    nts0.add(START_SYMBOL)
+    for (nt in nts0) if (nt != START_SYMBOL) baseProds.add(START_SYMBOL to listOf(nt))
+  }
+
+  // ---------- 1) add ε+ wrapper prods (same idea as addEpsilonProduction) ----------
+  // "holes" = LHS of terminal unit productions in the *input* grammar, excluding ε
+  val holeNTs = LinkedHashSet<Σᐩ>()
+  run {
+    val ntsSnap = nts0 // snapshot for membership tests here
+    for ((lhs, rhs) in baseProds) {
+      if (rhs.size == 1) {
+        val s = rhs[0]
+        if (s != "ε" && isTerminal(s, ntsSnap)) holeNTs.add(lhs)
+      }
+    }
+  }
+
+  // Add: V -> ε+ V | V ε+   and ε+ -> ε+ ε+ | ε
+  val withEpsPlus = ArrayList<Production>(baseProds.size + holeNTs.size * 2 + 4)
+  withEpsPlus.addAll(baseProds)
+  nts0.add("ε+")
+  for (v in holeNTs) {
+    withEpsPlus.add(v to listOf(v, "ε+"))
+    withEpsPlus.add(v to listOf("ε+", v))
+  }
+  withEpsPlus.add("ε+" to listOf("ε+", "ε+"))
+  withEpsPlus.add("ε+" to listOf("ε"))
+
+  // Also match refactorEpsilonProds() pre-step: add START -> START ε
+  withEpsPlus.add(START_SYMBOL to listOf(START_SYMBOL, "ε"))
+
+  // ---------- 2) nullable + ε-refactor in one pass ----------
+  val nts1 = LinkedHashSet<Σᐩ>().apply { for ((l, _) in withEpsPlus) add(l) }
+  val nullable = LinkedHashSet<Σᐩ>().apply { add("ε") }
+
+  // Fixpoint nullable: A nullable if A -> (all nullable symbols)
+  run {
+    var changed: Boolean
+    do {
+      changed = false
+      for ((lhs, rhs) in withEpsPlus) {
+        if (lhs in nullable) continue
+        if (rhs.isNotEmpty() && rhs.all { it in nullable }) {
+          nullable.add(lhs); changed = true
+        }
+      }
+    } while (changed)
+  }
+
+  // Expand productions by dropping any subset of nullable occurrences; keep non-empty RHS
+  val epsExpanded = LinkedHashSet<Production>(withEpsPlus.size * 2)
+  fun emitNullableVariants(lhs: Σᐩ, rhs: List<Σᐩ>) {
+    // indices of nullable symbols in rhs
+    val idxs = IntArray(rhs.size)
+    var k = 0
+    for (i in rhs.indices) if (rhs[i] in nullable) idxs[k++] = i
+    if (k == 0) {
+      epsExpanded.add(lhs to rhs)
+      return
+    }
+
+    // Enumerate keep/drop choices for nullable positions without allocating powersets.
+    // For k up to 62 this is fine; if k is huge, grammar is already toast.
+    val total = 1L shl k
+    for (mask in 0L until total) {
+      val out = ArrayList<Σᐩ>(rhs.size)
+      for (i in rhs.indices) {
+        val s = rhs[i]
+        if (s in nullable) {
+          // keep nullable at position i iff corresponding bit is 1
+          val j = run {
+            // find j such that idxs[j] == i (k is small in practice; linear scan is ok)
+            var jj = 0
+            while (jj < k && idxs[jj] != i) jj++
+            jj
+          }
+          if (j < k && ((mask ushr j) and 1L) == 0L) continue
+        }
+        out.add(s)
+      }
+      if (out.isNotEmpty()) epsExpanded.add(lhs to out)
+    }
+  }
+
+  for ((lhs, rhs) in withEpsPlus) {
+    if (rhs.any { it in nullable }) emitNullableVariants(lhs, rhs) else if (rhs.isNotEmpty()) epsExpanded.add(lhs to rhs)
+  }
+
+  // Recompute NTs after expansion (still just LHS)
+  val nts2 = LinkedHashSet<Σᐩ>().apply { for ((l, _) in epsExpanded) add(l) }
+
+  // ---------- 3) lift terminals to preterminals (linear) ----------
+  val termToPre = HashMap<Σᐩ, Σᐩ>(64)
+  val preTermUnits = LinkedHashSet<Production>(64)
+
+  fun ensurePreterminal(t: Σᐩ): Σᐩ {
+    return termToPre.getOrPut(t) {
+      val base = "F.$t"
+      var name = base
+      if (name in nts2) {
+        var i = 1
+        while (("$base#$i").also { name = it } in nts2) i++
+      }
+      nts2.add(name)
+      preTermUnits.add(name to listOf(t))
+      name
+    }
+  }
+
+  val lifted = ArrayList<Production>(epsExpanded.size + 64)
+  for ((lhs, rhs) in epsExpanded) {
+    if (rhs.size <= 1) {
+      lifted.add(lhs to rhs)
+    } else {
+      val out = ArrayList<Σᐩ>(rhs.size)
+      var changed = false
+      for (s in rhs) {
+        if (isNt(s, nts2)) out.add(s)
+        else { changed = true; out.add(ensurePreterminal(s)) }
+      }
+      lifted.add(lhs to if (changed) out else rhs)
+    }
+  }
+  // include generated F.t -> t
+  lifted.addAll(preTermUnits)
+
+  val nts3 = LinkedHashSet<Σᐩ>().apply { for ((l, _) in lifted) add(l) }
+
+  // ---------- 4) eliminate variable unit prods via unit-closure ----------
+  // Partition into: unit edges (A->B), terminal units (A->t), and proper rules (len>=2)
+  val declared = nts3.toList()
+  val idxOf = HashMap<Σᐩ, Int>(declared.size * 2).apply {
+    for (i in declared.indices) put(declared[i], i)
+  }
+  val n = declared.size
+  val words = (n + 63) ushr 6
+
+  val unitAdj = Array(n) { IntArray(0) }
+  val unitTmp = Array(n) { ArrayList<Int>(2) }
+  val termUnits = Array(n) { LinkedHashSet<Σᐩ>() }
+  val properByLhs = Array(n) { ArrayList<List<Σᐩ>>(4) }
+
+  for ((lhs, rhs) in lifted) {
+    val a = idxOf[lhs] ?: continue
+    if (rhs.size == 1) {
+      val s = rhs[0]
+      val b = idxOf[s]
+      if (b != null) unitTmp[a].add(b)
+      else termUnits[a].add(s)
+    } else if (rhs.size >= 2) {
+      properByLhs[a].add(rhs)
+    }
+  }
+  for (i in 0 until n) unitAdj[i] = unitTmp[i].toIntArray()
+
+  // Transitive closure over unit graph using bitsets with iterative propagation
+  val reach = Array(n) { LongArray(words) }
+  fun setBit(bs: LongArray, j: Int) { bs[j ushr 6] = bs[j ushr 6] or (1L shl (j and 63)) }
+  fun orInto(dst: LongArray, src: LongArray): Boolean {
+    var changed = false
+    for (w in dst.indices) {
+      val x = dst[w]
+      val y = x or src[w]
+      if (y != x) { dst[w] = y; changed = true }
+    }
+    return changed
+  }
+
+  for (a in 0 until n) for (b in unitAdj[a]) setBit(reach[a], b)
+
+  run {
+    var changed: Boolean
+    do {
+      changed = false
+      for (a in 0 until n) {
+        // reach[a] |= reach[b] for all b in unitAdj[a]
+        for (b in unitAdj[a]) {
+          if (orInto(reach[a], reach[b])) changed = true
+        }
+      }
+    } while (changed)
+  }
+
+  // Closed terminal units + closed proper rules
+  val closedTermUnits = Array(n) { LinkedHashSet<Σᐩ>() }
+  val closedProper = Array(n) { ArrayList<List<Σᐩ>>(4) }
+
+  for (a in 0 until n) {
+    closedTermUnits[a].addAll(termUnits[a])
+    closedProper[a].addAll(properByLhs[a])
+
+    val bs = reach[a]
+    for (w in 0 until words) {
+      var bits = bs[w]
+      while (bits != 0L) {
+        val lsb = bits and -bits
+        val bitIdx = lsb.countTrailingZeroBits()
+        val b = (w shl 6) + bitIdx
+        if (b < n) {
+          closedTermUnits[a].addAll(termUnits[b])
+          closedProper[a].addAll(properByLhs[b])
+        }
+        bits -= lsb
+      }
+    }
+  }
+
+  // ---------- 5) binarize (rightmost) with pair reuse ----------
+  val pairToName = HashMap<Pair<Σᐩ, Σᐩ>, Σᐩ>(256)
+  val binaryRules = LinkedHashSet<Production>(1024)
+  val nts4 = LinkedHashSet<Σᐩ>(nts3.size + 256).apply { addAll(nts3) }
+
+  fun ensureBin(a: Σᐩ, b: Σᐩ): Σᐩ {
+    val key = a to b
+    return pairToName.getOrPut(key) {
+      // mimic old naming ($a.$b), but collision-safe
+      val base = "$a.$b"
+      var name = base
+      if (name in nts4) {
+        var i = 1
+        while (("$base#$i").also { name = it } in nts4) i++
+      }
+      nts4.add(name)
+      binaryRules.add(name to listOf(a, b))
+      name
+    }
+  }
+
+  val cnfish = LinkedHashSet<Production>(2048)
+  // terminal units
+  for (a in 0 until n) {
+    val lhs = declared[a]
+    for (t in closedTermUnits[a]) cnfish.add(lhs to listOf(t))
+  }
+  // proper rules -> binary
+  for (a in 0 until n) {
+    val lhs = declared[a]
+    for (rhs0 in closedProper[a]) {
+      var rhs = rhs0
+      if (rhs.size < 2) continue
+      // after lifting, rhs symbols should be NTs; if not, lift again defensively
+      if (rhs.any { it !in nts4 } && rhs.size >= 2) {
+        val tmp = ArrayList<Σᐩ>(rhs.size)
+        for (s in rhs) tmp.add(if (s in nts4) s else ensurePreterminal(s))
+        rhs = tmp
+      }
+
+      var work = rhs
+      while (work.size > 2) {
+        val x = work[work.size - 2]
+        val y = work[work.size - 1]
+        val bin = ensureBin(x, y)
+        work = work.dropLast(2) + bin
+      }
+      cnfish.add(lhs to work)
+    }
+  }
+  cnfish.addAll(binaryRules)
+
+  // ---------- 6) prune to productive + reachable ----------
+  val allNts = LinkedHashSet<Σᐩ>().apply { for ((l, _) in cnfish) add(l) }
+  val byLhs = HashMap<Σᐩ, MutableList<List<Σᐩ>>>(allNts.size * 2).apply {
+    for ((l, r) in cnfish) getOrPut(l) { ArrayList() }.add(r)
+  }
+
+  // productive
+  val productive = HashSet<Σᐩ>(allNts.size * 2)
+  run {
+    // seed: any A -> terminal
+    for ((lhs, rhss) in byLhs) {
+      for (r in rhss) if (r.size == 1 && r[0] !in allNts) productive.add(lhs)
+    }
+    var changed: Boolean
+    do {
+      changed = false
+      for ((lhs, rhss) in byLhs) {
+        if (lhs in productive) continue
+        for (r in rhss) {
+          if (r.size == 2 && r[0] in productive && r[1] in productive) {
+            productive.add(lhs); changed = true; break
+          }
+          // allow unary terminal already handled
+        }
+      }
+    } while (changed)
+  }
+
+  // reachable
+  val reachable = HashSet<Σᐩ>(allNts.size * 2)
+  run {
+    val q = ArrayDeque<Σᐩ>()
+    if (START_SYMBOL in byLhs) { reachable.add(START_SYMBOL); q.add(START_SYMBOL) }
+    while (q.isNotEmpty()) {
+      val a = q.removeFirst()
+      for (r in byLhs[a].orEmpty()) {
+        if (r.size == 2) {
+          val x = r[0]; val y = r[1]
+          if (x in byLhs && x !in reachable) { reachable.add(x); q.add(x) }
+          if (y in byLhs && y !in reachable) { reachable.add(y); q.add(y) }
+        }
+      }
+    }
+  }
+
+  // filter
+  val pruned = LinkedHashSet<Production>(cnfish.size)
+  for ((lhs, rhs) in cnfish) {
+    if (lhs !in productive || lhs !in reachable) continue
+    if (rhs.size == 2 && (rhs[0] !in productive || rhs[1] !in productive)) continue
+    pruned.add(lhs to rhs)
+  }
+
+  return pruned
 }

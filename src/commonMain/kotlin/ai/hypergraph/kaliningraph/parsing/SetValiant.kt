@@ -124,10 +124,10 @@ fun CFG.solveFixedpoint(
 // Returns first valid whole-parse tree if the string is syntactically valid, and if not,
 // a sequence of partial trees ordered by the length of the substring that can be parsed.
 fun CFG.parseWithStubs(s: Σᐩ): Pair<Forest, List<Tree>> =
-  solveFixedpoint(s.tokenizeByWhitespace()).toUTMatrix().diagonals.asReversed().let {
-    it[0][0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
-      it.flatten().flatten().map { it.denormalize() }
-  }
+  initialUTMatrix(s.tokenizeByWhitespace()).seekFixpoint().diagonals.asReversed().let {
+      it[0][0].filter { it.root == START_SYMBOL }.map { it.denormalize() }.toSet() to
+        it.flatten().flatten().map { it.denormalize() }
+    }
 
 fun CFG.parseInvalidWithMaximalFragments(s: Σᐩ): List<Tree> =
   parseWithStubs(s).second.fold(setOf<Tree>()) { acc, t ->
@@ -383,10 +383,10 @@ fun CFG.initialUTMatrix(
   UTMatrix(
     ts = tokens.mapIndexed { i, terminal ->
       if (terminal == HOLE_MARKER)
-        unitReach.values.flatten().toSet().map { root ->
+        unitReach.values.flatten().toSet().flatMap { root ->
           bmp[root].filter { it.size == 1 }.map { it.first() }.filter { it in terminals }
             .map { Tree(root = root, terminal = it, span = i until (i + 1)) }
-        }.flatten().toSet()
+        }.toSet()
       else bmp[listOf(terminal)].map { Tree(root = it, terminal = terminal, span = i until (i + 1)) }.toSet()
     }.toTypedArray(),
     algebra = makeForestAlgebra()
