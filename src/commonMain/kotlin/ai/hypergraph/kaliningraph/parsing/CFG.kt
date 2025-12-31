@@ -34,6 +34,7 @@ private class FrozenCFG(val cfg: CFG): CFG by cfg {
   override fun equals(other: Any?) =
     ((other as? FrozenCFG)?.cfgId == cfgId) || (other as? CFG) == cfg
   override fun hashCode(): Int = cfgId
+  val stats = calcStats()
 }
 
 val CFG.language: CFL by cache { CFL(this) }
@@ -153,6 +154,9 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
  *        - Cons: immutable fields follow convention, easier to reason about
  */
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
+
+fun CFG.calcStats() = "CFG(|Σ|=${terminals.size}, |V|=${nonterminals.size}, |P|=${nonterminalProductions.size})"
+fun CFG.stats() = if (this is FrozenCFG) stats else calcStats()
 
 // Equivalence class of an NT B are all NTs, A ->* B ->* C
 // reachable via unit productions (in forward or reverse)
