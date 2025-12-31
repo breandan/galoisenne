@@ -239,9 +239,9 @@ val testDurations = mutableListOf<TestDuration>()
 
 tasks {
   withType<Test> {
-    if (System.getenv("GITHUB_ACTIONS")?.toBooleanStrictOrNull() == true) {
+    if (System.getenv("GITHUB_ACTIONS") != null) {
       minHeapSize = "1g"
-      maxHeapSize = "6g"
+      maxHeapSize = "7g"
     } else {
       minHeapSize = "32g"
       maxHeapSize = "120g"
