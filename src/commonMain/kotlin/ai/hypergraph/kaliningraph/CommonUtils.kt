@@ -162,13 +162,8 @@ class KBitSet(val n: Int) {
 
   fun clear() { data.fill(0L) }
 
-  infix fun or(other: KBitSet) {
-    for (i in data.indices) data[i] = data[i] or other.data[i]
-  }
-
-  infix fun and(other: KBitSet) {
-    for (i in data.indices) data[i] = data[i] and other.data[i]
-  }
+  infix fun or(other: KBitSet) { for (i in data.indices) data[i] = data[i] or other.data[i] }
+  infix fun and(other: KBitSet) { for (i in data.indices) data[i] = data[i] and other.data[i] }
 
   fun merge(other: KBitSet): KBitSet = KBitSet(n).also { it or other }.also { it or this }
 
@@ -251,5 +246,14 @@ class KBitSet(val n: Int) {
   fun intersects(other: KBitSet): Boolean {
     for (i in data.indices) if ((data[i] and other.data[i]) != 0L) return true
     return false
+  }
+
+  fun cardinality(): Int {
+    var count = 0
+    val last = data.lastIndex
+    if (last < 0) return 0
+    for (i in 0 until last) count += data[i].countOneBits()
+    count += (data[last] and lastMask).countOneBits()
+    return count
   }
 }

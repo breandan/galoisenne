@@ -3,8 +3,10 @@ package ai.hypergraph.kaliningraph.automata
 import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.*
+import ai.hypergraph.kaliningraph.sampling.bigLFSRSequence
 import ai.hypergraph.kaliningraph.tensor.UTMatrix
 import ai.hypergraph.kaliningraph.types.*
+import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlinx.coroutines.delay
 import kotlin.math.*
 import kotlin.time.Duration.Companion.nanoseconds
@@ -19,7 +21,7 @@ sealed class GRE(open vararg val args: GRE) {
   class CAT(val l: GRE, val r: GRE): GRE(l, r)
 
   fun words(terminals: List<Σᐩ>, shouldContinue: () -> Boolean = { true }): Sequence<Σᐩ> =
-    enumerate(shouldContinue).takeWhile { shouldContinue() }.distinct()
+    enumerate(shouldContinue).takeWhile { shouldContinue() }
       .map { it.mapNotNull { terminals[it].let { if (it == "ε") null else it } }.joinToString(" ") }
 
   fun wordsOrdered(
@@ -137,6 +139,80 @@ sealed class GRE(open vararg val args: GRE) {
 //    is UNI -> "( ${args.joinToString(" ∪ "){ "$it" }} )"
 //    is CAT -> "$l $r"
 //  }
+
+  /** Like [words], but sampled pseudorandomly from the space of all derivations */
+  fun sampleStrWithoutReplacement(terminals: List<Σᐩ>, stride: Int = 1, offset: Int = 0): Sequence<Σᐩ> {
+    val memo = hashMapOf<GRE, GreMemo>()
+    val total = this.sizeMemo(memo).size
+    if (total.isZero()) return emptySequence()
+
+    val idxSeq =
+      if (6 < total.bitLength()) bigLFSRSequence(total)
+      else sequence { var i = BigInteger.ZERO; while (i < total) { yield(i); i++ } }
+
+    return idxSeq.mapIndexedNotNull { ix, bi ->
+      if (ix % stride != offset) return@mapIndexedNotNull null
+      val buf = ArrayList<Int>(32)
+      unrank(bi, memo, buf)
+      buf.mapNotNull { terminals[it].let { t -> if (t == "ε") null else t } }.joinToString(" ")
+    }
+  }
+
+  private data class GreMemo(val size: BigInteger, val ranges: List<Pair<BigInteger, BigInteger>>? = null)
+
+  // Counts derivations (like PTree.totalTrees), not unique strings.
+  private fun sizeMemo(m: MutableMap<GRE, GreMemo>): GreMemo = m[this] ?: run {
+    val memo = when (this) {
+      is EPS -> GreMemo(BigInteger.ONE)
+      is SET -> GreMemo(BigInteger.fromInt(s.cardinality()))
+      is CAT -> {
+        val lm = l.sizeMemo(m); val rm = r.sizeMemo(m)
+        GreMemo(lm.size * rm.size)
+      }
+      is CUP -> {
+        val child = args.map { it.sizeMemo(m).size }
+        val total = child.fold(BigInteger.ZERO) { a, b -> a + b }
+        val ranges =
+          child.fold(listOf(BigInteger.ZERO)) { acc, it -> acc + (acc.last() + it) }
+            .windowed(2) { (a, b) -> a to (b - BigInteger.ONE) }
+        GreMemo(total, ranges)
+      }
+    }
+    m[this] = memo
+    memo
+  }
+
+  private fun unrank(i: BigInteger, m: MutableMap<GRE, GreMemo>, out: MutableList<Int>) {
+    when (this) {
+      is EPS -> return
+
+      is SET -> {
+        // pick the i-th element of the set in iteration order
+        val idx = i.intValue(true)
+        var k = 0
+        for (t in s.iterator()) {
+          if (k++ == idx) { out.add(t); return }
+        }
+        return
+      }
+
+      is CAT -> {
+        val rm = r.sizeMemo(m).size
+        val (iLeft, iRight) = i.divrem(rm)
+        l.unrank(iLeft, m, out)
+        r.unrank(iRight, m, out)
+      }
+
+      is CUP -> {
+        val memo = sizeMemo(m)
+        val ranges = memo.ranges!!
+        val t = ranges.indexOfFirst { (lo, hi) -> i in lo..hi }
+        val child = args[t]
+        val offset = i - ranges[t].first
+        child.unrank(offset, m, out)
+      }
+    }
+  }
 }
 
 fun CFG.initGREListMat(tokens: List<Σᐩ>): UTMatrix<List<GRE?>> =
@@ -426,7 +502,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val maxBranch = vindex.maxOf { it.size }
   val startIdx = bindex[START_SYMBOL]
 
-  var i = 0; suspend fun pause(freq: Int = 300_000) { if (i++ % freq == 0) { delay(50.nanoseconds) }}
+  var spin = 0; suspend fun pause(mask: Int = (1 shl 18) - 1) { if ((++spin and mask) == 0) delay(50.nanoseconds) }
 
   suspend fun nonemptyLevInt(levFSA: FSA): Int? {
     val ap: List<List<List<Int>?>> = levFSA.allPairs
@@ -685,7 +761,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()).flatunion()
 }
 
-fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
+fun completeWithSparsePTree(template: List<Σᐩ>, cfg: CFG): PTree? {
   val timer = TimeSource.Monotonic.markNow()
   val startIdx = cfg.bindex[START_SYMBOL]
   val W = cfg.nonterminals.size
@@ -856,4 +932,172 @@ fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): PTree? {
   val result = trees[0][nTok][startIdx]
   println("Completed sparse completion chart in ${timer.elapsedNow()} |w|=$nTok, |V|=$W")
   return result
+}
+
+fun completeWithSparseGRE(template: List<Σᐩ>, cfg: CFG): GRE? {
+  val timer = TimeSource.Monotonic.markNow()
+  val startIdx = cfg.bindex[START_SYMBOL]
+  val W = cfg.nonterminals.size
+  val nTok = template.size
+
+  val tmm = cfg.tmMap                  // terminal -> terminal index
+  val t2vs = cfg.tmToVidx              // terminal index -> IntArray of NT indices
+  val unitNTs = cfg.unitNonterminals   // nonterminals that can appear over a HOLE
+  val units = cfg.bimap.UNITS          // Map<NT, List<Terminal>> of unit expansions
+  val ladj = cfg.leftAdj               // B -> (C -> A) adjacency for A -> B C
+  val tms = cfg.tmLst.size
+
+  // -------------------------------
+  // PASS 1: Boolean CYK chart
+  // -------------------------------
+  val active: Array<Array<KBitSet>> = Array(nTok + 1) { Array(nTok + 1) { KBitSet(W) } }
+
+  // Base case: spans of length 1 (i, i+1)
+  for (i in 0 until nTok) {
+    val tok = template[i]
+    val cellBits = active[i][i + 1]
+
+    if (tok == "_" || tok == HOLE_MARKER) {
+      for (nt in unitNTs) {
+        val exp = units[nt] ?: continue
+        if (exp.isEmpty()) continue
+        cellBits.set(cfg.bindex[nt])
+      }
+    } else {
+      val tIdx = tmm[tok] ?: continue
+      for (A in t2vs[tIdx]) cellBits.set(A)
+    }
+  }
+
+  // CYK-style DP for spans of length ≥ 2
+  for (len in 2..nTok) {
+    var i = 0
+    while (i + len <= nTok) {
+      val j = i + len
+      val tgtBits = active[i][j]
+
+      var k = i + 1
+      while (k < j) {
+        val leftBits = active[i][k]
+        val rightBits = active[k][j]
+        if (leftBits.isEmpty() || rightBits.isEmpty()) { k++; continue }
+
+        for (B in leftBits.iterator())
+          (ladj[B] ?: continue).forEachIfIn(rightBits) { _, A ->
+            if (!tgtBits[A]) tgtBits.set(A)
+          }
+
+        k++
+      }
+      i++
+    }
+  }
+
+  if (!active[0][nTok][startIdx]) {
+    println("No completion: START does not derive the template under the hole semantics.")
+    return null
+  }
+
+  // -------------------------------
+  // PASS 2: Sparse GRE chart
+  // -------------------------------
+
+  // Precompute GRE.SET for hole-lexical expansions (NT -> SET(terminals))
+  val holeGre: Array<GRE?> = arrayOfNulls(W)
+  for (nt in unitNTs) {
+    val ntIdx = cfg.bindex[nt]
+    val exp = units[nt] ?: continue
+    if (exp.isEmpty()) continue
+
+    val bs = KBitSet(tms)
+    for (term in exp) {
+      val tid = tmm[term] ?: continue
+      bs.set(tid)
+    }
+    if (!bs.isEmpty()) holeGre[ntIdx] = GRE.SET(bs)
+  }
+
+  // dp[i][j]: map NT-index -> GRE for template[i..j)
+  val dp: Array<Array<MutableMap<Int, GRE>>> =
+    Array(nTok + 1) { Array(nTok + 1) { mutableMapOf() } }
+
+  // Base case: spans of length 1
+  for (i in 0 until nTok) {
+    val tok = template[i]
+    val cellBits = active[i][i + 1]
+    val cellMap = dp[i][i + 1]
+
+    if (tok == "_" || tok == HOLE_MARKER) {
+      for (nt in unitNTs) {
+        val A = cfg.bindex[nt]
+        if (!cellBits[A]) continue
+        val g = holeGre[A] ?: continue
+        cellMap[A] = g
+      }
+    } else {
+      val tIdx = tmm[tok] ?: continue
+      for (A in t2vs[tIdx]) {
+        if (!cellBits[A]) continue
+        // (Usually unique, but allow merging just in case)
+        val prev = cellMap[A] as? GRE.SET
+        cellMap[A] = (prev ?: GRE.SET(tms)).apply { s.set(tIdx) }
+      }
+    }
+  }
+
+  var maxChildren = 0
+  val acc: MutableMap<Int, MutableList<GRE>> = hashMapOf()
+
+  // Internal spans: 2..nTok
+  for (len in 2..nTok) {
+    var i = 0
+    while (i + len <= nTok) {
+      val j = i + len
+      val tgtBits = active[i][j]
+      if (tgtBits.isEmpty()) { i++; continue }
+
+      acc.clear()
+
+      var k = i + 1
+      while (k < j) {
+        val leftBits = active[i][k]
+        val rightBits = active[k][j]
+        if (leftBits.isEmpty() || rightBits.isEmpty()) { k++; continue }
+
+        val leftMap = dp[i][k]
+        val rightMap = dp[k][j]
+
+        for (B in leftBits.iterator()) {
+          val adj = ladj[B] ?: continue
+          val lgre = leftMap[B] ?: continue
+
+          adj.forEachIfIn(rightBits) { C, A ->
+            if (!tgtBits[A]) return@forEachIfIn
+            val rgre = rightMap[C] ?: return@forEachIfIn
+            acc.getOrPut(A) { mutableListOf() }.add(lgre * rgre)
+          }
+        }
+
+        k++
+      }
+
+      if (acc.isNotEmpty()) {
+        val cellMap = dp[i][j]
+        for ((A, parts) in acc) {
+          val combined = if (parts.size == 1) parts[0] else GRE.CUP(*parts.toTypedArray()).flatunion()
+
+          val prev = cellMap[A]
+          cellMap[A] = if (prev == null) combined else (prev + combined).flatunion()
+
+          if (parts.size > maxChildren) maxChildren = parts.size
+        }
+      }
+
+      i++
+    }
+  }
+
+  val result = dp[0][nTok][startIdx]
+  println("Completed sparse completion chart in ${timer.elapsedNow()} |w|=$nTok, |V|=$W, maxChildren=$maxChildren")
+  return result?.flatunion()
 }

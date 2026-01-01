@@ -28,7 +28,7 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
 
   val allTerminals: Set<Σᐩ> by lazy {
     if (branches.isEmpty()) setOf(root)
-    else branches.map { (l, r) -> l.allTerminals + r.allTerminals }.flatten().toSet()
+    else branches.flatMap { (l, r) -> l.allTerminals + r.allTerminals }.toSet()
   }
 
   val termDict by lazy { TermDict(allTerminals) }
@@ -42,10 +42,10 @@ class PTree constructor(val root: String = ".ε", val branches: List<Π2A<PTree>
   // TODO: Use weighted choice mechanism
   val shuffledBranches by lazy { branches.shuffled().sortedBy { "ε" !in it.first.root + it.second.root } }
   val toCFG: CFG by lazy {
-    branches.map { (x, z) ->
+    branches.flatMap { (x, z) ->
       if (".ε" == z.root) setOf(root to listOf(x.root))
       else setOf(root to listOf(x.root, z.root)) + x.toCFG + z.toCFG
-    }.flatten().toSet()
+    }.toSet()
   }
 
   val totalTreesStr by lazy { totalTrees.toString() }
@@ -311,8 +311,7 @@ fun CFG.initPTreeListMat(tokens: List<String>): UTMatrix<List<PTree?>> =
       (if (token != HOLE_MARKER) bimap[listOf(token)] else unitNonterminals)
         .associateWith { nt ->
           if (token != HOLE_MARKER) PSingleton(token)
-          else bimap.UNITS[nt]?.map {
-            PSingleton(it) }?.flatten() ?: listOf()
+          else bimap.UNITS[nt]?.flatMap { PSingleton(it) } ?: listOf()
         }.forEach { (k, v) -> ptreeList[bindex[k]] = PTree(k, v) }
       ptreeList
     }.toTypedArray(),
@@ -325,7 +324,7 @@ fun CFG.initPForestMat(tokens: List<String>): UTMatrix<PForest> =
       (if (token != HOLE_MARKER) bimap[listOf(token)] else unitNonterminals)
         .associateWith { nt ->
           if (token != HOLE_MARKER) PSingleton(token)
-          else bimap.UNITS[nt]?.map { PSingleton(it) }?.flatten() ?: listOf()
+          else bimap.UNITS[nt]?.flatMap { PSingleton(it) } ?: listOf()
         }.map { (k, v) -> k to PTree(k, v) }.toMap()
     }.toTypedArray(),
     algebra = Ring.of(

@@ -747,9 +747,12 @@ class ProbabilisticLBH {
 //  @Test // This test requires a lot of memory (more than GHCI can provide)
   fun testSLPs() {
 //    val pt = k2.startPTree(List(35) { "_" })!!
-    val pt = completeWithSparseGRE(List(20) { "_" }, k3)!!
-    pt.sampleStrWithoutReplacement().take(1000)//.filter { it.length <= 80 }
-      .forEach { println("\\texttt{ " + it.replace("{", "\\{")
+    val template = List(40) { "_" }
+    val pt = completeWithSparseGRE(template, k3)!!.sampleStrWithoutReplacement(k3.tmLst).take(1000)
+//  val pt = completeWithSparsePTree(template, k3)!!.sampleStrWithoutReplacement().take(1000)
+//  pt.sampleStrWithoutReplacement().take(1000)//.filter { it.length <= 80 }
+
+      pt.forEach { println("\\texttt{ " + it.replace("{", "\\{")
         .replace("}", "\\}") + "}\\\\") }
 
 //    val broke = "fn f0 ( p1 : T , p2 : T ) -> T { let mut p3 = add ( p1 , p1 ) ; p3 = mul ( p1 , p1 ) ; p3 }"
