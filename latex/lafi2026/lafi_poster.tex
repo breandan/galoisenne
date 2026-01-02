@@ -134,7 +134,7 @@
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
         \textbf{Type universe.} We assume a finite universe $\T$ with at two base types $\mathbb{B},\mathbb{N}$, and an ambient global context
-        $\Gamma$ of named functions $\tok{f\_} : (\tau_1,\ldots,\tau_m)\rightarrow \tau$.
+        $\Gamma$ of named functions $\tok{f\ttus} : (\tau_1,\ldots,\tau_m)\rightarrow \tau$.
     \end{minipage}
 
     \jointspacing
@@ -180,7 +180,7 @@
     \vspace{1cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        where the infix operator typing function $\delta_{\texttt{OPR}}$ is defined as follows:
+        where the infix operator typing function $\delta_{\texttt{OPR}}$ is defined in the following way:
 
         \[
           \delta_{\texttt{OPR}}(\odot,\tau,\tau')=
@@ -278,7 +278,7 @@
     \vspace{1.5cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Finally, normalize to Chomsky Normal Form (CNF), pruning unreachable and unproductive nonterminals. Expansion will be close to linear in $|G_\Gamma|$.
+        Finally, we normalize to Chomsky Normal Form (CNF), pruning unreachable and unproductive nonterminals. Expansion will be close to linear in $|G_\Gamma|$.
     \end{minipage}
     \vspace{-3cm}
 
@@ -369,16 +369,14 @@
     \mysection{Autoregressive Decoding}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Finite slices of a CFL are finite and therefore regular. We use star free regular expressions as a compact algebra for propagating regular constraints during parsing and decoding.
-        Let \( e: E \) be an expression defined by the grammar:
+        Finite slices of a CFL are finite and therefore regular. We use star free regular expressions as a compact algebra for propagating regular constraints during parsing and decoding. Let \( e: E \) be an expression defined by the grammar:\vspace{0.4cm}
         \[
           e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
         \]
-
-        where $\varepsilon$ is the empty symbol. We interpret these expressions as denoting regular languages, where $\mathcal{L}(x)\circ\mathcal{L}(z) \coloneqq \big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$:
+        \vspace{0.5cm}where $\varepsilon$ is the empty symbol and $\Sigma$ is a finite alphabet. We interpret these expressions as denoting regular languages, where $a \in \Sigma$:
     \end{minipage}
 
-    \vspace{-2.5cm}
+    \vspace{-2.4cm}
     \setlength{\columnseprule}{0pt}
     \setlength{\columnsep}{-3cm}
     \begin{multicols}{2}
@@ -388,17 +386,18 @@
         \hspace{-2cm}\mathcal{L}(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \{a\}
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\cdot z \hspace{-0.35cm}&) = \mathcal{L}(x) \circ \mathcal{L}(z)\text{\footnotemark}\\
+        \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\cdot z \hspace{-0.35cm}&) = \mathcal{L}(x)\hspace{3pt} \circ\hspace{3pt} \mathcal{L}(z)\\
         \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\vee  z \hspace{-0.35cm}&) = \mathcal{L}(x) \cup  \mathcal{L}(z)\\
         \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\land z \hspace{-0.35cm}&) = \mathcal{L}(x) \cap  \mathcal{L}(z)
       \end{eqnarray*}
     \end{multicols}
+    \vspace{-0.2cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Brzozowski (1962) provides a rewrite-based procedure which supports both recognition and generation. He defines a quotient \(\partial_a(L) = \{b \mid ab \in L\}\):
+        where $\mathcal{L}(x)\circ\mathcal{L}(z) \coloneqq \big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$. Brzozowski (1962) introduces an equational theory for quotients, \(\partial_a(L) = \{b \mid ab \in L\}\):
     \end{minipage}
 
-    \vspace{-1.5cm}
+    \vspace{-1.6cm}
     \begin{multicols}{2}
       \begin{eqnarray*}
         \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
@@ -420,8 +419,9 @@
 
     \vspace{-0.5cm}
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Now, for any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:
+        Now, for any nonempty $(\varepsilon, \land)$-free regex, \(e\), $\texttt{choose}\,(e)$ witnesses $\sigma \in \mathcal{L}(e)$:
     \end{minipage}
+    \vspace{0.2cm}
 
     \begin{equation*}
       \hspace{0.3cm}\texttt{follow}\,(e): E \rightarrow 2^\Sigma = \begin{cases}
@@ -450,9 +450,9 @@
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
         \begin{itemize}[leftmargin=1.5cm, labelsep=0.6em]
           \item A fixed-parameter $\langle k, |\mathbb{T}|\rangle$ tractable embedding from a syntax-directed type system to a CFG with soundness and completeness guarantees.
-          \item Intersection with an acyclic FSA yields a regular expression
-          \item Brzozowski derivatives enable incremental autoregressive decoding
-          \item Future work: lazy CNF materialization, quotienting (e.g., $\alpha$-equivalence), richer typing (subtyping, polymorphism, substructural constraints).
+          \item Intersection with an acyclic FSA yields a star-free regular expression.
+          \item Brzozowski derivatives enable incremental autoregressive decoding.
+          \item Future work: lazy CNF materialization, quotienting (e.g., $\alpha$-equivalence), richer type theories (subtyping, polymorphism, substructural constraints).
         \end{itemize}
     \end{minipage}
 
