@@ -42,6 +42,15 @@
 \usepackage{soul}
 \sethlcolor{Light}
 
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+  \mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+  \reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
+
 \newcommand{\codett}[1]{\texttt{\hl{#1}}}
 \newcommand{\nt}[1]{\texttt{#1}}
 \newcommand{\tok}[1]{\codett{#1}}
@@ -58,7 +67,7 @@
 
 \begin{document}
 \begin{poster}
-  \vspace{-0.3cm}
+  \vspace{1cm}
 
 %%% Header (same structure)
   \begin{center}
@@ -100,6 +109,7 @@
         Consider a simply-typed, first-order functional programming language with function calls, conditionals, and binary operators:\\
     \end{minipage}
 
+    \vspace{0.2cm}
     \hspace{0.5cm}
     \[
       \hspace{-0.3cm}\begin{tabular}{@{}c@{\quad}c@{}}
@@ -120,10 +130,10 @@
          \end{array}$
       \end{tabular}
     \]
-    \vspace{-0.1cm}
+    \vspace{-0.3cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        \textbf{Type universe.} We assume a finite set $\T$ (size $d$) with at least $\mathbb{B},\mathbb{N}$, and an ambient global context
+        \textbf{Type universe.} We assume a finite universe $\T$ with at two base types $\mathbb{B},\mathbb{N}$, and an ambient global context
         $\Gamma$ of named functions $\tok{f\_} : (\tau_1,\ldots,\tau_m)\rightarrow \tau$.
     \end{minipage}
 
@@ -132,14 +142,15 @@
 % =========================================================
     \mysection{Static Semantics}
 
+    \vspace{-0.2cm}
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
         Typing judgements are standard; we highlight just a few of them below:
     \end{minipage}
-\vspace{0.5cm}
+\vspace{0.8cm}
     \begin{center}
       \begin{minipage}{0.95\columnwidth}
         \begin{prooftree}
-          \AxiomC{$\Gamma \vdash e_c: \B$}
+          \AxiomC{$\Gamma \vdash e_c: \mathbb{B}$}
           \AxiomC{$\Gamma \vdash e_\top: \tau$}
           \AxiomC{$\Gamma \vdash e_\bot: \tau$}
           \RightLabel{\texttt{IFE}}
@@ -166,10 +177,11 @@
         \end{prooftree}
       \end{minipage}
     \end{center}
-    \vspace{0.8cm}
+    \vspace{1cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        where the operator typing function $\delta_{\texttt{OPR}}$ is:
+        where the infix operator typing function $\delta_{\texttt{OPR}}$ is defined as follows:
+
         \[
           \delta_{\texttt{OPR}}(\odot,\tau,\tau')=
           \begin{cases}
@@ -201,9 +213,10 @@
     \mysection{Embedding the Type Checker}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Typing derivations are compiled by decorating nonterminals with a pair, $\nt{EXP}[\cdot, \cdot]$, carrying
+        Typing derivations are compiled by decorating nonterminals with a pair, $\nt{EXP}\,[\cdot, \cdot]$, carrying
         the type annotation, $e: \tau$, and type signature $\tok{f0}:\vec\tau\rightarrow\dot\tau$.
     \end{minipage}
+    \vspace{0.4cm}
 
     \null\hspace*{1.6cm}\begin{minipage}[c]{0.92\columnwidth}
       \begin{prooftree}
@@ -213,79 +226,79 @@
         \BinaryInfC{$\Big(S_\Gamma \rightarrow
         \tok{fun}\gap \tok{f0}\gap
         \tok{(}\cjoin{i=1}{|\vec\tau|}\big(p_i \gap\tok{:}\gap \vec\tau_{i}\big)\:\tok{)}\gap
-        \tok{:}\gap \dot\tau \gap \tok{=}\gap \texttt{EXP}[\dot\tau, \vec\tau \rightarrow \dot\tau]
+        \tok{:}\gap \dot\tau \gap \tok{=}\gap \texttt{EXP}\,[\dot\tau, \vec\tau \rightarrow \dot\tau]
         \Big)\in P_\Gamma$}
       \end{prooftree}
       \begin{prooftree}
-        \AxiomC{$\texttt{EXP}[\tau, \pi] \in V_\Gamma$}
+        \AxiomC{$\texttt{EXP}\,[\tau, \pi] \in V_\Gamma$}
         \AxiomC{$\Gamma \vdash \codett{f\ttus} : (\tau_{1}, \ldots, \tau_{m}) \rightarrow \tau$}
         \RightLabel{$\texttt{INV}_{\varphi}$}
-        \BinaryInfC{$\big(\nt{EXP}[\tau,\pi] \;\rightarrow\; \tok{f\ttus}\gap \tok{(} \cjoin{i=1}{m}\nt{EXP}[\tau_{i},\pi] \:\tok{)}\big)\in P_\Gamma$}
+        \BinaryInfC{$\big(\nt{EXP}\,[\tau,\pi] \;\rightarrow\; \tok{f\ttus}\gap \tok{(} \cjoin{i=1}{m}\nt{EXP}\,[\tau_{i},\pi] \:\tok{)}\big)\in P_\Gamma$}
         \DisplayProof
         \vskip 1em
-        \AxiomC{$\texttt{EXP}[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma$}
+        \AxiomC{$\texttt{EXP}\,[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma$}
         \AxiomC{$\tau = \dot\tau$}
         \AxiomC{$\vec\tau_{0..|\vec\tau|} \in \vec\tau$}
         \RightLabel{$\texttt{REC}_{\varphi}$}
-        \TrinaryInfC{$\big(\nt{EXP}[\tau,\vec\tau \rightarrow \dot\tau] \;\rightarrow\; \tok{f0}\gap \tok{(} \cjoin{i=1}{|\vec\tau|}\nt{EXP}[\vec\tau_{i},\vec\tau \rightarrow \dot\tau] \:\tok{)}\big)\in P_\Gamma$}
+        \TrinaryInfC{$\big(\nt{EXP}\,[\tau,\vec\tau \rightarrow \dot\tau] \;\rightarrow\; \tok{f0}\gap \tok{(} \cjoin{i=1}{|\vec\tau|}\nt{EXP}\,[\vec\tau_{i},\vec\tau \rightarrow \dot\tau] \:\tok{)}\big)\in P_\Gamma$}
         \DisplayProof
         \vskip 1em
-        \AxiomC{$\texttt{EXP}[\tau,  \pi] \in V_\Gamma$}
+        \AxiomC{$\texttt{EXP}\,[\tau,  \pi] \in V_\Gamma$}
         \AxiomC{$\tau = \tau'$}
         \AxiomC{$\tau, \tau' \in \mathbb{T}$}
         \RightLabel{$\texttt{IFE}_{\varphi}$}
         \TrinaryInfC{$
         \left(
           \begin{array}{l}
-            \nt{EXP}[\tau, \pi] \;\rightarrow\;
-            \tok{if}\gap \nt{EXP}[\mathbb{B}, \pi]\gap \tok{\ttlb}\gap \nt{EXP}[\tau, \pi]\gap \tok{\ttrb}\\[0.15cm]
-            \phantom{\nt{EXP}[\tau, \pi] \;\rightarrow\;}\;\tok{else}\gap \tok{\ttlb}\gap \nt{EXP}[\tau', \pi]\gap \tok{\ttrb}
+            \nt{EXP}\,[\tau, \pi] \;\rightarrow\;
+            \tok{if}\gap \nt{EXP}\,[\mathbb{B}, \pi]\gap \tok{\ttlb}\gap \nt{EXP}\,[\tau, \pi]\gap \tok{\ttrb}\\[0.15cm]
+            \phantom{\nt{EXP}\,[\tau, \pi] \;\rightarrow\;}\;\tok{else}\gap \tok{\ttlb}\gap \nt{EXP}\,[\tau', \pi]\gap \tok{\ttrb}
           \end{array}
         \right)\in P_\Gamma
         $}
         \DisplayProof
         \vskip 1em
-        \AxiomC{$\texttt{EXP}[\hat\tau,  \pi] \in V_\Gamma$}
+        \AxiomC{$\texttt{EXP}\,[\hat\tau,  \pi] \in V_\Gamma$}
         \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
         \AxiomC{$\odot\in \{\codett{==}, \codett{<}, \codett{+}, \codett{*}\}$}
         \RightLabel{$\texttt{OPX}_{\varphi}$}
-        \TrinaryInfC{$\big(\nt{EXP}[\hat\tau, \pi] \;\rightarrow\; \codett{(}\gap\nt{EXP}[\tau, \pi] \;\odot\; \nt{EXP}[\tau', \pi]\gap\codett{)}\big)\in P_\Gamma$}
+        \TrinaryInfC{$\big(\nt{EXP}\,[\hat\tau, \pi] \;\rightarrow\; \codett{(}\gap\nt{EXP}\,[\tau, \pi] \;\odot\; \nt{EXP}\,[\tau', \pi]\gap\codett{)}\big)\in P_\Gamma$}
         \DisplayProof
         \vskip 1em
-        \AxiomC{$\texttt{EXP}[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma \gap\gap\exists\vec\tau_{i}=\tau$}
+        \AxiomC{$\texttt{EXP}\,[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma \gap\gap\exists\vec\tau_{i}=\tau$}
         \RightLabel{$\texttt{PID}_{\varphi}$}
-        \UnaryInfC{$\big(\nt{EXP}[\tau,\vec\tau \rightarrow \dot\tau] \rightarrow \tok{pi}\big)\in P_\Gamma$}
+        \UnaryInfC{$\big(\nt{EXP}\,[\tau,\vec\tau \rightarrow \dot\tau] \rightarrow \tok{pi}\big)\in P_\Gamma$}
         \DisplayProof
         \hskip 0.1em
-        \AxiomC{$\texttt{EXP}[\tau,  \pi] \in V_\Gamma\:\:\:\codett{\ttus}:\tau \in \{\mathbb{B}, \mathbb{N}\}$}
+        \AxiomC{$\texttt{EXP}\,[\tau,  \pi] \in V_\Gamma\:\:\:\codett{\ttus}:\tau \in \{\mathbb{B}, \mathbb{N}\}$}
         \RightLabel{$\ulcorner\mathbb{T}\lrcorner_{\varphi}$}
-        \UnaryInfC{$(\texttt{EXP}[\tau, \pi] \rightarrow \tok{\ttus})\in P_\Gamma$}
+        \UnaryInfC{$(\texttt{EXP}\,[\tau, \pi] \rightarrow \tok{\ttus})\in P_\Gamma$}
       \end{prooftree}
     \end{minipage}
     \vspace{1.5cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Finally, normalize to CNF ($G_\Gamma'$), pruning unreachable/unproductive nonterminals. In this case, the blow-up is close to linear in $|G_\Gamma|$.
+        Finally, normalize to Chomsky Normal Form (CNF), pruning unreachable and unproductive nonterminals. Expansion will be close to linear in $|G_\Gamma|$.
     \end{minipage}
     \vspace{-3cm}
 
-    \jointspacing
+    \jointspacing\newpage
 
 % =========================================================
     \mysection{Finite Language Intersection}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
         Context-free languages are closed under intersection with regular languages. Constructively, given CNF productions
-        $W\rightarrow XZ$ and $\alpha=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, we build synthetic nonterminals $pWr$ (for all $p,r\in Q$) and then add:\\
-
+        of the form $W\rightarrow XZ$ or $W\rightarrow a$, and $\alpha=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, we build synthetic nonterminals $pWr$, then add:
+      \vspace{1.31cm}
         \begin{itemize}[leftmargin=1.5cm]
-          \item \phantom{\small{.}} $pWr \rightarrow pXq\;\;qZr$ for each $W\rightarrow XZ$ and $p,q,r\in Q$,
-          \item \phantom{\small{.}} $pWq \rightarrow a$ for each $W\rightarrow a$ with $\delta(p,a)=q$,
-          \item \phantom{\small{.}} start rules $S \rightarrow q_\alpha S q_\omega$ for each $q_\omega\in F$.
-          \item \phantom{\small{.}} start rules $S \rightarrow q_\alpha S q_\omega$ for each $q_\omega\in F$.
+          \item \phantom{\small{.}} Binary rules $pWr \rightarrow pXq\;\;qZr$ for each $W\rightarrow XZ$ and $p,q,r\in Q$,
+          \item \phantom{\small{.}} Unit rules $pWq \rightarrow a$ for each $W\rightarrow a$ with $\delta(p,a)=q$, and
+          \item \phantom{\small{.}} Start rules $S \rightarrow q_\alpha S q_\omega$ for each $q_\omega\in F$.
         \end{itemize}
-\vspace{1.2cm}
-        If $\alpha$ is acyclic, the $\mathcal{L}(\alpha_\cap)$ admits efficient enumeration and exact sampling.
+\vspace{1.5cm}
+
+        This na\"ive construction (Salomaa, 1973) can be significantly improved via a semiring dynamic programming algorithm that avoids useless productions. When $\alpha$ is acyclic, $\mathcal{L}(\alpha_\cap)$ admits efficient enumeration and exact sampling.
     \end{minipage}
 
     \jointspacing
@@ -353,88 +366,93 @@
 %    \jointspacing
 
 % =========================================================
-    \mysection{Generalized Regular Expressions}
+    \mysection{Autoregressive Decoding}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-                          Finite slices of a CFL are finite and therefore regular. We use GREs (union, intersection, concatenation, star, complement) as a compact algebra for propagating regular constraints during parsing and decoding.
+        Finite slices of a CFL are finite and therefore regular. We use star free regular expressions as a compact algebra for propagating regular constraints during parsing and decoding.
+        Let \( e: E \) be an expression defined by the grammar:
+        \[
+          e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
+        \]
+
+        where $\varepsilon$ is the empty symbol. We interpret these expressions as denoting regular languages, where $\mathcal{L}(x)\circ\mathcal{L}(z) \coloneqq \big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$:
     \end{minipage}
 
-    \vspace{-2cm}
+    \vspace{-2.5cm}
     \setlength{\columnseprule}{0pt}
     \setlength{\columnsep}{-3cm}
     \begin{multicols}{2}
       \begin{eqnarray*}
-        \mathcal{L}(& \varnothing & ) = \varnothing \\
-        \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
-        \mathcal{L}(& a           & ) = \{a\}\\
-        \mathcal{L}(& R\cdot S    & ) = \mathcal{L}(R) \times \mathcal{L}(S)
+        \hspace{-2cm}\mathcal{L}(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing \\
+        \hspace{-2cm}\mathcal{L}(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \{\varepsilon\} \\
+        \hspace{-2cm}\mathcal{L}(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \{a\}
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \mathcal{L}(& R^*         & ) = \{\varepsilon\} \cup \mathcal{L}(R\cdot R^*)\\
-        \mathcal{L}(& R\vee S     & ) = \mathcal{L}(R) \cup \mathcal{L}(S)\\
-        \mathcal{L}(& R\land S    & ) = \mathcal{L}(R) \cap \mathcal{L}(S)\\
-        \mathcal{L}(& \neg R      & ) = \Sigma^* \setminus \mathcal{L}(R)
+        \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\cdot z \hspace{-0.35cm}&) = \mathcal{L}(x) \circ \mathcal{L}(z)\text{\footnotemark}\\
+        \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\vee  z \hspace{-0.35cm}&) = \mathcal{L}(x) \cup  \mathcal{L}(z)\\
+        \hspace{-0.5cm}\mathcal{L}(&\hspace{-0.35cm} x\land z \hspace{-0.35cm}&) = \mathcal{L}(x) \cap  \mathcal{L}(z)
       \end{eqnarray*}
     \end{multicols}
 
-    \jointspacing
-
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        When computing the closure of a parse chart, each chart cell carries a vector of GREs, one per nonterminal, representing exactly which terminal strings can fill that span while respecting the constraints.
+        Brzozowski (1962) provides a rewrite-based procedure which supports both recognition and generation. He defines a quotient \(\partial_a(L) = \{b \mid ab \in L\}\):
     \end{minipage}
 
-    \jointspacing
-
-% =========================================================
-    \mysection{Brzozowski Differentiation}
-
-    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Brzozowski derivatives provide a rewrite-based procedure for incremental LTR decoding:
-        \[
-          \partial_a L=\{b\in\Sigma^* \mid ab\in L\}.
-        \]
-        Enables sampling from intersections without materializing product automata.
-    \end{minipage}
-
-    \vspace{-1cm}
+    \vspace{-1.5cm}
     \begin{multicols}{2}
       \begin{eqnarray*}
-        \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
-        \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
-        \phantom{--}\partial_a(& a           &) = \varepsilon                                           \\
-        \phantom{--}\partial_a(& b           &) = \varnothing  \text{ for each } a \neq b               \\
-        \phantom{--}\partial_a(& R^*         &) = (\partial_x R)\cdot R^*                               \\
-        \phantom{--}\partial_a(& \neg R      &) = \neg \partial_a R                                     \\
-        \phantom{--}\partial_a(& R\cdot S    &) = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
-        \phantom{--}\partial_a(& R\vee S     &) = \partial_a R \vee \partial_a S                        \\
-        \phantom{--}\partial_a(& R\land S    &) = \partial_a R \land \partial_a S
+        \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
+        \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\\\[-0.5cm]
+        \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\\\
+        \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+        \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
+        \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
       \end{eqnarray*} \break\vspace{-0.45cm}
       \begin{eqnarray*}
-        \delta(& \varnothing &)= \varnothing                                      \\
-        \delta(& \varepsilon &)= \varepsilon                                      \\
-        \delta(& a           &)= \varnothing                                      \\
-        \delta(& R^*         &)= \varepsilon                                      \\
-        \delta(& \neg R      &)= \varepsilon \text{ if } \delta(R) = \varnothing  \\
-        \delta(& \neg R      &)= \varnothing \text{ if } \delta(R) = \varepsilon  \\
-        \delta(& R\cdot S    &)= \delta(R) \land \delta(S)                        \\
-        \delta(& R\vee S     &)= \delta(R) \vee  \delta(S)                        \\
-        \delta(& R\land S    &)= \delta(R) \land \delta(S)
+        \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
+        \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\\\[-0.5cm]
+        \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\\\
+        \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
+        \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
+        \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
       \end{eqnarray*}
     \end{multicols}
 
-    \jointspacing
+    \vspace{-0.5cm}
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Now, for any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:
+    \end{minipage}
+
+    \begin{equation*}
+      \hspace{0.3cm}\texttt{follow}\,(e): E \rightarrow 2^\Sigma = \begin{cases}
+          \{e\}                                        &\hspace{4.1cm}\text{ if } e \in \Sigma \\
+          \texttt{follow}\,(x)                         &\hspace{4.1cm}\text{ if } e = x \cdot z\\
+          \texttt{follow}\,(x)\cup\texttt{follow}\,(z) &\hspace{4.1cm}\text{ if } e = x \lor z
+      \end{cases}
+    \end{equation*}
+
+    \begin{equation*}\label{eq:choose}
+    \texttt{choose}\,(e): E \rightarrow \Sigma^+ = \begin{cases}
+         e &\text{ if } e \in \Sigma \\
+         \big(s \leftsquigarrow \texttt{follow}\,(e)\big)\cdot \texttt{choose}\,(\partial_s e) &\text{ if } e = x \cdot z\\
+         \texttt{choose}\,\big(e' \leftsquigarrow \{x, z\}\big) &\text{ if } e = x \lor z
+    \end{cases}
+    \end{equation*}
+
+    \vspace{1cm}
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        This enables LTR decoding without materializing the product automaton.\\
+    \end{minipage}
 
 % =========================================================
     \mysection{Takeaways \& Next Steps}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        \begin{itemize}[leftmargin=1.5cm]
-          \item \phantom{\small{.}} A fixed-parameter tractable reduction from syntax-directed type system to a CFG with soundness and completeness guarantees
-          \item \phantom{\small{.}} Intersection with an acyclic regular grammar yields a regular expression
-          \item \phantom{\small{.}} Brzozowski derivatives enable incremental autoregressive decoding
-          \item \phantom{\small{.}} TODO
-          \item \phantom{\small{.}} TODO
-          \item \phantom{\small{.}} Future: lazy CNF materialization, quotienting by syntactic symmetries (e.g., $\alpha$-equivalence / invariants), richer typing (subtyping, polymorphism, substructural constraints).
+        \begin{itemize}[leftmargin=1.5cm, labelsep=0.6em]
+          \item A fixed-parameter $\langle k, |\mathbb{T}|\rangle$ tractable embedding from a syntax-directed type system to a CFG with soundness and completeness guarantees.
+          \item Intersection with an acyclic FSA yields a regular expression
+          \item Brzozowski derivatives enable incremental autoregressive decoding
+          \item Future work: lazy CNF materialization, quotienting (e.g., $\alpha$-equivalence), richer typing (subtyping, polymorphism, substructural constraints).
         \end{itemize}
     \end{minipage}
 
