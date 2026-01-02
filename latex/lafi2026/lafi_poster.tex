@@ -1,0 +1,462 @@
+% https://www.staples.com/services/printing/posters/
+% $20 off poster orders of $70 or more. Coupon code 84987. Expires 1/3/26.
+
+\documentclass[portrait,a0b,final,a4resizeable]{a0poster}
+
+\setlength{\paperwidth}{36in}
+\setlength{\paperheight}{48in}
+
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
+
+\usepackage[margin=0.5in]{geometry}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{amsmath, amsthm, amssymb, bm}
+\usepackage{multirow}
+\usepackage{nicematrix}
+\usepackage{bussproofs}
+\makeatletter
+\def\defaultHypSeparation{\hskip 65pt}
+\def\extraVskip{6pt}
+\makeatother
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{dsfont}
+\usepackage{qrcode}
+\usepackage{svg}
+
+%\setlength{\proofhsep}{55pt}   % default is smaller
+%\setlength{\proofvsep}{50pt}   % optional
+
+\usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc,trees}
+
+\input{include/jlposter}
+\usepackage{include/preamble}
+
+% ----------------------------
+% Paper/Poster notation
+% ----------------------------
+\definecolor{Light}{gray}{.90}
+\usepackage{soul}
+\sethlcolor{Light}
+
+\newcommand{\codett}[1]{\texttt{\hl{#1}}}
+\newcommand{\nt}[1]{\texttt{#1}}
+\newcommand{\tok}[1]{\codett{#1}}
+\newcommand{\gap}{\;\;}
+
+\newcommand{\T}{\mathbb{T}}
+
+\DeclareMathOperator*{\largecomma}{\mathop{\vcenter{\hbox{\Huge\texttt{,}}}}}
+\newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
+\newcommand{\jointspacing}{\vspace{0.3in}}
+
+\newcommand{\bs}{\blacksquare}
+\newcommand{\ws}{\square}
+
+\begin{document}
+\begin{poster}
+  \vspace{-0.3cm}
+
+%%% Header (same structure)
+  \begin{center}
+    \begin{pcolumn}{1.03}
+      \begin{minipage}[c][9cm][c]{0.85\textwidth}
+        \begin{center}
+        {\Huge \textbf{A Word Sampler for Well-Typed Functions}}\\[8mm]
+        {\huge Breandan Considine}
+        \end{center}
+      \end{minipage}
+    \end{pcolumn}
+  \end{center}
+
+  \vspace*{-0.5cm}
+  \large
+  \Large
+
+  \begin{multicols}{2}
+
+% =========================================================
+%    \mysection{Main Idea}
+%
+%    \vspace*{-0.8cm}
+%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+%                          \renewcommand\labelitemi{$\vcenter{\hbox{\small\bullet}}$}
+%                          \begin{itemize}
+%                            \item \phantom{\small{.}} Goal: sample \emph{well-typed} first-order functions uniformly, without replacement.
+%%                            \item \phantom{\small{.}} Input: an \emph{acyclic} finite automaton $\alpha_{\varnothing}$ describing a regular constraint language.
+%%                            \item \phantom{\small{.}} Key step: compile a syntax-directed type system into a CFG $G_\Gamma$ that recognizes exactly the well-typed programs.
+%                          \end{itemize}
+%    \end{minipage}
+%
+%    \jointspacing
+
+% =========================================================
+    \mysection{Syntactic Terms}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Consider a simply-typed, first-order functional programming language with function calls, conditionals, and binary operators:\\
+    \end{minipage}
+
+    \hspace{0.5cm}
+    \[
+      \hspace{-0.3cm}\begin{tabular}{@{}c@{\quad}c@{}}
+         $\begin{array}{ccl}
+            \nt{FUN} & ::= & \tok{fun}\gap \tok{f0}\gap \tok{(}\gap \nt{PRM}\gap \tok{)}\gap \tok{:}\gap \T \gap \tok{=}\gap \nt{EXP} \\
+            \nt{PRM} & ::= & \nt{PID}\gap \tok{:}\gap \T \;\mid\; \nt{PRM}\gap \tok{,}\gap \nt{PID}\gap \tok{:}\gap \T \\
+            \nt{EXP} & ::= & \ulcorner\mathbb{T}\lrcorner \;\mid\; \nt{PID} \;\mid\; \nt{INV} \;\mid\; \nt{IFE} \;\mid\; \nt{OPX} \\
+            \nt{OPX} & ::= & \tok{(}\gap\nt{EXP}\gap \nt{OPR}\gap \nt{EXP}\gap\tok{)} \\
+            \nt{IFE} & ::= & \tok{if}\gap \nt{EXP}\gap \tok{\ttlb}\gap \nt{EXP}\gap \tok{\ttrb}\gap\tok{else}\gap \tok{\ttlb}\gap \nt{EXP}\gap \tok{\ttrb} \\
+         \end{array}$
+         &
+         $\begin{array}{ccl}
+            \nt{INV} & ::= & \nt{FID}\gap \tok{(}\gap \nt{ARG}\gap \tok{)} \\
+            \nt{ARG} & ::= & \nt{EXP} \;\mid\; \nt{ARG}\gap \tok{,}\gap \nt{EXP} \\
+            \nt{OPR} & ::= & \tok{+} \;\mid\; \tok{*} \;\mid\; \tok{<} \;\mid\; \tok{==} \\
+            \nt{PID} & ::= & \tok{p1} \;\mid\; \ldots \;\mid\; \tok{pk} \\
+            \nt{FID} & ::= & \tok{f0} \;\mid\; \ldots \;\mid\; \tok{fn}\\
+         \end{array}$
+      \end{tabular}
+    \]
+    \vspace{-0.1cm}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        \textbf{Type universe.} We assume a finite set $\T$ (size $d$) with at least $\mathbb{B},\mathbb{N}$, and an ambient global context
+        $\Gamma$ of named functions $\tok{f\_} : (\tau_1,\ldots,\tau_m)\rightarrow \tau$.
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Static Semantics}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Typing judgements are standard; we highlight just a few of them below:
+    \end{minipage}
+\vspace{0.5cm}
+    \begin{center}
+      \begin{minipage}{0.95\columnwidth}
+        \begin{prooftree}
+          \AxiomC{$\Gamma \vdash e_c: \B$}
+          \AxiomC{$\Gamma \vdash e_\top: \tau$}
+          \AxiomC{$\Gamma \vdash e_\bot: \tau$}
+          \RightLabel{\texttt{IFE}}
+          \TrinaryInfC{$\Gamma \vdash \tok{if}\gap e_c\gap \tok{\ttlb}\gap e_\top\gap \tok{\ttrb}\gap \tok{else}\gap \tok{\ttlb}\gap e_\bot\gap \tok{\ttrb} : \tau$}
+        \end{prooftree}
+
+        \vspace{0.35cm}
+
+        \begin{prooftree}
+          \AxiomC{$\Gamma \vdash \tok{f\ttus}: (\tau_1,\ldots,\tau_m)\rightarrow\tau$}
+          \AxiomC{$\Gamma \vdash e_i:\tau_i \ \forall i\in[1,m]$}
+          \RightLabel{\texttt{INV}}
+          \BinaryInfC{$\Gamma \vdash \tok{f\ttus}\gap\tok{(}\gap e_1\gap\tok{,}\gap\ldots\gap\tok{,}\gap e_m\gap\tok{)}:\tau$}
+        \end{prooftree}
+
+        \vspace{0.35cm}
+
+        \begin{prooftree}
+          \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+          \AxiomC{$\Gamma \vdash e_1:\tau$}
+          \AxiomC{$\Gamma \vdash e_2:\tau'$}
+          \RightLabel{\texttt{OPX}}
+          \TrinaryInfC{$\Gamma \vdash \tok{(}\gap e_1\gap \odot \gap e_2\gap\tok{)} : \hat\tau$}
+        \end{prooftree}
+      \end{minipage}
+    \end{center}
+    \vspace{0.8cm}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        where the operator typing function $\delta_{\texttt{OPR}}$ is:
+        \[
+          \delta_{\texttt{OPR}}(\odot,\tau,\tau')=
+          \begin{cases}
+            \mathbb{B} & \odot=\tok{<},\ \tau=\tau'=\mathbb{B}\\
+            \mathbb{N} & \odot\in\{\tok{+},\tok{*}\},\ \tau=\tau'=\mathbb{N}\\
+            \mathbb{B} & \odot=\tok{==},\ \tau=\tau'
+          \end{cases}
+        \]
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+%    \mysection{Semantics (Execution Model)}
+%
+%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+%                          We assume conventional \textbf{call-by-value} evaluation of first-order functions, with:
+%                          \begin{itemize}[leftmargin=1.5cm]
+%                            \item \phantom{\small{.}} total evaluation for literals and primitive operators within their defined domains,
+%                            \item \phantom{\small{.}} evaluation of $\tok{if}$ selecting a branch based on a Boolean guard,
+%                            \item \phantom{\small{.}} function calls dispatching to either the sampled $\tok{f0}$ (recursive) or a global $\tok{f\ttus}\in\Gamma$.
+%                          \end{itemize}
+%                          \textbf{Soundness target.} If a term is generated by the grammar embedding (below), it is well-typed, hence satisfies the usual type safety invariants for this fragment.
+%    \end{minipage}
+%
+%    \jointspacing
+
+% =========================================================
+    \mysection{Embedding the Type Checker}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Typing derivations are compiled by decorating nonterminals with a pair, $\nt{EXP}[\cdot, \cdot]$, carrying
+        the type annotation, $e: \tau$, and type signature $\tok{f0}:\vec\tau\rightarrow\dot\tau$.
+    \end{minipage}
+
+    \null\hspace*{1.6cm}\begin{minipage}[c]{0.92\columnwidth}
+      \begin{prooftree}
+        \AxiomC{$\langle\vec\tau,\dot\tau\rangle \in \mathbb{T}^{0..k}\times\mathbb{T}$}
+        \AxiomC{$\vec\tau_{0..|\vec\tau|} \in \vec\tau$}
+        \RightLabel{$\texttt{FUN}_{\varphi}$}
+        \BinaryInfC{$\Big(S_\Gamma \rightarrow
+        \tok{fun}\gap \tok{f0}\gap
+        \tok{(}\cjoin{i=1}{|\vec\tau|}\big(p_i \gap\tok{:}\gap \vec\tau_{i}\big)\:\tok{)}\gap
+        \tok{:}\gap \dot\tau \gap \tok{=}\gap \texttt{EXP}[\dot\tau, \vec\tau \rightarrow \dot\tau]
+        \Big)\in P_\Gamma$}
+      \end{prooftree}
+      \begin{prooftree}
+        \AxiomC{$\texttt{EXP}[\tau, \pi] \in V_\Gamma$}
+        \AxiomC{$\Gamma \vdash \codett{f\ttus} : (\tau_{1}, \ldots, \tau_{m}) \rightarrow \tau$}
+        \RightLabel{$\texttt{INV}_{\varphi}$}
+        \BinaryInfC{$\big(\nt{EXP}[\tau,\pi] \;\rightarrow\; \tok{f\ttus}\gap \tok{(} \cjoin{i=1}{m}\nt{EXP}[\tau_{i},\pi] \:\tok{)}\big)\in P_\Gamma$}
+        \DisplayProof
+        \vskip 1em
+        \AxiomC{$\texttt{EXP}[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma$}
+        \AxiomC{$\tau = \dot\tau$}
+        \AxiomC{$\vec\tau_{0..|\vec\tau|} \in \vec\tau$}
+        \RightLabel{$\texttt{REC}_{\varphi}$}
+        \TrinaryInfC{$\big(\nt{EXP}[\tau,\vec\tau \rightarrow \dot\tau] \;\rightarrow\; \tok{f0}\gap \tok{(} \cjoin{i=1}{|\vec\tau|}\nt{EXP}[\vec\tau_{i},\vec\tau \rightarrow \dot\tau] \:\tok{)}\big)\in P_\Gamma$}
+        \DisplayProof
+        \vskip 1em
+        \AxiomC{$\texttt{EXP}[\tau,  \pi] \in V_\Gamma$}
+        \AxiomC{$\tau = \tau'$}
+        \AxiomC{$\tau, \tau' \in \mathbb{T}$}
+        \RightLabel{$\texttt{IFE}_{\varphi}$}
+        \TrinaryInfC{$
+        \left(
+          \begin{array}{l}
+            \nt{EXP}[\tau, \pi] \;\rightarrow\;
+            \tok{if}\gap \nt{EXP}[\mathbb{B}, \pi]\gap \tok{\ttlb}\gap \nt{EXP}[\tau, \pi]\gap \tok{\ttrb}\\[0.15cm]
+            \phantom{\nt{EXP}[\tau, \pi] \;\rightarrow\;}\;\tok{else}\gap \tok{\ttlb}\gap \nt{EXP}[\tau', \pi]\gap \tok{\ttrb}
+          \end{array}
+        \right)\in P_\Gamma
+        $}
+        \DisplayProof
+        \vskip 1em
+        \AxiomC{$\texttt{EXP}[\hat\tau,  \pi] \in V_\Gamma$}
+        \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+        \AxiomC{$\odot\in \{\codett{==}, \codett{<}, \codett{+}, \codett{*}\}$}
+        \RightLabel{$\texttt{OPX}_{\varphi}$}
+        \TrinaryInfC{$\big(\nt{EXP}[\hat\tau, \pi] \;\rightarrow\; \codett{(}\gap\nt{EXP}[\tau, \pi] \;\odot\; \nt{EXP}[\tau', \pi]\gap\codett{)}\big)\in P_\Gamma$}
+        \DisplayProof
+        \vskip 1em
+        \AxiomC{$\texttt{EXP}[\tau, \vec\tau \rightarrow \dot\tau] \in V_\Gamma \gap\gap\exists\vec\tau_{i}=\tau$}
+        \RightLabel{$\texttt{PID}_{\varphi}$}
+        \UnaryInfC{$\big(\nt{EXP}[\tau,\vec\tau \rightarrow \dot\tau] \rightarrow \tok{pi}\big)\in P_\Gamma$}
+        \DisplayProof
+        \hskip 0.1em
+        \AxiomC{$\texttt{EXP}[\tau,  \pi] \in V_\Gamma\:\:\:\codett{\ttus}:\tau \in \{\mathbb{B}, \mathbb{N}\}$}
+        \RightLabel{$\ulcorner\mathbb{T}\lrcorner_{\varphi}$}
+        \UnaryInfC{$(\texttt{EXP}[\tau, \pi] \rightarrow \tok{\ttus})\in P_\Gamma$}
+      \end{prooftree}
+    \end{minipage}
+    \vspace{1.5cm}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Finally, normalize to CNF ($G_\Gamma'$), pruning unreachable/unproductive nonterminals. In this case, the blow-up is close to linear in $|G_\Gamma|$.
+    \end{minipage}
+    \vspace{-3cm}
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Finite Language Intersection}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Context-free languages are closed under intersection with regular languages. Constructively, given CNF productions
+        $W\rightarrow XZ$ and $\alpha=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, we build synthetic nonterminals $pWr$ (for all $p,r\in Q$) and then add:\\
+
+        \begin{itemize}[leftmargin=1.5cm]
+          \item \phantom{\small{.}} $pWr \rightarrow pXq\;\;qZr$ for each $W\rightarrow XZ$ and $p,q,r\in Q$,
+          \item \phantom{\small{.}} $pWq \rightarrow a$ for each $W\rightarrow a$ with $\delta(p,a)=q$,
+          \item \phantom{\small{.}} start rules $S \rightarrow q_\alpha S q_\omega$ for each $q_\omega\in F$.
+          \item \phantom{\small{.}} start rules $S \rightarrow q_\alpha S q_\omega$ for each $q_\omega\in F$.
+        \end{itemize}
+\vspace{1.2cm}
+        If $\alpha$ is acyclic, the $\mathcal{L}(\alpha_\cap)$ admits efficient enumeration and exact sampling.
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+%    \mysection{Evaluation Snapshot}
+%
+%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+%                          We evaluate for small arity $k\in[1,3]$ with $|\Gamma|=18$ and $|\T|=7$, producing CNF grammars roughly
+%                          $|G_\Gamma'|\in[1.9\times 10^4,\ 9.9\times 10^5]$ and measuring time-to-first-sample (TTFS) on an Apple M4 (16GB).
+%    \end{minipage}
+%
+%    \vspace{0.2cm}
+%    \begin{center}
+%      \begin{minipage}{0.98\columnwidth}
+%        \begin{tikzpicture}
+%          \begin{axis}[
+%          width=\linewidth, height=4.0cm,
+%          xlabel={$|\sigma|=n$},
+%          ylabel={$\mu$ TTFS (ms)},
+%          title={\textbf{Slice sampling delay (log-scale)}},
+%          ymode=log,
+%          xmajorgrids, ymajorgrids,
+%          tick align=outside,
+%          tick label style={font=\scriptsize},
+%          label style={font=\scriptsize},
+%          legend columns=3,
+%          legend style={draw=none, fill=none, font=\scriptsize, at={(0.02,0.98)}, anchor=north west, nodes={scale=0.8, transform shape}},
+%          scaled y ticks=false,
+%          ]
+%% k=1
+%          \addplot+[only marks, mark=*, mark size=1.5pt]
+%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
+%            n,mean_ttfs_ms
+%            20,27.05 21,20.75 22,22.65 23,25.65 24,34.85 25,43.5 26,49.6 27,42.75 28,47.85 29,69.75
+%            30,66.25 31,66.9 32,77.65 33,82.4 34,92.5 35,101.0 36,114.3 37,122.15 38,138.9 39,145.8
+%            40,159.55 41,171.85 42,189.55 43,205.7 44,220.0 45,242.15 46,257.8 47,281.75 48,308.35 49,327.75 50,353.4
+%          };
+%% k=2
+%          \addplot+[only marks, mark=square*, mark size=1.5pt]
+%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
+%            n,mean_ttfs_ms
+%            20,145.25 21,147.9 22,174.6 23,202.6 24,235.15 25,269.35 26,312.8 27,351.45 28,398.8 29,461.9
+%            30,507.95 31,569.5 32,644.9 33,715.6 34,786.05 35,963.7 36,1073.4 37,1339.9 38,1546.9 39,1627.15
+%            40,1734.3 41,1938.4 42,2115.55 43,2267.0 44,2490.35 45,2717.05 46,2878.45 47,3065.9 48,3383.15 49,3580.85 50,3907.65
+%          };
+%% k=3
+%          \addplot+[only marks, mark=triangle*, mark size=1.5pt]
+%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
+%            n,mean_ttfs_ms
+%            20,1005.5 21,1132.15 22,1333.05 23,1633.95 24,1856.05 25,1978.3 26,2900.25 27,3344.15 28,3864.75 29,4355.9
+%            30,4744.05 31,5341.85 32,5986.6 33,6762.95 34,7468.8 35,8270.4 36,9174.45 37,10416.85 38,11540.75 39,12119.55
+%            40,13643.15 41,15313.7 42,17913.25 43,21658.65 44,22495.4 45,22996.15 46,23839.55 47,27062.25 48,28112.65 49,28886.45 50,38244.9
+%          };
+%          \legend{$k=1$,$k=2$,$k=3$}
+%          \end{axis}
+%        \end{tikzpicture}
+%      \end{minipage}
+%    \end{center}
+%
+%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+%                          After the first sample, we observe bounded per-sample delay on the order of microseconds or better, enabling high-throughput generation of well-typed functions.
+%    \end{minipage}
+%
+%    \jointspacing
+
+% =========================================================
+    \mysection{Generalized Regular Expressions}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+                          Finite slices of a CFL are finite and therefore regular. We use GREs (union, intersection, concatenation, star, complement) as a compact algebra for propagating regular constraints during parsing and decoding.
+    \end{minipage}
+
+    \vspace{-2cm}
+    \setlength{\columnseprule}{0pt}
+    \setlength{\columnsep}{-3cm}
+    \begin{multicols}{2}
+      \begin{eqnarray*}
+        \mathcal{L}(& \varnothing & ) = \varnothing \\
+        \mathcal{L}(& \varepsilon & ) = \{\varepsilon\} \\
+        \mathcal{L}(& a           & ) = \{a\}\\
+        \mathcal{L}(& R\cdot S    & ) = \mathcal{L}(R) \times \mathcal{L}(S)
+      \end{eqnarray*} \break\vspace{-0.45cm}
+      \begin{eqnarray*}
+        \mathcal{L}(& R^*         & ) = \{\varepsilon\} \cup \mathcal{L}(R\cdot R^*)\\
+        \mathcal{L}(& R\vee S     & ) = \mathcal{L}(R) \cup \mathcal{L}(S)\\
+        \mathcal{L}(& R\land S    & ) = \mathcal{L}(R) \cap \mathcal{L}(S)\\
+        \mathcal{L}(& \neg R      & ) = \Sigma^* \setminus \mathcal{L}(R)
+      \end{eqnarray*}
+    \end{multicols}
+
+    \jointspacing
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        When computing the closure of a parse chart, each chart cell carries a vector of GREs, one per nonterminal, representing exactly which terminal strings can fill that span while respecting the constraints.
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Brzozowski Differentiation}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        Brzozowski derivatives provide a rewrite-based procedure for incremental LTR decoding:
+        \[
+          \partial_a L=\{b\in\Sigma^* \mid ab\in L\}.
+        \]
+        Enables sampling from intersections without materializing product automata.
+    \end{minipage}
+
+    \vspace{-1cm}
+    \begin{multicols}{2}
+      \begin{eqnarray*}
+        \phantom{--}\partial_a(& \varnothing &) = \varnothing                                           \\
+        \phantom{--}\partial_a(& \varepsilon &) = \varnothing                                           \\
+        \phantom{--}\partial_a(& a           &) = \varepsilon                                           \\
+        \phantom{--}\partial_a(& b           &) = \varnothing  \text{ for each } a \neq b               \\
+        \phantom{--}\partial_a(& R^*         &) = (\partial_x R)\cdot R^*                               \\
+        \phantom{--}\partial_a(& \neg R      &) = \neg \partial_a R                                     \\
+        \phantom{--}\partial_a(& R\cdot S    &) = (\partial_a R)\cdot S \vee \delta(R)\cdot\partial_a S \\
+        \phantom{--}\partial_a(& R\vee S     &) = \partial_a R \vee \partial_a S                        \\
+        \phantom{--}\partial_a(& R\land S    &) = \partial_a R \land \partial_a S
+      \end{eqnarray*} \break\vspace{-0.45cm}
+      \begin{eqnarray*}
+        \delta(& \varnothing &)= \varnothing                                      \\
+        \delta(& \varepsilon &)= \varepsilon                                      \\
+        \delta(& a           &)= \varnothing                                      \\
+        \delta(& R^*         &)= \varepsilon                                      \\
+        \delta(& \neg R      &)= \varepsilon \text{ if } \delta(R) = \varnothing  \\
+        \delta(& \neg R      &)= \varnothing \text{ if } \delta(R) = \varepsilon  \\
+        \delta(& R\cdot S    &)= \delta(R) \land \delta(S)                        \\
+        \delta(& R\vee S     &)= \delta(R) \vee  \delta(S)                        \\
+        \delta(& R\land S    &)= \delta(R) \land \delta(S)
+      \end{eqnarray*}
+    \end{multicols}
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Takeaways \& Next Steps}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        \begin{itemize}[leftmargin=1.5cm]
+          \item \phantom{\small{.}} A fixed-parameter tractable reduction from syntax-directed type system to a CFG with soundness and completeness guarantees
+          \item \phantom{\small{.}} Intersection with an acyclic regular grammar yields a regular expression
+          \item \phantom{\small{.}} Brzozowski derivatives enable incremental autoregressive decoding
+          \item \phantom{\small{.}} TODO
+          \item \phantom{\small{.}} TODO
+          \item \phantom{\small{.}} Future: lazy CNF materialization, quotienting by syntactic symmetries (e.g., $\alpha$-equivalence / invariants), richer typing (subtyping, polymorphism, substructural constraints).
+        \end{itemize}
+    \end{minipage}
+
+  \end{multicols}
+
+  \bottombox{
+    \phantom{
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \qrcode[height=2.6in]{https://tidyparse.github.io/}
+    \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=2.6in]{../figures/tidyparse_logo.png}
+    \end{minipage}
+    \hspace{-4cm}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=3in]{../figures/mcgill.png}
+    \end{minipage}
+    \hspace{2cm}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=3.2in]{../figures/mila.png}
+    \end{minipage}}
+  }
+
+\end{poster}
+\end{document}
