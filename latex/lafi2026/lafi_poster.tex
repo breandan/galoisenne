@@ -106,7 +106,7 @@
     \mysection{Syntactic Terms}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Consider a simply-typed, first-order functional programming language with function calls, conditionals, and binary operators:\\
+        Consider a simply-typed, first-order functional programming language with invocation, recursion, conditionals, and binary operators:\\
     \end{minipage}
 
     \vspace{0.2cm}
@@ -133,7 +133,7 @@
     \vspace{-0.3cm}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        \textbf{Type universe.} We assume a finite universe $\T$ with at two base types $\mathbb{B},\mathbb{N}$, and an ambient global context
+        \textbf{Type universe.} We assume a finite universe $\T$ with two base types $\mathbb{B},\mathbb{N}$, and an ambient global context
         $\Gamma$ of named functions $\tok{f\ttus} : (\tau_1,\ldots,\tau_m)\rightarrow \tau$.
     \end{minipage}
 
@@ -161,7 +161,7 @@
 
         \begin{prooftree}
           \AxiomC{$\Gamma \vdash \tok{f\ttus}: (\tau_1,\ldots,\tau_m)\rightarrow\tau$}
-          \AxiomC{$\Gamma \vdash e_i:\tau_i \ \forall i\in[1,m]$}
+          \AxiomC{$\Gamma \vdash e_i:\tau_i\;\;\forall i\in[1,m]$}
           \RightLabel{\texttt{INV}}
           \BinaryInfC{$\Gamma \vdash \tok{f\ttus}\gap\tok{(}\gap e_1\gap\tok{,}\gap\ldots\gap\tok{,}\gap e_m\gap\tok{)}:\tau$}
         \end{prooftree}
@@ -213,7 +213,7 @@
     \mysection{Embedding the Type Checker}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Typing derivations are compiled by decorating nonterminals with a pair, $\nt{EXP}\,[\cdot, \cdot]$, carrying
+        Typing derivations can be compiled by decorating nonterminals with a pair, $\nt{EXP}\,[\cdot, \cdot]$, carrying
         the type annotation, $e: \tau$, and type signature $\tok{f0}:\vec\tau\rightarrow\dot\tau$.
     \end{minipage}
     \vspace{0.4cm}
@@ -369,11 +369,11 @@
     \mysection{Autoregressive Decoding}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-        Finite slices of a CFL are finite and therefore regular. We use star free regular expressions as a compact algebra for propagating regular constraints during parsing and decoding. Let \( e: E \) be an expression defined by the grammar:\vspace{0.4cm}
+        Finite slices of a CFL are finite and thus regular. We use star-free regular expressions as a compact algebra for propagating regular constraints during parsing and decoding. Let \( e: E \) be an expression defined by the grammar:\vspace{0.4cm}
         \[
           e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
         \]
-        \vspace{0.5cm}where $\varepsilon$ is the empty symbol and $\Sigma$ is a finite alphabet. We interpret these expressions as denoting regular languages, where $a \in \Sigma$:
+        where $\varepsilon$ is the empty symbol and $\Sigma$ is a finite alphabet. We interpret these expressions as denoting regular languages, where $a \in \Sigma$:
     \end{minipage}
 
     \vspace{-2.4cm}
