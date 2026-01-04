@@ -1,0 +1,165 @@
+%! Author = breandan
+%! Date = 11/5/25
+
+\documentclass{beamer}
+
+% Basic fonts & symbols
+\usepackage[T1]{fontenc}
+\usepackage{tgcursor}
+\usepackage{booktabs}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}} % ✓
+\newcommand{\xmark}{\ding{55}} % ✗
+
+\usepackage[table]{xcolor}
+
+\usepackage{txfonts}
+\usepackage{soul}
+\usepackage{mathtools}
+
+\usepackage[normalem]{ulem}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing,calc}
+
+\definecolor{Light}{gray}{.90}
+\sethlcolor{Light}
+
+\newcommand{\codett}[1]{\texttt{\hl{#1}}}
+\DeclareMathOperator*{\largecomma}{\mathop{\vcenter{\hbox{\Huge\texttt{,}}}}}
+\newcommand{\bycommas}{%
+  \mathop{\vphantom{\sum}\mathchoice{\Large ,}{,}{,}{,}}\displaylimits
+}
+\newcommand{\cev}[1]{\reflectbox{\ensuremath{\vec{\reflectbox{\ensuremath{#1}}}}}}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{amssymb}
+\usepackage{centernot}
+\usepackage{bussproofs}
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+\SetMathAlphabet{\mathcal}{bold}{OMS}{cmsy}{b}{n}
+
+\newcommand{\nt}[1]{\texttt{#1}}      % nonterminals
+\newcommand{\tok}[1]{\codett{#1}}     % terminals
+\newcommand{\gap}{\;\;}
+\newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
+
+
+% Metadata
+\title{A Word Sampler for Well-Typed Functions}
+\author{Breandan Mark Considine}
+\date{\today}
+
+\begin{document}
+
+% -------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+% -------------------------------------------------
+
+\begin{frame}{Formal langauges \& type theory}
+  \vspace{-0.3cm}
+    \[
+      \underbrace{\sigma \in \mathcal{L}(G) \Leftrightarrow  \exists V.\ V \Rightarrow_G^{\!*} \sigma}_{\text{membership / parse tree}}
+      \qquad\leftrightsquigarrow\qquad
+      \underbrace{\exists \tau .\ (\Gamma \vdash e : \tau)}_{\text{type checking / proof tree}}
+    \]
+\vspace{0.2cm}
+    \begin{prooftree}
+      \AxiomC{$\Gamma \vdash x : X$}
+      \AxiomC{$\Gamma \vdash z : Z$}
+      \LeftLabel{$\smash{\underbrace{(W\rightarrow X Z)\in P}_{\text{grammar production}}}\hspace{0.8cm}\leftrightsquigarrow\hspace{1cm}$}
+      \BinaryInfC{$\underbrace{\hspace{1cm}\Gamma \vdash xz: W\hspace{1cm}}_{\text{typing judgment}}$}
+    \end{prooftree}
+
+    \[
+      \underbrace{\mathcal{L}(G) \neq \varnothing \Leftrightarrow \exists \sigma.\ S \Rightarrow_G^{\!*} \sigma}_{\text{non-emptiness / generation}}
+      \qquad\leftrightsquigarrow\qquad
+      \underbrace{\exists e .\ (\Gamma \vdash e : \tau)}_{\text{type inhabitation / synthesis}}
+    \]
+
+  \vspace{0.3cm}
+      \textbf{Goal}: Given a set of typing judgements and a typing context ($\Gamma$), design a grammar, $G$, such that $\forall \sigma\in\mathcal{L}(G)\cap\Sigma^{<n}\ \exists\ \tau.\ \Gamma\vdash\sigma:\tau$ and furthermore, $\forall \sigma\in\Sigma^{<n}\ .\ \Gamma\vdash\sigma:\tau\implies \sigma \in \mathcal{L}(G)$.
+\end{frame}
+
+
+\begin{frame}{Programming language [in]approximability}
+  \begin{columns}[T,onlytextwidth]
+    \hspace{-0.5cm}\begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item $\Sigma^*$: all words over $\Sigma$
+        \item $\mathcal{L}(G)$: syntactically valid
+        \item $\mathcal{L}(\Gamma)$: type-safe programs
+        \item $\mathcal{L}(\downarrow)$: halting programs
+        \item Most LLMs: $\sigma \leftsquigarrow \Sigma^*$
+        \item Typesafe: $\sigma \leftsquigarrow \mathcal{L}(\Gamma)$
+        \item Tighter approximations require ever-increasing expressive power
+        \item Volumes are not to scale
+      \end{itemize}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+      \centering
+      \hspace{-0.3cm}\begin{tikzpicture}[scale=0.94, >=latex]
+        %-----------------------------
+        % Universe: Σ^* (square)
+        %-----------------------------
+        \draw[thick] (0,0) rectangle (6,6);
+
+        \coordinate (C) at (3,3);
+
+        \node at ($(C)+(-2.5,2.5)$) {$\Sigma^*$};
+
+        \pgfmathsetseed{12310}
+        %-----------------------------
+        % Outer curve: L(G) (slightly wavy)
+        %-----------------------------
+        \begin{scope}[decoration={random steps,segment length=2pt,amplitude=1.02pt}]
+          \draw[thick,decorate] (C) circle [radius=2.6];
+        \end{scope}
+        % \draw[thick] (C) circle [radius=2.6];
+        \node at ($(C)+(-1.5,1.5)$) {$\mathcal{L}(G)$};
+
+        %-----------------------------
+        % Middle curve: L(Γ) (jagged)
+        %-----------------------------
+        \begin{scope}[decoration={random steps,segment length=4pt,amplitude=4pt}]
+          \draw[thick,decorate] (C) circle [radius=1.65];
+        \end{scope}
+        \node at ($(C)+(-0.87,0.87)$) {$\mathcal{L}(\Gamma)$};
+
+        \pgfmathsetseed{11313}
+        %-----------------------------
+        % Inner curve: L(⇓) (very jagged)
+        %-----------------------------
+        \begin{scope}[decoration={random steps,segment length=0.6pt,amplitude=5pt}]
+          \draw[thick,decorate] (C) circle [radius=0.7];
+        \end{scope}
+        \node at (C) {$\mathcal{L}(\downarrow)$};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{High-level grammar embedding recipe}
+
+  \begin{itemize}\setlength\itemsep{0.35em}
+  \item Fix a finite type universe $\mathbb{T}$ and an ambient global context $\Gamma$
+  \item Decorate vanilla nonterminals with a typing annotation, $\nt{E}[\tau]$
+  \item Each typing judgment becomes a schema for constructing a family of synthetic productions each instantiated by valid $\tau : \mathbb{T}$
+  \end{itemize}
+  \vspace{0.2cm}
+  \begin{align*}
+    \textbf{Syntax:}&\quad
+    \frac{\Gamma \vdash e_1:\tau_1,\ \cdots, e_m:\tau_m \qquad \Phi(\Sigma, \tau_1,\ \cdots,\tau_m):\tau}{\big(\nt{E}[\tau]\,\rightarrow\, \Phi(\Sigma, \tau_1,\ \cdots,\tau_m)\big)\in P_\Gamma}\\\\
+    \textbf{Names:}&\quad
+    \Gamma \vdash e:\tau \;\Rightarrow\; \big(\nt{E}[\tau]\,\rightarrow\,\tok{e}\big)\in P_\Gamma\\\\
+    \textbf{Functions:}&\quad
+    \frac{\Gamma \vdash f:(\tau_1,\ \cdots, \tau_k) \rightarrow \tau}{\big(\nt{E}[\tau_1]\,\rightarrow\,\tok{f}\gap\tok{(}\gap\nt{E}[\tau_1]\gap\tok{,}\gap \cdots\gap\tok{,}\gap\nt{E}[\tau_k]\gap\tok{)} \big)\in P_\Gamma}
+  \end{align*}
+  \begin{itemize}\setlength\itemsep{0.25em}
+  \end{itemize}
+\end{frame}
+
+
+\end{document}

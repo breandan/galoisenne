@@ -248,12 +248,7 @@ tasks {
     }
     useJUnitPlatform()
     testLogging {
-      events = setOf(
-        FAILED,
-        PASSED,
-        SKIPPED,
-        STANDARD_OUT
-      )
+      events = setOf(FAILED, PASSED, SKIPPED, STANDARD_OUT)
       exceptionFormat = FULL
       showExceptions = true
       showCauses = true
@@ -261,15 +256,13 @@ tasks {
       showStandardStreams = true
     }
 
-    afterTest(
-      KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
-        println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
-        testDurations.add(TestDuration(
-          name = "${desc.className}.${desc.name}",
-          duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
-        ))
-      })
-    )
+    afterTest(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
+      println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
+      testDurations.add(TestDuration(
+        name = "${desc.className}.${desc.name}",
+        duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
+      ))
+    }))
 
     doLast {
       println("Longest 10 tests")
