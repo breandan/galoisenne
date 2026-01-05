@@ -10,7 +10,8 @@
 \usepackage{pifont}
 \newcommand{\cmark}{\ding{51}} % ✓
 \newcommand{\xmark}{\ding{55}} % ✗
-
+%\usepackage[mathrm=sym]{unicode-math}
+\usepackage{multicol}
 \usepackage[table]{xcolor}
 
 \usepackage{txfonts}
@@ -43,6 +44,10 @@
 \newcommand{\gap}{\;\;}
 \newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
 
+\newcommand{\T}{\mathbb{T}}
+\newcommand{\ttlb}{\{}   % left brace token
+\newcommand{\ttrb}{\}}   % right brace token
+\newcommand{\ttus}{\_}   % underscore token (for f_*)
 
 % Metadata
 \title{A Word Sampler for Well-Typed Functions}
@@ -79,7 +84,7 @@
     \]
 
   \vspace{0.3cm}
-      \textbf{Goal}: Given a set of typing judgements and a typing context ($\Gamma$), design a grammar, $G$, such that $\forall \sigma\in\mathcal{L}(G)\cap\Sigma^{<n}\ \exists\ \tau.\ \Gamma\vdash\sigma:\tau$ and furthermore, $\forall \sigma\in\Sigma^{<n}\ .\ \Gamma\vdash\sigma:\tau\implies \sigma \in \mathcal{L}(G)$.
+      \textbf{Goal}: Given a set of typing judgements and a typing context ($\Gamma$), design a grammar, $G$, s.t. $\forall \sigma\in\Sigma^{<n} \exists \tau\ .\ \sigma \in \mathcal{L}(G)\Longleftrightarrow\Gamma\vdash\sigma:\tau$.
 \end{frame}
 
 
@@ -146,7 +151,7 @@
   \begin{itemize}\setlength\itemsep{0.35em}
   \item Fix a finite type universe $\mathbb{T}$ and an ambient global context $\Gamma$
   \item Decorate vanilla nonterminals with a typing annotation, $\nt{E}[\tau]$
-  \item Each typing judgment becomes a schema for constructing a family of synthetic productions each instantiated by valid $\tau : \mathbb{T}$
+  \item Each typing judgment becomes a schema for constructing a family of synthetic productions each instantiated with $\tau : \mathbb{T}$
   \end{itemize}
   \vspace{0.2cm}
   \begin{align*}
@@ -161,5 +166,247 @@
   \end{itemize}
 \end{frame}
 
+% -------------------------------------------------
+\begin{frame}{Example language: simply typed function syntax}
+  \vspace{-0.25cm}
 
+  \[
+    \hspace{-0.1cm}\begin{array}{ccl}
+     \nt{FUN} & ::= & \tok{fun}\gap \tok{f0}\gap \tok{(}\gap \nt{PRM}\gap \tok{)}\gap \tok{:}\gap \mathbb{T} \gap \tok{=}\gap \nt{EXP} \\
+     \nt{PRM} & ::= & \nt{PID}\gap \tok{:}\gap \mathbb{T} \;\mid\; \nt{PRM}\gap \tok{,}\gap \nt{PID}\gap \tok{:}\gap \mathbb{T} \\
+     \nt{EXP} & ::= & \ulcorner\mathbb{N}\lrcorner \;\mid\; \ulcorner\mathbb{B}\lrcorner \;\mid\; \nt{PID} \;\mid\; \nt{INV} \;\mid\; \nt{IFE} \;\mid\; \nt{OPX}\\
+     \nt{OPX} & ::= & \codett{(}\gap\nt{EXP}\gap \nt{OPR}\gap \nt{EXP}\gap\codett{)} \\
+     \nt{IFE} & ::= & \tok{if}\gap \nt{EXP}\gap \tok{\{}\gap \nt{EXP}\gap \tok{\}}\gap
+     \tok{else}\gap \tok{\{}\gap \nt{EXP}\gap \tok{\}} \\
+     \nt{INV} & ::= & \nt{FID}\gap \tok{(}\gap \nt{ARG}\gap \tok{)} \\
+     \nt{ARG} & ::= & \nt{EXP} \;\mid\; \nt{ARG}\gap \tok{,}\gap \nt{EXP} \\
+     \nt{OPR} & ::= & \tok{+} \;\mid\; \tok{*} \;\mid\; \tok{<} \;\mid\; \tok{==} \\
+     \nt{PID} & ::= & \tok{p1} \;\mid\; \ldots \;\mid\; \tok{pk} \\
+     \nt{FID} & ::= & \tok{f0} \;\mid\; \tok{f1} \;\mid\; \ldots \;\mid\; \tok{fn}\\
+     \ulcorner\mathbb{B}\lrcorner & ::= & \tok{true} \;\mid\; \tok{false}\\
+     \ulcorner\mathbb{N}\lrcorner & ::= & \tok{1} \;\mid\; \tok{2} \;\mid\; \tok{3} \;\mid\; \ldots
+    \end{array}
+  \]
+
+  \vspace{0.3cm}
+  \textbf{Type universe:} Finite $\T$ with two primitive types (e.g., $\mathbb{B},\mathbb{N},\ldots$)\\\vspace{1em}
+  \textbf{Ambient context:} $\Gamma$ maps $\tok{f\ttus}:(\tau_1,\ldots,\tau_m)\to\tau$.
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Example language: static semantics}
+  \vspace{-0.3cm}
+  \begin{center}
+    \begin{prooftree}
+      \hskip -1em
+      \AxiomC{$\Gamma \vdash e_c: \mathbb{B}$}
+      \AxiomC{$\Gamma \vdash e_\top: \tau$}
+      \AxiomC{$\Gamma \vdash e_\bot: \tau$}
+      \RightLabel{\texttt{IFE}}
+      \TrinaryInfC{$\Gamma \vdash \tok{if}\; e_c\; \tok{\ttlb}\; e_\top\; \tok{\ttrb}\; \tok{else}\; \tok{\ttlb}\; e_\bot\; \tok{\ttrb} : \tau$}
+\DisplayProof\vskip 2em\hskip -1em
+      \hskip -1em
+      \AxiomC{$\Gamma \vdash \tok{f\ttus}: (\tau_1,\ldots,\tau_m)\rightarrow\tau$}
+      \AxiomC{$\Gamma \vdash e_i:\tau_i\;\;\forall i\in[1,m]$}
+      \RightLabel{\texttt{INV}}
+      \BinaryInfC{$\Gamma \vdash \tok{f\ttus}\;\tok{(}\; e_1\;\tok{,}\;\ldots\;\tok{,}\;e_m\;\tok{)}:\tau$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+      \AxiomC{$\Gamma \vdash e_1:\tau$}
+      \AxiomC{$\Gamma \vdash e_2:\tau'$}
+      \RightLabel{\texttt{OPX}}
+      \TrinaryInfC{$\Gamma \vdash \tok{(}\; e_1\; \odot\; e_2\; \tok{)} : \hat\tau$}
+    \end{prooftree}
+  \end{center}
+
+  \vspace{0.1cm}
+
+  \hspace{-0.5em}Where the operator typing function $\delta_{\texttt{OPR}}: \Sigma_{\texttt{OPR}} \times \mathbb{T} \times \mathbb{T} \rightharpoonup \mathbb{T}$ returns:
+
+  \[
+    \hspace{-3em}\delta_{\texttt{OPR}}(\odot,\tau,\tau')=
+    \begin{cases}
+      \mathbb{B} & \odot=\tok{<},\ \tau=\tau'=\mathbb{B}\\
+      \mathbb{N} & \odot\in\{\tok{+},\tok{*}\},\ \tau=\tau'=\mathbb{N}\\
+      \mathbb{B} & \odot=\tok{==},\ \tau=\tau'
+    \end{cases}
+  \]
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Embedding the type checker (I)}
+  \vspace{-0.45cm}
+  \[
+    \textbf{Grammar:}\quad \langle \Sigma, V, P \textcolor{gray}{\ \subset V\times (V \cup \Sigma)^*}, S \textcolor{gray}{\ \in V}\rangle \Rightarrow \langle \Sigma_\Gamma, V_\Gamma, P_\Gamma, V_\Gamma, S_\Gamma\rangle\\\vspace{-0.5em}
+    \textbf{Decorated nonterminals:}\quad \nt{EXP}[\tau,\pi] \qquad \big(\tau\in\T,\;\pi\equiv(\vec\tau\rightarrow\dot\tau)\big)\\\vspace{0.5em}
+    \textbf{Provide:} \quad $k$ \text{, the maximum arity, and } $\mathbb{T}$ \text{, the type universe}.
+  \]
+\vspace{-1.6cm}
+  \begin{center}
+    \begin{prooftree}
+      \AxiomC{$\langle\vec\tau,\dot\tau\rangle \in \T^{0..k}\times\T$}
+      \AxiomC{$\vec\tau_{0..|\vec\tau|} \in \vec\tau$}
+      \RightLabel{$\texttt{FUN}_{\varphi}$}
+      \BinaryInfC{$\Big(S_\Gamma \rightarrow
+      \tok{fun}\;\tok{f0}\;
+      \tok{(}\;\cjoin{i=1}{|\vec\tau|}\big(p_i\;\tok{:}\;\vec\tau_i\big)\;\tok{)}\;
+      \tok{:}\;\dot\tau\;\tok{=}\;\nt{EXP}[\dot\tau,\vec\tau\rightarrow\dot\tau]
+      \Big)\in P_\Gamma$}
+\DisplayProof\vskip 1.5em\hskip -1em
+      \AxiomC{$\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau] \in V_\Gamma$}
+      \AxiomC{$\tau=\dot\tau$}
+      \AxiomC{$\vec\tau_{0..|\vec\tau|}\in\vec\tau$}
+      \RightLabel{$\texttt{REC}_{\varphi}$}
+      \TrinaryInfC{$\big(\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau] \rightarrow
+      \tok{f0}\;\tok{(}\;\cjoin{i=1}{|\vec\tau|}\nt{EXP}[\vec\tau_i,\vec\tau\rightarrow\dot\tau]\;\tok{)}
+      \big)\in P_\Gamma$}
+\DisplayProof\vskip 1.5em\hskip -0.1em
+      \AxiomC{$\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau]\in V_\Gamma\;\;\exists i.\ \vec\tau_i=\tau$}
+      \RightLabel{$\texttt{PID}_{\varphi}$}
+      \UnaryInfC{$\big(\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau]\rightarrow\tok{pi}\big)\in P_\Gamma$}
+      \DisplayProof\hskip 9.9em
+      \AxiomC{$\nt{EXP}[\tau,\pi]\in V_\Gamma\;\;\tok{\ttus}: \mathbb{B} \mid \mathbb{N}$}
+      \RightLabel{$\ulcorner\T\lrcorner_{\varphi}$}
+      \UnaryInfC{$\big(\nt{EXP}[\tau,\pi]\rightarrow\tok{\ttus}\big)\in P_\Gamma$}\hskip -9.9em
+    \end{prooftree}
+  \end{center}
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Embedding the type checker (II)}
+  \vspace{-0.35cm}
+  \begin{center}
+    \begin{prooftree}
+      \vskip -1em\hskip -0.6cm
+      \AxiomC{$\nt{EXP}[\tau,\pi] \in V_\Gamma$}
+      \AxiomC{$\Gamma \vdash \tok{f\ttus}:(\tau_1,\ldots,\tau_m)\rightarrow\tau$}
+      \RightLabel{$\texttt{INV}_{\varphi}$}
+      \BinaryInfC{$\big(\nt{EXP}[\tau,\pi] \rightarrow
+      \tok{f\ttus}\;\tok{(}\;\cjoin{i=1}{m}\nt{EXP}[\tau_i,\pi]\;\tok{)}
+      \big)\in P_\Gamma$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\nt{EXP}[\tau,\pi]\in V_\Gamma$}
+      \AxiomC{$\tau=\tau'$}
+      \AxiomC{$\tau,\tau'\in\T$}
+      \RightLabel{$\texttt{IFE}_{\varphi}$}
+      \TrinaryInfC{$\Big(
+      \nt{EXP}[\tau,\pi] \rightarrow
+      \tok{if}\;\nt{EXP}[\mathbb{B},\pi]\;\tok{\ttlb}\;\nt{EXP}[\tau,\pi]\;\tok{\ttrb}\;
+      \tok{else}\;\tok{\ttlb}\;\nt{EXP}[\tau',\pi]\;\tok{\ttrb}
+      \Big)\in P_\Gamma$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\nt{EXP}[\hat\tau,\pi]\in V_\Gamma$}
+      \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+      \AxiomC{$\odot\in\{\tok{==},\tok{<},\tok{+},\tok{*}\}$}
+      \RightLabel{$\texttt{OPX}_{\varphi}$}
+      \TrinaryInfC{$\Big(
+      \nt{EXP}[\hat\tau,\pi] \rightarrow
+      \tok{(}\;\nt{EXP}[\tau,\pi]\;\odot\;\nt{EXP}[\tau',\pi]\;\tok{)}
+      \Big)\in P_\Gamma$}
+    \end{prooftree}
+  \end{center}
+\vspace{1em}
+  Finally, we normalize to Chomsky Normal Form (CNF), rewriting all productions to either \textbf{(1)} $(w \rightarrow x z): V\times V^2$ or \textbf{(2)} $(w \rightarrow t): V\times\Sigma$.
+\end{frame}
+
+\begin{frame}{Sampling star-free regular expressions uniformly}
+  \vspace{-0.3cm}
+
+  Let \( e: E \) be an SFRE with two connectives: $ e \rightarrow \Sigma \mid e \cdot e \mid e \lor e $.
+
+  \begin{theorem}[Uniform tree enumeration]
+    To sample parse trees, take a PRNG and feed it into \texttt{enum}:
+    \begin{equation*}
+      \texttt{enum}\,(e, n) = \begin{cases}
+        e &\text{if } e \in \Sigma \\
+        \texttt{enum}\,\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\,\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
+        \texttt{enum}\,\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
+      \end{cases}
+    \end{equation*}
+
+    \begin{equation*}
+      |e|: E \rightarrow \mathbb{N} = \begin{cases}
+        1           & \text{if } e \in \Sigma \\
+        x \times z  & \text{if } e = x \cdot z \\
+        x + z       & \text{if } e = x \vee z
+      \end{cases}
+    \end{equation*}
+
+    n.b. may need to disambiguate to guarantee $\mathcal{L}(e)$ uniformity.
+  \end{theorem}
+\end{frame}
+
+\begin{frame}{Sampling star-free regular expressions autoregressively}
+
+%  \begin{multicols}{2}
+%    \begin{eqnarray*}
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\\\[-0.5cm]
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\\\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
+%    \end{eqnarray*} \break\vspace{-0.45cm}
+%    \begin{eqnarray*}
+%      \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
+%      \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\\\[-0.5cm]
+%      \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\\\
+%      \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
+%      \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
+%      \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
+%    \end{eqnarray*}
+%  \end{multicols}
+
+  Now, for any SFGRE, \(e\), $\texttt{choose}\,(e)$ witnesses $\sigma \in \mathcal{L}(e)$:
+  \begin{equation*}
+    \texttt{follow}\,(e) = \begin{cases}
+           \{e\}                                        &\hspace{1.3cm}\text{ if } e \in \Sigma \\
+           \texttt{follow}\,(x)                         &\hspace{1.3cm}\text{ if } e = x \cdot z\\
+           \texttt{follow}\,(x)\cup\texttt{follow}\,(z) &\hspace{1.3cm}\text{ if } e = x \lor z
+    \end{cases}
+  \end{equation*}
+  \begin{equation*}\label{eq:choose}
+    \texttt{choose}\,(e) = \begin{cases}
+         e &\text{ if } e \in \Sigma \\
+         \big(s \leftsquigarrow \texttt{follow}\,(e)\big)\cdot \texttt{choose}\,(\partial_s e) &\text{ if } e = x \cdot z\\
+         \texttt{choose}\,\big(e' \leftsquigarrow \{x, z\}\big) &\text{ if } e = x \lor z
+    \end{cases}
+  \end{equation*}
+\vspace{0.2cm}
+
+  where $\delta_s e$ is the Brzozowskian derivative (1973) and $\leftsquigarrow$ denotes probabilistic choice from a small finite set. This may be augmented with a weighted choice operator, $P_\theta\,(\sigma_{n} \mid  \sigma_{n-1}, \cdots, \sigma_{n - k})$.
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Addendum: CFG $\cap$ NFA closure and $G_\cap$ construction}
+    \textbf{Bar-Hillel (1961)}: For any CFG $G$, and NFA
+    $A=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, $\exists G_\cap$ s.t.
+    $\mathcal{L}(G_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)$. Salomaa's (1973) construction:
+
+  \vspace{-0.1cm}
+  \begin{center}
+    \begin{prooftree}
+      \AxiomC{$q_\omega \in F$}
+      \RightLabel{$\mathcal{S}$}
+      \UnaryInfC{$\big(S_\cap \rightarrow q_\alpha\, S\, q_\omega\big)\in P_\cap$}
+\DisplayProof\hspace{0.5em}
+      \AxiomC{$(W\rightarrow a)\in P$}
+      \AxiomC{$(p\overset{a}{\rightarrow}r)\in\delta$}
+      \RightLabel{$\uparrow$}
+      \BinaryInfC{$\big(pWr\rightarrow a\big)\in P_\cap$}
+\DisplayProof\vskip1em
+      \AxiomC{$(W\rightarrow XZ)\in P$}
+      \AxiomC{$p,q,r\in Q$}
+      \RightLabel{$\Join$}
+      \BinaryInfC{$\big(pWr\rightarrow (pXq)\,(qZr)\big)\in P_\cap$}
+    \end{prooftree}
+  \end{center}
+
+  \vspace{0.1cm}
+  but, there is a \textit{much} more efficient construction. Intuition: want to show $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  \begin{enumerate}\setlength\itemsep{0.25em}
+  \item $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
+  \item $\exists q, x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+  \end{enumerate}
+\end{frame}
 \end{document}
