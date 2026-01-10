@@ -21,6 +21,8 @@
 \usepackage[normalem]{ulem}
 \usepackage{tikz}
 \usetikzlibrary{decorations.pathmorphing,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 
 \definecolor{Light}{gray}{.90}
 \sethlcolor{Light}
@@ -91,56 +93,240 @@
 \begin{frame}{Programming language [in]approximability}
   \begin{columns}[T,onlytextwidth]
     \hspace{-0.5cm}\begin{column}{0.5\textwidth}
-      \begin{itemize}
-        \item $\Sigma^*$: all words over $\Sigma$
-        \item $\mathcal{L}(G)$: syntactically valid
-        \item $\mathcal{L}(\Gamma)$: type-safe programs
-        \item $\mathcal{L}(\downarrow)$: halting programs
-        \item Most LLMs: $\sigma \leftsquigarrow \Sigma^*$
-        \item Typesafe: $\sigma \leftsquigarrow \mathcal{L}(\Gamma)$
-        \item Tighter approximations require ever-increasing expressive power
-        \item Volumes are not to scale
-      \end{itemize}
+         \begin{itemize}
+           \item<1-> $\Sigma^*$: all words over $\Sigma$
+           \item<2-> $\mathcal{L}(G)$: syntactically valid
+           \item<3-> Most LLMs: $\sigma \leftsquigarrow \Sigma^*$
+           \item<4-> Guidance: $\sigma \leftsquigarrow \mathcal{L}(G)$
+           \only<5->{\item $\mathcal{L}(\downarrow)$: halting programs}
+           \item<6-> Tighter approximations require ever-increasing expressive power
+           \item<7-> $\mathcal{L}(\Gamma)$: type-safe programs
+           \item<8-> Typesafe: $\sigma \leftsquigarrow \mathcal{L}(\Gamma)$
+         \end{itemize}
     \end{column}
 
     \begin{column}{0.5\textwidth}
       \centering
       \hspace{-0.3cm}\begin{tikzpicture}[scale=0.94, >=latex]
-        %-----------------------------
-        % Universe: Σ^* (square)
-        %-----------------------------
-        \draw[thick] (0,0) rectangle (6,6);
+       %-----------------------------
+       % Universe: Σ^* (square)
+       %-----------------------------
+       \coordinate (C) at (3,3);
 
-        \coordinate (C) at (3,3);
+       \only<1->{
+         \draw[thick] (0,0) rectangle (6,6);
+         \node at ($(C)+(-2.5,2.5)$) {$\Sigma^*$};
+       }
 
-        \node at ($(C)+(-2.5,2.5)$) {$\Sigma^*$};
+      %----------------------------------------
+      % Slide 3: LLM splatter over Σ* (square only)
+      %----------------------------------------
+       \only<3>{
+         \pgfmathsetseed{20260111}
 
-        \pgfmathsetseed{12310}
-        %-----------------------------
-        % Outer curve: L(G) (slightly wavy)
-        %-----------------------------
-        \begin{scope}[decoration={random steps,segment length=2pt,amplitude=1.02pt}]
-          \draw[thick,decorate] (C) circle [radius=2.6];
-        \end{scope}
-        % \draw[thick] (C) circle [radius=2.6];
-        \node at ($(C)+(-1.5,1.5)$) {$\mathcal{L}(G)$};
+         \def\muX{3}
+         \def\muY{3}
+         \def\sigma{1.05}
 
-        %-----------------------------
-        % Middle curve: L(Γ) (jagged)
-        %-----------------------------
-        \begin{scope}[decoration={random steps,segment length=4pt,amplitude=4pt}]
-          \draw[thick,decorate] (C) circle [radius=1.65];
-        \end{scope}
-        \node at ($(C)+(-0.87,0.87)$) {$\mathcal{L}(\Gamma)$};
+         \begin{scope}
+           \clip (0,0) rectangle (6,6); % ONLY square cutoff
 
-        \pgfmathsetseed{11313}
-        %-----------------------------
-        % Inner curve: L(⇓) (very jagged)
-        %-----------------------------
-        \begin{scope}[decoration={random steps,segment length=0.6pt,amplitude=5pt}]
-          \draw[thick,decorate] (C) circle [radius=0.7];
-        \end{scope}
-        \node at (C) {$\mathcal{L}(\downarrow)$};
+           \foreach \k in {1,...,460}{
+             % Box–Muller for 2D normal
+             \pgfmathsetmacro{\u}{max(rnd,1e-6)}
+             \pgfmathsetmacro{\r}{sqrt(-2*ln(\u))}
+             \pgfmathsetmacro{\t}{360*rnd}
+
+             \pgfmathsetmacro{\x}{\muX + \sigma*\r*cos(\t)}
+             \pgfmathsetmacro{\y}{\muY + \sigma*\r*sin(\t)}
+
+             \fill[red] (\x,\y) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+
+       %----------------------------------------
+       % Slide 4: Guidance = delete samples outside L(G)
+       %----------------------------------------
+       \only<4>{
+         \pgfmathsetseed{20260111}
+
+         \def\muX{3}
+         \def\muY{3}
+         \def\sigma{1.05}
+
+         \begin{scope}
+           \clip (0,0) rectangle (6,6);
+           \clip (C) circle[radius=2.45]; % inside the wavy L(G) boundary (2.6)
+
+           \foreach \k in {1,...,360}{
+             \pgfmathsetmacro{\u}{max(rnd,1e-6)}
+             \pgfmathsetmacro{\r}{sqrt(-2*ln(\u))}
+             \pgfmathsetmacro{\t}{360*rnd}
+
+             \pgfmathsetmacro{\x}{\muX + \sigma*\r*cos(\t)}
+             \pgfmathsetmacro{\y}{\muY + \sigma*\r*sin(\t)}
+
+             \fill[red] (\x,\y) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+
+       %-----------------------------
+       % Outer curve: L(G) (slightly wavy)
+       %-----------------------------
+       \only<2->{
+         \pgfmathsetseed{12310}
+         \begin{scope}[decoration={random steps,segment length=2pt,amplitude=1.02pt}]
+           \draw[thick,decorate] (C) circle [radius=2.6];
+         \end{scope}
+         \node at ($(C)+(-1.5,1.5)$) {$\mathcal{L}(G)$};
+       }
+
+       %-----------------------------
+       % Middle curve: L(Γ) (jagged)
+       %-----------------------------
+       \only<7->{
+         \begin{scope}[decoration={random steps,segment length=4pt,amplitude=4pt}]
+           \draw[thick,decorate] (C) circle [radius=1.65];
+         \end{scope}
+         \node at ($(C)+(-0.87,0.87)$) {$\mathcal{L}(\Gamma)$};
+       }
+
+       %-----------------------------
+       % Inner curve: L(⇓) (very jagged) -- slide 4 only
+       %-----------------------------
+       \only<5-7>{
+         \pgfmathsetseed{11313}
+         \begin{scope}[decoration={random steps,segment length=0.6pt,amplitude=5pt}]
+           \draw[thick,decorate,black!50] (C) circle [radius=0.7];
+         \end{scope}
+         \node at (C) {$\mathcal{L}(\downarrow)$};
+       }
+
+       %-----------------------------
+       % Slide 5: spray sparse uniform samples inside L(Γ)
+       % (remove innermost jagged circle by not showing it on <5>)
+       %-----------------------------
+       \only<8->{
+       % keep dots comfortably inside the jagged boundary
+         \pgfmathsetseed{20260101}
+         \begin{scope}
+           \clip (C) circle[radius=1.45];
+           \foreach \k in {1,...,80}{
+             \pgfmathsetmacro{\rr}{sqrt(rnd)*1.45}
+             \pgfmathsetmacro{\tt}{rnd*360}
+             \fill[red] ($(C)+(\tt:\rr)$) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Stratified sampling with finite model theory}
+  \begin{columns}[T,onlytextwidth]
+    %-------------------- LEFT: bullets --------------------
+    \hspace{-0.5cm}
+    \begin{column}{0.5\textwidth}
+      \vspace{0.6cm}
+      \begin{itemize}
+        \item But $\mathcal{L}(\Gamma)$ is infinite
+        \item Consider finite models
+        \item Isolate key complexity parameters of interest
+        \item Embed description into a context-free grammar
+        \item Disintegrate into fixed-\\parameter tractable slices
+        \item Sample uniformly from the exact conditional distribution
+      \end{itemize}
+    \end{column}
+
+    %-------------------- RIGHT: figure --------------------
+    \begin{column}{0.5\textwidth}
+      \vspace{-0.5cm}
+      \hspace{-3cm}
+      \hfill % push to the right edge of the column
+      \begin{tikzpicture}
+        \begin{axis}[
+          view={25}{14},
+          width=9.2cm,
+          height=10cm,
+          xmin=-10, xmax=10,
+          ymin=-10, ymax=10,
+          zmin=0, zmax=8,
+          hide axis,
+          grid=none,
+        ]
+
+          % Paraboloid z = r^2 up to z=8
+          \pgfmathsetmacro\R{sqrt(8)}
+          \addplot3[
+          surf,
+          shader=interp,
+          opacity=0.3,
+          colormap/viridis,
+          domain=0:360,
+          y domain=0:\R,
+          samples=55,
+          samples y=25
+          ] ({y*cos(x)}, {y*sin(x)}, {y^2});
+
+          % Draw jagged level sets at z = 1,3,5,7
+          \pgfmathsetseed{12310}
+          \foreach \z [count=\i] in {1,3,5,7}{
+            % Inner jagged circle
+            \pgfmathsetmacro\rinner{sqrt(\z/0.9)}
+            \def\innerpoints{}
+            \foreach \sample in {1,...,20}{
+              \pgfmathsetmacro\ang{360*\sample/20}
+              \pgfmathsetmacro\noise{0.4 * rand}
+              \pgfmathsetmacro\x{ (\rinner + \noise) * cos(\ang) }
+              \pgfmathsetmacro\y{ (\rinner + \noise) * sin(\ang) }
+              \xdef\innerpoints{\innerpoints (\x,\y,\z)}
+            }
+            \addplot3[black, thick] coordinates {\innerpoints} --cycle;
+
+            % Sample points inside the innermost level set
+            \pgfmathsetseed{20260101 + \i}
+            \def\dotpoints{}
+            \pgfmathsetmacro\numdots{3*\i}
+            \foreach \k in {1,...,\numdots}{
+              \pgfmathsetmacro\rr{sqrt(rnd)*\rinner*0.9}
+              \pgfmathsetmacro\tt{rnd*360}
+              \pgfmathsetmacro\x{\rr * cos(\tt)}
+              \pgfmathsetmacro\y{\rr * sin(\tt)}
+              \xdef\dotpoints{\dotpoints (\x,\y,\z)}
+            }
+            \addplot3[red, only marks, mark=*, mark size=1] coordinates {\dotpoints};
+
+            % Middle jagged circle
+            \pgfmathsetmacro\r{sqrt(\z/0.2)}
+            \def\middlepoints{}
+            \foreach \sample in {1,...,40}{
+              \pgfmathsetmacro\ang{360*\sample/40}
+              \pgfmathsetmacro\noise{0.3 * rand}
+              \pgfmathsetmacro\x{ (\r + \noise) * cos(\ang) }
+              \pgfmathsetmacro\y{ (\r + \noise) * sin(\ang) }
+              \xdef\middlepoints{\middlepoints (\x,\y,\z)}
+            }
+            \addplot3[black, thick] coordinates {\middlepoints} --cycle;
+
+            % Outer bounding square
+            \pgfmathsetmacro\h{sqrt(\z / 0.1)}
+            \addplot3[black, thick] coordinates { (-\h, -\h, \z) (-\h, \h, \z) };
+            \addplot3[black, thick] coordinates { (\h, -\h, \z) (\h, \h, \z) };
+            \addplot3[black, thick] coordinates { (-\h, -\h, \z) (\h, -\h, \z) };
+            \addplot3[black, thick] coordinates { (-\h, \h, \z) (\h, \h, \z) };
+          }
+
+        \end{axis}
+        \path (current bounding box.north east) coordinate (plotNE);
+
+        % Labels
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-0.6, -1.3)$) {$\Sigma^{<80}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-0.9,-2.9)$)  {$\Sigma^{<60}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-1.5,-4.5)$)  {$\Sigma^{<40}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-2.2,-5.9)$)  {$\Sigma^{<20}$};
       \end{tikzpicture}
     \end{column}
   \end{columns}
@@ -151,7 +337,7 @@
   \begin{itemize}\setlength\itemsep{0.35em}
   \item Fix a finite type universe $\mathbb{T}$ and an ambient global context $\Gamma$
   \item Decorate vanilla nonterminals with a typing annotation, $\nt{E}[\tau]$
-  \item Each typing judgment becomes a schema for constructing a family of synthetic productions each instantiated with $\tau : \mathbb{T}$
+  \item Each typing judgment becomes a schema for constructing a family of synthetic productions, each instantiated with $\tau : \mathbb{T}$
   \end{itemize}
   \vspace{0.2cm}
   \begin{align*}
@@ -194,7 +380,7 @@
 \end{frame}
 
 % -------------------------------------------------
-\begin{frame}{Example language: static semantics}
+\begin{frame}{Expression fragment: static semantics}
   \vspace{-0.3cm}
   \begin{center}
     \begin{prooftree}
@@ -324,6 +510,8 @@
       \end{cases}
     \end{equation*}
 
+    Where the number of parse trees in a SFRE we abbreviate as $|e|$:
+
     \begin{equation*}
       |e|: E \rightarrow \mathbb{N} = \begin{cases}
         1           & \text{if } e \in \Sigma \\
@@ -332,7 +520,7 @@
       \end{cases}
     \end{equation*}
 
-    n.b. may need to disambiguate to guarantee $\mathcal{L}(e)$ uniformity.
+    n.b. we may need to disambiguate to guarantee $\mathcal{L}(e)$ uniformity.
   \end{theorem}
 \end{frame}
 
