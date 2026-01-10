@@ -14,13 +14,16 @@
 \usepackage{multicol}
 \usepackage[table]{xcolor}
 
+\usepackage{tikz-cd}
+\usepackage{adjustbox}
+
 \usepackage{txfonts}
 \usepackage{soul}
 \usepackage{mathtools}
 
 \usepackage[normalem]{ulem}
 \usepackage{tikz}
-\usetikzlibrary{decorations.pathmorphing,calc}
+\usetikzlibrary{decorations.pathmorphing,calc,automata,arrows}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 
@@ -45,6 +48,9 @@
 \newcommand{\tok}[1]{\codett{#1}}     % terminals
 \newcommand{\gap}{\;\;}
 \newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
+
+\newcommand{\bs}{\blacksquare}
+\newcommand{\ws}{\square}
 
 \newcommand{\T}{\mathbb{T}}
 \newcommand{\ttlb}{\{}   % left brace token
@@ -495,6 +501,122 @@
   Finally, we normalize to Chomsky Normal Form (CNF), rewriting all productions to either \textbf{(1)} $(w \rightarrow x z): V\times V^2$ or \textbf{(2)} $(w \rightarrow t): V\times\Sigma$.
 \end{frame}
 
+\begin{frame}{Addendum: CFG $\cap$ NFA closure and $G_\cap$ construction}
+  \textbf{Bar-Hillel (1961)}: For any CFG $G$, and NFA
+  $A=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, $\exists G_\cap$ s.t.
+  $\mathcal{L}(G_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)$. Salomaa's (1973) construction:
+
+  \vspace{-0.1cm}
+  \begin{center}
+    \begin{prooftree}
+      \AxiomC{$q_\omega \in F$}
+      \RightLabel{$\mathcal{S}$}
+      \UnaryInfC{$\big(S_\cap \rightarrow q_\alpha\, S\, q_\omega\big)\in P_\cap$}
+      \DisplayProof\hspace{0.5em}
+      \AxiomC{$(W\rightarrow a)\in P$}
+      \AxiomC{$(p\overset{a}{\rightarrow}r)\in\delta$}
+      \RightLabel{$\uparrow$}
+      \BinaryInfC{$\big(pWr\rightarrow a\big)\in P_\cap$}
+      \DisplayProof\vskip1em
+      \AxiomC{$(W\rightarrow XZ)\in P$}
+      \AxiomC{$p,q,r\in Q$}
+      \RightLabel{$\Join$}
+      \BinaryInfC{$\big(pWr\rightarrow (pXq)\,(qZr)\big)\in P_\cap$}
+    \end{prooftree}
+  \end{center}
+
+  \vspace{0.1cm}
+  but, there is a \textit{much} more efficient construction. Intuition: want to show $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  \begin{enumerate}\setlength\itemsep{0.25em}
+    \item $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
+    \item $\exists q, x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Repair example: Simple Levenshtein automaton}
+  Suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. Assume we have the Chomsky Normal Form CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow \hspace{-0.05cm}\texttt{(}, R \rightarrow\hspace{-0.05cm}\texttt{)}\big\}$ and let us impose an ordering of $S, F, L, R$ on $V$.
+  We will initially have the Levenshtein automaton, $A$, depicted below.
+
+  \vspace{0.5cm}
+  \centering
+  \begin{adjustbox}{max size={0.95\textwidth}{0.62\textheight},center}
+    \begin{tikzpicture}[
+%->, % makes the edges directed
+  >=stealth',
+  node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+  initial text=$ $, % sets the text that appears on the start arrow
+]
+  \node[state, initial]                (00) {$q_{0,0}$};
+  \node[state, right of=00]            (10) {$q_{1,0}$};
+  \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+  \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+  \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+  \node[state, right of=01]                     (11) {$q_{1,1}$};
+  \node[state, right of=11]                     (21) {$q_{2,1}$};
+  \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+  \draw [->] (00) edge[below] node{\tiny{$\texttt{(}$}} (10);
+  \draw [->] (10) edge[below] node{\tiny{$\texttt{)}$}} (20);
+  \draw [->] (20) edge[below] node{\tiny{$\texttt{)}$}} (30);
+
+  \draw [->] (01) edge[below] node{\tiny{$\texttt{(}$}}                       (11);
+  \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$\texttt{)}$}} (21);
+  \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$\texttt{)}$}} (31);
+
+  \draw [->] (00) edge[left] node{\tiny{$\texttt{)}$}} (11);
+  \draw [->] (10) edge[left] node{\tiny{$\texttt{(}$}} (21);
+  \draw [->] (20) edge[left] node{\tiny{$\texttt{(}$}} (31);
+
+  \draw [->] (00) edge[bend left=10, left] node{\tiny{$\texttt{)}$}} (01);
+  \draw [->] (10) edge[bend left=10, left] node{\tiny{$\texttt{(}$}} (11);
+  \draw [->] (20) edge[bend left=10, left] node{\tiny{$\texttt{(}$}} (21);
+  \draw [->] (30) edge[bend left=10, left] node{\tiny{$\texttt{)|(}$}} (31);
+
+  \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$\texttt{)}$}}    (21);
+  \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$\texttt{)}$}}    (31);
+\end{tikzpicture}
+  \end{adjustbox}
+\end{frame}
+
+%\begin{frame}{Pairing function over $L(\sigma:\Sigma^3,1)$}
+%  \centering
+%  \begin{adjustbox}{max size={1.98\textwidth}{0.88\textheight},center}
+%    \input{../../popl2026/figures/partial_order}
+%  \end{adjustbox}
+%\end{frame}
+%
+%\begin{frame}{Adjacency and reachability matrix}
+%  \centering
+%  \begin{adjustbox}{max size={1.98\textwidth}{0.88\textheight},center}
+%    \input{../../popl2026/figures/adj_mat}
+%  \end{adjustbox}
+%\end{frame}
+
+\begin{frame}{Repair example: Initial parse chart configuration}
+  \centering
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \input{../../popl2026/figures/pc_init}
+  \end{adjustbox}
+\end{frame}
+
+\begin{frame}{Repair example: Final parse chart configuration}
+  \centering
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \input{../../popl2026/figures/pc_final}
+  \end{adjustbox}
+\end{frame}
+
+\begin{frame}{Repair example: Regular expression denoting $\mathcal{L}(G) \cap \alpha_\varnothing$}
+  \centering
+  (abab | (ab | aabb)) | (abab | aabb)
+  \vspace{0.5cm}
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \includegraphics{../../popl2026/figures/gre}
+  \end{adjustbox}
+\end{frame}
+
 \begin{frame}{Sampling star-free regular expressions uniformly}
   \vspace{-0.3cm}
 
@@ -562,39 +684,6 @@
   \end{equation*}
 \vspace{0.2cm}
 
-  where $\delta_s e$ is the Brzozowskian derivative (1973) and $\leftsquigarrow$ denotes probabilistic choice from a small finite set. This may be augmented with a weighted choice operator, $P_\theta\,(\sigma_{n} \mid  \sigma_{n-1}, \cdots, \sigma_{n - k})$.
-\end{frame}
-
-% -------------------------------------------------
-\begin{frame}{Addendum: CFG $\cap$ NFA closure and $G_\cap$ construction}
-    \textbf{Bar-Hillel (1961)}: For any CFG $G$, and NFA
-    $A=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, $\exists G_\cap$ s.t.
-    $\mathcal{L}(G_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)$. Salomaa's (1973) construction:
-
-  \vspace{-0.1cm}
-  \begin{center}
-    \begin{prooftree}
-      \AxiomC{$q_\omega \in F$}
-      \RightLabel{$\mathcal{S}$}
-      \UnaryInfC{$\big(S_\cap \rightarrow q_\alpha\, S\, q_\omega\big)\in P_\cap$}
-\DisplayProof\hspace{0.5em}
-      \AxiomC{$(W\rightarrow a)\in P$}
-      \AxiomC{$(p\overset{a}{\rightarrow}r)\in\delta$}
-      \RightLabel{$\uparrow$}
-      \BinaryInfC{$\big(pWr\rightarrow a\big)\in P_\cap$}
-\DisplayProof\vskip1em
-      \AxiomC{$(W\rightarrow XZ)\in P$}
-      \AxiomC{$p,q,r\in Q$}
-      \RightLabel{$\Join$}
-      \BinaryInfC{$\big(pWr\rightarrow (pXq)\,(qZr)\big)\in P_\cap$}
-    \end{prooftree}
-  \end{center}
-
-  \vspace{0.1cm}
-  but, there is a \textit{much} more efficient construction. Intuition: want to show $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
-  \begin{enumerate}\setlength\itemsep{0.25em}
-  \item $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
-  \item $\exists q, x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
-  \end{enumerate}
+  where $\delta_s e$ is the Brzozowskian derivative (1973) and $\leftsquigarrow$ denotes probabilistic choice from a small finite set. This may be augmented with a weighted choice operator, $\sigma \leftsquigarrow P_\theta\,(\sigma_{n} \mid  \sigma_{n-1}, \cdots, \sigma_{n - k})$.
 \end{frame}
 \end{document}
