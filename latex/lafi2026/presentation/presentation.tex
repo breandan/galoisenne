@@ -533,11 +533,41 @@
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{Repair example: Simple Levenshtein automaton}
-  Suppose we have the string, $\err\sigma=\texttt{())}$ and wish to balance the parentheses. Assume we have the Chomsky Normal Form CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow \hspace{-0.05cm}\texttt{(}, R \rightarrow\hspace{-0.05cm}\texttt{)}\big\}$ and let us impose an ordering of $S, F, L, R$ on $V$.
-  We will initially have the Levenshtein automaton, $A$, depicted below.
+\begin{frame}{Finite intersection as matrix exponentiation on $(2^V,\oplus,\otimes)$}
+  Let $M \in (2^V)^{|Q|\times|Q|}$, with entries $M[r,c]\subseteq V$ (a set of nonterminals),
+  \vspace{-0.35cm}
+  \[
+    \text{and let } X \oplus Z = X\cup Z ,
+    X \otimes Z=\Big\{\, w \ \Big|\ \exists x\in X,\ z\in Z.\ (w\rightarrow xz)\in P \Big\}.
+  \]
 
-  \vspace{0.5cm}
+  \vspace{-0.25cm}
+  \[
+    M_0[r,c] \;=\; \bigcup_{a\in\Sigma}\Big\{\, w \ \Big|\ (w\rightarrow a)\in P \ \wedge\ (q_r \overset{a}{\rightarrow} q_c)\in\delta \Big\}.
+  \]
+
+  We will define the matrix exponential in the standard manner:
+
+  \vspace{-0.35cm}
+  \begin{align*}
+    \exp(M_0)&=\sum_{i=0}^{\infty} M_0^i \;=\;\sum_{i=0}^{|Q|} M_0^i \quad\text{($\alpha_\varnothing \Leftrightarrow $ S.U.T. $\Rightarrow$ nilpotent).}\\
+ T(2n)&=\sum_{i=0}^{2n}M_0^i = \begin{cases} M_0, & n=1,\\
+      T(n)\ \oplus\ \big(T(n)\cdot T(n)\big), & \text{otherwise}.
+    \end{cases}
+  \end{align*}
+
+  The following proposition decides nonemptiness:
+
+  \[
+    \Big[\ \bigvee_{q_\omega\in F}\ S\in \exp(M_0)[q_\alpha,q_\omega]\ \Big]  \Longleftrightarrow \mathcal{L}(G)\cap \mathcal{L}(\alpha_\cap) \neq \varnothing
+  \]
+\end{frame}
+
+\begin{frame}{Repair example: Simple Levenshtein automaton}
+  Suppose we have the string, $\err\sigma=\tok{(}\;\tok{)}\;\tok{)}$ and wish to balance the parentheses. Assume we have the Chomsky Normal Form CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow \hspace{-0.05cm}\texttt{(}, R \rightarrow\hspace{-0.05cm}\texttt{)}\big\}$ and let us impose an ordering of $S, F, L, R$ on $V$.
+  We will initially have the Levenshtein automaton, $\alpha_\varnothing$, depicted below:
+
+  \vspace{0.6cm}
   \centering
   \begin{adjustbox}{max size={0.95\textwidth}{0.62\textheight},center}
     \begin{tikzpicture}[
@@ -557,27 +587,29 @@
   \node[state, right of=11]                     (21) {$q_{2,1}$};
   \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
 
-  \draw [->] (00) edge[below] node{\tiny{$\texttt{(}$}} (10);
-  \draw [->] (10) edge[below] node{\tiny{$\texttt{)}$}} (20);
-  \draw [->] (20) edge[below] node{\tiny{$\texttt{)}$}} (30);
+  \draw [->] (00) edge[below] node{{$\texttt{(}$}} (10);
+  \draw [->] (10) edge[below] node{{$\texttt{)}$}} (20);
+  \draw [->] (20) edge[below] node{{$\texttt{)}$}} (30);
 
-  \draw [->] (01) edge[below] node{\tiny{$\texttt{(}$}}                       (11);
-  \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$\texttt{)}$}} (21);
-  \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$\texttt{)}$}} (31);
+  \draw [->] (01) edge[below] node{{$\texttt{(}$}}                       (11);
+  \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{{$\texttt{)}$}} (21);
+  \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{{$\texttt{)}$}} (31);
 
-  \draw [->] (00) edge[left] node{\tiny{$\texttt{)}$}} (11);
-  \draw [->] (10) edge[left] node{\tiny{$\texttt{(}$}} (21);
-  \draw [->] (20) edge[left] node{\tiny{$\texttt{(}$}} (31);
+  \draw [->] (00) edge[left] node{{$\texttt{)}$}} (11);
+  \draw [->] (10) edge[left] node{{$\texttt{(}$}} (21);
+  \draw [->] (20) edge[left] node{{$\texttt{(}$}} (31);
 
-  \draw [->] (00) edge[bend left=10, left] node{\tiny{$\texttt{)}$}} (01);
-  \draw [->] (10) edge[bend left=10, left] node{\tiny{$\texttt{(}$}} (11);
-  \draw [->] (20) edge[bend left=10, left] node{\tiny{$\texttt{(}$}} (21);
-  \draw [->] (30) edge[bend left=10, left] node{\tiny{$\texttt{)|(}$}} (31);
+  \draw [->] (00) edge[bend left=10, left] node{{$\texttt{)}$}} (01);
+  \draw [->] (10) edge[bend left=10, left] node{{$\texttt{(}$}} (11);
+  \draw [->] (20) edge[bend left=10, left] node{{$\texttt{(}$}} (21);
+  \draw [->] (30) edge[bend left=10, left] node{{$\texttt{)|(}$}} (31);
 
-  \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$\texttt{)}$}}    (21);
-  \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$\texttt{)}$}}    (31);
+  \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{{$\texttt{)}$}}    (21);
+  \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{{$\texttt{)}$}}    (31);
 \end{tikzpicture}
   \end{adjustbox}
+  \phantom{.}\\
+  n.b. acyclic, therefor has strictly upper triangular adjacency matrix.
 \end{frame}
 
 %\begin{frame}{Pairing function over $L(\sigma:\Sigma^3,1)$}
@@ -594,27 +626,32 @@
 %  \end{adjustbox}
 %\end{frame}
 
-\begin{frame}{Repair example: Initial parse chart configuration}
+\begin{frame}{Repair example: Initial parse chart ($M_0$)}
   \centering
   \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
     \input{../../popl2026/figures/pc_init}
   \end{adjustbox}
+  Initial configuration, after filling all unit productions.
 \end{frame}
 
-\begin{frame}{Repair example: Final parse chart configuration}
+\begin{frame}{Repair example: Final parse chart ($e^{M_0}$)}
   \centering
   \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
     \input{../../popl2026/figures/pc_final}
   \end{adjustbox}
+  Final configuration, after matrix fixpoint is reached.
 \end{frame}
 
-\begin{frame}{Repair example: Regular expression denoting $\mathcal{L}(G) \cap \alpha_\varnothing$}
+\begin{frame}{Repair example: Regex denoting $\mathcal{L}(G) \cap \mathcal{L}(\alpha_\varnothing)$}
   \centering
-  (abab | (ab | aabb)) | (abab | aabb)
+  \Big(\tok{a} \tok{b} \tok{a} \tok{b} | \big(\tok{a} \tok{b} | \tok{a} \tok{a} \tok{b} \tok{b}\big)\Big) \big| \big(\tok{a} \tok{b} \tok{a} \tok{b} | \tok{a} \tok{a} \tok{b} \tok{b}\big)
   \vspace{0.5cm}
   \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
     \includegraphics{../../popl2026/figures/gre}
   \end{adjustbox}
+  \phantom{.}\\
+  \vspace{-1cm}
+  Regular expression reconstructed from the final parse chart.
 \end{frame}
 
 \begin{frame}{Sampling star-free regular expressions uniformly}
@@ -667,7 +704,7 @@
 %    \end{eqnarray*}
 %  \end{multicols}
 
-  Now, for any SFGRE, \(e\), $\texttt{choose}\,(e)$ witnesses $\sigma \in \mathcal{L}(e)$:
+  Now, for any SFRE, \(e\), $\texttt{choose}\,(e)$ witnesses $\sigma \in \mathcal{L}(e)$:
   \begin{equation*}
     \texttt{follow}\,(e) = \begin{cases}
            \{e\}                                        &\hspace{1.3cm}\text{ if } e \in \Sigma \\
@@ -685,5 +722,79 @@
 \vspace{0.2cm}
 
   where $\delta_s e$ is the Brzozowskian derivative (1973) and $\leftsquigarrow$ denotes probabilistic choice from a small finite set. This may be augmented with a weighted choice operator, $\sigma \leftsquigarrow P_\theta\,(\sigma_{n} \mid  \sigma_{n-1}, \cdots, \sigma_{n - k})$.
+\end{frame}
+
+\begin{frame}{Evaluation benchmarks}
+  \begin{columns}[T,onlytextwidth]
+% ===================== Left: text =====================
+    \begin{column}{0.53\textwidth}
+      \vspace{0.2cm}
+      \small
+      \textbf{Experimental Setup}
+      \begin{itemize}
+        \item Arity: $k\in\{1,2,3\}$\\Fixed: $|\Gamma|=18,\ |\mathbb{T}|=7$
+        \item CNF grammar sizes: $|G'_\Gamma|\in[1.9\times10^4,\ 9.9\times10^5]$
+        \item Apple M4 (16\,GB RAM)
+      \end{itemize}
+
+      \vspace{0.1cm}
+      \textbf{Benchmarks}
+      \begin{itemize}
+        \item \textbf{Slicing}: $\sigma \leftsquigarrow \mathcal{L}(G'_\Gamma)\cap \Sigma^n$
+        \item \textbf{Type inference}: reuse random functions from slice sampling,
+        replace $(\tok{:}\ \tau\ \tok{=})$ with $(\tok{:}\ \Sigma\ \tok{=})$, and
+        $\sigma' \leftsquigarrow \mathcal{L}(G'_\Gamma)\cap(\ldots\tok{:}\:\Sigma\:\tok{=}\ldots)$
+        \item \textbf{Bounded delay}: $1786 \pm 817 $ ns
+        \item \textbf{Throughput}: $\sim 2.2 \times 10^7$ tok/s
+      \end{itemize}
+    \end{column}
+
+% ===================== Right: stacked plots =====================
+    \begin{column}{0.46\textwidth}
+      \vspace{-1cm}
+      \begin{minipage}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{plot1.pdf}\vspace{-0.3cm}
+        \includegraphics[width=\linewidth]{plot2.png}
+      \end{minipage}
+      \end{column}
+  \end{columns}
+  \vspace{-0.15cm}
+\end{frame}
+
+
+\begin{frame}{Future work}
+  \begin{itemize}
+    \item More compact embeddings and asymptotic complexity
+    \item Laziness: instantiate CFG productions during parsing
+    \item Extend to richer type systems, e.g., polymorphism, higher-order functions, subtyping, nested scope
+    \item \href{https://arxiv.org/pdf/2512.01036v1}{``A Relevance Sampler for $\mu$Rust$_{\text{sl}}$''} (Considine, 2025) explores a straight-line fragment of Rust with nominal relevance
+    \item \href{https://arxiv.org/pdf/2408.01849}{``
+A Tree Sampler for Bounded CFLs''} (Considine, 2024) describes a uniform sampler for finite CFL intersections
+    \item Other FPT embeddings. Open to suggestions!
+    \item Applications to program synthesis and repair
+    \item Try it yourself at: \href{https://tidyparse.github.io}{https://tidyparse.github.io}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Acknowledgements}
+  \centering\Large{Thank you!}\vspace{0.5cm}
+  \begin{columns}
+  \begin{column}{0.5\textwidth}
+  \begin{itemize}
+    \item Ori Roth
+    \item Chuta Sano
+    \item Brigitte Pientka
+  \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+      \item David Bieber
+      \item Margaret Considine
+      \item Mark Considine
+    \end{itemize}
+  \end{column}
+  \end{columns}\vspace{1cm}
+  Lastly, thank you to the LAFI organizers!
 \end{frame}
 \end{document}
