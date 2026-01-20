@@ -285,7 +285,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
               }
           }
 
-          if (p == 0 && A == startIdx && q in levFSA.finalIdxs && dp[p][q][A]) {
+          if (p == 0 && A == startIdx && q in levFSA.levFinalIdxs && dp[p][q][A]) {
             val (x, y) = levFSA.idsToCoords[q]!!
             /** See final state conditions for [makeExactLevCFL] */
             // The minimum radius such that this final state is included in the L-FSA
@@ -356,7 +356,7 @@ fun repairWithGREAtDist(brokenStr: List<Σᐩ>, cfg: CFG, d: Int): Pair<GRE.CUP,
   }
 
   // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
-  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+  val allParses = levFSA.levFinalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
   // 5) Combine under a single GRE
   return (if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()) to diff)
@@ -476,7 +476,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   println("Completed parse matrix in: ${timer.elapsedNow()}")
 
   // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
-  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+  val allParses = levFSA.levFinalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
   // 5) Combine under a single GRE
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray())
@@ -601,7 +601,7 @@ suspend fun initiateSuspendableRepair(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   println("Completed parse matrix in: ${timer.elapsedNow()}")
 
   // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
-  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+  val allParses = levFSA.levFinalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
   println("Parsing took ${timer.elapsedNow()} with |σ|=${brokenStr.size}, " +
 //      "|Q|=$nStates, |G|=${cfg.size}, maxBranch=$maxBranch, |V|=$width, |Σ|=$tms, maxChildren=$maxChildren@$location")
@@ -757,7 +757,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
   println("Completed sparse parse matrix in: ${timer.elapsedNow()} |Q|=$n, |G|=${cfg.size}, |V|=$W, |Σ|=$tms, maxChildren=$maxChildren")
 
-  val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+  val allParses = levFSA.levFinalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
   return if (allParses.isEmpty()) null else GRE.CUP(*allParses.toTypedArray()).flatunion()
 }
 

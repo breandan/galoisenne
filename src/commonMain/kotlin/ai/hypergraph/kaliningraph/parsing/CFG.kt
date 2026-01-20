@@ -383,6 +383,14 @@ val CFG.noNonterminalStubs: CFG by cache {
     .also { it.blocked.addAll(blocked) }
 }
 
+val CFG.noEpsilon: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
+  println("Disabling ε!")
+  filter { "ε" !in it.toString() }.toSet().freeze()
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
 val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
 //  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
   println("Disabling nonterminal stubs!")

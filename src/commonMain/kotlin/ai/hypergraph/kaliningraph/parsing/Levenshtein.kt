@@ -65,8 +65,8 @@ fun makeExactLevCFL(
 ): FSA =
   (upArcs(str, radius, digits) +
     diagArcs(str, radius, digits) +
-    str.mapIndexed { i, it -> rightArcs(i, radius, it, digits) }.flatten() +
-    str.mapIndexed { i, it -> knightArcs(i, radius, it, digits, str) }.flatten())
+      str.flatMapIndexed { i, it -> rightArcs(i, radius, it, digits) } +
+      str.flatMapIndexed { i, it -> knightArcs(i, radius, it, digits, str) })
   .let { Q ->
     val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
     val finalStates = Q.states().filter { it.unpackCoordinates().let { (i, j) -> ((str.size - i + j).absoluteValue == radius) } }
@@ -86,8 +86,8 @@ fun makeLevFSA(
   var initSize = 0
   val fsa = (upArcs(str, maxRad, digits) +
       diagArcs(str, maxRad, digits) +
-      str.mapIndexed { i, it -> rightArcs(i, maxRad, it, digits) }.flatten() +
-      str.mapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) }.flatten())
+      str.flatMapIndexed { i, it -> rightArcs(i, maxRad, it, digits) } +
+      str.flatMapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) })
     .also { initSize = it.size }
     .let { Q ->
       val initialStates = setOf("q_" + pd(0, digits).let { "$it/$it" })
@@ -131,8 +131,8 @@ fun makeLevFSA(
   var initSize = 0
   val fsa = (upArcs(str, maxRad, digits) +
       diagArcs(str, maxRad, digits) +
-      str.mapIndexed { i, it -> rightArcs(i, maxRad, it, digits) }.flatten() +
-      str.mapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) }.flatten())
+      str.flatMapIndexed { i, it -> rightArcs(i, maxRad, it, digits) } +
+      str.flatMapIndexed { i, it -> knightArcs(i, maxRad, it, digits, str) })
     .also { initSize = it.size }
     .filter { arc ->
       listOf(arc.first.unpackCoordinates(), arc.third.unpackCoordinates())

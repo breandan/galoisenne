@@ -146,8 +146,9 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
   open val midpoints: List<List<List<Int>>> by lazy { TODO() }
 
-  val finalIdxs by lazy { final.map { stateMap[it]!! }.filter { 0 < idsToCoords[it]!!.second }.toTypedArray() }
-  val isFinal by lazy { BooleanArray(numStates).also { fm -> for (f in finalIdxs) fm[f] = true } }
+  val finalIdxsq by lazy { final.map { stateMap[it]!! }.toTypedArray() }
+  val levFinalIdxs by lazy { finalIdxsq.filter { idsToCoords[it]!!.second > 0 }.toTypedArray() }
+  val isFinal by lazy { BooleanArray(numStates).also { fm -> for (f in levFinalIdxs) fm[f] = true } }
 
   // TODO: Implement Lev state pairing function to avoid this pain
   val idsToCoords by lazy { stateLst.mapIndexed { i, it -> i to it.coords() }.toMap() }
@@ -235,7 +236,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
               }
             }
 
-            if (p == 0 && A == startIdx && q in levFSA.finalIdxs && dp[p][q][A]) return true
+            if (p == 0 && A == startIdx && q in levFSA.levFinalIdxs && dp[p][q][A]) return true
           }
         }
       }
@@ -304,7 +305,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
       println("Completed parse matrix in: ${timer.elapsedNow()}")
 
       // 4) Gather final parse trees from dp[0][f][startIdx], for all final states f
-      val allParses = levFSA.finalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
+      val allParses = levFSA.levFinalIdxs.mapNotNull { q -> dp[0][q][startIdx] }
 
       return PTree(START_SYMBOL, allParses.flatMap { forest -> forest.branches })
     }
