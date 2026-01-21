@@ -425,6 +425,10 @@ fun allPairsLevenshtein(s1: Set<Σᐩ>, s2: Set<Σᐩ>) =
 fun levenshtein(s1: Σᐩ, s2: Σᐩ): Int =
   levenshtein(s1.tokenizeByWhitespace().toList(), s2.tokenizeByWhitespace().toList())
 
+fun levAndLenMetric(origTks: List<String>): (List<String>) -> Int = {
+  levenshtein(origTks, it) * 7919 + (origTks.sumOf { it.length } - it.sumOf { it.length }).absoluteValue
+}
+
 fun <T> levenshtein(o1: List<T>, o2: List<T>): Int {
   var prev = IntArray(o2.size + 1)
   for (j in 0..<o2.size + 1) prev[j] = j

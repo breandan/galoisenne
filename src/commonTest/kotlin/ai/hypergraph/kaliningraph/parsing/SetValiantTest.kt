@@ -10,7 +10,6 @@ import ai.hypergraph.kaliningraph.tensor.seekFixpoint
 import ai.hypergraph.kaliningraph.types.π2
 import kotlinx.datetime.Clock
 import kotlin.math.ceil
-import kotlin.math.log
 import kotlin.math.log2
 import kotlin.random.Random
 import kotlin.test.*
@@ -367,7 +366,7 @@ class SetValiantTest {
     val holExpr = "_ _ _ _"
 
     measureTime {
-      val solutions = Grammars.ocamlCFG.solve(holExpr, levMetric("( false curry )"))
+      val solutions = Grammars.ocamlCFG.solve(holExpr, levAndLenMetric("( false curry )"))
       println("Found: ${solutions.size} unique solutions")
       solutions.forEach { println(it); assertTrue("$it was invalid!") { Grammars.ocamlCFG.isValid(it) } }
     }.also { println("Finished in ${it.inWholeMilliseconds}ms.") }

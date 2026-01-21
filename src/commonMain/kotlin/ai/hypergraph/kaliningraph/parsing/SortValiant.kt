@@ -101,6 +101,6 @@ data class Choice(val tokens: List<Σᐩ>, val weight: Float): Comparable<Choice
 }
 
 // Returns a metric measuring Levenshtein distance w.r.t. some reference string
-fun levMetric(withRespectTo: Σᐩ): ChoiceMetric =
+fun levAndLenMetric(withRespectTo: Σᐩ): ChoiceMetric =
   withRespectTo.tokenizeByWhitespace()
     .let { wrt -> { levenshtein(it.sanitized, wrt).toFloat() } }
