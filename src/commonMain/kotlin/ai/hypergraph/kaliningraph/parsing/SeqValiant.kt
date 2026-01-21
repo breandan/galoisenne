@@ -401,9 +401,9 @@ fun CFG.enumSeqMinimal(
     ?: sequenceOf()
 
 fun CFG.enumNTSmall(nt: String): Sequence<Σᐩ> =
-  if (nt !in nonterminals) emptySequence<Σᐩ>()
-  else ((3..21 step 3).asSequence().flatMap {
-    startPTree(List(it) { "_" }, nt)?.sampleStrWithoutReplacement()
+  if (nt !in nonterminals) emptySequence()
+  else ((1..21).asSequence().flatMap {
+    startPTree(List(it) { "_" }, nt.also { println("Solving for: $nt") })?.sampleStrWithoutReplacement()
 //      ?.map { it.replace("ε", "").tokenizeByWhitespace().joinToString(" ") }
       ?.filter { it != "<$nt>" }
       ?: emptySequence()
